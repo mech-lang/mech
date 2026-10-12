@@ -1,0 +1,12 @@
+pixels(width<f64>, pixel<[f64]:8,1>, row<f64>) = (result<[bool]:1,9>) :=
+  cr := pixel<[f64]:8,1> * (2.0 / width<f64>) - 1.5
+  ci := row<f64> * (2.0 / width<f64>) - 1.0
+  ~state := [0.0, 0.0, 0.0; 0.0, 0.0, 0.0; 0.0, 0.0, 0.0; 0.0, 0.0, 0.0; 0.0, 0.0, 0.0; 0.0, 0.0, 0.0; 0.0, 0.0, 0.0; 0.0, 0.0, 0.0]
+  square := state * state
+  inside := square[:,1] + square[:,2] <= 4.0
+  done := state[1,3] >= 50.0 || !(inside[1] || inside[2] || inside[3] || inside[4] || inside[5] || inside[6] || inside[7] || inside[8])
+  state = [square[:,1] - square[:,2] + cr, (state[:,1] + state[:,1]) * state[:,2] + ci, state[:,3] + 1.0]
+  result := [inside', done].
+size := io/argument-u64(1)
+image := grid/map-until(size, size, pixels)
+image |> image/pbm |> io/write

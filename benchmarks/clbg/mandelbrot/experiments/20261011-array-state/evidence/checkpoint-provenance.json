@@ -1,0 +1,49 @@
+{
+  "created_at": "2026-10-12T00:19:00.162166+00:00",
+  "purpose": "Selective generic arrow-mutation repair and immutable Mech source/semantic checkpoint; no live timing results or opaque build artifacts.",
+  "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+  "copies": [
+    {
+      "original_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/.build/arrow-mutations-current/compiler-pins.json",
+      "original_sha256": "113ee046488896cccb30da08dea5515e924a5ee7ab462e574360c74e6264b3b9",
+      "checkpoint_path": "benchmarks/clbg/mandelbrot/experiments/20261011-array-state/evidence/compiler-pins.json",
+      "checkpoint_sha256": "113ee046488896cccb30da08dea5515e924a5ee7ab462e574360c74e6264b3b9",
+      "policy": "Exact byte copy; original absolute artifact paths remain unchanged for provenance."
+    },
+    {
+      "original_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/.build/arrow-mutations-current/final-focused-regression.log",
+      "original_sha256": "b040a9e916e4c71fd3042e910d675acfa929cdb4b6947ef79b8c40cfb75bb0aa",
+      "checkpoint_path": "benchmarks/clbg/mandelbrot/experiments/20261011-array-state/evidence/focused-tests.log",
+      "checkpoint_sha256": "b040a9e916e4c71fd3042e910d675acfa929cdb4b6947ef79b8c40cfb75bb0aa",
+      "policy": "Exact byte copy; original absolute artifact paths remain unchanged for provenance."
+    },
+    {
+      "original_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/.build/arrow-mutations-current/final-driver-build.log",
+      "original_sha256": "01ae60dca43635b4642037bf49e59d2be1eac5c0310929983b23dc71cfd5065f",
+      "checkpoint_path": "benchmarks/clbg/mandelbrot/experiments/20261011-array-state/evidence/driver-build.log",
+      "checkpoint_sha256": "01ae60dca43635b4642037bf49e59d2be1eac5c0310929983b23dc71cfd5065f",
+      "policy": "Exact byte copy; original absolute artifact paths remain unchanged for provenance."
+    },
+    {
+      "original_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/full-study/manifest.json",
+      "original_sha256": "a8f8d3069a25ffe47ab1bec2e6922108570432baeb5b467fc17d4a44734f55a9",
+      "checkpoint_path": "benchmarks/clbg/mandelbrot/experiments/20261011-array-state/evidence/full-study-plan.json",
+      "checkpoint_sha256": "a8f8d3069a25ffe47ab1bec2e6922108570432baeb5b467fc17d4a44734f55a9",
+      "policy": "Exact byte copy; original absolute artifact paths remain unchanged for provenance."
+    }
+  ],
+  "application_source_sha256": "433e116691eed736b3152d42f51b0a642b46d52a39f07e8f97e5d4aa83f58031",
+  "compatibility_before_revision": "d59e2dfdbffdcf84d8de47027f53a46f2eb3a89c",
+  "compatibility_counts": {
+    "unchanged-ok": 322
+  },
+  "evidence_policy": "Compiler metadata and the sealed study plan are copied from local artifact locations; binaries, native objects, generated C/assembly, complete PBM outputs, caches and active study reports/launch/attempt records are intentionally outside this checkpoint. References in archived JSON identify their original local evidence files. This is not a self-contained binary replay bundle.",
+  "standalone_pre_fix_snapshot": {
+    "original_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/.build/arrow-mutations-current/application-before.rs",
+    "original_sha256": "11b555d2b864b58ef2e6e5e4682d465a1b1b7bb7b569ad630846976fd90aabf1",
+    "standalone_tests": 25,
+    "passed": 19,
+    "failed": 6,
+    "note": "Historical source snapshot with the first seven added regression tests. It differs from the pure Git before revision used for the 322-source normalization comparison; the later standalone fixed snapshot includes an eighth added test. Original source snapshot is retained locally."
+  }
+}

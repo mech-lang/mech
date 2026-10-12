@@ -1,0 +1,5322 @@
+{
+  "created_at": "2026-10-11T23:17:16.400065+00:00",
+  "purpose": "Small semantic validation only; no scored timing",
+  "driver": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/.build/arrow-mutations-current/mech-clbg-mandelbrot-compiled",
+  "driver_sha256": "028cf28286c0e69fa56ddfee1d20b51602cbf8c789acfb05d3e5ef1c55c7e47c",
+  "driver_manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/.build/arrow-mutations-current/compiler-pins.json",
+  "driver_manifest_sha256": "113ee046488896cccb30da08dea5515e924a5ee7ab462e574360c74e6264b3b9",
+  "clang": "/opt/homebrew/opt/llvm@22/bin/clang-22",
+  "clang_version": {
+    "command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "--version"
+    ],
+    "returncode": 0,
+    "stdout": "Homebrew clang version 22.1.8\nTarget: arm64-apple-darwin25.2.0\nThread model: posix\nInstalledDir: /opt/homebrew/Cellar/llvm@22/22.1.8/bin\nConfiguration file: /opt/homebrew/Cellar/llvm@22/22.1.8/etc/clang/arm64-apple-darwin25.cfg\n",
+    "stderr": ""
+  },
+  "sdk": "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+  "sdk_realpath": "/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk",
+  "source_metric": "LOC only; one authored binding/statement per line",
+  "lock": "/tmp/mech-clbg-timing.lock",
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/.build/arrow-mutations-current/mech-clbg-mandelbrot-compiled": "028cf28286c0e69fa56ddfee1d20b51602cbf8c789acfb05d3e5ef1c55c7e47c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/.build/arrow-mutations-current/compiler-pins.json": "113ee046488896cccb30da08dea5515e924a5ee7ab462e574360c74e6264b3b9",
+    "/opt/homebrew/opt/llvm@22/bin/clang-22": "012b35304481c5d5db6b57f20e144fb78f198ca9db14aa0b8db72cd2e493e12d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validate_current.py": "9d18813836d3877f3ff361204e7c980ecdb95c8ab65b38b3b4f2af9c36846d0b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/engine/src/native_sequence/application.rs": "433e116691eed736b3152d42f51b0a642b46d52a39f07e8f97e5d4aa83f58031",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/engine/src/native_sequence/grid.rs": "8ff364dc9f4d16536f26f9f626a977886c217a7d5efd6db1bce354de876f888d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/hosts/gpu/src/fused_f64/mod.rs": "c34e939be71b5db73b9dff23c03ec0db748f874ad7a9f90ec263a8570574971c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/hosts/gpu/src/fused_f64/native.rs": "37d0c34abd60b137e77770584960f679aef836c3269034280055b5dd68628579",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/hosts/gpu/src/fused_f64/map_runner.rs": "fd70647e126f8b03272423d5e30e4d47804c26d10bb38dfdeafc9eba7b3a9419",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/hosts/gpu/src/fused_f64/grid_runner.c": "c2e15ca08cf4cc6068b84a7906368045922bf74d6c903adc34c857c0e5c1866a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mech-driver/Cargo.toml": "7444dfff4d0901708e6c768acc1cb2fbc422da26da42833cd1ff0be9d5f3f89a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mech-driver/Cargo.lock": "154b7ba0463000cbbbac81972010c547d436f609a9f8fe67388141e35a7d58d7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/upstream/mandelbrot-200.pbm": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+    "/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/SDKSettings.json": "45e88fdfde9be16796dbb0f95891d44d47549236ae51d299d535834f5abdfb35",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-scalar-canonical.mec": "4e4b881e9c2368ba9ddfcbd2b8df49f78e6fd759833b26e7a10374b432de7b3a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/scalar11.c": "209063ff800888ec642304f8c4089a72673710c911ffebfeceeab248f855ffa9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/scalar11.o": "fb7913940646451063e27dccdc1c2451e8aba34a6b01459fc72aa903c42e3281",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/scalar11": "c74553ef6f51e3969edf257ef0083c8103f16bc4a3ef6a70e4a41ca8158aad0a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-lanes-canonical.mec": "41f854842422ec236f0d9305c90fed84af16a621e1a8d8532a81b84e23d84bab",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/lanes12.c": "0d442a69533edc4868567f8f10762f2e706e8851aab56f8c7d92d3b1d4dabfe1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/lanes12.o": "5f83ab0cc2a188492817d9965acaf4996f09856d1ef97620f83e2c8fcda95e60",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/lanes12": "ef0132696cb4c0e34df0198bbb3cb7e5bac843673e6f07151fd1cf186d855035",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-lanes-rows-canonical.mec": "11e64fd6a9165216e575ff985453a02e8b92dcc70c5267c6344dd3f6c7beee60",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/lanes12-rows.c": "0d442a69533edc4868567f8f10762f2e706e8851aab56f8c7d92d3b1d4dabfe1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/lanes12-rows.o": "f301f53369dd0e81f334725744b93703a19ab704d4081aeba79af189acd11e0b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/lanes12-rows": "5b3ecdbf820ee09e64064b8f53101cf1f128823bfd555f4f515225895b2df503",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-canonical.mec": "24c15d96fb4b9e2acd755ee80a2d0c0aa643587016f897328653a8055475eecb",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16.c": "0d442a69533edc4868567f8f10762f2e706e8851aab56f8c7d92d3b1d4dabfe1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16.o": "5a8f4f05e3a846153ab0e40199ce3d40b1010c873e1179c6846f3dc88ad2066f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16": "5d7ca6cc0660381fd132e9b5e6c4055eec40f2cf76e7a4353b2085bca1e383b3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec": "baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows.c": "0d442a69533edc4868567f8f10762f2e706e8851aab56f8c7d92d3b1d4dabfe1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows.o": "64799101774d5bb8d39ff88814bbb92b87aa1c78953c9d2fed7bcb5bdb5f3e96",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows": "1b6c13c01ef4c2790e2b3fce4ac4a04576bdd91e93ae3282576829e3c045fb4f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-loop-fma.c": "0d442a69533edc4868567f8f10762f2e706e8851aab56f8c7d92d3b1d4dabfe1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-loop-fma.o": "fda7a7c1e5a602b65a8c10bd0e66e2ff27dd9bc86c5eedaa28b6e7e568dae405",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-loop-fma": "b6d64eb42aef699a52df3199eb2b1fbd842cca03104addb76d579d7b6b938727",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma.c": "0d442a69533edc4868567f8f10762f2e706e8851aab56f8c7d92d3b1d4dabfe1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma.o": "41ad4bedd5f8baf3093a0b2e65dfbf60e4638f0bb5d177d2f9f39c1a9e3f6843",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma": "42a54ae5ab8902a4b71d031f3744a1da23c1da1fa26af6943fa3b77475691d8f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-compact-program.mec": "75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen20.c": "209063ff800888ec642304f8c4089a72673710c911ffebfeceeab248f855ffa9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen20.o": "06c6d73b2b2919ef9c36210c2bd22797001893de20285ef902bfb36ff9e4f9a3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen20": "552206dd52775554d262e5a48a80bb0dda8f43ab79d58e772dcc3f9f12204b80",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-program.mec": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen29.c": "0d442a69533edc4868567f8f10762f2e706e8851aab56f8c7d92d3b1d4dabfe1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen29.o": "64799101774d5bb8d39ff88814bbb92b87aa1c78953c9d2fed7bcb5bdb5f3e96",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen29": "52b11e84498ebb525e511e82075edaadada767bdff77df773a6373bff6eafb3f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen29-loop-fma.c": "0d442a69533edc4868567f8f10762f2e706e8851aab56f8c7d92d3b1d4dabfe1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen29-loop-fma.o": "41ad4bedd5f8baf3093a0b2e65dfbf60e4638f0bb5d177d2f9f39c1a9e3f6843",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen29-loop-fma": "0d0c4286b92050c32d389a03be3e82d9dbdd6f13ef61615c70eaa5f00cc4a766"
+  },
+  "profiles": [
+    {
+      "id": "scalar11",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-scalar-canonical.mec",
+      "source_sha256": "4e4b881e9c2368ba9ddfcbd2b8df49f78e6fd759833b26e7a10374b432de7b3a",
+      "loc": 11,
+      "simd": false,
+      "loop_fma": false,
+      "executable": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/scalar11",
+      "emission": {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/.build/arrow-mutations-current/mech-clbg-mandelbrot-compiled",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-scalar-canonical.mec",
+          "emit-cranelift",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/scalar11.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/scalar11.o",
+          "--source-program"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "link": {
+        "command": [
+          "/opt/homebrew/opt/llvm@22/bin/clang-22",
+          "-O3",
+          "-mcpu=native",
+          "-ffp-contract=off",
+          "-isysroot",
+          "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/scalar11.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/scalar11.o",
+          "-lm",
+          "-pthread",
+          "-o",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/scalar11"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": "ld: warning: no platform load command found in '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/scalar11.o', assuming: macOS\n"
+      },
+      "generated_c_sha256": "209063ff800888ec642304f8c4089a72673710c911ffebfeceeab248f855ffa9",
+      "native_object_sha256": "fb7913940646451063e27dccdc1c2451e8aba34a6b01459fc72aa903c42e3281",
+      "object_inspection": {
+        "_mech_map_bits": {
+          "instructions": 40,
+          "mnemonics": {
+            "and": 1,
+            "b": 1,
+            "b.ne": 1,
+            "cmp": 1,
+            "csel": 2,
+            "fadd": 5,
+            "fcmp": 2,
+            "fdiv": 1,
+            "fmov": 6,
+            "fmul": 5,
+            "fsub": 3,
+            "ldr": 3,
+            "mov": 3,
+            "mov.16b": 3,
+            "movi.2s": 1,
+            "orn": 1,
+            "ret": 1
+          },
+          "memory_instructions": [
+            {
+              "address": 0,
+              "mnemonic": "ldr",
+              "operands": "d0, [x0]"
+            },
+            {
+              "address": 4,
+              "mnemonic": "ldr",
+              "operands": "d2, [x0, #0x8]"
+            },
+            {
+              "address": 8,
+              "mnemonic": "ldr",
+              "operands": "d1, [x0, #0x10]"
+            }
+          ]
+        },
+        "_mech_grid_row": {
+          "instructions": 46,
+          "mnemonics": {
+            "add": 2,
+            "and": 2,
+            "b": 2,
+            "b.eq": 1,
+            "b.hs": 1,
+            "b.lo": 1,
+            "bl": 1,
+            "cmp": 3,
+            "ldp": 3,
+            "ldrb": 1,
+            "lsl": 1,
+            "lsr": 1,
+            "mov": 12,
+            "orr": 1,
+            "pacibsp": 1,
+            "retab": 1,
+            "stp": 3,
+            "strb": 1,
+            "stur": 3,
+            "sub": 2,
+            "ucvtf": 3
+          },
+          "memory_instructions": [
+            {
+              "address": 164,
+              "mnemonic": "stp",
+              "operands": "x29, x30, [sp, #-0x10]!"
+            },
+            {
+              "address": 172,
+              "mnemonic": "stp",
+              "operands": "x21, x22, [sp, #-0x10]!"
+            },
+            {
+              "address": 176,
+              "mnemonic": "stp",
+              "operands": "x19, x20, [sp, #-0x10]!"
+            },
+            {
+              "address": 196,
+              "mnemonic": "stur",
+              "operands": "d19, [sp]"
+            },
+            {
+              "address": 204,
+              "mnemonic": "stur",
+              "operands": "d20, [sp, #0x10]"
+            },
+            {
+              "address": 228,
+              "mnemonic": "stur",
+              "operands": "d25, [sp, #0x8]"
+            },
+            {
+              "address": 268,
+              "mnemonic": "ldrb",
+              "operands": "w3, [x2, x1]"
+            },
+            {
+              "address": 296,
+              "mnemonic": "strb",
+              "operands": "w0, [x2, x1]"
+            },
+            {
+              "address": 328,
+              "mnemonic": "ldp",
+              "operands": "x19, x20, [sp], #0x10"
+            },
+            {
+              "address": 332,
+              "mnemonic": "ldp",
+              "operands": "x21, x22, [sp], #0x10"
+            },
+            {
+              "address": 336,
+              "mnemonic": "ldp",
+              "operands": "x29, x30, [sp], #0x10"
+            }
+          ]
+        }
+      },
+      "binary_sha256": "c74553ef6f51e3969edf257ef0083c8103f16bc4a3ef6a70e4a41ca8158aad0a"
+    },
+    {
+      "id": "lanes12",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-lanes-canonical.mec",
+      "source_sha256": "41f854842422ec236f0d9305c90fed84af16a621e1a8d8532a81b84e23d84bab",
+      "loc": 12,
+      "simd": true,
+      "loop_fma": false,
+      "executable": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/lanes12",
+      "emission": {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/.build/arrow-mutations-current/mech-clbg-mandelbrot-compiled",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-lanes-canonical.mec",
+          "emit-cranelift-simd",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/lanes12.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/lanes12.o",
+          "--source-program"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "link": {
+        "command": [
+          "/opt/homebrew/opt/llvm@22/bin/clang-22",
+          "-O3",
+          "-mcpu=native",
+          "-ffp-contract=off",
+          "-isysroot",
+          "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/lanes12.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/lanes12.o",
+          "-lm",
+          "-pthread",
+          "-o",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/lanes12"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": "ld: warning: no platform load command found in '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/lanes12.o', assuming: macOS\n"
+      },
+      "generated_c_sha256": "0d442a69533edc4868567f8f10762f2e706e8851aab56f8c7d92d3b1d4dabfe1",
+      "native_object_sha256": "5f83ab0cc2a188492817d9965acaf4996f09856d1ef97620f83e2c8fcda95e60",
+      "object_inspection": {
+        "_mech_map_bits": {
+          "instructions": 181,
+          "mnemonics": {
+            "and": 8,
+            "b": 1,
+            "b.ne": 1,
+            "cmp": 1,
+            "csel": 1,
+            "dup.2d": 2,
+            "fadd.2d": 20,
+            "fcmge.2d": 4,
+            "fcmp": 1,
+            "fdiv": 1,
+            "fmov": 11,
+            "fmov.2d": 3,
+            "fmul": 1,
+            "fmul.2d": 16,
+            "fsub": 1,
+            "fsub.2d": 8,
+            "ldp": 5,
+            "ldr": 10,
+            "mov": 8,
+            "mov.16b": 14,
+            "mov.d": 16,
+            "movi.16b": 1,
+            "movi.2s": 1,
+            "orn": 1,
+            "orr": 14,
+            "pacibsp": 1,
+            "retab": 1,
+            "stp": 5,
+            "uzp1.2d": 12,
+            "uzp2.2d": 12
+          },
+          "memory_instructions": [
+            {
+              "address": 4,
+              "mnemonic": "stp",
+              "operands": "x29, x30, [sp, #-0x10]!"
+            },
+            {
+              "address": 12,
+              "mnemonic": "stp",
+              "operands": "d14, d15, [sp, #-0x10]!"
+            },
+            {
+              "address": 16,
+              "mnemonic": "stp",
+              "operands": "d12, d13, [sp, #-0x10]!"
+            },
+            {
+              "address": 20,
+              "mnemonic": "stp",
+              "operands": "d10, d11, [sp, #-0x10]!"
+            },
+            {
+              "address": 24,
+              "mnemonic": "stp",
+              "operands": "d8, d9, [sp, #-0x10]!"
+            },
+            {
+              "address": 28,
+              "mnemonic": "ldr",
+              "operands": "d1, [x0]"
+            },
+            {
+              "address": 32,
+              "mnemonic": "ldr",
+              "operands": "d3, [x0, #0x8]"
+            },
+            {
+              "address": 36,
+              "mnemonic": "ldr",
+              "operands": "d2, [x0, #0x10]"
+            },
+            {
+              "address": 40,
+              "mnemonic": "ldr",
+              "operands": "d19, [x0, #0x18]"
+            },
+            {
+              "address": 44,
+              "mnemonic": "ldr",
+              "operands": "d4, [x0, #0x20]"
+            },
+            {
+              "address": 48,
+              "mnemonic": "ldr",
+              "operands": "d18, [x0, #0x28]"
+            },
+            {
+              "address": 52,
+              "mnemonic": "ldr",
+              "operands": "d5, [x0, #0x30]"
+            },
+            {
+              "address": 56,
+              "mnemonic": "ldr",
+              "operands": "d7, [x0, #0x38]"
+            },
+            {
+              "address": 60,
+              "mnemonic": "ldr",
+              "operands": "d6, [x0, #0x40]"
+            },
+            {
+              "address": 64,
+              "mnemonic": "ldr",
+              "operands": "d22, [x0, #0x48]"
+            },
+            {
+              "address": 700,
+              "mnemonic": "ldp",
+              "operands": "d8, d9, [sp], #0x10"
+            },
+            {
+              "address": 704,
+              "mnemonic": "ldp",
+              "operands": "d10, d11, [sp], #0x10"
+            },
+            {
+              "address": 708,
+              "mnemonic": "ldp",
+              "operands": "d12, d13, [sp], #0x10"
+            },
+            {
+              "address": 712,
+              "mnemonic": "ldp",
+              "operands": "d14, d15, [sp], #0x10"
+            },
+            {
+              "address": 716,
+              "mnemonic": "ldp",
+              "operands": "x29, x30, [sp], #0x10"
+            }
+          ]
+        },
+        "_mech_grid_row": {
+          "instructions": 65,
+          "mnemonics": {
+            "add": 9,
+            "and": 1,
+            "b": 1,
+            "b.eq": 1,
+            "b.hs": 1,
+            "bl": 1,
+            "cmp": 3,
+            "csel": 1,
+            "ldp": 3,
+            "lsl": 1,
+            "lsr": 1,
+            "mov": 13,
+            "pacibsp": 1,
+            "retab": 1,
+            "stp": 3,
+            "strb": 1,
+            "stur": 10,
+            "sub": 3,
+            "ucvtf": 10
+          },
+          "memory_instructions": [
+            {
+              "address": 728,
+              "mnemonic": "stp",
+              "operands": "x29, x30, [sp, #-0x10]!"
+            },
+            {
+              "address": 736,
+              "mnemonic": "stp",
+              "operands": "x21, x22, [sp, #-0x10]!"
+            },
+            {
+              "address": 740,
+              "mnemonic": "stp",
+              "operands": "x19, x20, [sp, #-0x10]!"
+            },
+            {
+              "address": 760,
+              "mnemonic": "stur",
+              "operands": "d0, [sp]"
+            },
+            {
+              "address": 768,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x48]"
+            },
+            {
+              "address": 792,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x8]"
+            },
+            {
+              "address": 804,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x10]"
+            },
+            {
+              "address": 816,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x18]"
+            },
+            {
+              "address": 828,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x20]"
+            },
+            {
+              "address": 840,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x28]"
+            },
+            {
+              "address": 852,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x30]"
+            },
+            {
+              "address": 864,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x38]"
+            },
+            {
+              "address": 876,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x40]"
+            },
+            {
+              "address": 936,
+              "mnemonic": "strb",
+              "operands": "w0, [x2, x1]"
+            },
+            {
+              "address": 968,
+              "mnemonic": "ldp",
+              "operands": "x19, x20, [sp], #0x10"
+            },
+            {
+              "address": 972,
+              "mnemonic": "ldp",
+              "operands": "x21, x22, [sp], #0x10"
+            },
+            {
+              "address": 976,
+              "mnemonic": "ldp",
+              "operands": "x29, x30, [sp], #0x10"
+            }
+          ]
+        }
+      },
+      "binary_sha256": "ef0132696cb4c0e34df0198bbb3cb7e5bac843673e6f07151fd1cf186d855035"
+    },
+    {
+      "id": "lanes12-rows",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-lanes-rows-canonical.mec",
+      "source_sha256": "11e64fd6a9165216e575ff985453a02e8b92dcc70c5267c6344dd3f6c7beee60",
+      "loc": 12,
+      "simd": true,
+      "loop_fma": false,
+      "executable": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/lanes12-rows",
+      "emission": {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/.build/arrow-mutations-current/mech-clbg-mandelbrot-compiled",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-lanes-rows-canonical.mec",
+          "emit-cranelift-simd",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/lanes12-rows.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/lanes12-rows.o",
+          "--source-program"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "link": {
+        "command": [
+          "/opt/homebrew/opt/llvm@22/bin/clang-22",
+          "-O3",
+          "-mcpu=native",
+          "-ffp-contract=off",
+          "-isysroot",
+          "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/lanes12-rows.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/lanes12-rows.o",
+          "-lm",
+          "-pthread",
+          "-o",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/lanes12-rows"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": "ld: warning: no platform load command found in '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/lanes12-rows.o', assuming: macOS\n"
+      },
+      "generated_c_sha256": "0d442a69533edc4868567f8f10762f2e706e8851aab56f8c7d92d3b1d4dabfe1",
+      "native_object_sha256": "f301f53369dd0e81f334725744b93703a19ab704d4081aeba79af189acd11e0b",
+      "object_inspection": {
+        "_mech_map_bits": {
+          "instructions": 141,
+          "mnemonics": {
+            "and": 8,
+            "b": 1,
+            "b.ne": 1,
+            "cmp": 1,
+            "csel": 1,
+            "dup.2d": 2,
+            "fadd.2d": 20,
+            "fcmge.2d": 4,
+            "fcmp": 1,
+            "fdiv": 1,
+            "fmov": 7,
+            "fmov.2d": 3,
+            "fmul": 1,
+            "fmul.2d": 16,
+            "fsub": 1,
+            "fsub.2d": 8,
+            "ldp": 3,
+            "ldr": 10,
+            "mov": 4,
+            "mov.16b": 15,
+            "mov.d": 12,
+            "movi.16b": 1,
+            "orn": 1,
+            "orr": 14,
+            "pacibsp": 1,
+            "retab": 1,
+            "stp": 3
+          },
+          "memory_instructions": [
+            {
+              "address": 4,
+              "mnemonic": "stp",
+              "operands": "x29, x30, [sp, #-0x10]!"
+            },
+            {
+              "address": 12,
+              "mnemonic": "stp",
+              "operands": "d10, d11, [sp, #-0x10]!"
+            },
+            {
+              "address": 16,
+              "mnemonic": "stp",
+              "operands": "d8, d9, [sp, #-0x10]!"
+            },
+            {
+              "address": 20,
+              "mnemonic": "ldr",
+              "operands": "d1, [x0]"
+            },
+            {
+              "address": 24,
+              "mnemonic": "ldr",
+              "operands": "d19, [x0, #0x8]"
+            },
+            {
+              "address": 28,
+              "mnemonic": "ldr",
+              "operands": "d18, [x0, #0x10]"
+            },
+            {
+              "address": 32,
+              "mnemonic": "ldr",
+              "operands": "d17, [x0, #0x18]"
+            },
+            {
+              "address": 36,
+              "mnemonic": "ldr",
+              "operands": "d2, [x0, #0x20]"
+            },
+            {
+              "address": 40,
+              "mnemonic": "ldr",
+              "operands": "d7, [x0, #0x28]"
+            },
+            {
+              "address": 44,
+              "mnemonic": "ldr",
+              "operands": "d3, [x0, #0x30]"
+            },
+            {
+              "address": 48,
+              "mnemonic": "ldr",
+              "operands": "d6, [x0, #0x38]"
+            },
+            {
+              "address": 52,
+              "mnemonic": "ldr",
+              "operands": "d4, [x0, #0x40]"
+            },
+            {
+              "address": 56,
+              "mnemonic": "ldr",
+              "operands": "d5, [x0, #0x48]"
+            },
+            {
+              "address": 548,
+              "mnemonic": "ldp",
+              "operands": "d8, d9, [sp], #0x10"
+            },
+            {
+              "address": 552,
+              "mnemonic": "ldp",
+              "operands": "d10, d11, [sp], #0x10"
+            },
+            {
+              "address": 556,
+              "mnemonic": "ldp",
+              "operands": "x29, x30, [sp], #0x10"
+            }
+          ]
+        },
+        "_mech_grid_row": {
+          "instructions": 65,
+          "mnemonics": {
+            "add": 9,
+            "and": 1,
+            "b": 1,
+            "b.eq": 1,
+            "b.hs": 1,
+            "bl": 1,
+            "cmp": 3,
+            "csel": 1,
+            "ldp": 3,
+            "lsl": 1,
+            "lsr": 1,
+            "mov": 13,
+            "pacibsp": 1,
+            "retab": 1,
+            "stp": 3,
+            "strb": 1,
+            "stur": 10,
+            "sub": 3,
+            "ucvtf": 10
+          },
+          "memory_instructions": [
+            {
+              "address": 568,
+              "mnemonic": "stp",
+              "operands": "x29, x30, [sp, #-0x10]!"
+            },
+            {
+              "address": 576,
+              "mnemonic": "stp",
+              "operands": "x21, x22, [sp, #-0x10]!"
+            },
+            {
+              "address": 580,
+              "mnemonic": "stp",
+              "operands": "x19, x20, [sp, #-0x10]!"
+            },
+            {
+              "address": 600,
+              "mnemonic": "stur",
+              "operands": "d0, [sp]"
+            },
+            {
+              "address": 608,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x48]"
+            },
+            {
+              "address": 632,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x8]"
+            },
+            {
+              "address": 644,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x10]"
+            },
+            {
+              "address": 656,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x18]"
+            },
+            {
+              "address": 668,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x20]"
+            },
+            {
+              "address": 680,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x28]"
+            },
+            {
+              "address": 692,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x30]"
+            },
+            {
+              "address": 704,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x38]"
+            },
+            {
+              "address": 716,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x40]"
+            },
+            {
+              "address": 776,
+              "mnemonic": "strb",
+              "operands": "w0, [x2, x1]"
+            },
+            {
+              "address": 808,
+              "mnemonic": "ldp",
+              "operands": "x19, x20, [sp], #0x10"
+            },
+            {
+              "address": 812,
+              "mnemonic": "ldp",
+              "operands": "x21, x22, [sp], #0x10"
+            },
+            {
+              "address": 816,
+              "mnemonic": "ldp",
+              "operands": "x29, x30, [sp], #0x10"
+            }
+          ]
+        }
+      },
+      "binary_sha256": "5b3ecdbf820ee09e64064b8f53101cf1f128823bfd555f4f515225895b2df503"
+    },
+    {
+      "id": "five16",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-canonical.mec",
+      "source_sha256": "24c15d96fb4b9e2acd755ee80a2d0c0aa643587016f897328653a8055475eecb",
+      "loc": 16,
+      "simd": true,
+      "loop_fma": false,
+      "executable": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16",
+      "emission": {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/.build/arrow-mutations-current/mech-clbg-mandelbrot-compiled",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-canonical.mec",
+          "emit-cranelift-simd",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16.o",
+          "--source-program"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "link": {
+        "command": [
+          "/opt/homebrew/opt/llvm@22/bin/clang-22",
+          "-O3",
+          "-mcpu=native",
+          "-ffp-contract=off",
+          "-isysroot",
+          "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16.o",
+          "-lm",
+          "-pthread",
+          "-o",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": "ld: warning: no platform load command found in '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16.o', assuming: macOS\n"
+      },
+      "generated_c_sha256": "0d442a69533edc4868567f8f10762f2e706e8851aab56f8c7d92d3b1d4dabfe1",
+      "native_object_sha256": "5a8f4f05e3a846153ab0e40199ce3d40b1010c873e1179c6846f3dc88ad2066f",
+      "object_inspection": {
+        "_mech_map_bits": {
+          "instructions": 259,
+          "mnemonics": {
+            "and": 8,
+            "b": 1,
+            "b.ne": 1,
+            "cmp": 1,
+            "csel": 1,
+            "dup.2d": 2,
+            "fadd": 1,
+            "fadd.2d": 64,
+            "fcmge.2d": 4,
+            "fcmp": 1,
+            "fdiv": 1,
+            "fmov": 8,
+            "fmov.2d": 2,
+            "fmul": 1,
+            "fmul.2d": 64,
+            "fsub": 1,
+            "fsub.2d": 24,
+            "ldr": 10,
+            "mov": 3,
+            "mov.16b": 7,
+            "mov.d": 12,
+            "movi.16b": 1,
+            "movi.2s": 1,
+            "orn": 1,
+            "orr": 14,
+            "ret": 1,
+            "uzp1.2d": 12,
+            "uzp2.2d": 12
+          },
+          "memory_instructions": [
+            {
+              "address": 0,
+              "mnemonic": "ldr",
+              "operands": "d6, [x0]"
+            },
+            {
+              "address": 4,
+              "mnemonic": "ldr",
+              "operands": "d24, [x0, #0x8]"
+            },
+            {
+              "address": 8,
+              "mnemonic": "ldr",
+              "operands": "d7, [x0, #0x10]"
+            },
+            {
+              "address": 12,
+              "mnemonic": "ldr",
+              "operands": "d23, [x0, #0x18]"
+            },
+            {
+              "address": 16,
+              "mnemonic": "ldr",
+              "operands": "d16, [x0, #0x20]"
+            },
+            {
+              "address": 20,
+              "mnemonic": "ldr",
+              "operands": "d22, [x0, #0x28]"
+            },
+            {
+              "address": 24,
+              "mnemonic": "ldr",
+              "operands": "d17, [x0, #0x30]"
+            },
+            {
+              "address": 28,
+              "mnemonic": "ldr",
+              "operands": "d20, [x0, #0x38]"
+            },
+            {
+              "address": 32,
+              "mnemonic": "ldr",
+              "operands": "d18, [x0, #0x40]"
+            },
+            {
+              "address": 36,
+              "mnemonic": "ldr",
+              "operands": "d26, [x0, #0x48]"
+            }
+          ]
+        },
+        "_mech_grid_row": {
+          "instructions": 65,
+          "mnemonics": {
+            "add": 9,
+            "and": 1,
+            "b": 1,
+            "b.eq": 1,
+            "b.hs": 1,
+            "bl": 1,
+            "cmp": 3,
+            "csel": 1,
+            "ldp": 3,
+            "lsl": 1,
+            "lsr": 1,
+            "mov": 13,
+            "pacibsp": 1,
+            "retab": 1,
+            "stp": 3,
+            "strb": 1,
+            "stur": 10,
+            "sub": 3,
+            "ucvtf": 10
+          },
+          "memory_instructions": [
+            {
+              "address": 1040,
+              "mnemonic": "stp",
+              "operands": "x29, x30, [sp, #-0x10]!"
+            },
+            {
+              "address": 1048,
+              "mnemonic": "stp",
+              "operands": "x21, x22, [sp, #-0x10]!"
+            },
+            {
+              "address": 1052,
+              "mnemonic": "stp",
+              "operands": "x19, x20, [sp, #-0x10]!"
+            },
+            {
+              "address": 1072,
+              "mnemonic": "stur",
+              "operands": "d0, [sp]"
+            },
+            {
+              "address": 1080,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x48]"
+            },
+            {
+              "address": 1104,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x8]"
+            },
+            {
+              "address": 1116,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x10]"
+            },
+            {
+              "address": 1128,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x18]"
+            },
+            {
+              "address": 1140,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x20]"
+            },
+            {
+              "address": 1152,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x28]"
+            },
+            {
+              "address": 1164,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x30]"
+            },
+            {
+              "address": 1176,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x38]"
+            },
+            {
+              "address": 1188,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x40]"
+            },
+            {
+              "address": 1248,
+              "mnemonic": "strb",
+              "operands": "w0, [x2, x1]"
+            },
+            {
+              "address": 1280,
+              "mnemonic": "ldp",
+              "operands": "x19, x20, [sp], #0x10"
+            },
+            {
+              "address": 1284,
+              "mnemonic": "ldp",
+              "operands": "x21, x22, [sp], #0x10"
+            },
+            {
+              "address": 1288,
+              "mnemonic": "ldp",
+              "operands": "x29, x30, [sp], #0x10"
+            }
+          ]
+        }
+      },
+      "binary_sha256": "5d7ca6cc0660381fd132e9b5e6c4055eec40f2cf76e7a4353b2085bca1e383b3"
+    },
+    {
+      "id": "five16-rows",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec",
+      "source_sha256": "baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde",
+      "loc": 16,
+      "simd": true,
+      "loop_fma": false,
+      "executable": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows",
+      "emission": {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/.build/arrow-mutations-current/mech-clbg-mandelbrot-compiled",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec",
+          "emit-cranelift-simd",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows.o",
+          "--source-program"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "link": {
+        "command": [
+          "/opt/homebrew/opt/llvm@22/bin/clang-22",
+          "-O3",
+          "-mcpu=native",
+          "-ffp-contract=off",
+          "-isysroot",
+          "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows.o",
+          "-lm",
+          "-pthread",
+          "-o",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": "ld: warning: no platform load command found in '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows.o', assuming: macOS\n"
+      },
+      "generated_c_sha256": "0d442a69533edc4868567f8f10762f2e706e8851aab56f8c7d92d3b1d4dabfe1",
+      "native_object_sha256": "64799101774d5bb8d39ff88814bbb92b87aa1c78953c9d2fed7bcb5bdb5f3e96",
+      "object_inspection": {
+        "_mech_map_bits": {
+          "instructions": 235,
+          "mnemonics": {
+            "and": 8,
+            "b": 1,
+            "b.ne": 1,
+            "cmp": 1,
+            "csel": 1,
+            "dup.2d": 2,
+            "fadd": 1,
+            "fadd.2d": 64,
+            "fcmge.2d": 4,
+            "fcmp": 1,
+            "fdiv": 1,
+            "fmov": 8,
+            "fmov.2d": 2,
+            "fmul": 1,
+            "fmul.2d": 64,
+            "fsub": 1,
+            "fsub.2d": 24,
+            "ldr": 10,
+            "mov": 3,
+            "mov.16b": 7,
+            "mov.d": 12,
+            "movi.16b": 1,
+            "movi.2s": 1,
+            "orn": 1,
+            "orr": 14,
+            "ret": 1
+          },
+          "memory_instructions": [
+            {
+              "address": 0,
+              "mnemonic": "ldr",
+              "operands": "d1, [x0]"
+            },
+            {
+              "address": 4,
+              "mnemonic": "ldr",
+              "operands": "d18, [x0, #0x8]"
+            },
+            {
+              "address": 8,
+              "mnemonic": "ldr",
+              "operands": "d2, [x0, #0x10]"
+            },
+            {
+              "address": 12,
+              "mnemonic": "ldr",
+              "operands": "d17, [x0, #0x18]"
+            },
+            {
+              "address": 16,
+              "mnemonic": "ldr",
+              "operands": "d3, [x0, #0x20]"
+            },
+            {
+              "address": 20,
+              "mnemonic": "ldr",
+              "operands": "d7, [x0, #0x28]"
+            },
+            {
+              "address": 24,
+              "mnemonic": "ldr",
+              "operands": "d4, [x0, #0x30]"
+            },
+            {
+              "address": 28,
+              "mnemonic": "ldr",
+              "operands": "d6, [x0, #0x38]"
+            },
+            {
+              "address": 32,
+              "mnemonic": "ldr",
+              "operands": "d5, [x0, #0x40]"
+            },
+            {
+              "address": 36,
+              "mnemonic": "ldr",
+              "operands": "d20, [x0, #0x48]"
+            }
+          ]
+        },
+        "_mech_grid_row": {
+          "instructions": 65,
+          "mnemonics": {
+            "add": 9,
+            "and": 1,
+            "b": 1,
+            "b.eq": 1,
+            "b.hs": 1,
+            "bl": 1,
+            "cmp": 3,
+            "csel": 1,
+            "ldp": 3,
+            "lsl": 1,
+            "lsr": 1,
+            "mov": 13,
+            "pacibsp": 1,
+            "retab": 1,
+            "stp": 3,
+            "strb": 1,
+            "stur": 10,
+            "sub": 3,
+            "ucvtf": 10
+          },
+          "memory_instructions": [
+            {
+              "address": 944,
+              "mnemonic": "stp",
+              "operands": "x29, x30, [sp, #-0x10]!"
+            },
+            {
+              "address": 952,
+              "mnemonic": "stp",
+              "operands": "x21, x22, [sp, #-0x10]!"
+            },
+            {
+              "address": 956,
+              "mnemonic": "stp",
+              "operands": "x19, x20, [sp, #-0x10]!"
+            },
+            {
+              "address": 976,
+              "mnemonic": "stur",
+              "operands": "d0, [sp]"
+            },
+            {
+              "address": 984,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x48]"
+            },
+            {
+              "address": 1008,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x8]"
+            },
+            {
+              "address": 1020,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x10]"
+            },
+            {
+              "address": 1032,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x18]"
+            },
+            {
+              "address": 1044,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x20]"
+            },
+            {
+              "address": 1056,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x28]"
+            },
+            {
+              "address": 1068,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x30]"
+            },
+            {
+              "address": 1080,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x38]"
+            },
+            {
+              "address": 1092,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x40]"
+            },
+            {
+              "address": 1152,
+              "mnemonic": "strb",
+              "operands": "w0, [x2, x1]"
+            },
+            {
+              "address": 1184,
+              "mnemonic": "ldp",
+              "operands": "x19, x20, [sp], #0x10"
+            },
+            {
+              "address": 1188,
+              "mnemonic": "ldp",
+              "operands": "x21, x22, [sp], #0x10"
+            },
+            {
+              "address": 1192,
+              "mnemonic": "ldp",
+              "operands": "x29, x30, [sp], #0x10"
+            }
+          ]
+        }
+      },
+      "binary_sha256": "1b6c13c01ef4c2790e2b3fce4ac4a04576bdd91e93ae3282576829e3c045fb4f"
+    },
+    {
+      "id": "five16-loop-fma",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-canonical.mec",
+      "source_sha256": "24c15d96fb4b9e2acd755ee80a2d0c0aa643587016f897328653a8055475eecb",
+      "loc": 16,
+      "simd": true,
+      "loop_fma": true,
+      "executable": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-loop-fma",
+      "emission": {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/.build/arrow-mutations-current/mech-clbg-mandelbrot-compiled",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-canonical.mec",
+          "emit-cranelift-simd",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-loop-fma.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-loop-fma.o",
+          "--source-program",
+          "--fp-contract-loop"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "link": {
+        "command": [
+          "/opt/homebrew/opt/llvm@22/bin/clang-22",
+          "-O3",
+          "-mcpu=native",
+          "-ffp-contract=off",
+          "-isysroot",
+          "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-loop-fma.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-loop-fma.o",
+          "-lm",
+          "-pthread",
+          "-o",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-loop-fma"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": "ld: warning: no platform load command found in '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-loop-fma.o', assuming: macOS\n"
+      },
+      "generated_c_sha256": "0d442a69533edc4868567f8f10762f2e706e8851aab56f8c7d92d3b1d4dabfe1",
+      "native_object_sha256": "fda7a7c1e5a602b65a8c10bd0e66e2ff27dd9bc86c5eedaa28b6e7e568dae405",
+      "object_inspection": {
+        "_mech_map_bits": {
+          "instructions": 247,
+          "mnemonics": {
+            "and": 8,
+            "b": 1,
+            "b.ne": 1,
+            "cmp": 1,
+            "csel": 1,
+            "dup.2d": 2,
+            "fadd": 1,
+            "fadd.2d": 40,
+            "fcmge.2d": 4,
+            "fcmp": 1,
+            "fdiv": 1,
+            "fmla.2d": 24,
+            "fmls.2d": 20,
+            "fmov": 12,
+            "fmov.2d": 2,
+            "fmul": 9,
+            "fmul.2d": 20,
+            "fsub": 1,
+            "fsub.2d": 4,
+            "ldr": 10,
+            "mov": 3,
+            "mov.16b": 31,
+            "mov.d": 16,
+            "movi.16b": 1,
+            "movi.2s": 1,
+            "orn": 1,
+            "orr": 14,
+            "ret": 1,
+            "uzp1.2d": 8,
+            "uzp2.2d": 8
+          },
+          "memory_instructions": [
+            {
+              "address": 0,
+              "mnemonic": "ldr",
+              "operands": "d1, [x0]"
+            },
+            {
+              "address": 4,
+              "mnemonic": "ldr",
+              "operands": "d18, [x0, #0x8]"
+            },
+            {
+              "address": 8,
+              "mnemonic": "ldr",
+              "operands": "d2, [x0, #0x10]"
+            },
+            {
+              "address": 12,
+              "mnemonic": "ldr",
+              "operands": "d17, [x0, #0x18]"
+            },
+            {
+              "address": 16,
+              "mnemonic": "ldr",
+              "operands": "d3, [x0, #0x20]"
+            },
+            {
+              "address": 20,
+              "mnemonic": "ldr",
+              "operands": "d7, [x0, #0x28]"
+            },
+            {
+              "address": 24,
+              "mnemonic": "ldr",
+              "operands": "d4, [x0, #0x30]"
+            },
+            {
+              "address": 28,
+              "mnemonic": "ldr",
+              "operands": "d6, [x0, #0x38]"
+            },
+            {
+              "address": 32,
+              "mnemonic": "ldr",
+              "operands": "d5, [x0, #0x40]"
+            },
+            {
+              "address": 36,
+              "mnemonic": "ldr",
+              "operands": "d20, [x0, #0x48]"
+            }
+          ]
+        },
+        "_mech_grid_row": {
+          "instructions": 65,
+          "mnemonics": {
+            "add": 9,
+            "and": 1,
+            "b": 1,
+            "b.eq": 1,
+            "b.hs": 1,
+            "bl": 1,
+            "cmp": 3,
+            "csel": 1,
+            "ldp": 3,
+            "lsl": 1,
+            "lsr": 1,
+            "mov": 13,
+            "pacibsp": 1,
+            "retab": 1,
+            "stp": 3,
+            "strb": 1,
+            "stur": 10,
+            "sub": 3,
+            "ucvtf": 10
+          },
+          "memory_instructions": [
+            {
+              "address": 992,
+              "mnemonic": "stp",
+              "operands": "x29, x30, [sp, #-0x10]!"
+            },
+            {
+              "address": 1000,
+              "mnemonic": "stp",
+              "operands": "x21, x22, [sp, #-0x10]!"
+            },
+            {
+              "address": 1004,
+              "mnemonic": "stp",
+              "operands": "x19, x20, [sp, #-0x10]!"
+            },
+            {
+              "address": 1024,
+              "mnemonic": "stur",
+              "operands": "d0, [sp]"
+            },
+            {
+              "address": 1032,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x48]"
+            },
+            {
+              "address": 1056,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x8]"
+            },
+            {
+              "address": 1068,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x10]"
+            },
+            {
+              "address": 1080,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x18]"
+            },
+            {
+              "address": 1092,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x20]"
+            },
+            {
+              "address": 1104,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x28]"
+            },
+            {
+              "address": 1116,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x30]"
+            },
+            {
+              "address": 1128,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x38]"
+            },
+            {
+              "address": 1140,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x40]"
+            },
+            {
+              "address": 1200,
+              "mnemonic": "strb",
+              "operands": "w0, [x2, x1]"
+            },
+            {
+              "address": 1232,
+              "mnemonic": "ldp",
+              "operands": "x19, x20, [sp], #0x10"
+            },
+            {
+              "address": 1236,
+              "mnemonic": "ldp",
+              "operands": "x21, x22, [sp], #0x10"
+            },
+            {
+              "address": 1240,
+              "mnemonic": "ldp",
+              "operands": "x29, x30, [sp], #0x10"
+            }
+          ]
+        }
+      },
+      "binary_sha256": "b6d64eb42aef699a52df3199eb2b1fbd842cca03104addb76d579d7b6b938727"
+    },
+    {
+      "id": "five16-rows-loop-fma",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec",
+      "source_sha256": "baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde",
+      "loc": 16,
+      "simd": true,
+      "loop_fma": true,
+      "executable": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+      "emission": {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/.build/arrow-mutations-current/mech-clbg-mandelbrot-compiled",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec",
+          "emit-cranelift-simd",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma.o",
+          "--source-program",
+          "--fp-contract-loop"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "link": {
+        "command": [
+          "/opt/homebrew/opt/llvm@22/bin/clang-22",
+          "-O3",
+          "-mcpu=native",
+          "-ffp-contract=off",
+          "-isysroot",
+          "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma.o",
+          "-lm",
+          "-pthread",
+          "-o",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": "ld: warning: no platform load command found in '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma.o', assuming: macOS\n"
+      },
+      "generated_c_sha256": "0d442a69533edc4868567f8f10762f2e706e8851aab56f8c7d92d3b1d4dabfe1",
+      "native_object_sha256": "41ad4bedd5f8baf3093a0b2e65dfbf60e4638f0bb5d177d2f9f39c1a9e3f6843",
+      "object_inspection": {
+        "_mech_map_bits": {
+          "instructions": 219,
+          "mnemonics": {
+            "and": 8,
+            "b": 1,
+            "b.ne": 1,
+            "cmp": 1,
+            "csel": 1,
+            "dup.2d": 2,
+            "fadd": 1,
+            "fadd.2d": 40,
+            "fcmge.2d": 4,
+            "fcmp": 1,
+            "fdiv": 1,
+            "fmla.2d": 24,
+            "fmls.2d": 20,
+            "fmov": 8,
+            "fmov.2d": 2,
+            "fmul": 1,
+            "fmul.2d": 24,
+            "fsub": 1,
+            "fsub.2d": 4,
+            "ldr": 10,
+            "mov": 3,
+            "mov.16b": 31,
+            "mov.d": 12,
+            "movi.16b": 1,
+            "movi.2s": 1,
+            "orn": 1,
+            "orr": 14,
+            "ret": 1
+          },
+          "memory_instructions": [
+            {
+              "address": 0,
+              "mnemonic": "ldr",
+              "operands": "d5, [x0]"
+            },
+            {
+              "address": 4,
+              "mnemonic": "ldr",
+              "operands": "d23, [x0, #0x8]"
+            },
+            {
+              "address": 8,
+              "mnemonic": "ldr",
+              "operands": "d6, [x0, #0x10]"
+            },
+            {
+              "address": 12,
+              "mnemonic": "ldr",
+              "operands": "d22, [x0, #0x18]"
+            },
+            {
+              "address": 16,
+              "mnemonic": "ldr",
+              "operands": "d7, [x0, #0x20]"
+            },
+            {
+              "address": 20,
+              "mnemonic": "ldr",
+              "operands": "d20, [x0, #0x28]"
+            },
+            {
+              "address": 24,
+              "mnemonic": "ldr",
+              "operands": "d17, [x0, #0x30]"
+            },
+            {
+              "address": 28,
+              "mnemonic": "ldr",
+              "operands": "d19, [x0, #0x38]"
+            },
+            {
+              "address": 32,
+              "mnemonic": "ldr",
+              "operands": "d18, [x0, #0x40]"
+            },
+            {
+              "address": 36,
+              "mnemonic": "ldr",
+              "operands": "d25, [x0, #0x48]"
+            }
+          ]
+        },
+        "_mech_grid_row": {
+          "instructions": 65,
+          "mnemonics": {
+            "add": 9,
+            "and": 1,
+            "b": 1,
+            "b.eq": 1,
+            "b.hs": 1,
+            "bl": 1,
+            "cmp": 3,
+            "csel": 1,
+            "ldp": 3,
+            "lsl": 1,
+            "lsr": 1,
+            "mov": 13,
+            "pacibsp": 1,
+            "retab": 1,
+            "stp": 3,
+            "strb": 1,
+            "stur": 10,
+            "sub": 3,
+            "ucvtf": 10
+          },
+          "memory_instructions": [
+            {
+              "address": 880,
+              "mnemonic": "stp",
+              "operands": "x29, x30, [sp, #-0x10]!"
+            },
+            {
+              "address": 888,
+              "mnemonic": "stp",
+              "operands": "x21, x22, [sp, #-0x10]!"
+            },
+            {
+              "address": 892,
+              "mnemonic": "stp",
+              "operands": "x19, x20, [sp, #-0x10]!"
+            },
+            {
+              "address": 912,
+              "mnemonic": "stur",
+              "operands": "d0, [sp]"
+            },
+            {
+              "address": 920,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x48]"
+            },
+            {
+              "address": 944,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x8]"
+            },
+            {
+              "address": 956,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x10]"
+            },
+            {
+              "address": 968,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x18]"
+            },
+            {
+              "address": 980,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x20]"
+            },
+            {
+              "address": 992,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x28]"
+            },
+            {
+              "address": 1004,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x30]"
+            },
+            {
+              "address": 1016,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x38]"
+            },
+            {
+              "address": 1028,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x40]"
+            },
+            {
+              "address": 1088,
+              "mnemonic": "strb",
+              "operands": "w0, [x2, x1]"
+            },
+            {
+              "address": 1120,
+              "mnemonic": "ldp",
+              "operands": "x19, x20, [sp], #0x10"
+            },
+            {
+              "address": 1124,
+              "mnemonic": "ldp",
+              "operands": "x21, x22, [sp], #0x10"
+            },
+            {
+              "address": 1128,
+              "mnemonic": "ldp",
+              "operands": "x29, x30, [sp], #0x10"
+            }
+          ]
+        }
+      },
+      "binary_sha256": "42a54ae5ab8902a4b71d031f3744a1da23c1da1fa26af6943fa3b77475691d8f"
+    },
+    {
+      "id": "frozen20",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-compact-program.mec",
+      "source_sha256": "75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169",
+      "loc": 20,
+      "simd": false,
+      "loop_fma": false,
+      "executable": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen20",
+      "emission": {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/.build/arrow-mutations-current/mech-clbg-mandelbrot-compiled",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-compact-program.mec",
+          "emit-cranelift",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen20.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen20.o",
+          "--source-program"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "link": {
+        "command": [
+          "/opt/homebrew/opt/llvm@22/bin/clang-22",
+          "-O3",
+          "-mcpu=native",
+          "-ffp-contract=off",
+          "-isysroot",
+          "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen20.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen20.o",
+          "-lm",
+          "-pthread",
+          "-o",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen20"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": "ld: warning: no platform load command found in '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen20.o', assuming: macOS\n"
+      },
+      "generated_c_sha256": "209063ff800888ec642304f8c4089a72673710c911ffebfeceeab248f855ffa9",
+      "native_object_sha256": "06c6d73b2b2919ef9c36210c2bd22797001893de20285ef902bfb36ff9e4f9a3",
+      "object_inspection": {
+        "_mech_map_bits": {
+          "instructions": 41,
+          "mnemonics": {
+            "and": 1,
+            "b": 1,
+            "b.ne": 1,
+            "cmp": 1,
+            "csel": 2,
+            "fadd": 4,
+            "fcmp": 2,
+            "fdiv": 1,
+            "fmov": 7,
+            "fmul": 6,
+            "fsub": 3,
+            "ldr": 3,
+            "mov": 3,
+            "mov.16b": 3,
+            "movi.2s": 1,
+            "orn": 1,
+            "ret": 1
+          },
+          "memory_instructions": [
+            {
+              "address": 0,
+              "mnemonic": "ldr",
+              "operands": "d0, [x0]"
+            },
+            {
+              "address": 4,
+              "mnemonic": "ldr",
+              "operands": "d2, [x0, #0x8]"
+            },
+            {
+              "address": 8,
+              "mnemonic": "ldr",
+              "operands": "d1, [x0, #0x10]"
+            }
+          ]
+        },
+        "_mech_grid_row": {
+          "instructions": 46,
+          "mnemonics": {
+            "add": 2,
+            "and": 2,
+            "b": 2,
+            "b.eq": 1,
+            "b.hs": 1,
+            "b.lo": 1,
+            "bl": 1,
+            "cmp": 3,
+            "ldp": 3,
+            "ldrb": 1,
+            "lsl": 1,
+            "lsr": 1,
+            "mov": 12,
+            "orr": 1,
+            "pacibsp": 1,
+            "retab": 1,
+            "stp": 3,
+            "strb": 1,
+            "stur": 3,
+            "sub": 2,
+            "ucvtf": 3
+          },
+          "memory_instructions": [
+            {
+              "address": 168,
+              "mnemonic": "stp",
+              "operands": "x29, x30, [sp, #-0x10]!"
+            },
+            {
+              "address": 176,
+              "mnemonic": "stp",
+              "operands": "x21, x22, [sp, #-0x10]!"
+            },
+            {
+              "address": 180,
+              "mnemonic": "stp",
+              "operands": "x19, x20, [sp, #-0x10]!"
+            },
+            {
+              "address": 200,
+              "mnemonic": "stur",
+              "operands": "d19, [sp]"
+            },
+            {
+              "address": 208,
+              "mnemonic": "stur",
+              "operands": "d20, [sp, #0x10]"
+            },
+            {
+              "address": 232,
+              "mnemonic": "stur",
+              "operands": "d25, [sp, #0x8]"
+            },
+            {
+              "address": 272,
+              "mnemonic": "ldrb",
+              "operands": "w3, [x2, x1]"
+            },
+            {
+              "address": 300,
+              "mnemonic": "strb",
+              "operands": "w0, [x2, x1]"
+            },
+            {
+              "address": 332,
+              "mnemonic": "ldp",
+              "operands": "x19, x20, [sp], #0x10"
+            },
+            {
+              "address": 336,
+              "mnemonic": "ldp",
+              "operands": "x21, x22, [sp], #0x10"
+            },
+            {
+              "address": 340,
+              "mnemonic": "ldp",
+              "operands": "x29, x30, [sp], #0x10"
+            }
+          ]
+        }
+      },
+      "binary_sha256": "552206dd52775554d262e5a48a80bb0dda8f43ab79d58e772dcc3f9f12204b80"
+    },
+    {
+      "id": "frozen29",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-program.mec",
+      "source_sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+      "loc": 29,
+      "simd": true,
+      "loop_fma": false,
+      "executable": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen29",
+      "emission": {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/.build/arrow-mutations-current/mech-clbg-mandelbrot-compiled",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-program.mec",
+          "emit-cranelift-simd",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen29.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen29.o",
+          "--source-program"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "link": {
+        "command": [
+          "/opt/homebrew/opt/llvm@22/bin/clang-22",
+          "-O3",
+          "-mcpu=native",
+          "-ffp-contract=off",
+          "-isysroot",
+          "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen29.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen29.o",
+          "-lm",
+          "-pthread",
+          "-o",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen29"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": "ld: warning: no platform load command found in '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen29.o', assuming: macOS\n"
+      },
+      "generated_c_sha256": "0d442a69533edc4868567f8f10762f2e706e8851aab56f8c7d92d3b1d4dabfe1",
+      "native_object_sha256": "64799101774d5bb8d39ff88814bbb92b87aa1c78953c9d2fed7bcb5bdb5f3e96",
+      "object_inspection": {
+        "_mech_map_bits": {
+          "instructions": 235,
+          "mnemonics": {
+            "and": 8,
+            "b": 1,
+            "b.ne": 1,
+            "cmp": 1,
+            "csel": 1,
+            "dup.2d": 2,
+            "fadd": 1,
+            "fadd.2d": 64,
+            "fcmge.2d": 4,
+            "fcmp": 1,
+            "fdiv": 1,
+            "fmov": 8,
+            "fmov.2d": 2,
+            "fmul": 1,
+            "fmul.2d": 64,
+            "fsub": 1,
+            "fsub.2d": 24,
+            "ldr": 10,
+            "mov": 3,
+            "mov.16b": 7,
+            "mov.d": 12,
+            "movi.16b": 1,
+            "movi.2s": 1,
+            "orn": 1,
+            "orr": 14,
+            "ret": 1
+          },
+          "memory_instructions": [
+            {
+              "address": 0,
+              "mnemonic": "ldr",
+              "operands": "d1, [x0]"
+            },
+            {
+              "address": 4,
+              "mnemonic": "ldr",
+              "operands": "d18, [x0, #0x8]"
+            },
+            {
+              "address": 8,
+              "mnemonic": "ldr",
+              "operands": "d2, [x0, #0x10]"
+            },
+            {
+              "address": 12,
+              "mnemonic": "ldr",
+              "operands": "d17, [x0, #0x18]"
+            },
+            {
+              "address": 16,
+              "mnemonic": "ldr",
+              "operands": "d3, [x0, #0x20]"
+            },
+            {
+              "address": 20,
+              "mnemonic": "ldr",
+              "operands": "d7, [x0, #0x28]"
+            },
+            {
+              "address": 24,
+              "mnemonic": "ldr",
+              "operands": "d4, [x0, #0x30]"
+            },
+            {
+              "address": 28,
+              "mnemonic": "ldr",
+              "operands": "d6, [x0, #0x38]"
+            },
+            {
+              "address": 32,
+              "mnemonic": "ldr",
+              "operands": "d5, [x0, #0x40]"
+            },
+            {
+              "address": 36,
+              "mnemonic": "ldr",
+              "operands": "d20, [x0, #0x48]"
+            }
+          ]
+        },
+        "_mech_grid_row": {
+          "instructions": 65,
+          "mnemonics": {
+            "add": 9,
+            "and": 1,
+            "b": 1,
+            "b.eq": 1,
+            "b.hs": 1,
+            "bl": 1,
+            "cmp": 3,
+            "csel": 1,
+            "ldp": 3,
+            "lsl": 1,
+            "lsr": 1,
+            "mov": 13,
+            "pacibsp": 1,
+            "retab": 1,
+            "stp": 3,
+            "strb": 1,
+            "stur": 10,
+            "sub": 3,
+            "ucvtf": 10
+          },
+          "memory_instructions": [
+            {
+              "address": 944,
+              "mnemonic": "stp",
+              "operands": "x29, x30, [sp, #-0x10]!"
+            },
+            {
+              "address": 952,
+              "mnemonic": "stp",
+              "operands": "x21, x22, [sp, #-0x10]!"
+            },
+            {
+              "address": 956,
+              "mnemonic": "stp",
+              "operands": "x19, x20, [sp, #-0x10]!"
+            },
+            {
+              "address": 976,
+              "mnemonic": "stur",
+              "operands": "d0, [sp]"
+            },
+            {
+              "address": 984,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x48]"
+            },
+            {
+              "address": 1008,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x8]"
+            },
+            {
+              "address": 1020,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x10]"
+            },
+            {
+              "address": 1032,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x18]"
+            },
+            {
+              "address": 1044,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x20]"
+            },
+            {
+              "address": 1056,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x28]"
+            },
+            {
+              "address": 1068,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x30]"
+            },
+            {
+              "address": 1080,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x38]"
+            },
+            {
+              "address": 1092,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x40]"
+            },
+            {
+              "address": 1152,
+              "mnemonic": "strb",
+              "operands": "w0, [x2, x1]"
+            },
+            {
+              "address": 1184,
+              "mnemonic": "ldp",
+              "operands": "x19, x20, [sp], #0x10"
+            },
+            {
+              "address": 1188,
+              "mnemonic": "ldp",
+              "operands": "x21, x22, [sp], #0x10"
+            },
+            {
+              "address": 1192,
+              "mnemonic": "ldp",
+              "operands": "x29, x30, [sp], #0x10"
+            }
+          ]
+        }
+      },
+      "binary_sha256": "52b11e84498ebb525e511e82075edaadada767bdff77df773a6373bff6eafb3f"
+    },
+    {
+      "id": "frozen29-loop-fma",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-program.mec",
+      "source_sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+      "loc": 29,
+      "simd": true,
+      "loop_fma": true,
+      "executable": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen29-loop-fma",
+      "emission": {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/.build/arrow-mutations-current/mech-clbg-mandelbrot-compiled",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-program.mec",
+          "emit-cranelift-simd",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen29-loop-fma.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen29-loop-fma.o",
+          "--source-program",
+          "--fp-contract-loop"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "link": {
+        "command": [
+          "/opt/homebrew/opt/llvm@22/bin/clang-22",
+          "-O3",
+          "-mcpu=native",
+          "-ffp-contract=off",
+          "-isysroot",
+          "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen29-loop-fma.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen29-loop-fma.o",
+          "-lm",
+          "-pthread",
+          "-o",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen29-loop-fma"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": "ld: warning: no platform load command found in '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen29-loop-fma.o', assuming: macOS\n"
+      },
+      "generated_c_sha256": "0d442a69533edc4868567f8f10762f2e706e8851aab56f8c7d92d3b1d4dabfe1",
+      "native_object_sha256": "41ad4bedd5f8baf3093a0b2e65dfbf60e4638f0bb5d177d2f9f39c1a9e3f6843",
+      "object_inspection": {
+        "_mech_map_bits": {
+          "instructions": 219,
+          "mnemonics": {
+            "and": 8,
+            "b": 1,
+            "b.ne": 1,
+            "cmp": 1,
+            "csel": 1,
+            "dup.2d": 2,
+            "fadd": 1,
+            "fadd.2d": 40,
+            "fcmge.2d": 4,
+            "fcmp": 1,
+            "fdiv": 1,
+            "fmla.2d": 24,
+            "fmls.2d": 20,
+            "fmov": 8,
+            "fmov.2d": 2,
+            "fmul": 1,
+            "fmul.2d": 24,
+            "fsub": 1,
+            "fsub.2d": 4,
+            "ldr": 10,
+            "mov": 3,
+            "mov.16b": 31,
+            "mov.d": 12,
+            "movi.16b": 1,
+            "movi.2s": 1,
+            "orn": 1,
+            "orr": 14,
+            "ret": 1
+          },
+          "memory_instructions": [
+            {
+              "address": 0,
+              "mnemonic": "ldr",
+              "operands": "d5, [x0]"
+            },
+            {
+              "address": 4,
+              "mnemonic": "ldr",
+              "operands": "d23, [x0, #0x8]"
+            },
+            {
+              "address": 8,
+              "mnemonic": "ldr",
+              "operands": "d6, [x0, #0x10]"
+            },
+            {
+              "address": 12,
+              "mnemonic": "ldr",
+              "operands": "d22, [x0, #0x18]"
+            },
+            {
+              "address": 16,
+              "mnemonic": "ldr",
+              "operands": "d7, [x0, #0x20]"
+            },
+            {
+              "address": 20,
+              "mnemonic": "ldr",
+              "operands": "d20, [x0, #0x28]"
+            },
+            {
+              "address": 24,
+              "mnemonic": "ldr",
+              "operands": "d17, [x0, #0x30]"
+            },
+            {
+              "address": 28,
+              "mnemonic": "ldr",
+              "operands": "d19, [x0, #0x38]"
+            },
+            {
+              "address": 32,
+              "mnemonic": "ldr",
+              "operands": "d18, [x0, #0x40]"
+            },
+            {
+              "address": 36,
+              "mnemonic": "ldr",
+              "operands": "d25, [x0, #0x48]"
+            }
+          ]
+        },
+        "_mech_grid_row": {
+          "instructions": 65,
+          "mnemonics": {
+            "add": 9,
+            "and": 1,
+            "b": 1,
+            "b.eq": 1,
+            "b.hs": 1,
+            "bl": 1,
+            "cmp": 3,
+            "csel": 1,
+            "ldp": 3,
+            "lsl": 1,
+            "lsr": 1,
+            "mov": 13,
+            "pacibsp": 1,
+            "retab": 1,
+            "stp": 3,
+            "strb": 1,
+            "stur": 10,
+            "sub": 3,
+            "ucvtf": 10
+          },
+          "memory_instructions": [
+            {
+              "address": 880,
+              "mnemonic": "stp",
+              "operands": "x29, x30, [sp, #-0x10]!"
+            },
+            {
+              "address": 888,
+              "mnemonic": "stp",
+              "operands": "x21, x22, [sp, #-0x10]!"
+            },
+            {
+              "address": 892,
+              "mnemonic": "stp",
+              "operands": "x19, x20, [sp, #-0x10]!"
+            },
+            {
+              "address": 912,
+              "mnemonic": "stur",
+              "operands": "d0, [sp]"
+            },
+            {
+              "address": 920,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x48]"
+            },
+            {
+              "address": 944,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x8]"
+            },
+            {
+              "address": 956,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x10]"
+            },
+            {
+              "address": 968,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x18]"
+            },
+            {
+              "address": 980,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x20]"
+            },
+            {
+              "address": 992,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x28]"
+            },
+            {
+              "address": 1004,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x30]"
+            },
+            {
+              "address": 1016,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x38]"
+            },
+            {
+              "address": 1028,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x40]"
+            },
+            {
+              "address": 1088,
+              "mnemonic": "strb",
+              "operands": "w0, [x2, x1]"
+            },
+            {
+              "address": 1120,
+              "mnemonic": "ldp",
+              "operands": "x19, x20, [sp], #0x10"
+            },
+            {
+              "address": 1124,
+              "mnemonic": "ldp",
+              "operands": "x21, x22, [sp], #0x10"
+            },
+            {
+              "address": 1128,
+              "mnemonic": "ldp",
+              "operands": "x29, x30, [sp], #0x10"
+            }
+          ]
+        }
+      },
+      "binary_sha256": "0d0c4286b92050c32d389a03be3e82d9dbdd6f13ef61615c70eaa5f00cc4a766"
+    }
+  ],
+  "images": [
+    {
+      "id": "scalar11",
+      "size": 1,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "scalar11-1-workers-1.pbm",
+      "bytes": 8,
+      "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "scalar11",
+      "size": 1,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "scalar11-1-workers-3.pbm",
+      "bytes": 8,
+      "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12",
+      "size": 1,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-1-workers-1.pbm",
+      "bytes": 8,
+      "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12",
+      "size": 1,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-1-workers-3.pbm",
+      "bytes": 8,
+      "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12-rows",
+      "size": 1,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-rows-1-workers-1.pbm",
+      "bytes": 8,
+      "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12-rows",
+      "size": 1,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-rows-1-workers-3.pbm",
+      "bytes": 8,
+      "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16",
+      "size": 1,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-1-workers-1.pbm",
+      "bytes": 8,
+      "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16",
+      "size": 1,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-1-workers-3.pbm",
+      "bytes": 8,
+      "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows",
+      "size": 1,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-1-workers-1.pbm",
+      "bytes": 8,
+      "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows",
+      "size": 1,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-1-workers-3.pbm",
+      "bytes": 8,
+      "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-loop-fma",
+      "size": 1,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-loop-fma-1-workers-1.pbm",
+      "bytes": 8,
+      "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-loop-fma",
+      "size": 1,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-loop-fma-1-workers-3.pbm",
+      "bytes": 8,
+      "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows-loop-fma",
+      "size": 1,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-loop-fma-1-workers-1.pbm",
+      "bytes": 8,
+      "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows-loop-fma",
+      "size": 1,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-loop-fma-1-workers-3.pbm",
+      "bytes": 8,
+      "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen20",
+      "size": 1,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen20-1-workers-1.pbm",
+      "bytes": 8,
+      "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen20",
+      "size": 1,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen20-1-workers-3.pbm",
+      "bytes": 8,
+      "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29",
+      "size": 1,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-1-workers-1.pbm",
+      "bytes": 8,
+      "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29",
+      "size": 1,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-1-workers-3.pbm",
+      "bytes": 8,
+      "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29-loop-fma",
+      "size": 1,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-loop-fma-1-workers-1.pbm",
+      "bytes": 8,
+      "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29-loop-fma",
+      "size": 1,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-loop-fma-1-workers-3.pbm",
+      "bytes": 8,
+      "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "scalar11",
+      "size": 7,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "scalar11-7-workers-1.pbm",
+      "bytes": 14,
+      "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "scalar11",
+      "size": 7,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "scalar11-7-workers-3.pbm",
+      "bytes": 14,
+      "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12",
+      "size": 7,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-7-workers-1.pbm",
+      "bytes": 14,
+      "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12",
+      "size": 7,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-7-workers-3.pbm",
+      "bytes": 14,
+      "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12-rows",
+      "size": 7,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-rows-7-workers-1.pbm",
+      "bytes": 14,
+      "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12-rows",
+      "size": 7,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-rows-7-workers-3.pbm",
+      "bytes": 14,
+      "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16",
+      "size": 7,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-7-workers-1.pbm",
+      "bytes": 14,
+      "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16",
+      "size": 7,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-7-workers-3.pbm",
+      "bytes": 14,
+      "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows",
+      "size": 7,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-7-workers-1.pbm",
+      "bytes": 14,
+      "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows",
+      "size": 7,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-7-workers-3.pbm",
+      "bytes": 14,
+      "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-loop-fma",
+      "size": 7,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-loop-fma-7-workers-1.pbm",
+      "bytes": 14,
+      "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-loop-fma",
+      "size": 7,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-loop-fma-7-workers-3.pbm",
+      "bytes": 14,
+      "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows-loop-fma",
+      "size": 7,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-loop-fma-7-workers-1.pbm",
+      "bytes": 14,
+      "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows-loop-fma",
+      "size": 7,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-loop-fma-7-workers-3.pbm",
+      "bytes": 14,
+      "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen20",
+      "size": 7,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen20-7-workers-1.pbm",
+      "bytes": 14,
+      "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen20",
+      "size": 7,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen20-7-workers-3.pbm",
+      "bytes": 14,
+      "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29",
+      "size": 7,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-7-workers-1.pbm",
+      "bytes": 14,
+      "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29",
+      "size": 7,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-7-workers-3.pbm",
+      "bytes": 14,
+      "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29-loop-fma",
+      "size": 7,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-loop-fma-7-workers-1.pbm",
+      "bytes": 14,
+      "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29-loop-fma",
+      "size": 7,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-loop-fma-7-workers-3.pbm",
+      "bytes": 14,
+      "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "scalar11",
+      "size": 8,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "scalar11-8-workers-1.pbm",
+      "bytes": 15,
+      "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "scalar11",
+      "size": 8,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "scalar11-8-workers-3.pbm",
+      "bytes": 15,
+      "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12",
+      "size": 8,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-8-workers-1.pbm",
+      "bytes": 15,
+      "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12",
+      "size": 8,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-8-workers-3.pbm",
+      "bytes": 15,
+      "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12-rows",
+      "size": 8,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-rows-8-workers-1.pbm",
+      "bytes": 15,
+      "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12-rows",
+      "size": 8,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-rows-8-workers-3.pbm",
+      "bytes": 15,
+      "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16",
+      "size": 8,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-8-workers-1.pbm",
+      "bytes": 15,
+      "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16",
+      "size": 8,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-8-workers-3.pbm",
+      "bytes": 15,
+      "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows",
+      "size": 8,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-8-workers-1.pbm",
+      "bytes": 15,
+      "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows",
+      "size": 8,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-8-workers-3.pbm",
+      "bytes": 15,
+      "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-loop-fma",
+      "size": 8,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-loop-fma-8-workers-1.pbm",
+      "bytes": 15,
+      "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-loop-fma",
+      "size": 8,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-loop-fma-8-workers-3.pbm",
+      "bytes": 15,
+      "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows-loop-fma",
+      "size": 8,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-loop-fma-8-workers-1.pbm",
+      "bytes": 15,
+      "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows-loop-fma",
+      "size": 8,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-loop-fma-8-workers-3.pbm",
+      "bytes": 15,
+      "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen20",
+      "size": 8,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen20-8-workers-1.pbm",
+      "bytes": 15,
+      "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen20",
+      "size": 8,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen20-8-workers-3.pbm",
+      "bytes": 15,
+      "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29",
+      "size": 8,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-8-workers-1.pbm",
+      "bytes": 15,
+      "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29",
+      "size": 8,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-8-workers-3.pbm",
+      "bytes": 15,
+      "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29-loop-fma",
+      "size": 8,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-loop-fma-8-workers-1.pbm",
+      "bytes": 15,
+      "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29-loop-fma",
+      "size": 8,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-loop-fma-8-workers-3.pbm",
+      "bytes": 15,
+      "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "scalar11",
+      "size": 9,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "scalar11-9-workers-1.pbm",
+      "bytes": 25,
+      "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "scalar11",
+      "size": 9,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "scalar11-9-workers-3.pbm",
+      "bytes": 25,
+      "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12",
+      "size": 9,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-9-workers-1.pbm",
+      "bytes": 25,
+      "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12",
+      "size": 9,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-9-workers-3.pbm",
+      "bytes": 25,
+      "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12-rows",
+      "size": 9,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-rows-9-workers-1.pbm",
+      "bytes": 25,
+      "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12-rows",
+      "size": 9,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-rows-9-workers-3.pbm",
+      "bytes": 25,
+      "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16",
+      "size": 9,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-9-workers-1.pbm",
+      "bytes": 25,
+      "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16",
+      "size": 9,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-9-workers-3.pbm",
+      "bytes": 25,
+      "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows",
+      "size": 9,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-9-workers-1.pbm",
+      "bytes": 25,
+      "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows",
+      "size": 9,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-9-workers-3.pbm",
+      "bytes": 25,
+      "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-loop-fma",
+      "size": 9,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-loop-fma-9-workers-1.pbm",
+      "bytes": 25,
+      "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-loop-fma",
+      "size": 9,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-loop-fma-9-workers-3.pbm",
+      "bytes": 25,
+      "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows-loop-fma",
+      "size": 9,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-loop-fma-9-workers-1.pbm",
+      "bytes": 25,
+      "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows-loop-fma",
+      "size": 9,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-loop-fma-9-workers-3.pbm",
+      "bytes": 25,
+      "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen20",
+      "size": 9,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen20-9-workers-1.pbm",
+      "bytes": 25,
+      "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen20",
+      "size": 9,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen20-9-workers-3.pbm",
+      "bytes": 25,
+      "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29",
+      "size": 9,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-9-workers-1.pbm",
+      "bytes": 25,
+      "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29",
+      "size": 9,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-9-workers-3.pbm",
+      "bytes": 25,
+      "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29-loop-fma",
+      "size": 9,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-loop-fma-9-workers-1.pbm",
+      "bytes": 25,
+      "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29-loop-fma",
+      "size": 9,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-loop-fma-9-workers-3.pbm",
+      "bytes": 25,
+      "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "scalar11",
+      "size": 13,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "scalar11-13-workers-1.pbm",
+      "bytes": 35,
+      "sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "scalar11",
+      "size": 13,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "scalar11-13-workers-3.pbm",
+      "bytes": 35,
+      "sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12",
+      "size": 13,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-13-workers-1.pbm",
+      "bytes": 35,
+      "sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12",
+      "size": 13,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-13-workers-3.pbm",
+      "bytes": 35,
+      "sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12-rows",
+      "size": 13,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-rows-13-workers-1.pbm",
+      "bytes": 35,
+      "sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12-rows",
+      "size": 13,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-rows-13-workers-3.pbm",
+      "bytes": 35,
+      "sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16",
+      "size": 13,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-13-workers-1.pbm",
+      "bytes": 35,
+      "sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16",
+      "size": 13,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-13-workers-3.pbm",
+      "bytes": 35,
+      "sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows",
+      "size": 13,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-13-workers-1.pbm",
+      "bytes": 35,
+      "sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows",
+      "size": 13,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-13-workers-3.pbm",
+      "bytes": 35,
+      "sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-loop-fma",
+      "size": 13,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-loop-fma-13-workers-1.pbm",
+      "bytes": 35,
+      "sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-loop-fma",
+      "size": 13,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-loop-fma-13-workers-3.pbm",
+      "bytes": 35,
+      "sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows-loop-fma",
+      "size": 13,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-loop-fma-13-workers-1.pbm",
+      "bytes": 35,
+      "sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows-loop-fma",
+      "size": 13,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-loop-fma-13-workers-3.pbm",
+      "bytes": 35,
+      "sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen20",
+      "size": 13,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen20-13-workers-1.pbm",
+      "bytes": 35,
+      "sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen20",
+      "size": 13,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen20-13-workers-3.pbm",
+      "bytes": 35,
+      "sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29",
+      "size": 13,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-13-workers-1.pbm",
+      "bytes": 35,
+      "sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29",
+      "size": 13,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-13-workers-3.pbm",
+      "bytes": 35,
+      "sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29-loop-fma",
+      "size": 13,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-loop-fma-13-workers-1.pbm",
+      "bytes": 35,
+      "sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29-loop-fma",
+      "size": 13,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-loop-fma-13-workers-3.pbm",
+      "bytes": 35,
+      "sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "scalar11",
+      "size": 31,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "scalar11-31-workers-1.pbm",
+      "bytes": 133,
+      "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "scalar11",
+      "size": 31,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "scalar11-31-workers-3.pbm",
+      "bytes": 133,
+      "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12",
+      "size": 31,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-31-workers-1.pbm",
+      "bytes": 133,
+      "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12",
+      "size": 31,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-31-workers-3.pbm",
+      "bytes": 133,
+      "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12-rows",
+      "size": 31,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-rows-31-workers-1.pbm",
+      "bytes": 133,
+      "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12-rows",
+      "size": 31,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-rows-31-workers-3.pbm",
+      "bytes": 133,
+      "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16",
+      "size": 31,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-31-workers-1.pbm",
+      "bytes": 133,
+      "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16",
+      "size": 31,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-31-workers-3.pbm",
+      "bytes": 133,
+      "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows",
+      "size": 31,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-31-workers-1.pbm",
+      "bytes": 133,
+      "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows",
+      "size": 31,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-31-workers-3.pbm",
+      "bytes": 133,
+      "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-loop-fma",
+      "size": 31,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-loop-fma-31-workers-1.pbm",
+      "bytes": 133,
+      "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-loop-fma",
+      "size": 31,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-loop-fma-31-workers-3.pbm",
+      "bytes": 133,
+      "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows-loop-fma",
+      "size": 31,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-loop-fma-31-workers-1.pbm",
+      "bytes": 133,
+      "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows-loop-fma",
+      "size": 31,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-loop-fma-31-workers-3.pbm",
+      "bytes": 133,
+      "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen20",
+      "size": 31,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen20-31-workers-1.pbm",
+      "bytes": 133,
+      "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen20",
+      "size": 31,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen20-31-workers-3.pbm",
+      "bytes": 133,
+      "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29",
+      "size": 31,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-31-workers-1.pbm",
+      "bytes": 133,
+      "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29",
+      "size": 31,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-31-workers-3.pbm",
+      "bytes": 133,
+      "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29-loop-fma",
+      "size": 31,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-loop-fma-31-workers-1.pbm",
+      "bytes": 133,
+      "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29-loop-fma",
+      "size": 31,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-loop-fma-31-workers-3.pbm",
+      "bytes": 133,
+      "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "scalar11",
+      "size": 63,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "scalar11-63-workers-1.pbm",
+      "bytes": 513,
+      "sha256": "fff578e583a052969e57607be53eeafcf0b30eb9e361659e98088f16ef35810e",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "scalar11",
+      "size": 63,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "scalar11-63-workers-3.pbm",
+      "bytes": 513,
+      "sha256": "fff578e583a052969e57607be53eeafcf0b30eb9e361659e98088f16ef35810e",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12",
+      "size": 63,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-63-workers-1.pbm",
+      "bytes": 513,
+      "sha256": "fff578e583a052969e57607be53eeafcf0b30eb9e361659e98088f16ef35810e",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12",
+      "size": 63,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-63-workers-3.pbm",
+      "bytes": 513,
+      "sha256": "fff578e583a052969e57607be53eeafcf0b30eb9e361659e98088f16ef35810e",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12-rows",
+      "size": 63,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-rows-63-workers-1.pbm",
+      "bytes": 513,
+      "sha256": "fff578e583a052969e57607be53eeafcf0b30eb9e361659e98088f16ef35810e",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12-rows",
+      "size": 63,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-rows-63-workers-3.pbm",
+      "bytes": 513,
+      "sha256": "fff578e583a052969e57607be53eeafcf0b30eb9e361659e98088f16ef35810e",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16",
+      "size": 63,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-63-workers-1.pbm",
+      "bytes": 513,
+      "sha256": "fff578e583a052969e57607be53eeafcf0b30eb9e361659e98088f16ef35810e",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16",
+      "size": 63,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-63-workers-3.pbm",
+      "bytes": 513,
+      "sha256": "fff578e583a052969e57607be53eeafcf0b30eb9e361659e98088f16ef35810e",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows",
+      "size": 63,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-63-workers-1.pbm",
+      "bytes": 513,
+      "sha256": "fff578e583a052969e57607be53eeafcf0b30eb9e361659e98088f16ef35810e",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows",
+      "size": 63,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-63-workers-3.pbm",
+      "bytes": 513,
+      "sha256": "fff578e583a052969e57607be53eeafcf0b30eb9e361659e98088f16ef35810e",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-loop-fma",
+      "size": 63,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-loop-fma-63-workers-1.pbm",
+      "bytes": 513,
+      "sha256": "fff578e583a052969e57607be53eeafcf0b30eb9e361659e98088f16ef35810e",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-loop-fma",
+      "size": 63,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-loop-fma-63-workers-3.pbm",
+      "bytes": 513,
+      "sha256": "fff578e583a052969e57607be53eeafcf0b30eb9e361659e98088f16ef35810e",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows-loop-fma",
+      "size": 63,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-loop-fma-63-workers-1.pbm",
+      "bytes": 513,
+      "sha256": "fff578e583a052969e57607be53eeafcf0b30eb9e361659e98088f16ef35810e",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows-loop-fma",
+      "size": 63,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-loop-fma-63-workers-3.pbm",
+      "bytes": 513,
+      "sha256": "fff578e583a052969e57607be53eeafcf0b30eb9e361659e98088f16ef35810e",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen20",
+      "size": 63,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen20-63-workers-1.pbm",
+      "bytes": 513,
+      "sha256": "fff578e583a052969e57607be53eeafcf0b30eb9e361659e98088f16ef35810e",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen20",
+      "size": 63,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen20-63-workers-3.pbm",
+      "bytes": 513,
+      "sha256": "fff578e583a052969e57607be53eeafcf0b30eb9e361659e98088f16ef35810e",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29",
+      "size": 63,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-63-workers-1.pbm",
+      "bytes": 513,
+      "sha256": "fff578e583a052969e57607be53eeafcf0b30eb9e361659e98088f16ef35810e",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29",
+      "size": 63,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-63-workers-3.pbm",
+      "bytes": 513,
+      "sha256": "fff578e583a052969e57607be53eeafcf0b30eb9e361659e98088f16ef35810e",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29-loop-fma",
+      "size": 63,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-loop-fma-63-workers-1.pbm",
+      "bytes": 513,
+      "sha256": "fff578e583a052969e57607be53eeafcf0b30eb9e361659e98088f16ef35810e",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29-loop-fma",
+      "size": 63,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-loop-fma-63-workers-3.pbm",
+      "bytes": 513,
+      "sha256": "fff578e583a052969e57607be53eeafcf0b30eb9e361659e98088f16ef35810e",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "scalar11",
+      "size": 64,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "scalar11-64-workers-1.pbm",
+      "bytes": 521,
+      "sha256": "54e0a14da37569cba6fa618c771c2704f6711783326b2b42197fc533c8f1337b",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "scalar11",
+      "size": 64,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "scalar11-64-workers-3.pbm",
+      "bytes": 521,
+      "sha256": "54e0a14da37569cba6fa618c771c2704f6711783326b2b42197fc533c8f1337b",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12",
+      "size": 64,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-64-workers-1.pbm",
+      "bytes": 521,
+      "sha256": "54e0a14da37569cba6fa618c771c2704f6711783326b2b42197fc533c8f1337b",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12",
+      "size": 64,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-64-workers-3.pbm",
+      "bytes": 521,
+      "sha256": "54e0a14da37569cba6fa618c771c2704f6711783326b2b42197fc533c8f1337b",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12-rows",
+      "size": 64,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-rows-64-workers-1.pbm",
+      "bytes": 521,
+      "sha256": "54e0a14da37569cba6fa618c771c2704f6711783326b2b42197fc533c8f1337b",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12-rows",
+      "size": 64,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-rows-64-workers-3.pbm",
+      "bytes": 521,
+      "sha256": "54e0a14da37569cba6fa618c771c2704f6711783326b2b42197fc533c8f1337b",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16",
+      "size": 64,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-64-workers-1.pbm",
+      "bytes": 521,
+      "sha256": "54e0a14da37569cba6fa618c771c2704f6711783326b2b42197fc533c8f1337b",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16",
+      "size": 64,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-64-workers-3.pbm",
+      "bytes": 521,
+      "sha256": "54e0a14da37569cba6fa618c771c2704f6711783326b2b42197fc533c8f1337b",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows",
+      "size": 64,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-64-workers-1.pbm",
+      "bytes": 521,
+      "sha256": "54e0a14da37569cba6fa618c771c2704f6711783326b2b42197fc533c8f1337b",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows",
+      "size": 64,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-64-workers-3.pbm",
+      "bytes": 521,
+      "sha256": "54e0a14da37569cba6fa618c771c2704f6711783326b2b42197fc533c8f1337b",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-loop-fma",
+      "size": 64,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-loop-fma-64-workers-1.pbm",
+      "bytes": 521,
+      "sha256": "54e0a14da37569cba6fa618c771c2704f6711783326b2b42197fc533c8f1337b",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-loop-fma",
+      "size": 64,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-loop-fma-64-workers-3.pbm",
+      "bytes": 521,
+      "sha256": "54e0a14da37569cba6fa618c771c2704f6711783326b2b42197fc533c8f1337b",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows-loop-fma",
+      "size": 64,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-loop-fma-64-workers-1.pbm",
+      "bytes": 521,
+      "sha256": "54e0a14da37569cba6fa618c771c2704f6711783326b2b42197fc533c8f1337b",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows-loop-fma",
+      "size": 64,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-loop-fma-64-workers-3.pbm",
+      "bytes": 521,
+      "sha256": "54e0a14da37569cba6fa618c771c2704f6711783326b2b42197fc533c8f1337b",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen20",
+      "size": 64,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen20-64-workers-1.pbm",
+      "bytes": 521,
+      "sha256": "54e0a14da37569cba6fa618c771c2704f6711783326b2b42197fc533c8f1337b",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen20",
+      "size": 64,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen20-64-workers-3.pbm",
+      "bytes": 521,
+      "sha256": "54e0a14da37569cba6fa618c771c2704f6711783326b2b42197fc533c8f1337b",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29",
+      "size": 64,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-64-workers-1.pbm",
+      "bytes": 521,
+      "sha256": "54e0a14da37569cba6fa618c771c2704f6711783326b2b42197fc533c8f1337b",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29",
+      "size": 64,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-64-workers-3.pbm",
+      "bytes": 521,
+      "sha256": "54e0a14da37569cba6fa618c771c2704f6711783326b2b42197fc533c8f1337b",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29-loop-fma",
+      "size": 64,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-loop-fma-64-workers-1.pbm",
+      "bytes": 521,
+      "sha256": "54e0a14da37569cba6fa618c771c2704f6711783326b2b42197fc533c8f1337b",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29-loop-fma",
+      "size": 64,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-loop-fma-64-workers-3.pbm",
+      "bytes": 521,
+      "sha256": "54e0a14da37569cba6fa618c771c2704f6711783326b2b42197fc533c8f1337b",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "scalar11",
+      "size": 65,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "scalar11-65-workers-1.pbm",
+      "bytes": 594,
+      "sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "scalar11",
+      "size": 65,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "scalar11-65-workers-3.pbm",
+      "bytes": 594,
+      "sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12",
+      "size": 65,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-65-workers-1.pbm",
+      "bytes": 594,
+      "sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12",
+      "size": 65,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-65-workers-3.pbm",
+      "bytes": 594,
+      "sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12-rows",
+      "size": 65,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-rows-65-workers-1.pbm",
+      "bytes": 594,
+      "sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12-rows",
+      "size": 65,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-rows-65-workers-3.pbm",
+      "bytes": 594,
+      "sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16",
+      "size": 65,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-65-workers-1.pbm",
+      "bytes": 594,
+      "sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16",
+      "size": 65,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-65-workers-3.pbm",
+      "bytes": 594,
+      "sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows",
+      "size": 65,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-65-workers-1.pbm",
+      "bytes": 594,
+      "sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows",
+      "size": 65,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-65-workers-3.pbm",
+      "bytes": 594,
+      "sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-loop-fma",
+      "size": 65,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-loop-fma-65-workers-1.pbm",
+      "bytes": 594,
+      "sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-loop-fma",
+      "size": 65,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-loop-fma-65-workers-3.pbm",
+      "bytes": 594,
+      "sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows-loop-fma",
+      "size": 65,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-loop-fma-65-workers-1.pbm",
+      "bytes": 594,
+      "sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows-loop-fma",
+      "size": 65,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-loop-fma-65-workers-3.pbm",
+      "bytes": 594,
+      "sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen20",
+      "size": 65,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen20-65-workers-1.pbm",
+      "bytes": 594,
+      "sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen20",
+      "size": 65,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen20-65-workers-3.pbm",
+      "bytes": 594,
+      "sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29",
+      "size": 65,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-65-workers-1.pbm",
+      "bytes": 594,
+      "sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29",
+      "size": 65,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-65-workers-3.pbm",
+      "bytes": 594,
+      "sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29-loop-fma",
+      "size": 65,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-loop-fma-65-workers-1.pbm",
+      "bytes": 594,
+      "sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29-loop-fma",
+      "size": 65,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-loop-fma-65-workers-3.pbm",
+      "bytes": 594,
+      "sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "scalar11",
+      "size": 129,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "scalar11-129-workers-1.pbm",
+      "bytes": 2204,
+      "sha256": "9285001b8e46c26687a2fd422846eab8601aae328fc69dc3fa8265bcefdd6ba9",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "scalar11",
+      "size": 129,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "scalar11-129-workers-3.pbm",
+      "bytes": 2204,
+      "sha256": "9285001b8e46c26687a2fd422846eab8601aae328fc69dc3fa8265bcefdd6ba9",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12",
+      "size": 129,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-129-workers-1.pbm",
+      "bytes": 2204,
+      "sha256": "9285001b8e46c26687a2fd422846eab8601aae328fc69dc3fa8265bcefdd6ba9",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12",
+      "size": 129,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-129-workers-3.pbm",
+      "bytes": 2204,
+      "sha256": "9285001b8e46c26687a2fd422846eab8601aae328fc69dc3fa8265bcefdd6ba9",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12-rows",
+      "size": 129,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-rows-129-workers-1.pbm",
+      "bytes": 2204,
+      "sha256": "9285001b8e46c26687a2fd422846eab8601aae328fc69dc3fa8265bcefdd6ba9",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12-rows",
+      "size": 129,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-rows-129-workers-3.pbm",
+      "bytes": 2204,
+      "sha256": "9285001b8e46c26687a2fd422846eab8601aae328fc69dc3fa8265bcefdd6ba9",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16",
+      "size": 129,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-129-workers-1.pbm",
+      "bytes": 2204,
+      "sha256": "9285001b8e46c26687a2fd422846eab8601aae328fc69dc3fa8265bcefdd6ba9",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16",
+      "size": 129,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-129-workers-3.pbm",
+      "bytes": 2204,
+      "sha256": "9285001b8e46c26687a2fd422846eab8601aae328fc69dc3fa8265bcefdd6ba9",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows",
+      "size": 129,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-129-workers-1.pbm",
+      "bytes": 2204,
+      "sha256": "9285001b8e46c26687a2fd422846eab8601aae328fc69dc3fa8265bcefdd6ba9",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows",
+      "size": 129,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-129-workers-3.pbm",
+      "bytes": 2204,
+      "sha256": "9285001b8e46c26687a2fd422846eab8601aae328fc69dc3fa8265bcefdd6ba9",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-loop-fma",
+      "size": 129,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-loop-fma-129-workers-1.pbm",
+      "bytes": 2204,
+      "sha256": "9285001b8e46c26687a2fd422846eab8601aae328fc69dc3fa8265bcefdd6ba9",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-loop-fma",
+      "size": 129,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-loop-fma-129-workers-3.pbm",
+      "bytes": 2204,
+      "sha256": "9285001b8e46c26687a2fd422846eab8601aae328fc69dc3fa8265bcefdd6ba9",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows-loop-fma",
+      "size": 129,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-loop-fma-129-workers-1.pbm",
+      "bytes": 2204,
+      "sha256": "9285001b8e46c26687a2fd422846eab8601aae328fc69dc3fa8265bcefdd6ba9",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows-loop-fma",
+      "size": 129,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-loop-fma-129-workers-3.pbm",
+      "bytes": 2204,
+      "sha256": "9285001b8e46c26687a2fd422846eab8601aae328fc69dc3fa8265bcefdd6ba9",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen20",
+      "size": 129,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen20-129-workers-1.pbm",
+      "bytes": 2204,
+      "sha256": "9285001b8e46c26687a2fd422846eab8601aae328fc69dc3fa8265bcefdd6ba9",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen20",
+      "size": 129,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen20-129-workers-3.pbm",
+      "bytes": 2204,
+      "sha256": "9285001b8e46c26687a2fd422846eab8601aae328fc69dc3fa8265bcefdd6ba9",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29",
+      "size": 129,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-129-workers-1.pbm",
+      "bytes": 2204,
+      "sha256": "9285001b8e46c26687a2fd422846eab8601aae328fc69dc3fa8265bcefdd6ba9",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29",
+      "size": 129,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-129-workers-3.pbm",
+      "bytes": 2204,
+      "sha256": "9285001b8e46c26687a2fd422846eab8601aae328fc69dc3fa8265bcefdd6ba9",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29-loop-fma",
+      "size": 129,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-loop-fma-129-workers-1.pbm",
+      "bytes": 2204,
+      "sha256": "9285001b8e46c26687a2fd422846eab8601aae328fc69dc3fa8265bcefdd6ba9",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29-loop-fma",
+      "size": 129,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-loop-fma-129-workers-3.pbm",
+      "bytes": 2204,
+      "sha256": "9285001b8e46c26687a2fd422846eab8601aae328fc69dc3fa8265bcefdd6ba9",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "scalar11",
+      "size": 200,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "scalar11-200-workers-1.pbm",
+      "bytes": 5011,
+      "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "scalar11",
+      "size": 200,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "scalar11-200-workers-3.pbm",
+      "bytes": 5011,
+      "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12",
+      "size": 200,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-200-workers-1.pbm",
+      "bytes": 5011,
+      "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12",
+      "size": 200,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-200-workers-3.pbm",
+      "bytes": 5011,
+      "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12-rows",
+      "size": 200,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-rows-200-workers-1.pbm",
+      "bytes": 5011,
+      "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12-rows",
+      "size": 200,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-rows-200-workers-3.pbm",
+      "bytes": 5011,
+      "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16",
+      "size": 200,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-200-workers-1.pbm",
+      "bytes": 5011,
+      "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16",
+      "size": 200,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-200-workers-3.pbm",
+      "bytes": 5011,
+      "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows",
+      "size": 200,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-200-workers-1.pbm",
+      "bytes": 5011,
+      "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows",
+      "size": 200,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-200-workers-3.pbm",
+      "bytes": 5011,
+      "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-loop-fma",
+      "size": 200,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-loop-fma-200-workers-1.pbm",
+      "bytes": 5011,
+      "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-loop-fma",
+      "size": 200,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-loop-fma-200-workers-3.pbm",
+      "bytes": 5011,
+      "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows-loop-fma",
+      "size": 200,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-loop-fma-200-workers-1.pbm",
+      "bytes": 5011,
+      "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows-loop-fma",
+      "size": 200,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-loop-fma-200-workers-3.pbm",
+      "bytes": 5011,
+      "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen20",
+      "size": 200,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen20-200-workers-1.pbm",
+      "bytes": 5011,
+      "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen20",
+      "size": 200,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen20-200-workers-3.pbm",
+      "bytes": 5011,
+      "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29",
+      "size": 200,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-200-workers-1.pbm",
+      "bytes": 5011,
+      "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29",
+      "size": 200,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-200-workers-3.pbm",
+      "bytes": 5011,
+      "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29-loop-fma",
+      "size": 200,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-loop-fma-200-workers-1.pbm",
+      "bytes": 5011,
+      "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29-loop-fma",
+      "size": 200,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-loop-fma-200-workers-3.pbm",
+      "bytes": 5011,
+      "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "scalar11",
+      "size": 257,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "scalar11-257-workers-1.pbm",
+      "bytes": 8492,
+      "sha256": "ccc7bd2c7c5018c1ea06b7c78269fa7084867e3cf443e8fba7c0a3d8d50b1056",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "scalar11",
+      "size": 257,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "scalar11-257-workers-3.pbm",
+      "bytes": 8492,
+      "sha256": "ccc7bd2c7c5018c1ea06b7c78269fa7084867e3cf443e8fba7c0a3d8d50b1056",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12",
+      "size": 257,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-257-workers-1.pbm",
+      "bytes": 8492,
+      "sha256": "ccc7bd2c7c5018c1ea06b7c78269fa7084867e3cf443e8fba7c0a3d8d50b1056",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12",
+      "size": 257,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-257-workers-3.pbm",
+      "bytes": 8492,
+      "sha256": "ccc7bd2c7c5018c1ea06b7c78269fa7084867e3cf443e8fba7c0a3d8d50b1056",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12-rows",
+      "size": 257,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-rows-257-workers-1.pbm",
+      "bytes": 8492,
+      "sha256": "ccc7bd2c7c5018c1ea06b7c78269fa7084867e3cf443e8fba7c0a3d8d50b1056",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "lanes12-rows",
+      "size": 257,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "lanes12-rows-257-workers-3.pbm",
+      "bytes": 8492,
+      "sha256": "ccc7bd2c7c5018c1ea06b7c78269fa7084867e3cf443e8fba7c0a3d8d50b1056",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16",
+      "size": 257,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-257-workers-1.pbm",
+      "bytes": 8492,
+      "sha256": "ccc7bd2c7c5018c1ea06b7c78269fa7084867e3cf443e8fba7c0a3d8d50b1056",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16",
+      "size": 257,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-257-workers-3.pbm",
+      "bytes": 8492,
+      "sha256": "ccc7bd2c7c5018c1ea06b7c78269fa7084867e3cf443e8fba7c0a3d8d50b1056",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows",
+      "size": 257,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-257-workers-1.pbm",
+      "bytes": 8492,
+      "sha256": "ccc7bd2c7c5018c1ea06b7c78269fa7084867e3cf443e8fba7c0a3d8d50b1056",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows",
+      "size": 257,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-257-workers-3.pbm",
+      "bytes": 8492,
+      "sha256": "ccc7bd2c7c5018c1ea06b7c78269fa7084867e3cf443e8fba7c0a3d8d50b1056",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-loop-fma",
+      "size": 257,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-loop-fma-257-workers-1.pbm",
+      "bytes": 8492,
+      "sha256": "ccc7bd2c7c5018c1ea06b7c78269fa7084867e3cf443e8fba7c0a3d8d50b1056",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-loop-fma",
+      "size": 257,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-loop-fma-257-workers-3.pbm",
+      "bytes": 8492,
+      "sha256": "ccc7bd2c7c5018c1ea06b7c78269fa7084867e3cf443e8fba7c0a3d8d50b1056",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows-loop-fma",
+      "size": 257,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-loop-fma-257-workers-1.pbm",
+      "bytes": 8492,
+      "sha256": "ccc7bd2c7c5018c1ea06b7c78269fa7084867e3cf443e8fba7c0a3d8d50b1056",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "five16-rows-loop-fma",
+      "size": 257,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "five16-rows-loop-fma-257-workers-3.pbm",
+      "bytes": 8492,
+      "sha256": "ccc7bd2c7c5018c1ea06b7c78269fa7084867e3cf443e8fba7c0a3d8d50b1056",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen20",
+      "size": 257,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen20-257-workers-1.pbm",
+      "bytes": 8492,
+      "sha256": "ccc7bd2c7c5018c1ea06b7c78269fa7084867e3cf443e8fba7c0a3d8d50b1056",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen20",
+      "size": 257,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen20-257-workers-3.pbm",
+      "bytes": 8492,
+      "sha256": "ccc7bd2c7c5018c1ea06b7c78269fa7084867e3cf443e8fba7c0a3d8d50b1056",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29",
+      "size": 257,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-257-workers-1.pbm",
+      "bytes": 8492,
+      "sha256": "ccc7bd2c7c5018c1ea06b7c78269fa7084867e3cf443e8fba7c0a3d8d50b1056",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29",
+      "size": 257,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-257-workers-3.pbm",
+      "bytes": 8492,
+      "sha256": "ccc7bd2c7c5018c1ea06b7c78269fa7084867e3cf443e8fba7c0a3d8d50b1056",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29-loop-fma",
+      "size": 257,
+      "workers": 1,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-loop-fma-257-workers-1.pbm",
+      "bytes": 8492,
+      "sha256": "ccc7bd2c7c5018c1ea06b7c78269fa7084867e3cf443e8fba7c0a3d8d50b1056",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    },
+    {
+      "id": "frozen29-loop-fma",
+      "size": 257,
+      "workers": 3,
+      "returncode": 0,
+      "stderr": "",
+      "path": "frozen29-loop-fma-257-workers-3.pbm",
+      "bytes": 8492,
+      "sha256": "ccc7bd2c7c5018c1ea06b7c78269fa7084867e3cf443e8fba7c0a3d8d50b1056",
+      "per_step_exact_match": true,
+      "five_step_exact_match": true
+    }
+  ],
+  "differences": [],
+  "official_200": {
+    "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+    "per_step_exact_match": true,
+    "five_step_exact_match": true
+  },
+  "pins_unchanged_at_end": true,
+  "status": "passed",
+  "compile_failures": []
+}

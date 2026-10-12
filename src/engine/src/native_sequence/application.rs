@@ -1,8 +1,8 @@
 //! Application syntax normalized before canonical parsing in the opt-in AOT
 //! frontends. `value |> f(_, bound)` evaluates value once; all holes in a stage
 //! refer to that value. `f(x<T>) => <U> := expression` is a typed function body.
-//! Indented bodies use the same signature: immutable local definitions precede
-//! the final expression or binding, whose value is the function result.
+//! Indented bodies use the same signature: local definitions and mutations
+//! precede the final expression, binding, or local assignment result.
 //! Normalization creates ordinary bindings/functions and adds no native kernel.
 
 fn identifier_char(ch: char) -> bool {
@@ -276,7 +276,7 @@ fn body_statements(source: &str) -> Result<Vec<String>, String> {
                 || statements.last().is_some_and(|previous| {
                     let previous = mask(previous);
                     let previous = previous.trim_end();
-                    ["|>", "+", "-", "*", "/", "·", "&&", "||", "==", "!=", "<", ">", "<=", ">=", ":="]
+                    ["|>", "+", "-", "*", "/", "·", "&&", "||", "==", "!=", "<", ">", "<=", ">=", ":=", "=", "+=", "-=", "*=", "/=", "^="]
                         .iter()
                         .any(|token| previous.ends_with(token))
                 });
@@ -292,6 +292,70 @@ fn body_statements(source: &str) -> Result<Vec<String>, String> {
     Ok(statements)
 }
 
+enum ArrowStatement<'a> {
+    Binding { target: &'a str, value: &'a str },
+    Mutation { target: &'a str, operator: &'a str, value: &'a str },
+    Expression(&'a str),
+}
+
+/// Split only statement operators. Comparison/match operators, quoted text,
+/// and operators inside selectors or RHS expressions keep their parser meaning.
+/// Targets are retained verbatim for the canonical parser to validate.
+fn arrow_statement(source: &str) -> Result<ArrowStatement<'_>, String> {
+    let bindings = top_offsets(source, ":=")?;
+    if let Some(&offset) = bindings.first() {
+        if bindings.len() != 1 {
+            return Err("function local requires one binding operator".into());
+        }
+        return Ok(ArrowStatement::Binding {
+            target: source[..offset].trim(),
+            value: source[offset + 2..].trim(),
+        });
+    }
+    let code = mask(source);
+    let mut assignment = None;
+    for offset in top_offsets(source, "=")? {
+        let previous = offset.checked_sub(1).and_then(|i| code.as_bytes().get(i));
+        let next = code.as_bytes().get(offset + 1);
+        if matches!(previous, Some(b'=' | b'!' | b'<' | b'>' | b':' | b'?' | b'@'))
+            || matches!(next, Some(b'=' | b'>'))
+            || code[..offset].ends_with('¬')
+            || code[..offset].ends_with("..")
+        {
+            continue;
+        }
+        let start = if matches!(previous, Some(b'+' | b'-' | b'*' | b'/' | b'^')) {
+            offset - 1
+        } else {
+            offset
+        };
+        if assignment.replace((start, offset + 1)).is_some() {
+            return Err("function local requires one assignment operator".into());
+        }
+    }
+    if let Some((start, end)) = assignment {
+        Ok(ArrowStatement::Mutation {
+            target: source[..start].trim(),
+            operator: &source[start..end],
+            value: source[end..].trim(),
+        })
+    } else {
+        Ok(ArrowStatement::Expression(source))
+    }
+}
+
+fn assignment_base(target: &str) -> Option<&str> {
+    let end = target
+        .char_indices()
+        .find_map(|(offset, ch)| (!identifier_char(ch)).then_some(offset))
+        .unwrap_or(target.len());
+    let name = &target[..end];
+    let remainder = target[end..].trim_start();
+    (identifier(name)
+        && (remainder.is_empty() || remainder.starts_with(['.', '[', '{'])))
+        .then_some(name)
+}
+
 fn normalize_arrow_body(
     source: &str,
     result: &str,
@@ -303,32 +367,44 @@ fn normalize_arrow_body(
         return Err("function body requires a final expression or binding".into());
     }
     // Preserve existing expression normalization byte-for-byte.
-    if statements.len() == 1 && top_offsets(&statements[0], ":=")?.is_empty() {
+    if statements.len() == 1 && matches!(arrow_statement(&statements[0])?, ArrowStatement::Expression(_)) {
         return Ok(None);
     }
     let mut definitions = Vec::new();
     let last = statements.len() - 1;
     for (index, statement) in statements.iter().enumerate() {
-        let assignments = top_offsets(statement, ":=")?;
-        let (binding, expression) = if let Some(&offset) = assignments.first() {
-            if assignments.len() != 1 {
-                return Err("function local requires one binding operator".into());
-            }
-            (Some(statement[..offset].trim()), statement[offset + 2..].trim())
-        } else {
-            (None, statement.as_str())
+        let classified = arrow_statement(statement)?;
+        let (binding, mutation, expression) = match classified {
+            ArrowStatement::Binding { target, value } => (Some(target), None, value),
+            ArrowStatement::Mutation { target, operator, value } => (None, Some((target, operator)), value),
+            ArrowStatement::Expression(value) => (None, None, value),
         };
         if expression.is_empty() {
             return Err("function local requires a value".into());
         }
         let (temporary, value) = pipeline(expression, prefix, serial)?;
         definitions.extend(temporary);
+        if let Some((target, operator)) = mutation {
+            definitions.push(format!("{target} {operator} {value}"));
+            if index == last {
+                // Canonical statement assignment returns the updated whole
+                // state, including its schema conversion and selected writes.
+                // A subsequent base read selects that source-order candidate;
+                // re-reading a selector could repeat an effect or select only
+                // part of the assignment's result.
+                let base = assignment_base(target)
+                    .ok_or("a final assignment requires a local state target")?;
+                definitions.push(format!("{result} := {base}"));
+            }
+            continue;
+        }
         if index == last {
             // A typed final binding returns the value after its annotation's
             // conversion, rather than converting the unannotated RHS again.
             if let Some((binding, name)) = binding.and_then(|binding| {
                 binding.split_once('<').and_then(|(name, _)| {
-                    identifier(name.trim()).then_some((binding, name.trim()))
+                    let name = name.trim().trim_start_matches('~').trim_start();
+                    identifier(name).then_some((binding, name))
                 })
             }) {
                 definitions.push(format!("{binding} := {value}"));
@@ -613,6 +689,116 @@ mod tests {
         let normalized = normalize(source).unwrap();
         assert!(normalized.contains("first := x + 1; application-temp-result := first * 2."));
         assert_eq!(normalized.lines().count(), source.lines().count());
+    }
+    #[test]
+    fn arrow_blocks_preserve_mutations_before_the_final_expression() {
+        let source = "Value(x<f64>) => <[f64]:1,2> :=\n  ~state := [x, 0.0]\n  ~iteration := 0.0\n  state = [state[1] + 1.0, state[2]]\n  iteration += 5.0\n  [state[1], iteration].\n";
+        let normalized = normalize(source).unwrap();
+        assert!(normalized.contains("~state := [x, 0.0]; ~iteration := 0.0; state = [state[1] + 1.0, state[2]]; iteration += 5.0; application-temp-result := [state[1], iteration]."));
+        assert!(!normalized.contains("effect-"));
+        assert_eq!(normalized.lines().count(), source.lines().count());
+        assert_eq!(normalize(&normalized).unwrap(), normalized);
+    }
+    #[test]
+    fn arrow_mutations_keep_field_index_targets_and_each_assignment_operator() {
+        let source = "Value(x<f64>) => <f64> :=\n  state.field[Which(x == 1.0)] = x\n  state[1] += x\n  state.field -= x\n  state{2} *= x\n  state.1 /= x\n  state[1, 2] ^= x\n  x\n";
+        let normalized = normalize(source).unwrap();
+        assert!(normalized.contains("state.field[Which(x == 1.0)] = x; state[1] += x; state.field -= x; state{2} *= x; state.1 /= x; state[1, 2] ^= x; application-temp-result := x."));
+        assert!(!normalized.contains("effect-"));
+    }
+    #[test]
+    fn arrow_mutation_rhs_pipelines_evaluate_each_input_once() {
+        let source = "Value(x<f64>) => <f64> :=\n  ~state := x\n  state = Input(x) |> Next(_)\n  state += Input(state) |> Next(_)\n  state\n";
+        let normalized = normalize(source).unwrap();
+        assert_eq!(normalized.matches("Input(x)").count(), 1);
+        assert_eq!(normalized.matches("Input(state)").count(), 1);
+        assert!(normalized.contains("application-temp-0 := Input(x); state = Next(application-temp-0); application-temp-1 := Input(state); state += Next(application-temp-1); application-temp-result := state."));
+    }
+    #[test]
+    fn arrow_comparisons_strings_comments_and_match_arrows_are_not_mutations() {
+        let source = "Value(x<f64>) => <bool> :=\n  x == 1.0\n  x != 2.0\n  x <= 3.0\n  x >= 4.0\n  x ¬= 5.0\n  x === 6.0\n  x !== 7.0\n  0..=3\n  io/print(\"state = {} +=\", x) -- state = ignored\n  x == 5.0 ? | true => true | * => false\n";
+        let normalized = normalize(source).unwrap();
+        assert!(normalized.contains("effect-0 := x == 1.0; application-temp-effect-1 := x != 2.0; application-temp-effect-2 := x <= 3.0; application-temp-effect-3 := x >= 4.0;"));
+        assert!(normalized.contains("application-temp-result := x == 5.0 ? | true => true | * => false."));
+        assert!(normalized.contains("effect-4 := x ¬= 5.0; application-temp-effect-5 := x === 6.0; application-temp-effect-6 := x !== 7.0; application-temp-effect-7 := 0..=3;"));
+        assert!(normalized.contains("\"state = {} +=\""));
+    }
+    #[test]
+    fn arrow_blocks_accept_multiline_assignment_values() {
+        let source = "Value(x<f64>) => <f64> :=\n  ~state := x\n  state =\n    x + 1.0\n  state +=\n    x\n    |> Next(_)\n  state\n";
+        let normalized = normalize(source).unwrap();
+        assert!(normalized.contains("state = x + 1.0; application-temp-0 := x; state += Next(application-temp-0); application-temp-result := state."));
+        assert_eq!(normalized.lines().count(), source.lines().count());
+    }
+    #[test]
+    fn arrow_final_mutations_return_the_updated_base_without_repeating_selectors() {
+        let source = "Value(x<f64>) => <u64> :=\n  ~state<u64> := 0\n  state += Touch(x)\nSelected(x<f64>) => <[f64]:1,2> :=\n  ~state := [x, x]\n  state[Which(x)] = Touch(x) |> Next(_)\nSingle(x<f64>) => <f64> := state.field = x\n";
+        let normalized = normalize(source).unwrap();
+        assert!(normalized.contains("~state<u64> := 0; state += Touch(x); application-temp-result := state."));
+        assert!(normalized.contains("state[Which(x)] = Next(application-temp-0); application-temp-result := state."));
+        assert_eq!(normalized.matches("Which(x)").count(), 1);
+        assert_eq!(normalized.matches("Touch(x)").count(), 2);
+        assert!(normalized.contains("state.field = x; application-temp-result := state."));
+    }
+    #[test]
+    fn arrow_final_typed_mutable_bindings_return_the_converted_value() {
+        let normalized = normalize("Value(x<f64>) => <u64> :=\n  ~answer<u64> := Touch(x)\n").unwrap();
+        assert!(normalized.contains("~answer<u64> := Touch(x); application-temp-result := answer."));
+        assert_eq!(normalized.matches("Touch(x)").count(), 1);
+    }
+    #[test]
+    fn arrow_mutations_reject_missing_values_and_multiple_assignment_operators() {
+        for source in [
+            "Value(x<f64>) => <f64> :=\n  state =\n",
+            "Value(x<f64>) => <f64> :=\n  state +=\n",
+        ] {
+            assert!(normalize(source).unwrap_err().contains("requires a value"));
+        }
+        assert!(normalize("Value(x<f64>) => <f64> :=\n  state = other = x\n  x\n").unwrap_err().contains("one assignment operator"));
+        assert!(normalize("Value(x<f64>) => <f64> := @main/state = x\n").unwrap_err().contains("final assignment requires a local state target"));
+    }
+    #[cfg(feature = "native-sequence")]
+    #[test]
+    fn normalized_arrow_mutations_are_canonical_statements() {
+        let source = "Value(x<f64>) => <[f64]:1,2> :=\n  ~state := [x, 0.0]\n  same := x == 1.0\n  state = [state[1] + 1.0, state[2]]\n  state[1] += x |> Next(_)\n  state[1] -= x\n  state[1] *= 2.0\n  state[1] /= 2.0\n  state[1] ^= 2.0\n  state[2] = x + 1.0\n";
+        let parsed = super::super::ParsedSource::parse(source).unwrap();
+        fn mutations(node: &mech_syntax::document::SyntaxNode) -> usize {
+            use mech_syntax::document::SyntaxKind;
+            usize::from(matches!(node.kind(), SyntaxKind::VariableAssign | SyntaxKind::OpAssign))
+                + node.children().map(|child| mutations(&child)).sum::<usize>()
+        }
+        assert_eq!(mutations(&parsed.syntax), 7);
+    }
+    #[cfg(all(feature = "source", feature = "resident-artifact"))]
+    #[test]
+    fn arrow_final_mutations_execute_with_updated_state_results() {
+        use crate::resident::{ActivationFacts, ResidentValueBorrow, activate};
+        use mech_core::{FunctionCatalogBuilder, ReactiveInstanceId};
+        use mech_syntax::document::{AstNode, DocumentSyntax};
+
+        let mut catalog = FunctionCatalogBuilder::new();
+        crate::install_intrinsic_resident(&mut catalog).unwrap();
+        let catalog = catalog.build().unwrap();
+        for (source, expected) in [
+            ("Value(x<f64>) => <f64> :=\n  ~state := 2.0\n  state += x\nanswer := Value(3.0)\nanswer\n", vec![5.0]),
+            ("Twice(x<f64>) => <f64> := x + x\nValue(x<f64>) => <[f64]:1,2> :=\n  ~state := [2.0, 4.0]\n  state[2] = x |> Twice(_)\nanswer := Value(3.0)\nanswer\n", vec![2.0, 6.0]),
+        ] {
+            let parsed = super::super::ParsedSource::parse(source).unwrap();
+            let document = DocumentSyntax::cast(parsed.syntax).unwrap();
+            let compiled = crate::CanonicalSourceFrontend.compile_document(&document).unwrap();
+            let output = compiled.document_outputs().iter()
+                .find(|binding| binding.kind == crate::SourceDocumentOutputKind::Program)
+                .unwrap().output as usize;
+            let artifact = compiled.compile_artifact().unwrap();
+            let mut instance = activate(
+                ReactiveInstanceId::new(0xA220, 0), &artifact, &catalog, &ActivationFacts::default(),
+            ).unwrap();
+            let candidate = instance.prepare_turn(&[]).unwrap();
+            let Some(ResidentValueBorrow::F64 { values, .. }) = candidate.output_borrow(output) else {
+                panic!("{source}: expected f64 result");
+            };
+            assert_eq!(values, expected.as_slice(), "{source}");
+        }
     }
     #[test]
     fn explicit_arrow_terminator_does_not_capture_following_indented_code() {

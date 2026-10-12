@@ -1,0 +1,1375 @@
+{
+  "scope": "Offline native object and generated-C inspection only; static instruction counts are not timing predictions. Old retained driver, strict arithmetic, no loop FMA.",
+  "profiles": [
+    {
+      "id": "scalar",
+      "object_sha256": "fb7913940646451063e27dccdc1c2451e8aba34a6b01459fc72aa903c42e3281",
+      "generated_c_sha256": "209063ff800888ec642304f8c4089a72673710c911ffebfeceeab248f855ffa9",
+      "functions": {
+        "_mech_map_bits": {
+          "instructions": 40,
+          "mnemonics": {
+            "and": 1,
+            "b": 1,
+            "b.ne": 1,
+            "cmp": 1,
+            "csel": 2,
+            "fadd": 5,
+            "fcmp": 2,
+            "fdiv": 1,
+            "fmov": 6,
+            "fmul": 5,
+            "fsub": 3,
+            "ldr": 3,
+            "mov": 3,
+            "mov.16b": 3,
+            "movi.2s": 1,
+            "orn": 1,
+            "ret": 1
+          },
+          "memory_instructions": [
+            {
+              "address": 0,
+              "mnemonic": "ldr",
+              "operands": "d0, [x0]"
+            },
+            {
+              "address": 4,
+              "mnemonic": "ldr",
+              "operands": "d2, [x0, #0x8]"
+            },
+            {
+              "address": 8,
+              "mnemonic": "ldr",
+              "operands": "d1, [x0, #0x10]"
+            }
+          ],
+          "text_bytes": 160
+        },
+        "_mech_grid_row": {
+          "instructions": 46,
+          "mnemonics": {
+            "add": 2,
+            "and": 2,
+            "b": 2,
+            "b.eq": 1,
+            "b.hs": 1,
+            "b.lo": 1,
+            "bl": 1,
+            "cmp": 3,
+            "ldp": 3,
+            "ldrb": 1,
+            "lsl": 1,
+            "lsr": 1,
+            "mov": 12,
+            "orr": 1,
+            "pacibsp": 1,
+            "retab": 1,
+            "stp": 3,
+            "strb": 1,
+            "stur": 3,
+            "sub": 2,
+            "ucvtf": 3
+          },
+          "memory_instructions": [
+            {
+              "address": 164,
+              "mnemonic": "stp",
+              "operands": "x29, x30, [sp, #-0x10]!"
+            },
+            {
+              "address": 172,
+              "mnemonic": "stp",
+              "operands": "x21, x22, [sp, #-0x10]!"
+            },
+            {
+              "address": 176,
+              "mnemonic": "stp",
+              "operands": "x19, x20, [sp, #-0x10]!"
+            },
+            {
+              "address": 196,
+              "mnemonic": "stur",
+              "operands": "d19, [sp]"
+            },
+            {
+              "address": 204,
+              "mnemonic": "stur",
+              "operands": "d20, [sp, #0x10]"
+            },
+            {
+              "address": 228,
+              "mnemonic": "stur",
+              "operands": "d25, [sp, #0x8]"
+            },
+            {
+              "address": 268,
+              "mnemonic": "ldrb",
+              "operands": "w3, [x2, x1]"
+            },
+            {
+              "address": 296,
+              "mnemonic": "strb",
+              "operands": "w0, [x2, x1]"
+            },
+            {
+              "address": 328,
+              "mnemonic": "ldp",
+              "operands": "x19, x20, [sp], #0x10"
+            },
+            {
+              "address": 332,
+              "mnemonic": "ldp",
+              "operands": "x21, x22, [sp], #0x10"
+            },
+            {
+              "address": 336,
+              "mnemonic": "ldp",
+              "operands": "x29, x30, [sp], #0x10"
+            }
+          ],
+          "text_bytes": 184
+        }
+      }
+    },
+    {
+      "id": "lanes",
+      "object_sha256": "5f83ab0cc2a188492817d9965acaf4996f09856d1ef97620f83e2c8fcda95e60",
+      "generated_c_sha256": "0d442a69533edc4868567f8f10762f2e706e8851aab56f8c7d92d3b1d4dabfe1",
+      "functions": {
+        "_mech_map_bits": {
+          "instructions": 181,
+          "mnemonics": {
+            "and": 8,
+            "b": 1,
+            "b.ne": 1,
+            "cmp": 1,
+            "csel": 1,
+            "dup.2d": 2,
+            "fadd.2d": 20,
+            "fcmge.2d": 4,
+            "fcmp": 1,
+            "fdiv": 1,
+            "fmov": 11,
+            "fmov.2d": 3,
+            "fmul": 1,
+            "fmul.2d": 16,
+            "fsub": 1,
+            "fsub.2d": 8,
+            "ldp": 5,
+            "ldr": 10,
+            "mov": 8,
+            "mov.16b": 14,
+            "mov.d": 16,
+            "movi.16b": 1,
+            "movi.2s": 1,
+            "orn": 1,
+            "orr": 14,
+            "pacibsp": 1,
+            "retab": 1,
+            "stp": 5,
+            "uzp1.2d": 12,
+            "uzp2.2d": 12
+          },
+          "memory_instructions": [
+            {
+              "address": 4,
+              "mnemonic": "stp",
+              "operands": "x29, x30, [sp, #-0x10]!"
+            },
+            {
+              "address": 12,
+              "mnemonic": "stp",
+              "operands": "d14, d15, [sp, #-0x10]!"
+            },
+            {
+              "address": 16,
+              "mnemonic": "stp",
+              "operands": "d12, d13, [sp, #-0x10]!"
+            },
+            {
+              "address": 20,
+              "mnemonic": "stp",
+              "operands": "d10, d11, [sp, #-0x10]!"
+            },
+            {
+              "address": 24,
+              "mnemonic": "stp",
+              "operands": "d8, d9, [sp, #-0x10]!"
+            },
+            {
+              "address": 28,
+              "mnemonic": "ldr",
+              "operands": "d1, [x0]"
+            },
+            {
+              "address": 32,
+              "mnemonic": "ldr",
+              "operands": "d3, [x0, #0x8]"
+            },
+            {
+              "address": 36,
+              "mnemonic": "ldr",
+              "operands": "d2, [x0, #0x10]"
+            },
+            {
+              "address": 40,
+              "mnemonic": "ldr",
+              "operands": "d19, [x0, #0x18]"
+            },
+            {
+              "address": 44,
+              "mnemonic": "ldr",
+              "operands": "d4, [x0, #0x20]"
+            },
+            {
+              "address": 48,
+              "mnemonic": "ldr",
+              "operands": "d18, [x0, #0x28]"
+            },
+            {
+              "address": 52,
+              "mnemonic": "ldr",
+              "operands": "d5, [x0, #0x30]"
+            },
+            {
+              "address": 56,
+              "mnemonic": "ldr",
+              "operands": "d7, [x0, #0x38]"
+            },
+            {
+              "address": 60,
+              "mnemonic": "ldr",
+              "operands": "d6, [x0, #0x40]"
+            },
+            {
+              "address": 64,
+              "mnemonic": "ldr",
+              "operands": "d22, [x0, #0x48]"
+            },
+            {
+              "address": 700,
+              "mnemonic": "ldp",
+              "operands": "d8, d9, [sp], #0x10"
+            },
+            {
+              "address": 704,
+              "mnemonic": "ldp",
+              "operands": "d10, d11, [sp], #0x10"
+            },
+            {
+              "address": 708,
+              "mnemonic": "ldp",
+              "operands": "d12, d13, [sp], #0x10"
+            },
+            {
+              "address": 712,
+              "mnemonic": "ldp",
+              "operands": "d14, d15, [sp], #0x10"
+            },
+            {
+              "address": 716,
+              "mnemonic": "ldp",
+              "operands": "x29, x30, [sp], #0x10"
+            }
+          ],
+          "text_bytes": 724
+        },
+        "_mech_grid_row": {
+          "instructions": 65,
+          "mnemonics": {
+            "add": 9,
+            "and": 1,
+            "b": 1,
+            "b.eq": 1,
+            "b.hs": 1,
+            "bl": 1,
+            "cmp": 3,
+            "csel": 1,
+            "ldp": 3,
+            "lsl": 1,
+            "lsr": 1,
+            "mov": 13,
+            "pacibsp": 1,
+            "retab": 1,
+            "stp": 3,
+            "strb": 1,
+            "stur": 10,
+            "sub": 3,
+            "ucvtf": 10
+          },
+          "memory_instructions": [
+            {
+              "address": 728,
+              "mnemonic": "stp",
+              "operands": "x29, x30, [sp, #-0x10]!"
+            },
+            {
+              "address": 736,
+              "mnemonic": "stp",
+              "operands": "x21, x22, [sp, #-0x10]!"
+            },
+            {
+              "address": 740,
+              "mnemonic": "stp",
+              "operands": "x19, x20, [sp, #-0x10]!"
+            },
+            {
+              "address": 760,
+              "mnemonic": "stur",
+              "operands": "d0, [sp]"
+            },
+            {
+              "address": 768,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x48]"
+            },
+            {
+              "address": 792,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x8]"
+            },
+            {
+              "address": 804,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x10]"
+            },
+            {
+              "address": 816,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x18]"
+            },
+            {
+              "address": 828,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x20]"
+            },
+            {
+              "address": 840,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x28]"
+            },
+            {
+              "address": 852,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x30]"
+            },
+            {
+              "address": 864,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x38]"
+            },
+            {
+              "address": 876,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x40]"
+            },
+            {
+              "address": 936,
+              "mnemonic": "strb",
+              "operands": "w0, [x2, x1]"
+            },
+            {
+              "address": 968,
+              "mnemonic": "ldp",
+              "operands": "x19, x20, [sp], #0x10"
+            },
+            {
+              "address": 972,
+              "mnemonic": "ldp",
+              "operands": "x21, x22, [sp], #0x10"
+            },
+            {
+              "address": 976,
+              "mnemonic": "ldp",
+              "operands": "x29, x30, [sp], #0x10"
+            }
+          ],
+          "text_bytes": 260
+        }
+      }
+    },
+    {
+      "id": "lanes-rows",
+      "object_sha256": "f301f53369dd0e81f334725744b93703a19ab704d4081aeba79af189acd11e0b",
+      "generated_c_sha256": "0d442a69533edc4868567f8f10762f2e706e8851aab56f8c7d92d3b1d4dabfe1",
+      "functions": {
+        "_mech_map_bits": {
+          "instructions": 141,
+          "mnemonics": {
+            "and": 8,
+            "b": 1,
+            "b.ne": 1,
+            "cmp": 1,
+            "csel": 1,
+            "dup.2d": 2,
+            "fadd.2d": 20,
+            "fcmge.2d": 4,
+            "fcmp": 1,
+            "fdiv": 1,
+            "fmov": 7,
+            "fmov.2d": 3,
+            "fmul": 1,
+            "fmul.2d": 16,
+            "fsub": 1,
+            "fsub.2d": 8,
+            "ldp": 3,
+            "ldr": 10,
+            "mov": 4,
+            "mov.16b": 15,
+            "mov.d": 12,
+            "movi.16b": 1,
+            "orn": 1,
+            "orr": 14,
+            "pacibsp": 1,
+            "retab": 1,
+            "stp": 3
+          },
+          "memory_instructions": [
+            {
+              "address": 4,
+              "mnemonic": "stp",
+              "operands": "x29, x30, [sp, #-0x10]!"
+            },
+            {
+              "address": 12,
+              "mnemonic": "stp",
+              "operands": "d10, d11, [sp, #-0x10]!"
+            },
+            {
+              "address": 16,
+              "mnemonic": "stp",
+              "operands": "d8, d9, [sp, #-0x10]!"
+            },
+            {
+              "address": 20,
+              "mnemonic": "ldr",
+              "operands": "d1, [x0]"
+            },
+            {
+              "address": 24,
+              "mnemonic": "ldr",
+              "operands": "d19, [x0, #0x8]"
+            },
+            {
+              "address": 28,
+              "mnemonic": "ldr",
+              "operands": "d18, [x0, #0x10]"
+            },
+            {
+              "address": 32,
+              "mnemonic": "ldr",
+              "operands": "d17, [x0, #0x18]"
+            },
+            {
+              "address": 36,
+              "mnemonic": "ldr",
+              "operands": "d2, [x0, #0x20]"
+            },
+            {
+              "address": 40,
+              "mnemonic": "ldr",
+              "operands": "d7, [x0, #0x28]"
+            },
+            {
+              "address": 44,
+              "mnemonic": "ldr",
+              "operands": "d3, [x0, #0x30]"
+            },
+            {
+              "address": 48,
+              "mnemonic": "ldr",
+              "operands": "d6, [x0, #0x38]"
+            },
+            {
+              "address": 52,
+              "mnemonic": "ldr",
+              "operands": "d4, [x0, #0x40]"
+            },
+            {
+              "address": 56,
+              "mnemonic": "ldr",
+              "operands": "d5, [x0, #0x48]"
+            },
+            {
+              "address": 548,
+              "mnemonic": "ldp",
+              "operands": "d8, d9, [sp], #0x10"
+            },
+            {
+              "address": 552,
+              "mnemonic": "ldp",
+              "operands": "d10, d11, [sp], #0x10"
+            },
+            {
+              "address": 556,
+              "mnemonic": "ldp",
+              "operands": "x29, x30, [sp], #0x10"
+            }
+          ],
+          "text_bytes": 564
+        },
+        "_mech_grid_row": {
+          "instructions": 65,
+          "mnemonics": {
+            "add": 9,
+            "and": 1,
+            "b": 1,
+            "b.eq": 1,
+            "b.hs": 1,
+            "bl": 1,
+            "cmp": 3,
+            "csel": 1,
+            "ldp": 3,
+            "lsl": 1,
+            "lsr": 1,
+            "mov": 13,
+            "pacibsp": 1,
+            "retab": 1,
+            "stp": 3,
+            "strb": 1,
+            "stur": 10,
+            "sub": 3,
+            "ucvtf": 10
+          },
+          "memory_instructions": [
+            {
+              "address": 568,
+              "mnemonic": "stp",
+              "operands": "x29, x30, [sp, #-0x10]!"
+            },
+            {
+              "address": 576,
+              "mnemonic": "stp",
+              "operands": "x21, x22, [sp, #-0x10]!"
+            },
+            {
+              "address": 580,
+              "mnemonic": "stp",
+              "operands": "x19, x20, [sp, #-0x10]!"
+            },
+            {
+              "address": 600,
+              "mnemonic": "stur",
+              "operands": "d0, [sp]"
+            },
+            {
+              "address": 608,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x48]"
+            },
+            {
+              "address": 632,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x8]"
+            },
+            {
+              "address": 644,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x10]"
+            },
+            {
+              "address": 656,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x18]"
+            },
+            {
+              "address": 668,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x20]"
+            },
+            {
+              "address": 680,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x28]"
+            },
+            {
+              "address": 692,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x30]"
+            },
+            {
+              "address": 704,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x38]"
+            },
+            {
+              "address": 716,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x40]"
+            },
+            {
+              "address": 776,
+              "mnemonic": "strb",
+              "operands": "w0, [x2, x1]"
+            },
+            {
+              "address": 808,
+              "mnemonic": "ldp",
+              "operands": "x19, x20, [sp], #0x10"
+            },
+            {
+              "address": 812,
+              "mnemonic": "ldp",
+              "operands": "x21, x22, [sp], #0x10"
+            },
+            {
+              "address": 816,
+              "mnemonic": "ldp",
+              "operands": "x29, x30, [sp], #0x10"
+            }
+          ],
+          "text_bytes": 260
+        }
+      }
+    },
+    {
+      "id": "five",
+      "object_sha256": "5a8f4f05e3a846153ab0e40199ce3d40b1010c873e1179c6846f3dc88ad2066f",
+      "generated_c_sha256": "0d442a69533edc4868567f8f10762f2e706e8851aab56f8c7d92d3b1d4dabfe1",
+      "functions": {
+        "_mech_map_bits": {
+          "instructions": 259,
+          "mnemonics": {
+            "and": 8,
+            "b": 1,
+            "b.ne": 1,
+            "cmp": 1,
+            "csel": 1,
+            "dup.2d": 2,
+            "fadd": 1,
+            "fadd.2d": 64,
+            "fcmge.2d": 4,
+            "fcmp": 1,
+            "fdiv": 1,
+            "fmov": 8,
+            "fmov.2d": 2,
+            "fmul": 1,
+            "fmul.2d": 64,
+            "fsub": 1,
+            "fsub.2d": 24,
+            "ldr": 10,
+            "mov": 3,
+            "mov.16b": 7,
+            "mov.d": 12,
+            "movi.16b": 1,
+            "movi.2s": 1,
+            "orn": 1,
+            "orr": 14,
+            "ret": 1,
+            "uzp1.2d": 12,
+            "uzp2.2d": 12
+          },
+          "memory_instructions": [
+            {
+              "address": 0,
+              "mnemonic": "ldr",
+              "operands": "d6, [x0]"
+            },
+            {
+              "address": 4,
+              "mnemonic": "ldr",
+              "operands": "d24, [x0, #0x8]"
+            },
+            {
+              "address": 8,
+              "mnemonic": "ldr",
+              "operands": "d7, [x0, #0x10]"
+            },
+            {
+              "address": 12,
+              "mnemonic": "ldr",
+              "operands": "d23, [x0, #0x18]"
+            },
+            {
+              "address": 16,
+              "mnemonic": "ldr",
+              "operands": "d16, [x0, #0x20]"
+            },
+            {
+              "address": 20,
+              "mnemonic": "ldr",
+              "operands": "d22, [x0, #0x28]"
+            },
+            {
+              "address": 24,
+              "mnemonic": "ldr",
+              "operands": "d17, [x0, #0x30]"
+            },
+            {
+              "address": 28,
+              "mnemonic": "ldr",
+              "operands": "d20, [x0, #0x38]"
+            },
+            {
+              "address": 32,
+              "mnemonic": "ldr",
+              "operands": "d18, [x0, #0x40]"
+            },
+            {
+              "address": 36,
+              "mnemonic": "ldr",
+              "operands": "d26, [x0, #0x48]"
+            }
+          ],
+          "text_bytes": 1036
+        },
+        "_mech_grid_row": {
+          "instructions": 65,
+          "mnemonics": {
+            "add": 9,
+            "and": 1,
+            "b": 1,
+            "b.eq": 1,
+            "b.hs": 1,
+            "bl": 1,
+            "cmp": 3,
+            "csel": 1,
+            "ldp": 3,
+            "lsl": 1,
+            "lsr": 1,
+            "mov": 13,
+            "pacibsp": 1,
+            "retab": 1,
+            "stp": 3,
+            "strb": 1,
+            "stur": 10,
+            "sub": 3,
+            "ucvtf": 10
+          },
+          "memory_instructions": [
+            {
+              "address": 1040,
+              "mnemonic": "stp",
+              "operands": "x29, x30, [sp, #-0x10]!"
+            },
+            {
+              "address": 1048,
+              "mnemonic": "stp",
+              "operands": "x21, x22, [sp, #-0x10]!"
+            },
+            {
+              "address": 1052,
+              "mnemonic": "stp",
+              "operands": "x19, x20, [sp, #-0x10]!"
+            },
+            {
+              "address": 1072,
+              "mnemonic": "stur",
+              "operands": "d0, [sp]"
+            },
+            {
+              "address": 1080,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x48]"
+            },
+            {
+              "address": 1104,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x8]"
+            },
+            {
+              "address": 1116,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x10]"
+            },
+            {
+              "address": 1128,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x18]"
+            },
+            {
+              "address": 1140,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x20]"
+            },
+            {
+              "address": 1152,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x28]"
+            },
+            {
+              "address": 1164,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x30]"
+            },
+            {
+              "address": 1176,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x38]"
+            },
+            {
+              "address": 1188,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x40]"
+            },
+            {
+              "address": 1248,
+              "mnemonic": "strb",
+              "operands": "w0, [x2, x1]"
+            },
+            {
+              "address": 1280,
+              "mnemonic": "ldp",
+              "operands": "x19, x20, [sp], #0x10"
+            },
+            {
+              "address": 1284,
+              "mnemonic": "ldp",
+              "operands": "x21, x22, [sp], #0x10"
+            },
+            {
+              "address": 1288,
+              "mnemonic": "ldp",
+              "operands": "x29, x30, [sp], #0x10"
+            }
+          ],
+          "text_bytes": 260
+        }
+      }
+    },
+    {
+      "id": "five-rows",
+      "object_sha256": "64799101774d5bb8d39ff88814bbb92b87aa1c78953c9d2fed7bcb5bdb5f3e96",
+      "generated_c_sha256": "0d442a69533edc4868567f8f10762f2e706e8851aab56f8c7d92d3b1d4dabfe1",
+      "functions": {
+        "_mech_map_bits": {
+          "instructions": 235,
+          "mnemonics": {
+            "and": 8,
+            "b": 1,
+            "b.ne": 1,
+            "cmp": 1,
+            "csel": 1,
+            "dup.2d": 2,
+            "fadd": 1,
+            "fadd.2d": 64,
+            "fcmge.2d": 4,
+            "fcmp": 1,
+            "fdiv": 1,
+            "fmov": 8,
+            "fmov.2d": 2,
+            "fmul": 1,
+            "fmul.2d": 64,
+            "fsub": 1,
+            "fsub.2d": 24,
+            "ldr": 10,
+            "mov": 3,
+            "mov.16b": 7,
+            "mov.d": 12,
+            "movi.16b": 1,
+            "movi.2s": 1,
+            "orn": 1,
+            "orr": 14,
+            "ret": 1
+          },
+          "memory_instructions": [
+            {
+              "address": 0,
+              "mnemonic": "ldr",
+              "operands": "d1, [x0]"
+            },
+            {
+              "address": 4,
+              "mnemonic": "ldr",
+              "operands": "d18, [x0, #0x8]"
+            },
+            {
+              "address": 8,
+              "mnemonic": "ldr",
+              "operands": "d2, [x0, #0x10]"
+            },
+            {
+              "address": 12,
+              "mnemonic": "ldr",
+              "operands": "d17, [x0, #0x18]"
+            },
+            {
+              "address": 16,
+              "mnemonic": "ldr",
+              "operands": "d3, [x0, #0x20]"
+            },
+            {
+              "address": 20,
+              "mnemonic": "ldr",
+              "operands": "d7, [x0, #0x28]"
+            },
+            {
+              "address": 24,
+              "mnemonic": "ldr",
+              "operands": "d4, [x0, #0x30]"
+            },
+            {
+              "address": 28,
+              "mnemonic": "ldr",
+              "operands": "d6, [x0, #0x38]"
+            },
+            {
+              "address": 32,
+              "mnemonic": "ldr",
+              "operands": "d5, [x0, #0x40]"
+            },
+            {
+              "address": 36,
+              "mnemonic": "ldr",
+              "operands": "d20, [x0, #0x48]"
+            }
+          ],
+          "text_bytes": 940
+        },
+        "_mech_grid_row": {
+          "instructions": 65,
+          "mnemonics": {
+            "add": 9,
+            "and": 1,
+            "b": 1,
+            "b.eq": 1,
+            "b.hs": 1,
+            "bl": 1,
+            "cmp": 3,
+            "csel": 1,
+            "ldp": 3,
+            "lsl": 1,
+            "lsr": 1,
+            "mov": 13,
+            "pacibsp": 1,
+            "retab": 1,
+            "stp": 3,
+            "strb": 1,
+            "stur": 10,
+            "sub": 3,
+            "ucvtf": 10
+          },
+          "memory_instructions": [
+            {
+              "address": 944,
+              "mnemonic": "stp",
+              "operands": "x29, x30, [sp, #-0x10]!"
+            },
+            {
+              "address": 952,
+              "mnemonic": "stp",
+              "operands": "x21, x22, [sp, #-0x10]!"
+            },
+            {
+              "address": 956,
+              "mnemonic": "stp",
+              "operands": "x19, x20, [sp, #-0x10]!"
+            },
+            {
+              "address": 976,
+              "mnemonic": "stur",
+              "operands": "d0, [sp]"
+            },
+            {
+              "address": 984,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x48]"
+            },
+            {
+              "address": 1008,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x8]"
+            },
+            {
+              "address": 1020,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x10]"
+            },
+            {
+              "address": 1032,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x18]"
+            },
+            {
+              "address": 1044,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x20]"
+            },
+            {
+              "address": 1056,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x28]"
+            },
+            {
+              "address": 1068,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x30]"
+            },
+            {
+              "address": 1080,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x38]"
+            },
+            {
+              "address": 1092,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x40]"
+            },
+            {
+              "address": 1152,
+              "mnemonic": "strb",
+              "operands": "w0, [x2, x1]"
+            },
+            {
+              "address": 1184,
+              "mnemonic": "ldp",
+              "operands": "x19, x20, [sp], #0x10"
+            },
+            {
+              "address": 1188,
+              "mnemonic": "ldp",
+              "operands": "x21, x22, [sp], #0x10"
+            },
+            {
+              "address": 1192,
+              "mnemonic": "ldp",
+              "operands": "x29, x30, [sp], #0x10"
+            }
+          ],
+          "text_bytes": 260
+        }
+      }
+    },
+    {
+      "id": "frozen-compact",
+      "object_sha256": "06c6d73b2b2919ef9c36210c2bd22797001893de20285ef902bfb36ff9e4f9a3",
+      "generated_c_sha256": "209063ff800888ec642304f8c4089a72673710c911ffebfeceeab248f855ffa9",
+      "functions": {
+        "_mech_map_bits": {
+          "instructions": 41,
+          "mnemonics": {
+            "and": 1,
+            "b": 1,
+            "b.ne": 1,
+            "cmp": 1,
+            "csel": 2,
+            "fadd": 4,
+            "fcmp": 2,
+            "fdiv": 1,
+            "fmov": 7,
+            "fmul": 6,
+            "fsub": 3,
+            "ldr": 3,
+            "mov": 3,
+            "mov.16b": 3,
+            "movi.2s": 1,
+            "orn": 1,
+            "ret": 1
+          },
+          "memory_instructions": [
+            {
+              "address": 0,
+              "mnemonic": "ldr",
+              "operands": "d0, [x0]"
+            },
+            {
+              "address": 4,
+              "mnemonic": "ldr",
+              "operands": "d2, [x0, #0x8]"
+            },
+            {
+              "address": 8,
+              "mnemonic": "ldr",
+              "operands": "d1, [x0, #0x10]"
+            }
+          ],
+          "text_bytes": 164
+        },
+        "_mech_grid_row": {
+          "instructions": 46,
+          "mnemonics": {
+            "add": 2,
+            "and": 2,
+            "b": 2,
+            "b.eq": 1,
+            "b.hs": 1,
+            "b.lo": 1,
+            "bl": 1,
+            "cmp": 3,
+            "ldp": 3,
+            "ldrb": 1,
+            "lsl": 1,
+            "lsr": 1,
+            "mov": 12,
+            "orr": 1,
+            "pacibsp": 1,
+            "retab": 1,
+            "stp": 3,
+            "strb": 1,
+            "stur": 3,
+            "sub": 2,
+            "ucvtf": 3
+          },
+          "memory_instructions": [
+            {
+              "address": 168,
+              "mnemonic": "stp",
+              "operands": "x29, x30, [sp, #-0x10]!"
+            },
+            {
+              "address": 176,
+              "mnemonic": "stp",
+              "operands": "x21, x22, [sp, #-0x10]!"
+            },
+            {
+              "address": 180,
+              "mnemonic": "stp",
+              "operands": "x19, x20, [sp, #-0x10]!"
+            },
+            {
+              "address": 200,
+              "mnemonic": "stur",
+              "operands": "d19, [sp]"
+            },
+            {
+              "address": 208,
+              "mnemonic": "stur",
+              "operands": "d20, [sp, #0x10]"
+            },
+            {
+              "address": 232,
+              "mnemonic": "stur",
+              "operands": "d25, [sp, #0x8]"
+            },
+            {
+              "address": 272,
+              "mnemonic": "ldrb",
+              "operands": "w3, [x2, x1]"
+            },
+            {
+              "address": 300,
+              "mnemonic": "strb",
+              "operands": "w0, [x2, x1]"
+            },
+            {
+              "address": 332,
+              "mnemonic": "ldp",
+              "operands": "x19, x20, [sp], #0x10"
+            },
+            {
+              "address": 336,
+              "mnemonic": "ldp",
+              "operands": "x21, x22, [sp], #0x10"
+            },
+            {
+              "address": 340,
+              "mnemonic": "ldp",
+              "operands": "x29, x30, [sp], #0x10"
+            }
+          ],
+          "text_bytes": 184
+        }
+      }
+    },
+    {
+      "id": "frozen-fast",
+      "object_sha256": "64799101774d5bb8d39ff88814bbb92b87aa1c78953c9d2fed7bcb5bdb5f3e96",
+      "generated_c_sha256": "0d442a69533edc4868567f8f10762f2e706e8851aab56f8c7d92d3b1d4dabfe1",
+      "functions": {
+        "_mech_map_bits": {
+          "instructions": 235,
+          "mnemonics": {
+            "and": 8,
+            "b": 1,
+            "b.ne": 1,
+            "cmp": 1,
+            "csel": 1,
+            "dup.2d": 2,
+            "fadd": 1,
+            "fadd.2d": 64,
+            "fcmge.2d": 4,
+            "fcmp": 1,
+            "fdiv": 1,
+            "fmov": 8,
+            "fmov.2d": 2,
+            "fmul": 1,
+            "fmul.2d": 64,
+            "fsub": 1,
+            "fsub.2d": 24,
+            "ldr": 10,
+            "mov": 3,
+            "mov.16b": 7,
+            "mov.d": 12,
+            "movi.16b": 1,
+            "movi.2s": 1,
+            "orn": 1,
+            "orr": 14,
+            "ret": 1
+          },
+          "memory_instructions": [
+            {
+              "address": 0,
+              "mnemonic": "ldr",
+              "operands": "d1, [x0]"
+            },
+            {
+              "address": 4,
+              "mnemonic": "ldr",
+              "operands": "d18, [x0, #0x8]"
+            },
+            {
+              "address": 8,
+              "mnemonic": "ldr",
+              "operands": "d2, [x0, #0x10]"
+            },
+            {
+              "address": 12,
+              "mnemonic": "ldr",
+              "operands": "d17, [x0, #0x18]"
+            },
+            {
+              "address": 16,
+              "mnemonic": "ldr",
+              "operands": "d3, [x0, #0x20]"
+            },
+            {
+              "address": 20,
+              "mnemonic": "ldr",
+              "operands": "d7, [x0, #0x28]"
+            },
+            {
+              "address": 24,
+              "mnemonic": "ldr",
+              "operands": "d4, [x0, #0x30]"
+            },
+            {
+              "address": 28,
+              "mnemonic": "ldr",
+              "operands": "d6, [x0, #0x38]"
+            },
+            {
+              "address": 32,
+              "mnemonic": "ldr",
+              "operands": "d5, [x0, #0x40]"
+            },
+            {
+              "address": 36,
+              "mnemonic": "ldr",
+              "operands": "d20, [x0, #0x48]"
+            }
+          ],
+          "text_bytes": 940
+        },
+        "_mech_grid_row": {
+          "instructions": 65,
+          "mnemonics": {
+            "add": 9,
+            "and": 1,
+            "b": 1,
+            "b.eq": 1,
+            "b.hs": 1,
+            "bl": 1,
+            "cmp": 3,
+            "csel": 1,
+            "ldp": 3,
+            "lsl": 1,
+            "lsr": 1,
+            "mov": 13,
+            "pacibsp": 1,
+            "retab": 1,
+            "stp": 3,
+            "strb": 1,
+            "stur": 10,
+            "sub": 3,
+            "ucvtf": 10
+          },
+          "memory_instructions": [
+            {
+              "address": 944,
+              "mnemonic": "stp",
+              "operands": "x29, x30, [sp, #-0x10]!"
+            },
+            {
+              "address": 952,
+              "mnemonic": "stp",
+              "operands": "x21, x22, [sp, #-0x10]!"
+            },
+            {
+              "address": 956,
+              "mnemonic": "stp",
+              "operands": "x19, x20, [sp, #-0x10]!"
+            },
+            {
+              "address": 976,
+              "mnemonic": "stur",
+              "operands": "d0, [sp]"
+            },
+            {
+              "address": 984,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x48]"
+            },
+            {
+              "address": 1008,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x8]"
+            },
+            {
+              "address": 1020,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x10]"
+            },
+            {
+              "address": 1032,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x18]"
+            },
+            {
+              "address": 1044,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x20]"
+            },
+            {
+              "address": 1056,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x28]"
+            },
+            {
+              "address": 1068,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x30]"
+            },
+            {
+              "address": 1080,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x38]"
+            },
+            {
+              "address": 1092,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x40]"
+            },
+            {
+              "address": 1152,
+              "mnemonic": "strb",
+              "operands": "w0, [x2, x1]"
+            },
+            {
+              "address": 1184,
+              "mnemonic": "ldp",
+              "operands": "x19, x20, [sp], #0x10"
+            },
+            {
+              "address": 1188,
+              "mnemonic": "ldp",
+              "operands": "x21, x22, [sp], #0x10"
+            },
+            {
+              "address": 1192,
+              "mnemonic": "ldp",
+              "operands": "x29, x30, [sp], #0x10"
+            }
+          ],
+          "text_bytes": 260
+        }
+      }
+    }
+  ],
+  "exact_object_equalities": [
+    [
+      "five-rows",
+      "frozen-fast"
+    ]
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "current_validation_sha256": "a73138b0a411a36a2a32ccd8b373a7c2e354230d6bbd828280c950ba9932bd2b",
+  "scope": "Actual pinned code equivalence only; no timing conclusion",
+  "comparisons": [
+    {
+      "left": "five16-rows",
+      "right": "frozen29",
+      "same_native_object": true,
+      "same_generated_c": true,
+      "object_sha256": "64799101774d5bb8d39ff88814bbb92b87aa1c78953c9d2fed7bcb5bdb5f3e96"
+    },
+    {
+      "left": "five16-rows-loop-fma",
+      "right": "frozen29-loop-fma",
+      "same_native_object": true,
+      "same_generated_c": true,
+      "object_sha256": "41ad4bedd5f8baf3093a0b2e65dfbf60e4638f0bb5d177d2f9f39c1a9e3f6843"
+    },
+    {
+      "left": "scalar11",
+      "right": "old-driver:scalar",
+      "same_native_object": true
+    },
+    {
+      "left": "five16",
+      "right": "old-driver:five",
+      "same_native_object": true
+    },
+    {
+      "left": "five16-rows",
+      "right": "old-driver:five-rows",
+      "same_native_object": true
+    },
+    {
+      "left": "frozen29",
+      "right": "old-driver:frozen-fast",
+      "same_native_object": true
+    }
+  ]
+}

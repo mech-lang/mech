@@ -1,0 +1,439 @@
+{
+  "created_at": "2026-10-11T21:55:23.727423+00:00",
+  "purpose": "Small isolated source-semantic validation only; no timing measurement",
+  "driver": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mech-driver/target/release/mech-clbg-mandelbrot-compiled",
+  "driver_sha256": "f9caaba0cc1d68c0a2a565e80add3d8f1eed2b3ee327152da6c500866c9f9d5e",
+  "clang": "/opt/homebrew/opt/llvm@22/bin/clang-22",
+  "clang_sha256": "012b35304481c5d5db6b57f20e144fb78f198ca9db14aa0b8db72cd2e493e12d",
+  "sdk": "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+  "lock": "/tmp/mech-clbg-timing.lock",
+  "sources": [
+    {
+      "id": "scalar",
+      "path": "benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-scalar.mec",
+      "sha256": "4bca5734ee96ed52b09dd20491eaddb7b432c665cbdc7fbfc31aa3c7eb9c1a36",
+      "physical_loc": 11,
+      "nonblank_noncomment_loc": 11,
+      "simd": false,
+      "loop_fma": false,
+      "emission": {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mech-driver/target/release/mech-clbg-mandelbrot-compiled",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-scalar.mec",
+          "emit-cranelift",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/scalar.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/scalar.o",
+          "--source-program"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "link": {
+        "command": [
+          "/opt/homebrew/opt/llvm@22/bin/clang-22",
+          "-O3",
+          "-mcpu=native",
+          "-ffp-contract=off",
+          "-isysroot",
+          "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/scalar.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/scalar.o",
+          "-lm",
+          "-pthread",
+          "-o",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/scalar"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": "ld: warning: no platform load command found in '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/scalar.o', assuming: macOS\n"
+      },
+      "generated_c_sha256": "209063ff800888ec642304f8c4089a72673710c911ffebfeceeab248f855ffa9",
+      "native_object_sha256": "fb7913940646451063e27dccdc1c2451e8aba34a6b01459fc72aa903c42e3281",
+      "executable_sha256": "8359e0de7c68f72c6f45beb15d327927324fcec66b16375017d208c1cb7d410b"
+    },
+    {
+      "id": "lanes",
+      "path": "benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-lanes.mec",
+      "sha256": "f7e0d572bce27d486e5b8fb3535a415d34426a8cda609f9489022db8322990b9",
+      "physical_loc": 12,
+      "nonblank_noncomment_loc": 12,
+      "simd": true,
+      "loop_fma": false,
+      "emission": {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mech-driver/target/release/mech-clbg-mandelbrot-compiled",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-lanes.mec",
+          "emit-cranelift-simd",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/lanes.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/lanes.o",
+          "--source-program"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "link": {
+        "command": [
+          "/opt/homebrew/opt/llvm@22/bin/clang-22",
+          "-O3",
+          "-mcpu=native",
+          "-ffp-contract=off",
+          "-isysroot",
+          "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/lanes.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/lanes.o",
+          "-lm",
+          "-pthread",
+          "-o",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/lanes"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": "ld: warning: no platform load command found in '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/lanes.o', assuming: macOS\n"
+      },
+      "generated_c_sha256": "0d442a69533edc4868567f8f10762f2e706e8851aab56f8c7d92d3b1d4dabfe1",
+      "native_object_sha256": "5f83ab0cc2a188492817d9965acaf4996f09856d1ef97620f83e2c8fcda95e60",
+      "executable_sha256": "a7f951fd280717a6588b6d6852485cfe9220f4790e3c3e7478649b75ef907200"
+    },
+    {
+      "id": "five",
+      "path": "benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five.mec",
+      "sha256": "a465ec429cc302a13bbd4da65be5a2603c70feeb4e1bf4231f1b34881fd850f2",
+      "physical_loc": 16,
+      "nonblank_noncomment_loc": 16,
+      "simd": true,
+      "loop_fma": false,
+      "emission": {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mech-driver/target/release/mech-clbg-mandelbrot-compiled",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five.mec",
+          "emit-cranelift-simd",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/five.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/five.o",
+          "--source-program"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "link": {
+        "command": [
+          "/opt/homebrew/opt/llvm@22/bin/clang-22",
+          "-O3",
+          "-mcpu=native",
+          "-ffp-contract=off",
+          "-isysroot",
+          "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/five.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/five.o",
+          "-lm",
+          "-pthread",
+          "-o",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/five"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": "ld: warning: no platform load command found in '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/five.o', assuming: macOS\n"
+      },
+      "generated_c_sha256": "0d442a69533edc4868567f8f10762f2e706e8851aab56f8c7d92d3b1d4dabfe1",
+      "native_object_sha256": "5a8f4f05e3a846153ab0e40199ce3d40b1010c873e1179c6846f3dc88ad2066f",
+      "executable_sha256": "6533753f264eff826bf61e3767e768a9bc41a4c95a82612815954712df1123bc"
+    },
+    {
+      "id": "frozen-compact",
+      "path": "benchmarks/clbg/mandelbrot/mandelbrot-compact-program.mec",
+      "sha256": "75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169",
+      "physical_loc": 20,
+      "nonblank_noncomment_loc": 20,
+      "simd": false,
+      "loop_fma": false,
+      "emission": {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mech-driver/target/release/mech-clbg-mandelbrot-compiled",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-compact-program.mec",
+          "emit-cranelift",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/frozen-compact.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/frozen-compact.o",
+          "--source-program"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "link": {
+        "command": [
+          "/opt/homebrew/opt/llvm@22/bin/clang-22",
+          "-O3",
+          "-mcpu=native",
+          "-ffp-contract=off",
+          "-isysroot",
+          "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/frozen-compact.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/frozen-compact.o",
+          "-lm",
+          "-pthread",
+          "-o",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/frozen-compact"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": "ld: warning: no platform load command found in '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/frozen-compact.o', assuming: macOS\n"
+      },
+      "generated_c_sha256": "209063ff800888ec642304f8c4089a72673710c911ffebfeceeab248f855ffa9",
+      "native_object_sha256": "06c6d73b2b2919ef9c36210c2bd22797001893de20285ef902bfb36ff9e4f9a3",
+      "executable_sha256": "e3c128afa8194feb5f952876bf6c78c848e1ddb15fc2b6cdaca96191d44db29d"
+    },
+    {
+      "id": "frozen-fast",
+      "path": "benchmarks/clbg/mandelbrot/mandelbrot-program.mec",
+      "sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+      "physical_loc": 29,
+      "nonblank_noncomment_loc": 29,
+      "simd": true,
+      "loop_fma": false,
+      "emission": {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mech-driver/target/release/mech-clbg-mandelbrot-compiled",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-program.mec",
+          "emit-cranelift-simd",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/frozen-fast.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/frozen-fast.o",
+          "--source-program"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "link": {
+        "command": [
+          "/opt/homebrew/opt/llvm@22/bin/clang-22",
+          "-O3",
+          "-mcpu=native",
+          "-ffp-contract=off",
+          "-isysroot",
+          "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/frozen-fast.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/frozen-fast.o",
+          "-lm",
+          "-pthread",
+          "-o",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/frozen-fast"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": "ld: warning: no platform load command found in '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/frozen-fast.o', assuming: macOS\n"
+      },
+      "generated_c_sha256": "0d442a69533edc4868567f8f10762f2e706e8851aab56f8c7d92d3b1d4dabfe1",
+      "native_object_sha256": "64799101774d5bb8d39ff88814bbb92b87aa1c78953c9d2fed7bcb5bdb5f3e96",
+      "executable_sha256": "8a8a01d14016f4be0127f74acf5bd3dd1d8e3004871f9a3a2002ad50bc36bae6"
+    },
+    {
+      "id": "scalar-canonical",
+      "path": "benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-scalar-canonical.mec",
+      "sha256": "4e4b881e9c2368ba9ddfcbd2b8df49f78e6fd759833b26e7a10374b432de7b3a",
+      "physical_loc": 11,
+      "nonblank_noncomment_loc": 11,
+      "simd": false,
+      "loop_fma": false,
+      "emission": {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mech-driver/target/release/mech-clbg-mandelbrot-compiled",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-scalar-canonical.mec",
+          "emit-cranelift",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/scalar-canonical.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/scalar-canonical.o",
+          "--source-program"
+        ],
+        "returncode": 2,
+        "stdout": "",
+        "stderr": "canonical source diagnostics: DiagnosticStore { revision: Revision(0), diagnostics: [Diagnostic { id: DiagnosticId(1), code: DiagnosticCode(\"syntax/unexpected-document-source\"), phase: Syntax, severity: Error, rule: Some(RuleId(1111180012)), context: None, primary: Element { element: Node(NodeId(358)), relative: TextRange { start: TextSize(0), end: TextSize(594) } }, labels: [], expected: [], found: Some(FoundSyntax { kind: Some(Unknown), text: Some(\"<f64>, pixel<f64>, row<f64>) = (application-temp-result<[bool]:1,2>) := application-temp-result := c := [pixel<f64>, row<f64>] * (2.0 / width<f64>) - [1.5, 1.0].\\n\\n  ~state := [0.0, 0.0, 0.0]\\n  square := state * state\\n  inside := square[1] + square[2] <= 4.0\\n  done := state[3] >= 50.0 || !inside\\n  state = [square[1] - square[2] + c[1], (state[1] + state[1]) * state[2] + c[2], state[3] + 1.0]\\n  [inside, done].\\nsize := io/argument-u64(1)\\nimage := grid/map-until(size, size, pixels)\\napplication-temp-0 := image; application-temp-1 := image/pbm(application-temp-0); io/write(application-temp-1)\\n\") }), fixes: [], related: [], recovery: Some(Abandon { rule: RuleId(1111180012), at: TextSize(606) }), tags: DiagnosticTags(0), message: \"unexpected source after the canonical document\" }] }\n"
+      }
+    },
+    {
+      "id": "lanes-canonical",
+      "path": "benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-lanes-canonical.mec",
+      "sha256": "41f854842422ec236f0d9305c90fed84af16a621e1a8d8532a81b84e23d84bab",
+      "physical_loc": 12,
+      "nonblank_noncomment_loc": 12,
+      "simd": true,
+      "loop_fma": false,
+      "emission": {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mech-driver/target/release/mech-clbg-mandelbrot-compiled",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-lanes-canonical.mec",
+          "emit-cranelift-simd",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/lanes-canonical.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/lanes-canonical.o",
+          "--source-program"
+        ],
+        "returncode": 2,
+        "stdout": "",
+        "stderr": "canonical source diagnostics: DiagnosticStore { revision: Revision(0), diagnostics: [Diagnostic { id: DiagnosticId(1), code: DiagnosticCode(\"syntax/unexpected-document-source\"), phase: Syntax, severity: Error, rule: Some(RuleId(1111180012)), context: None, primary: Element { element: Node(NodeId(678)), relative: TextRange { start: TextSize(0), end: TextSize(848) } }, labels: [], expected: [], found: Some(FoundSyntax { kind: Some(Unknown), text: Some(\"<f64>, pixel<[f64]:8,1>, row<f64>) = (application-temp-result<[bool]:1,9>) := application-temp-result := cr := pixel<[f64]:8,1> * (2.0 / width<f64>) - 1.5.\\n\\n  ci := row<f64> * (2.0 / width<f64>) - 1.0\\n  ~state := [0.0, 0.0, 0.0; 0.0, 0.0, 0.0; 0.0, 0.0, 0.0; 0.0, 0.0, 0.0; 0.0, 0.0, 0.0; 0.0, 0.0, 0.0; 0.0, 0.0, 0.0; 0.0, 0.0, 0.0]\\n  square := state * state\\n  inside := square[:,1] + square[:,2] <= 4.0\\n  done := state[1,3] >= 50.0 || !(inside[1] || inside[2] || inside[3] || inside[4] || inside[5] || inside[6] || inside[7] || inside[8])\\n  state = [square[:,1] - square[:,2] + cr, (state[:,1] + state[:,1]) * state[:,2] + ci, state[:,3] + 1.0]\\n  [inside', done].\\nsize := io/argument-u64(1)\\nimage := grid/map-until(size, size, pixels)\\napplication-temp-0 := image; application-temp-1 := image/pbm(application-temp-0); io/write(application-temp-1)\\n\") }), fixes: [], related: [], recovery: Some(Abandon { rule: RuleId(1111180012), at: TextSize(860) }), tags: DiagnosticTags(0), message: \"unexpected source after the canonical document\" }] }\n"
+      }
+    },
+    {
+      "id": "five-canonical",
+      "path": "benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-canonical.mec",
+      "sha256": "24c15d96fb4b9e2acd755ee80a2d0c0aa643587016f897328653a8055475eecb",
+      "physical_loc": 16,
+      "nonblank_noncomment_loc": 16,
+      "simd": true,
+      "loop_fma": false,
+      "emission": {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mech-driver/target/release/mech-clbg-mandelbrot-compiled",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-canonical.mec",
+          "emit-cranelift-simd",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/five-canonical.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/five-canonical.o",
+          "--source-program"
+        ],
+        "returncode": 2,
+        "stdout": "",
+        "stderr": "canonical source diagnostics: DiagnosticStore { revision: Revision(0), diagnostics: [Diagnostic { id: DiagnosticId(1), code: DiagnosticCode(\"syntax/unexpected-document-source\"), phase: Syntax, severity: Error, rule: Some(RuleId(1111180012)), context: None, primary: Element { element: Node(NodeId(3852)), relative: TextRange { start: TextSize(0), end: TextSize(1053) } }, labels: [], expected: [], found: Some(FoundSyntax { kind: Some(Unknown), text: Some(\"<f64>, pixel<[f64]:8,1>, row<f64>) = (application-temp-result<[bool]:1,9>) := application-temp-result := cr := pixel<[f64]:8,1> * (2.0 / width<f64>) - 1.5.\\n\\n  ci := row<f64> * (2.0 / width<f64>) - 1.0\\n  ~z := [0.0, 0.0; 0.0, 0.0; 0.0, 0.0; 0.0, 0.0; 0.0, 0.0; 0.0, 0.0; 0.0, 0.0; 0.0, 0.0]\\n  ~iteration := 0.0\\n  square := z * z\\n  inside := square[:,1] + square[:,2] <= 4.0\\n  done := iteration >= 50.0 || !(inside[1] || inside[2] || inside[3] || inside[4] || inside[5] || inside[6] || inside[7] || inside[8])\\napplication-temp-0 := [square[:,1] - square[:,2] + cr, (z[:,1] + z[:,1]) * z[:,2] + ci]; application-temp-1 := advance(application-temp-0, cr, ci); application-temp-2 := advance(application-temp-1, cr, ci); application-temp-3 := advance(application-temp-2, cr, ci); next-z := advance(application-temp-3, cr, ci)\\n  z = next-z\\n  iteration += 5.0\\n  [inside', done].\\nsize := io/argument-u64(1)\\nimage := grid/map-until(size, size, pixels)\\napplication-temp-4 := image; application-temp-5 := image/pbm(application-temp-4); io/write(application-temp-5)\\n\") }), fixes: [], related: [], recovery: Some(Abandon { rule: RuleId(1111180012), at: TextSize(1255) }), tags: DiagnosticTags(0), message: \"unexpected source after the canonical document\" }] }\n"
+      }
+    },
+    {
+      "id": "lanes-rows",
+      "path": "benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-lanes-rows.mec",
+      "sha256": "eccc29effdd5b1b3f2809909996c6bea83bd655cf3682372aec11d4418839e72",
+      "physical_loc": 12,
+      "nonblank_noncomment_loc": 12,
+      "simd": true,
+      "loop_fma": false,
+      "emission": {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mech-driver/target/release/mech-clbg-mandelbrot-compiled",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-lanes-rows.mec",
+          "emit-cranelift-simd",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/lanes-rows.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/lanes-rows.o",
+          "--source-program"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "link": {
+        "command": [
+          "/opt/homebrew/opt/llvm@22/bin/clang-22",
+          "-O3",
+          "-mcpu=native",
+          "-ffp-contract=off",
+          "-isysroot",
+          "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/lanes-rows.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/lanes-rows.o",
+          "-lm",
+          "-pthread",
+          "-o",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/lanes-rows"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": "ld: warning: no platform load command found in '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/lanes-rows.o', assuming: macOS\n"
+      },
+      "generated_c_sha256": "0d442a69533edc4868567f8f10762f2e706e8851aab56f8c7d92d3b1d4dabfe1",
+      "native_object_sha256": "f301f53369dd0e81f334725744b93703a19ab704d4081aeba79af189acd11e0b",
+      "executable_sha256": "7513d93d91668ab95a2c812bce98631a9ebd2dc944d04b4512569ece8a71fdc9"
+    },
+    {
+      "id": "five-rows",
+      "path": "benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows.mec",
+      "sha256": "01cb5e0111e27b3a9b377319f8b6ee0f0fbb3626fdc1c10aa447d3f50bd27be5",
+      "physical_loc": 16,
+      "nonblank_noncomment_loc": 16,
+      "simd": true,
+      "loop_fma": false,
+      "emission": {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mech-driver/target/release/mech-clbg-mandelbrot-compiled",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows.mec",
+          "emit-cranelift-simd",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/five-rows.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/five-rows.o",
+          "--source-program"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "link": {
+        "command": [
+          "/opt/homebrew/opt/llvm@22/bin/clang-22",
+          "-O3",
+          "-mcpu=native",
+          "-ffp-contract=off",
+          "-isysroot",
+          "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/five-rows.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/five-rows.o",
+          "-lm",
+          "-pthread",
+          "-o",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/five-rows"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": "ld: warning: no platform load command found in '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/five-rows.o', assuming: macOS\n"
+      },
+      "generated_c_sha256": "0d442a69533edc4868567f8f10762f2e706e8851aab56f8c7d92d3b1d4dabfe1",
+      "native_object_sha256": "64799101774d5bb8d39ff88814bbb92b87aa1c78953c9d2fed7bcb5bdb5f3e96",
+      "executable_sha256": "84417f03cd3049c7cf3a2af059225269843bab9e39b4985fefd815547ee196c9"
+    },
+    {
+      "id": "lanes-rows-canonical",
+      "path": "benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-lanes-rows-canonical.mec",
+      "sha256": "11e64fd6a9165216e575ff985453a02e8b92dcc70c5267c6344dd3f6c7beee60",
+      "physical_loc": 12,
+      "nonblank_noncomment_loc": 12,
+      "simd": true,
+      "loop_fma": false,
+      "emission": {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mech-driver/target/release/mech-clbg-mandelbrot-compiled",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-lanes-rows-canonical.mec",
+          "emit-cranelift-simd",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/lanes-rows-canonical.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/lanes-rows-canonical.o",
+          "--source-program"
+        ],
+        "returncode": 2,
+        "stdout": "",
+        "stderr": "canonical source diagnostics: DiagnosticStore { revision: Revision(0), diagnostics: [Diagnostic { id: DiagnosticId(1), code: DiagnosticCode(\"syntax/unexpected-document-source\"), phase: Syntax, severity: Error, rule: Some(RuleId(1111180012)), context: None, primary: Element { element: Node(NodeId(678)), relative: TextRange { start: TextSize(0), end: TextSize(850) } }, labels: [], expected: [], found: Some(FoundSyntax { kind: Some(Unknown), text: Some(\"<f64>, pixel<[f64]:8,1>, row<f64>) = (application-temp-result<[bool]:1,9>) := application-temp-result := cr := (pixel<[f64]:8,1> * (2.0 / width<f64>) - 1.5)'.\\n\\n  ci := row<f64> * (2.0 / width<f64>) - 1.0\\n  ~state := [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0; 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0; 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]\\n  square := state * state\\n  inside := square[1,:] + square[2,:] <= 4.0\\n  done := state[3,1] >= 50.0 || !(inside[1] || inside[2] || inside[3] || inside[4] || inside[5] || inside[6] || inside[7] || inside[8])\\n  state = [square[1,:] - square[2,:] + cr; (state[1,:] + state[1,:]) * state[2,:] + ci; state[3,:] + 1.0]\\n  [inside, done].\\nsize := io/argument-u64(1)\\nimage := grid/map-until(size, size, pixels)\\napplication-temp-0 := image; application-temp-1 := image/pbm(application-temp-0); io/write(application-temp-1)\\n\") }), fixes: [], related: [], recovery: Some(Abandon { rule: RuleId(1111180012), at: TextSize(862) }), tags: DiagnosticTags(0), message: \"unexpected source after the canonical document\" }] }\n"
+      }
+    },
+    {
+      "id": "five-rows-canonical",
+      "path": "benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec",
+      "sha256": "baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde",
+      "physical_loc": 16,
+      "nonblank_noncomment_loc": 16,
+      "simd": true,
+      "loop_fma": false,
+      "emission": {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mech-driver/target/release/mech-clbg-mandelbrot-compiled",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec",
+          "emit-cranelift-simd",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/five-rows-canonical.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation/five-rows-canonical.o",
+          "--source-program"
+        ],
+        "returncode": 2,
+        "stdout": "",
+        "stderr": "canonical source diagnostics: DiagnosticStore { revision: Revision(0), diagnostics: [Diagnostic { id: DiagnosticId(1), code: DiagnosticCode(\"syntax/unexpected-document-source\"), phase: Syntax, severity: Error, rule: Some(RuleId(1111180012)), context: None, primary: Element { element: Node(NodeId(3856)), relative: TextRange { start: TextSize(0), end: TextSize(1055) } }, labels: [], expected: [], found: Some(FoundSyntax { kind: Some(Unknown), text: Some(\"<f64>, pixel<[f64]:8,1>, row<f64>) = (application-temp-result<[bool]:1,9>) := application-temp-result := cr := (pixel<[f64]:8,1> * (2.0 / width<f64>) - 1.5)'.\\n\\n  ci := row<f64> * (2.0 / width<f64>) - 1.0\\n  ~z := [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0; 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]\\n  ~iteration := 0.0\\n  square := z * z\\n  inside := square[1,:] + square[2,:] <= 4.0\\n  done := iteration >= 50.0 || !(inside[1] || inside[2] || inside[3] || inside[4] || inside[5] || inside[6] || inside[7] || inside[8])\\napplication-temp-0 := [square[1,:] - square[2,:] + cr; (z[1,:] + z[1,:]) * z[2,:] + ci]; application-temp-1 := advance(application-temp-0, cr, ci); application-temp-2 := advance(application-temp-1, cr, ci); application-temp-3 := advance(application-temp-2, cr, ci); next-z := advance(application-temp-3, cr, ci)\\n  z = next-z\\n  iteration += 5.0\\n  [inside, done].\\nsize := io/argument-u64(1)\\nimage := grid/map-until(size, size, pixels)\\napplication-temp-4 := image; application-temp-5 := image/pbm(application-temp-4); io/write(application-temp-5)\\n\") }), fixes: [], related: [], recovery: Some(Abandon { rule: RuleId(1111180012), at: TextSize(1257) }), tags: DiagnosticTags(0), message: \"unexpected source after the canonical document\" }] }\n"
+      }
+    }
+  ],
+  "compiler_pins": {
+    "hosts/gpu/src/fused_f64/mod.rs": "c34e939be71b5db73b9dff23c03ec0db748f874ad7a9f90ec263a8570574971c",
+    "hosts/gpu/src/fused_f64/native.rs": "37d0c34abd60b137e77770584960f679aef836c3269034280055b5dd68628579",
+    "hosts/gpu/src/fused_f64/map_runner.rs": "fd70647e126f8b03272423d5e30e4d47804c26d10bb38dfdeafc9eba7b3a9419",
+    "hosts/gpu/src/fused_f64/grid_runner.c": "c2e15ca08cf4cc6068b84a7906368045922bf74d6c903adc34c857c0e5c1866a",
+    "src/engine/src/native_sequence/grid.rs": "8ff364dc9f4d16536f26f9f626a977886c217a7d5efd6db1bce354de876f888d",
+    "src/engine/src/native_sequence/application.rs": "007d9e52cf70db8d190836175f7f102fef549374d26c7174e64c3ceea4f7e8f3"
+  },
+  "source_metric": "LOC only; one independent statement/binding per authored line; array delimiters are expressions."
+}

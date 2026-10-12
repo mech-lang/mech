@@ -1,0 +1,209 @@
+Array-state source experiment, 2026-10-11
+
+These are separate authored prototypes. The frozen compact/fast sources,
+retained driver, published native control and existing semantic reports remain
+unchanged. A separate generic application.rs repair now preserves arrow-body
+mutations and final whole-base returns; its freshly isolated current driver
+accepts every canonical prototype. The historical validation/ directory records
+legacy statement-function success and old-driver arrow-block rejection. Those
+rejections describe the retained binary, not the repaired current compiler.
+This checkpoint contains source and immutable semantic evidence. Live full-study
+reports and launch/attempt records remain outside it; no elapsed-time comparison
+or chart promotion follows from the small checks or object inspection.
+
+Authored source counts (one independent statement/binding per line):
+  mandelbrot-array-state-scalar.mec: 11 LOC
+  mandelbrot-array-state-lanes.mec: 12 LOC
+  mandelbrot-array-state-five.mec: 16 LOC
+The corresponding -canonical.mec sources retain these same counts and use
+the requested arrow return-kind signature with a final bare expression.
+The -rows.mec and -rows-canonical.mec variants use 3x8 / 2x8 state instead of
+8x3 / 8x2, so the existing element_groups rule packs adjacent pixels into SIMD
+lanes. The original layouts are retained.
+
+Existing-driver validation (strict arithmetic, no loop FMA):
+  7 successfully compiled executables: five prototype layouts and both frozen
+  compact/fast sources. Every complete image matched independent per-step and
+  five-step Python recurrences at N=1,7,8,9,13,31,63,64,65,129,200,257 with
+  one and three workers: 168 comparisons, zero differences. N=200 additionally
+  matches the official image SHA256
+  97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5.
+  Complete outputs, generated C, native objects and executable hashes are saved.
+  These are small semantic checks, not full-workload timing measurements.
+
+Predicate observation is explicit:
+  Scalar and single-step lanes observe the radius and iteration predicates at
+  state iterations 0,1,...,50, before each next-state commit. A lane group stops
+  early when every lane is outside. Five-step variants observe only at states
+  0,5,...,50 and intentionally skip the four intermediate observations, exactly
+  like the frozen fast source. The saved reference implements this group
+  behavior including padding lanes; no discrepancies were hidden.
+
+Bounded N=129 recurrence proof (work-counts-129.json):
+  scalar per-step: 406325 real / 0 padded = 406325 physical pixel recurrences
+  eight lanes per-step: 467467 real / 4109 padded = 471576 physical
+  eight lanes five-step: 482345 real / 5495 padded = 487840 physical
+  whole row per-step: 813216 real / 0 padded = 813216 physical
+  The reference checks each retained state before committing its next value;
+  group observations include iteration zero and the terminal observation.
+  Complete per-row/group traces are retained. Scalar reference count matches
+  the separately reported active-pixel Uiua N129 work proof; whole-row reference
+  matches the original Uiua N129 count. This distinguishes unnecessary pixel
+  recurrence work, including padding and chunked stopping, from SIMD throughput,
+  worker count, compiler fusion, interpreter dispatch and temporary storage.
+  These counts do not predict elapsed time or extrapolate a full workload.
+
+The scalar prototype packages zr, zi and iteration as a numeric row array. It
+calculates both coordinate components and both squares with existing array
+operators, then commits one whole next-state value. That is a single array
+update, rather than several scalar assignments placed on one line. The radius
+test and stop predicate remain separately authored bindings. The array's third
+square is unobserved and can be removed by the existing live-root traversal.
+
+The lanes prototype uses an 8x3 numeric array and the same single recurrence.
+The five-step prototype uses an 8x2 array plus a scalar iteration counter;
+Advance is an ordinary pure Mech function, and four ordinary function-application
+stages compose it after the first recurrence. Its escape-observation interval
+matches the frozen 29-line fast source. The first step reuses the radius squares.
+
+Existing mechanisms used:
+  src/engine/src/native_sequence/mod.rs:98-110 normalizes application syntax.
+  src/engine/src/native_sequence/grid.rs:271-281 includes all authored functions
+    in the kernel source passed to the canonical compiler.
+  hosts/gpu/src/fused_f64/mod.rs:1240 onward lowers array arithmetic, static
+    selectors, transpose, concatenation and whole-value numeric state commits.
+  hosts/gpu/src/fused_f64/native.rs:1042-1098 checks the authored stop predicate
+    before committing state; output bitmap packing is already native.
+
+Concrete current gaps for a Uiua-like whole-row record formulation:
+  1. grid/map-until accepts only scalar or fixed column vectors with 1-64 lanes
+     (src/engine/src/native_sequence/grid.rs:233-240). A runtime-width row is
+     not an admitted input, although the language supports dynamic matrices.
+  2. The native map runner requires each state slot to borrow as f64 storage
+     (hosts/gpu/src/fused_f64/map_runner.rs:125-137). FusedProgram::shape accepts
+     only fixed-shape f64/bool scalars/tensors and rejects records/tuples and
+     dynamic dimensions (hosts/gpu/src/fused_f64/mod.rs:1697-1735). The source
+     language's record syntax and updates therefore do not by themselves give
+     this native grid path a Uiua record loop.
+  3. The maintained logic catalog offers elementwise and/or/not/xor but no
+     Boolean any/all reduction. stats/sum is numeric. The 8-way OR is therefore
+     explicitly authored here. A generic any/all operation would remove the
+     lane-count-specific selector expression, even though physical LOC remains
+     one binding either way.
+  4. FusedProgram::lower currently rejects control nodes. sequence/iterate
+     already exists in another native array/source-callable frontend, but it
+     cannot yet be used interchangeably inside this fixed-shape grid compiler.
+  5. The retained driver predates multiline arrow-block handling and rejects
+     local mutable state. This gap is resolved in the current compiler by a
+     generic statement classifier: assignments and augmented assignments remain
+     statements, RHS pipelines are lowered once, and a final mutation returns
+     the updated whole local base after conversion/selected writes. Comparisons,
+     ranges, strings and nested selector expressions keep their parser meaning.
+     A final context/resource target without a local base is diagnosed. No
+     benchmark-specific normalization or native operation was added.
+
+Useful generic work, subject to compiler/source pin coordination:
+  - Add Boolean any/all reductions to the maintained source/runtime/native
+    catalogs and lower them to mask reductions in the fused backend.
+  - Flatten record/tuple leaves into typed native state, preserving simultaneous
+    whole-state updates, field access and stable state reset. This is generic
+    structural scalar replacement rather than a Mandelbrot host operation.
+  - Connect pure source-callable array iteration/control IR to the grid backend
+    so a dynamic row recurrence can be fused and tiled; eliminate temporary
+    arrays and keep lane state and persistent live masks in native storage.
+  - Automatically widen independent scalar grid recurrences and support
+    vector predicates with persistent per-lane masks, retaining every required
+    observation. That would let concise scalar authored code use SIMD without
+    a source-level lane count.
+
+Actual retained-driver code inspection (strict arithmetic, no loop FMA):
+  validation/object-inspection.json and *.asm retain the native object evidence.
+  The 16-LOC 2x8 row-state source emits a byte-identical complete native object
+  to the frozen 29-LOC fast source:
+  SHA256 64799101774d5bb8d39ff88814bbb92b87aa1c78953c9d2fed7bcb5bdb5f3e96.
+  Their generated C is also identical: it contains only the generic row
+  scheduler/PBM allocation, and all numerical recurrence is in the native object.
+  The original 8x2 five-step source has the same arithmetic and input loads,
+  but exactly 24 extra instructions (12 uzp1.2d + 12 uzp2.2d lane shuffles).
+  Static map instruction counts are scalar11 40 / frozen compact20 41;
+  original five16 259 / row five16 235 / frozen fast29 235. Scalar11 replaces
+  one doubling multiply with one addition and one fewer setup instruction.
+  These static facts are not timing predictions or extrapolated chart values.
+  The 12-LOC 8x3 lane source has 181 static map instructions versus 141 for
+  3x8 row-state. Arithmetic counts are identical. The column layout preserves
+  eight callee-saved floating registers versus four in the row layout, producing
+  extra prologue/epilogue saves and restores, rather than heap arrays or loop
+  spills. Both lane sources retain eight iteration counters; the five-step
+  sources author just one scalar counter.
+
+Closed-map dead-state-leaf elimination, possible proof and limits:
+  - Restrict this transform to a native map whose externally observable ABI
+    contains only declared output/stop values. Resident snapshot, serialization,
+    debug/display or whole-frame state exposure makes the corresponding leaves
+    observable and must mark them live (or reconstruct them exactly).
+  - Begin a backward slice at every externally observed result and the stop
+    predicate. If an instruction reads a state leaf, retain that leaf and the
+    instruction producing its next value. Repeat through state update edges to
+    a fixed point; a whole-value state assignment must not make every updated
+    leaf a root automatically.
+  - A removable leaf cannot affect a retained next-state value, predicate,
+    output, side effect, error/termination behavior, dynamic selector, aliased
+    reference or externally inspectable cell. Unknown indexing/alias/effect
+    cases conservatively keep the affected state. Floating-point rounding and
+    ordering of every retained operation and immutable capture stay unchanged.
+  - Preserve the initial/reset value of every retained leaf and all predicate
+    observation points. Predicate-before-commit behavior must remain intact;
+    deleting unused state cannot imply deleting an intermediate predicate.
+  - Here, only iteration row leaf [3,1] affects done. The seven other counters
+    feed only their own +1 updates and do not affect real/imaginary recurrence
+    or outputs. Their iteration-square values are already removed by existing
+    live-root instruction traversal; the counter updates remain roots today.
+    This particular closed native ABI permits dropping those seven leaves.
+  - Proven loop-state equivalence is another option: identical seeds and
+    structurally identical recurrences over equivalent operands permit sharing
+    a value while reconstructing exposed duplicates if needed. The proof
+    cannot assume equality merely because runtime samples happened to match.
+  No backend transform has been implemented in this experiment.
+
+Automatic loop unrolling must retain the predicate check after each semantic
+iteration unless the source explicitly selects chunked observations. Arbitrary
+map recurrences cannot safely skip checks merely because this Mandelbrot source
+uses a five-step interval. The factored Advance prototype expresses that choice
+in ordinary Mech source today, without adding a benchmark-specific primitive.
+
+Current-driver semantic checkpoint:
+  validation-current/report.json records ten compiled canonical/control profiles
+  and 240 exact complete small PBMs at the same twelve widths and one/three
+  workers, with unchanged pins and the official N200 digest. Its stable driver
+  SHA256 is 028cf28286c0e69fa56ddfee1d20b51602cbf8c789acfb05d3e5ef1c55c7e47c.
+  validation-current/codegen-comparison.json confirms that the 16-LOC row-state
+  source and freshly compiled 29-LOC fast source emit identical complete objects
+  and C in both strict and loop-FMA modes. The FMA object SHA256 is
+  41ad4bedd5f8baf3093a0b2e65dfbf60e4638f0bb5d177d2f9f39c1a9e3f6843.
+  These are code/semantic equivalences, not timing predictions.
+
+  normalization-compatibility/report.json records all 322 pre-existing Mech
+  benchmark sources unchanged under normalization. The comparison's prior Git
+  revision and before/current application source hashes are retained in that
+  report. check_normalization_compatibility.py accepts --before-ref and defaults
+  to the saved report's prior revision, so committing the repair does not turn a
+  later replay into a comparison against the already repaired HEAD.
+
+  evidence/compiler-pins.json is an exact archive of the isolated compiler's
+  original .build manifest. It records 1,421 conservative compiler source pins,
+  the strict normal release build and 28 passing focused tests, including resident
+  execution of final augmented and selected mutations. The minimal feature test
+  invocation alone allows dead_code for two existing unused test helpers; the
+  repository warning policy and normal product build remain strict. Standalone
+  pre-fix snapshot had 25 standalone tests (19 pass / 6 fail); the later fixed
+  snapshot had 26 (26 pass / 0 fail), including an additional typed-final-binding
+  regression. These snapshots are distinct from the 322-source Git comparison.
+  evidence/focused-tests.log and evidence/driver-build.log retain their immutable
+  logs; evidence/checkpoint-provenance.json records each original path and digest.
+
+  evidence/full-study-plan.json archives the sealed separate study plan: three
+  actual N16000/eight-worker processes for each of five profiles, with complete
+  PBM validation and fatal pin/output/process/resource/monitor/cleanup gates.
+  Active study reports are intentionally excluded. Absolute artifact references
+  in archived reports remain provenance records; binaries, objects, generated
+  C/assembly and full PBMs are retained locally rather than committed here.

@@ -1,0 +1,1622 @@
+{
+  "scope": "Existing benchmark sources excluding new Mandelbrot experiment and ignored build directories; normalization only, no timing or native execution claim.",
+  "prior_revision": "d59e2dfdbffdcf84d8de47027f53a46f2eb3a89c",
+  "prior_application_sha256": "007d9e52cf70db8d190836175f7f102fef549374d26c7174e64c3ceea4f7e8f3",
+  "current_application_sha256": "433e116691eed736b3152d42f51b0a642b46d52a39f07e8f97e5d4aa83f58031",
+  "rustc_version": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0\n",
+  "sources": [
+    {
+      "source": "benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-pairwise.mec",
+      "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-short.mec",
+      "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-pairwise-mass.mec",
+      "source_sha256": "5cd6698ea94a5c4430702631bc21243f1e6361c9b05199ef598115e544b01e45",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody.mec",
+      "source_sha256": "7d10f0caccf215d5835262236bb31e9a0d97dc8fe11fbe8bf14919fd2a316109",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/binarytrees/binarytrees-parallel.mec",
+      "source_sha256": "61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/binarytrees/binarytrees.mec",
+      "source_sha256": "5a03182ece4f7707cfd63c5288a465690e143dda96c39ecee27ac350d187255f",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/binarytrees/experiments/callback-forms/binarytrees-parallel.mec",
+      "source_sha256": "76c30e167d2441be0f99bbab1abef8cc640b5d2b935cc1e8d54f9b174d69d611",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/binarytrees/experiments/callback-forms/binarytrees.mec",
+      "source_sha256": "13217d8ef89347f723f2fd2e3eb9f38432f432d6719063505b2f99a41d34fc5b",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/binarytrees/experiments/canonical-forms/matches-only.mec",
+      "source_sha256": "f4264e759aff9f56d08818d8058b8d9fbdd1bc012703d3486859faae2a8dfcfd",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/binarytrees/experiments/canonical-forms/sums-only.mec",
+      "source_sha256": "349318d27aec558073ab310986ace99fd98d4c15586dfb1996faf80d5cadb065",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/binarytrees/experiments/individual-box/binarytrees-parallel.mec",
+      "source_sha256": "579df63ef2f9c3ea1e0d846c25571119a75e3fbcbc9116442b522644cf5703c6",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/binarytrees/experiments/individual-box/binarytrees.mec",
+      "source_sha256": "38c9626d0cd584f539fcad6295fd77f4602fb52bb82c98530a11d6573c980465",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010/fixtures/allocation.mec",
+      "source_sha256": "1d1e79dc6949d35aa14435f2a011d2a7166e001a756e7b1875bd82f4164e64d2",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010/fixtures/captured-iteration.mec",
+      "source_sha256": "62e5d7bc1e0718b177ffbf938da2decd3b7ba91b5c24984dd350b403637bf238",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010/fixtures/coefficient-unused-parameter.mec",
+      "source_sha256": "c12e776e0a6ee6657c61ab97890016d2ba1eb88a55fd56765f75b5c234212bec",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010/fixtures/counted-scan-boundaries.mec",
+      "source_sha256": "dc3d426a514076a0fc792486595bb63588430e2e6b6c54313c847afcd902c348",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010/fixtures/eager-coefficient-overflow.mec",
+      "source_sha256": "263626bca00abfc4068aa174b10041a369d62562de9906af3be2ea87f30e2380",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010/fixtures/effects.mec",
+      "source_sha256": "92aeaafeb09e8e58d20d33cecc92f2d8a630c533b6f9f1c4b030c05f3043b25b",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010/fixtures/float-cast-range.mec",
+      "source_sha256": "975caef92508ab6c62ee9aad4ca6a5e5f3722fc5d21f0e789fef99f270f4dbd0",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010/fixtures/histogram-1-3-1109.mec",
+      "source_sha256": "e2064f93d8c5be80af1500a117a3035e2ee36887fd62b3059a7e457e4b46b1c3",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010/fixtures/histogram-1-4-3.mec",
+      "source_sha256": "8576846c9ee360b2970895ec29aa6bb7d91fbf434016624e4edf562ed6199a02",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010/fixtures/histogram-3-7-2061.mec",
+      "source_sha256": "32ad32c6520cc1f8afdb29c1f2f72766a1c16c5fd03d95a1af53bf345633de3e",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010/fixtures/histogram-4-16-1113.mec",
+      "source_sha256": "fb82554e600f43cfc9b41280d55dfae3d033c12483869fc085454165a80c44c3",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010/fixtures/integer-range-empty.mec",
+      "source_sha256": "4a57be61b187a99e7f268a9229f2ce9bf7312b101af02d86cf1307bde044902e",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010/fixtures/integer-range-limit.mec",
+      "source_sha256": "510331473aa9716a8c75ae6cdf017c43da4a805bb9da3a0c13c1d44121d9910e",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010/fixtures/invalid-bounded.mec",
+      "source_sha256": "f99b2469f5597fe023083319228ab1522b5845e19ee4aee90b31b2ce1e3bbbdf",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010/fixtures/lazy-branch.mec",
+      "source_sha256": "1af980a32ed14d396893e60907c23aa925d4a4778efb84440c75e8e91176347a",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010/fixtures/numeric-state-and-tail.mec",
+      "source_sha256": "aa2802c5cac32b3d61c00751968e432e2bc0db883e128f1b10357a7517948850",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010/fixtures/parallel-state-copy.mec",
+      "source_sha256": "3ae4540f7a524ffe5a49524725513d23fc0decd32b7816faf761653614593242",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010/fixtures/partial-pattern.mec",
+      "source_sha256": "9e603bf2ae6a80b7f4bd8fb1f29e23f98dee7fbab1347f82da30c21495de2210",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010/fixtures/rectangular-matrix.mec",
+      "source_sha256": "116dcc4934282e8272d67dfa83667e8afa7b3f25d10384870c4ae37cc0ca2aec",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010/fixtures/signed-bigint-alias.mec",
+      "source_sha256": "46a41561120d9b115cffd0192dfe4451ab9989e8162f1baa0880ba9da8511a05",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-final/fixtures/allocation.mec",
+      "source_sha256": "1d1e79dc6949d35aa14435f2a011d2a7166e001a756e7b1875bd82f4164e64d2",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-final/fixtures/captured-iteration.mec",
+      "source_sha256": "62e5d7bc1e0718b177ffbf938da2decd3b7ba91b5c24984dd350b403637bf238",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-final/fixtures/coefficient-unused-parameter.mec",
+      "source_sha256": "c12e776e0a6ee6657c61ab97890016d2ba1eb88a55fd56765f75b5c234212bec",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-final/fixtures/counted-scan-boundaries.mec",
+      "source_sha256": "dc3d426a514076a0fc792486595bb63588430e2e6b6c54313c847afcd902c348",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-final/fixtures/eager-coefficient-overflow.mec",
+      "source_sha256": "263626bca00abfc4068aa174b10041a369d62562de9906af3be2ea87f30e2380",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-final/fixtures/effects.mec",
+      "source_sha256": "92aeaafeb09e8e58d20d33cecc92f2d8a630c533b6f9f1c4b030c05f3043b25b",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-final/fixtures/float-cast-range.mec",
+      "source_sha256": "975caef92508ab6c62ee9aad4ca6a5e5f3722fc5d21f0e789fef99f270f4dbd0",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-final/fixtures/histogram-1-3-1109.mec",
+      "source_sha256": "e2064f93d8c5be80af1500a117a3035e2ee36887fd62b3059a7e457e4b46b1c3",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-final/fixtures/histogram-1-4-3.mec",
+      "source_sha256": "8576846c9ee360b2970895ec29aa6bb7d91fbf434016624e4edf562ed6199a02",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-final/fixtures/histogram-3-7-2061.mec",
+      "source_sha256": "32ad32c6520cc1f8afdb29c1f2f72766a1c16c5fd03d95a1af53bf345633de3e",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-final/fixtures/histogram-4-16-1113.mec",
+      "source_sha256": "fb82554e600f43cfc9b41280d55dfae3d033c12483869fc085454165a80c44c3",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-final/fixtures/integer-range-empty.mec",
+      "source_sha256": "4a57be61b187a99e7f268a9229f2ce9bf7312b101af02d86cf1307bde044902e",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-final/fixtures/integer-range-limit.mec",
+      "source_sha256": "510331473aa9716a8c75ae6cdf017c43da4a805bb9da3a0c13c1d44121d9910e",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-final/fixtures/invalid-bounded.mec",
+      "source_sha256": "f99b2469f5597fe023083319228ab1522b5845e19ee4aee90b31b2ce1e3bbbdf",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-final/fixtures/lazy-branch.mec",
+      "source_sha256": "1af980a32ed14d396893e60907c23aa925d4a4778efb84440c75e8e91176347a",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-final/fixtures/matrix-eager-zero-divisor.mec",
+      "source_sha256": "c66cd094306a35aaae2000363e74f5f0dc958c689f32fc4dcc9b78268c5dd26c",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-final/fixtures/matrix-integer-divisor.mec",
+      "source_sha256": "731c3efcc61c8ac261848e6d37f3dc929b6b08da36b784b11346819d9fd2037d",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-final/fixtures/matrix-tile-tail-1.mec",
+      "source_sha256": "1391673ac4e56906709069af942650eed810b61bdd99628770f6ace9038d243a",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-final/fixtures/matrix-tile-tail-31.mec",
+      "source_sha256": "7e865169e10a9c5186367547a22bb3474dbc73347194004e7dfba4666245e2c7",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-final/fixtures/matrix-tile-tail-32.mec",
+      "source_sha256": "4ded1173db9bb2ba57473b7da7c64af9d840391fb11c2b9dad6e57d457182e04",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-final/fixtures/matrix-tile-tail-33.mec",
+      "source_sha256": "4e69c75297ce89e4218fc3a24ef5853b6b041574c93756ece3d5564febd07111",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-final/fixtures/matrix-tile-tail-65.mec",
+      "source_sha256": "d622aafea8600e03f5dd2daf0ff1d15725753aa2ee76d2b362a92014d520f39c",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-final/fixtures/numeric-state-and-tail.mec",
+      "source_sha256": "aa2802c5cac32b3d61c00751968e432e2bc0db883e128f1b10357a7517948850",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-final/fixtures/parallel-state-copy.mec",
+      "source_sha256": "3ae4540f7a524ffe5a49524725513d23fc0decd32b7816faf761653614593242",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-final/fixtures/partial-pattern.mec",
+      "source_sha256": "9e603bf2ae6a80b7f4bd8fb1f29e23f98dee7fbab1347f82da30c21495de2210",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-final/fixtures/rectangular-matrix.mec",
+      "source_sha256": "116dcc4934282e8272d67dfa83667e8afa7b3f25d10384870c4ae37cc0ca2aec",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-final/fixtures/signed-bigint-alias.mec",
+      "source_sha256": "46a41561120d9b115cffd0192dfe4451ab9989e8162f1baa0880ba9da8511a05",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-optimization/fixtures/allocation.mec",
+      "source_sha256": "1d1e79dc6949d35aa14435f2a011d2a7166e001a756e7b1875bd82f4164e64d2",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-optimization/fixtures/captured-iteration.mec",
+      "source_sha256": "62e5d7bc1e0718b177ffbf938da2decd3b7ba91b5c24984dd350b403637bf238",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-optimization/fixtures/coefficient-unused-parameter.mec",
+      "source_sha256": "c12e776e0a6ee6657c61ab97890016d2ba1eb88a55fd56765f75b5c234212bec",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-optimization/fixtures/counted-scan-boundaries.mec",
+      "source_sha256": "dc3d426a514076a0fc792486595bb63588430e2e6b6c54313c847afcd902c348",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-optimization/fixtures/eager-coefficient-overflow.mec",
+      "source_sha256": "263626bca00abfc4068aa174b10041a369d62562de9906af3be2ea87f30e2380",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-optimization/fixtures/effects.mec",
+      "source_sha256": "92aeaafeb09e8e58d20d33cecc92f2d8a630c533b6f9f1c4b030c05f3043b25b",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-optimization/fixtures/float-cast-range.mec",
+      "source_sha256": "975caef92508ab6c62ee9aad4ca6a5e5f3722fc5d21f0e789fef99f270f4dbd0",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-optimization/fixtures/histogram-1-3-1109.mec",
+      "source_sha256": "e2064f93d8c5be80af1500a117a3035e2ee36887fd62b3059a7e457e4b46b1c3",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-optimization/fixtures/histogram-1-4-3.mec",
+      "source_sha256": "8576846c9ee360b2970895ec29aa6bb7d91fbf434016624e4edf562ed6199a02",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-optimization/fixtures/histogram-3-7-2061.mec",
+      "source_sha256": "32ad32c6520cc1f8afdb29c1f2f72766a1c16c5fd03d95a1af53bf345633de3e",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-optimization/fixtures/histogram-4-16-1113.mec",
+      "source_sha256": "fb82554e600f43cfc9b41280d55dfae3d033c12483869fc085454165a80c44c3",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-optimization/fixtures/integer-range-empty.mec",
+      "source_sha256": "4a57be61b187a99e7f268a9229f2ce9bf7312b101af02d86cf1307bde044902e",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-optimization/fixtures/integer-range-limit.mec",
+      "source_sha256": "510331473aa9716a8c75ae6cdf017c43da4a805bb9da3a0c13c1d44121d9910e",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-optimization/fixtures/invalid-bounded.mec",
+      "source_sha256": "f99b2469f5597fe023083319228ab1522b5845e19ee4aee90b31b2ce1e3bbbdf",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-optimization/fixtures/lazy-branch.mec",
+      "source_sha256": "1af980a32ed14d396893e60907c23aa925d4a4778efb84440c75e8e91176347a",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-optimization/fixtures/matrix-eager-zero-divisor.mec",
+      "source_sha256": "c66cd094306a35aaae2000363e74f5f0dc958c689f32fc4dcc9b78268c5dd26c",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-optimization/fixtures/matrix-integer-divisor.mec",
+      "source_sha256": "731c3efcc61c8ac261848e6d37f3dc929b6b08da36b784b11346819d9fd2037d",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-optimization/fixtures/matrix-tile-tail-1.mec",
+      "source_sha256": "1391673ac4e56906709069af942650eed810b61bdd99628770f6ace9038d243a",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-optimization/fixtures/matrix-tile-tail-31.mec",
+      "source_sha256": "7e865169e10a9c5186367547a22bb3474dbc73347194004e7dfba4666245e2c7",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-optimization/fixtures/matrix-tile-tail-32.mec",
+      "source_sha256": "4ded1173db9bb2ba57473b7da7c64af9d840391fb11c2b9dad6e57d457182e04",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-optimization/fixtures/matrix-tile-tail-33.mec",
+      "source_sha256": "4e69c75297ce89e4218fc3a24ef5853b6b041574c93756ece3d5564febd07111",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-optimization/fixtures/matrix-tile-tail-65.mec",
+      "source_sha256": "d622aafea8600e03f5dd2daf0ff1d15725753aa2ee76d2b362a92014d520f39c",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-optimization/fixtures/numeric-state-and-tail.mec",
+      "source_sha256": "aa2802c5cac32b3d61c00751968e432e2bc0db883e128f1b10357a7517948850",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-optimization/fixtures/parallel-state-copy.mec",
+      "source_sha256": "3ae4540f7a524ffe5a49524725513d23fc0decd32b7816faf761653614593242",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-optimization/fixtures/partial-pattern.mec",
+      "source_sha256": "9e603bf2ae6a80b7f4bd8fb1f29e23f98dee7fbab1347f82da30c21495de2210",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-optimization/fixtures/rectangular-matrix.mec",
+      "source_sha256": "116dcc4934282e8272d67dfa83667e8afa7b3f25d10384870c4ae37cc0ca2aec",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/execution-modes/20261010-optimization/fixtures/signed-bigint-alias.mec",
+      "source_sha256": "46a41561120d9b115cffd0192dfe4451ab9989e8162f1baa0880ba9da8511a05",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/fannkuchredux/fannkuchredux-aligned.mec",
+      "source_sha256": "78687fdbc7a07506b39379a17c90c230d68b263b50e39882762eb3c2e1a1ea82",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/fannkuchredux/fannkuchredux-cached.mec",
+      "source_sha256": "f62d757ae78b562a0de35b7b52c2a6a43c8724b0e844a1e378c647cc6724a30c",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/fannkuchredux/fannkuchredux-coarse.mec",
+      "source_sha256": "78e374c6a533626d435a3a693ba0eb3d8bb9f9d563b79344f7e26669978273c0",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/fannkuchredux/fannkuchredux-even.mec",
+      "source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/fannkuchredux/fannkuchredux-initial.mec",
+      "source_sha256": "ca58bf822e438707cb8abf8a724f746770e72b87f1c9ec53c0523ea4b0cd8777",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/fannkuchredux/fannkuchredux-paired.mec",
+      "source_sha256": "4141ed3c7f30f3e0162642b3a1e0ab934a1a8deb0789c070d0a8a5dfbb93d098",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/fannkuchredux/fannkuchredux.mec",
+      "source_sha256": "0a5bee0d62631abf4f200489ddf9044c9b238f0c2dcd6a074c60ec93c90fdb8f",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/fasta/fasta-optimized.mec",
+      "source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/fasta/fasta.mec",
+      "source_sha256": "5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/binarytrees/mech-binarytrees-parallel-before.project/source.mec",
+      "source_sha256": "76c30e167d2441be0f99bbab1abef8cc640b5d2b935cc1e8d54f9b174d69d611",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/fannkuchredux/mech-fannkuch-default-after.project/source.mec",
+      "source_sha256": "0a5bee0d62631abf4f200489ddf9044c9b238f0c2dcd6a074c60ec93c90fdb8f",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/fannkuchredux/mech-fannkuch-default-before.project/source.mec",
+      "source_sha256": "8e6732c29c7c6010c3769a43ed125085dd2643d55c80efb5c3b8ab9009e8a824",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/fannkuchredux/mech-fannkuch-even-after.project/source.mec",
+      "source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/fannkuchredux/mech-fannkuch-even-before.project/source.mec",
+      "source_sha256": "10f5e0467d9fd681580984c07092c77a6b16f36f18595d6f3c10c0bf5b483f6a",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/fasta/mech-fasta-final-compact-v2-after.project/source.mec",
+      "source_sha256": "5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/fasta/mech-fasta-final-compact-v2-before.project/source.mec",
+      "source_sha256": "a3d9cd69c6da8c4d558034b1d3592c3414e4d548f7bc668ea5a1421d7888c0b7",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/fasta/mech-fasta-final-expanded-v2-after.project/source.mec",
+      "source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/fasta/mech-fasta-final-expanded-v2-before.project/source.mec",
+      "source_sha256": "519ef38bcba15f5efef28b1bcb14fd68788880a8ae7165a4c4824d659f4c161d",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/knucleotide/mech-compact-final-std1-simd0-p4-after.project/source.mec",
+      "source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/knucleotide/mech-compact-final-std1-simd0-p4-before.project/source.mec",
+      "source_sha256": "801f22403045b5c81c418d84a4726b86b6510726cc74a1a7857c14066e324cd3",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/mandelbrot/mech-program-compact-after.project/source.mec",
+      "source_sha256": "75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/mandelbrot/mech-program-compact-before.project/source.mec",
+      "source_sha256": "410d26d920276876d39d8cddd75fa1bc964fc81de39190cb5201f6709e26a764",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/mandelbrot/mech-program-simd-loop-fma-after.project/source.mec",
+      "source_sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/mandelbrot/mech-program-simd-loop-fma-before.project/source.mec",
+      "source_sha256": "65e5624600be896862855e106711cddb51c79ee829da0c8f0841c13608a07fab",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/revcomp/mech-revcomp-optimized-after.project/source.mec",
+      "source_sha256": "7ca0b4ff377cc51f9104c4dd5c78a2db8c0bee5ec4690ab4f0685706fc46695d",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/revcomp/mech-revcomp-optimized-before.project/source.mec",
+      "source_sha256": "7e15f32e8920c19e7752002e1d0a2f0acbd5e33fcddf1a6ad7fbde9aa2fb3f57",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/spectralnorm/mech-integer-simd1-u4-r4-p8-g8-after.project/source.mec",
+      "source_sha256": "0cb8c17dbebfcdf80e27d225c131342b7b145bbc16d85fa4287fea93c8f0d59f",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/spectralnorm/mech-integer-simd1-u4-r4-p8-g8-before.project/source.mec",
+      "source_sha256": "8eb7cd3e3a9e375344b8b1c1423732c02fb7a76c6f65a0cd88f0f5ed2d596958",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v2/builds/binarytrees/mech-binarytrees-parallel-after.project/source.mec",
+      "source_sha256": "61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v2/builds/binarytrees/mech-binarytrees-parallel-before.project/source.mec",
+      "source_sha256": "76c30e167d2441be0f99bbab1abef8cc640b5d2b935cc1e8d54f9b174d69d611",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v2/builds/binarytrees/mech-binarytrees-parallel-current-before.project/source.mec",
+      "source_sha256": "d64191b398fea60eaf678c6f345952c9af4e68c93f0efe708a37aa3ed4bf8b9f",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v2/builds/binarytrees/mech-binarytrees-parallel-paired-callback.project/source.mec",
+      "source_sha256": "b082939ae89649d93c08d48548cbe30938ccabd06bdf9b0f58fa2b0118147bba",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v2/builds/fannkuchredux/mech-fannkuch-default-after.project/source.mec",
+      "source_sha256": "0a5bee0d62631abf4f200489ddf9044c9b238f0c2dcd6a074c60ec93c90fdb8f",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v2/builds/fannkuchredux/mech-fannkuch-default-before.project/source.mec",
+      "source_sha256": "8e6732c29c7c6010c3769a43ed125085dd2643d55c80efb5c3b8ab9009e8a824",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v2/builds/fannkuchredux/mech-fannkuch-even-after.project/source.mec",
+      "source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v2/builds/fannkuchredux/mech-fannkuch-even-before.project/source.mec",
+      "source_sha256": "10f5e0467d9fd681580984c07092c77a6b16f36f18595d6f3c10c0bf5b483f6a",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v2/builds/fasta/mech-fasta-final-compact-v2-after.project/source.mec",
+      "source_sha256": "5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v2/builds/fasta/mech-fasta-final-compact-v2-before.project/source.mec",
+      "source_sha256": "a3d9cd69c6da8c4d558034b1d3592c3414e4d548f7bc668ea5a1421d7888c0b7",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v2/builds/fasta/mech-fasta-final-expanded-v2-after.project/source.mec",
+      "source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v2/builds/fasta/mech-fasta-final-expanded-v2-before.project/source.mec",
+      "source_sha256": "519ef38bcba15f5efef28b1bcb14fd68788880a8ae7165a4c4824d659f4c161d",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v2/builds/generic/allocation.project/source.mec",
+      "source_sha256": "1d1e79dc6949d35aa14435f2a011d2a7166e001a756e7b1875bd82f4164e64d2",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v2/builds/generic/effects.project/source.mec",
+      "source_sha256": "92aeaafeb09e8e58d20d33cecc92f2d8a630c533b6f9f1c4b030c05f3043b25b",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v2/builds/knucleotide/mech-compact-final-std1-simd0-p4-after.project/source.mec",
+      "source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v2/builds/knucleotide/mech-compact-final-std1-simd0-p4-before.project/source.mec",
+      "source_sha256": "801f22403045b5c81c418d84a4726b86b6510726cc74a1a7857c14066e324cd3",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v2/builds/mandelbrot/mech-program-compact-after.project/source.mec",
+      "source_sha256": "75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v2/builds/mandelbrot/mech-program-compact-before.project/source.mec",
+      "source_sha256": "410d26d920276876d39d8cddd75fa1bc964fc81de39190cb5201f6709e26a764",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v2/builds/mandelbrot/mech-program-simd-loop-fma-after.project/source.mec",
+      "source_sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v2/builds/mandelbrot/mech-program-simd-loop-fma-before.project/source.mec",
+      "source_sha256": "65e5624600be896862855e106711cddb51c79ee829da0c8f0841c13608a07fab",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v2/builds/pidigits/mech-pi-final-advance-signed-after.project/source.mec",
+      "source_sha256": "7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v2/builds/pidigits/mech-pi-final-advance-signed-before.project/source.mec",
+      "source_sha256": "b85d1022a3ef6d1b3a4847c51eb2ff9042e815cad67348fade5a8c10285cd67b",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v2/builds/pidigits/mech-pi-final-compact-signed-after.project/source.mec",
+      "source_sha256": "db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v2/builds/pidigits/mech-pi-final-compact-signed-before.project/source.mec",
+      "source_sha256": "065d63d6a3099076a261bd5d6d57c6c882a088f101a4dfede9c6e1a454c6a4b5",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v2/builds/regexredux/mech-regex-final-reuse-signed-after.project/source.mec",
+      "source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v2/builds/regexredux/mech-regex-final-reuse-signed-before.project/source.mec",
+      "source_sha256": "5a358021a856e10d5e9248cde4c11e37ca38ac7d4e934818f1c51f4b8660e65b",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v2/builds/revcomp/mech-revcomp-optimized-after.project/source.mec",
+      "source_sha256": "7ca0b4ff377cc51f9104c4dd5c78a2db8c0bee5ec4690ab4f0685706fc46695d",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v2/builds/revcomp/mech-revcomp-optimized-before.project/source.mec",
+      "source_sha256": "7e15f32e8920c19e7752002e1d0a2f0acbd5e33fcddf1a6ad7fbde9aa2fb3f57",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v2/builds/spectralnorm/mech-integer-simd1-u4-r4-p8-g8-after.project/source.mec",
+      "source_sha256": "0cb8c17dbebfcdf80e27d225c131342b7b145bbc16d85fa4287fea93c8f0d59f",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v2/builds/spectralnorm/mech-integer-simd1-u4-r4-p8-g8-before.project/source.mec",
+      "source_sha256": "8eb7cd3e3a9e375344b8b1c1423732c02fb7a76c6f65a0cd88f0f5ed2d596958",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/binarytrees/mech-binarytrees-parallel-after.project/source.mec",
+      "source_sha256": "61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/binarytrees/mech-binarytrees-parallel-before.project/source.mec",
+      "source_sha256": "76c30e167d2441be0f99bbab1abef8cc640b5d2b935cc1e8d54f9b174d69d611",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/binarytrees/mech-binarytrees-parallel-current-before.project/source.mec",
+      "source_sha256": "d64191b398fea60eaf678c6f345952c9af4e68c93f0efe708a37aa3ed4bf8b9f",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/binarytrees/mech-binarytrees-parallel-paired-callback.project/source.mec",
+      "source_sha256": "b082939ae89649d93c08d48548cbe30938ccabd06bdf9b0f58fa2b0118147bba",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-default-after.project/source.mec",
+      "source_sha256": "0a5bee0d62631abf4f200489ddf9044c9b238f0c2dcd6a074c60ec93c90fdb8f",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-default-before.project/source.mec",
+      "source_sha256": "8e6732c29c7c6010c3769a43ed125085dd2643d55c80efb5c3b8ab9009e8a824",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after.project/source.mec",
+      "source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-before.project/source.mec",
+      "source_sha256": "10f5e0467d9fd681580984c07092c77a6b16f36f18595d6f3c10c0bf5b483f6a",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fasta/mech-fasta-final-compact-v2-after.project/source.mec",
+      "source_sha256": "5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fasta/mech-fasta-final-compact-v2-before.project/source.mec",
+      "source_sha256": "a3d9cd69c6da8c4d558034b1d3592c3414e4d548f7bc668ea5a1421d7888c0b7",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fasta/mech-fasta-final-expanded-v2-after.project/source.mec",
+      "source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fasta/mech-fasta-final-expanded-v2-before.project/source.mec",
+      "source_sha256": "519ef38bcba15f5efef28b1bcb14fd68788880a8ae7165a4c4824d659f4c161d",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/generic/allocation.project/source.mec",
+      "source_sha256": "1d1e79dc6949d35aa14435f2a011d2a7166e001a756e7b1875bd82f4164e64d2",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/generic/effects.project/source.mec",
+      "source_sha256": "92aeaafeb09e8e58d20d33cecc92f2d8a630c533b6f9f1c4b030c05f3043b25b",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-after.project/source.mec",
+      "source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-before.project/source.mec",
+      "source_sha256": "801f22403045b5c81c418d84a4726b86b6510726cc74a1a7857c14066e324cd3",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-compact-after.project/source.mec",
+      "source_sha256": "75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-compact-before.project/source.mec",
+      "source_sha256": "410d26d920276876d39d8cddd75fa1bc964fc81de39190cb5201f6709e26a764",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-after.project/source.mec",
+      "source_sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-before.project/source.mec",
+      "source_sha256": "65e5624600be896862855e106711cddb51c79ee829da0c8f0841c13608a07fab",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-advance-signed-after.project/source.mec",
+      "source_sha256": "7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-advance-signed-before.project/source.mec",
+      "source_sha256": "b85d1022a3ef6d1b3a4847c51eb2ff9042e815cad67348fade5a8c10285cd67b",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-compact-signed-after.project/source.mec",
+      "source_sha256": "db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-compact-signed-before.project/source.mec",
+      "source_sha256": "065d63d6a3099076a261bd5d6d57c6c882a088f101a4dfede9c6e1a454c6a4b5",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after.project/source.mec",
+      "source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-before.project/source.mec",
+      "source_sha256": "5a358021a856e10d5e9248cde4c11e37ca38ac7d4e934818f1c51f4b8660e65b",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/revcomp/mech-revcomp-optimized-after.project/source.mec",
+      "source_sha256": "7ca0b4ff377cc51f9104c4dd5c78a2db8c0bee5ec4690ab4f0685706fc46695d",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/revcomp/mech-revcomp-optimized-before.project/source.mec",
+      "source_sha256": "7e15f32e8920c19e7752002e1d0a2f0acbd5e33fcddf1a6ad7fbde9aa2fb3f57",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/spectralnorm/mech-integer-simd1-u4-r4-p8-g8-after.project/source.mec",
+      "source_sha256": "0cb8c17dbebfcdf80e27d225c131342b7b145bbc16d85fa4287fea93c8f0d59f",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/spectralnorm/mech-integer-simd1-u4-r4-p8-g8-before.project/source.mec",
+      "source_sha256": "8eb7cd3e3a9e375344b8b1c1423732c02fb7a76c6f65a0cd88f0f5ed2d596958",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/binarytrees/binarytrees-parallel.mec",
+      "source_sha256": "d64191b398fea60eaf678c6f345952c9af4e68c93f0efe708a37aa3ed4bf8b9f",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/binarytrees/binarytrees.mec",
+      "source_sha256": "f4d803ec19b32b26c695f9a509468639d7dc57b35678ff1b0f1d8024a2e218d6",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/fannkuchredux/fannkuchredux-aligned.mec",
+      "source_sha256": "78687fdbc7a07506b39379a17c90c230d68b263b50e39882762eb3c2e1a1ea82",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/fannkuchredux/fannkuchredux-cached.mec",
+      "source_sha256": "f62d757ae78b562a0de35b7b52c2a6a43c8724b0e844a1e378c647cc6724a30c",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/fannkuchredux/fannkuchredux-coarse.mec",
+      "source_sha256": "78e374c6a533626d435a3a693ba0eb3d8bb9f9d563b79344f7e26669978273c0",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/fannkuchredux/fannkuchredux-even.mec",
+      "source_sha256": "10f5e0467d9fd681580984c07092c77a6b16f36f18595d6f3c10c0bf5b483f6a",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/fannkuchredux/fannkuchredux-initial.mec",
+      "source_sha256": "ca58bf822e438707cb8abf8a724f746770e72b87f1c9ec53c0523ea4b0cd8777",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/fannkuchredux/fannkuchredux-paired.mec",
+      "source_sha256": "4141ed3c7f30f3e0162642b3a1e0ab934a1a8deb0789c070d0a8a5dfbb93d098",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/fannkuchredux/fannkuchredux.mec",
+      "source_sha256": "8e6732c29c7c6010c3769a43ed125085dd2643d55c80efb5c3b8ab9009e8a824",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/fasta/fasta-optimized.mec",
+      "source_sha256": "519ef38bcba15f5efef28b1bcb14fd68788880a8ae7165a4c4824d659f4c161d",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/fasta/fasta.mec",
+      "source_sha256": "a3d9cd69c6da8c4d558034b1d3592c3414e4d548f7bc668ea5a1421d7888c0b7",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/knucleotide/knucleotide-compact.mec",
+      "source_sha256": "801f22403045b5c81c418d84a4726b86b6510726cc74a1a7857c14066e324cd3",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/knucleotide/knucleotide.mec",
+      "source_sha256": "bd8bf9563a71927b82993c2f1aff7b54c81124e0c208eb994e696daecadb48bf",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/mandelbrot/mandelbrot-compact-program.mec",
+      "source_sha256": "410d26d920276876d39d8cddd75fa1bc964fc81de39190cb5201f6709e26a764",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/mandelbrot/mandelbrot-compact.mec",
+      "source_sha256": "89ebdc902c202c58cc29ff02a2d1ce5f78e8257257dd2755498e2f13ba1b3b50",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/mandelbrot/mandelbrot-program.mec",
+      "source_sha256": "65e5624600be896862855e106711cddb51c79ee829da0c8f0841c13608a07fab",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/mandelbrot/mandelbrot-unrolled-10.mec",
+      "source_sha256": "dbd2ee3618de1252a9c37c8f07f89838c8b17dff28923de888c7001f6bc45f5d",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/mandelbrot/mandelbrot-unrolled-add.mec",
+      "source_sha256": "443c345e72e35e042ddb9c0c2b084e6bca2986ae67a204146a8cc4bb69773de0",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/mandelbrot/mandelbrot-unrolled.mec",
+      "source_sha256": "2914b1f966a61f74ddc3d2462dae7b45365aa70e4a5c63ac7af04f910a8835b1",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/mandelbrot/mandelbrot.mec",
+      "source_sha256": "fa906382c589e92c47ba9fb0db79059b7282df013317a565d740d5dafb8859cf",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/nbody/nbody-factored.mec",
+      "source_sha256": "5835f437f8538a15d102e6c7e02b342c0928699431f8bdb1b54acecc2a12e170",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/nbody/nbody-pairwise-mass.mec",
+      "source_sha256": "5cd6698ea94a5c4430702631bc21243f1e6361c9b05199ef598115e544b01e45",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/nbody/nbody-pairwise.mec",
+      "source_sha256": "8c95b454f5f7112d27f4ba15dae5304fd3639436cb8b62a0b6142b9669aa1728",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/nbody/nbody-power.mec",
+      "source_sha256": "a62941f0665a17fcbdff910a325b37971e44c284ff3f1109e3a6117d6c33694d",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/nbody/nbody.mec",
+      "source_sha256": "7d10f0caccf215d5835262236bb31e9a0d97dc8fe11fbe8bf14919fd2a316109",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/pidigits/pidigits-advance.mec",
+      "source_sha256": "b85d1022a3ef6d1b3a4847c51eb2ff9042e815cad67348fade5a8c10285cd67b",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/pidigits/pidigits-gated.mec",
+      "source_sha256": "31c27c6497a16ebc6b11f7eb7820fc567744cb4ca15de548923f6dcd33731b7c",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/pidigits/pidigits.mec",
+      "source_sha256": "065d63d6a3099076a261bd5d6d57c6c882a088f101a4dfede9c6e1a454c6a4b5",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/regexredux/regexredux.mec",
+      "source_sha256": "5a358021a856e10d5e9248cde4c11e37ca38ac7d4e934818f1c51f4b8660e65b",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/revcomp/revcomp-buffered.mec",
+      "source_sha256": "21e5dc61b4475368e29c32afe0696fe096ddac667fefec2bd729fc34a0e36a43",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/revcomp/revcomp.mec",
+      "source_sha256": "7e15f32e8920c19e7752002e1d0a2f0acbd5e33fcddf1a6ad7fbde9aa2fb3f57",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/spectralnorm/spectralnorm-compact.mec",
+      "source_sha256": "8544df02d4799b3bba1c743c32df0ecab2750fe645e88ba444e9ad11457d632b",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/spectralnorm/spectralnorm-integer.mec",
+      "source_sha256": "8eb7cd3e3a9e375344b8b1c1423732c02fb7a76c6f65a0cd88f0f5ed2d596958",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/current-sources/spectralnorm/spectralnorm.mec",
+      "source_sha256": "f6a445fba59ca450e7d8d468f1e6c98328721a2ebe9857c0d9b634bc65aa9cd9",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/generic-examples/allocation.mec",
+      "source_sha256": "1d1e79dc6949d35aa14435f2a011d2a7166e001a756e7b1875bd82f4164e64d2",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/generic-examples/effects.mec",
+      "source_sha256": "92aeaafeb09e8e58d20d33cecc92f2d8a630c533b6f9f1c4b030c05f3043b25b",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/migrated-endpoints/binarytrees/binarytrees-parallel.mec",
+      "source_sha256": "b082939ae89649d93c08d48548cbe30938ccabd06bdf9b0f58fa2b0118147bba",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/migrated-endpoints/binarytrees/binarytrees.mec",
+      "source_sha256": "83312a83180907ef7ab54b41f2338c8a331704b75823d467431f01fbc4584a31",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/binarytrees/experiments/callback-forms/binarytrees-parallel.mec",
+      "source_sha256": "76c30e167d2441be0f99bbab1abef8cc640b5d2b935cc1e8d54f9b174d69d611",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/fannkuchredux/fannkuchredux-even.mec",
+      "source_sha256": "10f5e0467d9fd681580984c07092c77a6b16f36f18595d6f3c10c0bf5b483f6a",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/fannkuchredux/fannkuchredux.mec",
+      "source_sha256": "8e6732c29c7c6010c3769a43ed125085dd2643d55c80efb5c3b8ab9009e8a824",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/fasta/fasta-optimized.mec",
+      "source_sha256": "519ef38bcba15f5efef28b1bcb14fd68788880a8ae7165a4c4824d659f4c161d",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/fasta/fasta.mec",
+      "source_sha256": "a3d9cd69c6da8c4d558034b1d3592c3414e4d548f7bc668ea5a1421d7888c0b7",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/knucleotide/knucleotide-compact.mec",
+      "source_sha256": "801f22403045b5c81c418d84a4726b86b6510726cc74a1a7857c14066e324cd3",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/mandelbrot/mandelbrot-compact-program.mec",
+      "source_sha256": "410d26d920276876d39d8cddd75fa1bc964fc81de39190cb5201f6709e26a764",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/mandelbrot/mandelbrot-program.mec",
+      "source_sha256": "65e5624600be896862855e106711cddb51c79ee829da0c8f0841c13608a07fab",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/nbody/nbody-pairwise-mass.mec",
+      "source_sha256": "5cd6698ea94a5c4430702631bc21243f1e6361c9b05199ef598115e544b01e45",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/nbody/nbody.mec",
+      "source_sha256": "7d10f0caccf215d5835262236bb31e9a0d97dc8fe11fbe8bf14919fd2a316109",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/pidigits/pidigits-advance.mec",
+      "source_sha256": "b85d1022a3ef6d1b3a4847c51eb2ff9042e815cad67348fade5a8c10285cd67b",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/pidigits/pidigits.mec",
+      "source_sha256": "065d63d6a3099076a261bd5d6d57c6c882a088f101a4dfede9c6e1a454c6a4b5",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/regexredux/regexredux.mec",
+      "source_sha256": "5a358021a856e10d5e9248cde4c11e37ca38ac7d4e934818f1c51f4b8660e65b",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/revcomp/revcomp.mec",
+      "source_sha256": "7e15f32e8920c19e7752002e1d0a2f0acbd5e33fcddf1a6ad7fbde9aa2fb3f57",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/spectralnorm/spectralnorm-integer.mec",
+      "source_sha256": "8eb7cd3e3a9e375344b8b1c1423732c02fb7a76c6f65a0cd88f0f5ed2d596958",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/knucleotide/knucleotide-compact.mec",
+      "source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/knucleotide/knucleotide.mec",
+      "source_sha256": "6cc51495dd8ec1d88cf7799d41c536b56c6fed31c89c44ea75ddee334813e566",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/knucleotide/prototype-sources/knucleotide-compact.mec",
+      "source_sha256": "26839e0011f3da957080ede66a052f74b14d86b343eaa92cba93a519b5aafd45",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/knucleotide/prototype-sources/knucleotide.mec",
+      "source_sha256": "1a1a2cd3c62f0cdd24f8cb023a8e752cf0f9df0327cc21216d4f76b8f868dccc",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/language-gaps/20261011/fixtures/arrow-block-effects.mec",
+      "source_sha256": "b9b09c29f1bac75967a0e2fe11cf5148c2d1e629b43ff8499a513079d234e570",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/language-gaps/20261011/fixtures/arrow-block-last-binding.mec",
+      "source_sha256": "5f14fa52862fdf2249392816ed434bf32578ba8f79673a61a67c6cbae25b2782",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/language-gaps/20261011/fixtures/tag-conversion-final-binding.mec",
+      "source_sha256": "20d23cbd031ef10be26ecc786a47e74b9a41b387455b638ebf5ffa8ec7dbe588",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/language-gaps/20261011/fixtures/tag-conversion-invalid-kind.mec",
+      "source_sha256": "4ecea2969161ca5926865c8b4277b4fe103a015299d2d9f526d40f858850f382",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/language-gaps/20261011/fixtures/tag-conversion-negative-return.mec",
+      "source_sha256": "e431a818c4e6915820d5bfa6d3179ec00eeddd9b2530da73bfd85e77dc91cc7e",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/language-gaps/20261011/fixtures/tag-conversion-overflow-binding.mec",
+      "source_sha256": "cb1a5f865660eddbafdfa6c8db9dfac333f7a1ce6f6735846d7181b5345396dc",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/language-gaps/20261011/fixtures/tag-conversion-values.mec",
+      "source_sha256": "7eda75068ca0922b04e81f530a8a3e6ac6c82e8d2e7562ff7a8dd66d99d308b2",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/language-gaps/20261011/fixtures/type-tag-binding-negative.mec",
+      "source_sha256": "1515c484a76b81e3725523631d7e69477f25e77b6abd0686a0436d6e13809db2",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/language-gaps/20261011/fixtures/type-tag-binding-overflow.mec",
+      "source_sha256": "d77e47f5c0c0e14f889adf59fde18ef4feda5ad3aa332762336bbc63e62ec78c",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/language-gaps/20261011/fixtures/type-tag-binding.mec",
+      "source_sha256": "404cfe59d7bf487c1d48504a595a202993d31ea1b4176cc7ebb8678f83f59c6c",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/language-gaps/20261011/fixtures/value-conversion-negative.mec",
+      "source_sha256": "51057e69b3666bf228f1e482e7be1aa691dd540fa97e2ec6f7dad2bfaffd914c",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/language-gaps/20261011/fixtures/value-conversion-overflow.mec",
+      "source_sha256": "c6472da94cdb74128564a648475afecfc4ac96228170cd0347fba8f631585564",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/language-gaps/20261011/fixtures/value-copied-to-cell.mec",
+      "source_sha256": "92f8df224583ad986e0281cbcf777c018f0a9cfc439e76a3fdc31966ce643967",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/language-gaps/20261011/fixtures/value-divide-zero.mec",
+      "source_sha256": "d64473bdc08c202a65567598712fb7627ec852686e779e88ae6b09d04c21394f",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/language-gaps/20261011/fixtures/value-loop-aliases.mec",
+      "source_sha256": "4cdd708a631e8d13f59e77bd72a0a2a6ab7b27e58995eb6d635ed5d154cd2d31",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/language-gaps/20261011/fixtures/value-loop-long.mec",
+      "source_sha256": "3a6773922d4d6129287d96782a955611dd1e034a743975caf98dbb0ad4bf7ba1",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/language-gaps/20261011/fixtures/value-mixed-sign-division.mec",
+      "source_sha256": "267cc766046451122d7c9bda5a4b5d33f1594473bac0b415ae4ca46a417d876a",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/language-gaps/20261011/fixtures/value-nested-record-aliases.mec",
+      "source_sha256": "1095df80e6a314ad3b7f24b794f0e64dcb491d2ffe609ad15f1542be499cc491",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/language-gaps/20261011/fixtures/value-operands.mec",
+      "source_sha256": "7de6069d3e6b9880a9124f81a7830502bbc02471473168b60b6b104895cbe7e9",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/language-gaps/20261011/fixtures/value-rejects-mutation.mec",
+      "source_sha256": "7b81caf9d7ea9a21fe1c5e6f726844a5dd6a40ffc68638378b15d630a0a8e1a9",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/language-gaps/20261011/fixtures/value-remainder-zero.mec",
+      "source_sha256": "4050b4ee066bf510f1e2bb57de400b0d696d37d40b397b82dd334b01d566c9b6",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/language-gaps/20261011/sources/fasta.binary-search.mec",
+      "source_sha256": "7a3d21986c8312f256b7667ec71e21156c9d3bd8e2524a01b95c0f9771b960c2",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/language-gaps/20261011/sources/fasta.prototype.mec",
+      "source_sha256": "4863053d6d9e16d9ced4e05531a7cd36c62d3ac70ba1f8ca1de9853300404546",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/language-gaps/20261011/sources/fasta.readable.mec",
+      "source_sha256": "866c14097baf214f500d69c052dd5c396b89667d25a24337ef16654776c297f2",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/language-gaps/20261011/sources/pidigits.hypothetical.mec",
+      "source_sha256": "3441917b150471dec96a3b2be9bb20ddf1f86bab885ee06169ff832ef99cf80a",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/language-gaps/20261011/sources/pidigits.prototype.mec",
+      "source_sha256": "e8a3197fb776b633ccba133d5193d48769eebf90b9f8a8ceccde4d4725278a08",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/language-gaps/20261011/sources/regexredux.hypothetical.mec",
+      "source_sha256": "5ac2c75e2bae711b74399d0015756978dc1968c23e493b6bc404a8047484f4dd",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/mandelbrot/mandelbrot-compact-program.mec",
+      "source_sha256": "75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/mandelbrot/mandelbrot-compact.mec",
+      "source_sha256": "89ebdc902c202c58cc29ff02a2d1ce5f78e8257257dd2755498e2f13ba1b3b50",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/mandelbrot/mandelbrot-program.mec",
+      "source_sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/mandelbrot/mandelbrot-unrolled-10.mec",
+      "source_sha256": "dbd2ee3618de1252a9c37c8f07f89838c8b17dff28923de888c7001f6bc45f5d",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/mandelbrot/mandelbrot-unrolled-add.mec",
+      "source_sha256": "443c345e72e35e042ddb9c0c2b084e6bca2986ae67a204146a8cc4bb69773de0",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/mandelbrot/mandelbrot-unrolled.mec",
+      "source_sha256": "2914b1f966a61f74ddc3d2462dae7b45365aa70e4a5c63ac7af04f910a8835b1",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/mandelbrot/mandelbrot.mec",
+      "source_sha256": "fa906382c589e92c47ba9fb0db79059b7282df013317a565d740d5dafb8859cf",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/mandelbrot/prototype-sources/mandelbrot-compact.mec",
+      "source_sha256": "89ebdc902c202c58cc29ff02a2d1ce5f78e8257257dd2755498e2f13ba1b3b50",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/mandelbrot/prototype-sources/mandelbrot-unrolled-add.mec",
+      "source_sha256": "443c345e72e35e042ddb9c0c2b084e6bca2986ae67a204146a8cc4bb69773de0",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/nbody/experiments/20261009-local-simd/nbody-pairwise-mass.mec",
+      "source_sha256": "5cd6698ea94a5c4430702631bc21243f1e6361c9b05199ef598115e544b01e45",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/nbody/experiments/20261010-final-energy/nbody-matrix-pairwise-named.mec",
+      "source_sha256": "48ac0325e6feed9739f8036e50f72237faaac78f827d70a98286476dec56d407",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/nbody/experiments/20261010-final-energy/nbody-matrix-pairwise.mec",
+      "source_sha256": "517ce39d63cde976bfe155a9037603c03afc734b7c9e962b4f241a495ae04055",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/nbody/experiments/20261010-final-energy/nbody-matrix-short-named.mec",
+      "source_sha256": "f1203521bac0bc5268cd98e2d8a01a85d0f20bfa1d43d33416c58d0c21ceb23c",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/nbody/experiments/20261010-final-energy/nbody-matrix-short.mec",
+      "source_sha256": "1044584d35b021e3cf4c65f1944b52a47822fd744b0fc582eeca89584606a0ba",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/columns-type-probe.mec",
+      "source_sha256": "c828f495aeabacba601e6818ce01fae346f76f3214b607cccf8212e1ad2ad1ad",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-pairwise-columns.mec",
+      "source_sha256": "6b635c91392e6b24667d58854e692c28dc4a76365f8600cb1ea3ff296e06409c",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-pairwise.mec",
+      "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-short-columns.mec",
+      "source_sha256": "940665aea2076ca6783e0aef8af61a44d5afbe3320284ba22cd824deff7f84fb",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-short.mec",
+      "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/nbody/experiments/20261011-shared-products/sources/nbody-matrix-shared.mec",
+      "source_sha256": "fa9b1b367d4c48bb5add3362a99b8a624dc95a8db5ba03cf1fa7d4a1935bd6cc",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/nbody/nbody-factored.mec",
+      "source_sha256": "5835f437f8538a15d102e6c7e02b342c0928699431f8bdb1b54acecc2a12e170",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/nbody/nbody-inline.mec",
+      "source_sha256": "b357e1d1f1331ee90251a01cc339928e0f2b9181b29696c70f196d1d21b6e753",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/nbody/nbody-matrix-short.mec",
+      "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/nbody/nbody-pairwise-mass.mec",
+      "source_sha256": "5cd6698ea94a5c4430702631bc21243f1e6361c9b05199ef598115e544b01e45",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/nbody/nbody-pairwise.mec",
+      "source_sha256": "8c95b454f5f7112d27f4ba15dae5304fd3639436cb8b62a0b6142b9669aa1728",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/nbody/nbody-power.mec",
+      "source_sha256": "a62941f0665a17fcbdff910a325b37971e44c284ff3f1109e3a6117d6c33694d",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/nbody/nbody.mec",
+      "source_sha256": "7d10f0caccf215d5835262236bb31e9a0d97dc8fe11fbe8bf14919fd2a316109",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/pidigits/experiments/baseline/project/source.mec",
+      "source_sha256": "013870a28c7b3ed40837e216ed0bfa9ab4a159068254d56ea3229aadd7794b8f",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/pidigits/experiments/baseline/source.mec",
+      "source_sha256": "013870a28c7b3ed40837e216ed0bfa9ab4a159068254d56ea3229aadd7794b8f",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/pidigits/experiments/tuple-form/pidigits-gated.mec",
+      "source_sha256": "889b92288a378b423509f58ce80b4a82065813ec4bf9ba7db56969d650f9c892",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/pidigits/experiments/tuple-form/pidigits.mec",
+      "source_sha256": "013870a28c7b3ed40837e216ed0bfa9ab4a159068254d56ea3229aadd7794b8f",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/pidigits/pidigits-advance.mec",
+      "source_sha256": "7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/pidigits/pidigits-gated.mec",
+      "source_sha256": "67ff52e6ab9be4f10bd33034458fedf3538f335a7e0fdaeab0f8924b4a5a4ac2",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/pidigits/pidigits.mec",
+      "source_sha256": "db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/regexredux/experiments/baseline/project/source.mec",
+      "source_sha256": "5a358021a856e10d5e9248cde4c11e37ca38ac7d4e934818f1c51f4b8660e65b",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/regexredux/experiments/baseline/source.mec",
+      "source_sha256": "5a358021a856e10d5e9248cde4c11e37ca38ac7d4e934818f1c51f4b8660e65b",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/regexredux/regexredux.mec",
+      "source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/remaining-conformance/empty-regex.mec",
+      "source_sha256": "7f747988969c20dbbccdee9e48338fe984231484d6dbe9f7fe9eac874b3f952a",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/remaining-conformance/fibonacci.mec",
+      "source_sha256": "5bb5fed6d3d4bca302f91fc61df966e21606c4478bd36dc4eccac4db777bbb5c",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/remaining-conformance/generic-regex.mec",
+      "source_sha256": "a72aa6635575afdf4366ecba13c2c2acee5ed9dde436b686102e8941233690f2",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/revcomp/revcomp-buffered.mec",
+      "source_sha256": "9afe7d2d2ec2996a00f692e41ba81a5cbfe737550b606719522b9e0e0b1ce93d",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/revcomp/revcomp.mec",
+      "source_sha256": "7ca0b4ff377cc51f9104c4dd5c78a2db8c0bee5ec4690ab4f0685706fc46695d",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/spectralnorm/spectralnorm-compact.mec",
+      "source_sha256": "0cb8c17dbebfcdf80e27d225c131342b7b145bbc16d85fa4287fea93c8f0d59f",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/spectralnorm/spectralnorm-faithful.mec",
+      "source_sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/spectralnorm/spectralnorm-integer.mec",
+      "source_sha256": "0cb8c17dbebfcdf80e27d225c131342b7b145bbc16d85fa4287fea93c8f0d59f",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/spectralnorm/spectralnorm.mec",
+      "source_sha256": "0cb8c17dbebfcdf80e27d225c131342b7b145bbc16d85fa4287fea93c8f0d59f",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/work-audit/20261009/builds/binarytrees-mech-binarytrees-parallel-unchanged.project/source.mec",
+      "source_sha256": "61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/work-audit/20261009/builds/fannkuchredux-mech-fannkuch-default-unchanged.project/source.mec",
+      "source_sha256": "0a5bee0d62631abf4f200489ddf9044c9b238f0c2dcd6a074c60ec93c90fdb8f",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/work-audit/20261009/builds/fannkuchredux-mech-fannkuch-even-unchanged.project/source.mec",
+      "source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-compact-v2-floating.project/source.mec",
+      "source_sha256": "5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-compact-v2-unchanged.project/source.mec",
+      "source_sha256": "5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating.project/source.mec",
+      "source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-unchanged.project/source.mec",
+      "source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/work-audit/20261009/builds/knucleotide-mech-compact-final-std1-simd0-p4-unchanged.project/source.mec",
+      "source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/work-audit/20261009/builds/mandelbrot-mech-program-compact-unchanged.project/source.mec",
+      "source_sha256": "75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/work-audit/20261009/builds/mandelbrot-mech-program-simd-loop-fma-unchanged.project/source.mec",
+      "source_sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/work-audit/20261009/builds/pidigits-mech-pi-final-advance-signed-unchanged.project/source.mec",
+      "source_sha256": "7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/work-audit/20261009/builds/pidigits-mech-pi-final-compact-signed-unchanged.project/source.mec",
+      "source_sha256": "db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/work-audit/20261009/builds/regexredux-mech-regex-final-reuse-signed-unchanged.project/source.mec",
+      "source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/work-audit/20261009/builds/revcomp-mech-revcomp-optimized-unchanged.project/source.mec",
+      "source_sha256": "7ca0b4ff377cc51f9104c4dd5c78a2db8c0bee5ec4690ab4f0685706fc46695d",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions.project/source.mec",
+      "source_sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-unchanged.project/source.mec",
+      "source_sha256": "0cb8c17dbebfcdf80e27d225c131342b7b145bbc16d85fa4287fea93c8f0d59f",
+      "status": "unchanged-ok"
+    },
+    {
+      "source": "benchmarks/clbg/work-audit/20261009/sources/spectralnorm-four-functions.mec",
+      "source_sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290",
+      "status": "unchanged-ok"
+    }
+  ],
+  "counts": {
+    "unchanged-ok": 322
+  }
+}

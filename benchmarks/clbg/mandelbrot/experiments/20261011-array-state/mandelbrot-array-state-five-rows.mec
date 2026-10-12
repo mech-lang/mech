@@ -1,0 +1,16 @@
+advance(z<[f64]:2,8>, cr<[f64]:1,8>, ci<f64>) => <[f64]:2,8> := [z[1,:] * z[1,:] - z[2,:] * z[2,:] + cr; (z[1,:] + z[1,:]) * z[2,:] + ci]
+pixels(width<f64>, pixel<[f64]:8,1>, row<f64>) = (result<[bool]:1,9>) :=
+  cr := (pixel<[f64]:8,1> * (2.0 / width<f64>) - 1.5)'
+  ci := row<f64> * (2.0 / width<f64>) - 1.0
+  ~z := [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0; 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  ~iteration := 0.0
+  square := z * z
+  inside := square[1,:] + square[2,:] <= 4.0
+  done := iteration >= 50.0 || !(inside[1] || inside[2] || inside[3] || inside[4] || inside[5] || inside[6] || inside[7] || inside[8])
+  next-z := [square[1,:] - square[2,:] + cr; (z[1,:] + z[1,:]) * z[2,:] + ci] |> advance(_, cr, ci) |> advance(_, cr, ci) |> advance(_, cr, ci) |> advance(_, cr, ci)
+  z = next-z
+  iteration += 5.0
+  result := [inside, done].
+size := io/argument-u64(1)
+image := grid/map-until(size, size, pixels)
+image |> image/pbm |> io/write
