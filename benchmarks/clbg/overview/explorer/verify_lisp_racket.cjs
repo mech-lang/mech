@@ -1,6 +1,7 @@
 const fs=require('node:fs');
 const assert=require('node:assert/strict');
 const {pathToFileURL}=require('node:url');
+const {selectTraitOnly}=require('./trait_test_helpers.cjs');
 const data=JSON.parse(fs.readFileSync(__dirname+'/dist/data.json','utf8'));
 const click=(page,selector)=>page.evaluate(selector=>document.querySelector(selector).click(),selector);
 (async()=>{
@@ -46,7 +47,7 @@ const click=(page,selector)=>page.evaluate(selector=>document.querySelector(sele
       }
       await click(page,'#all-languages');
       for(const group of ['dynamic','functional','aot']){
-        await click(page,`[data-only-group="${group}"]`);
+        await selectTraitOnly(page,group);
         const selected=await page.evaluate(()=>window.benchmarkExplorer.getSelection().languages);
         assert(selected.includes('lisp')&&selected.includes('racket'));
       }

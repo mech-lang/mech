@@ -1,5 +1,6 @@
 const {pathToFileURL}=require('node:url');
 const fs=require('fs');const assert=require('assert/strict');
+const {selectTraitOnly,traitSelector,expectedTraitKeys}=require('./trait_test_helpers.cjs');
 const data=JSON.parse(fs.readFileSync(__dirname+'/dist/data.json','utf8'));
 const completeCount=data.languages.filter(l=>l.timed_benchmarks.length).length;
 const matlabCount=data.languages.find(l=>l.key==='matlab').timed_benchmarks.length;
@@ -109,7 +110,7 @@ async function clickChartPoint(page,selector){
       assert.equal('twoSigma' in afterNone.selection,false);
       assert.deepEqual(afterNone.domains,beforeNone.domains);
       assert.equal(await page.locator('[data-language]:checked').count(),0);
-      assert.equal(await page.locator('[data-language-group]:checked').count(),0);
+      assert.equal(await page.locator('[data-trait-option]:checked').count(),0);
       assert.equal(await page.locator('.endpoint, .spread-area, .line-label').count(),0);
       assert.equal(await page.locator('#mean-table tbody tr').count(),0);
       assert(await page.locator('#empty-state').isVisible());
@@ -120,29 +121,31 @@ async function clickChartPoint(page,selector){
       assert.equal((await page.evaluate(()=>window.benchmarkExplorer.getSummary())).length,completeCount);
       await keepBenchmarks(page,()=>page.locator('[data-family="mech"]').uncheck());
       await keepBenchmarks(page,()=>page.locator('[data-family="mech"]').check());
-      assert.equal(await page.locator('[data-language-group]').count(),data.language_groups.length);
+      assert.equal(await page.locator('.trait-dimension').count(),4);
+      assert.equal(await page.locator('[data-trait-option]').count(),11);
       const functional=data.language_groups.find(group=>group.key==='functional').languages;
-      await keepBenchmarks(page,()=>page.locator('[data-only-group="functional"]').click());
+      await keepBenchmarks(page,()=>selectTraitOnly(page,'functional'));
       assert.deepEqual(new Set((await page.evaluate(()=>window.benchmarkExplorer.getSelection())).languages),new Set(functional));
       assert.equal(await page.locator('.line-label').count(),(await assertCoverage(page)).length);
       await page.locator('[data-benchmark="binarytrees"]').uncheck();
       assert.equal(await page.locator('.line-label').count(),(await assertCoverage(page)).length);
       await page.locator('#reset').click();
-      await keepBenchmarks(page,()=>page.locator('[data-only-group="interpreted"]').click());
-      const interpreted=data.language_groups.find(group=>group.key==='interpreted').languages;
+      await keepBenchmarks(page,()=>selectTraitOnly(page,'interpreted'));
+      const interpreted=expectedTraitKeys(data,'interpreted');
       assert.deepEqual(new Set((await page.evaluate(()=>window.benchmarkExplorer.getSelection())).languages),new Set(interpreted));
       assert.equal(await page.locator('.line-label').count(),(await assertCoverage(page)).length);
       await keepBenchmarks(page,()=>page.locator('input[data-language="python"]').uncheck());
-      assert.equal(await page.locator('[data-language-group="interpreted"]').evaluate(input=>input.indeterminate),true);
-      await keepBenchmarks(page,()=>page.locator('[data-language-group="interpreted"]').check());
+      assert.equal(await page.locator(traitSelector('interpreted')).isChecked(),true,'Manual exclusion preserves the active execution filter');
+      assert.equal((await page.evaluate(()=>window.benchmarkExplorer.getSelection())).languages.length,interpreted.length-1);
+      await keepBenchmarks(page,()=>page.locator('input[data-language="python"]').check());
       assert.equal((await page.evaluate(()=>window.benchmarkExplorer.getSelection())).languages.length,interpreted.length);
-      await keepBenchmarks(page,()=>page.locator('[data-only-group="array"]').click());
+      await keepBenchmarks(page,()=>selectTraitOnly(page,'array'));
       assert.deepEqual(new Set((await page.evaluate(()=>window.benchmarkExplorer.getSelection())).languages),new Set(data.language_groups.find(group=>group.key==='array').languages));
       await selectBenchmarks(page,data.benchmarks.filter(b=>data.language_groups.find(g=>g.key==='array').languages.every(key=>data.languages.find(l=>l.key===key).timed_benchmarks.includes(b.key))).map(b=>b.key));
       assert.equal(await page.locator('.line-label').count(),(await assertCoverage(page)).length);
       await page.locator('#reset').click();
       for(const group of ['array','dynamic','jit']){
-        await keepBenchmarks(page,()=>page.locator(`[data-only-group="${group}"]`).click());
+        await keepBenchmarks(page,()=>selectTraitOnly(page,group));
         assert((await page.evaluate(()=>window.benchmarkExplorer.getSelection())).languages.includes('matlab'));
         assert.equal(await page.locator('[data-mean=true][data-language="matlab"]').count(),2);
       }

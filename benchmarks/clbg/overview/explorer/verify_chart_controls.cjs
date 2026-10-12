@@ -1,6 +1,7 @@
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const {pathToFileURL}=require('node:url');
+const {selectTraitOnly,setTraitChecked}=require('./trait_test_helpers.cjs');
 const data=JSON.parse(fs.readFileSync(__dirname+'/dist/data.json','utf8'));
 const subset=['binarytrees','fasta','spectralnorm'];
 const mechModes=data.languages.filter(language=>language.family==='mech'||language.key==='mech').map(language=>language.key);
@@ -79,11 +80,12 @@ async function assertRemovedControl(page){
       const afterFamily=await selection(page);
       assert(mechModes.every(key=>afterFamily.languages.includes(key)));
 
-      await keepSubset(page,()=>page.locator('[data-language-group="interpreted"]').uncheck());
+      await keepSubset(page,()=>selectTraitOnly(page,'interpreted'));
       await assertCoverage(page);
-      await keepSubset(page,()=>page.locator('[data-language-group="interpreted"]').check());
+      assert(!(await selection(page)).languages.includes('ruby')&&!(await selection(page)).languages.includes('php'),'YJIT and tracing PHP are excluded from the interpreted execution path');
+      await keepSubset(page,()=>setTraitChecked(page,'interpreted',false));
       await assertPartialCoverage(page);
-      await keepSubset(page,()=>page.locator('[data-only-group="functional"]').click());
+      await keepSubset(page,()=>selectTraitOnly(page,'functional'));
       const afterGroup=await selection(page);
       const functional=data.language_groups.find(group=>group.key==='functional').languages.filter(key=>data.languages.find(language=>language.key===key).release_year<=afterGroup.releaseYear);
       assert.deepEqual(new Set(afterGroup.languages),new Set(functional));

@@ -1,6 +1,7 @@
 const fs=require('node:fs');
 const assert=require('node:assert/strict');
 const {pathToFileURL}=require('node:url');
+const {selectTraitOnly}=require('./trait_test_helpers.cjs');
 const data=JSON.parse(fs.readFileSync(__dirname+'/dist/data.json','utf8'));
 const completeCount=data.languages.filter(l=>l.timed_benchmarks.length).length;
 const mechPaths=data.languages.filter(l=>l.family==='mech'||l.key==='mech').map(l=>l.key);
@@ -26,14 +27,14 @@ function sameChart(a,b,label){for(const key of ['left','top','width','height'])a
       await settle(page);
       const original=await layout(page);
       for(const group of ['dynamic','array','interpreted']){
-        await click(page,`[data-only-group="${group}"]`);await settle(page);
+        await selectTraitOnly(page,group);await settle(page);
         sameChart(original,await layout(page),`${width}: ${group} only`);
         assert.equal(await page.locator('#coverage-note').evaluate(note=>note.open),false,'Coverage never opens itself');
       }
       await click(page,'#all-languages');await click(page,'#coverage-note summary');await settle(page);
       const expanded=await layout(page);
       for(const group of ['dynamic','array']){
-        await click(page,`[data-only-group="${group}"]`);await settle(page);
+        await selectTraitOnly(page,group);await settle(page);
         sameChart(expanded,await layout(page),`${width}: ${group} with coverage note expanded`);
       }
       await click(page,'#all-languages');await click(page,'[data-view="benchmark"]');await settle(page);

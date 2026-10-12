@@ -525,11 +525,11 @@ def enrich_payload(root, data, array_audit_dir):
     data['protocol']['measured'] = 'October 8–11, 2026'
     data['language_groups'] = [
         dict(key='dynamic', label='Dynamic', languages=['python','ruby','perl','php','javascript','lua','luajit','julia','bqn','k','matlab','erlang','lisp','racket','smalltalk','r','apl','uiua']),
-        dict(key='interpreted', label='Interpreted', languages=['python','ruby','perl','php','lua','bqn','k','mech-resident','r','apl','uiua']),
+        dict(key='interpreted', label='Interpreted', languages=['python','perl','lua','bqn','k','mech-resident','r','apl','uiua']),
         dict(key='array', label='Array', languages=['mech','mech-jit','mech-resident','julia','bqn','k','futhark','matlab','r','apl','uiua']),
         dict(key='functional', label='Functional', languages=['haskell','ocaml','fsharp','fsharp-aot','futhark','mech','mech-jit','mech-resident','erlang','lisp','racket','roc','elm','r','apl','uiua']),
         dict(key='aot', label='AOT', languages=['c','cpp','chapel','go','java','rust','mech','mojo','futhark','swift','haskell','ocaml','lisp','racket','zig','odin','roc','ada','pascal','fortran','csharp-aot','fsharp-aot','dart','d']),
-        dict(key='jit', label='JIT', languages=['javascript','luajit','julia','mech-jit','matlab','erlang','elm','csharp','fsharp','dart-jit','smalltalk']),
+        dict(key='jit', label='JIT', languages=['javascript','ruby','php','luajit','julia','mech-jit','matlab','erlang','elm','csharp','fsharp','dart-jit','smalltalk']),
     ]
     for group in data['language_groups']:
         group['languages']=[key for key in group['languages'] if any(l['key']==key for l in data['languages'])]
@@ -546,7 +546,7 @@ def enrich_payload(root, data, array_audit_dir):
     data['protocol']['baseline'] = 'Fixed per-benchmark minima of the current endpoint dataset; visibility changes preserve these baselines.'
     data['protocol']['spread'] = 'Sample covariance in log2 LOC/time ratios across selected measured benchmarks, separately for fastest and fewest-LOC profiles. Inner contours use one standard deviation; optional lighter outer areas use two along both principal axes. Centers are geometric means. These areas describe benchmark variation, not timing uncertainty or confidence intervals. Covariance envelopes determine fixed upper limits whether displayed or hidden; the first labelled tick is always 1x and covariance tails below 1x are clipped without changing the statistics.'
     data['protocol']['fasta_rust'] = 'Rust fastest uses the locally adapted floating-CDF Rust #7 source with five full-size measurements. Mech FASTA uses the unchanged binary control from those same five shuffled rounds. The compact Rust endpoint remains its complete original source.'
-    data['protocol']['language_groups'] = 'Groups overlap. Dynamic, Array and Functional describe language families; Interpreted, AOT and JIT describe the benchmark execution paths used here. Java uses GraalVM native AOT builds in this cohort.'
+    data['protocol']['language_groups'] = 'Language filters intersect Execution, Typing, Language style and Memory management categories. Choices within a category are alternatives; empty categories include all. Execution describes the measured runtime: Java uses GraalVM native AOT, Ruby uses YJIT and PHP uses tracing JIT.'
     years_path = Path(__file__).with_name('language-years.json')
     years = json.loads(years_path.read_text())
     data['provenance']['language-years.json'] = sha(years_path)

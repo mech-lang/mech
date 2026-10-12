@@ -1,0 +1,30 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "width": 1440,
+      "intersection": true,
+      "within_category_alternatives": true,
+      "fixed_axes": true,
+      "manual_selection": true,
+      "mech_modes": true
+    },
+    {
+      "width": 390,
+      "intersection": true,
+      "within_category_alternatives": true,
+      "fixed_axes": true,
+      "manual_selection": true,
+      "mech_modes": true
+    },
+    {
+      "width": 320,
+      "intersection": true,
+      "within_category_alternatives": true,
+      "fixed_axes": true,
+      "manual_selection": true,
+      "mech_modes": true
+    }
+  ],
+  "errors": []
+}

@@ -1,10 +1,11 @@
 import {comparison,same,chartDomain,comparisonMetrics,languagesByYear,globalStatistics,languageFamilies,medianHistory} from './math.mjs';
+import {traitDimensions,languageTraits,emptyTraitFilters,matchesTraits,filterLanguageKeys} from './traits.mjs';
 
 const $=selector=>document.querySelector(selector);
 const svgNS='http://www.w3.org/2000/svg';
-let data,model;
+let data,model,traits;
 const state={benchmarks:new Set(),languages:new Set(),disabled:new Set(),ellipses:new Set(['mech']),
-  view:'summary',focus:'nbody',fast:true,small:true,samples:true,focusMeans:true,global:false,trail:true,playing:false,collapsedFamilies:new Set(),releaseYear:null,
+  view:'summary',focus:'nbody',fast:true,small:true,samples:true,focusMeans:true,global:false,trail:true,playing:false,collapsedFamilies:new Set(),releaseYear:null,traits:emptyTraitFilters(),
   detail:{language:'mech',benchmark:'nbody',kind:'fast',program:null,aggregate:false,file:0}};
 const colors={};
 const mechViewColors={mech:'#F6C04E','mech-jit':'#FFE59A','mech-resident':'#C99B2E'};
@@ -28,6 +29,7 @@ const mechKeys=()=>data.languages.filter(l=>isMechLanguage(l.key)).map(l=>l.key)
 const displayColor=key=>state.view==='mech'?(mechViewColors[key]??colors[key]):colors[key];
 function enterMechView(){
   pauseYears();
+  state.traits=emptyTraitFilters();
   state.view='mech';state.releaseYear=yearBounds().max;
   state.benchmarks=new Set(data.benchmarks.map(b=>b.key));
   for(const key of mechKeys())state.languages.add(key);
@@ -42,7 +44,8 @@ const lineDash=key=>({dashed:'7 4',dotted:'2 4'}[language(key).line_style]??null
 const yearBounds=()=>({min:Math.min(...data.languages.map(l=>l.release_year)),max:Math.max(...data.languages.map(l=>l.release_year))});
 const releaseYears=()=>[...new Set(data.languages.map(l=>l.release_year))].sort((a,b)=>a-b);
 const yearKeys=()=>new Set(languagesByYear(data.languages,{year:state.releaseYear}));
-const effectiveLanguages=()=>{const allowed=yearKeys();return new Set([...state.languages].filter(key=>allowed.has(key)));};
+const traitLanguageKeys=()=>filterLanguageKeys(state.languages,traits,state.traits);
+const effectiveLanguages=()=>{const allowed=yearKeys();return new Set([...traitLanguageKeys()].filter(key=>allowed.has(key)));};
 function pauseYears(){clearTimeout(playbackTimer);playbackTimer=null;state.playing=false;}
 function setReleaseYear(year,{playback=false}={}){
   const {min,max}=yearBounds();
@@ -66,7 +69,7 @@ function playYears(){
 }
 function currentHistory(){
   const selection={benchmarks:state.view==='benchmark'?new Set(state.benchmarks.has(state.focus)?[state.focus]:[]):state.benchmarks,
-    languages:state.view==='mech'?new Set(mechKeys().filter(key=>state.languages.has(key))):state.languages,disabled:state.disabled};
+    languages:state.view==='mech'?new Set(mechKeys().filter(key=>state.languages.has(key))):traitLanguageKeys(),disabled:state.disabled};
   const key=JSON.stringify(Object.fromEntries(Object.entries(selection).map(([k,v])=>[k,[...v].sort()])));
   if(historyCache.key!==key)historyCache={key,series:medianHistory(data,selection)};
   return historyCache.series.filter(item=>item.year<=state.releaseYear);
@@ -77,7 +80,7 @@ function renderYears(){
   $('#release-year').setAttribute('aria-valuetext',String(state.releaseYear));
   $('#release-year-value').textContent=state.releaseYear;
   $('#release-year-min').textContent=years[0];$('#release-year-max').textContent=years.at(-1);
-  $('#release-year-status').textContent=`${eligible.size} of ${state.languages.size} enabled entries released by ${state.releaseYear}.`;
+  $('#release-year-status').textContent=`${eligible.size} of ${traitLanguageKeys().size} matching entries released by ${state.releaseYear}.`;
   $('#playback-year').textContent=state.releaseYear;
   $('#play-years').textContent=state.playing?'Pause years':'Play years';
   $('#play-years').setAttribute('aria-pressed',String(state.playing));
@@ -170,30 +173,27 @@ function renderPlotOptions(){
 function renderControls(){
   const allowed=yearKeys(),enabled=effectiveLanguages();
   const active=document.activeElement;
-  const focusAttribute=['data-language','data-family','data-language-group','data-spread','data-benchmark'].find(attribute=>active?.hasAttribute(attribute));
+  const focusAttribute=['data-language','data-family','data-trait-option','data-spread','data-benchmark'].find(attribute=>active?.hasAttribute(attribute));
   const focusValue=focusAttribute?active.getAttribute(focusAttribute):null;
   $('#benchmark-controls').innerHTML=data.benchmarks.map(b=>`<div class="control-row"><input type="checkbox" data-benchmark="${b.key}" aria-label="Include ${esc(b.title)}" ${state.benchmarks.has(b.key)?'checked':''}><button class="benchmark-name ${state.focus===b.key&&state.view==='benchmark'?'active':''}" data-inspect-benchmark="${b.key}">${esc(b.title)}</button></div>`).join('');
-  const languageRow=(l,child=false)=>`<div class="control-row ${child?'variant-row':''} ${allowed.has(l.key)?'':'year-excluded'}"><label class="lang-check ${child?'':'family-name'}" title="${esc(l.release_note)}"><input type="checkbox" data-language="${l.key}" aria-label="Include ${esc(shortName(l.key))}" ${enabled.has(l.key)?'checked':''} ${!allowed.has(l.key)||state.view==='mech'&&!isMechLanguage(l.key)?'disabled':''}><span class="color-key" style="${colorKeyStyle(l.key)}"></span><span>${esc(child?l.variant_label:shortName(l.key))}${child?'':`<small class="release-label">${l.release_year}</small>`}${l.timed_benchmarks.length<10?`<small class="coverage-label" title="${esc(l.coverage_note??'Incomplete measured coverage')}">${l.timed_benchmarks.length}/10 admitted</small>`:''}</span></label><button class="spread-toggle" data-spread="${l.key}" aria-label="Toggle ${esc(shortName(l.key))} standard deviation" aria-pressed="${state.ellipses.has(l.key)}" title="${esc(shortName(l.key))}: standard-deviation ellipses" ${!enabled.has(l.key)||state.view==='mech'&&!isMechLanguage(l.key)?'disabled':''}><svg viewBox="0 0 28 18" aria-hidden="true"><ellipse cx="14" cy="9" rx="11" ry="5.5" transform="rotate(-22 14 9)" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="14" cy="9" r="1.5" fill="currentColor"/></svg></button></div>`;
+  const languageRow=(l,child=false)=>`<div class="control-row ${child?'variant-row':''} ${allowed.has(l.key)?'':'year-excluded'} ${matchesTraits(traits.get(l.key),state.traits)?'':'trait-excluded'}"><label class="lang-check ${child?'':'family-name'}" title="${esc(l.release_note)}"><input type="checkbox" data-language="${l.key}" aria-label="Include ${esc(shortName(l.key))}" ${enabled.has(l.key)?'checked':''} ${!matchesTraits(traits.get(l.key),state.traits)||!allowed.has(l.key)||state.view==='mech'&&!isMechLanguage(l.key)?'disabled':''}><span class="color-key" style="${colorKeyStyle(l.key)}"></span><span>${esc(child?l.variant_label:shortName(l.key))}${child?'':`<small class="release-label">${l.release_year}</small>`}${l.timed_benchmarks.length<10?`<small class="coverage-label" title="${esc(l.coverage_note??'Incomplete measured coverage')}">${l.timed_benchmarks.length}/10 admitted</small>`:''}</span></label><button class="spread-toggle" data-spread="${l.key}" aria-label="Toggle ${esc(shortName(l.key))} standard deviation" aria-pressed="${state.ellipses.has(l.key)}" title="${esc(shortName(l.key))}: standard-deviation ellipses" ${!enabled.has(l.key)||state.view==='mech'&&!isMechLanguage(l.key)?'disabled':''}><svg viewBox="0 0 28 18" aria-hidden="true"><ellipse cx="14" cy="9" rx="11" ry="5.5" transform="rotate(-22 14 9)" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="14" cy="9" r="1.5" fill="currentColor"/></svg></button></div>`;
   $('#language-controls').innerHTML=families().map(family=>{
     if(family.members.length===1)return `<div class="language-family" data-language-family="${family.key}">${languageRow(family.members[0])}</div>`;
-    const eligible=family.members.filter(l=>allowed.has(l.key)&&(state.view!=='mech'||isMechLanguage(l.key))),count=eligible.filter(l=>enabled.has(l.key)).length;
+    const eligible=family.members.filter(l=>matchesTraits(traits.get(l.key),state.traits)&&allowed.has(l.key)&&(state.view!=='mech'||isMechLanguage(l.key))),count=eligible.filter(l=>enabled.has(l.key)).length;
     const expanded=!state.collapsedFamilies.has(family.key),first=family.members[0];
     return `<div class="language-family" data-language-family="${family.key}"><div class="control-row family-row ${eligible.length?'':'year-excluded'}"><label class="lang-check family-name" title="Toggle all ${esc(family.label)} variants"><input type="checkbox" data-family="${family.key}" aria-label="Include all ${esc(family.label)} variants" ${count&&count===eligible.length?'checked':''} ${eligible.length?'':'disabled'}><span class="color-key" style="${colorKeyStyle(first.key)}"></span><span>${esc(family.label)}<small class="release-label">${first.release_year}</small></span></label><button class="family-disclosure" data-toggle-family="${family.key}" aria-label="${expanded?'Collapse':'Expand'} ${esc(family.label)} variants" aria-expanded="${expanded}" aria-controls="variants-${family.key}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3 10 8 5 13"/></svg></button></div><div class="family-variants" id="variants-${family.key}" ${expanded?'':'hidden'}>${family.members.map(l=>languageRow(l,true)).join('')}</div></div>`;
   }).join('');
   for(const input of document.querySelectorAll('[data-family]')){
     const family=families().find(f=>f.key===input.dataset.family);
-    const eligible=family.members.filter(l=>allowed.has(l.key)&&(state.view!=='mech'||isMechLanguage(l.key))),count=eligible.filter(l=>enabled.has(l.key)).length;
+    const eligible=family.members.filter(l=>matchesTraits(traits.get(l.key),state.traits)&&allowed.has(l.key)&&(state.view!=='mech'||isMechLanguage(l.key))),count=eligible.filter(l=>enabled.has(l.key)).length;
     input.indeterminate=count>0&&count<eligible.length;
   }
-  $('#language-groups').innerHTML=data.language_groups.map(group=>{
-    const selected=group.languages.filter(key=>enabled.has(key)).length;
-    return `<div class="language-group"><label><input type="checkbox" data-language-group="${group.key}" aria-label="Toggle ${esc(group.label)} languages" ${selected===group.languages.length?'checked':''} ${state.view==='mech'?'disabled':''}><span>${esc(group.label)}</span><small>${selected}/${group.languages.length}</small></label><button data-only-group="${group.key}" aria-label="Show only ${esc(group.label)} languages">Only</button></div>`;
-  }).join('');
-  for(const input of document.querySelectorAll('[data-language-group]')){
-    const group=data.language_groups.find(g=>g.key===input.dataset.languageGroup);
-    const count=group.languages.filter(key=>enabled.has(key)).length;
-    input.indeterminate=count>0&&count<group.languages.length;
-  }
+  $('#language-groups').innerHTML=traitDimensions.map(dimension=>`<fieldset class="trait-dimension"><legend>${esc(dimension.label)}</legend>${dimension.options.map(option=>{
+    const count=data.languages.filter(l=>allowed.has(l.key)&&state.languages.has(l.key)&&matchesTraits(traits.get(l.key),state.traits,dimension.key)&&traits.get(l.key)[dimension.key].has(option.key)).length;
+    return `<label class="trait-choice"><input type="checkbox" data-trait-dimension="${dimension.key}" data-trait-option="${dimension.key}:${option.key}" aria-label="Filter ${esc(dimension.label)}: ${esc(option.label)}" ${state.traits[dimension.key].has(option.key)?'checked':''} ${state.view==='mech'?'disabled':''}><span>${esc(option.label)}</span><small>${count}</small></label>`;
+  }).join('')}${dimension.note?`<p>${esc(dimension.note)}</p>`:''}</fieldset>`).join('');
+  $('#trait-filter-status').textContent=`${enabled.size} matching variants`;
+  $('#clear-traits').disabled=state.view==='mech'||!traitDimensions.some(({key})=>state.traits[key].size);
   if(focusAttribute)$(`[${focusAttribute}="${focusValue}"]`)?.focus({preventScroll:true});
 }
 function currentEntries(){
@@ -538,6 +538,7 @@ function reset(){
   state.benchmarks=new Set(data.benchmarks.map(b=>b.key));state.languages=new Set(data.languages.map(l=>l.key));
   state.disabled.clear();state.ellipses=new Set(['mech']);state.view='summary';state.focus='nbody';
   state.collapsedFamilies.clear();
+  state.traits=emptyTraitFilters();
   Object.assign(state,{fast:true,small:true,samples:true,focusMeans:true,global:false,trail:true,releaseYear:yearBounds().max});update();
 }
 function registerTools(){
@@ -553,6 +554,7 @@ function registerTools(){
       for(const key of Object.keys(input))if(!allowed[key])throw new Error('Unknown selection field.');
       for(const [key,values] of Object.entries(input))if(!Array.isArray(values)||values.some(v=>typeof v!=='string'||!allowed[key].includes(v)))throw new Error(`Invalid ${key} selection.`);
       for(const [key,values] of Object.entries(input))state[key]=new Set(values);
+      if(input.languages)state.traits=emptyTraitFilters();
       state.view='summary';update();return {benchmarks:[...state.benchmarks],languages:model.entries.map(e=>e.language.key),ellipses:[...state.ellipses]};
     }};
   try{Promise.resolve(document.modelContext.registerTool(tool,{signal:controller.signal})).catch(()=>{});}catch{}
@@ -560,6 +562,7 @@ function registerTools(){
 }
 async function start(){
   data=await fetch(new URL('./data.json',import.meta.url)).then(response=>{if(!response.ok)throw new Error('Could not load measured benchmark data.');return response.json();});
+  traits=languageTraits(data);
   for(const l of data.languages)colors[l.key]=darkColor(l.color);
   const yearSources=[...new Map(data.languages.map(l=>[l.release_name,l])).values()].sort((a,b)=>a.release_year-b.release_year||a.release_name.localeCompare(b.release_name));
   $('#release-year-sources').innerHTML=yearSources.map(l=>`<li><a href="${esc(l.release_source)}" target="_blank" rel="noopener">${esc(l.release_name)} · ${l.release_year}</a><span>${esc(l.release_note)}</span></li>`).join('');
@@ -573,9 +576,10 @@ async function start(){
   }
   $('#all-benchmarks').onclick=()=>{state.benchmarks=new Set(data.benchmarks.map(b=>b.key));update();};
   $('#no-benchmarks').onclick=()=>{state.benchmarks.clear();update();};
-  $('#all-languages').onclick=()=>{state.languages=new Set(data.languages.map(l=>l.key));if(state.view==='mech')state.view='summary';update();};
-  $('#no-languages').onclick=()=>{state.languages.clear();update();};
-  $('#only-mech').onclick=()=>{state.languages=new Set(mechKeys());update();};
+  $('#all-languages').onclick=()=>{state.traits=emptyTraitFilters();state.languages=new Set(data.languages.map(l=>l.key));if(state.view==='mech')state.view='summary';update();};
+  $('#no-languages').onclick=()=>{state.traits=emptyTraitFilters();state.languages.clear();update();};
+  $('#only-mech').onclick=()=>{state.traits=emptyTraitFilters();state.languages=new Set(mechKeys());update();};
+  $('#clear-traits').onclick=()=>{state.traits=emptyTraitFilters();update();};
   $('#release-year').oninput=event=>setReleaseYear(releaseYears()[Number(event.target.value)]);
   $('#play-years').onclick=playYears;
   addEventListener('pagehide',pauseYears,{once:true});
@@ -589,10 +593,6 @@ async function start(){
       renderControls();$(`[data-toggle-family="${key}"]`).focus({preventScroll:true});return;
     }
     const sort=event.target.closest('[data-sort-table]');if(sort){sortTable(sort);return;}
-    const groupButton=event.target.closest('[data-only-group]');if(groupButton){
-      const group=data.language_groups.find(g=>g.key===groupButton.dataset.onlyGroup);
-      state.languages=new Set(group.languages);if(state.view==='mech')state.view='summary';update();return;
-    }
     const view=event.target.closest('[data-view]');if(view){if(view.dataset.view==='mech')enterMechView();else state.view=view.dataset.view;update();}
     const inspect=event.target.closest('[data-inspect-benchmark]');if(inspect){state.focus=inspect.dataset.inspectBenchmark;state.view='benchmark';update();openPoint({language:'mech',benchmark:state.focus});}
     const spread=event.target.closest('[data-spread]');if(spread){const key=spread.dataset.spread;state.ellipses.has(key)?state.ellipses.delete(key):state.ellipses.add(key);update();}
@@ -604,12 +604,12 @@ async function start(){
     if(element.disabled)return;
     if(element.dataset.family){
       const family=families().find(f=>f.key===element.dataset.family),allowed=yearKeys();
-      for(const l of family.members)if(allowed.has(l.key)&&(state.view!=='mech'||isMechLanguage(l.key)))element.checked?state.languages.add(l.key):state.languages.delete(l.key);
+      for(const l of family.members)if(matchesTraits(traits.get(l.key),state.traits)&&allowed.has(l.key)&&(state.view!=='mech'||isMechLanguage(l.key)))element.checked?state.languages.add(l.key):state.languages.delete(l.key);
       update();return;
     }
-    if(element.dataset.languageGroup){
-      const group=data.language_groups.find(g=>g.key===element.dataset.languageGroup);
-      for(const key of group.languages)element.checked?state.languages.add(key):state.languages.delete(key);
+    if(element.dataset.traitOption){
+      const [dimension,option]=element.dataset.traitOption.split(':');
+      element.checked?state.traits[dimension].add(option):state.traits[dimension].delete(option);
       update();return;
     }
     if(element.dataset.benchmark){element.checked?state.benchmarks.add(element.dataset.benchmark):state.benchmarks.delete(element.dataset.benchmark);update();}
@@ -623,7 +623,7 @@ async function start(){
   });
   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&$('#inspector').open)closeInspector();});
   new ResizeObserver(()=>requestAnimationFrame(renderChart)).observe($('#chart-wrap'));
-  window.benchmarkExplorer={getSelection:()=>({benchmarks:[...state.benchmarks],languages:[...effectiveLanguages()],selectedLanguages:[...state.languages],releaseYear:state.releaseYear,ellipses:[...state.ellipses],disabled:[...state.disabled],view:state.view,samples:state.samples,focusMeans:state.focusMeans,global:state.global,trail:state.trail,playing:state.playing}),
+  window.benchmarkExplorer={getSelection:()=>({benchmarks:[...state.benchmarks],languages:[...effectiveLanguages()],selectedLanguages:[...state.languages],traits:Object.fromEntries(traitDimensions.map(({key})=>[key,[...state.traits[key]]])),releaseYear:state.releaseYear,ellipses:[...state.ellipses],disabled:[...state.disabled],view:state.view,samples:state.samples,focusMeans:state.focusMeans,global:state.global,trail:state.trail,playing:state.playing}),
     getMedianHistory:currentHistory,
     getGlobalStatistics:()=>globalStatistics(currentEntries()),
     getDomains:()=>({...currentDomain}),

@@ -15,11 +15,22 @@ that language's covariance contours without changing the oval button selections.
 Keyboard focus provides the same emphasis; touch taps retain source inspection
 without a persistent hover state.
 Wide invisible line targets sit below every point so existing clicks still work.
-Overlapping Dynamic,
-Interpreted, Array, Functional, AOT and JIT group controls can toggle their members or isolate
-a group while preserving individual language controls. Execution groups describe
-the measured backend: the Java cohort uses GraalVM native AOT. All three Mech
-execution modes belong to both the Array and Functional groups.
+Language filters intersect independent categories: Execution, Typing,
+Language style, and Memory management. **Array + Dynamic** includes only languages with both traits;
+choosing AOT and JIT within Execution allows either mode. Empty categories impose
+no restriction. Filtering preserves manual language exclusions, benchmark
+selection, and the fixed chart limits. Clear filters restores the unconstrained
+categories; All enables all languages and clears filters. Execution describes
+the measured backend: Java uses GraalVM native AOT, Ruby uses YJIT, and PHP uses
+the verified tracing JIT. All three Mech modes are Array and Functional.
+Memory strategies can overlap: Python, PHP, and CBQN use reference counting plus
+cycle collection; Mech uses ownership and shared reference-counted values.
+Foreign arithmetic/regex libraries do not determine a runtime's category.
+MATLAB and GNU APL remain Unclassified for memory management pending runtime
+evidence. Reference policies: [CPython GC](https://docs.python.org/3/library/gc.html),
+[PHP cycles](https://www.php.net/manual/en/features.gc.collecting-cycles.php),
+[CBQN](https://github.com/dzaima/CBQN/blob/master/README.md), and
+[Futhark array lifetime](https://futhark.readthedocs.io/en/latest/c-api.html).
 
 The language selection also provides All, None and Mech actions. None clears all
 language selections, including entries hidden by the release-year filter, while
@@ -42,7 +53,7 @@ independently; timing samples retain their original run numbers. Sorting uses
 the raw numeric measurements and persists as selections change.
 
 The **Release year** slider accumulates languages and steps only through years
-represented in the comparison. It intersects manual language and group selections
+represented in the comparison. It intersects manual language selections and trait filters
 without forgetting them. Chart bounds and the full-cohort 1× baselines stay fixed
 when the year changes. Mech uses **2026** for the benchmark development version
 under test, rather than its first public introduction.

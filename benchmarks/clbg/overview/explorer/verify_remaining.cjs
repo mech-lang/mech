@@ -1,6 +1,7 @@
 const fs=require('node:fs');
 const assert=require('node:assert/strict');
 const {pathToFileURL}=require('node:url');
+const {selectTraitOnly,expectedTraitKeys}=require('./trait_test_helpers.cjs');
 const data=JSON.parse(fs.readFileSync(__dirname+'/dist/data.json','utf8'));
 const keys=['csharp','csharp-aot','fsharp','fsharp-aot','ada','pascal','fortran',
   'dart','dart-jit','smalltalk'];
@@ -66,8 +67,8 @@ const domain=page=>page.evaluate(()=>window.benchmarkExplorer.getDomains());
         }
       }
       for(const group of data.language_groups){
-        await click(page,`[data-only-group="${group.key}"]`);
-        assert.deepEqual(new Set((await selection(page)).languages),new Set(group.languages));
+        await selectTraitOnly(page,group.key);
+        assert.deepEqual(new Set((await selection(page)).languages),new Set(expectedTraitKeys(data,group.key)));
         assert.deepEqual(await domain(page),bounds);
       }
       await click(page,'#reset');

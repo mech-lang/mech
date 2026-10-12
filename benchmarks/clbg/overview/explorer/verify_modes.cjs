@@ -1,6 +1,7 @@
 const fs=require('node:fs');
 const assert=require('node:assert/strict');
 const {pathToFileURL}=require('node:url');
+const {selectTraitOnly}=require('./trait_test_helpers.cjs');
 const data=JSON.parse(fs.readFileSync(__dirname+'/dist/data.json','utf8'));
 const completeCount=data.languages.filter(l=>l.timed_benchmarks.length).length;
 const modes=['mech','mech-jit','mech-resident'];
@@ -52,10 +53,10 @@ const settle=page=>page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(
       assert.equal(await page.locator('.spread-area').count(),12);
       assert.equal(await page.locator('input[data-language="rust"]').isDisabled(),true);
       assert.equal(await page.locator('input[data-language="mech-jit"]').isDisabled(),false);
-      await click(page,'#all-languages');await click(page,'[data-only-group="jit"]');
+      await selectTraitOnly(page,'jit');
       assert((await page.evaluate(()=>window.benchmarkExplorer.getSelection())).languages.includes('mech-jit'));
       assert(!(await page.evaluate(()=>window.benchmarkExplorer.getSelection())).languages.includes('mech-resident'));
-      await click(page,'[data-only-group="interpreted"]');
+      await selectTraitOnly(page,'interpreted');
       assert((await page.evaluate(()=>window.benchmarkExplorer.getSelection())).languages.includes('mech-resident'));
       await click(page,'#reset');await settle(page);
       assert.deepEqual(await page.evaluate(()=>window.benchmarkExplorer.getDomains()),domains);

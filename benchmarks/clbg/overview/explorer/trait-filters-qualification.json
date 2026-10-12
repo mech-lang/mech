@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "finished_at": "2026-10-12T18:04:20.476151+00:00",
+  "pins": {
+    "dist/app.mjs": "d13ede81385b3afd006be88660de02e8ff25a0e4da81c3712742008427e21630",
+    "dist/traits.mjs": "9e2a7ab78c92605d5a43c81537036f81d565d57f500ba1009803ca3e1a230762",
+    "dist/index.html": "da9d2e56a33e9ea23bae55c99b31f1ec5eca98ea95c3a2dfdf3dee251a027252",
+    "dist/style.css": "f40270d62093c5c732445fa57412b512b802af9641ef5210218cea7ef1703529",
+    "dist/data.json": "65bfa4d833f61fff69b16eb3c917e4fcd1eb21d5788bbbeed7e09e9f2382d32f",
+    "test_traits.mjs": "7d0220fc53b976b020ab19a50251a246c7c62e91aab1b70096bb1fe1a0d863ef",
+    "verify_traits.cjs": "333498452b02349a643f9254f39899ae2d8aee06b880821c15773f3e87634297",
+    "qualify_trait_ui.py": "b8955cf12f0c03bb4cb34c05babebc6fda48d6a09bf84ed1b213e9fff38e0c9a"
+  }
+}

@@ -1,6 +1,7 @@
 const fs=require('node:fs');
 const assert=require('node:assert/strict');
 const {pathToFileURL}=require('node:url');
+const {selectTraitOnly}=require('./trait_test_helpers.cjs');
 const data=JSON.parse(fs.readFileSync(__dirname+'/dist/data.json','utf8'));
 const click=(page,selector)=>page.evaluate(selector=>document.querySelector(selector).click(),selector);
 (async()=>{
@@ -54,7 +55,7 @@ const click=(page,selector)=>page.evaluate(selector=>document.querySelector(sele
         }
       }
       for(const group of ['functional','aot','jit']){
-        await click(page,`[data-only-group="${group}"]`);
+        await selectTraitOnly(page,group);
         const selected=await page.evaluate(()=>window.benchmarkExplorer.getSelection().languages);
         if(group==='functional')assert(selected.includes('roc')&&selected.includes('elm'));
         if(group==='aot')assert(['zig','odin','roc'].every(key=>selected.includes(key))&&!selected.includes('elm'));

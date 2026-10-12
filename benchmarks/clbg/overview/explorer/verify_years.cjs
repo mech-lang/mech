@@ -1,6 +1,7 @@
 const fs=require('node:fs');
 const assert=require('node:assert/strict');
 const {pathToFileURL}=require('node:url');
+const {selectTraitOnly}=require('./trait_test_helpers.cjs');
 const data=JSON.parse(fs.readFileSync(__dirname+'/dist/data.json','utf8'));
 const keys=data.languages.map(l=>l.key);
 const years=[...new Set(data.languages.map(l=>l.release_year))].sort((a,b)=>a-b);
@@ -96,7 +97,7 @@ async function metrics(page){
       assert.deepEqual((await selection(page)).languages,[],'None also clears languages hidden by the year filter');
       await click(page,'#all-languages');
       assert.deepEqual(new Set((await selection(page)).languages),new Set(keys));
-      await click(page,'[data-only-group="array"]');
+      await selectTraitOnly(page,'array');
       const array=data.language_groups.find(g=>g.key==='array').languages;
       await setYear(page,2017);
       assert.deepEqual(new Set((await selection(page)).languages),new Set(expected(2017,array)));

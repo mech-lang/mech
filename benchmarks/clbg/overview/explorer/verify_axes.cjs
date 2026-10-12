@@ -1,6 +1,7 @@
 const fs=require('node:fs');
 const assert=require('node:assert/strict');
 const {pathToFileURL}=require('node:url');
+const {selectTraitOnly}=require('./trait_test_helpers.cjs');
 const data=JSON.parse(fs.readFileSync(__dirname+'/dist/data.json','utf8'));
 const completeCount=data.languages.filter(l=>l.timed_benchmarks.length).length;
 const mechPaths=data.languages.filter(l=>l.family==='mech'||l.key==='mech').map(l=>l.key);
@@ -45,6 +46,7 @@ async function checkBox(page,selector,checked){
   },{selector,checked});
 }
 async function setLanguages(page,keys){
+  await click(page,'#clear-traits');
   // Each change passes through the actual language control event handler.
   for(const language of data.languages)await checkBox(page,`input[data-language="${language.key}"]`,keys.includes(language.key));
 }
@@ -108,7 +110,7 @@ async function setLanguages(page,keys){
             await compare(`restore ${language.key}`);
           }
           for(const group of data.language_groups){
-            await click(page,`[data-only-group="${group.key}"]`);
+            await selectTraitOnly(page,group.key);
             await compare(`only ${group.key} group`);
             await setLanguages(page,data.languages.map(language=>language.key));
             await compare('restore all languages');
