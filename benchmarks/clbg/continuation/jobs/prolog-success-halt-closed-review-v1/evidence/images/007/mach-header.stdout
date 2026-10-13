@@ -1,0 +1,4 @@
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/Frameworks/libz.1.dylib:
+Mach header
+      magic  cputype cpusubtype  caps    filetype ncmds sizeofcmds      flags
+MH_MAGIC_64    ARM64        ALL  0x00       DYLIB    15       1560   NOUNDEFS DYLDLINK TWOLEVEL NO_REEXPORTED_DYLIBS

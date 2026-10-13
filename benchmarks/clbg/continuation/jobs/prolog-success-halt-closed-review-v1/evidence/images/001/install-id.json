@@ -1,0 +1,22 @@
+{
+  "command": [
+    "/usr/bin/otool",
+    "-arch",
+    "arm64",
+    "-D",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/MacOS/swipl"
+  ],
+  "started_at": "2026-10-13T22:00:16.555179+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 22301,
+  "identity": {
+    "pid": 22301,
+    "process_listing": "Tue Oct 13 18:00:16 2026     /usr/bin/otool -arch arm64 -D /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/MacOS/swipl"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-13T22:00:16.580545+00:00",
+  "final_exit_status": 0
+}

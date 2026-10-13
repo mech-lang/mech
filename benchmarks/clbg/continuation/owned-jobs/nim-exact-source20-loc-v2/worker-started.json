@@ -1,0 +1,40 @@
+{
+  "started_at": "2026-10-13T22:06:11.828576+00:00",
+  "worker_identity": {
+    "pid": 24034,
+    "listing": "24034     1 Tue Oct 13 18:06:11 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/nim-exact-source20-loc-v2 --lease-fd 3 --go-fd 4"
+  },
+  "inherited_private_lease": true,
+  "detached_session": true,
+  "common_mutex_owned_by_target_command": true,
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/source-counts/helper-owners-v2/replay_existing.py",
+    "--revision",
+    "exact-source20-loc-v2",
+    "--durable-terminal-sha256",
+    "34b9a6a25a5dcf21ba3f3fa9948a67420581c4e264032672cebe2cec83e0fc32",
+    "--output-terminal-sha256",
+    "7df0386a6c4d75b68e7829279849a69429c23ee685b723fc928d0ebb99f4032d",
+    "--suite-sha256",
+    "c4dff4ea00db0f380257708cfb0aea50b3a3eaecd1c5ce0f11f6cc780561f3f7",
+    "--worker-sha256",
+    "31494c1b373bb9c1b7988581a202cf05ff4e53e82fb60a331aaad7919a236614",
+    "--owners-sha256",
+    "32cd6b22897296178a5aa31028b4b6cbbe7e1efa41d577006f7475d9230ced4f",
+    "--tests-sha256",
+    "7446e27d62b28113e68b2448b51cde6b45558d1b366e6c7dc1709215af992ef0",
+    "--review-sha256",
+    "2a5e010233d550e9491ddf3f12bda377a745db20397efc7ccda18ce8b1e420b3",
+    "--notes-sha256",
+    "1605a7e6fa5b143a7771727fda28a68f0d9f395b7272652ae0fa35d40e5ddafb",
+    "--failed-outcome-sha256",
+    "3333db46ecff4bbfadd6971f329c2b613e33209ee12b064e349dd2c4dfa35df9",
+    "--failed-durable-terminal-sha256",
+    "6bfdb28c3adfbbdae3f3872a9502a0c3aa968d6c4ae912f7c355afdaea54d70b"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "qualification_granted": false
+}

@@ -1,0 +1,25 @@
+{
+  "at": "2026-10-13T21:53:03.271391+00:00",
+  "status": "source-reviewed-frozen-for-all133-diagnostic",
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-diagnosis-v1/audit.py",
+    "--worker-sha256",
+    "44be50e362757e56c03d6a78e9f302e315101360419adfb2bb55d130b00a7860",
+    "--review-sha256",
+    "8812b5cad192a04cd3a411245717a1838e8a3afd9a3e8ce38ec489bcff9b4a63",
+    "--closed-review-sha256",
+    "d3f7634e318a3da25d7625467545a9525c877e9175789e1eee13d32b8317518f"
+  ],
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-diagnosis-v1/audit.py": "44be50e362757e56c03d6a78e9f302e315101360419adfb2bb55d130b00a7860",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-diagnosis-v1/REVIEW.md": "8812b5cad192a04cd3a411245717a1838e8a3afd9a3e8ce38ec489bcff9b4a63",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/legacy-platform133-source-bound-v3-qualification-closed-review-v1/receipt.json": "d3f7634e318a3da25d7625467545a9525c877e9175789e1eee13d32b8317518f"
+  },
+  "prior_pins_verified": 207,
+  "root_review": "Full audit.py and REVIEW read, preserved v3 hooks and original History source checked; diagnostic-only outcomes retain all errors and admit no annotations.",
+  "native_commands": 0,
+  "benchmark_runs": 0
+}

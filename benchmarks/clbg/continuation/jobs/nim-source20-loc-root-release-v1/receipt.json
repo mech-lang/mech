@@ -1,0 +1,43 @@
+{
+  "at": "2026-10-13T21:58:16.204644+00:00",
+  "status": "source-accepted-by-root-and-independent-peer",
+  "source_pins": {
+    "replay_existing.py": "d459e3018ce5f6a745d8d39e02c71f0c030ac2a378e6cb1a00e140869960039a",
+    "helper_owners.py": "32cd6b22897296178a5aa31028b4b6cbbe7e1efa41d577006f7475d9230ced4f",
+    "test_helper_owners.py": "63fc981cb1e18ac8cae0904f096a6f5c3bde2dae747bcb572f79be3129b0487d",
+    "meaning-review.json": "2a5e010233d550e9491ddf3f12bda377a745db20397efc7ccda18ce8b1e420b3",
+    "REVIEW.md": "4ae3e9e910f32a170903e6c8d85bd5ff323ea1940fb882dd9c36acb8191748cd"
+  },
+  "prerequisite_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/nim-source20-entry-repaired-v4/terminal.json": "34b9a6a25a5dcf21ba3f3fa9948a67420581c4e264032672cebe2cec83e0fc32",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/nim-source-replay-v1/jobs/source20-entry-repaired-v4/terminal-pins.json": "7df0386a6c4d75b68e7829279849a69429c23ee685b723fc928d0ebb99f4032d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/reconciliation/full-v6-suite-v2.json": "c4dff4ea00db0f380257708cfb0aea50b3a3eaecd1c5ce0f11f6cc780561f3f7"
+  },
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/source-counts/helper-owners-v1/replay_existing.py",
+    "--revision",
+    "exact-source20-loc-v1",
+    "--durable-terminal-sha256",
+    "34b9a6a25a5dcf21ba3f3fa9948a67420581c4e264032672cebe2cec83e0fc32",
+    "--output-terminal-sha256",
+    "7df0386a6c4d75b68e7829279849a69429c23ee685b723fc928d0ebb99f4032d",
+    "--suite-sha256",
+    "c4dff4ea00db0f380257708cfb0aea50b3a3eaecd1c5ce0f11f6cc780561f3f7",
+    "--worker-sha256",
+    "d459e3018ce5f6a745d8d39e02c71f0c030ac2a378e6cb1a00e140869960039a",
+    "--owners-sha256",
+    "32cd6b22897296178a5aa31028b4b6cbbe7e1efa41d577006f7475d9230ced4f",
+    "--tests-sha256",
+    "63fc981cb1e18ac8cae0904f096a6f5c3bde2dae747bcb572f79be3129b0487d",
+    "--review-sha256",
+    "2a5e010233d550e9491ddf3f12bda377a745db20397efc7ccda18ce8b1e420b3",
+    "--notes-sha256",
+    "4ae3e9e910f32a170903e6c8d85bd5ff323ea1940fb882dd9c36acb8191748cd"
+  ],
+  "root_review": "Full five-file packet, shared grammar entry and actual durable command read; declaration/body count policy accepted.",
+  "peer_review": "formatted_source_review independently read all five files, all twenty mains, actual GMP helper and policy/adapter; no blocker. Only five new meaningful helper assertions execute.",
+  "benchmark_runs": 0
+}

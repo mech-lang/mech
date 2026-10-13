@@ -1,0 +1,324 @@
+{
+  "at": "2026-10-13T21:57:25.842228+00:00",
+  "status": "completed-all133-diagnosis-reviewed",
+  "verified_pins": 384,
+  "body_terminal_sha256": "baaafa08e990844b95c1407c3c8d164cf1c439f1e9a04d97d02d66e6e1071940",
+  "durable_terminal_sha256": "3bac46826dfecd5798dddee58890be6bead66a9414ded7448c70f044757ff4de",
+  "diagnosis_sha256": "61a0a7b0ca269d442eecc8245e285fab1d451f3ee8be8fb2224a2d83174260fb",
+  "counts": {
+    "resolved-v3-measurement": 115,
+    "missing-v3-history": 13,
+    "v3-mapping-error": 5
+  },
+  "issues": {
+    "binarytrees:binarytrees-julia-3": {
+      "status": "missing-v3-history",
+      "error": "missing-corresponding-runtime-observation",
+      "error_type": "MissingHistory"
+    },
+    "binarytrees:binarytrees-julia-4": {
+      "status": "missing-v3-history",
+      "error": "missing-corresponding-runtime-observation",
+      "error_type": "MissingHistory"
+    },
+    "fannkuchredux:fannkuchredux-julia-1": {
+      "status": "missing-v3-history",
+      "error": "missing-corresponding-runtime-observation",
+      "error_type": "MissingHistory"
+    },
+    "fannkuchredux:fannkuchredux-julia-2": {
+      "status": "missing-v3-history",
+      "error": "missing-corresponding-runtime-observation",
+      "error_type": "MissingHistory"
+    },
+    "fasta:fasta-gcc-2-llvm": {
+      "status": "missing-v3-history",
+      "error": "missing-historical-native-build-output-binding",
+      "error_type": "MissingHistory"
+    },
+    "fasta:fasta-julia-3": {
+      "status": "missing-v3-history",
+      "error": "missing-corresponding-runtime-observation",
+      "error_type": "MissingHistory"
+    },
+    "fasta:mech-fasta-final-compact-v2": {
+      "status": "v3-mapping-error",
+      "error": "Exact historical row selector ambiguous or absent: fasta:mech-fasta-final-compact-v2",
+      "error_type": "ValueError",
+      "literal_route_diagnostic": {
+        "status": "literal-route-proof-for-review-only",
+        "saved_selector": "/programs/fasta:mech-fasta-final-compact-v2:floating",
+        "saved_id": null,
+        "saved_key": "fasta:mech-fasta-final-compact-v2:floating",
+        "source_report": "work-audit/20261009/timings.json",
+        "source_selector": "/programs/fasta:mech-fasta-final-compact-v2:floating",
+        "samples": [
+          1.236018125,
+          1.223196375,
+          1.232202667,
+          1.227297416,
+          1.22587825
+        ],
+        "median_seconds": 1.227297416,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-compact-v2-floating",
+          "{n}"
+        ],
+        "binary_sha256": "a5c498195826e54f4b5fa351020e94fb951b06500358c884cce0560ca5ccd064",
+        "displayed_files": [
+          {
+            "path": "fasta/fasta.mec",
+            "sha256": "5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066"
+          }
+        ],
+        "recorded_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta.mec",
+        "recorded_source_sha256": "5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066",
+        "compile_command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+          "build",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta.mec",
+          "--backend",
+          "cranelift",
+          "--offline",
+          "--keep-project",
+          "--no-config",
+          "-o",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-compact-v2-floating"
+        ],
+        "annotation_created": false
+      }
+    },
+    "fasta:mech-fasta-final-expanded-v2": {
+      "status": "v3-mapping-error",
+      "error": "Exact historical row selector ambiguous or absent: fasta:mech-fasta-final-expanded-v2",
+      "error_type": "ValueError",
+      "literal_route_diagnostic": {
+        "status": "literal-route-proof-for-review-only",
+        "saved_selector": "/programs/mech-current-floating",
+        "saved_id": "mech-current-floating",
+        "saved_key": null,
+        "source_report": "work-audit/20261009/builds.json",
+        "source_selector": "/programs/fasta:mech-fasta-final-expanded-v2:floating",
+        "samples": [
+          0.572612958,
+          0.55167075,
+          0.539613667,
+          0.541193292,
+          0.54118425
+        ],
+        "median_seconds": 0.541193292,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating",
+          "{n}"
+        ],
+        "binary_sha256": "37c24e617689fbbec6221ff4c107d9ea35f18eb62ed7387286bfa7d6224a92e4",
+        "displayed_files": [
+          {
+            "path": "fasta/fasta-optimized.mec",
+            "sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602"
+          }
+        ],
+        "recorded_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta-optimized.mec",
+        "recorded_source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+        "compile_command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+          "build",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta-optimized.mec",
+          "--backend",
+          "cranelift",
+          "--offline",
+          "--keep-project",
+          "--no-config",
+          "-o",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating"
+        ],
+        "annotation_created": false
+      }
+    },
+    "fasta:rust7-floating-16-local": {
+      "status": "v3-mapping-error",
+      "error": "Exact historical row selector ambiguous or absent: fasta:rust7-floating-16-local",
+      "error_type": "ValueError",
+      "literal_route_diagnostic": {
+        "status": "literal-route-proof-for-review-only",
+        "saved_selector": "/programs/rust7-floating-16",
+        "saved_id": "rust7-floating-16",
+        "saved_key": null,
+        "source_report": "fasta/investigations/20261009-floating-cdf/results.json",
+        "source_selector": "/programs/rust7-floating-16",
+        "samples": [
+          0.542419958,
+          0.541320917,
+          0.567194959,
+          0.564502708,
+          0.563287167
+        ],
+        "median_seconds": 0.563287167,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/investigations/20261009-floating-cdf/rust7-floating-16",
+          "{n}"
+        ],
+        "binary_sha256": "a3f50b8b859e7c925094d00c827ce3b20ae5af79efdada9bcbced01616e61cd7",
+        "displayed_files": [
+          {
+            "path": "fasta/investigations/20261009-floating-cdf/rust7-floating-16.rs",
+            "sha256": "33eca0e8bfb39f98910c60469512646e2f135697bd8c892cbd94cf9292404db2"
+          }
+        ],
+        "recorded_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/investigations/20261009-floating-cdf/rust7-floating-16.rs",
+        "recorded_source_sha256": "33eca0e8bfb39f98910c60469512646e2f135697bd8c892cbd94cf9292404db2",
+        "compile_command": [
+          "/Users/cim310/.cargo/bin/rustc",
+          "--edition=2021",
+          "-O",
+          "-Ctarget-cpu=native",
+          "-Ccodegen-units=1",
+          "-L",
+          "dependency=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/.build/rust-deps/release/deps",
+          "--extern",
+          "num_cpus=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/.build/rust-deps/release/deps/libnum_cpus-f437def7a522faea.rlib",
+          "--extern",
+          "spin=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/.build/rust-deps/release/deps/libspin-c0bfca583903e9dc.rlib",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/investigations/20261009-floating-cdf/rust7-floating-16.rs",
+          "-o",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/investigations/20261009-floating-cdf/rust7-floating-16"
+        ],
+        "annotation_created": false
+      }
+    },
+    "knucleotide:knucleotide-julia-1": {
+      "status": "missing-v3-history",
+      "error": "missing-corresponding-runtime-observation",
+      "error_type": "MissingHistory"
+    },
+    "knucleotide:knucleotide-julia-6": {
+      "status": "missing-v3-history",
+      "error": "missing-corresponding-runtime-observation",
+      "error_type": "MissingHistory"
+    },
+    "mandelbrot:mandelbrot-julia-1": {
+      "status": "missing-v3-history",
+      "error": "missing-corresponding-runtime-observation",
+      "error_type": "MissingHistory"
+    },
+    "mandelbrot:mandelbrot-julia-7": {
+      "status": "missing-v3-history",
+      "error": "missing-corresponding-runtime-observation",
+      "error_type": "MissingHistory"
+    },
+    "nbody:compact-baseline": {
+      "status": "v3-mapping-error",
+      "error": "Exact historical row selector ambiguous or absent: nbody:compact-baseline",
+      "error_type": "ValueError",
+      "literal_route_diagnostic": {
+        "status": "literal-route-proof-for-review-only",
+        "saved_selector": "/programs/4",
+        "saved_id": "compact-regions8",
+        "saved_key": null,
+        "source_report": "nbody/experiments/20261011-shared-products/replication-50m.json",
+        "source_selector": "/programs/4",
+        "samples": [
+          1.086641042,
+          1.084876709,
+          1.088786375,
+          1.094040875,
+          1.090478292,
+          1.091892292,
+          1.090561583
+        ],
+        "median_seconds": 1.090478292,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions8",
+          "{n}"
+        ],
+        "binary_sha256": "946b2b49b0a6a2aae7476104cc29f2c33026bf032d9ccf1461921c4c2abbedea",
+        "displayed_files": [
+          {
+            "path": "array-comparison/nbody-20261009/sources/nbody-matrix-short.mec",
+            "sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175"
+          }
+        ],
+        "recorded_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-short.mec",
+        "recorded_source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+        "compile_command": [
+          "/opt/homebrew/opt/llvm@22/bin/clang-22",
+          "-O3",
+          "-isysroot",
+          "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions8.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions8.o",
+          "-lm",
+          "-o",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions8"
+        ],
+        "annotation_created": false
+      }
+    },
+    "nbody:pairwise-mass-tails": {
+      "status": "v3-mapping-error",
+      "error": "Exact historical row selector ambiguous or absent: nbody:pairwise-mass-tails",
+      "error_type": "ValueError",
+      "literal_route_diagnostic": {
+        "status": "literal-route-proof-for-review-only",
+        "saved_selector": "/programs/6",
+        "saved_id": "pairwise-seed8",
+        "saved_key": null,
+        "source_report": "nbody/experiments/20261011-shared-products/replication-50m.json",
+        "source_selector": "/programs/6",
+        "samples": [
+          1.02965075,
+          1.041882209,
+          1.039486459,
+          1.042079458,
+          1.034882542,
+          1.039196875,
+          1.040053125
+        ],
+        "median_seconds": 1.039486459,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/pairwise-seed8",
+          "{n}"
+        ],
+        "binary_sha256": "462a91334f74b3b942c9b7fba3ba1443a1f737c8d504d25b3c8d074f80b03609",
+        "displayed_files": [
+          {
+            "path": "array-comparison/nbody-20261009/sources/nbody-matrix-pairwise.mec",
+            "sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa"
+          }
+        ],
+        "recorded_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+        "recorded_source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+        "compile_command": [
+          "/opt/homebrew/opt/llvm@22/bin/clang-22",
+          "-O3",
+          "-isysroot",
+          "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/pairwise-seed8.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/pairwise-seed8.o",
+          "-lm",
+          "-o",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/pairwise-seed8"
+        ],
+        "annotation_created": false
+      }
+    },
+    "revcomp:revcomp-julia-7": {
+      "status": "missing-v3-history",
+      "error": "missing-corresponding-runtime-observation",
+      "error_type": "MissingHistory"
+    },
+    "revcomp:revcomp-julia-9": {
+      "status": "missing-v3-history",
+      "error": "missing-corresponding-runtime-observation",
+      "error_type": "MissingHistory"
+    },
+    "spectralnorm:spectralnorm-julia-4": {
+      "status": "missing-v3-history",
+      "error": "missing-corresponding-runtime-observation",
+      "error_type": "MissingHistory"
+    }
+  },
+  "native_processes": 0,
+  "benchmark_runs": 0,
+  "annotations_admitted": 0
+}

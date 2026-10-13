@@ -1,0 +1,20 @@
+{
+  "status": "command-failed",
+  "started_at": "2026-10-13T21:53:03.349098+00:00",
+  "worker_identity": {
+    "pid": 20926,
+    "listing": "20926     1 Tue Oct 13 17:53:03 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/legacy-platform133-all-diagnosis-v1 --lease-fd 3 --go-fd 4"
+  },
+  "actual_command_started": true,
+  "exit_code": 1,
+  "qualification_granted": false,
+  "automatic_retry": false,
+  "command_pid": 20931,
+  "command_identity": {
+    "pid": 20931,
+    "listing": "20931 20926 Tue Oct 13 17:53:03 2026     /opt/homebrew/opt/python@3.14/bin/python3.14 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-diagnosis-v1/audit.py --worker-sha256 44be50e362757e56c03d6a78e9f302e315101360419adfb2bb55d130b00a7860 --review-sha256 8812b5cad192a04cd3a411245717a1838e8a3afd9a3e8ce38ec489bcff9b4a63 --closed-review-sha256 d3f7634e318a3da25d7625467545a9525c877e9175789e1eee13d32b8317518f"
+  },
+  "command_identity_observation_missing": false,
+  "finished_at": "2026-10-13T21:53:03.633755+00:00",
+  "stop_signals": []
+}

@@ -1,0 +1,20 @@
+{
+  "status": "command-exited-zero-awaiting-report-review",
+  "started_at": "2026-10-13T22:00:12.667052+00:00",
+  "worker_identity": {
+    "pid": 22272,
+    "listing": "22272     1 Tue Oct 13 18:00:12 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/prolog-runtime-success-halt-v1 --lease-fd 3 --go-fd 4"
+  },
+  "actual_command_started": true,
+  "exit_code": 0,
+  "qualification_granted": false,
+  "automatic_retry": false,
+  "command_pid": 22277,
+  "command_identity": {
+    "pid": 22277,
+    "listing": "22277 22272 Tue Oct 13 18:00:12 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -I -S -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-success-halt-v1/discover_runtime.py --packet-pins /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/prolog-success-halt-root-release-v1/packet-pins.json --packet-pins-sha256 c460f24075de8ce40c1aaf7c6e524bb2b8709c10cec7c5b74b67e6e474cee6cc --closed-review-sha256 ca4e8b797d340e84ce517829fabcca3fa157c5db5dd820ab4c97d75910c330c0"
+  },
+  "command_identity_observation_missing": false,
+  "finished_at": "2026-10-13T22:00:20.665789+00:00",
+  "stop_signals": []
+}

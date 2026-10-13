@@ -1,0 +1,34 @@
+{
+  "started_at": "2026-10-13T21:58:16.311844+00:00",
+  "command_pid": 22090,
+  "command_identity": {
+    "pid": 22090,
+    "listing": "22090 22085 Tue Oct 13 17:58:16 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/source-counts/helper-owners-v1/replay_existing.py --revision exact-source20-loc-v1 --durable-terminal-sha256 34b9a6a25a5dcf21ba3f3fa9948a67420581c4e264032672cebe2cec83e0fc32 --output-terminal-sha256 7df0386a6c4d75b68e7829279849a69429c23ee685b723fc928d0ebb99f4032d --suite-sha256 c4dff4ea00db0f380257708cfb0aea50b3a3eaecd1c5ce0f11f6cc780561f3f7 --worker-sha256 d459e3018ce5f6a745d8d39e02c71f0c030ac2a378e6cb1a00e140869960039a --owners-sha256 32cd6b22897296178a5aa31028b4b6cbbe7e1efa41d577006f7475d9230ced4f --tests-sha256 63fc981cb1e18ac8cae0904f096a6f5c3bde2dae747bcb572f79be3129b0487d --review-sha256 2a5e010233d550e9491ddf3f12bda377a745db20397efc7ccda18ce8b1e420b3 --notes-sha256 4ae3e9e910f32a170903e6c8d85bd5ff323ea1940fb882dd9c36acb8191748cd"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/source-counts/helper-owners-v1/replay_existing.py",
+    "--revision",
+    "exact-source20-loc-v1",
+    "--durable-terminal-sha256",
+    "34b9a6a25a5dcf21ba3f3fa9948a67420581c4e264032672cebe2cec83e0fc32",
+    "--output-terminal-sha256",
+    "7df0386a6c4d75b68e7829279849a69429c23ee685b723fc928d0ebb99f4032d",
+    "--suite-sha256",
+    "c4dff4ea00db0f380257708cfb0aea50b3a3eaecd1c5ce0f11f6cc780561f3f7",
+    "--worker-sha256",
+    "d459e3018ce5f6a745d8d39e02c71f0c030ac2a378e6cb1a00e140869960039a",
+    "--owners-sha256",
+    "32cd6b22897296178a5aa31028b4b6cbbe7e1efa41d577006f7475d9230ced4f",
+    "--tests-sha256",
+    "63fc981cb1e18ac8cae0904f096a6f5c3bde2dae747bcb572f79be3129b0487d",
+    "--review-sha256",
+    "2a5e010233d550e9491ddf3f12bda377a745db20397efc7ccda18ce8b1e420b3",
+    "--notes-sha256",
+    "4ae3e9e910f32a170903e6c8d85bd5ff323ea1940fb882dd9c36acb8191748cd"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech"
+}

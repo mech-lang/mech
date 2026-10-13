@@ -1,0 +1,25 @@
+{
+  "at": "2026-10-13T21:55:32.521418+00:00",
+  "status": "reviewed-exact-saved-process-image-name",
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-diagnosis-v2/audit.py",
+    "--worker-sha256",
+    "2f5efde7c684d0fa04406ab80b998cef0b7f43471551c7733916ef0a6d224611",
+    "--review-sha256",
+    "ea9a4cb43c09a051575686ee9cba3780c89f20c94fd29147e98d696785fccc7e",
+    "--closed-review-sha256",
+    "d3f7634e318a3da25d7625467545a9525c877e9175789e1eee13d32b8317518f"
+  ],
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-diagnosis-v2/audit.py": "2f5efde7c684d0fa04406ab80b998cef0b7f43471551c7733916ef0a6d224611",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-diagnosis-v2/REVIEW.md": "ea9a4cb43c09a051575686ee9cba3780c89f20c94fd29147e98d696785fccc7e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/legacy-platform133-source-bound-v3-qualification-closed-review-v1/receipt.json": "d3f7634e318a3da25d7625467545a9525c877e9175789e1eee13d32b8317518f"
+  },
+  "change": "Accept exact independently saved Framework process name with unchanged remaining argv; no timing or native-image equivalence inferred.",
+  "prior_failure": "legacy-platform133-all-diagnosis-v1",
+  "native_commands": 0,
+  "benchmark_runs": 0
+}

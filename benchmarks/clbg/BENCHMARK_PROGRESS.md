@@ -1,6 +1,6 @@
-Benchmark progress as of **2026-10-13 21:47 UTC** (17:47 New York).
+Benchmark progress as of **2026-10-13 22:15 UTC** (18:15 New York).
 
-The previous remotely verified checkpoint is `96877e6dae88f51e24179c6ccb053a7a09efe98b`
+The previous remotely verified checkpoint is `7627517ea35495fa0b20fe7163676412346e5957`
 on `codex/clbg-native-benchmarks`. The language overview and complete Crystal
 inventory are published. C3's exact source counts, runtime metadata and current
 chart candidate have qualified and are now published through GitLab Pages
@@ -14,12 +14,12 @@ actual request, process identity and exit.
 |---|---:|---|
 | Crystal | 90/90 | Published with 20 source forms and 60 candidate samples, plus 30 matched Mech samples in the complete study. |
 | C3 | 90/90 | Published through GitLab Pages. Source counts, runtime metadata and current dataset qualified; all 20 forms / 60 candidate samples passed browser inspection. |
-| Nim | 90/90 | Independent full-suite reconciliation and complete receipt/pin review passed. Exact source-owner diagnostics still need resolution before LOC admission. |
+| Nim | 90/90 | Independent full-suite reconciliation and exact LOC admission passed for all 20 forms and 21 authored inputs. Five new helper fixtures passed; runtime metadata and publication remain. |
 | Gleam | 90/90 | Independent full-suite reconciliation and complete receipt/pin review passed. Qualified Gleam and authored Erlang evidence still needs whole-bundle source admission. |
 | Clojure | 90/90 | Published. Full-suite, LOC, JVM metadata and current dataset admission passed. Root verified 5,276 candidate pins; 20 forms / 60 candidate samples are retained, with 18 selected endpoints. Public browser inspection confirmed all 20 forms and 60 runs. |
 | V | 90/90 | Full workload samples collected, including eight missing tree slots recovered additively. Independent all-ten reconciliation passed. Report-only; excluded from dataset, charts and Site. |
 | Pony | 0/90 | Both tree observations and four Pi/map traces are retained. The existing-evidence capture exited normally; original authored main IR was overwritten by builtin output. Separate bitcode/ownership recovery remains. |
-| Prolog | 0/90 | Archive repair, private app extraction and ARM64 slicing completed. Runtime home and version 10.0.2 verified. Two sequential halt controls confirmed that the catch wrapper intercepts successful shutdown and replaces exit 0 with exit 1. Wrapper repair, feature/image qualification and runtime admission remain pending; original failures are preserved. |
+| Prolog | 0/90 | SWI-Prolog 10.0.2 ARM64 runtime qualified. Moving successful shutdown outside the catch wrapper fixed exit status; actual feature probe and seven-image closure passed. The 156 bounded workload cases, work/LOC checks and full samples remain. |
 | Julia AOT | 0 qualified | Kernel-image binding repaired. Both bounded debugger calibration cells timed out; no native AOT helper executed. No permission cause is established. An official safe-trim/stripped-IR route is documented for the next additive attempt. |
 | Rebol | 0/90 | Faithful source bundle and six runtime intake fixtures retained; actual SDK/runtime/build/work/LOC/full qualification remains. |
 | Elixir / Kotlin | 0/90 each | Reviewed source bundles are frozen and pushed. Actual toolchain and complete qualification remain. |
@@ -296,3 +296,53 @@ runtime. No feature probe or benchmark ran. A source repair will move successful
 halt(0) outside the checked catch in the probe, QLF preparation and authored I/O
 wrapper before fresh feature/image qualification.
 Evidence: `continuation/jobs/prolog-halt-controls-closed-review-v1/review.json`.
+
+
+## Nim source admission, Prolog runtime and platform diagnosis — 2026-10-13 22:15 UTC
+
+Nim's exact source admission passed for all 20 forms and 21 authored inputs.
+The counted GMP helper has 13 physical and 23 canonical lines; optimized
+Pi totals 84 canonical lines including that helper. Five helper fixtures
+passed, and root verified 36,838 evidence pins after normal job completion.
+The original 90 timing samples and source bytes are unchanged. An earlier
+fixture incorrectly wrapped a type alias and failed; that actual failure is
+retained separately. The corrected fixture tests only template wrapping.
+The qualified overlay SHA is
+`55ef7197d8caa62a5087cf93380e524d8a0fac11d2d82a731e44675e3d288398`.
+Evidence is in `nim-comparison/20261012/source-counts/helper-owners-v2/`
+and `continuation/jobs/nim-source20-loc-v2-closed-review/`. Runtime metadata
+and dataset publication remain pending; Nim is not yet in the public chart.
+
+Prolog's corrected feature probe exited 0. The repair moves successful halt
+outside the catch handler, while retaining failure handling. The actual
+ARM64 runtime reports SWI-Prolog 10.0.2, enabled GC, unbounded integers and
+PCRE2 10.40. Thirty-five native image-inspection commands passed for seven
+loaded images. Root verified 13,399 evidence pins; the qualified runtime
+configuration adds exact official archive, version and library-source
+bindings. Its SHA is
+`7fa470a9827e60e84eb9c6ad343cc8385e411b400f0ae8a322fbefda488bb448`.
+Portable receipts and logs are saved in
+`continuation/jobs/prolog-success-halt-closed-review-v1/`; configuration is in
+`prolog-comparison/20261013/runtime-qualified/success-halt-v1/`. No benchmark
+has run. Twenty-program QLF preparation, 156 bounded output cases, workload
+ownership, exact LOC and all 90 full samples remain pending.
+
+The platform diagnosis completed all 133 historical records: 115 resolve,
+13 lack required historical evidence, and five have proven literal source
+and timing routes requiring an adapter repair. All five preserve exact
+source, sample, executable and build identities. Twelve missing rows are
+Julia runtime observations; one is the C FASTA native-build output binding.
+Those 13 remain unclassified. Root verified 384 pins. The first diagnostic
+attempt rejected a launcher-versus-process-image spelling difference before
+visiting any row; the corrected attempt binds the exact saved process image
+and all remaining argv. Both outcomes are retained. No platform annotation
+or timing was changed. Evidence is in
+`continuation/legacy-platform-history-diagnosis-v2/` and its closed review.
+
+Gleam's source-owner semantic packet is ready for independent review but has
+not run. Platform repair, Nim runtime metadata and Prolog bounded preparation
+are separate additive source packets. The public timing dataset remains
+`b088279074e85ec149466f876bdce49d4d497f7784a0d48be58e023e5b2c6a13`.
+The Samples Off fix remains live in website commit
+`624c7f9b8b190134034f75fdeb8e010eceec21cc`; published page and app bytes were
+rechecked at 22:14 UTC. No new Mech optimization or benchmark timing is claimed.

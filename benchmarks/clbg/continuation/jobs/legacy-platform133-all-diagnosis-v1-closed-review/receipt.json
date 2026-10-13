@@ -1,0 +1,10 @@
+{
+  "at": "2026-10-13T21:54:22.288949+00:00",
+  "status": "closed-prior-launcher-alias-check-failure",
+  "verified_pins": 216,
+  "body_terminal_sha256": "1b36e7be8b614ad871c3a844f13a39076f584c51d036809e3bd414b6fa8e2666",
+  "durable_terminal_sha256": "ab1613788a04d4034ca5ab14963a0d269419121bd9b01296eddcae211d4e18ed",
+  "actual_outer_exit": 1,
+  "native_processes": 0,
+  "benchmark_runs": 0
+}

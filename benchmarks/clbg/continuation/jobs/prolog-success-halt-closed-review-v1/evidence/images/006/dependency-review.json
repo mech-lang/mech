@@ -1,0 +1,78 @@
+{
+  "image": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/Frameworks/libgmp.10.dylib",
+  "executable_anchor": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/MacOS/swipl",
+  "parent": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/Frameworks/libswipl.10.0.2.dylib",
+  "architectures": [
+    "x86_64",
+    "arm64"
+  ],
+  "selected_architecture": "arm64",
+  "mach_header": {
+    "architecture": "arm64",
+    "filetype": "DYLIB",
+    "load_command_count": 15
+  },
+  "install_id": "/Users/jan/deps/lib/libgmp.10.dylib",
+  "declared_rpaths": [],
+  "actual_rpath_context": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/Frameworks"
+  ],
+  "dependencies": [
+    {
+      "install_name": "/usr/lib/libSystem.B.dylib",
+      "scope": "OS-image-not-hashed",
+      "load_command": "LC_LOAD_DYLIB"
+    }
+  ],
+  "commands": {
+    "architecture": {
+      "command": [
+        "/usr/bin/lipo",
+        "-archs",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/Frameworks/libgmp.10.dylib"
+      ],
+      "receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-success-halt-v1/images/006/architecture.json"
+    },
+    "mach-header": {
+      "command": [
+        "/usr/bin/otool",
+        "-arch",
+        "arm64",
+        "-hv",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/Frameworks/libgmp.10.dylib"
+      ],
+      "receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-success-halt-v1/images/006/mach-header.json"
+    },
+    "linked-images": {
+      "command": [
+        "/usr/bin/otool",
+        "-arch",
+        "arm64",
+        "-L",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/Frameworks/libgmp.10.dylib"
+      ],
+      "receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-success-halt-v1/images/006/linked-images.json"
+    },
+    "install-id": {
+      "command": [
+        "/usr/bin/otool",
+        "-arch",
+        "arm64",
+        "-D",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/Frameworks/libgmp.10.dylib"
+      ],
+      "receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-success-halt-v1/images/006/install-id.json"
+    },
+    "load-commands": {
+      "command": [
+        "/usr/bin/otool",
+        "-arch",
+        "arm64",
+        "-l",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/Frameworks/libgmp.10.dylib"
+      ],
+      "receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-success-halt-v1/images/006/load-commands.json"
+    }
+  },
+  "chart_admission": false
+}

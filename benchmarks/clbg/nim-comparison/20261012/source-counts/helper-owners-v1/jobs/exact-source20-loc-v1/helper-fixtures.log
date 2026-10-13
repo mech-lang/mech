@@ -1,0 +1,19 @@
+test_existing_proc_composition_policy_is_unchanged (test_helper_owners.HelperOwnerFixtures.test_existing_proc_composition_policy_is_unchanged) ... ok
+test_typed_declarations_and_independent_bodies (test_helper_owners.HelperOwnerFixtures.test_typed_declarations_and_independent_bodies) ... ok
+test_unknown_include_generic_and_returned_type_are_rejected (test_helper_owners.HelperOwnerFixtures.test_unknown_include_generic_and_returned_type_are_rejected) ... ok
+test_wrapping_keeps_owner_units_and_exact_spans (test_helper_owners.HelperOwnerFixtures.test_wrapping_keeps_owner_units_and_exact_spans) ... FAIL
+test_wrong_forwarding_and_extra_action_are_rejected (test_helper_owners.HelperOwnerFixtures.test_wrong_forwarding_and_extra_action_are_rejected) ... ok
+
+======================================================================
+FAIL: test_wrapping_keeps_owner_units_and_exact_spans (test_helper_owners.HelperOwnerFixtures.test_wrapping_keeps_owner_units_and_exact_spans)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/source-counts/helper-owners-v1/jobs/exact-source20-loc-v1/snapshot/test_helper_owners.py", line 30, in test_wrapping_keeps_owner_units_and_exact_spans
+    self.assertEqual(value['physical_loc'], 23)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 24 != 23
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.009s
+
+FAILED (failures=1)

@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/source-counts/helper-owners-v1/replay_existing.py", line 365, in run
+    outcome.update(seal(args, output, pins), status='completed-qualified-loc-overlay')
+                   ~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/source-counts/helper-owners-v1/replay_existing.py", line 208, in seal
+    fixture = fixtures(directory, normalizer, helper, worker, old, pins)
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/source-counts/helper-owners-v1/replay_existing.py", line 170, in fixtures
+    assert sorted(started) == IDS and result.testsRun == 5 and result.wasSuccessful()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

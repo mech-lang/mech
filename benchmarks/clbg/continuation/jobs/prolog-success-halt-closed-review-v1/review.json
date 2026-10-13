@@ -1,0 +1,41 @@
+{
+  "at": "2026-10-13T22:01:47.853306+00:00",
+  "status": "corrected-feature-and-private-images-passed",
+  "verified_pins": 13399,
+  "report_sha256": "d744e831eb92c8ea88b3f07ab8dd247e6feaeacb0f003132364513d13471404b",
+  "body_terminal_sha256": "d30db7f89c6eb7e077e400d3227a527d03899f473454b0678a8f13ec0bb84c6e",
+  "durable_terminal_sha256": "6ce1f4e5d108c89314843faea410842477f5580b602ec296f9bc3931b2f0308b",
+  "feature_exit": 0,
+  "actual_native_image_commands": 35,
+  "native_images": 7,
+  "images": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/Frameworks/libgmp.10.dylib",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/Frameworks/libpcre2-8.dylib",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/Frameworks/libswipl.10.0.2.dylib",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/Frameworks/libz.1.dylib",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/MacOS/swipl",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/PlugIns/swipl/json.so",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/PlugIns/swipl/pcre4pl.so"
+  ],
+  "runtime": {
+    "architecture": "arm64-darwin",
+    "bounded": false,
+    "gc": true,
+    "home": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/Resources/swipl",
+    "stack_limit": 8589934592,
+    "version_components": [
+      10,
+      0,
+      2
+    ],
+    "version_data": "swi(10,0,2,[])"
+  },
+  "regex_jit_requested": false,
+  "pcre_version": "10.40 2022-04-14",
+  "benchmarks": 0,
+  "version_reexecutions": 0,
+  "fixture_reexecutions": 0,
+  "prior_failures_relabelled": false,
+  "source_work_qualified": false,
+  "runtime_config_created": false
+}

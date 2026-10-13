@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "at": "2026-10-13T22:06:55.970768+00:00",
+  "root_review": true,
+  "source_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/official-source/swipl-10.0.2/src/os/pl-prologflag.c": "16faab0f1f94263743430e5d84be363331432441bb2ef2ae14089ad4e8d9d8bb",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/official-source/swipl-10.0.2/src/pl-gc.c": "276002f94eae95e3648af527e38b0bdbd247b1d6af11600bbc5ef5b8fa3aade7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/official-source/swipl-10.0.2/packages/pcre/pcre4pl.c": "00f09dd44bf74c1043966e5818d75949de95b8c1c34d0a1c86c3e39333d324ac",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/Resources/swipl/library/ext/pcre/pcre.pl": "d0d234a81ab6638b44cdc9b35d9cb8ececf287f4203395d0e1e97884f0d653b9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/Resources/swipl/library/hashtable.pl": "9285d0cd59a23ee95a9f63bbcff10e714350b6de45d4223c9a7f8a802f8e25a9"
+  },
+  "actual_feature_sha256": "32b7cc83c20417d5abe81c660d59d199ca80dbee2a4d8f911e76433afcf5dfc6",
+  "native_image_closure_sha256": "266d1d6a01d87fd2dd7baf274e018061519de9ffdf9b54c70b010ef4011a219a",
+  "conclusions": {
+    "gc": "Actual gc=true; exact official flag initializer sets true and collector checks that flag. Probe and uniform8g prefix contain no disabling flags.",
+    "integers": "Actual bounded=false, successful220-bit quotient/remainder and negative floor/modulo; private GMP image is in the verified native closure.",
+    "hashtable": "Packaged module equals official archive bytes; generic open addressing, half-load resize and setarg update. Actual four-key growth/update primitive passed. Full workload maps remain to qualify.",
+    "pcre": "Packaged module equals official archive bytes; PCRE2 10.40 and pcre4pl native images verified. jit(false) is a recognized inverted PCRE2_NO_JIT match option. get_re_copy resets match flags; no persistence claim. JIT compilation requires optimise flags, initialized zero; current source requests no optimisation. Fold/replacement primitive outputs passed.",
+    "backend": "Native ARM64 SWI runtime executes bytecode/QLF applications; clause indexing is not native application compilation.",
+    "scope": "Runtime configuration only. Scored WAM/tree factory, workload semantics,156 bounded outputs, LOC and full90 remain pending."
+  }
+}

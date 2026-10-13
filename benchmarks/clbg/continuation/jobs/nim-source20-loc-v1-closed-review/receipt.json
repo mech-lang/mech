@@ -1,0 +1,14 @@
+{
+  "at": "2026-10-13T21:59:32.438519+00:00",
+  "status": "closed-fixture-wrapping-generation-failure-preserved",
+  "verified_pins": 36799,
+  "outcome_sha256": "3333db46ecff4bbfadd6971f329c2b613e33209ee12b064e349dd2c4dfa35df9",
+  "durable_terminal_sha256": "6bfdb28c3adfbbdae3f3872a9502a0c3aa968d6c4ae912f7c355afdaea54d70b",
+  "fixture_receipt_sha256": "0bfa8de6a71dd42200d39b4a94c40c019a639f3b16e07ecc7ab20ddf311170cf",
+  "tests_run": 5,
+  "passed": 4,
+  "failed": 1,
+  "cause": "Wrapping fixture also split the Mpz type alias; expected physical23 became24. Canonical23 assertion passed.",
+  "native_processes": 0,
+  "benchmark_runs": 0
+}

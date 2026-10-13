@@ -1,0 +1,263 @@
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/PlugIns/swipl/pcre4pl.so:
+Load command 0
+      cmd LC_SEGMENT_64
+  cmdsize 552
+  segname __TEXT
+   vmaddr 0x0000000000000000
+   vmsize 0x0000000000008000
+  fileoff 0
+ filesize 32768
+  maxprot 0x00000005
+ initprot 0x00000005
+   nsects 6
+    flags 0x0
+Section
+  sectname __text
+   segname __TEXT
+      addr 0x00000000000012a0
+      size 0x0000000000003acc
+    offset 4768
+     align 2^5 (32)
+    reloff 0
+    nreloc 0
+     flags 0x80000400
+ reserved1 0
+ reserved2 0
+Section
+  sectname __stubs
+   segname __TEXT
+      addr 0x0000000000004d6c
+      size 0x0000000000000444
+    offset 19820
+     align 2^2 (4)
+    reloff 0
+    nreloc 0
+     flags 0x80000408
+ reserved1 0 (index into indirect symbol table)
+ reserved2 12 (size of stubs)
+Section
+  sectname __stub_helper
+   segname __TEXT
+      addr 0x00000000000051b0
+      size 0x000000000000045c
+    offset 20912
+     align 2^2 (4)
+    reloff 0
+    nreloc 0
+     flags 0x80000400
+ reserved1 0
+ reserved2 0
+Section
+  sectname __cstring
+   segname __TEXT
+      addr 0x0000000000005610
+      size 0x0000000000000f8d
+    offset 22032
+     align 2^3 (8)
+    reloff 0
+    nreloc 0
+     flags 0x00000002
+ reserved1 0
+ reserved2 0
+Section
+  sectname __const
+   segname __TEXT
+      addr 0x00000000000065a0
+      size 0x0000000000000090
+    offset 26016
+     align 2^4 (16)
+    reloff 0
+    nreloc 0
+     flags 0x00000000
+ reserved1 0
+ reserved2 0
+Section
+  sectname __eh_frame
+   segname __TEXT
+      addr 0x0000000000006630
+      size 0x00000000000009a0
+    offset 26160
+     align 2^3 (8)
+    reloff 0
+    nreloc 0
+     flags 0x6800000b
+ reserved1 0
+ reserved2 0
+Load command 1
+      cmd LC_SEGMENT_64
+  cmdsize 152
+  segname __DATA_CONST
+   vmaddr 0x0000000000008000
+   vmsize 0x0000000000004000
+  fileoff 32768
+ filesize 16384
+  maxprot 0x00000003
+ initprot 0x00000003
+   nsects 1
+    flags 0x10
+Section
+  sectname __got
+   segname __DATA_CONST
+      addr 0x0000000000008000
+      size 0x0000000000000008
+    offset 32768
+     align 2^3 (8)
+    reloff 0
+    nreloc 0
+     flags 0x00000006
+ reserved1 91 (index into indirect symbol table)
+ reserved2 0
+Load command 2
+      cmd LC_SEGMENT_64
+  cmdsize 312
+  segname __DATA
+   vmaddr 0x000000000000c000
+   vmsize 0x0000000000004000
+  fileoff 49152
+ filesize 16384
+  maxprot 0x00000003
+ initprot 0x00000003
+   nsects 3
+    flags 0x0
+Section
+  sectname __la_symbol_ptr
+   segname __DATA
+      addr 0x000000000000c000
+      size 0x00000000000002d8
+    offset 49152
+     align 2^3 (8)
+    reloff 0
+    nreloc 0
+     flags 0x00000007
+ reserved1 92 (index into indirect symbol table)
+ reserved2 0
+Section
+  sectname __data
+   segname __DATA
+      addr 0x000000000000c2d8
+      size 0x0000000000000b90
+    offset 49880
+     align 2^3 (8)
+    reloff 0
+    nreloc 0
+     flags 0x00000000
+ reserved1 0
+ reserved2 0
+Section
+  sectname __bss
+   segname __DATA
+      addr 0x000000000000ce68
+      size 0x0000000000000020
+    offset 0
+     align 2^3 (8)
+    reloff 0
+    nreloc 0
+     flags 0x00000001
+ reserved1 0
+ reserved2 0
+Load command 3
+      cmd LC_SEGMENT_64
+  cmdsize 72
+  segname __LINKEDIT
+   vmaddr 0x0000000000010000
+   vmsize 0x0000000000004000
+  fileoff 65536
+ filesize 10136
+  maxprot 0x00000001
+ initprot 0x00000001
+   nsects 0
+    flags 0x0
+Load command 4
+            cmd LC_DYLD_INFO_ONLY
+        cmdsize 48
+     rebase_off 65536
+    rebase_size 32
+       bind_off 65568
+      bind_size 24
+  weak_bind_off 0
+ weak_bind_size 0
+  lazy_bind_off 65592
+ lazy_bind_size 2232
+     export_off 67824
+    export_size 32
+Load command 5
+     cmd LC_SYMTAB
+ cmdsize 24
+  symoff 67904
+   nsyms 246
+  stroff 72576
+ strsize 2360
+Load command 6
+            cmd LC_DYSYMTAB
+        cmdsize 80
+      ilocalsym 0
+      nlocalsym 153
+     iextdefsym 153
+     nextdefsym 1
+      iundefsym 154
+      nundefsym 92
+         tocoff 0
+           ntoc 0
+      modtaboff 0
+        nmodtab 0
+   extrefsymoff 0
+    nextrefsyms 0
+ indirectsymoff 71840
+  nindirectsyms 183
+      extreloff 0
+        nextrel 0
+      locreloff 0
+        nlocrel 0
+Load command 7
+     cmd LC_UUID
+ cmdsize 24
+    uuid 1223576F-9A87-3F74-838F-BED8A1CDF81C
+Load command 8
+      cmd LC_BUILD_VERSION
+  cmdsize 32
+ platform 1
+    minos 10.15
+      sdk 10.15
+   ntools 1
+     tool 3
+  version 1230.1
+Load command 9
+      cmd LC_SOURCE_VERSION
+  cmdsize 16
+  version 0.0
+Load command 10
+          cmd LC_LOAD_DYLIB
+      cmdsize 48
+         name @rpath/libpcre2-8.dylib (offset 24)
+   time stamp 2 Wed Dec 31 19:00:02 1969
+      current version 0.0.0
+compatibility version 0.0.0
+Load command 11
+          cmd LC_LOAD_DYLIB
+      cmdsize 56
+         name @rpath/libswipl.10.dylib (offset 24)
+   time stamp 2 Wed Dec 31 19:00:02 1969
+      current version 10.0.2
+compatibility version 10.0.0
+Load command 12
+          cmd LC_LOAD_DYLIB
+      cmdsize 56
+         name /usr/lib/libSystem.B.dylib (offset 24)
+   time stamp 2 Wed Dec 31 19:00:02 1969
+      current version 1356.0.0
+compatibility version 1.0.0
+Load command 13
+      cmd LC_FUNCTION_STARTS
+  cmdsize 16
+  dataoff 67856
+ datasize 48
+Load command 14
+      cmd LC_DATA_IN_CODE
+  cmdsize 16
+  dataoff 67904
+ datasize 0
+Load command 15
+      cmd LC_CODE_SIGNATURE
+  cmdsize 16
+  dataoff 74944
+ datasize 728

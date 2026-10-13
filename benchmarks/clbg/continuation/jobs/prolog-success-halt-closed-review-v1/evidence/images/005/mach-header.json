@@ -1,0 +1,22 @@
+{
+  "command": [
+    "/usr/bin/otool",
+    "-arch",
+    "arm64",
+    "-hv",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/Frameworks/libpcre2-8.dylib"
+  ],
+  "started_at": "2026-10-13T22:00:18.366186+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 22387,
+  "identity": {
+    "pid": 22387,
+    "process_listing": "Tue Oct 13 18:00:18 2026     /usr/bin/otool -arch arm64 -hv /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/Frameworks/libpcre2-8.dylib"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-13T22:00:18.391654+00:00",
+  "final_exit_status": 0
+}
