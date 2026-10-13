@@ -1,0 +1,33 @@
+{
+  "status": "durable-job-launched",
+  "launched_at": "2026-10-13T13:18:20.579942+00:00",
+  "job": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/matlab-regexp-source2-entry-repaired-v2",
+  "worker_identity": {
+    "pid": 17870,
+    "listing": "17870 17869 Tue Oct 13 09:18:20 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/matlab-regexp-source2-entry-repaired-v2 --lease-fd 3 --go-fd 4"
+  },
+  "command": [
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/matlab-source2-entry-repair-v2/replay.py",
+    "--revision",
+    "corrected-source2-entry-repaired-v2",
+    "--stage",
+    "replay",
+    "--packet-pins",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/matlab-regexp-reviewed-digests-v1/reviewed-packet.json",
+    "--packet-pins-sha256",
+    "4222852c3ac28554da174a176f2984bc887c990a3c7c3ef553367c7699dbfe57",
+    "--fixture-receipt",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/matlab-regexp-grammar-v1/jobs/fixtures16-restored-v1/fixture-receipt.json",
+    "--fixture-sha256",
+    "9f943cabf4a27eeb7010f2178a7b45e5310382cfeaa08c04bbbdab6a65fae7cd",
+    "--full-report-sha256",
+    "0329e11f98bf771b634c4947104d8c1ab35182f1440a6c49f30f6eb048f2b27f"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "detached_session": true,
+  "automatic_retry": false,
+  "qualification_granted": false
+}

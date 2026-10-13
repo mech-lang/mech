@@ -1,0 +1,90 @@
+{
+  "status": "source-only-unexecuted-awaiting-generated-SDK-and-runtime-review",
+  "language": "rebol3",
+  "implementation_candidate": "Oldes/Rebol3",
+  "version_candidate": "3.22.1",
+  "runtime_variant_candidate": "Bulk macOS ARM64",
+  "execution_mode_candidate": "authored Rebol executed in the native interpreter with a counted general C primitive extension",
+  "runtime_executable": null,
+  "actual_runtime_configuration": null,
+  "native_primitive_API_qualified": false,
+  "generated_SDK_qualified": false,
+  "authored_extension_source": "support/clbg_primitives.c",
+  "authored_extension_loader": "support/clbg_primitives.reb",
+  "extension_path_environment": "MECH_CLBG_REBOL_PRIMITIVES",
+  "generated_SDK_requirement": "Full ordered3.22.1 RL_LIB/type/include headers from the official generation route and all exact input pins; never a partial handwritten ABI",
+  "runtime_configuration_admitted": false,
+  "source_work_qualified": false,
+  "source_owner_grammar_qualified": false,
+  "canonical_loc": null,
+  "bounded_output_qualified": false,
+  "full_processes_authorized": 0,
+  "native_processes_authorized": 0,
+  "chart_admission": false,
+  "publication_forms_proposed": ["compact", "optimized"],
+  "publication_alias_policy": "Physically preserve one equivalent baseline in both forms later; separate fresh actual records per form, no distinct optimization or copied timing",
+  "profiles": [
+    {
+      "id": "rebol-regexredux-baseline-v1", "benchmark": "regexredux", "variant": "baseline",
+      "source": "sources/regexredux/main.reb", "stdin": true, "maximum_workers": 1,
+      "authored_helpers": ["support/clbg_io.reb", "support/clbg_regex.reb", "support/clbg_primitives.reb", "support/clbg_primitives.c"],
+      "general_vendor_libraries_proposed": ["PCRE2-8", "GMP (same complete generic extension image)"],
+      "native_facade_source_pending": false, "canonical_loc": null, "chart_admission": false
+    },
+    {
+      "id": "rebol-revcomp-baseline-v1", "benchmark": "revcomp", "variant": "baseline",
+      "source": "sources/revcomp/main.reb", "stdin": true, "maximum_workers": 1,
+      "authored_helpers": ["support/clbg_io.reb", "support/clbg_primitives.reb", "support/clbg_primitives.c"], "general_vendor_libraries_proposed": ["GMP", "PCRE2-8"],
+      "canonical_loc": null, "chart_admission": false
+    },
+    {
+      "id": "rebol-pidigits-baseline-v1", "benchmark": "pidigits", "variant": "baseline",
+      "source": "sources/pidigits/main.reb", "stdin": false, "maximum_workers": 1,
+      "authored_helpers": ["support/clbg_io.reb", "support/clbg_big.reb", "support/clbg_primitives.reb", "support/clbg_primitives.c"],
+      "general_vendor_libraries_proposed": ["GMP", "PCRE2-8 (same complete generic extension image)"],
+      "native_facade_source_pending": false, "canonical_loc": null, "chart_admission": false
+    },
+    {
+      "id": "rebol-spectralnorm-baseline-v1", "benchmark": "spectralnorm", "variant": "baseline",
+      "source": "sources/spectralnorm/main.reb", "stdin": false, "maximum_workers": 1,
+      "authored_helpers": ["support/clbg_io.reb", "support/clbg_primitives.reb", "support/clbg_primitives.c"], "general_vendor_libraries_proposed": ["GMP", "PCRE2-8"],
+      "canonical_loc": null, "chart_admission": false
+    },
+    {
+      "id": "rebol-mandelbrot-baseline-v1", "benchmark": "mandelbrot", "variant": "baseline",
+      "source": "sources/mandelbrot/main.reb", "stdin": false, "maximum_workers": 1,
+      "authored_helpers": ["support/clbg_io.reb", "support/clbg_primitives.reb", "support/clbg_primitives.c"], "general_vendor_libraries_proposed": ["GMP", "PCRE2-8"],
+      "canonical_loc": null, "chart_admission": false
+    },
+    {
+      "id": "rebol-fasta-baseline-v1", "benchmark": "fasta", "variant": "baseline",
+      "source": "sources/fasta/main.reb", "stdin": false, "maximum_workers": 1,
+      "authored_helpers": ["support/clbg_io.reb", "support/clbg_primitives.reb", "support/clbg_primitives.c"], "general_vendor_libraries_proposed": ["GMP", "PCRE2-8"],
+      "canonical_loc": null, "chart_admission": false
+    },
+    {
+      "id": "rebol-knucleotide-baseline-v1", "benchmark": "knucleotide", "variant": "baseline",
+      "source": "sources/knucleotide/main.reb", "stdin": true, "maximum_workers": 1,
+      "authored_helpers": ["support/clbg_io.reb", "support/clbg_primitives.reb", "support/clbg_primitives.c"], "general_vendor_libraries_proposed": ["GMP", "PCRE2-8"],
+      "canonical_loc": null, "chart_admission": false
+    },
+    {
+      "id": "rebol-binarytrees-baseline-v1", "benchmark": "binarytrees", "variant": "baseline",
+      "source": "sources/binarytrees/main.reb", "stdin": false, "maximum_workers": 1,
+      "authored_helpers": ["support/clbg_io.reb", "support/clbg_primitives.reb", "support/clbg_primitives.c"], "general_vendor_libraries_proposed": ["GMP", "PCRE2-8"],
+      "canonical_loc": null, "chart_admission": false
+    },
+    {
+      "id": "rebol-nbody-baseline-v1", "benchmark": "nbody", "variant": "baseline",
+      "source": "sources/nbody/main.reb", "stdin": false, "maximum_workers": 1,
+      "authored_helpers": ["support/clbg_io.reb", "support/clbg_primitives.reb", "support/clbg_primitives.c"], "general_vendor_libraries_proposed": ["GMP", "PCRE2-8"],
+      "canonical_loc": null, "chart_admission": false
+    },
+    {
+      "id": "rebol-fannkuchredux-baseline-v1", "benchmark": "fannkuchredux", "variant": "baseline",
+      "source": "sources/fannkuchredux/main.reb", "stdin": false, "maximum_workers": 1,
+      "authored_helpers": ["support/clbg_io.reb", "support/clbg_primitives.reb", "support/clbg_primitives.c"], "general_vendor_libraries_proposed": ["GMP", "PCRE2-8"],
+      "canonical_loc": null, "chart_admission": false
+    }
+  ]
+}

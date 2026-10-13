@@ -1,0 +1,9 @@
+{
+  "status": "stopped-before-next-stage",
+  "dependency": "pony-work-v5-seal",
+  "automatic_retry": false,
+  "benchmark_timing_authorized": false,
+  "chart_admission": false,
+  "error": "AssertionError",
+  "error_type": "AssertionError"
+}

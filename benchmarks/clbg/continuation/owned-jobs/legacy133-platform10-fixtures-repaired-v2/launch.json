@@ -1,0 +1,23 @@
+{
+  "status": "durable-job-launched",
+  "launched_at": "2026-10-13T13:29:12.037989+00:00",
+  "job": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/legacy133-platform10-fixtures-repaired-v2",
+  "worker_identity": {
+    "pid": 20890,
+    "listing": "20890 20889 Tue Oct 13 09:29:12 2026     /opt/homebrew/opt/python@3.14/bin/python3.14 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/legacy133-platform10-fixtures-repaired-v2 --lease-fd 3 --go-fd 4"
+  },
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-entry-repair-v2/replay.py",
+    "--stage",
+    "fixtures",
+    "--revision",
+    "fixtures-entry-repaired-v2"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "detached_session": true,
+  "automatic_retry": false,
+  "qualification_granted": false
+}

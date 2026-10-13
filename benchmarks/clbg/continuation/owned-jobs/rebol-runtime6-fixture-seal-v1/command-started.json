@@ -1,0 +1,19 @@
+{
+  "started_at": "2026-10-13T15:11:20.769174+00:00",
+  "command_pid": 40179,
+  "command_identity": {
+    "pid": 40179,
+    "listing": "40179 40175 Tue Oct 13 11:11:20 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -E -S -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/rebol-comparison/20261013/revisions/runtime-v1/bootstrap_runtime.py --seal"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-E",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/rebol-comparison/20261013/revisions/runtime-v1/bootstrap_runtime.py",
+    "--seal"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech"
+}

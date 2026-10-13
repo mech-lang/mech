@@ -12235,7 +12235,8 @@
     "pidigits",
     "fasta",
     "knucleotide",
-    "nbody"
+    "nbody",
+    "fannkuchredux"
   ],
   "benchmark_order": [
     "regexredux",
@@ -12366,7 +12367,7 @@
     }
   },
   "machine": "Apple M3",
-  "updated_at": "2026-10-13T15:42:23.324488+00:00",
+  "updated_at": "2026-10-13T15:54:34.879364+00:00",
   "historical_attempts": [
     {
       "key": "regexredux:mech-control-for-apl",
@@ -14258,6 +14259,10 @@
     "original_report_mutated": false,
     "original_sources_changed": false,
     "aliases_remain_aliases": true,
-    "chart_admission": false
+    "chart_admission": false,
+    "status": "complete",
+    "pins_unchanged_at_end": true,
+    "completed_at": "2026-10-13T15:54:34.879411+00:00",
+    "overall_suite_completion_pending": true
   }
 }

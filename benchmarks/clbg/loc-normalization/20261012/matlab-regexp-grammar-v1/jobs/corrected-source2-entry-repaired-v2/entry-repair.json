@@ -1,0 +1,27 @@
+{
+  "status": "additive-fingerprint-schema-repair",
+  "original": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/matlab-regexp-grammar-v1/qualify_replay.py",
+  "original_sha256": "379104af95910a652697512f3a9aa170ca8c4614f7855e433052a3bac09f4acc",
+  "preserved_failed_entry_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/matlab-regexp-source2-v1/request.json": "825d35ee00969b20e798b8450c70ba26ef658aef7548df3f66672fe7eff1244f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/matlab-regexp-source2-v1/command.stdout": "a7898f390b27b408e99a72dc895a97cf5700f54e0c291e08778a406d5aa7734b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/matlab-regexp-source2-v1/worker.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/matlab-regexp-source2-v1/command.stderr": "7ce2e05d9a30eda25b320d931b5298e57427d1e8b59ac51ede70c62a35490833",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/matlab-regexp-source2-v1/worker-started.json": "8baa6c4698b2b7b365384ab8492708f348360981eba3eb94896b458736c32f0e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/matlab-regexp-source2-v1/command-started.json": "c27e32056010d287a8dd987b2f7be57b06da3c7f9d4743a6ae2ea1d099e3b16a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/matlab-regexp-source2-v1/owner.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/matlab-regexp-source2-v1/terminal.json": "f325f3b2e0dd81e579ad6e0d45e25d0209579ea919633d98e477280c81536b2a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/matlab-regexp-source2-v1/launch.json": "ae2c2c14eda6330174caa93525022bc355b99fc0504d8c021b972d8c901986d6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/matlab-source2-entry-repair-v2/replay.py": "11c711b7a16ae84764f8f9bca3972f0d3474161663df873817487d5b07def18c"
+  },
+  "changes": [
+    "Mech source-support entry derived from exact row source",
+    "absent legacy binary identity retained as JSON null"
+  ],
+  "parser_changed": false,
+  "fixture_methods_changed": false,
+  "original_native_records_changed": false,
+  "benchmark_runs": 0,
+  "identity_checks_removed": 0,
+  "chart_admission": false
+}

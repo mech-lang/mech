@@ -212,7 +212,7 @@ function openPoint(info){
     $('#inspector').show();
     renderChart();
   }
-  $('#tooltip').hidden=true;
+  clearHoverDetails();
   $('#close-inspector').focus({preventScroll:true});
 }
 function closeInspector(){
@@ -220,16 +220,20 @@ function closeInspector(){
   $('#chart-detail-layout').classList.remove('inspector-open');
   renderChart();
 }
-function tooltip(event,description){
-  const tip=$('#tooltip');tip.textContent=description;tip.hidden=false;
-  const box=tip.getBoundingClientRect();
-  tip.style.left=`${Math.max(8,Math.min(innerWidth-box.width-8,event.clientX+14))}px`;
-  tip.style.top=`${Math.max(8,Math.min(innerHeight-box.height-8,event.clientY+14))}px`;
+function clearHoverDetails(){
+  const details=$('#hover-details');
+  details.textContent='Hover a point or line for details.';
+  details.classList.remove('active');
+}
+function showHoverDetails(description){
+  const details=$('#hover-details');
+  if(details.textContent!==description)details.textContent=description;
+  details.classList.add('active');
 }
 function renderChart(){
   const svg=$('#chart');svg.replaceChildren();
   svg.classList.toggle('median-focus',state.global);
-  delete svg.dataset.highlightLanguage;svg.onpointerleave=null;$('#tooltip').hidden=true;
+  delete svg.dataset.highlightLanguage;svg.onpointerleave=null;clearHoverDetails();
   const entries=currentEntries(),isMech=state.view==='mech',single=state.view==='benchmark';
   $('#chart-title').textContent=single?benchmark(state.focus).title:isMech?'Mech across selected benchmarks':`${state.benchmarks.size} selected benchmark${state.benchmarks.size===1?'':'s'}`;
   if(isMech){
@@ -310,9 +314,9 @@ function renderChart(){
   }
   function highlightPointer(event,key,description){
     if(event.pointerType==='touch')return;
-    hoveredLanguage=key;updateHighlight();tooltip(event,description);
+    hoveredLanguage=key;updateHighlight();showHoverDetails(description);
   }
-  function clearHover(){hoveredLanguage=null;updateHighlight();$('#tooltip').hidden=true;}
+  function clearHover(){hoveredLanguage=null;updateHighlight();clearHoverDetails();}
   svg.onpointerleave=clearHover;
   function pointerPosition(event){
     const transform=svg.getScreenCTM();if(!transform)return null;
@@ -374,8 +378,8 @@ function renderChart(){
     const hover=event=>{const nearest=closestMarker(event,hit);highlightPointer(event,nearest.info.language,nearest.description);};
     mark.addEventListener('pointerenter',hover);mark.addEventListener('pointermove',hover);
     mark.addEventListener('pointerleave',clearHover);
-    mark.addEventListener('focus',()=>{focusedLanguage=entry.language.key;updateHighlight();});
-    mark.addEventListener('blur',()=>{focusedLanguage=null;updateHighlight();});
+    mark.addEventListener('focus',()=>{focusedLanguage=entry.language.key;updateHighlight();showHoverDetails(description);});
+    mark.addEventListener('blur',()=>{focusedLanguage=null;updateHighlight();clearHoverDetails();});
     return mark;
   }
   function pair(entry,fast,small,{mean=false,faint=false,benchmarkKey=null,label=null}={}){
@@ -417,8 +421,8 @@ function renderChart(){
       const mark=node('circle',{cx:X(p.x),cy:Y(p.y),r:2.8,fill:color,class:'median-trail-point',
         'data-global-profile':kind,'data-year':item.year,'data-ratio-x':p.x,'data-ratio-y':p.y},plot);
       const description=`${item.year} · global ${kind==='fast'?'fastest':'fewest LOC'} median\n${ratio(p.x)} LOC · ${ratio(p.y)} time\n${item.statistics[kind].n} visible execution variants`;
-      mark.addEventListener('pointerenter',event=>{clearHover();tooltip(event,description);});
-      mark.addEventListener('pointermove',event=>tooltip(event,description));mark.addEventListener('pointerleave',clearHover);
+      mark.addEventListener('pointerenter',event=>{clearHover();showHoverDetails(description);});
+      mark.addEventListener('pointermove',event=>showHoverDetails(description));mark.addEventListener('pointerleave',clearHover);
     }
   }
   if(state.global)for(const kind of visibleKinds){
@@ -431,9 +435,9 @@ function renderChart(){
       stroke:'#151b21','stroke-width':2,tabindex:0,role:'img','aria-label':description.replaceAll('\n',', ')},plot);
     text(plot,`${kind==='fast'?'Fastest':'Fewest LOC'} median`,x+12,y-12,{class:'median-label',fill:kind==='fast'?'#edf3f6':'#f6c04e'});
     labelObstacles.push({x:x-size-3,y:y-size-3,width:2*size+6,height:2*size+6});
-    mark.addEventListener('pointerenter',event=>{clearHover();tooltip(event,description);});
-    mark.addEventListener('pointermove',event=>tooltip(event,description));mark.addEventListener('pointerleave',clearHover);
-    mark.addEventListener('focus',()=>{const box=mark.getBoundingClientRect();tooltip({clientX:box.right,clientY:box.top},description);});
+    mark.addEventListener('pointerenter',event=>{clearHover();showHoverDetails(description);});
+    mark.addEventListener('pointermove',event=>showHoverDetails(description));mark.addEventListener('pointerleave',clearHover);
+    mark.addEventListener('focus',()=>showHoverDetails(description));
     mark.addEventListener('blur',clearHover);
   }
   // Label only the visible profiles, not their faint benchmark samples. Prefer

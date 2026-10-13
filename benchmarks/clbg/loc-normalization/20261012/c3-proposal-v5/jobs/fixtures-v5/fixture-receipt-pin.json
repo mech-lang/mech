@@ -1,0 +1,18 @@
+{
+  "common_mutex_held": true,
+  "terminal_worker_status": "passed-awaiting-source-review",
+  "saved_receipt_status": "passed-awaiting-source-review",
+  "terminal_artifact_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-proposal-v5/jobs/fixtures-v5/fixture-receipt.json": "ef90317a26782bb8e6801ccfb125533ffc1352e77595d81840088972209263a5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-proposal-v5/jobs/fixtures-v5/fixtures.log": "f6586c27fd38b9aad01deb52b27cc9f7ae891308f14feb83340858580f80df8c"
+  },
+  "receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-proposal-v5/jobs/fixtures-v5/fixture-receipt.json",
+  "receipt_sha256": "ef90317a26782bb8e6801ccfb125533ffc1352e77595d81840088972209263a5",
+  "raw_fixture_log": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-proposal-v5/jobs/fixtures-v5/fixtures.log",
+    "sha256": "f6586c27fd38b9aad01deb52b27cc9f7ae891308f14feb83340858580f80df8c"
+  },
+  "automatic_retry": false,
+  "source_counting_started": false,
+  "chart_admitted": false
+}

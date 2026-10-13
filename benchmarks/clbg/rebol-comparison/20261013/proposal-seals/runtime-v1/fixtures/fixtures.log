@@ -1,0 +1,11 @@
+test_observed_interpretation_gc_and_regular_bytes_never_prove_pipe_io (test_runtime.RuntimeContracts.test_observed_interpretation_gc_and_regular_bytes_never_prove_pipe_io) ... ok
+test_os_images_reject_escaped_and_private_install_names (test_runtime.RuntimeContracts.test_os_images_reject_escaped_and_private_install_names) ... ok
+test_publisher_runtime_and_full_commit_source_identity (test_runtime.RuntimeContracts.test_publisher_runtime_and_full_commit_source_identity) ... ok
+test_seal_cannot_authorize_downloads_or_native_work (test_runtime.RuntimeContracts.test_seal_cannot_authorize_downloads_or_native_work) ... ok
+test_source_members_reject_traversal_links_duplicates_and_wrong_root (test_runtime.RuntimeContracts.test_source_members_reject_traversal_links_duplicates_and_wrong_root) ... ok
+test_startup_closure_requires_private_empty_inputs (test_runtime.RuntimeContracts.test_startup_closure_requires_private_empty_inputs) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.003s
+
+OK

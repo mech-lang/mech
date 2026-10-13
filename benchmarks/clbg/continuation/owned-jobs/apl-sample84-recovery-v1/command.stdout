@@ -1,0 +1,5 @@
+WAIT common mutex: actual APL sample84 recovery
+FULL RECOVERED APL REMAINING 2 mech-control-fannkuchredux-for-apl
+FULL RECOVERED APL REMAINING 3 mech-control-fannkuchredux-for-apl
+FULL RECOVERED APL REMAINING 3 fannkuchredux-apl-compact
+{"status": "complete", "report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/apl-sample84-recovery-v1/full-owner/timings-apl.json", "recovered_original_sample84": true, "fresh_full_processes": 3, "chart_admission": false}

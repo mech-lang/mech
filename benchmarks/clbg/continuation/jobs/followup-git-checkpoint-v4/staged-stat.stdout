@@ -1,0 +1,924 @@
+ benchmarks/clbg/BENCHMARK_PROGRESS.md              |     55 +
+ .../20261012/reconciliation/full-v1-suite-v2.json  |  13523 ++
+ .../attempts/001-c3-binarytrees-compact.json       |     53 +
+ .../001-c3-binarytrees-compact.supervisor.json     |     92 +
+ .../attempts/002-c3-binarytrees-optimized.json     |     53 +
+ .../002-c3-binarytrees-optimized.supervisor.json   |     92 +
+ .../binarytrees/attempts/003-mech-aot-control.json |     47 +
+ .../attempts/003-mech-aot-control.supervisor.json  |     86 +
+ .../attempts/004-c3-binarytrees-optimized.json     |     53 +
+ .../004-c3-binarytrees-optimized.supervisor.json   |     92 +
+ .../binarytrees/attempts/005-mech-aot-control.json |     47 +
+ .../attempts/005-mech-aot-control.supervisor.json  |     86 +
+ .../attempts/006-c3-binarytrees-compact.json       |     53 +
+ .../006-c3-binarytrees-compact.supervisor.json     |     92 +
+ .../binarytrees/attempts/007-mech-aot-control.json |     47 +
+ .../attempts/007-mech-aot-control.supervisor.json  |     86 +
+ .../attempts/008-c3-binarytrees-compact.json       |     53 +
+ .../008-c3-binarytrees-compact.supervisor.json     |     92 +
+ .../attempts/009-c3-binarytrees-optimized.json     |     53 +
+ .../009-c3-binarytrees-optimized.supervisor.json   |     92 +
+ .../studies/full-v1/binarytrees/launch.json        |     26 +
+ .../studies/full-v1/binarytrees/manifest.json      |   9186 +
+ .../studies/full-v1/binarytrees/report.json        |   1284 +
+ .../studies/full-v1/binarytrees/supervisor.log     |     19 +
+ .../attempts/001-c3-fannkuchredux-compact.json     |     53 +
+ .../001-c3-fannkuchredux-compact.supervisor.json   |     92 +
+ .../attempts/002-c3-fannkuchredux-optimized.json   |     53 +
+ .../002-c3-fannkuchredux-optimized.supervisor.json |     92 +
+ .../attempts/003-mech-aot-control.json             |     47 +
+ .../attempts/003-mech-aot-control.supervisor.json  |     86 +
+ .../attempts/004-c3-fannkuchredux-optimized.json   |     53 +
+ .../004-c3-fannkuchredux-optimized.supervisor.json |     92 +
+ .../attempts/005-mech-aot-control.json             |     47 +
+ .../attempts/005-mech-aot-control.supervisor.json  |     86 +
+ .../attempts/006-c3-fannkuchredux-compact.json     |     53 +
+ .../006-c3-fannkuchredux-compact.supervisor.json   |     92 +
+ .../attempts/007-mech-aot-control.json             |     47 +
+ .../attempts/007-mech-aot-control.supervisor.json  |     86 +
+ .../attempts/008-c3-fannkuchredux-compact.json     |     53 +
+ .../008-c3-fannkuchredux-compact.supervisor.json   |     92 +
+ .../attempts/009-c3-fannkuchredux-optimized.json   |     53 +
+ .../009-c3-fannkuchredux-optimized.supervisor.json |     92 +
+ .../studies/full-v1/fannkuchredux/launch.json      |     26 +
+ .../studies/full-v1/fannkuchredux/manifest.json    |   9137 +
+ .../studies/full-v1/fannkuchredux/report.json      |   1235 +
+ .../studies/full-v1/fannkuchredux/supervisor.log   |     19 +
+ .../fasta/attempts/001-c3-fasta-compact.json       |     53 +
+ .../attempts/001-c3-fasta-compact.supervisor.json  |     92 +
+ .../fasta/attempts/002-c3-fasta-optimized.json     |     53 +
+ .../002-c3-fasta-optimized.supervisor.json         |     92 +
+ .../fasta/attempts/003-mech-aot-control.json       |     47 +
+ .../attempts/003-mech-aot-control.supervisor.json  |     86 +
+ .../fasta/attempts/004-c3-fasta-optimized.json     |     53 +
+ .../004-c3-fasta-optimized.supervisor.json         |     92 +
+ .../fasta/attempts/005-mech-aot-control.json       |     47 +
+ .../attempts/005-mech-aot-control.supervisor.json  |     86 +
+ .../fasta/attempts/006-c3-fasta-compact.json       |     53 +
+ .../attempts/006-c3-fasta-compact.supervisor.json  |     92 +
+ .../fasta/attempts/007-mech-aot-control.json       |     47 +
+ .../attempts/007-mech-aot-control.supervisor.json  |     86 +
+ .../fasta/attempts/008-c3-fasta-compact.json       |     53 +
+ .../attempts/008-c3-fasta-compact.supervisor.json  |     92 +
+ .../fasta/attempts/009-c3-fasta-optimized.json     |     53 +
+ .../009-c3-fasta-optimized.supervisor.json         |     92 +
+ .../20261012/studies/full-v1/fasta/launch.json     |     26 +
+ .../20261012/studies/full-v1/fasta/manifest.json   |   9334 +
+ .../20261012/studies/full-v1/fasta/report.json     |   1432 +
+ .../20261012/studies/full-v1/fasta/supervisor.log  |     19 +
+ .../20261012/studies/full-v1/index.json            |     51 +
+ .../attempts/001-c3-knucleotide-compact.json       |     53 +
+ .../001-c3-knucleotide-compact.supervisor.json     |     92 +
+ .../attempts/002-c3-knucleotide-optimized.json     |     53 +
+ .../002-c3-knucleotide-optimized.supervisor.json   |     92 +
+ .../knucleotide/attempts/003-mech-aot-control.json |     51 +
+ .../attempts/003-mech-aot-control.supervisor.json  |     89 +
+ .../attempts/004-c3-knucleotide-optimized.json     |     53 +
+ .../004-c3-knucleotide-optimized.supervisor.json   |     92 +
+ .../knucleotide/attempts/005-mech-aot-control.json |     51 +
+ .../attempts/005-mech-aot-control.supervisor.json  |     89 +
+ .../attempts/006-c3-knucleotide-compact.json       |     53 +
+ .../006-c3-knucleotide-compact.supervisor.json     |     92 +
+ .../knucleotide/attempts/007-mech-aot-control.json |     51 +
+ .../attempts/007-mech-aot-control.supervisor.json  |     89 +
+ .../attempts/008-c3-knucleotide-compact.json       |     53 +
+ .../008-c3-knucleotide-compact.supervisor.json     |     92 +
+ .../attempts/009-c3-knucleotide-optimized.json     |     53 +
+ .../009-c3-knucleotide-optimized.supervisor.json   |     92 +
+ .../studies/full-v1/knucleotide/launch.json        |     26 +
+ .../studies/full-v1/knucleotide/manifest.json      |   9376 +
+ .../studies/full-v1/knucleotide/report.json        |   1483 +
+ .../studies/full-v1/knucleotide/supervisor.log     |     19 +
+ .../attempts/001-c3-mandelbrot-compact.json        |     53 +
+ .../001-c3-mandelbrot-compact.supervisor.json      |     92 +
+ .../attempts/002-c3-mandelbrot-optimized.json      |     53 +
+ .../002-c3-mandelbrot-optimized.supervisor.json    |     92 +
+ .../mandelbrot/attempts/003-mech-aot-control.json  |     48 +
+ .../attempts/003-mech-aot-control.supervisor.json  |     88 +
+ .../attempts/004-c3-mandelbrot-optimized.json      |     53 +
+ .../004-c3-mandelbrot-optimized.supervisor.json    |     92 +
+ .../mandelbrot/attempts/005-mech-aot-control.json  |     48 +
+ .../attempts/005-mech-aot-control.supervisor.json  |     88 +
+ .../attempts/006-c3-mandelbrot-compact.json        |     53 +
+ .../006-c3-mandelbrot-compact.supervisor.json      |     92 +
+ .../mandelbrot/attempts/007-mech-aot-control.json  |     48 +
+ .../attempts/007-mech-aot-control.supervisor.json  |     88 +
+ .../attempts/008-c3-mandelbrot-compact.json        |     53 +
+ .../008-c3-mandelbrot-compact.supervisor.json      |     92 +
+ .../attempts/009-c3-mandelbrot-optimized.json      |     53 +
+ .../009-c3-mandelbrot-optimized.supervisor.json    |     92 +
+ .../studies/full-v1/mandelbrot/launch.json         |     26 +
+ .../studies/full-v1/mandelbrot/manifest.json       |  11196 ++
+ .../studies/full-v1/mandelbrot/report.json         |   1671 +
+ .../studies/full-v1/mandelbrot/supervisor.log      |     19 +
+ .../nbody/attempts/001-c3-nbody-compact.json       |     58 +
+ .../attempts/001-c3-nbody-compact.supervisor.json  |     97 +
+ .../nbody/attempts/002-c3-nbody-optimized.json     |     58 +
+ .../002-c3-nbody-optimized.supervisor.json         |     97 +
+ .../nbody/attempts/003-mech-aot-control.json       |     52 +
+ .../attempts/003-mech-aot-control.supervisor.json  |     91 +
+ .../nbody/attempts/004-c3-nbody-optimized.json     |     58 +
+ .../004-c3-nbody-optimized.supervisor.json         |     97 +
+ .../nbody/attempts/005-mech-aot-control.json       |     52 +
+ .../attempts/005-mech-aot-control.supervisor.json  |     91 +
+ .../nbody/attempts/006-c3-nbody-compact.json       |     58 +
+ .../attempts/006-c3-nbody-compact.supervisor.json  |     97 +
+ .../nbody/attempts/007-mech-aot-control.json       |     52 +
+ .../attempts/007-mech-aot-control.supervisor.json  |     91 +
+ .../nbody/attempts/008-c3-nbody-compact.json       |     58 +
+ .../attempts/008-c3-nbody-compact.supervisor.json  |     97 +
+ .../nbody/attempts/009-c3-nbody-optimized.json     |     58 +
+ .../009-c3-nbody-optimized.supervisor.json         |     97 +
+ .../20261012/studies/full-v1/nbody/launch.json     |     26 +
+ .../20261012/studies/full-v1/nbody/manifest.json   |   9133 +
+ .../20261012/studies/full-v1/nbody/report.json     |   1324 +
+ .../20261012/studies/full-v1/nbody/supervisor.log  |     19 +
+ .../pidigits/attempts/001-c3-pidigits-compact.json |     53 +
+ .../001-c3-pidigits-compact.supervisor.json        |     92 +
+ .../attempts/002-c3-pidigits-optimized.json        |     53 +
+ .../002-c3-pidigits-optimized.supervisor.json      |     92 +
+ .../pidigits/attempts/003-mech-aot-control.json    |     47 +
+ .../attempts/003-mech-aot-control.supervisor.json  |     86 +
+ .../attempts/004-c3-pidigits-optimized.json        |     53 +
+ .../004-c3-pidigits-optimized.supervisor.json      |     92 +
+ .../pidigits/attempts/005-mech-aot-control.json    |     47 +
+ .../attempts/005-mech-aot-control.supervisor.json  |     86 +
+ .../pidigits/attempts/006-c3-pidigits-compact.json |     53 +
+ .../006-c3-pidigits-compact.supervisor.json        |     92 +
+ .../pidigits/attempts/007-mech-aot-control.json    |     47 +
+ .../attempts/007-mech-aot-control.supervisor.json  |     86 +
+ .../pidigits/attempts/008-c3-pidigits-compact.json |     53 +
+ .../008-c3-pidigits-compact.supervisor.json        |     92 +
+ .../attempts/009-c3-pidigits-optimized.json        |     53 +
+ .../009-c3-pidigits-optimized.supervisor.json      |     92 +
+ .../20261012/studies/full-v1/pidigits/launch.json  |     26 +
+ .../studies/full-v1/pidigits/manifest.json         |   9315 +
+ .../20261012/studies/full-v1/pidigits/report.json  |   1413 +
+ .../studies/full-v1/pidigits/supervisor.log        |     19 +
+ .../attempts/001-c3-regexredux-compact.json        |     53 +
+ .../001-c3-regexredux-compact.supervisor.json      |     92 +
+ .../attempts/002-c3-regexredux-optimized.json      |     53 +
+ .../002-c3-regexredux-optimized.supervisor.json    |     92 +
+ .../regexredux/attempts/003-mech-aot-control.json  |     49 +
+ .../attempts/003-mech-aot-control.supervisor.json  |     87 +
+ .../attempts/004-c3-regexredux-optimized.json      |     53 +
+ .../004-c3-regexredux-optimized.supervisor.json    |     92 +
+ .../regexredux/attempts/005-mech-aot-control.json  |     49 +
+ .../attempts/005-mech-aot-control.supervisor.json  |     87 +
+ .../attempts/006-c3-regexredux-compact.json        |     53 +
+ .../006-c3-regexredux-compact.supervisor.json      |     92 +
+ .../regexredux/attempts/007-mech-aot-control.json  |     49 +
+ .../attempts/007-mech-aot-control.supervisor.json  |     87 +
+ .../attempts/008-c3-regexredux-compact.json        |     53 +
+ .../008-c3-regexredux-compact.supervisor.json      |     92 +
+ .../attempts/009-c3-regexredux-optimized.json      |     53 +
+ .../009-c3-regexredux-optimized.supervisor.json    |     92 +
+ .../studies/full-v1/regexredux/launch.json         |     26 +
+ .../studies/full-v1/regexredux/manifest.json       |   9262 +
+ .../studies/full-v1/regexredux/report.json         |   1363 +
+ .../studies/full-v1/regexredux/supervisor.log      |     19 +
+ .../revcomp/attempts/001-c3-revcomp-compact.json   |     53 +
+ .../001-c3-revcomp-compact.supervisor.json         |     92 +
+ .../revcomp/attempts/002-c3-revcomp-optimized.json |     53 +
+ .../002-c3-revcomp-optimized.supervisor.json       |     92 +
+ .../revcomp/attempts/003-mech-aot-control.json     |     48 +
+ .../attempts/003-mech-aot-control.supervisor.json  |     86 +
+ .../revcomp/attempts/004-c3-revcomp-optimized.json |     53 +
+ .../004-c3-revcomp-optimized.supervisor.json       |     92 +
+ .../revcomp/attempts/005-mech-aot-control.json     |     48 +
+ .../attempts/005-mech-aot-control.supervisor.json  |     86 +
+ .../revcomp/attempts/006-c3-revcomp-compact.json   |     53 +
+ .../006-c3-revcomp-compact.supervisor.json         |     92 +
+ .../revcomp/attempts/007-mech-aot-control.json     |     48 +
+ .../attempts/007-mech-aot-control.supervisor.json  |     86 +
+ .../revcomp/attempts/008-c3-revcomp-compact.json   |     53 +
+ .../008-c3-revcomp-compact.supervisor.json         |     92 +
+ .../revcomp/attempts/009-c3-revcomp-optimized.json |     53 +
+ .../009-c3-revcomp-optimized.supervisor.json       |     92 +
+ .../20261012/studies/full-v1/revcomp/launch.json   |     26 +
+ .../20261012/studies/full-v1/revcomp/manifest.json |   9235 +
+ .../20261012/studies/full-v1/revcomp/report.json   |   1333 +
+ .../studies/full-v1/revcomp/supervisor.log         |     19 +
+ .../attempts/001-c3-spectralnorm-compact.json      |     53 +
+ .../001-c3-spectralnorm-compact.supervisor.json    |     92 +
+ .../attempts/002-c3-spectralnorm-optimized.json    |     53 +
+ .../002-c3-spectralnorm-optimized.supervisor.json  |     92 +
+ .../attempts/003-mech-aot-control.json             |     47 +
+ .../attempts/003-mech-aot-control.supervisor.json  |     86 +
+ .../attempts/004-c3-spectralnorm-optimized.json    |     53 +
+ .../004-c3-spectralnorm-optimized.supervisor.json  |     92 +
+ .../attempts/005-mech-aot-control.json             |     47 +
+ .../attempts/005-mech-aot-control.supervisor.json  |     86 +
+ .../attempts/006-c3-spectralnorm-compact.json      |     53 +
+ .../006-c3-spectralnorm-compact.supervisor.json    |     92 +
+ .../attempts/007-mech-aot-control.json             |     47 +
+ .../attempts/007-mech-aot-control.supervisor.json  |     86 +
+ .../attempts/008-c3-spectralnorm-compact.json      |     53 +
+ .../008-c3-spectralnorm-compact.supervisor.json    |     92 +
+ .../attempts/009-c3-spectralnorm-optimized.json    |     53 +
+ .../009-c3-spectralnorm-optimized.supervisor.json  |     92 +
+ .../studies/full-v1/spectralnorm/launch.json       |     26 +
+ .../studies/full-v1/spectralnorm/manifest.json     |   9243 +
+ .../studies/full-v1/spectralnorm/report.json       |   1341 +
+ .../studies/full-v1/spectralnorm/supervisor.log    |     19 +
+ .../outcome.json                                   |     37 +
+ .../started.json                                   |     15 +
+ .../clojure-binarytrees-compact.json               |     95 +
+ .../clojure-binarytrees-optimized.json             |     98 +
+ .../clojure-fannkuchredux-compact.json             |     95 +
+ .../clojure-fannkuchredux-optimized.json           |     98 +
+ .../compiler-inputs/clojure-fasta-compact.json     |     95 +
+ .../compiler-inputs/clojure-fasta-optimized.json   |     96 +
+ .../clojure-knucleotide-compact.json               |     97 +
+ .../clojure-knucleotide-optimized.json             |    102 +
+ .../clojure-mandelbrot-compact.json                |     93 +
+ .../clojure-mandelbrot-optimized.json              |     97 +
+ .../compiler-inputs/clojure-nbody-compact.json     |     97 +
+ .../compiler-inputs/clojure-nbody-optimized.json   |    102 +
+ .../compiler-inputs/clojure-pidigits-compact.json  |     92 +
+ .../clojure-pidigits-optimized.json                |     92 +
+ .../clojure-regexredux-compact.json                |     93 +
+ .../clojure-regexredux-optimized.json              |     95 +
+ .../compiler-inputs/clojure-revcomp-compact.json   |     93 +
+ .../compiler-inputs/clojure-revcomp-optimized.json |     94 +
+ .../clojure-spectralnorm-compact.json              |     96 +
+ .../clojure-spectralnorm-optimized.json            |     99 +
+ .../qualified-loc-overlay.json                     |  36839 ++++
+ .../continuation/CURRENT_CHART_SCOPE_20261013.md   |     41 +
+ .../continuation/FORMATTED_LOC_SCOPE_20261013.md   |     30 +
+ .../clbg/continuation/PROGRESS_20261013_1503.md    |     50 +
+ .../REBOL_RUNTIME_SEAL_20261013_1511.md            |     23 +
+ .../full-owner/apl-before.json                     |  13946 ++
+ .../085-mech-control-fannkuchredux-for-apl.json    |     47 +
+ ...h-control-fannkuchredux-for-apl.supervisor.json |     86 +
+ .../086-mech-control-fannkuchredux-for-apl.json    |     47 +
+ ...h-control-fannkuchredux-for-apl.supervisor.json |     86 +
+ .../attempts/087-fannkuchredux-apl-compact.json    |     54 +
+ .../087-fannkuchredux-apl-compact.supervisor.json  |     98 +
+ .../full-owner/manifest.json                       |   6506 +
+ .../full-owner/original-snapshot/manifest.json     |   6520 +
+ .../original-snapshot/observer-registered.json     |     54 +
+ .../original-snapshot/observer-terminal.json       |     41 +
+ .../full-owner/original-snapshot/raw-084.json      |     54 +
+ .../full-owner/original-snapshot/status.json       |     18 +
+ .../full-owner/original-snapshot/timings-apl.json  |  13861 ++
+ .../full-owner/recovered-084.supervisor.json       |    101 +
+ .../full-owner/recovery-admission.json             |    117 +
+ .../full-owner/started.json                        |     15 +
+ .../full-owner/status.json                         |     34 +
+ .../full-owner/timings-apl.json                    |  14263 ++
+ .../continuation/crystal-ready-publication-v1.json |     22 +
+ .../continuation/enter_c3_grammar5_replay_v1.py    |    122 +
+ .../continuation/enter_reviewed_followup_v1.py     |    232 +
+ .../jobs/fixtures-v1/fixture-receipt.json          |    112 +
+ .../jobs/fixtures-v1/fixtures.log                  |     24 +
+ .../jobs/fixtures-v1/terminal-error.log            |      8 +
+ .../jobs/fixtures-v1/terminal.json                 |     66 +
+ .../jobs/helpers-entry-repaired-v2/terminal.json   |   6083 +
+ .../jobs/curated-git-checkpoint-v3/commit.stderr   |      2 +
+ .../jobs/curated-git-checkpoint-v3/commit.stdout   |  17087 ++
+ .../jobs/curated-git-checkpoint-v3/head.stderr     |      0
+ .../jobs/curated-git-checkpoint-v3/head.stdout     |      1 +
+ .../curated-git-checkpoint-v3/prior-index.stderr   |      0
+ .../curated-git-checkpoint-v3/prior-index.stdout   |      0
+ .../jobs/curated-git-checkpoint-v3/push.stderr     |      4 +
+ .../jobs/curated-git-checkpoint-v3/push.stdout     |      0
+ .../jobs/curated-git-checkpoint-v3/selection.json  |  17145 ++
+ .../jobs/curated-git-checkpoint-v3/stage.stderr    |      0
+ .../jobs/curated-git-checkpoint-v3/stage.stdout    |      0
+ .../curated-git-checkpoint-v3/staged-stat.stderr   |      0
+ .../curated-git-checkpoint-v3/staged-stat.stdout   |  17103 ++
+ .../tracked-diff-paths.stderr                      |      0
+ .../tracked-diff-paths.stdout                      |     17 +
+ .../jobs/nim-source20-v4-reviewed-dependency.json  |     20 +
+ .../jobs/push-checkpoint-8c80-v1/local-head.stderr |      0
+ .../jobs/push-checkpoint-8c80-v1/local-head.stdout |      1 +
+ .../jobs/push-checkpoint-8c80-v1/push.stderr       |      2 +
+ .../jobs/push-checkpoint-8c80-v1/push.stdout       |      0
+ .../jobs/push-checkpoint-8c80-v1/receipt.json      |      9 +
+ .../push-checkpoint-8c80-v1/remote-after.stderr    |      0
+ .../push-checkpoint-8c80-v1/remote-after.stdout    |      1 +
+ .../push-checkpoint-8c80-v1/remote-before.stderr   |      0
+ .../push-checkpoint-8c80-v1/remote-before.stdout   |      1 +
+ .../clbg/continuation/launch_nim_source20_v4.py    |     37 +
+ .../legacy-platform-entry-repair-v2/REVIEW.md      |     59 +
+ .../jobs/fixtures-entry-repaired-v2/terminal.json  |     64 +
+ .../legacy-platform-entry-repair-v2/replay.py      |    201 +
+ .../matlab-source2-entry-repair-v2/replay.py       |     88 +
+ .../native-eight-explorer-fixtures-v1/REVIEW.md    |     56 +
+ .../native-eight-explorer-fixtures-v1/worker.py    |    265 +
+ .../nim-source20-entry-repair-v2/REVIEW.md         |     50 +
+ .../nim-source20-entry-repair-v2/replay.py         |    154 +
+ .../command-started.json                           |     24 +
+ .../command.stderr                                 |      0
+ .../command.stdout                                 |      2 +
+ .../c3-full90-independent-reconcile-v2/launch.json |     27 +
+ .../request.json                                   |     22 +
+ .../terminal.json                                  |     20 +
+ .../worker-started.json                            |     26 +
+ .../c3-full90-independent-reconcile-v2/worker.log  |      0
+ .../command-started.json                           |     18 +
+ .../command.stderr                                 |      0
+ .../command.stdout                                 |      2 +
+ .../c3-source24-compiled25-replay-v2/launch.json   |     21 +
+ .../c3-source24-compiled25-replay-v2/request.json  |     16 +
+ .../c3-source24-compiled25-replay-v2/terminal.json |     20 +
+ .../worker-started.json                            |     20 +
+ .../c3-source24-compiled25-replay-v2/worker.log    |      0
+ .../clojure-loc21-overlay-v2/command-started.json  |     22 +
+ .../clojure-loc21-overlay-v2/command.stderr        |      0
+ .../clojure-loc21-overlay-v2/command.stdout        |      2 +
+ .../clojure-loc21-overlay-v2/launch.json           |     25 +
+ .../clojure-loc21-overlay-v2/request.json          |     20 +
+ .../clojure-loc21-overlay-v2/terminal.json         |     20 +
+ .../clojure-loc21-overlay-v2/worker-started.json   |     24 +
+ .../owned-jobs/clojure-loc21-overlay-v2/worker.log |      0
+ .../command-started.json                           |     24 +
+ .../crystal-publication-metadata-v2/command.stderr |      0
+ .../crystal-publication-metadata-v2/command.stdout |      2 +
+ .../crystal-publication-metadata-v2/launch.json    |     27 +
+ .../crystal-publication-metadata-v2/request.json   |     22 +
+ .../crystal-publication-metadata-v2/terminal.json  |     20 +
+ .../worker-started.json                            |     26 +
+ .../crystal-publication-metadata-v2/worker.log     |      0
+ .../curated-git-checkpoint-v3/command-started.json |     16 +
+ .../curated-git-checkpoint-v3/command.stderr       |      8 +
+ .../curated-git-checkpoint-v3/command.stdout       |      1 +
+ .../curated-git-checkpoint-v3/launch.json          |     19 +
+ .../curated-git-checkpoint-v3/request.json         |     14 +
+ .../curated-git-checkpoint-v3/terminal.json        |     20 +
+ .../curated-git-checkpoint-v3/worker-started.json  |     18 +
+ .../curated-git-checkpoint-v3/worker.log           |      0
+ .../command-started.json                           |     18 +
+ .../command.stderr                                 |      0
+ .../command.stdout                                 |      3 +
+ .../launch.json                                    |     21 +
+ .../request.json                                   |     16 +
+ .../terminal.json                                  |     20 +
+ .../worker-started.json                            |     20 +
+ .../worker.log                                     |      0
+ .../command-started.json                           |     20 +
+ .../command.stderr                                 |      0
+ .../command.stdout                                 |      3 +
+ .../gleam-source20-entry-repaired-v3/launch.json   |     23 +
+ .../gleam-source20-entry-repaired-v3/request.json  |     18 +
+ .../gleam-source20-entry-repaired-v3/terminal.json |     20 +
+ .../worker-started.json                            |     22 +
+ .../gleam-source20-entry-repaired-v3/worker.log    |      0
+ .../command-started.json                           |     22 +
+ .../julia-attach-environment-v1/command.stderr     |      0
+ .../julia-attach-environment-v1/command.stdout     |      2 +
+ .../julia-attach-environment-v1/launch.json        |     25 +
+ .../julia-attach-environment-v1/request.json       |     20 +
+ .../julia-attach-environment-v1/terminal.json      |     20 +
+ .../worker-started.json                            |     24 +
+ .../julia-attach-environment-v1/worker.log         |      0
+ .../command-started.json                           |     22 +
+ .../command.stderr                                 |     11 +
+ .../command.stdout                                 |      1 +
+ .../launch.json                                    |     25 +
+ .../request.json                                   |     20 +
+ .../terminal.json                                  |     20 +
+ .../worker-started.json                            |     24 +
+ .../julia-generic-attach-calibration-v1/worker.log |      0
+ .../command-started.json                           |     20 +
+ .../command.stderr                                 |     14 +
+ .../command.stdout                                 |      1 +
+ .../legacy133-platform10-fixtures-v1/launch.json   |     23 +
+ .../legacy133-platform10-fixtures-v1/request.json  |     18 +
+ .../legacy133-platform10-fixtures-v1/terminal.json |     20 +
+ .../worker-started.json                            |     22 +
+ .../legacy133-platform10-fixtures-v1/worker.log    |      0
+ .../matlab-regexp-source2-v1/command-started.json  |     30 +
+ .../matlab-regexp-source2-v1/command.stderr        |     17 +
+ .../matlab-regexp-source2-v1/command.stdout        |      1 +
+ .../matlab-regexp-source2-v1/launch.json           |     33 +
+ .../matlab-regexp-source2-v1/request.json          |     28 +
+ .../matlab-regexp-source2-v1/terminal.json         |     20 +
+ .../matlab-regexp-source2-v1/worker-started.json   |     32 +
+ .../owned-jobs/matlab-regexp-source2-v1/worker.log |      0
+ .../nim-full90-launch-v6/command-started.json      |     20 +
+ .../owned-jobs/nim-full90-launch-v6/command.stderr |      0
+ .../owned-jobs/nim-full90-launch-v6/command.stdout |    263 +
+ .../owned-jobs/nim-full90-launch-v6/launch.json    |     23 +
+ .../owned-jobs/nim-full90-launch-v6/request.json   |     18 +
+ .../owned-jobs/nim-full90-launch-v6/terminal.json  |     20 +
+ .../nim-full90-launch-v6/worker-started.json       |     22 +
+ .../owned-jobs/nim-full90-launch-v6/worker.log     |      0
+ .../command-started.json                           |     20 +
+ .../nim-source20-entry-repaired-v3/command.stderr  |     21 +
+ .../nim-source20-entry-repaired-v3/command.stdout  |      2 +
+ .../nim-source20-entry-repaired-v3/launch.json     |     23 +
+ .../nim-source20-entry-repaired-v3/request.json    |     18 +
+ .../nim-source20-entry-repaired-v3/terminal.json   |     20 +
+ .../worker-started.json                            |     22 +
+ .../nim-source20-entry-repaired-v3/worker.log      |      0
+ .../command-started.json                           |     20 +
+ .../pony-grammar33-fixtures-v2/command.stderr      |      0
+ .../pony-grammar33-fixtures-v2/command.stdout      |      2 +
+ .../pony-grammar33-fixtures-v2/launch.json         |     23 +
+ .../pony-grammar33-fixtures-v2/request.json        |     18 +
+ .../pony-grammar33-fixtures-v2/terminal.json       |     20 +
+ .../pony-grammar33-fixtures-v2/worker-started.json |     22 +
+ .../pony-grammar33-fixtures-v2/worker.log          |      0
+ .../pony-work-v4-seal/command-started.json         |     21 +
+ .../owned-jobs/pony-work-v4-seal/command.stderr    |     16 +
+ .../owned-jobs/pony-work-v4-seal/command.stdout    |      0
+ .../owned-jobs/pony-work-v4-seal/launch.json       |     24 +
+ .../owned-jobs/pony-work-v4-seal/request.json      |     19 +
+ .../owned-jobs/pony-work-v4-seal/terminal.json     |     20 +
+ .../pony-work-v4-seal/worker-started.json          |     23 +
+ .../owned-jobs/pony-work-v4-seal/worker.log        |      0
+ .../pony-work-v5-seal/command-started.json         |     21 +
+ .../owned-jobs/pony-work-v5-seal/command.stderr    |      0
+ .../owned-jobs/pony-work-v5-seal/command.stdout    |      4 +
+ .../owned-jobs/pony-work-v5-seal/launch.json       |     24 +
+ .../owned-jobs/pony-work-v5-seal/request.json      |     19 +
+ .../owned-jobs/pony-work-v5-seal/terminal.json     |     20 +
+ .../pony-work-v5-seal/worker-started.json          |     23 +
+ .../owned-jobs/pony-work-v5-seal/worker.log        |      0
+ .../command-started.json                           |     19 +
+ .../command.stderr                                 |     15 +
+ .../command.stdout                                 |      1 +
+ .../launch.json                                    |     22 +
+ .../request.json                                   |     17 +
+ .../terminal.json                                  |     20 +
+ .../worker-started.json                            |     21 +
+ .../prolog-runtime-v3-loader-diagnostic/worker.log |      0
+ .../prolog-runtime-v4-seal/command-started.json    |     21 +
+ .../prolog-runtime-v4-seal/command.stderr          |      0
+ .../prolog-runtime-v4-seal/command.stdout          |      2 +
+ .../owned-jobs/prolog-runtime-v4-seal/launch.json  |     24 +
+ .../owned-jobs/prolog-runtime-v4-seal/request.json |     19 +
+ .../prolog-runtime-v4-seal/terminal.json           |     20 +
+ .../prolog-runtime-v4-seal/worker-started.json     |     23 +
+ .../owned-jobs/prolog-runtime-v4-seal/worker.log   |      0
+ .../push-checkpoint-8c80-v1/command-started.json   |     16 +
+ .../push-checkpoint-8c80-v1/command.stderr         |      0
+ .../push-checkpoint-8c80-v1/command.stdout         |      1 +
+ .../owned-jobs/push-checkpoint-8c80-v1/launch.json |     19 +
+ .../push-checkpoint-8c80-v1/request.json           |     14 +
+ .../push-checkpoint-8c80-v1/terminal.json          |     20 +
+ .../push-checkpoint-8c80-v1/worker-started.json    |     18 +
+ .../owned-jobs/push-checkpoint-8c80-v1/worker.log  |      0
+ .../command-started.json                           |     16 +
+ .../command.stderr                                 |      5 +
+ .../command.stdout                                 |      0
+ .../v-report-only-full90-reconcile-v3/launch.json  |     19 +
+ .../v-report-only-full90-reconcile-v3/request.json |     14 +
+ .../terminal.json                                  |     20 +
+ .../worker-started.json                            |     18 +
+ .../v-report-only-full90-reconcile-v3/worker.log   |      0
+ .../command-started.json                           |     16 +
+ .../command.stderr                                 |      0
+ .../command.stdout                                 |     10 +
+ .../v-report-only-full90-reconcile-v4/launch.json  |     19 +
+ .../v-report-only-full90-reconcile-v4/request.json |     14 +
+ .../terminal.json                                  |     20 +
+ .../worker-started.json                            |     18 +
+ .../v-report-only-full90-reconcile-v4/worker.log   |      0
+ .../clbg/continuation/pony-work-entry-v1/REVIEW.md |     53 +
+ .../clbg/continuation/pony-work-entry-v1/replay.py |    367 +
+ .../architecture.active.json                       |     17 +
+ .../architecture.json                              |     20 +
+ .../architecture.stderr                            |      0
+ .../architecture.stdout                            |      1 +
+ .../dependency-review.json                         |     22 +
+ .../linked-images.active.json                      |     17 +
+ .../linked-images.json                             |     20 +
+ .../linked-images.stderr                           |      0
+ .../linked-images.stdout                           |      4 +
+ .../mach-header.active.json                        |     17 +
+ .../crystal-knucleotide-optimized/mach-header.json |     20 +
+ .../mach-header.stderr                             |      0
+ .../mach-header.stdout                             |      4 +
+ .../architecture.active.json                       |     17 +
+ .../crystal-pidigits-compact/architecture.json     |     20 +
+ .../crystal-pidigits-compact/architecture.stderr   |      0
+ .../crystal-pidigits-compact/architecture.stdout   |      1 +
+ .../dependency-review.json                         |     22 +
+ .../linked-images.active.json                      |     17 +
+ .../crystal-pidigits-compact/linked-images.json    |     20 +
+ .../crystal-pidigits-compact/linked-images.stderr  |      0
+ .../crystal-pidigits-compact/linked-images.stdout  |      4 +
+ .../mach-header.active.json                        |     17 +
+ .../crystal-pidigits-compact/mach-header.json      |     20 +
+ .../crystal-pidigits-compact/mach-header.stderr    |      0
+ .../crystal-pidigits-compact/mach-header.stdout    |      4 +
+ .../architecture.active.json                       |     17 +
+ .../crystal-pidigits-optimized/architecture.json   |     20 +
+ .../crystal-pidigits-optimized/architecture.stderr |      0
+ .../crystal-pidigits-optimized/architecture.stdout |      1 +
+ .../dependency-review.json                         |     22 +
+ .../linked-images.active.json                      |     17 +
+ .../crystal-pidigits-optimized/linked-images.json  |     20 +
+ .../linked-images.stderr                           |      0
+ .../linked-images.stdout                           |      4 +
+ .../mach-header.active.json                        |     17 +
+ .../crystal-pidigits-optimized/mach-header.json    |     20 +
+ .../crystal-pidigits-optimized/mach-header.stderr  |      0
+ .../crystal-pidigits-optimized/mach-header.stdout  |      4 +
+ .../architecture.active.json                       |     17 +
+ .../crystal-regexredux-compact/architecture.json   |     20 +
+ .../crystal-regexredux-compact/architecture.stderr |      0
+ .../crystal-regexredux-compact/architecture.stdout |      1 +
+ .../dependency-review.json                         |     22 +
+ .../linked-images.active.json                      |     17 +
+ .../crystal-regexredux-compact/linked-images.json  |     20 +
+ .../linked-images.stderr                           |      0
+ .../linked-images.stdout                           |      4 +
+ .../mach-header.active.json                        |     17 +
+ .../crystal-regexredux-compact/mach-header.json    |     20 +
+ .../crystal-regexredux-compact/mach-header.stderr  |      0
+ .../crystal-regexredux-compact/mach-header.stdout  |      4 +
+ .../architecture.active.json                       |     17 +
+ .../crystal-regexredux-optimized/architecture.json |     20 +
+ .../architecture.stderr                            |      0
+ .../architecture.stdout                            |      1 +
+ .../dependency-review.json                         |     22 +
+ .../linked-images.active.json                      |     17 +
+ .../linked-images.json                             |     20 +
+ .../linked-images.stderr                           |      0
+ .../linked-images.stdout                           |      4 +
+ .../mach-header.active.json                        |     17 +
+ .../crystal-regexredux-optimized/mach-header.json  |     20 +
+ .../mach-header.stderr                             |      0
+ .../mach-header.stdout                             |      4 +
+ .../qualified/actual-metadata-v2/metadata.json     |   5913 +
+ .../qualified/actual-metadata-v2/outcome.json      |   5923 +
+ .../actual-metadata-v2/preserved-failed-v1.json    |     27 +
+ .../qualified/actual-metadata-v2/terminal-pin.json |   5916 +
+ .../toolchain-runtime-receipt.json                 |   6675 +
+ .../publication-ready-current-v1/packet.json       |     27 +
+ .../clbg/continuation/root-recovery-20261012.json  |    455 +-
+ .../continuation/save_followup_checkpoint_v4.py    |    118 +
+ .../continuation/save_followup_checkpoint_v5.py    |    126 +
+ .../continuation/save_followup_checkpoint_v6.py    |    126 +
+ .../continuation/save_followup_checkpoint_v7.py    |    131 +
+ .../queries/0-entitlements/receipt.json            |     19 +
+ .../queries/0-entitlements/stderr                  |      2 +
+ .../queries/0-entitlements/stdout                  |      0
+ .../queries/0-identity/receipt.json                |     18 +
+ .../queries/0-identity/stderr                      |     26 +
+ .../queries/0-identity/stdout                      |      0
+ .../queries/1-entitlements/receipt.json            |     19 +
+ .../queries/1-entitlements/stderr                  |      2 +
+ .../queries/1-entitlements/stdout                  |      0
+ .../queries/1-identity/receipt.json                |     18 +
+ .../queries/1-identity/stderr                      |     23 +
+ .../queries/1-identity/stdout                      |      0
+ .../queries/2-entitlements/receipt.json            |     19 +
+ .../queries/2-entitlements/stderr                  |      2 +
+ .../queries/2-entitlements/stdout                  |      0
+ .../queries/2-identity/receipt.json                |     18 +
+ .../queries/2-identity/stderr                      |     23 +
+ .../queries/2-identity/stdout                      |      0
+ .../queries/3-entitlements/receipt.json            |     19 +
+ .../queries/3-entitlements/stderr                  |      2 +
+ .../queries/3-entitlements/stdout                  |      0
+ .../queries/3-identity/receipt.json                |     18 +
+ .../queries/3-identity/stderr                      |     26 +
+ .../queries/3-identity/stdout                      |      0
+ .../queries/4-entitlements/receipt.json            |     19 +
+ .../queries/4-entitlements/stderr                  |      2 +
+ .../queries/4-entitlements/stdout                  |      1 +
+ .../queries/4-identity/receipt.json                |     18 +
+ .../queries/4-identity/stderr                      |     26 +
+ .../queries/4-identity/stdout                      |      0
+ .../queries/current-identity/receipt.json          |     15 +
+ .../queries/current-identity/stderr                |      0
+ .../queries/current-identity/stdout                |      1 +
+ .../queries/developer-tools-status/receipt.json    |     16 +
+ .../queries/developer-tools-status/stderr          |      0
+ .../queries/developer-tools-status/stdout          |      1 +
+ .../jobs/attach-environment-v1/report.json         |    747 +
+ .../revisions/attach-calibration-v1/REVIEW.md      |    168 +
+ .../revisions/attach-calibration-v1/calibrate.py   |    453 +
+ .../attach-calibration-v1/generic_helper.c         |     77 +
+ .../attach-calibration-v1/observe_calibration.py   |    127 +
+ .../compiler-input-proposals.json                  |  54219 ++++++
+ .../packet/REVIEW.md                               |     54 +
+ .../packet/qualify_replay.py                       |    378 +
+ .../source-count-proposals.json                    |  48797 ++++++
+ .../terminal-pins.json                             |     19 +
+ .../build-original-count-tool.active.json          |     18 +
+ .../build-counter/build-original-count-tool.json   |     21 +
+ .../build-counter/build-original-count-tool.stderr |      0
+ .../build-counter/build-original-count-tool.stdout |      0
+ .../build-original-owner-probe.active.json         |     18 +
+ .../build-original-owner-probe.json                |     21 +
+ .../build-original-owner-probe.stderr              |      0
+ .../build-original-owner-probe.stdout              |      0
+ .../helpers-entry-repaired-v2/entry-repair.json    |     40 +
+ .../original-source-AST-count.active.json          |     24 +
+ .../original-source-AST-count.json                 |     27 +
+ .../original-source-AST-count.stderr               |      0
+ .../original-source-AST-count.stdout               |      1 +
+ .../original-source-AST-count.active.json          |     24 +
+ .../original-source-AST-count.json                 |     27 +
+ .../original-source-AST-count.stderr               |      0
+ .../original-source-AST-count.stdout               |      1 +
+ .../original-source-AST-count.active.json          |     24 +
+ .../original-source-AST-count.json                 |     27 +
+ .../original-source-AST-count.stderr               |      0
+ .../original-source-AST-count.stdout               |      1 +
+ .../original-source-AST-count.active.json          |     24 +
+ .../original-source-AST-count.json                 |     27 +
+ .../original-source-AST-count.stderr               |      0
+ .../original-source-AST-count.stdout               |      1 +
+ .../helpers-entry-repaired-v2/fixture-receipt.json |   3070 +
+ .../original-source-AST-count.active.json          |     24 +
+ .../original-source-AST-count.json                 |     27 +
+ .../original-source-AST-count.stderr               |      0
+ .../original-source-AST-count.stdout               |      1 +
+ .../original-source-scanner-AST.active.json        |     24 +
+ .../helper-1/original-source-scanner-AST.json      |     27 +
+ .../helper-1/original-source-scanner-AST.stderr    |      0
+ .../helper-1/original-source-scanner-AST.stdout    |      1 +
+ .../original-source-scanner-AST.active.json        |     24 +
+ .../helper-10/original-source-scanner-AST.json     |     27 +
+ .../helper-10/original-source-scanner-AST.stderr   |      0
+ .../helper-10/original-source-scanner-AST.stdout   |      1 +
+ .../original-source-scanner-AST.active.json        |     24 +
+ .../helper-2/original-source-scanner-AST.json      |     27 +
+ .../helper-2/original-source-scanner-AST.stderr    |      0
+ .../helper-2/original-source-scanner-AST.stdout    |      1 +
+ .../original-source-scanner-AST.active.json        |     24 +
+ .../helper-3/original-source-scanner-AST.json      |     27 +
+ .../helper-3/original-source-scanner-AST.stderr    |      0
+ .../helper-3/original-source-scanner-AST.stdout    |      1 +
+ .../original-source-scanner-AST.active.json        |     24 +
+ .../helper-4/original-source-scanner-AST.json      |     27 +
+ .../helper-4/original-source-scanner-AST.stderr    |      0
+ .../helper-4/original-source-scanner-AST.stdout    |      1 +
+ .../original-source-scanner-AST.active.json        |     24 +
+ .../helper-5/original-source-scanner-AST.json      |     27 +
+ .../helper-5/original-source-scanner-AST.stderr    |      0
+ .../helper-5/original-source-scanner-AST.stdout    |      1 +
+ .../original-source-scanner-AST.active.json        |     24 +
+ .../helper-6/original-source-scanner-AST.json      |     27 +
+ .../helper-6/original-source-scanner-AST.stderr    |      0
+ .../helper-6/original-source-scanner-AST.stdout    |      1 +
+ .../original-source-scanner-AST.active.json        |     24 +
+ .../helper-7/original-source-scanner-AST.json      |     27 +
+ .../helper-7/original-source-scanner-AST.stderr    |      0
+ .../helper-7/original-source-scanner-AST.stdout    |      1 +
+ .../original-source-scanner-AST.active.json        |     24 +
+ .../helper-8/original-source-scanner-AST.json      |     27 +
+ .../helper-8/original-source-scanner-AST.stderr    |      0
+ .../helper-8/original-source-scanner-AST.stdout    |      1 +
+ .../original-source-scanner-AST.active.json        |     24 +
+ .../helper-9/original-source-scanner-AST.json      |     27 +
+ .../helper-9/original-source-scanner-AST.stderr    |      0
+ .../helper-9/original-source-scanner-AST.stdout    |      1 +
+ .../helper-count-proposals.json                    |  31032 ++++
+ .../legacy-fixture-receipt.json                    |    126 +
+ .../original-source-scanner-AST.active.json        |     24 +
+ .../original-source-scanner-AST.json               |     27 +
+ .../original-source-scanner-AST.stderr             |      0
+ .../original-source-scanner-AST.stdout             |      1 +
+ .../original-source-scanner-AST.active.json        |     24 +
+ .../original-source-scanner-AST.json               |     27 +
+ .../original-source-scanner-AST.stderr             |      0
+ .../original-source-scanner-AST.stdout             |      1 +
+ .../original-source-scanner-AST.active.json        |     24 +
+ .../original-source-scanner-AST.json               |     27 +
+ .../original-source-scanner-AST.stderr             |      0
+ .../original-source-scanner-AST.stdout             |      1 +
+ .../original-source-scanner-AST.active.json        |     24 +
+ .../original-source-scanner-AST.json               |     27 +
+ .../original-source-scanner-AST.stderr             |      0
+ .../original-source-scanner-AST.stdout             |      1 +
+ .../original-source-scanner-AST.active.json        |     24 +
+ .../original-source-scanner-AST.json               |     27 +
+ .../original-source-scanner-AST.stderr             |      0
+ .../original-source-scanner-AST.stdout             |      1 +
+ .../original-source-scanner-AST.active.json        |     24 +
+ .../original-source-scanner-AST.json               |     27 +
+ .../original-source-scanner-AST.stderr             |      0
+ .../original-source-scanner-AST.stdout             |      1 +
+ .../original-source-scanner-AST.active.json        |     24 +
+ .../original-source-scanner-AST.json               |     27 +
+ .../original-source-scanner-AST.stderr             |      0
+ .../original-source-scanner-AST.stdout             |      1 +
+ .../original-source-scanner-AST.active.json        |     24 +
+ .../original-source-scanner-AST.json               |     27 +
+ .../original-source-scanner-AST.stderr             |      0
+ .../original-source-scanner-AST.stdout             |      1 +
+ .../original-source-scanner-AST.active.json        |     24 +
+ .../original-source-scanner-AST.json               |     27 +
+ .../original-source-scanner-AST.stderr             |      0
+ .../original-source-scanner-AST.stdout             |      1 +
+ .../original-source-scanner-AST.active.json        |     24 +
+ .../original-source-scanner-AST.json               |     27 +
+ .../original-source-scanner-AST.stderr             |      0
+ .../original-source-scanner-AST.stdout             |      1 +
+ .../original-source-scanner-AST.active.json        |     24 +
+ .../original-source-scanner-AST.json               |     27 +
+ .../original-source-scanner-AST.stderr             |      0
+ .../original-source-scanner-AST.stdout             |      1 +
+ .../original-source-scanner-AST.active.json        |     24 +
+ .../original-source-scanner-AST.json               |     27 +
+ .../original-source-scanner-AST.stderr             |      0
+ .../original-source-scanner-AST.stdout             |      1 +
+ .../original-source-scanner-AST.active.json        |     24 +
+ .../original-source-scanner-AST.json               |     27 +
+ .../original-source-scanner-AST.stderr             |      0
+ .../original-source-scanner-AST.stdout             |      1 +
+ .../original-source-scanner-AST.active.json        |     24 +
+ .../original-source-scanner-AST.json               |     27 +
+ .../original-source-scanner-AST.stderr             |      0
+ .../original-source-scanner-AST.stdout             |      1 +
+ .../original-source-scanner-AST.active.json        |     24 +
+ .../original-source-scanner-AST.json               |     27 +
+ .../original-source-scanner-AST.stderr             |      0
+ .../original-source-scanner-AST.stdout             |      1 +
+ .../original-source-scanner-AST.active.json        |     24 +
+ .../original-source-scanner-AST.json               |     27 +
+ .../original-source-scanner-AST.stderr             |      0
+ .../original-source-scanner-AST.stdout             |      1 +
+ .../original-source-scanner-AST.active.json        |     24 +
+ .../original-source-scanner-AST.json               |     27 +
+ .../original-source-scanner-AST.stderr             |      0
+ .../original-source-scanner-AST.stdout             |      1 +
+ .../original-source-scanner-AST.active.json        |     24 +
+ .../original-source-scanner-AST.json               |     27 +
+ .../original-source-scanner-AST.stderr             |      0
+ .../original-source-scanner-AST.stdout             |      1 +
+ .../original-source-scanner-AST.active.json        |     24 +
+ .../original-source-scanner-AST.json               |     27 +
+ .../original-source-scanner-AST.stderr             |      0
+ .../original-source-scanner-AST.stdout             |      1 +
+ .../original-source-scanner-AST.active.json        |     24 +
+ .../original-source-scanner-AST.json               |     27 +
+ .../original-source-scanner-AST.stderr             |      0
+ .../original-source-scanner-AST.stdout             |      1 +
+ .../original-source-scanner-AST.active.json        |     24 +
+ .../original-source-scanner-AST.json               |     27 +
+ .../original-source-scanner-AST.stderr             |      0
+ .../original-source-scanner-AST.stdout             |      1 +
+ .../helpers-entry-repaired-v2/terminal-pins.json   |   6789 +
+ .../jobs/source20-repaired-v3/entry-repair.json    |     22 +
+ .../source-count-proposals.json                    | 165183 ++++++++++++++++++
+ .../jobs/source20-repaired-v3/terminal-pins.json   |   6107 +
+ .../jobs/source20-restored-v2/exception.log        |      5 +
+ .../jobs/source20-restored-v2/failure.json         |      9 +
+ .../jobs/source20-restored-v2/terminal-pins.json   |     69 +
+ .../jobs/corrected-source2-v1/terminal-error.log   |     13 +
+ .../jobs/corrected-source2-v1/terminal.json        |    404 +
+ .../fixtures16-restored-v1/fixture-receipt.json    |    479 +
+ .../jobs/fixtures16-restored-v1/fixtures.log       |     21 +
+ .../jobs/fixtures16-restored-v1/terminal.json      |    399 +
+ .../jobs/source20-repaired-v3/exception.log        |     13 +
+ .../jobs/source20-repaired-v3/stopped-report.json  |     11 +
+ .../jobs/source20-repaired-v3/terminal-pins.json   |  35823 ++++
+ .../jobs/source20-restored-v2/exception.log        |      8 +
+ .../jobs/source20-restored-v2/stopped-report.json  |     11 +
+ .../jobs/source20-restored-v2/terminal-pins.json   |  35815 ++++
+ .../fixture-receipt.json                           |  10513 ++
+ .../grammar-v2-fixtures-restored-v2/fixtures.log   |     38 +
+ .../apl-closer-approval-job07.json                 |    186 +
+ .../grammar-dependencies/apl_closer_approved.py    |     46 +
+ .../grammar-dependencies/audit.py                  |    358 +
+ .../grammar-dependencies/c_named_types.py          |    377 +
+ .../grammar-dependencies/c_type_environment.py     |    746 +
+ .../grammar-dependencies/canonical.py              |    761 +
+ .../grammar-dependencies/comparisons.py            |    271 +
+ .../grammar-dependencies/compiler_attributes.py    |     95 +
+ .../cpp-initializer-source-review-20261012.json    |    688 +
+ .../cpp-initializer-source-review-20261012.md      |     54 +
+ .../cpp-job16-repair-20261012.md                   |     38 +
+ .../cpp-job17-fixture-scope-correction-20261012.md |     15 +
+ .../cpp-new-operand-source-review-20261012.md      |     22 +
+ .../grammar-dependencies/cpp_initializers.py       |    298 +
+ .../foreign-braced-job11-review.json               |   1382 +
+ .../foreign-braced-job11-review.md                 |    191 +
+ .../foreign-braced-job12-repair.json               |     41 +
+ .../foreign-braced-job12-repair.md                 |     11 +
+ .../foreign-braced-job13-review.json               |    162 +
+ .../foreign-braced-job13-review.md                 |     13 +
+ .../grammar-dependencies/foreign_braced.py         |   1027 +
+ .../grammar-dependencies/foreign_core.py           |    212 +
+ .../grammar-dependencies/foreign_crystal.py        |    510 +
+ .../grammar-dependencies/foreign_dispatch.py       |     43 +
+ .../grammar-dependencies/foreign_future_mask.py    |    234 +
+ .../grammar-dependencies/foreign_keyword.py        |    764 +
+ .../grammar-dependencies/foreign_layout.py         |    806 +
+ .../grammar-dependencies/foreign_nim.py            |    498 +
+ .../grammar-dependencies/foreign_pony.py           |    382 +
+ .../grammar-dependencies/foreign_smalltalk.py      |    397 +
+ .../grammar-dependencies/isolated_study_data.py    |     79 +
+ .../keyword-continuation-job11-review.md           |    128 +
+ .../grammar-dependencies/legacy_loc_data.py        |    235 +
+ .../grammar-dependencies/lexical.py                |    298 +
+ .../grammar-dependencies/mandelbrot_study_data.py  |    252 +
+ .../grammar-dependencies/normalizer.py             |    793 +
+ .../grammar-dependencies/pending_minima.py         |     98 +
+ .../grammar-dependencies/pending_minima_records.py |    237 +
+ .../policy-explicit-initialization-20261012.json   |     34 +
+ .../policy-scope-correction-20261012.json          |    176 +
+ .../grammar-dependencies/pools.py                  |    512 +
+ .../grammar-dependencies/prior_array_loc.py        |    238 +
+ .../grammar-dependencies/record_fields.py          |    372 +
+ .../test_apl_closer_approved.py                    |     65 +
+ .../grammar-dependencies/test_c_named_types.py     |    302 +
+ .../test_c_type_environment.py                     |    413 +
+ .../test_c_type_integration.py                     |     80 +
+ .../grammar-dependencies/test_comparisons.py       |    137 +
+ .../test_compiler_attributes.py                    |    115 +
+ .../test_cpp_initializer_integration.py            |     53 +
+ .../grammar-dependencies/test_cpp_initializers.py  |    156 +
+ .../grammar-dependencies/test_foreign_braced.py    |    355 +
+ .../grammar-dependencies/test_foreign_crystal.py   |    206 +
+ .../test_foreign_future_mask.py                    |    168 +
+ .../grammar-dependencies/test_foreign_keyword.py   |    277 +
+ .../grammar-dependencies/test_foreign_layout.py    |    330 +
+ .../grammar-dependencies/test_foreign_nim.py       |    162 +
+ .../grammar-dependencies/test_foreign_pony.py      |    169 +
+ .../grammar-dependencies/test_foreign_smalltalk.py |    155 +
+ .../grammar-dependencies/test_legacy_loc_data.py   |    140 +
+ .../grammar-dependencies/test_normalizer.py        |    682 +
+ .../grammar-dependencies/test_pending_minima.py    |    141 +
+ .../test_pending_minima_records.py                 |    221 +
+ .../grammar-dependencies/test_prior_array_loc.py   |    135 +
+ .../grammar-dependencies/test_record_fields.py     |    188 +
+ .../test_record_integration.py                     |     51 +
+ .../grammar-dependencies/test_semantic_imports.py  |     52 +
+ .../grammar-dependencies/test_value_forms.py       |    140 +
+ .../grammar-dependencies/test_value_integration.py |     64 +
+ .../grammar-dependencies/test_zig_odin.py          |    252 +
+ .../grammar-dependencies/value_forms.py            |    454 +
+ .../zig-scalar-if-source-review-20261012.md        |     22 +
+ .../grammar-dependencies/zig_odin.py               |    589 +
+ .../terminal-pins.json                             |    102 +
+ .../20261012/revisions/work-full-v4/REVIEW.md      |     86 +
+ .../revisions/work-full-v4/allocation_evidence.py  |     74 +
+ .../revisions/work-full-v4/check_traces.py         |    125 +
+ .../revisions/work-full-v4/check_traces_base.py    |     75 +
+ .../revisions/work-full-v4/full_prerequisite.py    |     53 +
+ .../20261012/revisions/work-full-v4/full_study.py  |    221 +
+ .../revisions/work-full-v4/generate_traces.py      |     81 +
+ .../revisions/work-full-v4/generate_traces_base.py |     68 +
+ .../work-full-v4/owned_service_work_v2.py          |    152 +
+ .../revisions/work-full-v4/preparation_service.py  |     24 +
+ .../revisions/work-full-v4/reuse_work_v2.py        |    167 +
+ .../revisions/work-full-v4/reuse_work_v3.py        |    167 +
+ .../revisions/work-full-v4/run_work_fixtures.py    |     94 +
+ .../revisions/work-full-v4/static_review.py        |     40 +
+ .../revisions/work-full-v4/test_full_study.py      |     34 +
+ .../work-full-v4/test_owned_work_service.py        |    100 +
+ .../revisions/work-full-v4/test_work_v2.py         |     85 +
+ .../revisions/work-full-v4/work_qualify.py         |    363 +
+ .../20261012/revisions/work-full-v5/REVIEW.md      |    106 +
+ .../revisions/work-full-v5/allocation_evidence.py  |     74 +
+ .../revisions/work-full-v5/check_traces.py         |    125 +
+ .../revisions/work-full-v5/check_traces_base.py    |     75 +
+ .../revisions/work-full-v5/full_prerequisite.py    |     53 +
+ .../20261012/revisions/work-full-v5/full_study.py  |    221 +
+ .../revisions/work-full-v5/generate_traces.py      |     81 +
+ .../revisions/work-full-v5/generate_traces_base.py |     68 +
+ .../work-full-v5/owned_service_work_v2.py          |    152 +
+ .../revisions/work-full-v5/preparation_service.py  |     24 +
+ .../revisions/work-full-v5/reuse_work_v2.py        |    167 +
+ .../revisions/work-full-v5/reuse_work_v3.py        |    205 +
+ .../revisions/work-full-v5/run_work_fixtures.py    |     94 +
+ .../revisions/work-full-v5/static_review.py        |     40 +
+ .../revisions/work-full-v5/test_full_study.py      |     34 +
+ .../work-full-v5/test_owned_work_service.py        |    100 +
+ .../revisions/work-full-v5/test_work_v2.py         |     85 +
+ .../revisions/work-full-v5/work_qualify.py         |    363 +
+ .../private-v8-work-v4/actual-error.log            |     12 +
+ .../private-v8-work-v4/receipt.json                |     13 +
+ .../private-v8-work-v5/receipt.json                |     44 +
+ .../proposal-seals/private-v1/fixture-receipt.json |     36 +
+ .../private-v1/fixture-sources/profiles.json       |    502 +
+ .../proposal-seals/private-v1/fixtures.log         |     11 +
+ .../20261013/proposal-seals/private-v1/report.json |    791 +
+ .../proposal-seals/private-v1/terminal-pin.json    |    151 +
+ .../proposal-seals/runtime-v2/fixture-receipt.json |     21 +
+ .../20261013/proposal-seals/runtime-v2/report.json |    177 +
+ .../proposal-seals/runtime-v2/terminal-pin.json    |    174 +
+ .../proposal-seals/runtime-v3/actual-error.log     |      7 +
+ .../runtime-v3/actual-fixture-error.log            |      5 +
+ .../runtime-v3/actual-loader-discovery.json        |     25 +
+ .../runtime-v3/actual-loader-discovery.log         |     25 +
+ .../proposal-seals/runtime-v3/fixture-receipt.json |     40 +
+ .../20261013/proposal-seals/runtime-v3/report.json |    215 +
+ .../proposal-seals/runtime-v3/terminal-pin.json    |    202 +
+ .../runtime-v4/actual-loader-discovery.json        |     21 +
+ .../runtime-v4/actual-loader-discovery.log         |     21 +
+ .../proposal-seals/runtime-v4/fixture-receipt.json |     46 +
+ .../proposal-seals/runtime-v4/fixtures.log         |     11 +
+ .../runtime-v4/metadata-publication-outcome.json   |     11 +
+ .../runtime-v4/metadata-publication-terminal.json  |     11 +
+ .../20261013/proposal-seals/runtime-v4/report.json |    350 +
+ .../proposal-seals/runtime-v4/terminal-pin.json    |    247 +
+ .../20261013/proposals/private-v1.json             |    791 +
+ .../20261013/proposals/runtime-v2.json             |    350 +
+ .../20261013/proposals/runtime-v4.json             |    350 +
+ .../20261013/revisions/runtime-v4/REVIEW.md        |     70 +
+ .../revisions/runtime-v4/seal_runtime_v4.py        |    260 +
+ .../v-report-only/20261012/reconcile_suite_v3.py   |     81 +
+ .../v-report-only/20261012/reconcile_suite_v4.py   |     82 +
+ .../reconciliation/all-ten-full-samples-v4.json    |  15244 ++
+ 923 files changed, 766571 insertions(+), 1 deletion(-)

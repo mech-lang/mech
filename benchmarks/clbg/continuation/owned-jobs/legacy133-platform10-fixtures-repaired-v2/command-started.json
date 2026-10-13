@@ -1,0 +1,20 @@
+{
+  "started_at": "2026-10-13T13:29:12.097190+00:00",
+  "command_pid": 20894,
+  "command_identity": {
+    "pid": 20894,
+    "listing": "20894 20890 Tue Oct 13 09:29:12 2026     /opt/homebrew/opt/python@3.14/bin/python3.14 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-entry-repair-v2/replay.py --stage fixtures --revision fixtures-entry-repaired-v2"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-entry-repair-v2/replay.py",
+    "--stage",
+    "fixtures",
+    "--revision",
+    "fixtures-entry-repaired-v2"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech"
+}

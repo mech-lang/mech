@@ -1,0 +1,40 @@
+{
+  "status": "passed",
+  "expected_test_ids": [
+    "test_runtime.RuntimeContracts.test_seal_cannot_authorize_downloads_or_native_work",
+    "test_runtime.RuntimeContracts.test_publisher_runtime_and_full_commit_source_identity",
+    "test_runtime.RuntimeContracts.test_source_members_reject_traversal_links_duplicates_and_wrong_root",
+    "test_runtime.RuntimeContracts.test_os_images_reject_escaped_and_private_install_names",
+    "test_runtime.RuntimeContracts.test_startup_closure_requires_private_empty_inputs",
+    "test_runtime.RuntimeContracts.test_observed_interpretation_gc_and_regular_bytes_never_prove_pipe_io"
+  ],
+  "actual_test_ids": [
+    "test_runtime.RuntimeContracts.test_observed_interpretation_gc_and_regular_bytes_never_prove_pipe_io",
+    "test_runtime.RuntimeContracts.test_os_images_reject_escaped_and_private_install_names",
+    "test_runtime.RuntimeContracts.test_publisher_runtime_and_full_commit_source_identity",
+    "test_runtime.RuntimeContracts.test_seal_cannot_authorize_downloads_or_native_work",
+    "test_runtime.RuntimeContracts.test_source_members_reject_traversal_links_duplicates_and_wrong_root",
+    "test_runtime.RuntimeContracts.test_startup_closure_requires_private_empty_inputs"
+  ],
+  "discovered_test_ids": [
+    "test_runtime.RuntimeContracts.test_observed_interpretation_gc_and_regular_bytes_never_prove_pipe_io",
+    "test_runtime.RuntimeContracts.test_os_images_reject_escaped_and_private_install_names",
+    "test_runtime.RuntimeContracts.test_publisher_runtime_and_full_commit_source_identity",
+    "test_runtime.RuntimeContracts.test_seal_cannot_authorize_downloads_or_native_work",
+    "test_runtime.RuntimeContracts.test_source_members_reject_traversal_links_duplicates_and_wrong_root",
+    "test_runtime.RuntimeContracts.test_startup_closure_requires_private_empty_inputs"
+  ],
+  "discovered_tests": 6,
+  "tests_run": 6,
+  "execution_completed": true,
+  "inherited_common_mutex": true,
+  "failures": [],
+  "errors": [],
+  "skips": [],
+  "expected_failures": [],
+  "unexpected_successes": [],
+  "python_executable": "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+  "python_version": "3.12.14 (main, Aug 25 2026, 13:50:33) [Clang 22.1.3 ]",
+  "unittest_snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/rebol-comparison/20261013/proposal-seals/runtime-v1/fixtures/python/unittest",
+  "loader_errors": []
+}

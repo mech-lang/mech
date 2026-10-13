@@ -1,0 +1,17 @@
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/matlab-source2-entry-repair-v2/replay.py", line 88, in <module>
+    original.main()
+    ~~~~~~~~~~~~~^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/matlab-regexp-grammar-v1/qualify_replay.py", line 512, in main
+    run(args)
+    ~~~^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/matlab-regexp-grammar-v1/qualify_replay.py", line 474, in run
+    rows, paths, runtime_evidence, native_pins = source_inventory(args.full_report_sha256)
+                                                 ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/matlab-regexp-grammar-v1/qualify_replay.py", line 393, in source_inventory
+    actual_attempt(attempt, bounded_rows[attempt['id']], False, ordinal, QUALIFICATION.parent, pins)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/matlab-regexp-grammar-v1/qualify_replay.py", line 308, in actual_attempt
+    assert type(record['peak_process_group_rss_kib']) is int and record['peak_process_group_rss_kib'] > 0
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

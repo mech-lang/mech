@@ -1,0 +1,25 @@
+{
+  "started_at": "2026-10-13T13:53:33.252800+00:00",
+  "command_pid": 25754,
+  "command_identity": {
+    "pid": 25754,
+    "listing": "25754 25748 Tue Oct 13 09:53:33 2026     /opt/homebrew/opt/python@3.14/bin/python3.14 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-proposal-v5/queue_fixtures.py --direct --job /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-proposal-v5/jobs/fixtures-v5 --core-snapshot /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-18/snapshot --dependency-root /tmp/mech-clbg-compact-libs --prior-fixture-receipt /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-proposal-v4/jobs/fixtures-v4/fixture-receipt.json"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-proposal-v5/queue_fixtures.py",
+    "--direct",
+    "--job",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-proposal-v5/jobs/fixtures-v5",
+    "--core-snapshot",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-18/snapshot",
+    "--dependency-root",
+    "/tmp/mech-clbg-compact-libs",
+    "--prior-fixture-receipt",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-proposal-v4/jobs/fixtures-v4/fixture-receipt.json"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech"
+}

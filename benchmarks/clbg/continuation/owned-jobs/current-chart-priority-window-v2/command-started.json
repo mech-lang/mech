@@ -1,0 +1,18 @@
+{
+  "started_at": "2026-10-13T16:18:02.830162+00:00",
+  "command_pid": 57195,
+  "command_identity": {
+    "pid": 57195,
+    "listing": "57195 57189 Tue Oct 13 12:18:02 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -E -S -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/current_chart_priority_v2.py"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-E",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/current_chart_priority_v2.py"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech"
+}

@@ -1,0 +1,4 @@
+{"status": "frozen-awaiting-same-pid-worker-exec", "pid": 25754, "job": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-proposal-v5/jobs/fixtures-v5", "mutex": "/tmp/mech-clbg-timing.lock"}
+WAIT LOCK: C3 proposal fixtures and dependency pins
+Acquired common timing mutex; testing frozen C3 proposal.
+{"status": "passed-awaiting-source-review", "tests_run": 23, "failures": 0, "errors": 0, "source_counting_started": false, "chart_admitted": false}
