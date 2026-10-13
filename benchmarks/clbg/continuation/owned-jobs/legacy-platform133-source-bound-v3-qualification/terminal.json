@@ -1,0 +1,20 @@
+{
+  "status": "command-failed",
+  "started_at": "2026-10-13T21:37:49.468005+00:00",
+  "worker_identity": {
+    "pid": 16552,
+    "listing": "16552     1 Tue Oct 13 17:37:49 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/legacy-platform133-source-bound-v3-qualification --lease-fd 3 --go-fd 4"
+  },
+  "actual_command_started": true,
+  "exit_code": 1,
+  "qualification_granted": false,
+  "automatic_retry": false,
+  "command_pid": 16556,
+  "command_identity": {
+    "pid": 16556,
+    "listing": "16556 16552 Tue Oct 13 17:37:49 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-repair-v3/replay.py --stage qualify --revision history-source-bound-v3 --fixture-receipt /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/existing-native-platform-proposal-v1/jobs/fixtures-source-bound-v3/fixture-receipt.json --fixture-sha256 8ccd484cec74cb2a5c6ac6b720fe8b5bc4ddf3608948c8260a69983b8ea550bc --fixture-terminal-sha256 1b82a743b575e6d71467d070ea416519e3313be5a6062182821bcfc727fa9c5e"
+  },
+  "command_identity_observation_missing": false,
+  "finished_at": "2026-10-13T21:37:51.222794+00:00",
+  "stop_signals": []
+}

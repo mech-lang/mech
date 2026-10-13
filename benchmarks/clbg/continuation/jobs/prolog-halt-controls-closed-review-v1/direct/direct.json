@@ -1,0 +1,31 @@
+{
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/MacOS/swipl",
+    "-q",
+    "-O",
+    "-f",
+    "none",
+    "--stack-limit=8g",
+    "-l",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-probe-v1/runtime_probe.pl",
+    "-l",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-halt-diagnostic-v1/diagnose_halt.pl",
+    "-g",
+    "clbg_halt_diagnostic:direct",
+    "--",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-halt-diagnostic-v1/direct.events"
+  ],
+  "started_at": "2026-10-13T21:45:44.132900+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 19045,
+  "identity": {
+    "pid": 19045,
+    "process_listing": "Tue Oct 13 17:45:44 2026     /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/MacOS/swipl -q -O -f none --stack-limit=8g -l /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-probe-v1/runtime_probe.pl -l /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-halt-diagnostic-v1/diagnose_halt.pl -g clbg_halt_diagnostic:direct -- /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-halt-diagnostic-v1/direct.events"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-13T21:45:44.163382+00:00",
+  "final_exit_status": 0
+}

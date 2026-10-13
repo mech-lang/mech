@@ -646,11 +646,7 @@ function renderChart(){
       lineLabels.push({label,language:entry.language.key,benchmark:benchmarkKey,a:{x:X(a.x),y:Y(a.y)},b:{x:X(b.x),y:Y(b.y)}});
     }
   }
-  if(layers.showMedians&&!single&&!isMech)for(const entry of entries)for(const input of entry.inputs){
-    if(languageView&&selectedKeys.has(entry.language.key))continue;
-    if(state.small)marker(input.small,entry,'small',{faint:true,program:input.small,benchmarkKey:input.benchmark.key});
-    if(state.fast)marker(input.fast,entry,'fast',{faint:true,program:input.fast,benchmarkKey:input.benchmark.key});
-  }
+  // Recorded runs supply the background cloud. Keep summary endpoints in Medians.
   for(const point of rawSamples){
     const {program,entry,benchmark:inputBenchmark,run:runNumber,elapsed}=point;
     // Runs share the program's actual source coordinate; no jitter or invented values.

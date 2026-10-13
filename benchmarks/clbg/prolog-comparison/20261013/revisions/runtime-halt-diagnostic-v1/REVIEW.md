@@ -1,7 +1,7 @@
 # Prolog shutdown diagnosis and two bounded controls
 
-Source-only, mutable, unexecuted, unhashed and unfrozen. This two-file packet
-contains a prospective diagnostic helper and this note. It adds no retry or
+Source-only, mutable, unexecuted, unhashed and unfrozen. This three-file packet
+contains a diagnostic helper, its bounded controller and this note. It adds no retry or
 native execution authorization. The frozen runtime-probe-v1 packet, failed
 outputs, current chart and datasets remain unchanged.
 
@@ -126,3 +126,24 @@ unchanged. One fresh actual feature+image qualification would still be needed
 after that source review. If the pair differs, preserve all diagnostics and
 trace the observed cleanup/recovery/native exit branch before proposing any
 further native attempt. No prospective repair or launch is included here.
+
+## Concrete controller
+
+run_controls.py now implements the proposed two controls using the existing
+owned-command service. Root captures the worker/helper/note and prior closed
+review digests under common, then freezes these three source files. The CLI
+requires --worker-sha256, --helper-sha256, --review-sha256 and
+--prior-review-sha256. It holds the named/descriptor-checked common lock and a
+nonblocking lease on the old closed job, verifies the complete prior report
+and terminal closure, and reuses the exact service and runtime environment.
+It creates only the fresh private .build/swi-halt-diagnostic-v1 output.
+
+The expected wrapped exit1 remains a failed owned-command receipt. Only its
+exact AssertionError tuple is accepted by the diagnostic controller, alongside
+normal final exit1, a recorded identity, no cleanup errors, exact five events
+and empty stdout/stderr. Direct requires normal0 and exactly three events.
+Different observations stop the controller with all available evidence; no
+automatic retry or runtime qualification follows. The existing terminal helper
+pins both control receipts, event files and streams and revalidates all inputs.
+The outer durable job may succeed only as confirmation of this diagnostic pair.
+Neither feature-probe main nor checked is invoked by either control.

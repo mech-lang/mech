@@ -1,0 +1,23 @@
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-repair-v3/replay.py", line 303, in <module>
+    main()
+    ~~~~^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-repair-v3/replay.py", line 299, in main
+    original.run(args)
+    ~~~~~~~~~~~~^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/existing-native-platform-proposal-v1/guarded_qualify.py", line 221, in run
+    else:qualification_stage(args,output,directory,pins,history,adapter);completed='completed-history-qualification'
+         ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/existing-native-platform-proposal-v1/guarded_qualify.py", line 181, in qualification_stage
+    result=history.qualify(CLBG,data,expected,reads,output)
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/existing-native-platform-proposal-v1/jobs/history-source-bound-v3/snapshot/qualify_history.py", line 409, in qualify
+    measured=measurement(history,displayed)
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-repair-v3/history_repair.py", line 90, in measurement
+    return original_measurement(history, displayed)
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/existing-native-platform-proposal-v1/jobs/history-source-bound-v3/snapshot/qualify_history.py", line 220, in measurement
+    found=record_candidates(report,displayed); require(len(found)==1,'Exact historical row selector ambiguous or absent: '+displayed['key'])
+                                               ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/existing-native-platform-proposal-v1/jobs/history-source-bound-v3/snapshot/qualify_history.py", line 26, in require
+    if not value: raise ValueError(message)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: Exact historical row selector ambiguous or absent: fasta:mech-fasta-final-compact-v2

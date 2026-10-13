@@ -1,0 +1,28 @@
+{
+  "started_at": "2026-10-13T21:37:49.476521+00:00",
+  "worker_identity": {
+    "pid": 16552,
+    "listing": "16552     1 Tue Oct 13 17:37:49 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/legacy-platform133-source-bound-v3-qualification --lease-fd 3 --go-fd 4"
+  },
+  "inherited_private_lease": true,
+  "detached_session": true,
+  "common_mutex_owned_by_target_command": true,
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-repair-v3/replay.py",
+    "--stage",
+    "qualify",
+    "--revision",
+    "history-source-bound-v3",
+    "--fixture-receipt",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/existing-native-platform-proposal-v1/jobs/fixtures-source-bound-v3/fixture-receipt.json",
+    "--fixture-sha256",
+    "8ccd484cec74cb2a5c6ac6b720fe8b5bc4ddf3608948c8260a69983b8ea550bc",
+    "--fixture-terminal-sha256",
+    "1b82a743b575e6d71467d070ea416519e3313be5a6062182821bcfc727fa9c5e"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "qualification_granted": false
+}

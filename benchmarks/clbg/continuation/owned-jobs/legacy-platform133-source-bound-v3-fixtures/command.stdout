@@ -1,0 +1,3 @@
+WAIT common mutex: exact-chart/source legacy-platform history repair
+WAIT common mutex: legacy133 fixtures/history metadata only
+{"status": "completed-fixtures", "output": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/existing-native-platform-proposal-v1/jobs/fixtures-source-bound-v3", "terminal_sha256": "1b82a743b575e6d71467d070ea416519e3313be5a6062182821bcfc727fa9c5e", "receipt_sha256": "8ccd484cec74cb2a5c6ac6b720fe8b5bc4ddf3608948c8260a69983b8ea550bc"}

@@ -1,0 +1,48 @@
+{
+  "status": "exact-chart-and-source-helper-repaired-awaiting-current-fixtures-or-history",
+  "stage": "qualify",
+  "repaired_function_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-repair-v3/replay.py",
+  "original_core": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/existing-native-platform-proposal-v1/jobs/history-source-bound-v3/snapshot/qualify_history.py",
+  "original_core_sha256": "73f882444382630717701c556d695614dc33161e83a2a1738136a45ee10b1adb",
+  "adapter": "deduplicate exact alias strings before original historical_pin lookup",
+  "additional_semantic_changes": {
+    "record_selector": "original identifiers plus exact literal chart_key; resident after-phase unchanged",
+    "native_build_selector": "original binary path/SHA plus complete displayed authored path/SHA bundle",
+    "actual_measurement_body": "unchanged original measurement",
+    "standalone_pure_build_helper": "unchanged outside an actual measurement context",
+    "source_binding_absence": "MissingHistory; pending/unclassified, no binary-only borrowing"
+  },
+  "repair_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-repair-v3/history_repair.py",
+  "repair_source_sha256": "654fe3a50ba73a96a1705957ff6a62410c9c4bab34c0817a44410344d0a40e06",
+  "preserved_failed_history": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/existing-native-platform-proposal-v1/jobs/history-entry-repaired-v2/terminal.json",
+    "sha256": "5514a3482e56725605544519850e73839b975e295575f8a2e6b24916f0317ccc"
+  },
+  "distinct_path_or_version_only_rules_changed": false,
+  "original_nine_files": {
+    "guarded_qualify.py": "ec9aa84f88c75ac62ff31c2ff801dfb60f34e5693f7fd09fabd2afc934737dc7",
+    "qualify_history.py": "73f882444382630717701c556d695614dc33161e83a2a1738136a45ee10b1adb",
+    "adapter.py": "90b6052eaa14f960a6fb2510364335cf87f43d4d62998a015223db42ae516342",
+    "test_history.py": "19479b0f33f731c3873b58877ad2e42c0568ee43837ee9992f11d10a5ef29cd5",
+    "test_adapter.py": "3e8c16642057f735c3dced79ca8bddde01e65f7d9b4fb9b2e0f66f667fca8ae2",
+    "expected-program-keys.json": "ee19373b3d0185ebcf1b7f7e52f43fd43004c2ab4ba45675aced44bc652e6140",
+    "routes.json": "88dae9329d7e509f17b09f1794408938e9b73270b72824e4f93325f43f7ec191",
+    "REVIEW.md": "2939009928ab312aaf3457783806bc6b6aff800dc923f3bb06149bd5442c5691",
+    "extract_existing_evidence.jq": "2b11ff7c6131ae36e4576f537442dfa9293323f7080c3b1b4c4edcdf4b0a1512"
+  },
+  "original_source_files_changed": false,
+  "helper_semantics_changed": true,
+  "preserved_failed_fixture": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/existing-native-platform-proposal-v1/jobs/fixtures-v1/fixture-receipt.json",
+    "sha256": "01cf7f23accd926c6866218c5ccebe7b4a51c0b80e89ca8255ef22d791013be3"
+  },
+  "prior_completed_fixture_ids": 10,
+  "prior_successful_fixture_ids": 9,
+  "prior_failed_fixture_ids": 1,
+  "prior_fixture_success_reused": false,
+  "current_fixture_ids_required": 10,
+  "actual_native_processes": 0,
+  "benchmark_replays": 0,
+  "chart_admission": false,
+  "dataset_mutated": false
+}

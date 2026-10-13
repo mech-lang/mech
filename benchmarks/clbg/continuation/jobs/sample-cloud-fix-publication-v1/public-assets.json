@@ -1,0 +1,17 @@
+{
+  "at": "2026-10-13T21:44:35.176203+00:00",
+  "assets": [
+    {
+      "file": "index.html",
+      "url": "https://mech-lang.org/benchmarks/",
+      "sha256": "26a98b8a850437240e709f547c25cf452af7ca75dd43895bf3385f78eedcf379",
+      "matches": true
+    },
+    {
+      "file": "app.mjs",
+      "url": "https://mech-lang.org/benchmarks/app.mjs?v=20261013-samples",
+      "sha256": "23882e390de0aea5ef1e09eae266c9070ed9174451cf4eee56eccb0d529b6833",
+      "matches": true
+    }
+  ]
+}

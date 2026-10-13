@@ -1,0 +1,29 @@
+{
+  "status": "durable-job-launched",
+  "launched_at": "2026-10-13T21:45:42.384448+00:00",
+  "job": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/prolog-halt-controls-v1",
+  "worker_identity": {
+    "pid": 19034,
+    "listing": "19034 19033 Tue Oct 13 17:45:42 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/prolog-halt-controls-v1 --lease-fd 3 --go-fd 4"
+  },
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-halt-diagnostic-v1/run_controls.py",
+    "--worker-sha256",
+    "753564c3283bc8b2750788740fec6eb0c200c7a2125d67db04bfd41df4cabcba",
+    "--helper-sha256",
+    "e2b07b9a2ca3bb01d7d17bcb1477e4970689adafd312267e885c3460a5595e8e",
+    "--review-sha256",
+    "bc3dd20d3f3372f32a51e2c8de3b89c0af44e8ef2143aee1aea7707e4ca0e61d",
+    "--prior-review-sha256",
+    "63f7bcc0d933a50f9a397d34150edd1fbf253e04a4cbc800f7a52370c2461477"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "detached_session": true,
+  "automatic_retry": false,
+  "qualification_granted": false
+}

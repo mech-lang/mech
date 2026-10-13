@@ -1,0 +1,20 @@
+{
+  "at": "2026-10-13T21:45:28.193759+00:00",
+  "status": "published-and-live-browser-verified",
+  "url": "https://mech-lang.org/benchmarks/",
+  "website_sha": "624c7f9b8b190134034f75fdeb8e010eceec21cc",
+  "pipeline_id": 2944391226,
+  "version": "20261013-samples",
+  "live_settings": {
+    "samples": "off",
+    "medians": "highlight",
+    "density": "off"
+  },
+  "live_recorded_run_marks": 0,
+  "live_background_program_marks": 0,
+  "live_summary_endpoints": 97,
+  "live_variants": 49,
+  "console_errors": [],
+  "timings_unchanged": true,
+  "benchmarks_rerun": 0
+}

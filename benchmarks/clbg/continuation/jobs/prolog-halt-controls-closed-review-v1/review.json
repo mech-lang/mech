@@ -1,0 +1,37 @@
+{
+  "at": "2026-10-13T21:46:56.702209+00:00",
+  "status": "actual-halt-recovery-exit-replacement-confirmed",
+  "verified_pins": 13233,
+  "report_sha256": "d43a5f0845b2b0ba7b312905265b1edf22071e3b99cbcc7a0d391af6b1bace29",
+  "body_terminal_sha256": "5dd615c6f9e6af4f773f1223a570c0217f3c5a5942524d6c3cf7f7626b69aee3",
+  "durable_terminal_sha256": "ebe4960eceb30abe9615384f42301468f7cb949aa5b20dfa769b671555fa0742",
+  "controls": [
+    {
+      "mode": "direct",
+      "exit_status": 0,
+      "events": [
+        "started(direct).",
+        "before_halt(0).",
+        "cleanup(exception(unwind(halt(0))))."
+      ],
+      "owned_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-halt-diagnostic-v1/direct/direct.json"
+    },
+    {
+      "mode": "wrapped",
+      "exit_status": 1,
+      "events": [
+        "started(wrapped).",
+        "before_halt(0).",
+        "cleanup(exception(unwind(halt(0)))).",
+        "recovery(unwind(halt(0))).",
+        "before_recovery_halt(1)."
+      ],
+      "owned_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-halt-diagnostic-v1/wrapped/wrapped.json"
+    }
+  ],
+  "actual_native_controls": 2,
+  "feature_runs": 0,
+  "benchmarks": 0,
+  "runtime_qualified": false,
+  "prior_failure_relabelled": false
+}

@@ -1,0 +1,43 @@
+{
+  "at": "2026-10-13T21:42:09.435509+00:00",
+  "status": "local-browser-passed",
+  "change": "Remove duplicate per-benchmark endpoint cloud from summary Medians; actual recorded samples remain the independent Samples layer",
+  "independent_source_review": "formatted_source_review accepted exact loop removal",
+  "syntax_check": "node --check app.mjs passed",
+  "samples_off": {
+    "recorded_runs": 0,
+    "background_program_markers": 0,
+    "summary_endpoints": 97,
+    "variants": 49
+  },
+  "samples_on": {
+    "recorded_runs": 2418,
+    "summary_endpoints": 97
+  },
+  "samples_only": {
+    "recorded_runs": 2418,
+    "summary_endpoints": 0
+  },
+  "density_only": {
+    "runs": 2418,
+    "programs": 778,
+    "cells": 1728,
+    "point_marks": 0
+  },
+  "benchmark_nbody_samples_off": {
+    "median_endpoints": 74,
+    "runs": 0
+  },
+  "phone390": {
+    "document_width": 390,
+    "background_program_markers": 0,
+    "summary_endpoints": 97
+  },
+  "axis_domain_unchanged": true,
+  "console_errors": [],
+  "source_pins": {
+    "app.mjs": "23882e390de0aea5ef1e09eae266c9070ed9174451cf4eee56eccb0d529b6833",
+    "index.html": "26a98b8a850437240e709f547c25cf452af7ca75dd43895bf3385f78eedcf379"
+  },
+  "data_sha256": "b088279074e85ec149466f876bdce49d4d497f7784a0d48be58e023e5b2c6a13"
+}

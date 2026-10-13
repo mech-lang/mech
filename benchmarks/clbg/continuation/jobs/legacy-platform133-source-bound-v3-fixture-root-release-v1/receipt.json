@@ -1,0 +1,34 @@
+{
+  "status": "root-and-independent-reviewed-source-frozen-fixture-stage-only",
+  "at": "2026-10-13T21:35:15.839926+00:00",
+  "source_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-repair-v3/replay.py": "1c84d495a88aac6c545904b63bfdf043e2a68cba374c83a14311ecc79a557987",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-repair-v3/history_repair.py": "654fe3a50ba73a96a1705957ff6a62410c9c4bab34c0817a44410344d0a40e06",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-repair-v3/test_history_extensions.py": "f252a635a26367cc9402a70529002834efcfde4651917018199abe059d015c80",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-repair-v3/REVIEW.md": "0cf4507c2af66937de840288a29ac505c388d1d3dd4650fb0f659acb6b33c6be"
+  },
+  "host_and_launcher_pins": {
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/bin/python3.14": "e401ac7a95cda75dee34a0cfe1e4faf0a6df1a501cf67887f177fb78cd4eb60a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py": "9dad53a4580b6b3617a13cd99659d150ecd9b6339c57a7b8657ebff596f2f368"
+  },
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-repair-v3/replay.py",
+    "--stage",
+    "fixtures",
+    "--revision",
+    "fixtures-source-bound-v3"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "durable_job": "legacy-platform133-source-bound-v3-fixtures",
+  "expected_fixture_count": 10,
+  "extended_existing_method_count": 2,
+  "common_mutex_held": true,
+  "common_inode": 79859134,
+  "benchmark_runs": 0,
+  "native_application_runs": 0,
+  "qualification_released": false,
+  "automatic_retry": false
+}

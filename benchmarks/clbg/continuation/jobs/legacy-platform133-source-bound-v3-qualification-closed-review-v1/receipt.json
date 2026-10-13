@@ -1,0 +1,14 @@
+{
+  "at": "2026-10-13T21:38:31.900153+00:00",
+  "status": "closed-qualification-failure-preserved",
+  "failure": {
+    "error": "Exact historical row selector ambiguous or absent: fasta:mech-fasta-final-compact-v2",
+    "error_type": "ValueError"
+  },
+  "verified_pins": 207,
+  "durable_terminal_sha256": "a5841b98ee3b53cdc5e44f84fa93f2468e8a1f8a9b57d76c38aede737e7b464b",
+  "body_terminal_sha256": "8d8a9d485935ba001fc892973560a38e2eaff16b6c18dcdbd63ea32205bcaa58",
+  "native_processes": 0,
+  "benchmark_replays": 0,
+  "chart_admission": false
+}

@@ -1,0 +1,51 @@
+{
+  "status": "actual-ten-v3-source-bound-fixtures-closed-verified-awaiting-root-qualification-release",
+  "at": "2026-10-13T21:36:42.474376+00:00",
+  "verified_unique_pins": 150,
+  "fixture_ids": [
+    "test_adapter.LegacyPlatformAdapterFixtures.test_exact_old_current_source_sample_key_and_provenance_identity",
+    "test_adapter.LegacyPlatformAdapterFixtures.test_independent_platform_with_unknown_mode_or_bytes",
+    "test_adapter.LegacyPlatformAdapterFixtures.test_late_invalid_row_causes_zero_mutation",
+    "test_adapter.LegacyPlatformAdapterFixtures.test_three_and_seven_samples_and_resident_boundary_are_preserved",
+    "test_history.HistoryEvidence.test_byte_identity_cannot_be_borrowed_from_equal_basename_or_version",
+    "test_history.HistoryEvidence.test_duplicate_or_wrong_language_record_is_never_a_sample_join",
+    "test_history.HistoryEvidence.test_native_link_requires_exact_output_and_cargo_artifact_pin",
+    "test_history.HistoryEvidence.test_resident_selector_requires_the_actual_after_phase",
+    "test_history.HistoryEvidence.test_runtime_observer_must_use_the_preserved_sample_symbol",
+    "test_history.HistoryEvidence.test_three_five_seven_samples_are_exact_not_converted"
+  ],
+  "tests_run": 10,
+  "fixture_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/existing-native-platform-proposal-v1/jobs/fixtures-source-bound-v3/fixture-receipt.json",
+  "fixture_receipt_sha256": "8ccd484cec74cb2a5c6ac6b720fe8b5bc4ddf3608948c8260a69983b8ea550bc",
+  "fixture_terminal_sha256": "1b82a743b575e6d71467d070ea416519e3313be5a6062182821bcfc727fa9c5e",
+  "durable_owner": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/legacy-platform133-source-bound-v3-fixtures",
+  "durable_pins": {
+    "request.json": "bc9c212ea6c2fa559e348576c3505c2bfc8bc5ff17aa119a4a3a3889a04b4625",
+    "launch.json": "3046d24d36632ccf66f732b866e890dc75d0eb1c1145b0c2a9a180fef1f44604",
+    "worker-started.json": "378ddc463eeb3c0b1e9f49caff2fedab8fafa9a474e6d32330f3749784713a5c",
+    "command-started.json": "851271fcb4c66869d4766bf4a4bb3c3453b8e2559a9d0766f0e8e6af6b780293",
+    "terminal.json": "4106c05c60416e7aa73389312dacf5d5a05c92fca2c08e7927a87b0914856d8e",
+    "command.stdout": "61d50c15c70ef3baa655f535de75ebae7e28daf1c75d4457c7c9d1ce390b1b21",
+    "command.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "worker.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "source_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-repair-v3/replay.py": "1c84d495a88aac6c545904b63bfdf043e2a68cba374c83a14311ecc79a557987",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-repair-v3/history_repair.py": "654fe3a50ba73a96a1705957ff6a62410c9c4bab34c0817a44410344d0a40e06",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-repair-v3/test_history_extensions.py": "f252a635a26367cc9402a70529002834efcfde4651917018199abe059d015c80",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-repair-v3/REVIEW.md": "0cf4507c2af66937de840288a29ac505c388d1d3dd4650fb0f659acb6b33c6be"
+  },
+  "observed_worker_image_pins": {
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python": "b3e2d3162eb789101425bbe76810fc5eb0d412d7cd5867d27568dd180ccf5a22"
+  },
+  "root_release": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/legacy-platform133-source-bound-v3-fixture-root-release-v1/receipt.json",
+  "root_release_sha256": "465e0bb6c55f45f4b922c97a2ea25090c6f1313e9cc4b77c623b272cc1f448f7",
+  "actual_native_processes": 0,
+  "runtime_version_reruns": 0,
+  "benchmark_replays": 0,
+  "fixture_reexecutions_after_stage": 0,
+  "actual_common_mutex_held": true,
+  "closed_private_lease_verified": true,
+  "chart_admission": false,
+  "qualification_released": false
+}

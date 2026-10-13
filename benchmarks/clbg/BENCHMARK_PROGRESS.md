@@ -1,6 +1,6 @@
-Benchmark progress as of **2026-10-13 21:31 UTC** (17:31 New York).
+Benchmark progress as of **2026-10-13 21:47 UTC** (17:47 New York).
 
-The previous remotely verified checkpoint is `6ea914a526dd58557f5d810bdcb5f0c75784c5fd`
+The previous remotely verified checkpoint is `96877e6dae88f51e24179c6ccb053a7a09efe98b`
 on `codex/clbg-native-benchmarks`. The language overview and complete Crystal
 inventory are published. C3's exact source counts, runtime metadata and current
 chart candidate have qualified and are now published through GitLab Pages
@@ -19,7 +19,7 @@ actual request, process identity and exit.
 | Clojure | 90/90 | Published. Full-suite, LOC, JVM metadata and current dataset admission passed. Root verified 5,276 candidate pins; 20 forms / 60 candidate samples are retained, with 18 selected endpoints. Public browser inspection confirmed all 20 forms and 60 runs. |
 | V | 90/90 | Full workload samples collected, including eight missing tree slots recovered additively. Independent all-ten reconciliation passed. Report-only; excluded from dataset, charts and Site. |
 | Pony | 0/90 | Both tree observations and four Pi/map traces are retained. The existing-evidence capture exited normally; original authored main IR was overwritten by builtin output. Separate bitcode/ownership recovery remains. |
-| Prolog | 0/90 | Archive repair, private app extraction and ARM64 slicing completed. Runtime home and version 10.0.2 verified. The probe filename collision is fixed, but native exit 1 persists after isolating the imported initializer. Complete raw results and the separate failed owned receipt are retained; image closure and runtime admission remain pending. |
+| Prolog | 0/90 | Archive repair, private app extraction and ARM64 slicing completed. Runtime home and version 10.0.2 verified. Two sequential halt controls confirmed that the catch wrapper intercepts successful shutdown and replaces exit 0 with exit 1. Wrapper repair, feature/image qualification and runtime admission remain pending; original failures are preserved. |
 | Julia AOT | 0 qualified | Kernel-image binding repaired. Both bounded debugger calibration cells timed out; no native AOT helper executed. No permission cause is established. An official safe-trim/stripped-IR route is documented for the next additive attempt. |
 | Rebol | 0/90 | Faithful source bundle and six runtime intake fixtures retained; actual SDK/runtime/build/work/LOC/full qualification remains. |
 | Elixir / Kotlin | 0/90 each | Reviewed source bundles are frozen and pushed. Actual toolchain and complete qualification remain. |
@@ -261,3 +261,38 @@ arguments. Both entries reached their unchanged targets without repeating their
 successful seals/fixtures. Prolog failed in exact source-archive extraction;
 Pony's two bounded tree observations remain under its original common-lock
 controller. The preserved v1 failures remain failed.
+
+## Samples Off correction — 2026-10-13 21:45 UTC
+
+A user screenshot exposed 952 small per-benchmark endpoint marks still drawn
+inside the Medians layer. Those redundant background marks are removed;
+actual recorded runs now provide the background sample cloud. Summary Medians
+retains 97 fastest/fewest-LOC endpoints for 49 execution variants. With Samples
+Off there are zero run marks and zero background program marks. Samples On
+restores all 2,418 actual recorded-run dots; Medians Off removes summary endpoints.
+Dedicated benchmark/language program medians remain available in their views.
+
+The exact screenshot settings were reproduced locally and on the public site.
+Density-only still includes 2,418 runs/778 programs/1,728 cells. Axis bounds remain
+unchanged, N-body detail medians remain, and the 390px layout has no page overflow.
+The app syntax check and browser regression checks passed with no console errors.
+Website commit `624c7f9b8b190134034f75fdeb8e010eceec21cc` is pushed;
+Pages pipeline `2944391226` passed, and both changed public assets match.
+Evidence: `continuation/jobs/sample-cloud-fix-publication-v1/`.
+No timing/source data or normalization baseline changed.
+
+The legacy 133 v3 metadata repair passed all ten extended fixtures, but its
+qualification stopped at the historical FASTA compact row selector. Root
+verified 207 failure pins and its normal exit 1; no partial metadata was admitted.
+An all-133 mapping diagnosis is underway before another qualification attempt.
+Nim/Gleam source-semantic admission remains active.
+
+Two sequential Prolog halt-only controls completed at 21:45 UTC. Direct halt(0)
+exited 0; the catch-wrapped route caught unwind(halt(0)), entered recovery and
+called halt(1), exiting 1. Root verified all 13,233 recorded pins, the closed
+private lease and normal outer controller exit at 21:46 UTC. The wrapped native
+failure remains recorded as a failure; this diagnosis does not qualify the
+runtime. No feature probe or benchmark ran. A source repair will move successful
+halt(0) outside the checked catch in the probe, QLF preparation and authored I/O
+wrapper before fresh feature/image qualification.
+Evidence: `continuation/jobs/prolog-halt-controls-closed-review-v1/review.json`.

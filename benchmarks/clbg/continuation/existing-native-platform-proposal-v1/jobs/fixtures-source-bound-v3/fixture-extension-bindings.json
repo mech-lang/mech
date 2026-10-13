@@ -1,0 +1,37 @@
+{
+  "status": "bound-two-extended-existing-fixture-methods",
+  "methods": {
+    "test_duplicate_or_wrong_language_record_is_never_a_sample_join": {
+      "original_method_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/existing-native-platform-proposal-v1/jobs/fixtures-source-bound-v3/snapshot/test_history.py",
+      "extension_method_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-repair-v3/test_history_extensions.py",
+      "extra_assertion_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-repair-v3/test_history_extensions.py",
+      "full_original_method_executed_first": true
+    },
+    "test_native_link_requires_exact_output_and_cargo_artifact_pin": {
+      "original_method_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/existing-native-platform-proposal-v1/jobs/fixtures-source-bound-v3/snapshot/test_history.py",
+      "extension_method_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-repair-v3/test_history_extensions.py",
+      "extra_assertion_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-repair-v3/test_history_extensions.py",
+      "full_original_method_executed_first": true
+    }
+  },
+  "expected_fixture_ids": [
+    "test_adapter.LegacyPlatformAdapterFixtures.test_exact_old_current_source_sample_key_and_provenance_identity",
+    "test_adapter.LegacyPlatformAdapterFixtures.test_independent_platform_with_unknown_mode_or_bytes",
+    "test_adapter.LegacyPlatformAdapterFixtures.test_late_invalid_row_causes_zero_mutation",
+    "test_adapter.LegacyPlatformAdapterFixtures.test_three_and_seven_samples_and_resident_boundary_are_preserved",
+    "test_history.HistoryEvidence.test_byte_identity_cannot_be_borrowed_from_equal_basename_or_version",
+    "test_history.HistoryEvidence.test_duplicate_or_wrong_language_record_is_never_a_sample_join",
+    "test_history.HistoryEvidence.test_native_link_requires_exact_output_and_cargo_artifact_pin",
+    "test_history.HistoryEvidence.test_resident_selector_requires_the_actual_after_phase",
+    "test_history.HistoryEvidence.test_runtime_observer_must_use_the_preserved_sample_symbol",
+    "test_history.HistoryEvidence.test_three_five_seven_samples_are_exact_not_converted"
+  ],
+  "expected_fixture_count": 10,
+  "extension_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-repair-v3/test_history_extensions.py",
+  "extension_source_sha256": "f252a635a26367cc9402a70529002834efcfde4651917018199abe059d015c80",
+  "original_fixture_sources_changed": false,
+  "original_assertions_executed_first": true,
+  "actual_native_processes": 0,
+  "runtime_version_reruns": 0,
+  "benchmark_replays": 0
+}

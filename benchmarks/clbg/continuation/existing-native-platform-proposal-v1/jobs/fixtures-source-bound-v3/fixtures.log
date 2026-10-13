@@ -1,0 +1,15 @@
+test_byte_identity_cannot_be_borrowed_from_equal_basename_or_version (test_history.HistoryEvidence.test_byte_identity_cannot_be_borrowed_from_equal_basename_or_version) ... ok
+test_duplicate_or_wrong_language_record_is_never_a_sample_join (test_history.HistoryEvidence.test_duplicate_or_wrong_language_record_is_never_a_sample_join) ... ok
+test_native_link_requires_exact_output_and_cargo_artifact_pin (test_history.HistoryEvidence.test_native_link_requires_exact_output_and_cargo_artifact_pin) ... ok
+test_resident_selector_requires_the_actual_after_phase (test_history.HistoryEvidence.test_resident_selector_requires_the_actual_after_phase) ... ok
+test_runtime_observer_must_use_the_preserved_sample_symbol (test_history.HistoryEvidence.test_runtime_observer_must_use_the_preserved_sample_symbol) ... ok
+test_three_five_seven_samples_are_exact_not_converted (test_history.HistoryEvidence.test_three_five_seven_samples_are_exact_not_converted) ... ok
+test_exact_old_current_source_sample_key_and_provenance_identity (test_adapter.LegacyPlatformAdapterFixtures.test_exact_old_current_source_sample_key_and_provenance_identity) ... ok
+test_independent_platform_with_unknown_mode_or_bytes (test_adapter.LegacyPlatformAdapterFixtures.test_independent_platform_with_unknown_mode_or_bytes) ... ok
+test_late_invalid_row_causes_zero_mutation (test_adapter.LegacyPlatformAdapterFixtures.test_late_invalid_row_causes_zero_mutation) ... ok
+test_three_and_seven_samples_and_resident_boundary_are_preserved (test_adapter.LegacyPlatformAdapterFixtures.test_three_and_seven_samples_and_resident_boundary_are_preserved) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.091s
+
+OK
