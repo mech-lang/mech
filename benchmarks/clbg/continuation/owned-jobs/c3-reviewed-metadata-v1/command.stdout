@@ -1,0 +1,4 @@
+WAIT closed dependency lease: C3 exact reviewed LOC seal
+WAIT common mutex: exact C3 metadata handoff
+WAIT common mutex: C3 actual publication metadata only
+{"status": "metadata-qualified-awaiting-root-whole-six-review", "metadata": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/publication-c3-metadata-v1/qualified/actual-metadata-v1/metadata.json", "sha256": "c9c33e008e52280f5ec0a4051b2d57c0a9f052f3e89614ca2310c87e67250e07"}

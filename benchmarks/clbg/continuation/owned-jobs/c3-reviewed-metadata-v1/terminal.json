@@ -1,0 +1,20 @@
+{
+  "status": "command-exited-zero-awaiting-report-review",
+  "started_at": "2026-10-13T18:37:07.503325+00:00",
+  "worker_identity": {
+    "pid": 79069,
+    "listing": "79069     1 Tue Oct 13 14:37:07 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/c3-reviewed-metadata-v1 --lease-fd 3 --go-fd 4"
+  },
+  "actual_command_started": true,
+  "exit_code": 0,
+  "qualification_granted": false,
+  "automatic_retry": false,
+  "command_pid": 79074,
+  "command_identity": {
+    "pid": 79074,
+    "listing": "79074 79069 Tue Oct 13 14:37:07 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -E -S -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/enter_c3_reviewed_metadata_v1.py --plan-sha256 b117b9f535f2ff8a7eb06b928ae6fc35c208745ab22249d7eba6020a10951065"
+  },
+  "command_identity_observation_missing": false,
+  "finished_at": "2026-10-13T18:37:16.598286+00:00",
+  "stop_signals": []
+}

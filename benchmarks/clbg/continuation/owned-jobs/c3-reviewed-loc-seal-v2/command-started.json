@@ -1,0 +1,18 @@
+{
+  "started_at": "2026-10-13T18:32:34.873525+00:00",
+  "command_pid": 77416,
+  "command_identity": {
+    "pid": 77416,
+    "listing": "77416 77412 Tue Oct 13 14:32:34 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -E -S -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/enter_c3_reviewed_loc_seal_v1.py"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-E",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/enter_c3_reviewed_loc_seal_v1.py"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech"
+}

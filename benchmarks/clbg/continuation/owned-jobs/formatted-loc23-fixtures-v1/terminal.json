@@ -1,0 +1,20 @@
+{
+  "status": "command-exited-zero-awaiting-report-review",
+  "started_at": "2026-10-13T18:34:56.014102+00:00",
+  "worker_identity": {
+    "pid": 78200,
+    "listing": "78200     1 Tue Oct 13 14:34:55 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/formatted-loc23-fixtures-v1 --lease-fd 3 --go-fd 4"
+  },
+  "actual_command_started": true,
+  "exit_code": 0,
+  "qualification_granted": false,
+  "automatic_retry": false,
+  "command_pid": 78206,
+  "command_identity": {
+    "pid": 78206,
+    "listing": "78206 78200 Tue Oct 13 14:34:56 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -E -S -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/qualify_fixtures.py --revision fixtures23-v1"
+  },
+  "command_identity_observation_missing": false,
+  "finished_at": "2026-10-13T18:34:56.224498+00:00",
+  "stop_signals": []
+}

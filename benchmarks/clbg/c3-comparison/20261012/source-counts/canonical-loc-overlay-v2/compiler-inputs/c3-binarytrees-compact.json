@@ -1,0 +1,2295 @@
+{
+  "status": "qualified-exact-authored-compiler-inputs",
+  "profile": "c3-binarytrees-compact",
+  "source_sha256": "25a79d7ae38f248b677e337f19e07553f536c30b71e40cd9bedb0d2ec026f166",
+  "binary_sha256": "26d977d307c2c29f578533390e7ed50c48855385753b65c1d6e30c8e2350ad6b",
+  "files": [
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/sources/binarytrees/compact.c3",
+      "sha256": "25a79d7ae38f248b677e337f19e07553f536c30b71e40cd9bedb0d2ec026f166"
+    }
+  ],
+  "independently_retained_compiler_input_evidence": {
+    "id": "c3-binarytrees-compact",
+    "benchmark": "binarytrees",
+    "variant": "compact",
+    "status": "compiler-input-proposals-awaiting-source-role-review",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/sources/binarytrees/compact.c3",
+    "source_sha256": "25a79d7ae38f248b677e337f19e07553f536c30b71e40cd9bedb0d2ec026f166",
+    "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-binarytrees-compact",
+    "binary_sha256": "26d977d307c2c29f578533390e7ed50c48855385753b65c1d6e30c8e2350ad6b",
+    "original_authored_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/sources/binarytrees/compact.c3",
+    "producer_loc": null,
+    "files": [
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/sources/binarytrees/compact.c3",
+        "sha256": "25a79d7ae38f248b677e337f19e07553f536c30b71e40cd9bedb0d2ec026f166",
+        "role": "application",
+        "compiler_input_copy": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/sources/binarytrees/compact.c3",
+        "compiler_input_sha256": "25a79d7ae38f248b677e337f19e07553f536c30b71e40cd9bedb0d2ec026f166"
+      }
+    ],
+    "source_bundle": [
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/sources/binarytrees/compact.c3",
+        "sha256": "25a79d7ae38f248b677e337f19e07553f536c30b71e40cd9bedb0d2ec026f166"
+      }
+    ],
+    "actual_original_compile_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/c3c",
+      "compile",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/sources/binarytrees/compact.c3",
+      "-O3",
+      "--safe=no",
+      "--backend=llvm",
+      "--target",
+      "macos-aarch64",
+      "--fp-math=strict",
+      "--threads",
+      "1",
+      "--single-module=yes",
+      "--ansi=no",
+      "--stdlib",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib",
+      "--cc",
+      "/opt/homebrew/Cellar/llvm@22/22.1.8/bin/clang-22",
+      "--linker=cc",
+      "--macos-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk",
+      "--macos-min-version",
+      "14.4",
+      "--macos-sdk-version",
+      "14.4",
+      "--build-dir",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-binarytrees-compact",
+      "--obj-out",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-binarytrees-compact/objects",
+      "--llvm-out",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-binarytrees-compact/llvm",
+      "--asm-out",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-binarytrees-compact/asm",
+      "--emit-llvm",
+      "--emit-asm",
+      "--keep-obj",
+      "--print-linking",
+      "--print-input",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-binarytrees-compact"
+    ],
+    "production_build_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/builds/c3-binarytrees-compact/build.json",
+    "production_build_receipt_sha256": "aa1715b5f000d1a08a0506fc3dfc6b1c05a716ba80bf87fc599152ce413ecd5c",
+    "compiler_input_stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/builds/c3-binarytrees-compact/build.stdout",
+    "compiler_input_stdout_sha256": "0207c2f34b23d17181874e9afb83a3a19722c3bfbf3fdf21bbb40f88302059e9",
+    "compiler_input_stderr": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/builds/c3-binarytrees-compact/build.stderr",
+    "compiler_input_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "actual_printed_compiler_inputs": [
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/sources/binarytrees/compact.c3",
+        "sha256": "25a79d7ae38f248b677e337f19e07553f536c30b71e40cd9bedb0d2ec026f166",
+        "role": "application",
+        "counted": true
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/atomic.c3",
+        "sha256": "3413c43586650dcc28a11eb19a511e0b5e8be025899d4a09de41d8dd45f0814d",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/libc/termios.c3",
+        "sha256": "71dfcd7e5c4c0dde204b96912679d41b9f2e86e0810114266ba203d478830efc",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/libc/libc_extra.c3",
+        "sha256": "51bde5d1889605a8316074389ba0ce18dd9f3e81004f9e95d2334ddc2aeea091",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/libc/libc.c3",
+        "sha256": "d4c5f94d3492221c91872b9e20ac309b827d867798e0b75cb4bf99aac18ebef8",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/libc/os/linux.c3",
+        "sha256": "a61e2881c334fb74bd61ab38e6061bd34594712caabb09534d595311799cdfdd",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/libc/os/darwin.c3",
+        "sha256": "19d38b9129a05bae2a1aa08801d457eca99fae8117fb0f3051e1d309e2b678b0",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/libc/os/posix.c3",
+        "sha256": "c49c2fc014b3ccd1eb50931b2901fed12225463510b1d9d09088f0e95bb60a31",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/libc/os/generic_bsd.c3",
+        "sha256": "e87d1dbb5d6dc6adcac7eee7bb7a284d0578f2b5abe53bd066314faa8b2ed71e",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/libc/os/android.c3",
+        "sha256": "9690a404c15e6255ba82052b0a063b76a54dba33ea9ecfd8616b5a06ce66548f",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/libc/os/freebsd.c3",
+        "sha256": "be1788b306f51b5d0f97e097414949b455fa561253f5b6f77b7a418bb18a1717",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/libc/os/emscripten.c3",
+        "sha256": "24a5ecee814ec7efba50f7064b6136d44fddedfd1cf3bcdcd6bd346182f409ca",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/libc/os/netbsd.c3",
+        "sha256": "e374795b4619b6d1ffed1b552f34d732d7a51004bd572997704fe53714815a18",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/libc/os/win32.c3",
+        "sha256": "4c1673019ac4546d578b8e8ae7ee3c2f0c0dde09ecb9e98ce1fb77e4da70885d",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/libc/os/openbsd.c3",
+        "sha256": "d5bdf223b6785925a96074ee25b47a18df04b58a0e223d4f4b1adf906da305e5",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/libc/os/errno.c3",
+        "sha256": "88b092a2c820acd241366faf7c5209be9b5105221c2c21f64b46bf0e55ac3692",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/experimental/FrameScheduler.c3",
+        "sha256": "c368679d6cc54d70ebdb1efe871d3f8d0108d3464d7633a9feac7ba795a01f8e",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/crypto/entropy.c3",
+        "sha256": "72294446b523313523ec2e7bfc57faa07fdcc0b6a0a348c42ac06c16d9df8e0d",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/crypto/crypto.c3",
+        "sha256": "8eda21e215b1f52e1eee5f09cc6fce1ed665364a55c4bc7a3cebcc0945351805",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/crypto/ed25519.c3",
+        "sha256": "65b7d63e6c08005f5a1846553afb325e139f81a4a58efbdf65ea993379bd089a",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/crypto/chacha20.c3",
+        "sha256": "e609768ace2cd652aaa5c5e51816ed0c66a075a8e9649e22dec9a3733f2998b7",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/crypto/rc4.c3",
+        "sha256": "000e43be44690cf30b96e13ea372cb69db31073a2c40d16c10dec1d128cd9a0b",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/crypto/keccak/cshake.c3",
+        "sha256": "7d75a23d6abd5b157c97af890956bdcfbaaec6c3bc83f4b78ae54775303ffa0a",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/crypto/keccak/tuple_hash.c3",
+        "sha256": "c3b373f6cf1e6f5243fc97b79fbb462182150f053d2cf2e0112d05a2c6a6e105",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/crypto/keccak/parallel_hash.c3",
+        "sha256": "d42f615f47c11ad2b6885a9a772a851ab3dc7698e81e9ad18768753cebde0462",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/crypto/keccak/kmac.c3",
+        "sha256": "737b0312bfd48451e7e02d33e0f2d5b573c8c42861a0225a0b5a00dae61da9b8",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/crypto/keccak/sha3.c3",
+        "sha256": "7732a39abcabe5d2c2cfa430408b10a55b1fb945589cfa16a4190d12cbcdd438",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/crypto/keccak/shake.c3",
+        "sha256": "b12b2ada409dff0e7f2e81a7d571854258fb147252c9808f16e906c21b54b510",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/crypto/keccak/keccak.c3",
+        "sha256": "7fbe471dd02f3cf3633939bcb7c75470a5a95bfe6b5a90947dc705c06ff7e1ab",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/crypto/keccak/nist.c3",
+        "sha256": "c06cb3c73c1bc122c120137808efd827f92e57cbec484a2c2f9105ba9ed7a05d",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/crypto/keccak/turbo_shake.c3",
+        "sha256": "e09d70a6fe31e1fd1abc4d67740538c16b6036e4b632c323dc323552f6dad6a2",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/crypto/dh.c3",
+        "sha256": "9cbb0b671a03975442e3666365aeb6881f702a2b83f6b3d3527c47f8a27d2d96",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/crypto/aes.c3",
+        "sha256": "db73581527ef79a4cf663f648018a6bf9cc1da4edfa8b0cc7c7155aa9a1f83d8",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/crypto/argon2.c3",
+        "sha256": "50f4291d749bfa22b0bdc2c93cc23167a524f2a668443d921f1de956502d69f8",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/crypto/aes_128_192_256.c3",
+        "sha256": "a0bfbf7fd08dd8746d93f98c825d1f089eb697bd469410097b3b1c69a2264294",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/net/socket.c3",
+        "sha256": "5123bcb69318cdd900423acd552befab8114b35d65dbd59aca1627e863b429fd",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/net/socket_private.c3",
+        "sha256": "0247c532305051cc41e5795ac181ad75e24c49de1fbff930a16781dee2971c02",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/net/url_encoding.c3",
+        "sha256": "abc0e4b27b323bef57911764e34b646fafc31adc1b5215bb65c57abfcaf81bce",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/net/udp.c3",
+        "sha256": "0dc04893666c5af7f85a474058e3f06fbfb71ce847e32cba2268e03b6fd94839",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/net/tcp.c3",
+        "sha256": "19c4f00c7d92b4debeeec0e155eda67b48643c0e445f7ff3dd3b523f934152cf",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/net/url.c3",
+        "sha256": "721f3f69807d1883613755bb9732ed36afea6819b861f43bd6cf4b1dc8f896d0",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/net/inetaddr.c3",
+        "sha256": "45eb6cd06b4abad79a2e3070d2d72b594cb5c0588a9498348bc92a368099a30c",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/net/net.c3",
+        "sha256": "b54ccf964f687b3895445f89b980dc6bce8004506fe44661e5d48baff6e86852",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/net/os/linux.c3",
+        "sha256": "a973122f6e7f8dc4e67540d10972ab5fe56eb16f049135a9443abd7cebe4114e",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/net/os/darwin.c3",
+        "sha256": "ac745a4fd20a3f1579e7033c65f7eb01c93a35b9b8c513a713c64e3f13e76207",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/net/os/posix.c3",
+        "sha256": "eeddbb974c563afe8dca64c10a7f5262fe21bf6aaafa509009fffc3ddc0f66dd",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/net/os/common.c3",
+        "sha256": "01395ce771bac4d57462e17193034652f2fd67edb96d625087264bf1e4c1c9d8",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/net/os/android.c3",
+        "sha256": "28589e80e1e1db478fdd7d97c4a65e238c0d79e190569085ec29950512ade7f3",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/net/os/freebsd.c3",
+        "sha256": "8a2525896228f6193fac3b2016f0f10e36fcbcf07a3a688e9b87d800c3ae2bb8",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/net/os/emscripten.c3",
+        "sha256": "2ea2e5413e27b750055e30d67eeb346f40c3937fb9decc7fe7f4d60e0ad0bd1d",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/net/os/netbsd.c3",
+        "sha256": "6f0232b0aee12c4ca415f621ef7381b9b704db91a30ce9c559c4c3d0d769b2bd",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/net/os/win32.c3",
+        "sha256": "ccb996512911379fe7b474bfc678eb168cddf047ff43e2fdc4295e2240f37cf9",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/net/os/openbsd.c3",
+        "sha256": "48db731ff2f88463a272a85259bf45f0a63c50cb20f74d40a13655cb231ea49f",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/array.c3",
+        "sha256": "ea1fe38e798a91de794541446a53257978ce1d9b767b5cddbc3b28a839da4f7a",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/runtime_benchmark.c3",
+        "sha256": "b6fb9ed5551a80e9298338296b9ef8fea584eb85a5a6515b9a9daaea003b037c",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/conv.c3",
+        "sha256": "3edad96df5df64a59cad5453d37f66a01e6dde943cd804ae56e740344052b079",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/builtin_panic.c3",
+        "sha256": "e5269a06bd53bd0b8a2f17a3fe170f249de66b1d682917b38cf2728d97501695",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/string.c3",
+        "sha256": "7e0eb209e911fc9d0d1f2aa7e46f8e3a35d456c73efa29f04bdb6bb7e76676f9",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/ansi.c3",
+        "sha256": "4c88f06e528cfdf300a487a152a4e529e601abbd18dabfd78fb15e8a7065bd7c",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/builtin.c3",
+        "sha256": "75c71736b45f6dc6d07bb3b0d89f5108f6eff6b99167c51df9f3b5c19e115380",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/cinterop.c3",
+        "sha256": "0c2a887ba2097495cd2303512685d518a98450792c7a0f8308f4c6abaeb94432",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/alloc.c3",
+        "sha256": "13367f501523a7a84e26f9858b5002b00f6a05855a1ddf22bc4247c01991978b",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/runtime_test.c3",
+        "sha256": "1f06b6d4fe3dc680e4ae01b0a26e6d6b069d03979c1c9f3cd2a954ea8f922128",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/builtin_comparison.c3",
+        "sha256": "9ad0bbb05b775b573787a81defa5779550651455a0268c6692e848a0d49bebc3",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/mem.c3",
+        "sha256": "560c6f8a5cc2c12447374735cc3b221822f8ce6b6a0ee9c23694b2899f6df750",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/string_escape.c3",
+        "sha256": "3527d981527c16dff885aad53f7bf55611f23ab6f36cc72be1032775b4d61c56",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/dstring.c3",
+        "sha256": "6893b611bffe9f279880e39927d6517003b693e0f0170fc62844fbcfb5978735",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/string_iterator.c3",
+        "sha256": "096d1d0f4953cb98f5e75d22b465fa57a126e820aeb64455e91bb1f1c11f11a1",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/sanitizer/asan.c3",
+        "sha256": "70747575dada0d0c8d94d72ae5de22566d28a5f5368771ada5bbccf5af28a4f8",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/sanitizer/tsan.c3",
+        "sha256": "30b29b423a1126c55a995eb65bfefbd3d2b3f892a40ca7c53d0a9369de743949",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/sanitizer/sanitizer.c3",
+        "sha256": "3c2294c2550c17a269939718d5f883bc16be32f3b7018ffb9ad38cf35bba581e",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/string_to_real.c3",
+        "sha256": "e755ac6a1d63c3892ad5b4b490527081ed3f102738afe16c4d58ce001abb73fd",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/bitorder.c3",
+        "sha256": "dc15a3415c01d5fae89e235ed14e8be0759161b7cfaf8a9fd910af5f90e06814",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/ascii.c3",
+        "sha256": "b258aea716a69e439b50d1c648f31d1b7fdd4752a5150ba14cdd153c5368a5a2",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/slice2d.c3",
+        "sha256": "320479b5a0b0b591ca0ca8892477d9a27d82f8922c892584a1ac42551b97e8ac",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/private/allocators_heap.c3",
+        "sha256": "281a97c442f3453a422a81c3a381a2cf3d13d54f5f19485bf595ca714d73437c",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/private/macho_runtime.c3",
+        "sha256": "0bb2724231bf0788a7b093000f755c42c50e2b31809d0f954a46fccc579632c4",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/private/main_stub.c3",
+        "sha256": "4a3c3a4dd0b07901168cc2fdc67850e46b8ec956c22aa73537dbbb1f3a369bad",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/private/allocators_temp.c3",
+        "sha256": "496c341d81162b206bccd4eb1cc15ed6f4b5aad586170afe69d726ed71893243",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/private/cpu_detect.c3",
+        "sha256": "4a4ac8f4e663d53d145fa0aa72f0f2441cfa359df87bf022874f621c9ca2c1ae",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/runtime.c3",
+        "sha256": "04d14fe65b1e9934da5706dc0cb8977a368158c486bd2d7b946a06031c646c97",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/test.c3",
+        "sha256": "8c38dc26c0d6866ca4e65c6dbb210a2b655c0d2e6a1dcb7aeb3e2663fc06fcad",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/types.c3",
+        "sha256": "5b680002ac52617022cee51f87dc14d30bd1e70d2bddbaada58d28e394be2572",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/mem_mempool.c3",
+        "sha256": "7d823468cff9ae1ff665eedaf524bee4fd57a425155930ca6c3e04481d84fce7",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/allocators/on_stack_allocator.c3",
+        "sha256": "d8acf8c47577a2a4b69e8cd0771f65f2c3bfd047dc3dcc4df017775df1b1f655",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/allocators/vmem.c3",
+        "sha256": "627cdaffad8eb9b1e53c2d458e23168dbdcfccf638880f06a4224459bd99355d",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/allocators/tracking_allocator.c3",
+        "sha256": "3a2836574a7dab4012604a704fd225dc40f52f8a1e8959f519c24e12bfa504d7",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/allocators/heap_allocator.c3",
+        "sha256": "67950f14027050cefa749a412471256d2759be7119e0893868a4b1366b0a2278",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/allocators/null_allocator.c3",
+        "sha256": "e081802f1c82053a99933e94fba259468428463f6a38dfb14cca4eb1d96b1523",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/allocators/backed_arena_allocator.c3",
+        "sha256": "db7e2240bd36f287f70643f5f2582a00b40e12163da5fef5bc6ba0650fbf7608",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/allocators/libc_allocator.c3",
+        "sha256": "9e8b3e478319c3790cdafac9607f3166ac978215a097f8156779e48703531cbc",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/allocators/dynamic_arena.c3",
+        "sha256": "de629f6fcdbcd1c53239eabb971344dbf8aa3716edcdcbe4a7761060605c2000",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/allocators/arena_allocator.c3",
+        "sha256": "8e193fee7edee3f0b6f5451b0e5e9951d6068242ad0bb110ce9be854ba71927f",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/allocators/temp_allocator.c3",
+        "sha256": "f1f426ae92babfd720a99d65cd501890e6c25f9972b56a7de8bb93e0971d3222",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/os/mem_vm.c3",
+        "sha256": "0069755b619566753828114d49e29c70b3883a81fc8047a704a298b5c0d4f480",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/os/wasm/wasm_memory.c3",
+        "sha256": "39ba6549b93d9f1fb0f4383b4d899ba1b70a2c26acca13549380b0bf4d2c5bc8",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/allocators.c3",
+        "sha256": "e7afa4e2c3ab7dc3de84d44201cc22164774cc9cd0ae9a3056ae2f2ef34d744e",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/logging.c3",
+        "sha256": "143f4ead67a63cf865dd67447ceca9b76410f0d632b6d69f54a71d55e9fce4dc",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/refcount.c3",
+        "sha256": "7201f5a3f19173887267be390c846112043d10c0c7fb309f337ee3f26358482f",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/env.c3",
+        "sha256": "2e5a490da0377357ef199d1820b616192c94e9ed7f11ae4ab950cf8856a8c3ed",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/core/values.c3",
+        "sha256": "eeb19ff40c84c346da10b7774f6fa7ed5b979a89e46d9cc002fad35af3ba2b19",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/sort/sorted.c3",
+        "sha256": "0b2ec13b034a5022ebae7b2419cc8bf7b9ec04963a4096060f5898095f8830b9",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/sort/binarysearch.c3",
+        "sha256": "17b83cd2fe7340000063a8c15aead923138771cf57bf5dfed29d299207ba3574",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/sort/mergesort.c3",
+        "sha256": "f60c6f4c8630a9b1da773dcceba973cba73cc956546cff046e7c607da1a22b33",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/sort/quicksort.c3",
+        "sha256": "94b3dd57a085024632bdacbe189ff5e9489f217d7ac7cb0d11365c025a2f4a86",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/sort/sort_common_private.c3",
+        "sha256": "e347c4d9cd58f3a71a4d2bbac657cb9d7824ef9b58d61fa3bc32ec2e60892cf9",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/sort/sort.c3",
+        "sha256": "8a10ca6807733cfdf7c606dc32ac8fb8ee80a8c5567e3b75d600d972063977d6",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/sort/countingsort.c3",
+        "sha256": "4df7f9ccf2526ee848fc2588045aa8b088681415fc5a66fedfd51e0af34b513e",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/sort/insertionsort.c3",
+        "sha256": "686c65ac4bf094347377b2f93b69fbf3daa7fd35d104835b9f73df834b256bfd",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/hash/hmac.c3",
+        "sha256": "9989033a1f448ee3bb60eaf8479597f6b180fc4e436e264e80b1a9bd324cde46",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/hash/metro64.c3",
+        "sha256": "39dc489ba405773c852b68c1e97076a0e15b9f17f2a14409fdbaaf716f72dde5",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/hash/ripemd.c3",
+        "sha256": "0ce1e8266a0a89ad743281fb47d6ff8f9bf58334edf5547b9b7de3d10b81b6a1",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/hash/md5.c3",
+        "sha256": "62b7216b73149a9dbb8222178d32f69940186249fba2c8de71ee8d168d04b232",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/hash/murmur.c3",
+        "sha256": "1012340f74e2a6fa9b9cadd4b91c083a1172237fa9ff7f29066ec2420192517d",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/hash/a5hash.c3",
+        "sha256": "8f349ddf9d8e1ec3f474e22d9055ca247f8894bcb619df1d8c17340d14fe6913",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/hash/komi.c3",
+        "sha256": "22c0e93d7defbe42eca313e05d4969386e9b603f94c08bf2e5286a9f69d60ed2",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/hash/fnv32a.c3",
+        "sha256": "72fcd06dade6bc194be0bf0cfe957748364ad8942983d4bc42d6537869509b64",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/hash/gost/streebog.c3",
+        "sha256": "4103677916eaf9d804d72b0e37f8d91e68ce203b547b682d3179a80e7efaeee9",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/hash/gost/streebog_internal.c3",
+        "sha256": "eb8c110cd6992925ec8b68033257c2a7ea6f1c7c52528a45df1c8fe62858acc4",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/hash/siphash.c3",
+        "sha256": "5b9f813b2a3351240e9d10e6ecd458c8899254546323853d27cb26885c6a007c",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/hash/crc64.c3",
+        "sha256": "437e7fd44a5a9016a21e8979b04e241b3f927545088d6b86115a83fe472cbacb",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/hash/poly1305.c3",
+        "sha256": "2ce44144321b836a57d198ce028f7c68669a64734ab0e108e1d41c0e76219b73",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/hash/sha1.c3",
+        "sha256": "0d6eb7949d518a29a5f0eb992cf8034651834b0f3dc99eca3a9adaa71815db82",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/hash/sha256.c3",
+        "sha256": "57f2547d1ecd97384b38cb31e1e5ff2fc1e8b8edcc7595a091c2f8c2c6920442",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/hash/crc32.c3",
+        "sha256": "7e6494d8455abd0d1072532c0222db66eb4031885fa1298203fc8e591deafa3a",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/hash/metro128.c3",
+        "sha256": "cb47f938e3d2d62bf393c7f07d95b9957c00bc72913b3490171d04b61339bbed",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/hash/fnv64a.c3",
+        "sha256": "e70dd7e7b9474e99291e497e104cb9129a186f4c89188776ffa032dc497d9b39",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/hash/whirlpool/whirlpool_sbox.c3",
+        "sha256": "66a52cbdb10b828f14d64666bbab5f9c2e045f1d8df8021616f3d2a7d101307a",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/hash/whirlpool/whirlpool.c3",
+        "sha256": "e7c15c059df3f7c2a9e05a9f96a07ac7a28691f951825070d00a9579aa8a25d4",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/hash/sha512.c3",
+        "sha256": "69d7c426912286c959e378e01112e021b1061a313b79a789036c80022fb97bd9",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/hash/blake2.c3",
+        "sha256": "1c783b5af033f375a836de6372e0c82a569f44b2eeda238fd5df7c09b8faeb21",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/hash/adler32.c3",
+        "sha256": "efd96af99b4d44f89b220452392cd97639f3bc11b78db4267166360722adebe0",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/hash/blake3.c3",
+        "sha256": "de776786c345e2b55f0f477959fd51c708298511c84bc070c35b44c7fe508376",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/hash/wyhash2.c3",
+        "sha256": "f264a0c23304db0c5984cf60cdcb2c376e5eb2769187e3c23611f0a7097f6794",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/io/file_mmap.c3",
+        "sha256": "9cc387231263e646e84264ec6525b21177e709a5742fd8f25389e4036a8b913a",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/io/path.c3",
+        "sha256": "c58142704059f997c5836bab051ed0e53c21377a2440678b2dc81ac8648580c3",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/io/file.c3",
+        "sha256": "3aaed4b96ee692d25f7f100a5fc2f2a7a5dbd075a6ad16d72ae4d089f80942ce",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/io/stream/limitreader.c3",
+        "sha256": "3698d8b86eb92f49527b5907e5255baab305fc0685faafafc25723472927fdae",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/io/stream/bytewriter.c3",
+        "sha256": "bf12f48472792ea6235c8d3fc3e5333b18124051b457e1fda74c0f9343c47153",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/io/stream/bytebuffer.c3",
+        "sha256": "6737fd446636c7436c5d8aeeb4c744a5892ee21d6b40a433e78c93ae3b95408c",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/io/stream/buffer.c3",
+        "sha256": "44d0b049572b400530625af51f456265e2edd421869a28778445705b654c5079",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/io/stream/bytereader.c3",
+        "sha256": "d330b079396a7e5dc3a97de4fddec18f5222dc5d53141dec7463950e42d9dfea",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/io/stream/multireader.c3",
+        "sha256": "e507a2128e4dac41b94728bce74cf640b20f2a176a3c46915c712af3d499258a",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/io/stream/scanner.c3",
+        "sha256": "54c4fc00485d706737bcc4acca1cdb4bb7a7ff71d62862ff1bb4a3ca478b47be",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/io/stream/multiwriter.c3",
+        "sha256": "20e69a39132370ec608dd292c45f93ef48caa1d15342ec3d3a07926592265130",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/io/stream/teereader.c3",
+        "sha256": "9ef3c922d97fa6213d7872863c626227d96d9664746fcf2840c19f05357da21b",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/io/formatter_private.c3",
+        "sha256": "23a346e9a4023b758dafb14cc2d7a713b70e276d17443e46312b5b93bc5502da",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/io/io.c3",
+        "sha256": "3212010b6f7b3a4e09263163ba418e2260b037c9fc125266cce7106644f1933f",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/io/stream.c3",
+        "sha256": "bff2fd0bd2e3f30085bff3a92e6e48454c4c1bc0116dd39d22cd16ee824135ec",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/io/formatter.c3",
+        "sha256": "d2b7458d7cde056977a4e0ee50616dc66267724ef7ebb3fc4032b51eee45bb55",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/io/os/fileinfo.c3",
+        "sha256": "3306e833b1f8e7cc5195e382118d91c6580de9c9f9557fd66316097f30d5e066",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/io/os/chdir.c3",
+        "sha256": "d5f8c2fdd87f33314e3786572989c93c9129a0660861d08c5fd38f0345d6a0af",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/io/os/rmtree.c3",
+        "sha256": "86f4cbe3f088952c366acbaf250646efd70f7697a8286ab1a8d4b536c258c4de",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/io/os/mkdir.c3",
+        "sha256": "59983e54672d5f5831ba1b4bb7919c2bdde74aa18e6f6176610321ca5c3cc1e7",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/io/os/file_libc.c3",
+        "sha256": "9d1a7ba1ee647cc1b03d044caa1c6b9f93b82aa4c29c95c90939c54cdfe62ffd",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/io/os/ls.c3",
+        "sha256": "f28480b71b55bf6d190a8aa6123facaa2a7d1b82954f0134a605bfe2dc0067db",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/io/os/rmdir.c3",
+        "sha256": "8fe0f1e8584a8cc7824e1d9f240d38a8211140ce4b743763679ca1de30008d3f",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/io/os/getcwd.c3",
+        "sha256": "2ce2105b26017914a79d9909bf9f60b36e1028c03d43f69ac6f071127815b9c2",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/io/os/file_nolibc.c3",
+        "sha256": "bf398402d6a82173769229ee3cc69783591297995c973bdce0d0784ac6d22f18",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/io/os/temp_directory.c3",
+        "sha256": "3d47609bf47a49d6f4b10678c80af0435b80f6bf04e808c578e053f636f19449",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/io/bits.c3",
+        "sha256": "d27edbeb8e2db8706df4ad5be4d69e34c0406ecf50ad59443d71a203a898488d",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/encoding/base32.c3",
+        "sha256": "c6c3e6ba08df84d9c6d5c59e86c95cc3ef48e56efa6e108982d595290752017d",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/encoding/ini.c3",
+        "sha256": "aa2e3f61ed31bf01a5a69d45227e8bf582b209de123e4ce98b3127b0f30538fc",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/encoding/regex.c3",
+        "sha256": "9afe8c7316c40d0e1676e7b42522c2d39377f7999262159b898e1217ec72b475",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/encoding/codepage.c3",
+        "sha256": "ebf0cb5faa40d90755b173f66718bd26becb35648b683e4f78282ce4326181ef",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/encoding/json_marshal.c3",
+        "sha256": "dda74ba124f85788442e072e11acdff669b89769f29d71482384fedd9f2742b9",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/encoding/json.c3",
+        "sha256": "c2c6540c08110918a86c2ae7ef388f770949ae96dca0b74d32f9c098ee03e16a",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/encoding/hex.c3",
+        "sha256": "1cddc016c1330d8bb9ba1e97c8ece901d903134704fa4986e6b6d87191bb7b15",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/encoding/csv.c3",
+        "sha256": "bcbe4aa9ab70209c9e13b99c101181a209bf65e17f1dc400667f2a251a937fb3",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/encoding/xml.c3",
+        "sha256": "89ef06aa4b1ac82a12cc5a9b664caa8368c85d33c2b157489808fe2da119e53e",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/encoding/pem.c3",
+        "sha256": "9e981f0f987c30d0fc8825a985a2aba207b57d3b6a5f3d80f0a8eb84e512fa76",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/encoding/encoding.c3",
+        "sha256": "0575dd51b43e6b0890b9bbf99b4d01daec9beb01927de89e1daba90a78c881ca",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/encoding/base64.c3",
+        "sha256": "51c71cd8f097228308c08e41d4a6d092fb35d99973870611cd4ecc287356114b",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/encoding/codepage_private.c3",
+        "sha256": "f90767dbf83443906a19264038d4e290e36a682f28bfac5c67b72621c426e99c",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/math/math.c3",
+        "sha256": "acf02634ca95a3e9e03bd3b5ff8e75d5c4ecc9f6ae746bfd387158359aa0ccf0",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/math/vector_private.c3",
+        "sha256": "2c9c4de5673c8ba166391e39828963a34c22b725659019bfef3c4604571e35a5",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/math/uuid.c3",
+        "sha256": "ed97d60c5a636f76ae950e42ee2d70fa0d15c5e120c6befb2fe00b844fc3d771",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/math/complex.c3",
+        "sha256": "5770fbf73cf7d8b7e5cc798fa09d1192e5ae39d173f39cc4ed6f6be3e091de01",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/math/distributions.c3",
+        "sha256": "2da0f8b510287810517119d39152e764ee7b8b6e0145421e56ec9ba134db4dee",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/math/distributions_private.c3",
+        "sha256": "6903ce993c6219eaa1dfafcaa08aee6e1020576ce68672368d18760d0eae1fda",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/math/easing.c3",
+        "sha256": "e1c6b5e4e83e52ee286b3bb4f423b699640c562545a6fbe78fd61e9ce9b61ac4",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/math/quaternion.c3",
+        "sha256": "108f076558bab042dad8fa2d4d82626cdb7788c50e6f8596e36a7da49786949c",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/math/random.c3",
+        "sha256": "c06d231b3689352997ea2af1e600369bb69c342d6ba42f15bb08b479b314895e",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/math/bigint.c3",
+        "sha256": "7f1ee37debf221156485efee955d94907f9284a3f9e2c2805146ed3a718ce01b",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/math/geometry/bounding_box.c3",
+        "sha256": "14d3b44158c0caa2e537399f6fee99f452f81d4d3520f93d5f659eb4478871a3",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/math/geometry/common.c3",
+        "sha256": "2ff6addf4117ac1e8d6815435085838675cb554189f412a025479ae80019f4bd",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/math/geometry/rectangle.c3",
+        "sha256": "5310fe31f95bb13bbde59fe6a279c141f92f2ea4ef77f84237bf0100093eddce",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/math/random/math.xoshiro.c3",
+        "sha256": "1f86c83a0390289c57a84f9fc1972e32f8386375bd2b43936dbfe8a801bb8ca0",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/math/random/math.seeder.c3",
+        "sha256": "b6b22eacba9cfbd4251a4ce355c4ef9a1e1ccca06f3f17a821b36021fb4b9ad3",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/math/random/splitmix64.c3",
+        "sha256": "fb50ab1c7ba5a2d7c32b9dee22c56f1fb0f25bfee28f8a5522b04f10c3314682",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/math/random/math.pcg.c3",
+        "sha256": "309f0ea7c998eb615b3e89e68991739dd7d423d81aebbd5d5a782a9fd54c3bf9",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/math/random/math.sfc.c3",
+        "sha256": "545311bffea42819047598446fed9f3a4c4ccfeed9592b51118b2db3f7bcd725",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/math/random/math.simple_random.c3",
+        "sha256": "0d992e7c3ce5ae81d317e60f08cd6bff9506f8451879657ac690d164930e68b2",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/math/random/math.msws.c3",
+        "sha256": "1d27209e2ee49c466cc76726ea3c57d294e04be2792b1645d3470c3cce890004",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/math/random/math.lcg.c3",
+        "sha256": "be4d2523a8008870197995877231b858352c7c49d0ce062e60ab7fac8e9c3484",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/math/random/math.mcg.c3",
+        "sha256": "e2f0d5ef122de503f730d276316ab73d0006ae2963e1be4d22d3cc57c6f7a84b",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/math/matrix.c3",
+        "sha256": "9156ef49a2d19580db2b9227439d5939a9cf4fe0bb62dd2fbd462bc78d301319",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/math/vector.c3",
+        "sha256": "d7abaea832058fa7767c5fef1c878ba4c1f92c43152ffd9a42e3b1a6b3e2a813",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/time/datetime.c3",
+        "sha256": "45e83ced64e139cf69c1c821f6a31a0d95818f18afa7acb457ea63e3b1fcd4f7",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/time/clock.c3",
+        "sha256": "f296fae48386fff5bdb02d19a2043273ad7855653e348bce5ba770368bfc1a78",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/time/format.c3",
+        "sha256": "a58db18a6eabdf8abd9dd81fc0262b8d595a7519122424a0a005af7085e4b28d",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/time/os/time_darwin.c3",
+        "sha256": "ecd17fd65517d5f33e3c942ac09975ffcff7fffa40f3facdcce0364cbc2038c8",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/time/os/time_win32.c3",
+        "sha256": "9f262f4253b45c6e977163fa0979ea90b93fb509578f4b974fce999f6b34008e",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/time/os/time_emscripten.c3",
+        "sha256": "b64e44968c3dc5e6160a612f35bab476980f08e47202d58fd1689d7b1ed3b5cd",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/time/os/time_posix.c3",
+        "sha256": "1f0dc81aea4d12a767387d7fc66dc58b9cca426cfaa287173a112da2680d6dc9",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/time/time.c3",
+        "sha256": "5645384a56be2b8aa1fd4a31d470daa3afbb5fa62de98daf3f4f0b7331f471ef",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/threads/pool.c3",
+        "sha256": "1aa498b39b64e2ea71f5cc83192f9080dda59a174bb90729a2021a60968a13ae",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/threads/threadgroup.c3",
+        "sha256": "2e643d1d6196e8d92e60ab81cf99fd27890f6add629d40513f7f1a6ca1946fd2",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/threads/unbounded_channel.c3",
+        "sha256": "973344b9887544a16fa490f2e8d2e36bec49bbeebbf4d85889a9c80ac5528e34",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/threads/oneshot_channel.c3",
+        "sha256": "cbcefc6b47605de7ab981499da3d9e2565098126a76461ef231c4ac8552bc4f3",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/threads/threadpool.c3",
+        "sha256": "57c4d8a92356a78986e92c8982f7748198d5aa0dda489bb037fe3bb41527443c",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/threads/buffered_channel.c3",
+        "sha256": "be098654d24a89858b0dd7d0cb186e0888d023a8dcfb1435c665d57979f466db",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/threads/os/thread_none.c3",
+        "sha256": "0f62a326b4e5b7765502608a9c5e25347b464f71262d2520a8ab5c3a33b3d67f",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/threads/os/thread_posix.c3",
+        "sha256": "49a3826f25deeef170b59dc9c2cb0ca4737fc610ba8c1c13f4af3d8b6cdea610",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/threads/os/cpu.c3",
+        "sha256": "fb1cd7187a0871bd5618af2b2e2dbe1f31affc010a177c435e240a9d656e5b10",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/threads/os/thread_win32.c3",
+        "sha256": "fc068a5368cbbe4d942c1b7c90956cce9c13345168cdae8af7d0427b908b12ee",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/threads/unbuffered_channel.c3",
+        "sha256": "5458953fb343fc0d8ae7d25ea63ca311cb827a5bec77bebdb22f9ce120e6e90f",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/threads/event/event_thread.c3",
+        "sha256": "0ecedaa3e35613c1b5acf5044d37d0051ce0e55228a6d1f37241227526c49dec",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/threads/fixed_pool.c3",
+        "sha256": "45a19302b7009da2058cb68b237611d0b93bae6a27d826c657dc06b681aa72d7",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/threads/thread.c3",
+        "sha256": "d7504438e75f3347d0b434735fa8d0a311a5dba353960ed9a6be65dd7e3ec314",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/nolibc.c3",
+        "sha256": "a5a4e42a678d73d413a552f479be8c84462a21e30d63d76f573f4701ab2c3f9d",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/math_nolibc/__sin.c3",
+        "sha256": "267bf9ba86af78c261c74544141bae2d5fb612b5c0848e1d5be05cda1775ff69",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/math_nolibc/sin.c3",
+        "sha256": "6a03ecbf29436767726459baa967cac1bbc58a71296edc90c8fb8f1925df023b",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/math_nolibc/gamma.c3",
+        "sha256": "e6be32f08e3948cab5d39b3d693764304b183f2db4b6a3ab4c02597c1d006e2f",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/math_nolibc/atanh.c3",
+        "sha256": "05a673948b0068614eb6b097adc16162b9f0cb7b736bdca6f4ba0f3c3a757aad",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/math_nolibc/acos.c3",
+        "sha256": "063d3d507344c36a32352e895b60bb7422598e84e35b4ac863c9524457bd6df9",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/math_nolibc/log1p.c3",
+        "sha256": "f9dd8ac4f8d2589d9d2466ccd2273ef0b0a04410cff75225179507ae6794ae56",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/math_nolibc/atan.c3",
+        "sha256": "afd996292461b5512e580f42470101036e966f79d873d64309e2a9db26e5cc11",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/math_nolibc/exp.c3",
+        "sha256": "2d8fdf083b8dea0b6ae7c50ea008edae8e113c9413a7a2f1fc03e8e289f8116f",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/math_nolibc/exp2.c3",
+        "sha256": "b53b3f5744d142f9821ebc2e063dd2bb9a2a887c93ca5bc5fc54fa35f9420c89",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/math_nolibc/round.c3",
+        "sha256": "3a706c7d7d5bf245a4497a4557d245a3c2747b1a2ceed88ada5c066294b2e905",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/math_nolibc/frexp.c3",
+        "sha256": "d069a1ff19433f9066b308f6b1752ca7761a0d7580ac126e72da5bb6b1e27d23",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/math_nolibc/sincos.c3",
+        "sha256": "b24ba51d6dd8bc994449934ed2fae0bb408e8a14e74802322e197d4b5bb7a255",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/math_nolibc/__cosdf.c3",
+        "sha256": "3e40c3a77a6f5c6a68f3a9d727996e98281d471d15b4bb92414974d407a2e132",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/math_nolibc/fabs.c3",
+        "sha256": "9cb8a2ec6f2702d27633073c3097a4421ef77c3adb229c9dcb605c38710ba4cf",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/math_nolibc/__fmod.c3",
+        "sha256": "bae1804f3ac60522bccf434329cce1dd63a08943653f111c822edf35b3b46d14",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/math_nolibc/scalbn.c3",
+        "sha256": "1d51a03e2c98ed44e398f3293a0d3e0bdf5bc6ce5a3058b91c67f21b702d0ede",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/math_nolibc/tan.c3",
+        "sha256": "670c039d3fa202eb0a7b91a83da3219efbd8ced12131504f3e772d78aec81578",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/math_nolibc/cos.c3",
+        "sha256": "f1907b810880ec29f94f6bd9bdc9d20aefe83148adf77feda34ad9e963c9c278",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/math_nolibc/asin.c3",
+        "sha256": "76591299cb0050807358622b2df8d2cbccc84d73a47610fef1118f31ae66b690",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/math_nolibc/__cos.c3",
+        "sha256": "d64209aabe5e93be65150d33d6bfec74a7016ec8a653e67621cc24edc0c40dce",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/math_nolibc/__tan.c3",
+        "sha256": "66c962a0ea1d11b377fed68e3035a5d91e36487bbb5cba366f7e10d55d9b8e51",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/math_nolibc/ceil.c3",
+        "sha256": "4919a67de26dac6bb5519281324da768ffa8270eb2b324fe6cdd88ce2e9364d5",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/math_nolibc/floor.c3",
+        "sha256": "114432cc0f61a88c5f3d98c9d657feb1719e7b3ca512b52cdef37782a175a6ac",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/math_nolibc/erf.c3",
+        "sha256": "bd10e9fec1d087cff0b15a2b78dc2e219c85355244272f2c4e5bf64589583f87",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/math_nolibc/__tandf.c3",
+        "sha256": "cd550fc96f9c1b434e8b4179e881b522d35db8b239931c01a51af61afea55eb8",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/math_nolibc/__sindf.c3",
+        "sha256": "7aa041b6097852b29111c6f97c1297f5e8bf560d2ad0fed1c9b90c2d7725ba2b",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/math_nolibc/ldexp.c3",
+        "sha256": "e8bf918975bab5f4d8595ca3139fa67d56a11c2e8f157e1680534848c6544d62",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/math_nolibc/trunc.c3",
+        "sha256": "6eec4d73c8b972662fa7e4cc6c74272d9da0242a31657a7e189600c729b4cb8e",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/math_nolibc/pow.c3",
+        "sha256": "587614f15422a569a19f36d88cc9874eb75ebe6150fe7f2190efedb13c55ca11",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/math_nolibc/rempi.c3",
+        "sha256": "adabd24d0913d604f5a65619c3c0c5316de501c420dca997dd41b9e41c97444d",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/math_nolibc/log.c3",
+        "sha256": "d2e7bb6662c9409224bcacc29ae046ca945c74faf0d1a3370a3aff46ac4f9dfc",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/math_nolibc/math_nolibc.c3",
+        "sha256": "7563171da0be6bb805e0b6c6943bd989aed3cd5b591f55ce0a1a8c0b7d3589b8",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_nolibc/math_nolibc/trig.c3",
+        "sha256": "31f55de523d719209f25426b00b0767bd01bedd1609cacb6bd49a18ce0a0a4b2",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/compression/qoi.c3",
+        "sha256": "130d2b47d3b4c445c7820b631ea9fa65045d894638fd322e7d5ec3f75b18c185",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/compression/zip.c3",
+        "sha256": "97166a843cb6f351ea5be017343900330c0667ad604d5afb255c7e9b1f6faffc",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/compression/deflate.c3",
+        "sha256": "2d4d7e4d6f6b69099b4f6d6b3bc5b32433060c329335f46d2b5ff6daf7b60d10",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/compression/gzip.c3",
+        "sha256": "669b882e603e1b89b9ca5f86ca6a6d00c9679c459d90e136eddb0245cc77e258",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/posix/general.c3",
+        "sha256": "eee218239f089b2510027676836e3c874dbb189f8c8feb0bd6be105beb93a8e3",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/posix/threads.c3",
+        "sha256": "a95edfaf19d282cc7a6cb596c9d4a2ba24432abff79dd386f2b1aef04495a3eb",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/posix/process.c3",
+        "sha256": "b64083b7346a5915492c92caee39f8758cb6891d73da5ff95c865eac5284e2af",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/posix/net.c3",
+        "sha256": "0d994fc1dc2b6d6eaab96d0ee2f9211389a03faf13e9d17803417a8630a43f85",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/posix/clock.c3",
+        "sha256": "93fb1de2b2e8ed1e3011bab6855dcb06eb953cf61218665bfbbaea093b8b53c0",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/posix/files.c3",
+        "sha256": "33ec3e03a6c9d2d672cef380437b5c34c843c560ac4c3fda2d1470d0946953e9",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/posix/mman.c3",
+        "sha256": "f14ae68afc8b126ca1d96350a8813432caec65e53a69b3c393e5814e460af065",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/posix/heap.c3",
+        "sha256": "73d354140d1c1f3fef0bdcb07d38b6032f1d40a87ebdbc5d64c8488a2be6732b",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/xdg.c3",
+        "sha256": "3ca31b5e88d7dfe9b464f9df4c147f13ef7e2099c126d58166c792590c3cd2c8",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/macos/hitoolbox.c3",
+        "sha256": "31794ae20e2a722359968c824247b472f6f5040c26ac16b43608c97bfb397d02",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/macos/appkit.c3",
+        "sha256": "c764be290ed51ccf2c988292136a864a00478995eeaec4121592e5a539bdd4a8",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/macos/core_graphics.c3",
+        "sha256": "4f906099d400839b49b9599f45c56238996f5fe3ea02f9d0afe8331718834520",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/backtrace.c3",
+        "sha256": "a00b364bfb9975990d0197a416f0151ea620cd37a917a3041eee89b47831d009",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/netbsd/general.c3",
+        "sha256": "734e64cec8bca8606088acaabda594bcdd9c87ed86f7eeabf3dfaa1a4bf78e84",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/process.c3",
+        "sha256": "fdb095f36fa666e24299d69acd8ce5eb3571eda495aa1e9b0398ef0730dae83d",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/cpu.c3",
+        "sha256": "afb0a16394c59f4280863a45074bbfb35171c60d5ff1bc698b2d25fb38cd51b0",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/freebsd/general.c3",
+        "sha256": "b079d9275090ed5519420efb66e11acc010b1272be37bd83129c96b6b1124917",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/linux/linux.c3",
+        "sha256": "1249e45b7b779346d9e843ad9353f3cf8e22d5798a2d737265c5b8992ce26f85",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/linux/epoll.c3",
+        "sha256": "4477089573cb89ac10dd034255e3dac8ee76f20e903f92196f887202a3b4f710",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/linux/heap.c3",
+        "sha256": "f41e4ee336032add5aef2056c7f7a92e51ee8853268749da83a75717c34a0eef",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/android/log.c3",
+        "sha256": "db2722c5d3aa57b68be0c7c371794e89298914d58f82eb47f994d6d8e7d9424e",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/openbsd/general.c3",
+        "sha256": "57bdd37217c87e180f482a9ab73c366da804e8ff89519ef7461cf03643aa6d41",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/os.c3",
+        "sha256": "4e94d3b64abfca05e4957916128b43caa0ebe918e65e1aae28c3896cc203d683",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/darwin/metal.c3",
+        "sha256": "a66d2d35429ebe2ac8560db3c922b650a33c0527e4757ed92e516f30185a4e6b",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/darwin/darwin.c3",
+        "sha256": "1e6a746b6c0497c0e59adc0227b897c2f2a89d16c9c1c6e6143916f28c77561f",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/darwin/cf_dictionary.c3",
+        "sha256": "86da7fc0aca4d46dc20045164ef0f170b98943c2336fafe28c0ca33a701dbd83",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/darwin/cf_allocator.c3",
+        "sha256": "6415b3604aa2e2ac5aced3ebb12ab95244db1feb59aa424043e0e5f53fff1af6",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/darwin/objc.c3",
+        "sha256": "3e77770e203c1334ef2c13f82d31301c94e142c02982038f12ad35b73af50842",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/darwin/process.c3",
+        "sha256": "6b75f3f1cbfcafce215428ba11fa9ed846c1c393ebdcbff1ba7878fc26d87041",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/darwin/core_foundation.c3",
+        "sha256": "c91876e6544edac29d065a12e469a466b8153eea88dcdbf745d67e58032ccfb1",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/darwin/foundation.c3",
+        "sha256": "a8355a796499692b00aad4fa9fe142f49c516901383d1fe9a901f1f7b3fb93de",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/darwin/quartz_core.c3",
+        "sha256": "d7be382a6726d818cd6e7d779cbb0d48d5ffa280728c14bf2febc312963a59c7",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/darwin/cf_array.c3",
+        "sha256": "37284b9975515e56af25b9461ebd3eac8b11f6cc063a599f6524c71de1d21e52",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/win32/wingdi.c3",
+        "sha256": "41b808267ca81291c7f1bca09b0947da74c4a983e6a36ab9a375aa7b2f11352d",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/win32/gdi.c3",
+        "sha256": "646f7b92a5b737eb9e00c7e835e128134ab7ed812feed9dec5e59b215e1c9ba3",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/win32/general.c3",
+        "sha256": "40bfcb619d298d15fe031bbde9ac40b13e6c4c7cf7ca6c213b5e46c59f973d2d",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/win32/wsa.c3",
+        "sha256": "eff1ca5b205a197633c123901e506bcbc4cdc720e79621a8c812597deac117ad",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/win32/libloaderapi.c3",
+        "sha256": "9980254ad68b73405c01304ac36b8e43d027309c6e1eb4aa5ab35426705b7ed3",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/win32/winreg.c3",
+        "sha256": "e87ccf4e12bc40f3eb1ffe25637e68be6c27e6a57fc986229bd4585d83dbf127",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/win32/process.c3",
+        "sha256": "cb9ee33d66a71e5850da1d8251aeb25d20f699d49780c0fc2498205a22a7b793",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/win32/shell32.c3",
+        "sha256": "4ba0651f9c7fae82331aee43ce5bc3e99d1be51537b589da1479cca66779aabe",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/win32/timeapi.c3",
+        "sha256": "95723fd8fc70890355a89d49ef43a68d527d4c9b15899a12d9ed66d74643d014",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/win32/winuser.c3",
+        "sha256": "1367b1d77b466cef89be254b61f7d529203f0385cb6ddf410df200360020372b",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/win32/winbase.c3",
+        "sha256": "a19cc4de7105d643add569a8c157c831a38abedc75deac17c07a2e9c06b7f063",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/win32/clock.c3",
+        "sha256": "c0aea33926fcf251d879bea3692ef4a8d2edb670a74d5dcf5bffddcf3cb5ce5c",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/win32/shellapi.c3",
+        "sha256": "6661bf7d80c4a4eb5913648ec17e194b1d75f265e2237cefeafaf4cee5754d0c",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/win32/dxgitype.c3",
+        "sha256": "dfad14fa6f0f72cd9c10133bada717721e743012cde2a39108b040c374aa4a73",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/win32/windef.c3",
+        "sha256": "6e139c1ea002647bc9a0c44586a228006c9ce8f754b3c256c4c7dec33b8a0ffa",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/win32/dxgi.c3",
+        "sha256": "8ad8539004f0fec37726b45d97830bb53c67744ffeca79d41913b42751fe98d9",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/win32/types.c3",
+        "sha256": "46db1b8a96e8ff8c611cf5abfa48ec308993ca3be151836bef3a50f3257fd0fa",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/win32/memoryapi.c3",
+        "sha256": "2b2c82455e43705faf744754c6a7f77afaa5a4ead8260c18980f71f5659df880",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/win32/wincon.c3",
+        "sha256": "6a551bc6105578eca3f8c4647cec587495438c71470b4980079ea8c2bd95d8c0",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/win32/exception.c3",
+        "sha256": "f5a1e96a05d1c7270f04c121f60329877cc44e10bf34787f4022493d1639c8db",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/win32/files.c3",
+        "sha256": "090a6f3526c14ca3b2d0ff504adb2491e79ee13ad113aa4d25f8fd48d72a7849",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/win32/console.c3",
+        "sha256": "2e74cdd40e0eedc0247904d73e497c392dd5329878af98f8ddf63ba42daf15b6",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/win32/dxgicommon.c3",
+        "sha256": "4769b00c2ba23f54b9e3ead8516f3f141d1436f695fe1d340cd25406d4aa6e29",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/win32/winnt.c3",
+        "sha256": "8054ae07515d15e91b297269206376b18930284ab8184cec2450dbab9470df47",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/win32/stringapiset.c3",
+        "sha256": "5e3bbc56b1fb8ecd2ad29d4b94c4a012832b99e1b3249e47802d54df97011399",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/win32/ws2def.c3",
+        "sha256": "874f981c8ac28ec43b221031dacaa04af1a5ca79173b38b2ae149806681a7122",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/win32/heap.c3",
+        "sha256": "a4d9ddb9078fbae9517aee0535640669b1d811dbd8bec1feed17d0d766e5560d",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/win32/dwmapi.c3",
+        "sha256": "8636e14caf5ee5e761a5177e65a9454b0ffa65feb6d22aa95135ed20d253101e",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/os/env.c3",
+        "sha256": "aba5cfbaca1b054c32f8844d080d973106e743c4925a86dbae325586f2ef538d",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_compiler_rt/atomic_rt.c3",
+        "sha256": "093b2b6d966730a8713eaf7a23400ae2ad7497d48b9404d16d6022545d64eab0",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_compiler_rt/math_rt.c3",
+        "sha256": "512cf280996b6158b07087bdded387a9752d3097911eb4e5ed9584a661b2ad11",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/_compiler_rt/i128_rt.c3",
+        "sha256": "6338049ce72b3c6ea5dd3aa38b3dcd80d63ebe04b35c98d5d1dcca102904abad",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/bits.c3",
+        "sha256": "042f2e2534d6466d344c344683d0b46f0353c08452ae1b0a7804cd7911e05d69",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/collections/hashmap.c3",
+        "sha256": "ecd97c61e3d4ec82ec21f7a27284f2286c488ead6baa09685965308e850afd0c",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/collections/fixedlist.c3",
+        "sha256": "ab147f23d683459a422d194b23a0c4a15af72a85f9a744b040480b8bc67dbe1d",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/collections/bitset.c3",
+        "sha256": "f0e4d3327eeb547fc4d3a66f044f69b10f495b3bb1644733a09d5413759e9407",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/collections/result.c3",
+        "sha256": "468b7e8650f6e6cd1c2461ad744d2213baa22205c689f505ec61df7748b64bba",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/collections/interfacelist.c3",
+        "sha256": "3ee38dd4bed8121abf63b3d337f715c78d52eeabbeeec849eae2ec4bd44d8ee6",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/collections/ref.c3",
+        "sha256": "008125175596e84db9b37e98dc48f032ebebedb708f48de038029e16fc484547",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/collections/hashset.c3",
+        "sha256": "bff87288a5bc9e01d71ecc769fd326771e35dbe2060df744f5041ba462a35159",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/collections/enumset.c3",
+        "sha256": "f6ab246eec0ee914bac7f8596ebae92c1067f9d9b2fa4bcf3c5eccc0ca423dd9",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/collections/range.c3",
+        "sha256": "b79d6c96de94a820154dc9aa8554716706825674c260e043dbf4c475bfa0eb20",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/collections/linkedlist.c3",
+        "sha256": "64f009f0103959bc6a1fd77467b22b6de6ba1a906cc4aca224ac01c7e8dc0bc3",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/collections/linkedblockingqueue.c3",
+        "sha256": "5baf07f20dfaa17d61eac4c6d123040902176726fbfc2c33f6c3195d9bf31f33",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/collections/priorityqueue.c3",
+        "sha256": "dd6e2709186400818e4850eea387ee163b5548c7eca2ead8dd6000ecc4a861cf",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/collections/orderedset.c3",
+        "sha256": "f85e702f9f16adf7edc02ff8c322f794e4b89872b1d265b54d64f6591a7719b7",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/collections/maybe.c3",
+        "sha256": "431a9efff9e275b0a79905488f2ab00eb67049123691e25b640b6483c82a5014",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/collections/tuple.c3",
+        "sha256": "1c4561b80918b74a06751c79e132fb1d0025ffe90825ca1ac90be995474aa6db",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/collections/treeset.c3",
+        "sha256": "7e2050eb2b02575e3fc66687fe89eb402c2d6b240b108de1142f7298a480f299",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/collections/ringbuffer.c3",
+        "sha256": "2d30650658ef8dae31ac97604cfe62acff0d61869a9a7863a5f0d25c2427affa",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/collections/enummap.c3",
+        "sha256": "15737ca78c8283e141b94c684f1e06c266e94bacc90ddf109cb89608422e2750",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/collections/object.c3",
+        "sha256": "ab4d1928eca0feb2b9c3c783b6fa9092fe4a3ab7ec21937e62b087c760c0e217",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/collections/anylist.c3",
+        "sha256": "f33890460b4f7f7e76d4964f2462426f06463689522a2aa466a9583da519acd6",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/collections/list_common.c3",
+        "sha256": "4d43f2eeafc7593e760e4656632c75fd52377a5a1d47526cb86580adcd860360",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/collections/deque.c3",
+        "sha256": "031c9cf05ab53845e82ffec360d5089267fbdfd2694b0e71dc44e8fd08019763",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/collections/list.c3",
+        "sha256": "4fb50abbf682a82087fb8df33038fc78e68941e71d973cb9b8d63f8bcc33c5fd",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/collections/orderedmap.c3",
+        "sha256": "e680a62043526d05e99800977440c5826a6463bd86688ff793d67913d6bfbbea",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/collections/sortedmap.c3",
+        "sha256": "759e8c9258ef7818345d8e9480a2b3f4f92f53c25d599a8d32e901981eb7fec0",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/gfx/private/gfx_gl.c3",
+        "sha256": "3fbe2e6f2b4bf4c9ffb12007b4cd414650291a700de2888da7c1feef4f6f8ead",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/gfx/private/gfx_x11.c3",
+        "sha256": "56e71c2723492c0165725d495e0028909d7687ab8f2663b289ddf84f181ae96f",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/gfx/private/gfx_win32.c3",
+        "sha256": "54982b15147bbfad660807bd004b99de2e992d3cb8042599150732dd43b87895",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/gfx/private/gfx_x11_bindings.c3",
+        "sha256": "228aa05f0171fe746addfd62e11d6d8b95fa6c07b05815b13cb8e5bb4e168a84",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/gfx/private/gfx_private.c3",
+        "sha256": "5e28230cdf43226fadf0d5a434bf0ad44dd2931b87072f5dbbd65e4d6e79c4a3",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/gfx/private/gfx_macos.c3",
+        "sha256": "357eae26ab9f2ddd86f8122ab36e0101cd4df3fd11b308ef7299baae7328a43b",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/gfx/private/gfx_wayland.c3",
+        "sha256": "ef56c587f9506b40375b10e2d92376f019a11c0a9f3a1943ce6a7f0fc2612471",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/gfx/private/gfx_wasm.c3",
+        "sha256": "d026b2df2d3831f786aa1eb31c418ddbd5fc8c64094299c936173d7760a2883e",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/gfx/private/gfx_wayland_bindings.c3",
+        "sha256": "bc13d458c4675133186e6471b956ce1671e7ed6508f4923b4b20b2e9e02ea04e",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/gfx/private/gfx_impl.c3",
+        "sha256": "29b95771a9870ae87330a109606364776ba396c77906d50303b43f44d173a0b4",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/gfx/private/gfx_vk.c3",
+        "sha256": "17b080a5ff4565111674971a0adbcc63ee5d88596d24d1386047c3be40cd7614",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/gfx/private/gfx_wgpu.c3",
+        "sha256": "97d62204758fd5a03517f4a24c947e7537ee8c982cfec8184af83e7572b2f0f9",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/gfx/private/gfx_egl.c3",
+        "sha256": "25ce7226879e0f11885574308cf6fdede1d03a6f4227cd3124b44bf2a8f70a27",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/gfx/private/gfx_egl_bindings.c3",
+        "sha256": "8850e952be1981c3730dd5aca60ee91dc66d6d2ba278e8b43bcc529eaef30483",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/gfx/gfx.c3",
+        "sha256": "04ff4887c9bff2f1d6f5c92583ff02999b8284fcbb8abfa81c1ef5288d093756",
+        "role": "vendor-standard-library",
+        "counted": false
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib/std/gfx/os/gfx_wayland.c3",
+        "sha256": "7ffb6246bd0a3f6f40628940300428eefd8083ce56ab619413ad6cbad53a4949",
+        "role": "vendor-standard-library",
+        "counted": false
+      }
+    ],
+    "qualification_origin": "private-v2"
+  },
+  "original_compiler_inventory": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-source-replay-v2/jobs/grammar5-source24-v1/compiler-input-proposals.json",
+    "sha256": "c469ffbeb3b10fb944316ed2ffc6e94f6494c915293627b5a7f9b5f6e7956a6a"
+  },
+  "qualified_preparation": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v3/report.json",
+    "sha256": "7cb4a25819935f3e15b3c270595efc9df3dbc056982625892abc3b16bef2f20c"
+  },
+  "exact_source_role_review": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/source-counts/reviews/grammar5-source24-v1/meaning-review.json",
+    "sha256": "9802bfeeb0cdfefd5b557213fa91bee727bd4020f6e288fb57f826ea31ee1b56"
+  },
+  "inventory_derived_from_original_actual_compile_receipt": true,
+  "authored_application_helpers_complete": true,
+  "vendor_standard_library_counted_as_source": false,
+  "observer_sources_counted_as_source": false
+}

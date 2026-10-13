@@ -1,0 +1,105 @@
+{
+  "status": "captured-awaiting-manual-owner-review",
+  "common_owned_by_review_session": 77487,
+  "canonical_LOC_admitted": false,
+  "chart_admission": false,
+  "sources": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/private-v2/sources/regexredux/compact.c3": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/source-counts/reviews/meaning-capture-v1/source-00.c3",
+      "source_sha256": "d142eea8a4a5c07a6511656b1fe6db8061cdb3d63cc96ff1f8d9dc28180b8621"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/private-v2/sources/regexredux/optimized.c3": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/source-counts/reviews/meaning-capture-v1/source-01.c3",
+      "source_sha256": "fb8cca9e7fe2c676dea2a9d7fda373d792506b0558fb723417ec048227803412"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/private-v3/sources/binarytrees/optimized.c3": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/source-counts/reviews/meaning-capture-v1/source-02.c3",
+      "source_sha256": "be1130c6fe4c65ae83f49d18549ca1fc8cd55a9edc38db167e6758eb5f33a93d"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/private-v3/sources/fannkuchredux/compact.c3": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/source-counts/reviews/meaning-capture-v1/source-03.c3",
+      "source_sha256": "e6ddcfd06a7dbe4946cbf349466d79e8a69b861d737f6f9f238f84540a9cea24"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/private-v3/sources/fannkuchredux/optimized.c3": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/source-counts/reviews/meaning-capture-v1/source-04.c3",
+      "source_sha256": "647c75d7ecc165899958b00ad6fd4cae917ed3944e5ea1a768e0af09c6605ffe"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/sources/binarytrees/compact.c3": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/source-counts/reviews/meaning-capture-v1/source-05.c3",
+      "source_sha256": "25a79d7ae38f248b677e337f19e07553f536c30b71e40cd9bedb0d2ec026f166"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/sources/fasta/compact.c3": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/source-counts/reviews/meaning-capture-v1/source-06.c3",
+      "source_sha256": "a18b0d92e4038879b5e64dd7a17e945d381e6850362309bb5eacadbba5bb0d3c"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/sources/fasta/optimized.c3": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/source-counts/reviews/meaning-capture-v1/source-07.c3",
+      "source_sha256": "4ed46ab09ab395f0fca96d4a77ec79b100e2cc1a392eafc219842d435e3c986b"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/sources/knucleotide/compact.c3": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/source-counts/reviews/meaning-capture-v1/source-08.c3",
+      "source_sha256": "e53016c215b1846e1e484fcee50662bd973d627a52085412fe28599553f9daad"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/sources/knucleotide/optimized.c3": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/source-counts/reviews/meaning-capture-v1/source-09.c3",
+      "source_sha256": "c7292e7d86969b66a4090b42565153d273f3a0bdbd694e7345609eaa80ecd2bb"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/sources/mandelbrot/compact.c3": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/source-counts/reviews/meaning-capture-v1/source-10.c3",
+      "source_sha256": "2d844eebc56c0ba4a97aadae0c547c1371a1d200cf75e55876f7d51e864b636f"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/sources/mandelbrot/optimized.c3": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/source-counts/reviews/meaning-capture-v1/source-11.c3",
+      "source_sha256": "222872e03c1e82b8384b8ba625c84761812232b556684f154ddd7bf47a33cc24"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/sources/nbody/compact.c3": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/source-counts/reviews/meaning-capture-v1/source-12.c3",
+      "source_sha256": "c4491382f222634f4af8c817d17d0b7d8a2b301b1de59fc563f1c19f3ba2a26f"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/sources/nbody/optimized.c3": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/source-counts/reviews/meaning-capture-v1/source-13.c3",
+      "source_sha256": "1a88907ac9e42266ddd6361c67ff0838545b3634ce56dd53d815a6ae1625dc7f"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/sources/pidigits/compact.c3": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/source-counts/reviews/meaning-capture-v1/source-14.c3",
+      "source_sha256": "8136db22c21a7f33f46551be1012f293cb3f35ed4a16babb5bd3667ecf522349"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/sources/pidigits/optimized.c3": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/source-counts/reviews/meaning-capture-v1/source-15.c3",
+      "source_sha256": "d6c4899a7658e69663c9b08b8ad2921f361503fc782919c479a626f499e80aa7"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/sources/revcomp/compact.c3": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/source-counts/reviews/meaning-capture-v1/source-16.c3",
+      "source_sha256": "2f302322a496c42ec5fc9e9107e780490462e539be097f637b431d09e672f6d6"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/sources/revcomp/optimized.c3": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/source-counts/reviews/meaning-capture-v1/source-17.c3",
+      "source_sha256": "058b8800e42c9981175936718ca6cea5c643f288998f196885729a70291b275c"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/sources/spectralnorm/compact.c3": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/source-counts/reviews/meaning-capture-v1/source-18.c3",
+      "source_sha256": "64fccafeee38ae10926c139effe90c792b6fb6cc1409b544ba28b9d9986b3e39"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/sources/spectralnorm/optimized.c3": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/source-counts/reviews/meaning-capture-v1/source-19.c3",
+      "source_sha256": "89be54970c119d906d84dc7e218cfa10531f970a7b59f713ff5d47b80f5a0d23"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/support/buffer.c3": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/source-counts/reviews/meaning-capture-v1/source-20.c3",
+      "source_sha256": "1975203b07f2cdd300b86536e6726883dfa917935d4bcbd1070db4a25bf3f564"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/support/gmp.c3": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/source-counts/reviews/meaning-capture-v1/source-21.c3",
+      "source_sha256": "dda78c3cd35ca445d4f83da2be99327335f829ad7a7fd91a77c3e7e12b57736e"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/support/pcre2.c3": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/source-counts/reviews/meaning-capture-v1/source-22.c3",
+      "source_sha256": "2b46f2f3be49a5910a5c3c2b77d905b767ffc0ff108da92589854852694f53a5"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/support/threads.c3": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/source-counts/reviews/meaning-capture-v1/source-23.c3",
+      "source_sha256": "acff1f78af8233552d720d90d5ae971d64a12b5cddf9b98830d1539eda3a5248"
+    }
+  },
+  "source_replay_sha256": "877e58726c90511caea86ad29b5ca56654bfd0ffbc83908229a56d388db5f16e"
+}

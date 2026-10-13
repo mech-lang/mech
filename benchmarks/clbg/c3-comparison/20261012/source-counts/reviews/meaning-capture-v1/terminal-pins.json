@@ -1,0 +1,19 @@
+{
+  "status": "completed-source-proposal-evidence-retained",
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-source-replay-v2/jobs/grammar5-source24-v1/compiler-input-proposals.json": "c469ffbeb3b10fb944316ed2ffc6e94f6494c915293627b5a7f9b5f6e7956a6a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-source-replay-v2/jobs/grammar5-source24-v1/packet/REVIEW.md": "69a651387a3500e7d6445ca6bb98a6fb9b05052ec51c18e4710df5b64fe4a720",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-source-replay-v2/jobs/grammar5-source24-v1/packet/qualify_replay.py": "d63daf7aa240aca7872ae6e2a5ab79b0c6aa5220b66696707820754a69257ffe",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-source-replay-v2/jobs/grammar5-source24-v1/snapshot/REVIEW.md": "362ddd85b4455b5ac8bab7ce4b82a23525536e064df48ef8e2d12edc2d8750f5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-source-replay-v2/jobs/grammar5-source24-v1/snapshot/c3_mask.py": "d8bd8bbfa37446c28d8aefe0a3cb61fb495d199196e194cf369105f38a061e94",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-source-replay-v2/jobs/grammar5-source24-v1/snapshot/canonical.py": "4568ecaa00623b18de165d228f37752c973db58e9254f5b587e1b820bbbe56da",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-source-replay-v2/jobs/grammar5-source24-v1/snapshot/foreign_c3.py": "8d3ff4a8863c422654f6bbe191c26de0923d9d9e8491e67b2db1f369fd627c29",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-source-replay-v2/jobs/grammar5-source24-v1/snapshot/foreign_core.py": "62a79d27740647f5f4918c3f29df6ba977e72f61777f8cf3f431e0ec66ba5be5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-source-replay-v2/jobs/grammar5-source24-v1/snapshot/test_foreign_c3.py": "836fdd618dc85c29424d518e7af75249727088c36e7670286d0c67002cd99c34",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-source-replay-v2/jobs/grammar5-source24-v1/source-count-proposals.json": "877e58726c90511caea86ad29b5ca56654bfd0ffbc83908229a56d388db5f16e"
+  },
+  "exclusive_mutex_held": true,
+  "common_timing_mutex": "/tmp/mech-clbg-timing.lock",
+  "canonical_LOC_admitted": false,
+  "chart_admission": false
+}

@@ -1,0 +1,4 @@
+WAIT closed dependency lease: actual C3 v5 source replay
+WAIT common mutex: exact C3 reviewed LOC entry
+WAIT common mutex: reviewed exact C3 LOC24 overlay
+{"overlay": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/source-counts/canonical-loc-overlay-v2/qualified-loc-overlay.json", "sha256": "4465bcc760401a7fd40aa516390a3681cd20edbb91538d9f5607a4060f1a5263", "profiles": 20, "authored_inputs": 24, "compiler_copies": 25}
