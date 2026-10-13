@@ -1,0 +1,4 @@
+WAIT common mutex: five exact historical routes; metadata/fixtures only
+WAIT common mutex: exact-chart/source legacy-platform history repair
+WAIT common mutex: legacy133 fixtures/history metadata only
+{"status": "completed-fixtures", "output": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/existing-native-platform-proposal-v1/jobs/fixtures-literal-routes-v4", "terminal_sha256": "1407ec3f46333b806ba7a965e3b65588c30d731d0aef902bfed99ea7a3877472", "receipt_sha256": "30f59901c3843dab14940059b8a2301d6032b9f63f74d3811b0c2fcd17fde31f"}

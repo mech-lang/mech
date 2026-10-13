@@ -1,6 +1,6 @@
-Benchmark progress as of **2026-10-13 22:15 UTC** (18:15 New York).
+Benchmark progress as of **2026-10-13 22:37 UTC** (18:37 New York).
 
-The previous remotely verified checkpoint is `7627517ea35495fa0b20fe7163676412346e5957`
+The previous remotely verified checkpoint is `40170427711079ebc789727f54b465104c0b879f`
 on `codex/clbg-native-benchmarks`. The language overview and complete Crystal
 inventory are published. C3's exact source counts, runtime metadata and current
 chart candidate have qualified and are now published through GitLab Pages
@@ -14,8 +14,8 @@ actual request, process identity and exit.
 |---|---:|---|
 | Crystal | 90/90 | Published with 20 source forms and 60 candidate samples, plus 30 matched Mech samples in the complete study. |
 | C3 | 90/90 | Published through GitLab Pages. Source counts, runtime metadata and current dataset qualified; all 20 forms / 60 candidate samples passed browser inspection. |
-| Nim | 90/90 | Independent full-suite reconciliation and exact LOC admission passed for all 20 forms and 21 authored inputs. Five new helper fixtures passed; runtime metadata and publication remain. |
-| Gleam | 90/90 | Independent full-suite reconciliation and complete receipt/pin review passed. Qualified Gleam and authored Erlang evidence still needs whole-bundle source admission. |
+| Nim | 90/90 | Published through GitLab Pages with all 20 forms and 60 candidate samples. Exact LOC, runtime metadata and current dataset checks passed; all 21 authored inputs, including GMP glue, are counted. |
+| Gleam | 90/90 | Full-suite reconciliation and complete source admission passed: 20 bundles, 30 unique authored sources and 104 measured copies. Runtime publication metadata and chart integration remain. |
 | Clojure | 90/90 | Published. Full-suite, LOC, JVM metadata and current dataset admission passed. Root verified 5,276 candidate pins; 20 forms / 60 candidate samples are retained, with 18 selected endpoints. Public browser inspection confirmed all 20 forms and 60 runs. |
 | V | 90/90 | Full workload samples collected, including eight missing tree slots recovered additively. Independent all-ten reconciliation passed. Report-only; excluded from dataset, charts and Site. |
 | Pony | 0/90 | Both tree observations and four Pi/map traces are retained. The existing-evidence capture exited normally; original authored main IR was overwritten by builtin output. Separate bitcode/ownership recovery remains. |
@@ -51,10 +51,59 @@ optimization.
 Remaining publication work is complete cohort reconciliation, exact canonical
 source-owner/count admission where pending, complete runtime metadata,
 platform filters, Julia AOT measurement, dataset integration and browser QA.
-The platform frontend candidate passed its checks, but its filters have not yet
-been integrated into the published Site. Successful historical samples and
+The platform frontend candidate passed its checks. Historical metadata now
+qualifies 120 platform and 97 execution annotations across 133 retained rows;
+13 rows remain explicitly unclassified. Filters have not yet been integrated
+into the published Site. Successful historical samples and
 original failures remain immutable; additive repairs reuse successful evidence
 instead of relabeling it as a fresh run.
+
+## Nim publication and current qualification — 2026-10-13 22:37 UTC
+
+Nim is live in website commit `b0082b0da35f7e41b5f4c056c6b1130922081ee8`;
+GitLab Pages pipeline `2944511241` passed. The deployed data SHA-256 is
+`9d9eba51742dcf1afc76c0a45fa4125524197ed06ae540a1d142769fd859f60a`.
+It retains all previous measurements and baselines, adding 20 Nim programs and
+60 candidate runs. The complete original study also retains 30 matched Mech
+runs. The current site has 44 language families, 50 execution variants,
+798 selected programs, 80 inventory entries and 2,478 recorded runs.
+Root independently verified 41,944 candidate pins after normal completion.
+Runtime metadata binds Nim 2.2.12, its C backend, Clang 22.1.8 and the actual
+ORC configuration, with the saved PCRE/GMP dependencies.
+
+Local and public browser inspection confirmed all 20 Nim source forms and
+60 runs. Optimized Pi includes its authored GMP adapter: 61 main units plus
+23 helper units, totaling 84 canonical LOC. Samples Highlight shows 2,478
+recorded marks. Samples Off shows zero recorded marks and zero background
+program endpoints, while preserving the 99 aggregate endpoints. The live app
+still matches the published sample-cloud fix; no UI code changed in this data
+release. There were no browser console errors. Screenshot capture was
+unavailable, so the saved QA report records DOM observations. Publication
+receipts are in `continuation/jobs/nim-chart-publication-v1/`.
+
+Platform history v4 passed ten literal-route fixtures and qualified all 133
+retained row identities. It resolves five earlier literal proof cases, yielding
+120 platform annotations, 97 execution annotations and 114 byte-verified
+historical rows. Twelve Julia rows lack a saved runtime observation; one C
+FASTA row lacks native-build binding. These 13 stay pending. The qualified
+history SHA is `cfea973a22951b7efef504ba48f84b07745397e7dc8df71161b3a01182b026b9`.
+The combined formatted-LOC/platform integration remains a source candidate.
+
+Gleam's first semantic seal failed before source processing because a historical
+helper worker was recorded with the Framework Python image, while the checker
+assumed every initial listing used the launcher. The failed output is retained.
+An independently reviewed three-job literal mapping fixed that assumption;
+the subsequent metadata-only seal exited normally. Root verified 6,896 pins,
+all 20 complete source bundles and both regex totals (130 and 167). The
+qualified overlay SHA is
+`dd51c9a33d0eade6b5f4f94266ad1561b0f36770ac03a9c1691d2f19cbc04fce`.
+Original regex diagnostics remain preserved alongside the four exact semantic
+resolutions; no parser, successful fixture, native runtime or timing was rerun.
+Runtime metadata and the current chart candidate remain to be completed.
+
+The Prolog preparation revision is fully source-reviewed and frozen, but has
+not run. Pony's additive bitcode/ARM recovery revision is released for review;
+it has not run. No new benchmark timings were collected during this update.
 
 ## Chart controls and statistical views — first publication
 

@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-13T22:34:05.018669+00:00",
+  "sha": "b0082b0da35f7e41b5f4c056c6b1130922081ee8",
+  "remote_verified": true,
+  "existing_authenticated_runner": "mac-mini-runner",
+  "transport": "existing SSH repository through verified Git bundle",
+  "previous_sha": "624c7f9b8b190134034f75fdeb8e010eceec21cc",
+  "pipeline_id": 2944511241,
+  "local_https_attempt": "authentication failed; no remote mutation",
+  "local_ssh_attempt": "host verification failed; no host/security setting changed"
+}

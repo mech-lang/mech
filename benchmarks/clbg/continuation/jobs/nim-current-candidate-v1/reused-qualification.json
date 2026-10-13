@@ -1,0 +1,76 @@
+{
+  "status": "actual-original-four-reused-for-Nim-without-fixture-reexecution",
+  "original_fixture_receipt": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/native-ready-v1/fixture-receipt.json",
+    "sha256": "bce66a4cb1fc02cc827c6906f9ddc5be4b3abddb8851e2028415600972ec29b8"
+  },
+  "original_fixture_terminal": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/native-ready-v1/terminal-pin.json",
+    "sha256": "0b3a1cce3a5c2a41d27b88e2f3af8145d014c9ed3c1a2b5959c5c1613afeba59"
+  },
+  "original_fixture_methods_passed": 4,
+  "new_fixture_methods_executed": 0,
+  "unchanged_eight_source_files": [
+    "native_languages_ready_v1.py",
+    "test_native_languages_ready_v1.py",
+    "native_languages_data_v2.py",
+    "native_platform_metadata_v2.py",
+    "native_language_groups_v2.py",
+    "publication_endpoints_v1.py",
+    "test_native_languages_data_v1.py",
+    "native_languages_data_v1.py"
+  ],
+  "original_mutable_input": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/dist/data.json",
+    "original_sha256": "65bfa4d833f61fff69b16eb3c917e4fcd1eb21d5788bbbeed7e09e9f2382d32f",
+    "immutable_snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/current-chart-session-v2/input-data.json"
+  },
+  "published_baseline": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/clojure-current-candidate-v1/candidate-data.json",
+    "sha256": "b088279074e85ec149466f876bdce49d4d497f7784a0d48be58e023e5b2c6a13",
+    "immutable_new_input": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/nim-current-candidate-v1/input-data.json"
+  },
+  "live_baseline_observations": [
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/dist/data.json",
+      "observed_sha256": "b088279074e85ec149466f876bdce49d4d497f7784a0d48be58e023e5b2c6a13",
+      "immutable_input": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/clojure-current-candidate-v1/candidate-data.json",
+      "frozen_source_pin": false
+    }
+  ],
+  "admission": {
+    "ready_languages": [
+      "nim"
+    ],
+    "full_requested_languages": [
+      "c3",
+      "clojure",
+      "crystal",
+      "elixir",
+      "gleam",
+      "kotlin",
+      "nim",
+      "pony",
+      "prolog",
+      "rebol"
+    ],
+    "actual_full_native_processes": 90,
+    "source_count": 20,
+    "samples_per_source": 3,
+    "unchanged_existing_baselines": true,
+    "source_or_timing_mutations": 0,
+    "V_visualization_entries": 0,
+    "Red_visualization_entries": 0
+  },
+  "endpoint_admission": {
+    "ready_languages": [
+      "nim"
+    ],
+    "retained_ready_programs": 20,
+    "unchanged_existing_baselines": true,
+    "source_or_timing_mutations": 0
+  },
+  "retained_Nim_source_inventory": 20,
+  "old_programs_files_inventory_baselines_groups_and_summaries_unchanged": true,
+  "live_dataset_mutations": 0
+}

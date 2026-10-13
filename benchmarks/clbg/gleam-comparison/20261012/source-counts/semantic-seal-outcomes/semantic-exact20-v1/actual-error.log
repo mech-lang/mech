@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/seal_semantic_overlay_v2.py", line 327, in main
+    prepare(args, base, pins, stack, output)
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/seal_semantic_overlay_v2.py", line 160, in prepare
+    base.closed_jobs(closed['closed_original_jobs'], pins, stack)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/seal_overlay_v1.py", line 105, in closed_jobs
+    assert initial[7] == LAUNCHER and final[7] == FRAMEWORK
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

@@ -1,0 +1,33 @@
+{
+  "status": "durable-job-launched",
+  "launched_at": "2026-10-13T22:24:35.525639+00:00",
+  "job": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/nim-current-candidate-v1",
+  "worker_identity": {
+    "pid": 29030,
+    "listing": "29030 29016 Tue Oct 13 18:24:35 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/nim-current-candidate-v1 --lease-fd 3 --go-fd 4"
+  },
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/qualify_nim_current_candidate_v1.py",
+    "--worker-sha256",
+    "d116ce31b3ab32629be95026d03cff96d3ee63505ee69e2bc8047693027f4106",
+    "--packet-sha256",
+    "22670b76b9801c9b7c7b09dc7077584011863ce0aace268e49c6f6e40d056d8a",
+    "--metadata-sha256",
+    "98efdbdfcdaacbf22c0644e4225b39e29b68ca94db4d392a3cdd436376ce3722",
+    "--review-sha256",
+    "a2950716e19a0c853b0148618f83713adc76da3403d5c3f60f3c5719103f5d0a",
+    "--metadata-review-sha256",
+    "1082d7709da62a12a4da3f5def71c39e647d1fa1c05fccb29885c34b34b4bb68",
+    "--baseline-review-sha256",
+    "d18f446c20bda8b3fe37c966084cb410e27e9bfcea3ea5ebf3d1290aeea94667"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "detached_session": true,
+  "automatic_retry": false,
+  "qualification_granted": false
+}

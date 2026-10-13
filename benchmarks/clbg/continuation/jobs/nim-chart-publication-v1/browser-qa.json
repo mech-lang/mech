@@ -1,0 +1,24 @@
+{
+  "at": "2026-10-13T22:32:29.964536+00:00",
+  "status": "passed-local-DOM-QA",
+  "url": "http://127.0.0.1:58302/benchmarks/",
+  "data_sha256": "9d9eba51742dcf1afc76c0a45fa4125524197ed06ae540a1d142769fd859f60a",
+  "language_families": 44,
+  "execution_variants": 50,
+  "nim_program_rows": 20,
+  "nim_recorded_runs": 60,
+  "nim_pidigits_optimized_loc": 84,
+  "nim_pidigits_source_files": [
+    "optimized.nim",
+    "gmp_ops.nim"
+  ],
+  "helper_source_visible": true,
+  "samples_highlight_recorded_run_marks": 2478,
+  "samples_off_recorded_run_marks": 0,
+  "samples_off_non_summary_endpoints": 0,
+  "samples_off_summary_endpoints": 99,
+  "medians": "highlight",
+  "density": "off",
+  "screenshot": "capture unavailable; DOM observations retained",
+  "benchmarks_rerun": 0
+}

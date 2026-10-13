@@ -1,0 +1,38 @@
+{
+  "started_at": "2026-10-13T22:16:18.708266+00:00",
+  "worker_identity": {
+    "pid": 26619,
+    "listing": "26619     1 Tue Oct 13 18:16:18 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/nim-publication-metadata-v2 --lease-fd 3 --go-fd 4"
+  },
+  "inherited_private_lease": true,
+  "detached_session": true,
+  "common_mutex_owned_by_target_command": true,
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/publication-nim-metadata-v2/qualify_descriptor.py",
+    "--revision",
+    "actual-metadata-v2",
+    "--qualifier-sha256",
+    "925834eba9781dd4805860127dfa391a1ed3fcd841729e1f20c82ac33a6a5edc",
+    "--descriptor-sha256",
+    "7c5b269d641c685f33e731cff0bc7ecc1625e7bbf756295c78c2bc3978e2a460",
+    "--suite",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/reconciliation/full-v6-suite-v2.json",
+    "--suite-sha256",
+    "c4dff4ea00db0f380257708cfb0aea50b3a3eaecd1c5ce0f11f6cc780561f3f7",
+    "--canonical-loc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/source-counts/helper-owners-v2/jobs/exact-source20-loc-v2/qualified-loc-overlay.json",
+    "--canonical-loc-sha256",
+    "55ef7197d8caa62a5087cf93380e524d8a0fac11d2d82a731e44675e3d288398",
+    "--full-index",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/studies/full-v6/index.json",
+    "--full-index-sha256",
+    "462bfa79e8fdd4900b6c4b575b7645c25675ac81f0161ad229d1941241eb9923",
+    "--importer-sha256",
+    "27779d09a6cfea98d0377c58d4cdd459fc7f59aac46efdb8f61144070a871dc7"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "qualification_granted": false
+}

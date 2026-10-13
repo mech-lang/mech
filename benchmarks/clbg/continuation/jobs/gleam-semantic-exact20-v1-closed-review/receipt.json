@@ -1,0 +1,11 @@
+{
+  "status": "closed-failed-before-source-owner-sealing",
+  "at": "2026-10-13T22:24:35.469124+00:00",
+  "verified_pins": 24,
+  "outcome_sha256": "97495d55ea9e0715ca7df8acc580d87fa4c6b647901e00b2aecf603023e78290",
+  "durable_terminal_sha256": "459cb887fc0a585c82e17edc723f9fe0ccdbc29bc77833b1f7bd7be059e30310",
+  "failure": "Original helper assumes each historical worker starts through launcher and ends through Framework image; exact saved listings differ.",
+  "native_processes": 0,
+  "benchmark_runs": 0,
+  "overlay_created": false
+}

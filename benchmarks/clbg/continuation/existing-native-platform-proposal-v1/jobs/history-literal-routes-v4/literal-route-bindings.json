@@ -1,0 +1,20 @@
+{
+  "status": "five-actual-literal-routes-bound",
+  "stage": "qualify",
+  "changes": {
+    "status": "five-actual-literal-routes-installed",
+    "route_count": 5,
+    "selector_rule": "exact report object and reviewed JSON pointer inside exact displayed identity",
+    "source_binary_sample_binding": "unchanged actual proof and original measurement body",
+    "other_128_routes": "unchanged v3 helpers and MissingHistory policy"
+  },
+  "diagnosis": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-diagnosis-v2/jobs/all133-v1/diagnosis.json",
+    "sha256": "61a0a7b0ca269d442eecc8245e285fab1d451f3ee8be8fb2224a2d83174260fb"
+  },
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-repair-v4/literal_routes.py",
+  "source_sha256": "8a5abe0438d5e1d8d3bb5599a98e3d58cf5556691b4153762f4b81ff501448d7",
+  "old_115_metadata_preservation_required": true,
+  "pending_13_preservation_required": true,
+  "original_measurement_body_preserved": true
+}

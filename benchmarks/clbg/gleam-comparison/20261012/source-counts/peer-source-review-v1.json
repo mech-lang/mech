@@ -1,0 +1,208 @@
+{
+  "schema_version": 1,
+  "status": "accepted-exact-gleam-erlang30-source-meanings-and20-bundles",
+  "review_identity": "/root/current_c3_review:independent-gleam-erlang30-source-meaning-20261013",
+  "reviewed_facts": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/source-owner-facts-v1.json",
+    "sha256": "437f7883efd55044bb4a03d012354f4981033e4954787f265242f220ecdf63cf"
+  },
+  "actual_suite": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/reconciliation/full-v4-suite-v2.json",
+    "sha256": "e2b4a772153c9997d4ab5f749dfa950cbcf4ebaad825201b3c6338454f4e2594"
+  },
+  "all_owner_events_and_resolution_certificates_reviewed": true,
+  "four_exact_semantic_prefixes_reviewed": true,
+  "all20_complete_compiler_bundles_and_totals_reviewed": true,
+  "profile_ids": [
+    "gleam-binarytrees-compact",
+    "gleam-binarytrees-optimized",
+    "gleam-fannkuchredux-compact",
+    "gleam-fannkuchredux-optimized",
+    "gleam-nbody-compact",
+    "gleam-nbody-optimized",
+    "gleam-spectralnorm-compact",
+    "gleam-spectralnorm-optimized",
+    "gleam-mandelbrot-compact",
+    "gleam-mandelbrot-optimized",
+    "gleam-pidigits-compact",
+    "gleam-pidigits-optimized",
+    "gleam-fasta-compact",
+    "gleam-fasta-optimized",
+    "gleam-revcomp-compact",
+    "gleam-revcomp-optimized",
+    "gleam-knucleotide-compact",
+    "gleam-knucleotide-optimized",
+    "gleam-regexredux-compact",
+    "gleam-regexredux-optimized"
+  ],
+  "source_review": {
+    "actual_measured_main_sources_fully_read": 20,
+    "unique_authored_helper_sources_fully_read": 10,
+    "original_source_copy_records_retained": 104,
+    "all_canonical_event_anchors_reviewed_against_source": true,
+    "actual_written_headers_bodies_closes_data_wrapping_preserved": true,
+    "authored_runner_counted_in_every_bundle": true,
+    "generic_vendor_and_generated_backend_provenance_excluded_from_authored_LOC": true
+  },
+  "helper_canonical_and_physical_units": {
+    "clbg_io.gleam": [
+      26,
+      26
+    ],
+    "clbg_reference.gleam": [
+      3,
+      3
+    ],
+    "clbg_process.gleam": [
+      5,
+      5
+    ],
+    "clbg_vector.gleam": [
+      9,
+      9
+    ],
+    "clbg_regex.gleam": [
+      5,
+      5
+    ],
+    "clbg_io_ffi.erl": [
+      31,
+      25
+    ],
+    "clbg_process_ffi.erl": [
+      21,
+      15
+    ],
+    "clbg_regex_ffi.erl": [
+      14,
+      11
+    ],
+    "clbg_vector_ffi.erl": [
+      6,
+      4
+    ],
+    "clbg_runner.erl": [
+      10,
+      9
+    ]
+  },
+  "reviewed_bundle_canonical_and_physical_units": {
+    "gleam-binarytrees-compact": [
+      134,
+      113
+    ],
+    "gleam-binarytrees-optimized": [
+      185,
+      145
+    ],
+    "gleam-fannkuchredux-compact": [
+      201,
+      157
+    ],
+    "gleam-fannkuchredux-optimized": [
+      257,
+      194
+    ],
+    "gleam-nbody-compact": [
+      161,
+      148
+    ],
+    "gleam-nbody-optimized": [
+      179,
+      161
+    ],
+    "gleam-spectralnorm-compact": [
+      120,
+      102
+    ],
+    "gleam-spectralnorm-optimized": [
+      170,
+      138
+    ],
+    "gleam-mandelbrot-compact": [
+      131,
+      110
+    ],
+    "gleam-mandelbrot-optimized": [
+      176,
+      140
+    ],
+    "gleam-pidigits-compact": [
+      103,
+      94
+    ],
+    "gleam-pidigits-optimized": [
+      104,
+      95
+    ],
+    "gleam-fasta-compact": [
+      160,
+      132
+    ],
+    "gleam-fasta-optimized": [
+      160,
+      132
+    ],
+    "gleam-revcomp-compact": [
+      203,
+      145
+    ],
+    "gleam-revcomp-optimized": [
+      202,
+      144
+    ],
+    "gleam-knucleotide-compact": [
+      241,
+      165
+    ],
+    "gleam-knucleotide-optimized": [
+      286,
+      198
+    ],
+    "gleam-regexredux-compact": [
+      130,
+      116
+    ],
+    "gleam-regexredux-optimized": [
+      167,
+      143
+    ]
+  },
+  "semantic_conclusions": [
+    "The two nbody scalar certificates bind the actual Float-to-Float io.sqrt declaration and Erlang math:sqrt target, preserving squared multiplication and existing one-expression grouping.",
+    "The knucleotide scalar certificates bind exact byte and local code bodies. The existing collection certificates bind generic dict.to_list/list.sort/Order and a separately counted complete authored comparator; all comparator and direct callback body/close owners remain.",
+    "Compact regex patterns() at1507:1517 calls the separately counted zero-argument local List(String) function containing one nine-string literal expression. Its declaration, body and written close retain three units.",
+    "Optimized regex take at1576:1597, drop at1712:1733 and zip at1872:1897 bind original lexical List(String)/Task(Int)/List(Int) values and exact pinned stdlib1.0.5 generic list recursion/reverse declarations. Their containing prefixes share only their first direct callback header under the existing policy; nested start callbacks, callback bodies and all actual closes remain separate.",
+    "Unchanged event inventories give regex main44/55 and complete bundles130/167 only after these four source-specific semantic gates. Original normalized_loc=null and all four diagnostics must remain verbatim in the separate meaning receipt. No physical-LOC substitute or broad callable exemption is accepted."
+  ],
+  "original_nulls_diagnostics_and_source_metrics_preserved": true,
+  "original_18_nonregex_counts_unchanged": true,
+  "exact_compiler_source_binary_bundle_classpath_artifact_links_reviewed": true,
+  "preserved_fixture_receipts": {
+    "gleam_owner_methods": 34,
+    "erlang_owner_cases": 21,
+    "legacy_sequence_cases": 5,
+    "reexecutions": 0
+  },
+  "read_only_evidence_projections": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/peer-source-projection-v1.json",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/peer-source-projection-v1.txt",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/peer-bundle-projection-v1.json",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/peer-bundle-projection-v1.txt"
+  ],
+  "projection_capture": {
+    "actual_common_mutex_inode": 79859134,
+    "exclusive_nonblocking_common_mutex_held": true,
+    "stdlib_JSON_reads_and_metadata_equalities_only": true,
+    "hashes_calculated": 0,
+    "source_parsers_or_counters_executed": 0
+  },
+  "qualified_overlay_actually_sealed": false,
+  "canonical_LOC_admitted": false,
+  "chart_admission": false,
+  "native_processes": 0,
+  "fixture_reexecutions": 0,
+  "sources_or_timings_mutated": false,
+  "source_counts_overridden": false,
+  "unresolved_source_review_findings": []
+}

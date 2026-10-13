@@ -1,0 +1,17 @@
+{
+  "at": "2026-10-13T22:35:19.502677+00:00",
+  "assets": {
+    "data.json": {
+      "sha256": "9d9eba51742dcf1afc76c0a45fa4125524197ed06ae540a1d142769fd859f60a",
+      "expected_sha256": "9d9eba51742dcf1afc76c0a45fa4125524197ed06ae540a1d142769fd859f60a",
+      "bytes": 28768743,
+      "match": true
+    },
+    "app.mjs?v=20261013-samples": {
+      "sha256": "23882e390de0aea5ef1e09eae266c9070ed9174451cf4eee56eccb0d529b6833",
+      "expected_sha256": "23882e390de0aea5ef1e09eae266c9070ed9174451cf4eee56eccb0d529b6833",
+      "bytes": 91388,
+      "match": true
+    }
+  }
+}

@@ -1,0 +1,141 @@
+{
+  "at": "2026-10-13T22:36:47.846397+00:00",
+  "status": "passed-closed-Gleam-exact20-source-overlay-review",
+  "verified_pin_count": 6896,
+  "qualified_overlay": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/semantic-exact20-v2/qualified-loc-overlay.json",
+    "sha256": "dd51c9a33d0eade6b5f4f94266ad1561b0f36770ac03a9c1691d2f19cbc04fce"
+  },
+  "resolution_sha256": "c4b65664696b26539d4ce1f32e7494c80c2e706786ffff482df18116aca72505",
+  "outcome_sha256": "37e762c2cd3072c9aa9b8caca6796e96afe4708cd24464567592fcc23bf06e02",
+  "durable_terminal_sha256": "58c082f42422a6a9aaca306cdfb6eb8fb49f57e9b222d391c856938980ecc82d",
+  "exact_process_records": {
+    "request": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-semantic-exact20-loc-v2/request.json",
+      "sha256": "905ff86e6b58bb6fe2dfb8ec6a0fafed38a32741433cf034ecae668e031e6a19"
+    },
+    "launch": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-semantic-exact20-loc-v2/launch.json",
+      "sha256": "b40689e55a7d2e8490d41ee66007017f26403bc175f9e20a5fee83ef186c878c"
+    },
+    "worker-started": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-semantic-exact20-loc-v2/worker-started.json",
+      "sha256": "11a923a816c9303a3e479518d781ee92bc162d545ba4fdfc862283e2ac62513e"
+    },
+    "command-started": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-semantic-exact20-loc-v2/command-started.json",
+      "sha256": "733f77f6801c0eb7c754dadf94383d6d88205e549bedcb8a94e704841a4caab9"
+    },
+    "terminal": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-semantic-exact20-loc-v2/terminal.json",
+      "sha256": "58c082f42422a6a9aaca306cdfb6eb8fb49f57e9b222d391c856938980ecc82d"
+    }
+  },
+  "profiles": {
+    "gleam-binarytrees-compact": {
+      "canonical_loc": 134,
+      "physical_loc": 113,
+      "authored_inputs": 5
+    },
+    "gleam-binarytrees-optimized": {
+      "canonical_loc": 185,
+      "physical_loc": 145,
+      "authored_inputs": 7
+    },
+    "gleam-fannkuchredux-compact": {
+      "canonical_loc": 201,
+      "physical_loc": 157,
+      "authored_inputs": 6
+    },
+    "gleam-fannkuchredux-optimized": {
+      "canonical_loc": 257,
+      "physical_loc": 194,
+      "authored_inputs": 8
+    },
+    "gleam-fasta-compact": {
+      "canonical_loc": 160,
+      "physical_loc": 132,
+      "authored_inputs": 4
+    },
+    "gleam-fasta-optimized": {
+      "canonical_loc": 160,
+      "physical_loc": 132,
+      "authored_inputs": 4
+    },
+    "gleam-knucleotide-compact": {
+      "canonical_loc": 241,
+      "physical_loc": 165,
+      "authored_inputs": 4
+    },
+    "gleam-knucleotide-optimized": {
+      "canonical_loc": 286,
+      "physical_loc": 198,
+      "authored_inputs": 6
+    },
+    "gleam-mandelbrot-compact": {
+      "canonical_loc": 131,
+      "physical_loc": 110,
+      "authored_inputs": 4
+    },
+    "gleam-mandelbrot-optimized": {
+      "canonical_loc": 176,
+      "physical_loc": 140,
+      "authored_inputs": 6
+    },
+    "gleam-nbody-compact": {
+      "canonical_loc": 161,
+      "physical_loc": 148,
+      "authored_inputs": 4
+    },
+    "gleam-nbody-optimized": {
+      "canonical_loc": 179,
+      "physical_loc": 161,
+      "authored_inputs": 6
+    },
+    "gleam-pidigits-compact": {
+      "canonical_loc": 103,
+      "physical_loc": 94,
+      "authored_inputs": 4
+    },
+    "gleam-pidigits-optimized": {
+      "canonical_loc": 104,
+      "physical_loc": 95,
+      "authored_inputs": 4
+    },
+    "gleam-regexredux-compact": {
+      "canonical_loc": 130,
+      "physical_loc": 116,
+      "authored_inputs": 6
+    },
+    "gleam-regexredux-optimized": {
+      "canonical_loc": 167,
+      "physical_loc": 143,
+      "authored_inputs": 8
+    },
+    "gleam-revcomp-compact": {
+      "canonical_loc": 203,
+      "physical_loc": 145,
+      "authored_inputs": 4
+    },
+    "gleam-revcomp-optimized": {
+      "canonical_loc": 202,
+      "physical_loc": 144,
+      "authored_inputs": 4
+    },
+    "gleam-spectralnorm-compact": {
+      "canonical_loc": 120,
+      "physical_loc": 102,
+      "authored_inputs": 4
+    },
+    "gleam-spectralnorm-optimized": {
+      "canonical_loc": 170,
+      "physical_loc": 138,
+      "authored_inputs": 6
+    }
+  },
+  "benchmark_runs": 0,
+  "native_processes": 0,
+  "fixture_reexecutions": 0,
+  "source_parser_executions": 0,
+  "chart_admission": false
+}

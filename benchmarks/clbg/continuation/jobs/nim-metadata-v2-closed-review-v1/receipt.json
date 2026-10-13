@@ -1,0 +1,28 @@
+{
+  "at": "2026-10-13T22:17:13.334193+00:00",
+  "status": "root-reviewed-qualified-Nim20-runtime-metadata",
+  "verified_pins": 38829,
+  "metadata_sha256": "98efdbdfcdaacbf22c0644e4225b39e29b68ca94db4d392a3cdd436376ce3722",
+  "runtime_receipt_sha256": "1c6d5a872768b9bb1c47d321dbc909eb702899ecaaca3f5b1117d7746e770352",
+  "outcome_sha256": "a02dedb0aa44367b484841adcd2c3dc061364691ca41d93a71d4279416570cb4",
+  "durable_terminal_sha256": "b6359c02526c8b1e7c1ba633f62a38c40fa96def3db6e61a463a519ccb55c49c",
+  "profile_count": 20,
+  "original_compiler_roots": 3,
+  "reused_private_v2_image_profiles": [
+    "nim-pidigits-compact",
+    "nim-regexredux-compact",
+    "nim-regexredux-optimized",
+    "nim-revcomp-compact",
+    "nim-revcomp-optimized"
+  ],
+  "memory_strategies": [
+    "rc",
+    "gc"
+  ],
+  "architecture": "arm64",
+  "source_counts_unchanged": true,
+  "full_samples_reused": 90,
+  "native_processes": 0,
+  "benchmark_runs": 0,
+  "chart_admission": false
+}

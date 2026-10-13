@@ -1,0 +1,16 @@
+{
+  "status": "passed-closed-Nim-candidate-review",
+  "at": "2026-10-13T22:26:14.226518+00:00",
+  "verified_pins": 41944,
+  "candidate_sha256": "9d9eba51742dcf1afc76c0a45fa4125524197ed06ae540a1d142769fd859f60a",
+  "previous_baseline_sha256": "b088279074e85ec149466f876bdce49d4d497f7784a0d48be58e023e5b2c6a13",
+  "terminal_sha256": "f051d0a86c8016ea80a7c82fcbd0952ea5b57fb1f48f9c208bee5f1c180b3088",
+  "outcome_sha256": "55f8f8eb153968cc1e623238f8c2dedf0c82e87486fa3071473908b7afc6f47c",
+  "inventory_sources": 20,
+  "candidate_samples": 60,
+  "nim_endpoints": 20,
+  "original_full_processes": 90,
+  "prior_records_preserved": true,
+  "benchmark_runs": 0,
+  "fixture_reexecutions": 0
+}

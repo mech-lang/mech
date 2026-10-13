@@ -1,0 +1,14 @@
+{
+  "at": "2026-10-13T22:21:10.491610+00:00",
+  "status": "root-source-reviewed-awaiting-independent-peer",
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-repair-v4/replay.py": "4915eff8e3c27a86a7708e319c35bd87b5f640be0b80ccf510241e0fa12d413a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-repair-v4/literal_routes.py": "8a5abe0438d5e1d8d3bb5599a98e3d58cf5556691b4153762f4b81ff501448d7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-repair-v4/test_literal_extensions.py": "bbb61a92d49901dc4463ff56497b7499f5efb7e432e1e71139550cf78f29bead",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-repair-v4/REVIEW.md": "e5f09202bdeff50e7bebc916bbf9df9b6e375d64632496d54223ca0908f6adbf",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/legacy-platform133-all-diagnosis-v2-closed-review/receipt.json": "6f798421a3d6e0191f9169218ff0f411b2fed13a31e323b03bd42446f50c35f0"
+  },
+  "source_files": 4,
+  "scope": "Five literal source/sample/binary routes; prior115 annotations and13 pending rows retained; existing ten fixture IDs",
+  "native_processes": 0
+}

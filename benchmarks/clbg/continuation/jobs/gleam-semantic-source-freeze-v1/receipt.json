@@ -1,0 +1,12 @@
+{
+  "status": "root-source-reviewed-awaiting-complete-independent-peer",
+  "at": "2026-10-13T22:18:20.524691+00:00",
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/seal_semantic_overlay_v2.py": "2aa3c3b87eaf5eb3059bad1ff9da446250a11849c35d3a9700d4cac2f7a3333b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/seal_overlay_v1.py": "0dd0e4c84f8a264ca41d6e46ce8de745a615bb005b807a83885ba90c4ba54634",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/source-owner-facts-v1.json": "437f7883efd55044bb4a03d012354f4981033e4954787f265242f220ecdf63cf",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/SEMANTIC_REVIEW_V1.md": "310658bce8b1f4b804bebf2e8b656533b53c2ef87b4e86b85dd3154347edd8b7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/closed-original-jobs-v1.json": "a5ca760b6a4cc131492aa5f9ed437ba54319b32b3e64766c3040bced5f2d6b36"
+  },
+  "native_subjects": 0
+}

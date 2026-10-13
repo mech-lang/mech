@@ -1,0 +1,17 @@
+{
+  "status": "root-and-independent-peer-reviewed-narrow-historical-image-repair",
+  "at": "2026-10-13T22:34:05.018282+00:00",
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/seal_overlay_v2.py": "0e10d449388ab5fee11909f7098faddd34ee5ef89f4097dc4e4e167bf86d9051",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/seal_semantic_overlay_v3.py": "b905b19da3e41c3b8ca87728ebaaa802cbd5d42d0e5ad9bdaba2537640200fd5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/SEMANTIC_REVIEW_V2.md": "69a6c759666b80fc2b11d7286d12cf39bc1f60b0046abdc3a1140650edbb7a8b"
+  },
+  "root_review": "Full delta against previously read utilities/workers; utility adds exact3-job initial-image map, worker changes utility/note/module paths only. Exact historical15 records remain bound. No source-count semantics changed.",
+  "peer_reviewers": [
+    "current_c3_review author",
+    "apl_current_admission independent reviewer"
+  ],
+  "executed": false,
+  "benchmark_runs": 0,
+  "native_runs": 0
+}

@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-13T22:22:04.248847+00:00",
+  "status": "root-reviewed-ten-platform-v4-fixtures-passed",
+  "tests_run": 10,
+  "verified_pins": 425,
+  "fixture_receipt_sha256": "30f59901c3843dab14940059b8a2301d6032b9f63f74d3811b0c2fcd17fde31f",
+  "fixture_terminal_sha256": "1407ec3f46333b806ba7a965e3b65588c30d731d0aef902bfed99ea7a3877472",
+  "durable_terminal_sha256": "0d662f460d4b545a5f611e376b2dc4c3431518e7d0c757c1937d56d421f6c0ca",
+  "native_processes": 0,
+  "benchmark_runs": 0
+}

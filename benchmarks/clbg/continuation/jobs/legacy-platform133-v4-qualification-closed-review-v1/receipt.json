@@ -1,0 +1,59 @@
+{
+  "at": "2026-10-13T22:23:20.004374+00:00",
+  "status": "root-reviewed-qualified-platform-history133",
+  "verified_pins": 445,
+  "qualified_history_sha256": "cfea973a22951b7efef504ba48f84b07745397e7dc8df71161b3a01182b026b9",
+  "qualification_receipt_sha256": "0030b48dffa6e867a69035b2e12c506e947eab72ea58010ac93a2f14460dfca0",
+  "body_terminal_sha256": "9afe129d9563f8ec27809c509259b7190d014c26cd983139ff36126d8d0ca388",
+  "durable_terminal_sha256": "cc482ff23ddd295b22613f76b06c6344c5d0f5bc2fac8b25b173e3dc22bd9e1b",
+  "profiles": 133,
+  "qualified_platform_rows": 120,
+  "qualified_execution_rows": 97,
+  "qualified_historical_byte_rows": 114,
+  "pending": {
+    "binarytrees:binarytrees-julia-3": [
+      "missing-corresponding-runtime-observation"
+    ],
+    "binarytrees:binarytrees-julia-4": [
+      "missing-corresponding-runtime-observation"
+    ],
+    "fannkuchredux:fannkuchredux-julia-1": [
+      "missing-corresponding-runtime-observation"
+    ],
+    "fannkuchredux:fannkuchredux-julia-2": [
+      "missing-corresponding-runtime-observation"
+    ],
+    "fasta:fasta-gcc-2-llvm": [
+      "missing-historical-native-build-output-binding"
+    ],
+    "fasta:fasta-julia-3": [
+      "missing-corresponding-runtime-observation"
+    ],
+    "knucleotide:knucleotide-julia-1": [
+      "missing-corresponding-runtime-observation"
+    ],
+    "knucleotide:knucleotide-julia-6": [
+      "missing-corresponding-runtime-observation"
+    ],
+    "mandelbrot:mandelbrot-julia-1": [
+      "missing-corresponding-runtime-observation"
+    ],
+    "mandelbrot:mandelbrot-julia-7": [
+      "missing-corresponding-runtime-observation"
+    ],
+    "revcomp:revcomp-julia-7": [
+      "missing-corresponding-runtime-observation"
+    ],
+    "revcomp:revcomp-julia-9": [
+      "missing-corresponding-runtime-observation"
+    ],
+    "spectralnorm:spectralnorm-julia-4": [
+      "missing-corresponding-runtime-observation"
+    ]
+  },
+  "prior115_annotations_preserved": true,
+  "all133_measurement_identities_preserved": true,
+  "native_processes": 0,
+  "benchmark_runs": 0,
+  "chart_admission": false
+}

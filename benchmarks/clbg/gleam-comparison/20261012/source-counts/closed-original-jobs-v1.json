@@ -1,0 +1,31 @@
+{
+  "status": "captured-original-gleam-count-and-suite-closed-receipts",
+  "captured_at": "2026-10-13T22:18:20.523425+00:00",
+  "actual_suite": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/reconciliation/full-v4-suite-v2.json",
+    "sha256": "e2b4a772153c9997d4ab5f749dfa950cbcf4ebaad825201b3c6338454f4e2594"
+  },
+  "closed_original_jobs": {
+    "gleam-source20-entry-repaired-v3": {
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-source20-entry-repaired-v3/request.json": "aed815362e10f1e9e3a39aa886b103ee88b387282d0d3f105e2b0bbefb5e00e2",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-source20-entry-repaired-v3/launch.json": "6f25d4fbc97bd32e00eb672d5b446a7bec04caa01e5c464852e72dc9f428a678",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-source20-entry-repaired-v3/worker-started.json": "31f28478c5138fef794b6a26c5ea9f083690ed9ceba9ac6d268cc7adf153664a",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-source20-entry-repaired-v3/command-started.json": "4a4c89641735b42305a59f9d114f05dcb4beb81cf9e3a90a68ff58e755441219",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-source20-entry-repaired-v3/terminal.json": "1f764f20c514278865520c3d90032d86324dfc7701b74c7ee1044a8d59155bee"
+    },
+    "gleam-erlang-helpers26-entry-repaired-v2": {
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-erlang-helpers26-entry-repaired-v2/request.json": "1969cbea1aa0eeaa0f37fb50dba7c241de07d002c45347bd00cd60c971b09699",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-erlang-helpers26-entry-repaired-v2/launch.json": "fd4432c1656ea25a2819ccb21902ceb6ce42da3b67cb2ce2324be3d4481781cd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-erlang-helpers26-entry-repaired-v2/worker-started.json": "2bf71f89ae805dfccc470f74da69c56d4013ef8d212bd5dac9b94a55e16c26d0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-erlang-helpers26-entry-repaired-v2/command-started.json": "cc4863ab6d70ae2a1f875bc5767b6f0b292f26a68f061a45433b6fa6f388e243",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-erlang-helpers26-entry-repaired-v2/terminal.json": "45362e2c5b1c254610d3f44848a065a23696369088a20fa8eeee024818d29ac7"
+    },
+    "gleam-full90-independent-reconcile-v2": {
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-full90-independent-reconcile-v2/request.json": "23d5e7d5c0e8b64f47625abc14f8f80307e61e801bfac55dc7841001673ccaed",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-full90-independent-reconcile-v2/launch.json": "7d668054336dd2c0cc83eb3ff0d3d8969621e7722d90450f4dcece5551f62d57",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-full90-independent-reconcile-v2/worker-started.json": "e3d4f071747be66f4373589f9462858659063f48aa8c00b534b121ef91d2b7f2",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-full90-independent-reconcile-v2/command-started.json": "82958a6069db1647ae9bdb8423665baf5847a0067a835dd2bec96faa00a05b37",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-full90-independent-reconcile-v2/terminal.json": "300f97fbe6abe8db0dc7d3f8dbe4581587b7a1dca74749f1d3855025cf4b1500"
+    }
+  }
+}

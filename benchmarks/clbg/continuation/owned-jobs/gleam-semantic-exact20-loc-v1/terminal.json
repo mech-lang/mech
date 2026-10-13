@@ -1,0 +1,20 @@
+{
+  "status": "command-failed",
+  "started_at": "2026-10-13T22:23:20.078088+00:00",
+  "worker_identity": {
+    "pid": 28481,
+    "listing": "28481     1 Tue Oct 13 18:23:20 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-semantic-exact20-loc-v1 --lease-fd 3 --go-fd 4"
+  },
+  "actual_command_started": true,
+  "exit_code": 1,
+  "qualification_granted": false,
+  "automatic_retry": false,
+  "command_pid": 28486,
+  "command_identity": {
+    "pid": 28486,
+    "listing": "28486 28481 Tue Oct 13 18:23:20 2026     /opt/homebrew/opt/python@3.14/bin/python3.14 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/seal_semantic_overlay_v2.py --base-sealer-sha256 0dd0e4c84f8a264ca41d6e46ce8de745a615bb005b807a83885ba90c4ba54634 --facts-sha256 437f7883efd55044bb4a03d012354f4981033e4954787f265242f220ecdf63cf --peer-review /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/peer-source-review-v1.json --peer-sha256 c088f69a0eeef793445cc7efc83cad003c5a3d45acb45a327ecc9964ba49e1b3 --closed-job-pins /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/closed-original-jobs-v1.json --closed-job-pins-sha256 a5ca760b6a4cc131492aa5f9ed437ba54319b32b3e64766c3040bced5f2d6b36 --revision semantic-exact20-v1"
+  },
+  "command_identity_observation_missing": false,
+  "finished_at": "2026-10-13T22:23:20.168666+00:00",
+  "stop_signals": []
+}

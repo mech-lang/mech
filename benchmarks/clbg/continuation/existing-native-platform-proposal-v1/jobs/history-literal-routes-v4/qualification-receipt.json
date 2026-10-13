@@ -1,0 +1,18 @@
+{
+  "status": "reconciled-with-unresolved-existing-platform-history",
+  "profile_count": 133,
+  "qualified_history": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/existing-native-platform-proposal-v1/jobs/history-literal-routes-v4/qualified-history.json",
+  "qualified_history_sha256": "cfea973a22951b7efef504ba48f84b07745397e7dc8df71161b3a01182b026b9",
+  "qualified_platform_rows": 120,
+  "qualified_execution_rows": 97,
+  "qualified_historical_byte_rows": 114,
+  "actual_native_processes": 0,
+  "runtime_version_reruns": 0,
+  "benchmark_replays": 0,
+  "chart_admission": false,
+  "dataset_mutated": false,
+  "sources_mutated": false,
+  "timings_mutated": false,
+  "actual_common_mutex_held": true,
+  "pins_unchanged_at_end": true
+}

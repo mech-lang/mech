@@ -1,0 +1,40 @@
+{
+  "status": "failed-overlay-stage",
+  "body_error": {
+    "error": "AssertionError",
+    "error_type": "AssertionError"
+  },
+  "integrity_errors": [],
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/seal_overlay_v1.py": "0dd0e4c84f8a264ca41d6e46ce8de745a615bb005b807a83885ba90c4ba54634",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/source-owner-facts-v1.json": "437f7883efd55044bb4a03d012354f4981033e4954787f265242f220ecdf63cf",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/peer-source-review-v1.json": "c088f69a0eeef793445cc7efc83cad003c5a3d45acb45a327ecc9964ba49e1b3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/closed-original-jobs-v1.json": "a5ca760b6a4cc131492aa5f9ed437ba54319b32b3e64766c3040bced5f2d6b36",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/seal_semantic_overlay_v2.py": "2aa3c3b87eaf5eb3059bad1ff9da446250a11849c35d3a9700d4cac2f7a3333b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/SEMANTIC_REVIEW_V1.md": "310658bce8b1f4b804bebf2e8b656533b53c2ef87b4e86b85dd3154347edd8b7",
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/bin/python3.14": "e401ac7a95cda75dee34a0cfe1e4faf0a6df1a501cf67887f177fb78cd4eb60a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-proposal-v2/jobs/source20-repaired-v3/source-count-proposals.json": "6eba15be3c2a53189d5fc11b560a51ff89516f96ad45893eb419e0a31cd4263b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/helper-count-proposals.json": "8ba774ecc399ec7dc94778db7afdce55ad20e1c0c1b8dbb0e808abc3be4e2d02",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/qualification/private-v5/report.json": "a19f2d079b917f1172b54d09e494e72c5a7aea9d6a9301ef0974633b4d4f30dc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/reconciliation/full-v4-suite-v2.json": "e2b4a772153c9997d4ab5f749dfa950cbcf4ebaad825201b3c6338454f4e2594",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/python-framework-host-linkage-v1/host-linkage.json": "9a1c0fa4fc330cf0c7c176349c220640ad4714c5e8e081eaead84c00b89729af",
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python": "b3e2d3162eb789101425bbe76810fc5eb0d412d7cd5867d27568dd180ccf5a22",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-source20-entry-repaired-v3/request.json": "aed815362e10f1e9e3a39aa886b103ee88b387282d0d3f105e2b0bbefb5e00e2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-source20-entry-repaired-v3/launch.json": "6f25d4fbc97bd32e00eb672d5b446a7bec04caa01e5c464852e72dc9f428a678",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-source20-entry-repaired-v3/worker-started.json": "31f28478c5138fef794b6a26c5ea9f083690ed9ceba9ac6d268cc7adf153664a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-source20-entry-repaired-v3/command-started.json": "4a4c89641735b42305a59f9d114f05dcb4beb81cf9e3a90a68ff58e755441219",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-source20-entry-repaired-v3/terminal.json": "1f764f20c514278865520c3d90032d86324dfc7701b74c7ee1044a8d59155bee",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-erlang-helpers26-entry-repaired-v2/request.json": "1969cbea1aa0eeaa0f37fb50dba7c241de07d002c45347bd00cd60c971b09699",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-erlang-helpers26-entry-repaired-v2/launch.json": "fd4432c1656ea25a2819ccb21902ceb6ce42da3b67cb2ce2324be3d4481781cd",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-erlang-helpers26-entry-repaired-v2/worker-started.json": "2bf71f89ae805dfccc470f74da69c56d4013ef8d212bd5dac9b94a55e16c26d0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-erlang-helpers26-entry-repaired-v2/command-started.json": "cc4863ab6d70ae2a1f875bc5767b6f0b292f26a68f061a45433b6fa6f388e243",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-erlang-helpers26-entry-repaired-v2/terminal.json": "45362e2c5b1c254610d3f44848a065a23696369088a20fa8eeee024818d29ac7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/semantic-seal-outcomes/semantic-exact20-v1/actual-error.log": "11dfab0f5c8341ddbc5080a381c8db2d45f82dadd952049e7df12bbf61fa9175"
+  },
+  "actual_common_mutex_held": true,
+  "actual_native_subjects": 0,
+  "actual_signals_sent": 0,
+  "fixture_reexecutions": 0,
+  "chart_admission": false,
+  "original_sources_or_timings_mutated": false
+}

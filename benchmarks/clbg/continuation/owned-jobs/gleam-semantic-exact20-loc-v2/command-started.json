@@ -1,0 +1,30 @@
+{
+  "started_at": "2026-10-13T22:34:36.900582+00:00",
+  "command_pid": 30363,
+  "command_identity": {
+    "pid": 30363,
+    "listing": "30363 30357 Tue Oct 13 18:34:36 2026     /opt/homebrew/opt/python@3.14/bin/python3.14 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/seal_semantic_overlay_v3.py --base-sealer-sha256 0e10d449388ab5fee11909f7098faddd34ee5ef89f4097dc4e4e167bf86d9051 --facts-sha256 437f7883efd55044bb4a03d012354f4981033e4954787f265242f220ecdf63cf --peer-review /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/peer-source-review-v1.json --peer-sha256 c088f69a0eeef793445cc7efc83cad003c5a3d45acb45a327ecc9964ba49e1b3 --closed-job-pins /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/closed-original-jobs-v1.json --closed-job-pins-sha256 a5ca760b6a4cc131492aa5f9ed437ba54319b32b3e64766c3040bced5f2d6b36 --revision semantic-exact20-v2"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/seal_semantic_overlay_v3.py",
+    "--base-sealer-sha256",
+    "0e10d449388ab5fee11909f7098faddd34ee5ef89f4097dc4e4e167bf86d9051",
+    "--facts-sha256",
+    "437f7883efd55044bb4a03d012354f4981033e4954787f265242f220ecdf63cf",
+    "--peer-review",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/peer-source-review-v1.json",
+    "--peer-sha256",
+    "c088f69a0eeef793445cc7efc83cad003c5a3d45acb45a327ecc9964ba49e1b3",
+    "--closed-job-pins",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/closed-original-jobs-v1.json",
+    "--closed-job-pins-sha256",
+    "a5ca760b6a4cc131492aa5f9ed437ba54319b32b3e64766c3040bced5f2d6b36",
+    "--revision",
+    "semantic-exact20-v2"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech"
+}

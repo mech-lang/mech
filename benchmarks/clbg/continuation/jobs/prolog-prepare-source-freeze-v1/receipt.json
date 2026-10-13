@@ -1,0 +1,10 @@
+{
+  "status": "root-reviewed-adaptation-and-exact27-copies-awaiting-independent-peer",
+  "at": "2026-10-13T22:20:37.425140+00:00",
+  "packet": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/prepare-success-halt-v1",
+  "packet_pins": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/prolog-prepare-source-freeze-v1/packet-pins.json",
+  "packet_pins_sha256": "37076a11022e0cfbb07c86b420866eec4f81f1d722b606e186c41c25dcdc2660",
+  "source_files": 27,
+  "actual_source_derivation_verified": true,
+  "native_processes": 0
+}

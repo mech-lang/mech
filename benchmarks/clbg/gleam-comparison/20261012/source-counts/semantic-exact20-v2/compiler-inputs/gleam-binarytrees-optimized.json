@@ -1,0 +1,219 @@
+{
+  "status": "qualified-exact-authored-compiler-inputs",
+  "profile": "gleam-binarytrees-optimized",
+  "source_sha256": "b723536a1af4bc731fcc58d8033e1cde01b42842c0f9106c2253cd52f879d951",
+  "binary_sha256": "ef68f389ca08a7984d2cfbf9beedc44a111cf42215f77d020c3868a9a6ef88f1",
+  "files": [
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-binarytrees-optimized/src/benchmark.gleam",
+      "sha256": "b723536a1af4bc731fcc58d8033e1cde01b42842c0f9106c2253cd52f879d951"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-binarytrees-optimized/src/clbg_io.gleam",
+      "sha256": "34c68812594ab7472e7a2318e0ce22b8eae5b176465ce4dc85a19021d197a6eb"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-binarytrees-optimized/src/clbg_io_ffi.erl",
+      "sha256": "c4c84235a88dcc32e07619e4eb66281fa913cf9d0f699207e14c08eafa892c39"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-binarytrees-optimized/src/clbg_runner.erl",
+      "sha256": "ba95e660c20543288d70602f8788b5cab5666a6e5a05b5a0e8d51315210e1190"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-binarytrees-optimized/src/clbg_reference.gleam",
+      "sha256": "0508f86384f2b4d16ad1097be0cd9ed9cb1109ef7d91830c2819b4325fe2a9b6"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-binarytrees-optimized/src/clbg_process.gleam",
+      "sha256": "90ead9d59bbb9d8e67939150689f07c0434ccb7e4a3791c3aedabd828d6f6d75"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-binarytrees-optimized/src/clbg_process_ffi.erl",
+      "sha256": "b47c516b69611d273427d7e4e2f602234a71d291991d49cd7a1ecf82f4a9cf64"
+    }
+  ],
+  "original_compiler_inventory": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/qualification/private-v4/builds/gleam-binarytrees-optimized/compiler-input-inventory.json",
+    "sha256": "95ea93ef46f481e9a771c5b54be3abbebc9cd1337722bc7b82a163a33bd8c71d",
+    "source_bundle": [
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-binarytrees-optimized/src/benchmark.gleam",
+        "sha256": "b723536a1af4bc731fcc58d8033e1cde01b42842c0f9106c2253cd52f879d951",
+        "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/qualification/private-v4/source-snapshot/revisions/private-v2/sources/binarytrees/optimized.gleam",
+        "role": "application"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-binarytrees-optimized/src/clbg_io.gleam",
+        "sha256": "34c68812594ab7472e7a2318e0ce22b8eae5b176465ce4dc85a19021d197a6eb",
+        "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/qualification/private-v4/source-snapshot/support/clbg_io.gleam",
+        "role": "application-helper"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-binarytrees-optimized/src/clbg_io_ffi.erl",
+        "sha256": "c4c84235a88dcc32e07619e4eb66281fa913cf9d0f699207e14c08eafa892c39",
+        "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/qualification/private-v4/source-snapshot/support/clbg_io_ffi.erl",
+        "role": "application-helper"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-binarytrees-optimized/src/clbg_runner.erl",
+        "sha256": "ba95e660c20543288d70602f8788b5cab5666a6e5a05b5a0e8d51315210e1190",
+        "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/qualification/private-v4/source-snapshot/support/clbg_runner.erl",
+        "role": "application-helper"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-binarytrees-optimized/src/clbg_reference.gleam",
+        "sha256": "0508f86384f2b4d16ad1097be0cd9ed9cb1109ef7d91830c2819b4325fe2a9b6",
+        "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/qualification/private-v4/source-snapshot/support/clbg_reference.gleam",
+        "role": "application-helper"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-binarytrees-optimized/src/clbg_process.gleam",
+        "sha256": "90ead9d59bbb9d8e67939150689f07c0434ccb7e4a3791c3aedabd828d6f6d75",
+        "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/qualification/private-v4/source-snapshot/support/clbg_process.gleam",
+        "role": "application-helper"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-binarytrees-optimized/src/clbg_process_ffi.erl",
+        "sha256": "b47c516b69611d273427d7e4e2f602234a71d291991d49cd7a1ecf82f4a9cf64",
+        "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/qualification/private-v4/source-snapshot/support/clbg_process_ffi.erl",
+        "role": "application-helper"
+      }
+    ],
+    "compiled_artifacts": {
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/ebin/clbg_io_ffi.beam": "524db1e521226c60b2928bfb4b4e797bf5ee371d290c40566bf6035dbadd9d49",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/ebin/benchmark.beam": "03d4e495b28d14994a3226595ed019d4165de6f20e79dd0d71e215bad3b2909d",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/ebin/clbg_process_ffi.beam": "f661140a69f5b909180c576f1ec073909e1971b5bfd3de41740bb2a42f6e184e",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/ebin/clbg_process.beam": "1ad7d192bbdcb09eb1db3f5d0b4f02119b99f90756083f7dd6935d6f80995c81",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/ebin/clbg_reference.beam": "cc2f5b04c16a65cfbe8a6d8ee9615fa7633409a0063e64822a7240fb01deeb1a",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/ebin/clbg_io.beam": "260e1c12672ae36cf17783d1076079b0102742191ca2682faf5c0e706748b0c9",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/ebin/benchmark.app": "22b2cb1d94f4eb6dfc671481d7e23df6d4a312b2c483920c4574c5857cb1cd4b",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/ebin/clbg_runner.beam": "cdd32ae5f9e339487fe35c83e710c4eaa4834f2a490b69b0b00f16f155902612",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/_gleam_artefacts/benchmark.abstr": "f5af2739bc203448c1da6cfaa1db1ce355fafcfab9036315611d92f45ea952b6",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/_gleam_artefacts/benchmark.cache_meta": "d4c819fb9ecab37136ea396bf4ca76e4f88070ec52e1aa4537b4e3746baacfcb",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/_gleam_artefacts/clbg_process.cache_meta": "345684eeb53bfd301a1de7f9b0bf84e31bed207341c253c86bdf8eb0752ae9e6",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/_gleam_artefacts/clbg_reference.abstr": "c112c42e6feaea634f0a313bb22688b6d0a0243aa6759d8758e443ab7a018837",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/_gleam_artefacts/clbg_process.abstr": "12c8f702742af45644d4faf64b140663ac702b0909b61257b3e313106dc84a01",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/_gleam_artefacts/clbg_reference.cache_meta": "09754d8143d179500aa3cff7772a603661be40f17b38d80bbe53b4e8c95f83d5",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/_gleam_artefacts/clbg_io.cache": "40d80a496007a2b60d4e9c8dee99e2830e62d1fc6c2e90e8502bcff85282f10d",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/_gleam_artefacts/benchmark.cache": "9066201f9fd473cd19fd2f9fce59e6231d17ab4bae57124931c15b71ce69af02",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/_gleam_artefacts/clbg_reference.cache": "97f0f57a4fb780c828a93436a666cac56aeefef5144ebbc80c2fbae8e80390ca",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/_gleam_artefacts/clbg_process_ffi.erl": "b47c516b69611d273427d7e4e2f602234a71d291991d49cd7a1ecf82f4a9cf64",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/_gleam_artefacts/clbg_io.cache_meta": "6a1e2540e93edb37f5d013d32c74d791255a09f20b37214375ac6a912ab3fc76",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/_gleam_artefacts/clbg_process.cache": "2824c6f339ae13196e259fbbe240e529d48cd2305da2c77561b5f42b6b794d52",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/_gleam_artefacts/clbg_io.abstr": "2c42618f11468ee8e896bbe98ac82ab1dac137918cbbff4ebde6421c3cf61731",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/_gleam_artefacts/clbg_io_ffi.erl": "c4c84235a88dcc32e07619e4eb66281fa913cf9d0f699207e14c08eafa892c39",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/_gleam_artefacts/clbg_runner.erl": "ba95e660c20543288d70602f8788b5cab5666a6e5a05b5a0e8d51315210e1190"
+    },
+    "runtime_classpath": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/ebin",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v1/libraries/gleam_stdlib/ebin"
+    ]
+  },
+  "exact_original_inventory": {
+    "status": "compiled-exact-authored-input-inventory",
+    "profile": "gleam-binarytrees-optimized",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-binarytrees-optimized/src/benchmark.gleam",
+    "source_sha256": "b723536a1af4bc731fcc58d8033e1cde01b42842c0f9106c2253cd52f879d951",
+    "source_bundle": [
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-binarytrees-optimized/src/benchmark.gleam",
+        "sha256": "b723536a1af4bc731fcc58d8033e1cde01b42842c0f9106c2253cd52f879d951",
+        "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/qualification/private-v4/source-snapshot/revisions/private-v2/sources/binarytrees/optimized.gleam",
+        "role": "application"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-binarytrees-optimized/src/clbg_io.gleam",
+        "sha256": "34c68812594ab7472e7a2318e0ce22b8eae5b176465ce4dc85a19021d197a6eb",
+        "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/qualification/private-v4/source-snapshot/support/clbg_io.gleam",
+        "role": "application-helper"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-binarytrees-optimized/src/clbg_io_ffi.erl",
+        "sha256": "c4c84235a88dcc32e07619e4eb66281fa913cf9d0f699207e14c08eafa892c39",
+        "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/qualification/private-v4/source-snapshot/support/clbg_io_ffi.erl",
+        "role": "application-helper"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-binarytrees-optimized/src/clbg_runner.erl",
+        "sha256": "ba95e660c20543288d70602f8788b5cab5666a6e5a05b5a0e8d51315210e1190",
+        "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/qualification/private-v4/source-snapshot/support/clbg_runner.erl",
+        "role": "application-helper"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-binarytrees-optimized/src/clbg_reference.gleam",
+        "sha256": "0508f86384f2b4d16ad1097be0cd9ed9cb1109ef7d91830c2819b4325fe2a9b6",
+        "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/qualification/private-v4/source-snapshot/support/clbg_reference.gleam",
+        "role": "application-helper"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-binarytrees-optimized/src/clbg_process.gleam",
+        "sha256": "90ead9d59bbb9d8e67939150689f07c0434ccb7e4a3791c3aedabd828d6f6d75",
+        "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/qualification/private-v4/source-snapshot/support/clbg_process.gleam",
+        "role": "application-helper"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-binarytrees-optimized/src/clbg_process_ffi.erl",
+        "sha256": "b47c516b69611d273427d7e4e2f602234a71d291991d49cd7a1ecf82f4a9cf64",
+        "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/qualification/private-v4/source-snapshot/support/clbg_process_ffi.erl",
+        "role": "application-helper"
+      }
+    ],
+    "compiler": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v1/compiler/gleam",
+    "compiler_sha256": "fa41094adf67780a3078bb494bb8c7b1ab0bc586752c97adacde9d6cab4cc9e0",
+    "build_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v1/compiler/gleam",
+      "compile-package",
+      "--target",
+      "erlang",
+      "--no-dev",
+      "--package",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-binarytrees-optimized",
+      "--out",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized",
+      "--lib",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v1/libraries"
+    ],
+    "compiled_artifacts": {
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/ebin/clbg_io_ffi.beam": "524db1e521226c60b2928bfb4b4e797bf5ee371d290c40566bf6035dbadd9d49",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/ebin/benchmark.beam": "03d4e495b28d14994a3226595ed019d4165de6f20e79dd0d71e215bad3b2909d",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/ebin/clbg_process_ffi.beam": "f661140a69f5b909180c576f1ec073909e1971b5bfd3de41740bb2a42f6e184e",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/ebin/clbg_process.beam": "1ad7d192bbdcb09eb1db3f5d0b4f02119b99f90756083f7dd6935d6f80995c81",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/ebin/clbg_reference.beam": "cc2f5b04c16a65cfbe8a6d8ee9615fa7633409a0063e64822a7240fb01deeb1a",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/ebin/clbg_io.beam": "260e1c12672ae36cf17783d1076079b0102742191ca2682faf5c0e706748b0c9",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/ebin/benchmark.app": "22b2cb1d94f4eb6dfc671481d7e23df6d4a312b2c483920c4574c5857cb1cd4b",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/ebin/clbg_runner.beam": "cdd32ae5f9e339487fe35c83e710c4eaa4834f2a490b69b0b00f16f155902612",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/_gleam_artefacts/benchmark.abstr": "f5af2739bc203448c1da6cfaa1db1ce355fafcfab9036315611d92f45ea952b6",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/_gleam_artefacts/benchmark.cache_meta": "d4c819fb9ecab37136ea396bf4ca76e4f88070ec52e1aa4537b4e3746baacfcb",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/_gleam_artefacts/clbg_process.cache_meta": "345684eeb53bfd301a1de7f9b0bf84e31bed207341c253c86bdf8eb0752ae9e6",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/_gleam_artefacts/clbg_reference.abstr": "c112c42e6feaea634f0a313bb22688b6d0a0243aa6759d8758e443ab7a018837",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/_gleam_artefacts/clbg_process.abstr": "12c8f702742af45644d4faf64b140663ac702b0909b61257b3e313106dc84a01",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/_gleam_artefacts/clbg_reference.cache_meta": "09754d8143d179500aa3cff7772a603661be40f17b38d80bbe53b4e8c95f83d5",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/_gleam_artefacts/clbg_io.cache": "40d80a496007a2b60d4e9c8dee99e2830e62d1fc6c2e90e8502bcff85282f10d",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/_gleam_artefacts/benchmark.cache": "9066201f9fd473cd19fd2f9fce59e6231d17ab4bae57124931c15b71ce69af02",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/_gleam_artefacts/clbg_reference.cache": "97f0f57a4fb780c828a93436a666cac56aeefef5144ebbc80c2fbae8e80390ca",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/_gleam_artefacts/clbg_process_ffi.erl": "b47c516b69611d273427d7e4e2f602234a71d291991d49cd7a1ecf82f4a9cf64",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/_gleam_artefacts/clbg_io.cache_meta": "6a1e2540e93edb37f5d013d32c74d791255a09f20b37214375ac6a912ab3fc76",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/_gleam_artefacts/clbg_process.cache": "2824c6f339ae13196e259fbbe240e529d48cd2305da2c77561b5f42b6b794d52",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/_gleam_artefacts/clbg_io.abstr": "2c42618f11468ee8e896bbe98ac82ab1dac137918cbbff4ebde6421c3cf61731",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/_gleam_artefacts/clbg_io_ffi.erl": "c4c84235a88dcc32e07619e4eb66281fa913cf9d0f699207e14c08eafa892c39",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/_gleam_artefacts/clbg_runner.erl": "ba95e660c20543288d70602f8788b5cab5666a6e5a05b5a0e8d51315210e1190"
+    },
+    "runtime_classpath": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-binarytrees-optimized/ebin",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v1/libraries/gleam_stdlib/ebin"
+    ]
+  },
+  "source_role_review": {
+    "status": "passed",
+    "review_identity": "/root/apl_current_admission:gleam-erlang-source-meaning-v1",
+    "evidence_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/source-owner-facts-v1.json",
+    "evidence_sha256": "437f7883efd55044bb4a03d012354f4981033e4954787f265242f220ecdf63cf",
+    "independent_peer": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/peer-source-review-v1.json",
+      "sha256": "c088f69a0eeef793445cc7efc83cad003c5a3d45acb45a327ecc9964ba49e1b3",
+      "review_identity": "/root/current_c3_review:independent-gleam-erlang30-source-meaning-20261013"
+    }
+  },
+  "inventory_derived_from_original_actual_compile_receipt": true
+}

@@ -1,0 +1,2 @@
+WAIT common mutex: actual Gleam/Erlang exact semantic LOC20 seal
+{"overlay": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/semantic-exact20-v2/qualified-loc-overlay.json", "sha256": "dd51c9a33d0eade6b5f4f94266ad1561b0f36770ac03a9c1691d2f19cbc04fce", "profiles": 20, "exact_semantic_gates": 4, "native_processes": 0, "chart_admission": false}
