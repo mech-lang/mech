@@ -1,0 +1,27 @@
+{
+  "status": "durable-job-launched",
+  "launched_at": "2026-10-13T18:39:48.741689+00:00",
+  "job": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-full90-independent-reconcile-v2",
+  "worker_identity": {
+    "pid": 80121,
+    "listing": "80121 80102 Tue Oct 13 14:39:48 2026     /opt/homebrew/opt/python@3.14/bin/python3.14 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-full90-independent-reconcile-v2 --lease-fd 3 --go-fd 4"
+  },
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/reconcile_native_suite_v2.py",
+    "--language",
+    "gleam",
+    "--study-root",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/studies/full-v4",
+    "--reviewed-index-sha256",
+    "d5eff42c8f88733af92a8e597b3e02c2b3e8212b24b827b17a494cfabd54497b",
+    "--output",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/reconciliation/full-v4-suite-v2.json"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "detached_session": true,
+  "automatic_retry": false,
+  "qualification_granted": false
+}

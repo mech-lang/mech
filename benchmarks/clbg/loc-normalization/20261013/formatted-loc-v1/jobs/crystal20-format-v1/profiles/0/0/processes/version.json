@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/bin/crystal",
+    "--version"
+  ],
+  "started_at": "2026-10-13T18:59:48.267957+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 82747,
+  "identity": {
+    "pid": 82747,
+    "process_listing": "Tue Oct 13 14:59:48 2026     /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/bin/crystal --version"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-13T18:59:48.481748+00:00",
+  "final_exit_status": 0
+}

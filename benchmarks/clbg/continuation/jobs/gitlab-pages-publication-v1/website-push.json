@@ -1,0 +1,11 @@
+{
+  "status": "website-main-pushed-remote-SHA-verified-awaiting-Pages-deployment",
+  "commit": "11cacf9ca1baa800736355759d4b6bd0ca815e68",
+  "remote_commit": "11cacf9ca1baa800736355759d4b6bd0ca815e68",
+  "repository": "https://gitlab.com/mech-lang/web/website",
+  "publication_url": "https://mech-lang.org/benchmarks/",
+  "push_output": "To gitlab.com:mech-lang/web/website.git\n   801c62f..11cacf9  benchmark-publication -> main\n",
+  "existing_authenticated_runner": "mac-mini-runner",
+  "common_mutex_held": true,
+  "benchmark_runs": 0
+}

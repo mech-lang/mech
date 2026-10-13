@@ -1,0 +1,11 @@
+{
+  "definition": "nonblank-noncomment-physical-lines-v1",
+  "module_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/formatted-crystal-plan-v1/physical_crystal.py",
+  "module_sha256": "26db5ae940e8bbdec5e6f367db5a5c4c4deb4d159c23926965d0fb705bf3072f",
+  "function": "mask_foreign",
+  "argument": "crystal",
+  "diagnostics": [],
+  "no_semantic_normalization": true,
+  "input_sha256": "e8759f8aeb4e7932d2a9279620eebcb74757c3b7c3c2aabd1e73c98a2c4c489d",
+  "physical_loc": 55
+}

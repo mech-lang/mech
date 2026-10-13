@@ -1,0 +1,24 @@
+{
+  "started_at": "2026-10-13T18:39:48.801025+00:00",
+  "command_pid": 80130,
+  "command_identity": {
+    "pid": 80130,
+    "listing": "80130 80121 Tue Oct 13 14:39:48 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/reconcile_native_suite_v2.py --language gleam --study-root /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/studies/full-v4 --reviewed-index-sha256 d5eff42c8f88733af92a8e597b3e02c2b3e8212b24b827b17a494cfabd54497b --output /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/reconciliation/full-v4-suite-v2.json"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/reconcile_native_suite_v2.py",
+    "--language",
+    "gleam",
+    "--study-root",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/studies/full-v4",
+    "--reviewed-index-sha256",
+    "d5eff42c8f88733af92a8e597b3e02c2b3e8212b24b827b17a494cfabd54497b",
+    "--output",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/reconciliation/full-v4-suite-v2.json"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech"
+}

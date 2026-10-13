@@ -1,0 +1,8 @@
+{
+  "status": "failed-with-preserved-C3-session-evidence",
+  "error": "Expected nonsecret package or refresh-ui",
+  "error_type": "AssertionError",
+  "native_benchmarks_started": 0,
+  "fixture_reexecutions": 0,
+  "automatic_retry": false
+}

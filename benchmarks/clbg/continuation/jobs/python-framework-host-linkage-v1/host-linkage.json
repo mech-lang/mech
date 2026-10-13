@@ -1,0 +1,17 @@
+{
+  "status": "root-reviewed-exact-python-framework-linkage",
+  "python_version": "3.14.8",
+  "official_startup_source": "https://raw.githubusercontent.com/python/cpython/v3.14.8/Mac/Tools/pythonw.c",
+  "same_image_bytes_claimed": false,
+  "benchmark_runtime_image_changed": false,
+  "launcher": {
+    "path": "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "resolved_path": "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+    "sha256": "e401ac7a95cda75dee34a0cfe1e4faf0a6df1a501cf67887f177fb78cd4eb60a"
+  },
+  "framework": {
+    "path": "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+    "sha256": "b3e2d3162eb789101425bbe76810fc5eb0d412d7cd5867d27568dd180ccf5a22"
+  },
+  "host_pin_scope": "launcher hash retained from actual qualified host receipts; framework hash is a current root capture linked to exact saved worker-started/terminal identities"
+}

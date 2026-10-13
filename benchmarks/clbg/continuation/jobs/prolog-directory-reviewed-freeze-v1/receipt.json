@@ -1,0 +1,15 @@
+{
+  "status": "root-and-independent-peer-accepted-directory-recovery-source-frozen",
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-directory-v1/extract_source.py": "3d0c6778454b26cdfaca3cd945927183795b820a1c1904e9e6f4ee4dce11ee5e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-directory-v1/test_extract_source.py": "c1b29ac57b0a02457bd5a821c13921b840f7f43b788296c72614aeea8a6adf1c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-directory-v1/qualify_extract.py": "43c1eb7333bfa66349c6258314e0aa358905c1fab8ff8f63c366d1e43896775b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-directory-v1/bootstrap_runtime_directory_v1.py": "a7f97dc59580154db6d790498778f3ab883047f368e03733b9fa65b6b7add783",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-directory-v1/REVIEW.md": "b5c2f2691457dfec46e488a821a871351f83289fcf677f9c9f31f4243a0debdb"
+  },
+  "actual_fixture_runs": 0,
+  "actual_native_subjects": 0,
+  "downloads": 0,
+  "common_mutex_inode": 79859134,
+  "completed_at": "2026-10-13T19:23:57.106683+00:00"
+}

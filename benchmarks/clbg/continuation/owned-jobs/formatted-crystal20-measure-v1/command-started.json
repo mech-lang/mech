@@ -1,0 +1,24 @@
+{
+  "started_at": "2026-10-13T18:59:44.064520+00:00",
+  "command_pid": 82745,
+  "command_identity": {
+    "pid": 82745,
+    "listing": "82745 82741 Tue Oct 13 14:59:44 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -E -S -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/measure.py --plan /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/formatted-crystal-plan-v1/jobs/actual-plans-v1/cohort-plan.json --plan-sha256 bdf950a871aead2957232afe3b7a6549761593edfeaa06a64eb250c5f36781c3 --revision crystal20-format-v1"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-E",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/measure.py",
+    "--plan",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/formatted-crystal-plan-v1/jobs/actual-plans-v1/cohort-plan.json",
+    "--plan-sha256",
+    "bdf950a871aead2957232afe3b7a6549761593edfeaa06a64eb250c5f36781c3",
+    "--revision",
+    "crystal20-format-v1"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech"
+}

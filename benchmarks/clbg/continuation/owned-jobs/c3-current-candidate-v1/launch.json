@@ -1,0 +1,25 @@
+{
+  "status": "durable-job-launched",
+  "launched_at": "2026-10-13T18:50:04.199020+00:00",
+  "job": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/c3-current-candidate-v1",
+  "worker_identity": {
+    "pid": 81333,
+    "listing": "81333 81319 Tue Oct 13 14:50:04 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/c3-current-candidate-v1 --lease-fd 3 --go-fd 4"
+  },
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-E",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/qualify_c3_current_candidate_v1.py",
+    "--worker-sha256",
+    "302638172799a25dfd13b0808ea3da9451fbb53bd03a68f1d7f3360487772cc7",
+    "--packet-sha256",
+    "314fb21c277a89554ce276735fff2f73de044f65da1b8258585913c782b59e3b"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "detached_session": true,
+  "automatic_retry": false,
+  "qualification_granted": false
+}

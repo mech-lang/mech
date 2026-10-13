@@ -1,0 +1,33 @@
+{
+  "status": "root-and-peer-released-frozen-C3-stage-TTY-command",
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-E",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/c3_chart_session_v1.py",
+    "--source-sha256",
+    "b8e7dc7d101812270d8bd15542d31a977bb7ee06375a232371371ff03fb1f112",
+    "--review-sha256",
+    "f1ec4b79422df2e5f9f0a5a5d48ab433c1741ae5c3001509e95371b936d3b46b",
+    "--closure-review-sha256",
+    "f54c756ac2f47ec424459c4d5c4f03473f2bb49fa844efd14e3cf0b1f3d211e1",
+    "--source-opening-sha256",
+    "32dbe87a672e7e378549bacbed1feccdf9f1c05185c5aa66a6426fdb4c91ec90"
+  ],
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/c3_chart_session_v1.py": "b8e7dc7d101812270d8bd15542d31a977bb7ee06375a232371371ff03fb1f112",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/C3_CHART_SESSION_V1_REVIEW.md": "f1ec4b79422df2e5f9f0a5a5d48ab433c1741ae5c3001509e95371b936d3b46b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/c3-current-candidate-actual-review-v1/receipt.json": "f54c756ac2f47ec424459c4d5c4f03473f2bb49fa844efd14e3cf0b1f3d211e1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/c3-source-opening-v1/receipt.json": "32dbe87a672e7e378549bacbed1feccdf9f1c05185c5aa66a6426fdb4c91ec90",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/c3-current-candidate-v1/candidate-data.json": "4fe402c21360fbbbe9d650c15d1fd4c62422c17cfad8cafd24721fe7f0bd2947",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/c3-current-candidate-v1/outcome.json": "0eddb2cf33f04cb3953350724ed83b9de9a81c4524d535e365d29ae25862a5f9"
+  },
+  "common_mutex_held": true,
+  "mutex_inode": 79859134,
+  "controller_launched": false,
+  "native_commands": 0,
+  "fixture_reexecutions": 0,
+  "live_dataset_mutations": 0
+}

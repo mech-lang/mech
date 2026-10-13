@@ -1,0 +1,26 @@
+{
+  "status": "root-and-peer-released-frozen-C3-candidate-only-command",
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-E",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/qualify_c3_current_candidate_v1.py",
+    "--worker-sha256",
+    "302638172799a25dfd13b0808ea3da9451fbb53bd03a68f1d7f3360487772cc7",
+    "--packet-sha256",
+    "314fb21c277a89554ce276735fff2f73de044f65da1b8258585913c782b59e3b"
+  ],
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/qualify_c3_current_candidate_v1.py": "302638172799a25dfd13b0808ea3da9451fbb53bd03a68f1d7f3360487772cc7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/c3-ready-publication-v1.json": "314fb21c277a89554ce276735fff2f73de044f65da1b8258585913c782b59e3b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/C3_CURRENT_CANDIDATE_V1_REVIEW.md": "a52825dd9148db11473249bf806a1b0c4e2e8431cf87dd4afc11597213251006"
+  },
+  "common_mutex_held": true,
+  "mutex_inode": 79859134,
+  "native_commands": 0,
+  "fixture_reexecutions": 0,
+  "live_dataset_mutations": 0,
+  "chart_admission": false
+}

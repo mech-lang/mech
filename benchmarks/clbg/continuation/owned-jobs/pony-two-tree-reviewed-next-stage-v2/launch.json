@@ -1,0 +1,25 @@
+{
+  "status": "durable-job-launched",
+  "launched_at": "2026-10-13T18:50:27.400381+00:00",
+  "job": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/pony-two-tree-reviewed-next-stage-v2",
+  "worker_identity": {
+    "pid": 81385,
+    "listing": "81385 81371 Tue Oct 13 14:50:27 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/pony-two-tree-reviewed-next-stage-v2 --lease-fd 3 --go-fd 4"
+  },
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/enter_reviewed_followup_v2.py",
+    "--stage",
+    "pony-work",
+    "--host-linkage",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/python-framework-host-linkage-v1/host-linkage.json",
+    "--host-linkage-sha256",
+    "9a1c0fa4fc330cf0c7c176349c220640ad4714c5e8e081eaead84c00b89729af"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "detached_session": true,
+  "automatic_retry": false,
+  "qualification_granted": false
+}

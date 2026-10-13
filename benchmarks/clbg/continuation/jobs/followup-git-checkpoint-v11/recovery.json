@@ -1,0 +1,10 @@
+{
+  "status": "original-stage-scope-corrected-before-commit",
+  "original_error": "Whitespace check stopped on copied import snapshots and exact recorded website diff",
+  "excluded_import_snapshots": 338,
+  "remaining_selected_files": 345,
+  "stored_diff_preserved_exactly": true,
+  "source_check_excludes_only_recorded_diff": true,
+  "benchmark_runs": 0,
+  "common_mutex_held": true
+}

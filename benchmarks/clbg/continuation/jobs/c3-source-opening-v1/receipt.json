@@ -1,0 +1,18 @@
+{
+  "status": "supported-source-opening-completed",
+  "project_id": "appgprj_6ac8f49664688191961eac14d8a9465b",
+  "checkout_path": "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site",
+  "commit_sha": "c23339fe74db3623db8409d92826dc0d64b3b853",
+  "source_helper_exit_code": 0,
+  "shared_timing_mutex_held_by_parent_through_helper_exit": true,
+  "owner_private_audience_unchanged": true,
+  "external_visitors": 0,
+  "credentials_kept_only_in_session_memory_and_hidden_stdin": true,
+  "site_data_mutations": 0,
+  "benchmark_runs": 0,
+  "earlier_stdin_setup_attempt": {
+    "exit_code": 64,
+    "reason": "A shell heredoc consumed stdin before the helper. Corrected by passing Python source with -c while retaining the TTY.",
+    "credentials_requested_or_supplied": false
+  }
+}

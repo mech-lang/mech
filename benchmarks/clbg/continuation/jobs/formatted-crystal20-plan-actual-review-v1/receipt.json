@@ -1,0 +1,30 @@
+{
+  "status": "exact-Crystal20-plan-and-preparation-closure-reviewed",
+  "profiles": 20,
+  "cohort_plan": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/formatted-crystal-plan-v1/jobs/actual-plans-v1/cohort-plan.json",
+    "sha256": "bdf950a871aead2957232afe3b7a6549761593edfeaa06a64eb250c5f36781c3"
+  },
+  "preparation_terminal_sha256": "d4de60ed4f0e9ca9ad92cd8c597ab705259291edea82439ac268dca7c175e546",
+  "durable_terminal_sha256": "c1fd2b0960913fabb7956f490506dd4ad9cac4243a8ce89c24d838f8e5122a28",
+  "verified_pins": 6568,
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-E",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/measure.py",
+    "--plan",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/formatted-crystal-plan-v1/jobs/actual-plans-v1/cohort-plan.json",
+    "--plan-sha256",
+    "bdf950a871aead2957232afe3b7a6549761593edfeaa06a64eb250c5f36781c3",
+    "--revision",
+    "crystal20-format-v1"
+  ],
+  "common_mutex_held": true,
+  "mutex_inode": 79859134,
+  "actual_application_processes": 0,
+  "fixture_reexecutions": 0,
+  "chart_admission": false
+}

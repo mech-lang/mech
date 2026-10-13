@@ -1,0 +1,27 @@
+{
+  "status": "durable-job-launched",
+  "launched_at": "2026-10-13T18:39:48.894180+00:00",
+  "job": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/clojure-full90-independent-reconcile-v2",
+  "worker_identity": {
+    "pid": 80141,
+    "listing": "80141 80123 Tue Oct 13 14:39:48 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/clojure-full90-independent-reconcile-v2 --lease-fd 3 --go-fd 4"
+  },
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/reconcile_native_suite_v2.py",
+    "--language",
+    "clojure",
+    "--study-root",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/studies/full-v1",
+    "--reviewed-index-sha256",
+    "7391f432d86a78b0995a1895ff828930642c2eb82f4dbcb36ef86fe97c75b6fd",
+    "--output",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/reconciliation/full-v1-suite-v2.json"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "detached_session": true,
+  "automatic_retry": false,
+  "qualification_granted": false
+}

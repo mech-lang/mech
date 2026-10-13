@@ -1,0 +1,37 @@
+{
+  "provider": "language-project",
+  "official_sources": [
+    "https://github.com/crystal-lang/crystal/blob/1.21.1/src/compiler/crystal/command/format.cr",
+    "https://github.com/crystal-lang/crystal/blob/1.21.1/src/compiler/crystal/tools/formatter.cr"
+  ],
+  "tool": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/bin/crystal",
+    "sha256": "e88aa24910acea22d392300b87ae811d419c991e019623a9725b9e0fc942b020",
+    "version": "Crystal 1.21.1 [73ea5c2b1] (2026-09-26)"
+  },
+  "config": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/formatted-crystal-plan-v1/jobs/actual-plans-v1/native-formatter-config.json",
+    "sha256": "0c3557d68afc8c9c1d588e0296cdba8e66eb8b4c59e6969e67cb38ff0c3448bf"
+  },
+  "input": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/source-snapshot/sources/revcomp/optimized.cr",
+    "sha256": "d2559b94e50d2c1bcee57803f822d376cd688c47024dd8d34f3d87488c234581"
+  },
+  "output": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/17/0/optimized.cr",
+    "sha256": "01a2c744582bab15aa2e624a97f2042bdb815643fd17ae3f263e76bd6e9fc8dc"
+  },
+  "process_receipt": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/17/0/processes/format.json",
+    "sha256": "52a5063cd4439f5edcbb142ddf26784e9c55671702ca0f196ec0ef01610e1737"
+  },
+  "version_receipt": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/0/0/version-evidence.json",
+    "sha256": "9b53b595ef7fa9db78c243021d0789305e3dd384e149eb4bc8724df191264522",
+    "binding_field": "/version",
+    "binding": "Crystal 1.21.1 [73ea5c2b1] (2026-09-26)"
+  },
+  "source_preservation_verified": true,
+  "ownership_verified": true,
+  "no_application_execution": true
+}

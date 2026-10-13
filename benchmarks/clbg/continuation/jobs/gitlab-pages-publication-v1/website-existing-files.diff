@@ -1,0 +1,51 @@
+diff --git a/README.md b/README.md
+index 7f99672..3181820 100644
+--- a/README.md
++++ b/README.md
+@@ -9,3 +9,10 @@ Read about progress on our [blog](https://mech-lang.org/blog/), follow us on Twi
+ # Mech Project Website
+ 
+ This is the project website for the Mech programming language, which you can find here: https://gitlab.com/cmontella/mech
++
++The Benchmark Explorer is served at https://mech-lang.org/benchmarks/ from
++`public/benchmarks/`. Its static assets and qualified measurement data come from
++`benchmarks/clbg/overview/explorer/dist/` on the Mech repository's
++`codex/clbg-native-benchmarks` branch. Copy the complete directory for updates;
++keep the sibling modules, data, source audits, downloads and license files
++together. The existing Pages job publishes `public` when `main` is pushed.
+diff --git a/public/blog/index.html b/public/blog/index.html
+index 312fc09..dc5db81 100644
+--- a/public/blog/index.html
++++ b/public/blog/index.html
+@@ -2329,6 +2329,7 @@ mark {
+         <a href="https://mech-lang.org/community/">Community</a>
+         <a href="https://docs.mech-lang.org">Docs</a>
+         <a href="/explore/">Explore</a>
++        <a href="/benchmarks/">Benchmarks</a>
+       </nav>
+     </div>
+   </header>
+diff --git a/public/explore/index.html b/public/explore/index.html
+index 61901a0..51b6c82 100644
+--- a/public/explore/index.html
++++ b/public/explore/index.html
+@@ -28,6 +28,7 @@
+         <a href="https://mech-lang.org/community/">Community</a>
+         <a href="https://docs.mech-lang.org">Docs</a>
+         <a class="active" href="/explore/" aria-current="page">Explore</a>
++        <a href="/benchmarks/">Benchmarks</a>
+       </nav>
+     </div>
+   </header>
+diff --git a/public/index.html b/public/index.html
+index 07bf00e..5aa88ef 100644
+--- a/public/index.html
++++ b/public/index.html
+@@ -298,6 +298,7 @@
+           <div><span>DATE:</span><span>2026-05-11</span></div>
+           <div><span>LICENSE:</span><span><a href="https://github.com/mech-lang/mech?tab=Apache-2.0-1-ov-file#readme">APACHE 2.0</a></span></div>
+           <p class="ack"><a href="https://docs.mech-lang.org">DOCUMENTATION</a></p>
++          <p class="ack"><a href="/benchmarks/">BENCHMARKS</a></p>
+         
+         </div>
+         <div class="right">

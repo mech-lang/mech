@@ -1,0 +1,15 @@
+{
+  "status": "root-and-independent-peer-accepted-followup-v2-frozen",
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/python-framework-host-linkage-v1/host-linkage.json": "9a1c0fa4fc330cf0c7c176349c220640ad4714c5e8e081eaead84c00b89729af",
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/bin/python3.14": "e401ac7a95cda75dee34a0cfe1e4faf0a6df1a501cf67887f177fb78cd4eb60a",
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python": "b3e2d3162eb789101425bbe76810fc5eb0d412d7cd5867d27568dd180ccf5a22",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/enter_reviewed_followup_v2.py": "aad824d27b1a6cd584e28281f2dbf81ce9dd2ce59609f631c5b5e3394c415f56",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/ENTER_REVIEWED_FOLLOWUP_V2_REVIEW.md": "b3b4cdbfba90e8949730b80300f096a8c84facd90ffc0e1b11b28c4064e4dd3d"
+  },
+  "completed_at": "2026-10-13T18:50:18.011852+00:00",
+  "common_mutex_inode": 79859134,
+  "actual_native_subjects": 0,
+  "fixture_reexecutions": 0,
+  "full_timing_authorized": false
+}

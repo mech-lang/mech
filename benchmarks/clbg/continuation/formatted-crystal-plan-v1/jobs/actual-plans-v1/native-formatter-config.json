@@ -1,0 +1,18 @@
+{
+  "language": "crystal",
+  "version": "1.21.1",
+  "argv": [
+    "tool",
+    "format",
+    "--no-color",
+    "{input}"
+  ],
+  "output_mode": "in-place",
+  "style": "Exact pinned Crystal built-in formatter defaults",
+  "explicit_file_only": true,
+  "ambient_config_files_read": false,
+  "source_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/src/compiler/crystal/command/format.cr": "d9b0605622c1aa0a9d0354b6bfc6b295467225065fca213c3708e11baa95bd7e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/src/compiler/crystal/tools/formatter.cr": "59e0acb997bd8506a42e334205e6783de6c43f7915ad0ae3cdcf4894cfbbd2bd"
+  }
+}

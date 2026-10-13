@@ -1,0 +1,3 @@
+WAIT closed C3 metadata lease
+WAIT common mutex: source-only C3 current candidate
+{"status": "qualified-current-C3-candidate-awaiting-root-stage-review", "candidate": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/c3-current-candidate-v1/candidate-data.json", "sha256": "4fe402c21360fbbbe9d650c15d1fd4c62422c17cfad8cafd24721fe7f0bd2947", "actual_C3_sources": 20, "actual_full_processes": 90, "fixture_reexecutions": 0, "live_dataset_mutations": 0}

@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-13T18:59:44.016321+00:00",
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-E",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/measure.py",
+    "--plan",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/formatted-crystal-plan-v1/jobs/actual-plans-v1/cohort-plan.json",
+    "--plan-sha256",
+    "bdf950a871aead2957232afe3b7a6549761593edfeaa06a64eb250c5f36781c3",
+    "--revision",
+    "crystal20-format-v1"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "common_mutex_owned_by_target_command": true,
+  "qualification_granted": false,
+  "automatic_retry": false
+}

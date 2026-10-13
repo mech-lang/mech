@@ -1,0 +1,21 @@
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/pony-work-entry-v1/replay.py", line 367, in <module>
+    main()
+    ~~~~^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/pony-work-entry-v1/replay.py", line 363, in main
+    raise error
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/pony-work-entry-v1/replay.py", line 315, in main
+    original.main()
+    ~~~~~~~~~~~~~^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/work-full-v5/work_qualify.py", line 360, in main
+    run(args.revision, args.manifest_sha256)
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/work-full-v5/work_qualify.py", line 343, in run
+    raw_allocation, allocation_pins = allocation_evidence.emit(preparation, guard, harness,
+                                      ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        manifest['qualification'], output / 'scored-tree-allocation', lock.fileno())
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/work-full-v5/allocation_evidence.py", line 48, in emit
+    assert len(ir_files) == 1, 'Exact source IR output must be unambiguous'
+           ^^^^^^^^^^^^^^^^^^
+AssertionError: Exact source IR output must be unambiguous

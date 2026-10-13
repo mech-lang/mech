@@ -1,0 +1,8 @@
+{
+  "status": "root-attested-supported-source-opening-complete",
+  "project_id": "appgprj_6ac8f49664688191961eac14d8a9465b",
+  "baseline_sha256": "27b1c792b253d3d465ca6f853e7f85c9d089cb87e3b161a634feb7b5c1f69c8e",
+  "actual_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/c3-source-opening-v1/receipt.json",
+  "actual_receipt_sha256": "32dbe87a672e7e378549bacbed1feccdf9f1c05185c5aa66a6426fdb4c91ec90",
+  "credentials_read_by_coordinator": false
+}

@@ -1,0 +1,11 @@
+{
+  "environment": {
+    "PATH": "/usr/bin:/bin",
+    "CRYSTAL_WORKERS": "1",
+    "HOME": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/19/0/home",
+    "XDG_CONFIG_HOME": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/19/0/home",
+    "LANG": "C",
+    "LC_ALL": "C"
+  },
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/19/0"
+}

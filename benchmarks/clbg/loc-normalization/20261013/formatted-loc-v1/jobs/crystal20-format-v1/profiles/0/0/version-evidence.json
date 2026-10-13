@@ -1,0 +1,14 @@
+{
+  "version": "Crystal 1.21.1 [73ea5c2b1] (2026-09-26)",
+  "stdout": "Crystal 1.21.1 [73ea5c2b1] (2026-09-26)\n\nLLVM: 15.0.7\nDefault target: aarch64-apple-macosx11.0\n",
+  "stderr": "",
+  "tool": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/bin/crystal",
+    "sha256": "e88aa24910acea22d392300b87ae811d419c991e019623a9725b9e0fc942b020",
+    "version": "Crystal 1.21.1 [73ea5c2b1] (2026-09-26)"
+  },
+  "process_receipt": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/0/0/processes/version.json",
+    "sha256": "d2d6e3443d0906ad861c96fb6966b6149af6bdaf2627c7c134e615b0d50f2d1d"
+  }
+}

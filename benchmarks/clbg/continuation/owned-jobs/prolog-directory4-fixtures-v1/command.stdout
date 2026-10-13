@@ -1,0 +1,2 @@
+WAIT common mutex: four new directory extraction fixtures
+{"status": "passed-directory-extraction-fixtures", "receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-directory-v1/jobs/fixtures-v1/fixture-receipt.json", "receipt_sha256": "6bd2f38bef28c017c45395e05a307cb1005d03e4540ca92b3832754bc6977ad3", "terminal_sha256": "d4273be3af3161410f39a9125bba453beb25cd7461f5df691bc5652d254ccd3f", "tests_run": 4, "actual_native_subjects": 0}

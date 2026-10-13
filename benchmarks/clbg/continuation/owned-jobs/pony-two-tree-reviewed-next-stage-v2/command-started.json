@@ -1,0 +1,22 @@
+{
+  "started_at": "2026-10-13T18:50:27.464913+00:00",
+  "command_pid": 81399,
+  "command_identity": {
+    "pid": 81399,
+    "listing": "81399 81385 Tue Oct 13 14:50:27 2026     /opt/homebrew/opt/python@3.14/bin/python3.14 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/enter_reviewed_followup_v2.py --stage pony-work --host-linkage /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/python-framework-host-linkage-v1/host-linkage.json --host-linkage-sha256 9a1c0fa4fc330cf0c7c176349c220640ad4714c5e8e081eaead84c00b89729af"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/enter_reviewed_followup_v2.py",
+    "--stage",
+    "pony-work",
+    "--host-linkage",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/python-framework-host-linkage-v1/host-linkage.json",
+    "--host-linkage-sha256",
+    "9a1c0fa4fc330cf0c7c176349c220640ad4714c5e8e081eaead84c00b89729af"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech"
+}

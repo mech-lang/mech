@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-v2/bootstrap_runtime_v2.py", line 510, in <module>
+    main()
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-v2/bootstrap_runtime_v2.py", line 504, in main
+    raise error
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-v2/bootstrap_runtime_v2.py", line 367, in main
+    extract_source(source_archive, output/'official-source')
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-v2/bootstrap_runtime_v2.py", line 262, in extract_source
+    assert target.is_relative_to(destination.resolve()) and str(target) not in names
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

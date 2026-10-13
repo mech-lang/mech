@@ -1,0 +1,20 @@
+{
+  "started_at": "2026-10-13T19:27:13.631050+00:00",
+  "command_pid": 86591,
+  "command_identity": {
+    "pid": 86591,
+    "listing": "86591 86585 Tue Oct 13 15:27:13 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -I -S -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-directory-v1/qualify_extract.py --revision fixtures-v1"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-directory-v1/qualify_extract.py",
+    "--revision",
+    "fixtures-v1"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech"
+}

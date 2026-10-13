@@ -1,0 +1,9 @@
+test_alias_escape_metadata_and_unselected_member_types_reject (test_extract_source.DirectoryContracts.test_alias_escape_metadata_and_unselected_member_types_reject) ... ok
+test_existing_destination_and_dangling_link_keep_original_policy (test_extract_source.DirectoryContracts.test_existing_destination_and_dangling_link_keep_original_policy) ... ok
+test_regular_link_and_cross_type_duplicates_never_overwrite (test_extract_source.DirectoryContracts.test_regular_link_and_cross_type_duplicates_never_overwrite) ... ok
+test_repeated_exact_directory_identity_allows_only_unapplied_timestamp_difference (test_extract_source.DirectoryContracts.test_repeated_exact_directory_identity_allows_only_unapplied_timestamp_difference) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.013s
+
+OK

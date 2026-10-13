@@ -1,0 +1,767 @@
+{
+  "status": "actual-Crystal20-formatter-receipts-reviewed-awaiting-root-admission",
+  "qualification": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/qualification.json",
+    "sha256": "cda8ac6271fee4ae3f37340cc80b17ba3aa98b6582d5c980270923a0abbb382a"
+  },
+  "terminal": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/terminal.json",
+    "sha256": "0434c52404fa85f863aa0c2167c32981182b166a68dd8e9c1b00a96156237b49"
+  },
+  "durable_terminal_sha256": "8b1c95a6d6b1dd76c7a7a9ba591de3df81407819668d6ea7e3d10f9161be5190",
+  "profiles": 20,
+  "qualified_profiles": 20,
+  "formatted_file_receipts": 20,
+  "observed_version_receipts": 1,
+  "all_original_source_pins_preserved": true,
+  "baseline_unchanged": true,
+  "pure_stage_accepted": true,
+  "verified_pins": 6861,
+  "rows": {
+    "binarytrees:crystal-binarytrees-compact": {
+      "status": "qualified",
+      "formatted_loc": 30,
+      "complete": true,
+      "files": [
+        {
+          "published_file": "b220cf0277dbe40aff0e4e348b5a1830054dbc18d0bff1f8abaf47eb447f1dc3",
+          "source_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/source-snapshot/sources/binarytrees/compact.cr",
+          "source_sha256": "b220cf0277dbe40aff0e4e348b5a1830054dbc18d0bff1f8abaf47eb447f1dc3",
+          "status": "qualified",
+          "physical_loc": 30,
+          "output_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/0/0/compact.cr",
+          "output_sha256": "2e4c9fa69e386b231e585026844ab410359215041e77cd0cfe6586725be00596",
+          "process_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/0/0/processes/format.json",
+            "sha256": "747f4689d62acb644f75f1b1799032a5fd9958da8c83296ff96acc53d9f80689"
+          },
+          "counter_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/0/0/physical-count.json",
+            "sha256": "aeeebd49408c56261e2f017185e50f66026c9e688cfe34c3bc22a2913335ae7f",
+            "binding_field": "",
+            "binding": {
+              "definition": "nonblank-noncomment-physical-lines-v1",
+              "module_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/formatted-crystal-plan-v1/physical_crystal.py",
+              "module_sha256": "26db5ae940e8bbdec5e6f367db5a5c4c4deb4d159c23926965d0fb705bf3072f",
+              "function": "mask_foreign",
+              "argument": "crystal",
+              "diagnostics": [],
+              "no_semantic_normalization": true,
+              "input_sha256": "2e4c9fa69e386b231e585026844ab410359215041e77cd0cfe6586725be00596",
+              "physical_loc": 30
+            }
+          }
+        }
+      ],
+      "reasons": []
+    },
+    "binarytrees:crystal-binarytrees-optimized": {
+      "status": "qualified",
+      "formatted_loc": 45,
+      "complete": true,
+      "files": [
+        {
+          "published_file": "b5220f56d68307540873582eb4a41379445c196d33e6e7a40b81e1207a5843f2",
+          "source_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/source-snapshot/sources/binarytrees/optimized.cr",
+          "source_sha256": "b5220f56d68307540873582eb4a41379445c196d33e6e7a40b81e1207a5843f2",
+          "status": "qualified",
+          "physical_loc": 45,
+          "output_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/1/0/optimized.cr",
+          "output_sha256": "b3a91a2febecb5033efb2ab0c42053aa70dc062f8717c4b07a2edba59fc340c9",
+          "process_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/1/0/processes/format.json",
+            "sha256": "0b7d01ed2c6762fe1f5b6a7b7c26580004ce879c1d4c6b5a6645383ab57fe9c1"
+          },
+          "counter_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/1/0/physical-count.json",
+            "sha256": "5fd2abb931b50bfd18f7c58b06f2738177e38788a644420b4201cf7f22c1fbdb",
+            "binding_field": "",
+            "binding": {
+              "definition": "nonblank-noncomment-physical-lines-v1",
+              "module_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/formatted-crystal-plan-v1/physical_crystal.py",
+              "module_sha256": "26db5ae940e8bbdec5e6f367db5a5c4c4deb4d159c23926965d0fb705bf3072f",
+              "function": "mask_foreign",
+              "argument": "crystal",
+              "diagnostics": [],
+              "no_semantic_normalization": true,
+              "input_sha256": "b3a91a2febecb5033efb2ab0c42053aa70dc062f8717c4b07a2edba59fc340c9",
+              "physical_loc": 45
+            }
+          }
+        }
+      ],
+      "reasons": []
+    },
+    "fannkuchredux:crystal-fannkuchredux-compact": {
+      "status": "qualified",
+      "formatted_loc": 44,
+      "complete": true,
+      "files": [
+        {
+          "published_file": "0a7eebec4367e0855e166286640564c3367fd8108db71e34ad1f3b02cabd6db6",
+          "source_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/source-snapshot/sources/fannkuchredux/compact.cr",
+          "source_sha256": "0a7eebec4367e0855e166286640564c3367fd8108db71e34ad1f3b02cabd6db6",
+          "status": "qualified",
+          "physical_loc": 44,
+          "output_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/2/0/compact.cr",
+          "output_sha256": "0a7eebec4367e0855e166286640564c3367fd8108db71e34ad1f3b02cabd6db6",
+          "process_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/2/0/processes/format.json",
+            "sha256": "3df2c92c23a45c1ba6b163be8a8dcfde6d3be72f41b40a6a3077d529653c515c"
+          },
+          "counter_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/2/0/physical-count.json",
+            "sha256": "448e08314029fab3056e60dd4a71d480d8b4ddf30040268ab0059e08827cc5a6",
+            "binding_field": "",
+            "binding": {
+              "definition": "nonblank-noncomment-physical-lines-v1",
+              "module_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/formatted-crystal-plan-v1/physical_crystal.py",
+              "module_sha256": "26db5ae940e8bbdec5e6f367db5a5c4c4deb4d159c23926965d0fb705bf3072f",
+              "function": "mask_foreign",
+              "argument": "crystal",
+              "diagnostics": [],
+              "no_semantic_normalization": true,
+              "input_sha256": "0a7eebec4367e0855e166286640564c3367fd8108db71e34ad1f3b02cabd6db6",
+              "physical_loc": 44
+            }
+          }
+        }
+      ],
+      "reasons": []
+    },
+    "fannkuchredux:crystal-fannkuchredux-optimized": {
+      "status": "qualified",
+      "formatted_loc": 68,
+      "complete": true,
+      "files": [
+        {
+          "published_file": "7dd38850ef149e9c47ef4e15dcaf34fba6168a252b77b55fe9ca852d63a0e0b3",
+          "source_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/source-snapshot/sources/fannkuchredux/optimized.cr",
+          "source_sha256": "7dd38850ef149e9c47ef4e15dcaf34fba6168a252b77b55fe9ca852d63a0e0b3",
+          "status": "qualified",
+          "physical_loc": 68,
+          "output_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/3/0/optimized.cr",
+          "output_sha256": "d4d5d97e9f83b352b08e05b4ecd5413668f6eead3743be4d026ebfdbe94a36dd",
+          "process_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/3/0/processes/format.json",
+            "sha256": "80f85f63d39db019c79272a37753e4db7ff675b5e7cedc3a5410f46b9c4663bf"
+          },
+          "counter_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/3/0/physical-count.json",
+            "sha256": "3123b461b5b0a990ce076b295de9e5911a279d05ea483fde7996db0a18e4497b",
+            "binding_field": "",
+            "binding": {
+              "definition": "nonblank-noncomment-physical-lines-v1",
+              "module_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/formatted-crystal-plan-v1/physical_crystal.py",
+              "module_sha256": "26db5ae940e8bbdec5e6f367db5a5c4c4deb4d159c23926965d0fb705bf3072f",
+              "function": "mask_foreign",
+              "argument": "crystal",
+              "diagnostics": [],
+              "no_semantic_normalization": true,
+              "input_sha256": "d4d5d97e9f83b352b08e05b4ecd5413668f6eead3743be4d026ebfdbe94a36dd",
+              "physical_loc": 68
+            }
+          }
+        }
+      ],
+      "reasons": []
+    },
+    "fasta:crystal-fasta-compact": {
+      "status": "qualified",
+      "formatted_loc": 69,
+      "complete": true,
+      "files": [
+        {
+          "published_file": "fb5a254a6c357a5541e3f6d0c405b1e4fabab002adb34e357012e593e30fdc7c",
+          "source_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/source-snapshot/sources/fasta/compact.cr",
+          "source_sha256": "fb5a254a6c357a5541e3f6d0c405b1e4fabab002adb34e357012e593e30fdc7c",
+          "status": "qualified",
+          "physical_loc": 69,
+          "output_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/4/0/compact.cr",
+          "output_sha256": "fb5a254a6c357a5541e3f6d0c405b1e4fabab002adb34e357012e593e30fdc7c",
+          "process_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/4/0/processes/format.json",
+            "sha256": "74d86a52acacf06ff1a9da779bebda6b9146a6fdb626cf2a0a739f4df6aeb3ff"
+          },
+          "counter_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/4/0/physical-count.json",
+            "sha256": "ccf94c7432e822f3709df2c610792c33e8aea5689d0bfca575655fb5028ec403",
+            "binding_field": "",
+            "binding": {
+              "definition": "nonblank-noncomment-physical-lines-v1",
+              "module_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/formatted-crystal-plan-v1/physical_crystal.py",
+              "module_sha256": "26db5ae940e8bbdec5e6f367db5a5c4c4deb4d159c23926965d0fb705bf3072f",
+              "function": "mask_foreign",
+              "argument": "crystal",
+              "diagnostics": [],
+              "no_semantic_normalization": true,
+              "input_sha256": "fb5a254a6c357a5541e3f6d0c405b1e4fabab002adb34e357012e593e30fdc7c",
+              "physical_loc": 69
+            }
+          }
+        }
+      ],
+      "reasons": []
+    },
+    "fasta:crystal-fasta-optimized": {
+      "status": "qualified",
+      "formatted_loc": 107,
+      "complete": true,
+      "files": [
+        {
+          "published_file": "6c1af560fa57eb8d2211d01090c44de3f925a667fc760cf969f88962a047f209",
+          "source_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/source-snapshot/sources/fasta/optimized.cr",
+          "source_sha256": "6c1af560fa57eb8d2211d01090c44de3f925a667fc760cf969f88962a047f209",
+          "status": "qualified",
+          "physical_loc": 107,
+          "output_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/5/0/optimized.cr",
+          "output_sha256": "3edad9024e4bfd17c8bf28800693b4c624025db565d3a8ba4ffe95c31082ca27",
+          "process_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/5/0/processes/format.json",
+            "sha256": "a5503156d3af23ef8f964d7612d3706e455a871319b6b6ab83a0a981702c1f11"
+          },
+          "counter_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/5/0/physical-count.json",
+            "sha256": "8ddea73ed0fe8c8e47a29e5689b9f30a63ebe2622ec8970e7b7880c1b23faedc",
+            "binding_field": "",
+            "binding": {
+              "definition": "nonblank-noncomment-physical-lines-v1",
+              "module_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/formatted-crystal-plan-v1/physical_crystal.py",
+              "module_sha256": "26db5ae940e8bbdec5e6f367db5a5c4c4deb4d159c23926965d0fb705bf3072f",
+              "function": "mask_foreign",
+              "argument": "crystal",
+              "diagnostics": [],
+              "no_semantic_normalization": true,
+              "input_sha256": "3edad9024e4bfd17c8bf28800693b4c624025db565d3a8ba4ffe95c31082ca27",
+              "physical_loc": 107
+            }
+          }
+        }
+      ],
+      "reasons": []
+    },
+    "knucleotide:crystal-knucleotide-compact": {
+      "status": "qualified",
+      "formatted_loc": 34,
+      "complete": true,
+      "files": [
+        {
+          "published_file": "62ce2f52527642f1570c822233e13794011a05f3c9784fd13f5bd2b257448a99",
+          "source_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/source-snapshot/sources/knucleotide/compact.cr",
+          "source_sha256": "62ce2f52527642f1570c822233e13794011a05f3c9784fd13f5bd2b257448a99",
+          "status": "qualified",
+          "physical_loc": 34,
+          "output_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/6/0/compact.cr",
+          "output_sha256": "448ee29c6343f00f01456bda8877b18244de15349d61fc261350a1e862c98a81",
+          "process_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/6/0/processes/format.json",
+            "sha256": "4b9332209d09d729e8fd53b3bfa3644cc8c8bef88246602da8a94b0d1a260e59"
+          },
+          "counter_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/6/0/physical-count.json",
+            "sha256": "8c3e6af9fe79d5d17bf485d785496676da23e25034c749031d2ca73d8878ff43",
+            "binding_field": "",
+            "binding": {
+              "definition": "nonblank-noncomment-physical-lines-v1",
+              "module_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/formatted-crystal-plan-v1/physical_crystal.py",
+              "module_sha256": "26db5ae940e8bbdec5e6f367db5a5c4c4deb4d159c23926965d0fb705bf3072f",
+              "function": "mask_foreign",
+              "argument": "crystal",
+              "diagnostics": [],
+              "no_semantic_normalization": true,
+              "input_sha256": "448ee29c6343f00f01456bda8877b18244de15349d61fc261350a1e862c98a81",
+              "physical_loc": 34
+            }
+          }
+        }
+      ],
+      "reasons": []
+    },
+    "knucleotide:crystal-knucleotide-optimized": {
+      "status": "qualified",
+      "formatted_loc": 71,
+      "complete": true,
+      "files": [
+        {
+          "published_file": "6bd73c739483d4b0ebe50490e2a13264a1395fd2cfe9979ae2e5e229d255e6ca",
+          "source_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-input-archive-filter-v6/source-snapshot/sources/knucleotide/optimized.cr",
+          "source_sha256": "6bd73c739483d4b0ebe50490e2a13264a1395fd2cfe9979ae2e5e229d255e6ca",
+          "status": "qualified",
+          "physical_loc": 71,
+          "output_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/7/0/optimized.cr",
+          "output_sha256": "50eff713c11bc882d346b9b490f9c65915405ca7a4a8f28dfa3aa1b7f1cb0799",
+          "process_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/7/0/processes/format.json",
+            "sha256": "98d05d3117bdb636633581bd1bc72be96bb117e0a591f822fd8c9fadc8dbb811"
+          },
+          "counter_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/7/0/physical-count.json",
+            "sha256": "557d6f23d666d5d71f2dd3b3aaf3acddeec11585ddf46ac881a9417d8355c267",
+            "binding_field": "",
+            "binding": {
+              "definition": "nonblank-noncomment-physical-lines-v1",
+              "module_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/formatted-crystal-plan-v1/physical_crystal.py",
+              "module_sha256": "26db5ae940e8bbdec5e6f367db5a5c4c4deb4d159c23926965d0fb705bf3072f",
+              "function": "mask_foreign",
+              "argument": "crystal",
+              "diagnostics": [],
+              "no_semantic_normalization": true,
+              "input_sha256": "50eff713c11bc882d346b9b490f9c65915405ca7a4a8f28dfa3aa1b7f1cb0799",
+              "physical_loc": 71
+            }
+          }
+        }
+      ],
+      "reasons": []
+    },
+    "mandelbrot:crystal-mandelbrot-compact": {
+      "status": "qualified",
+      "formatted_loc": 31,
+      "complete": true,
+      "files": [
+        {
+          "published_file": "ed4fb0e6a53fe8db69431935011d8de7677430ff0091c7a56e2a40e36cdd3e1c",
+          "source_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/source-snapshot/sources/mandelbrot/compact.cr",
+          "source_sha256": "ed4fb0e6a53fe8db69431935011d8de7677430ff0091c7a56e2a40e36cdd3e1c",
+          "status": "qualified",
+          "physical_loc": 31,
+          "output_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/8/0/compact.cr",
+          "output_sha256": "ed4fb0e6a53fe8db69431935011d8de7677430ff0091c7a56e2a40e36cdd3e1c",
+          "process_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/8/0/processes/format.json",
+            "sha256": "199b69a07df027453a1d01123b65946e5320c87ca8569fb397ab906e4be772a1"
+          },
+          "counter_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/8/0/physical-count.json",
+            "sha256": "6ebefc6694722ba12014d86b24941b736d1dce87d1fa2287fa666b2f19ef586e",
+            "binding_field": "",
+            "binding": {
+              "definition": "nonblank-noncomment-physical-lines-v1",
+              "module_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/formatted-crystal-plan-v1/physical_crystal.py",
+              "module_sha256": "26db5ae940e8bbdec5e6f367db5a5c4c4deb4d159c23926965d0fb705bf3072f",
+              "function": "mask_foreign",
+              "argument": "crystal",
+              "diagnostics": [],
+              "no_semantic_normalization": true,
+              "input_sha256": "ed4fb0e6a53fe8db69431935011d8de7677430ff0091c7a56e2a40e36cdd3e1c",
+              "physical_loc": 31
+            }
+          }
+        }
+      ],
+      "reasons": []
+    },
+    "mandelbrot:crystal-mandelbrot-optimized": {
+      "status": "qualified",
+      "formatted_loc": 50,
+      "complete": true,
+      "files": [
+        {
+          "published_file": "5671d8d0a8bf31b80d4e6c8539d430d38e47d4ddff91a5558fe9b687d8de363f",
+          "source_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/source-snapshot/sources/mandelbrot/optimized.cr",
+          "source_sha256": "5671d8d0a8bf31b80d4e6c8539d430d38e47d4ddff91a5558fe9b687d8de363f",
+          "status": "qualified",
+          "physical_loc": 50,
+          "output_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/9/0/optimized.cr",
+          "output_sha256": "a01de6d8b77db91d927b3c58b49bbd1d9854e80192f6c4303e771c1c2a64f722",
+          "process_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/9/0/processes/format.json",
+            "sha256": "59794b799990075403f80b18681e7dfd11ead7c6bbebc23ba454e555b48f5de4"
+          },
+          "counter_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/9/0/physical-count.json",
+            "sha256": "878c079bc77b746d149873e834126c490d7e14a97fe4c3c36f4187625c826dc0",
+            "binding_field": "",
+            "binding": {
+              "definition": "nonblank-noncomment-physical-lines-v1",
+              "module_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/formatted-crystal-plan-v1/physical_crystal.py",
+              "module_sha256": "26db5ae940e8bbdec5e6f367db5a5c4c4deb4d159c23926965d0fb705bf3072f",
+              "function": "mask_foreign",
+              "argument": "crystal",
+              "diagnostics": [],
+              "no_semantic_normalization": true,
+              "input_sha256": "a01de6d8b77db91d927b3c58b49bbd1d9854e80192f6c4303e771c1c2a64f722",
+              "physical_loc": 50
+            }
+          }
+        }
+      ],
+      "reasons": []
+    },
+    "nbody:crystal-nbody-compact": {
+      "status": "qualified",
+      "formatted_loc": 52,
+      "complete": true,
+      "files": [
+        {
+          "published_file": "b2fc0082ebd9b48b79d63c8ff59e8221d9eaebe1bb934af5847fc93bb7933fde",
+          "source_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/source-snapshot/sources/nbody/compact.cr",
+          "source_sha256": "b2fc0082ebd9b48b79d63c8ff59e8221d9eaebe1bb934af5847fc93bb7933fde",
+          "status": "qualified",
+          "physical_loc": 52,
+          "output_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/10/0/compact.cr",
+          "output_sha256": "61d60189dcab864d6df592021f7b630d772199096c1aba0e0811260168b76cb0",
+          "process_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/10/0/processes/format.json",
+            "sha256": "c735fa5af9b0e9812c205e0c916c83beaad1f90800d1ea32122c1bbc8e8b0470"
+          },
+          "counter_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/10/0/physical-count.json",
+            "sha256": "0c3fdf1d9b8139aadffe4f353fe72848483420cec2141de34682e122f2e04425",
+            "binding_field": "",
+            "binding": {
+              "definition": "nonblank-noncomment-physical-lines-v1",
+              "module_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/formatted-crystal-plan-v1/physical_crystal.py",
+              "module_sha256": "26db5ae940e8bbdec5e6f367db5a5c4c4deb4d159c23926965d0fb705bf3072f",
+              "function": "mask_foreign",
+              "argument": "crystal",
+              "diagnostics": [],
+              "no_semantic_normalization": true,
+              "input_sha256": "61d60189dcab864d6df592021f7b630d772199096c1aba0e0811260168b76cb0",
+              "physical_loc": 52
+            }
+          }
+        }
+      ],
+      "reasons": []
+    },
+    "nbody:crystal-nbody-optimized": {
+      "status": "qualified",
+      "formatted_loc": 134,
+      "complete": true,
+      "files": [
+        {
+          "published_file": "b2648c9eefd4ebf27917e9ec485b9411832d14132ab7c3437449d8f2e9ce3888",
+          "source_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/source-snapshot/sources/nbody/optimized.cr",
+          "source_sha256": "b2648c9eefd4ebf27917e9ec485b9411832d14132ab7c3437449d8f2e9ce3888",
+          "status": "qualified",
+          "physical_loc": 134,
+          "output_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/11/0/optimized.cr",
+          "output_sha256": "b2648c9eefd4ebf27917e9ec485b9411832d14132ab7c3437449d8f2e9ce3888",
+          "process_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/11/0/processes/format.json",
+            "sha256": "364a4bb5448007dd5b2a5d596777062c9a2d6a2a70d7b23197859eb17abdcc03"
+          },
+          "counter_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/11/0/physical-count.json",
+            "sha256": "189b1060b9448508a76a9033e61c875d573dfbfa09709785e1820eca67d9fdb3",
+            "binding_field": "",
+            "binding": {
+              "definition": "nonblank-noncomment-physical-lines-v1",
+              "module_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/formatted-crystal-plan-v1/physical_crystal.py",
+              "module_sha256": "26db5ae940e8bbdec5e6f367db5a5c4c4deb4d159c23926965d0fb705bf3072f",
+              "function": "mask_foreign",
+              "argument": "crystal",
+              "diagnostics": [],
+              "no_semantic_normalization": true,
+              "input_sha256": "b2648c9eefd4ebf27917e9ec485b9411832d14132ab7c3437449d8f2e9ce3888",
+              "physical_loc": 134
+            }
+          }
+        }
+      ],
+      "reasons": []
+    },
+    "pidigits:crystal-pidigits-compact": {
+      "status": "qualified",
+      "formatted_loc": 31,
+      "complete": true,
+      "files": [
+        {
+          "published_file": "10a661763c5991cc979ee498afa6f3e9a202e094fc8889b1216543bd5c17a537",
+          "source_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-input-archive-filter-v6/source-snapshot/sources/pidigits/compact.cr",
+          "source_sha256": "10a661763c5991cc979ee498afa6f3e9a202e094fc8889b1216543bd5c17a537",
+          "status": "qualified",
+          "physical_loc": 31,
+          "output_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/12/0/compact.cr",
+          "output_sha256": "10a661763c5991cc979ee498afa6f3e9a202e094fc8889b1216543bd5c17a537",
+          "process_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/12/0/processes/format.json",
+            "sha256": "5c74b3feadb700e06fb57c54584d093190cd5928e8b0cb5edf28c7d2e4a85007"
+          },
+          "counter_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/12/0/physical-count.json",
+            "sha256": "c347e5c844cfb49b3abe7f88ae83dc033188eb24676b518d5cb9a6e39810e90c",
+            "binding_field": "",
+            "binding": {
+              "definition": "nonblank-noncomment-physical-lines-v1",
+              "module_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/formatted-crystal-plan-v1/physical_crystal.py",
+              "module_sha256": "26db5ae940e8bbdec5e6f367db5a5c4c4deb4d159c23926965d0fb705bf3072f",
+              "function": "mask_foreign",
+              "argument": "crystal",
+              "diagnostics": [],
+              "no_semantic_normalization": true,
+              "input_sha256": "10a661763c5991cc979ee498afa6f3e9a202e094fc8889b1216543bd5c17a537",
+              "physical_loc": 31
+            }
+          }
+        }
+      ],
+      "reasons": []
+    },
+    "pidigits:crystal-pidigits-optimized": {
+      "status": "qualified",
+      "formatted_loc": 31,
+      "complete": true,
+      "files": [
+        {
+          "published_file": "69ee8e46548eb3996393772df89a6a7a856e9f8f70560259a3b53af8bfb8a5ff",
+          "source_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-input-archive-filter-v6/source-snapshot/sources/pidigits/optimized.cr",
+          "source_sha256": "69ee8e46548eb3996393772df89a6a7a856e9f8f70560259a3b53af8bfb8a5ff",
+          "status": "qualified",
+          "physical_loc": 31,
+          "output_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/13/0/optimized.cr",
+          "output_sha256": "69ee8e46548eb3996393772df89a6a7a856e9f8f70560259a3b53af8bfb8a5ff",
+          "process_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/13/0/processes/format.json",
+            "sha256": "92dd5bb9091fa85e0176043c9c4a7eac75339dee79867f64c6467b21884c2aaf"
+          },
+          "counter_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/13/0/physical-count.json",
+            "sha256": "6104e4caff7cf579423e1ea83e0819d3895fc3458ca98ece68752914f33a4812",
+            "binding_field": "",
+            "binding": {
+              "definition": "nonblank-noncomment-physical-lines-v1",
+              "module_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/formatted-crystal-plan-v1/physical_crystal.py",
+              "module_sha256": "26db5ae940e8bbdec5e6f367db5a5c4c4deb4d159c23926965d0fb705bf3072f",
+              "function": "mask_foreign",
+              "argument": "crystal",
+              "diagnostics": [],
+              "no_semantic_normalization": true,
+              "input_sha256": "69ee8e46548eb3996393772df89a6a7a856e9f8f70560259a3b53af8bfb8a5ff",
+              "physical_loc": 31
+            }
+          }
+        }
+      ],
+      "reasons": []
+    },
+    "regexredux:crystal-regexredux-compact": {
+      "status": "qualified",
+      "formatted_loc": 37,
+      "complete": true,
+      "files": [
+        {
+          "published_file": "6d82ab4ea92a705d0b2959996c29feef76b36ca7321c74a7f5bfdc7d4c1b196c",
+          "source_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-input-archive-filter-v6/source-snapshot/sources/regexredux/compact.cr",
+          "source_sha256": "6d82ab4ea92a705d0b2959996c29feef76b36ca7321c74a7f5bfdc7d4c1b196c",
+          "status": "qualified",
+          "physical_loc": 37,
+          "output_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/14/0/compact.cr",
+          "output_sha256": "c5d4947c48a6748315879d782cbaf39919be541926642fbf40642b84a7e30fc6",
+          "process_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/14/0/processes/format.json",
+            "sha256": "2b6fe8926b00695261cefbd2caf768ec2432ef269acbf9af5e773f18e88eecfc"
+          },
+          "counter_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/14/0/physical-count.json",
+            "sha256": "2a967a10163f020ccab538a18a542cf7ec9318370a19061357d871201a128a4f",
+            "binding_field": "",
+            "binding": {
+              "definition": "nonblank-noncomment-physical-lines-v1",
+              "module_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/formatted-crystal-plan-v1/physical_crystal.py",
+              "module_sha256": "26db5ae940e8bbdec5e6f367db5a5c4c4deb4d159c23926965d0fb705bf3072f",
+              "function": "mask_foreign",
+              "argument": "crystal",
+              "diagnostics": [],
+              "no_semantic_normalization": true,
+              "input_sha256": "c5d4947c48a6748315879d782cbaf39919be541926642fbf40642b84a7e30fc6",
+              "physical_loc": 37
+            }
+          }
+        }
+      ],
+      "reasons": []
+    },
+    "regexredux:crystal-regexredux-optimized": {
+      "status": "qualified",
+      "formatted_loc": 50,
+      "complete": true,
+      "files": [
+        {
+          "published_file": "36d759ccb7c40f7b18927381b6a9a427eae0cd333e50f434c4bba0f43c59bbe6",
+          "source_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-input-archive-filter-v6/source-snapshot/sources/regexredux/optimized.cr",
+          "source_sha256": "36d759ccb7c40f7b18927381b6a9a427eae0cd333e50f434c4bba0f43c59bbe6",
+          "status": "qualified",
+          "physical_loc": 50,
+          "output_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/15/0/optimized.cr",
+          "output_sha256": "1c1184fbe80d2ec28d946bd9fd74fc6ee8d8986a4c0300cef8b57e66aecd8b0d",
+          "process_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/15/0/processes/format.json",
+            "sha256": "953737a921246438a478d46ee088ed9f6bb18b809cc80c989c5f783829ebb754"
+          },
+          "counter_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/15/0/physical-count.json",
+            "sha256": "9eb5109d2edfb02d1edc1576389f8565b78d7eb2101cd52668538f28390464ee",
+            "binding_field": "",
+            "binding": {
+              "definition": "nonblank-noncomment-physical-lines-v1",
+              "module_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/formatted-crystal-plan-v1/physical_crystal.py",
+              "module_sha256": "26db5ae940e8bbdec5e6f367db5a5c4c4deb4d159c23926965d0fb705bf3072f",
+              "function": "mask_foreign",
+              "argument": "crystal",
+              "diagnostics": [],
+              "no_semantic_normalization": true,
+              "input_sha256": "1c1184fbe80d2ec28d946bd9fd74fc6ee8d8986a4c0300cef8b57e66aecd8b0d",
+              "physical_loc": 50
+            }
+          }
+        }
+      ],
+      "reasons": []
+    },
+    "revcomp:crystal-revcomp-compact": {
+      "status": "qualified",
+      "formatted_loc": 18,
+      "complete": true,
+      "files": [
+        {
+          "published_file": "cbe34ee540760ef13fd9a1c98e752f0d7df3bd7ab014bcf30893b703e0599edf",
+          "source_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/source-snapshot/sources/revcomp/compact.cr",
+          "source_sha256": "cbe34ee540760ef13fd9a1c98e752f0d7df3bd7ab014bcf30893b703e0599edf",
+          "status": "qualified",
+          "physical_loc": 18,
+          "output_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/16/0/compact.cr",
+          "output_sha256": "c6a320d7283b344cb40d616ddecb237ae2cb7ebb5205ab1edadea6df982b7262",
+          "process_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/16/0/processes/format.json",
+            "sha256": "ccafbabb4e5ce0711aee9bf5440be2ae7e6bd1921a9daa997b218437a672dab1"
+          },
+          "counter_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/16/0/physical-count.json",
+            "sha256": "b9069dc0fc47a09c9dcaaf6c1747a4b3c9ede4630b11693526b4d65a451e58fc",
+            "binding_field": "",
+            "binding": {
+              "definition": "nonblank-noncomment-physical-lines-v1",
+              "module_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/formatted-crystal-plan-v1/physical_crystal.py",
+              "module_sha256": "26db5ae940e8bbdec5e6f367db5a5c4c4deb4d159c23926965d0fb705bf3072f",
+              "function": "mask_foreign",
+              "argument": "crystal",
+              "diagnostics": [],
+              "no_semantic_normalization": true,
+              "input_sha256": "c6a320d7283b344cb40d616ddecb237ae2cb7ebb5205ab1edadea6df982b7262",
+              "physical_loc": 18
+            }
+          }
+        }
+      ],
+      "reasons": []
+    },
+    "revcomp:crystal-revcomp-optimized": {
+      "status": "qualified",
+      "formatted_loc": 60,
+      "complete": true,
+      "files": [
+        {
+          "published_file": "d2559b94e50d2c1bcee57803f822d376cd688c47024dd8d34f3d87488c234581",
+          "source_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/source-snapshot/sources/revcomp/optimized.cr",
+          "source_sha256": "d2559b94e50d2c1bcee57803f822d376cd688c47024dd8d34f3d87488c234581",
+          "status": "qualified",
+          "physical_loc": 60,
+          "output_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/17/0/optimized.cr",
+          "output_sha256": "01a2c744582bab15aa2e624a97f2042bdb815643fd17ae3f263e76bd6e9fc8dc",
+          "process_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/17/0/processes/format.json",
+            "sha256": "52a5063cd4439f5edcbb142ddf26784e9c55671702ca0f196ec0ef01610e1737"
+          },
+          "counter_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/17/0/physical-count.json",
+            "sha256": "ea8c6a8fc45be9c80e6d1bb4933e1781e98f1c7d6b20b9187ebcd79711abdbc1",
+            "binding_field": "",
+            "binding": {
+              "definition": "nonblank-noncomment-physical-lines-v1",
+              "module_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/formatted-crystal-plan-v1/physical_crystal.py",
+              "module_sha256": "26db5ae940e8bbdec5e6f367db5a5c4c4deb4d159c23926965d0fb705bf3072f",
+              "function": "mask_foreign",
+              "argument": "crystal",
+              "diagnostics": [],
+              "no_semantic_normalization": true,
+              "input_sha256": "01a2c744582bab15aa2e624a97f2042bdb815643fd17ae3f263e76bd6e9fc8dc",
+              "physical_loc": 60
+            }
+          }
+        }
+      ],
+      "reasons": []
+    },
+    "spectralnorm:crystal-spectralnorm-compact": {
+      "status": "qualified",
+      "formatted_loc": 26,
+      "complete": true,
+      "files": [
+        {
+          "published_file": "a593cbb5ca6524d6d30d920f76dca21e9637a7904aa9f761e962c5ba7468ad99",
+          "source_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/source-snapshot/sources/spectralnorm/compact.cr",
+          "source_sha256": "a593cbb5ca6524d6d30d920f76dca21e9637a7904aa9f761e962c5ba7468ad99",
+          "status": "qualified",
+          "physical_loc": 26,
+          "output_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/18/0/compact.cr",
+          "output_sha256": "8faf45b2a1b27fa83f230422a62b75cab066c1eaeae05131d78cbdd98e6e2f78",
+          "process_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/18/0/processes/format.json",
+            "sha256": "de52179cc17990e9f258e016004d46b266678c37db8896401ef9eed6ee847980"
+          },
+          "counter_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/18/0/physical-count.json",
+            "sha256": "1f2e2f77a8d2daf46ede9f1c48dc0b59f76c74e8180d2e5942b4ed6dfb37be6b",
+            "binding_field": "",
+            "binding": {
+              "definition": "nonblank-noncomment-physical-lines-v1",
+              "module_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/formatted-crystal-plan-v1/physical_crystal.py",
+              "module_sha256": "26db5ae940e8bbdec5e6f367db5a5c4c4deb4d159c23926965d0fb705bf3072f",
+              "function": "mask_foreign",
+              "argument": "crystal",
+              "diagnostics": [],
+              "no_semantic_normalization": true,
+              "input_sha256": "8faf45b2a1b27fa83f230422a62b75cab066c1eaeae05131d78cbdd98e6e2f78",
+              "physical_loc": 26
+            }
+          }
+        }
+      ],
+      "reasons": []
+    },
+    "spectralnorm:crystal-spectralnorm-optimized": {
+      "status": "qualified",
+      "formatted_loc": 55,
+      "complete": true,
+      "files": [
+        {
+          "published_file": "3c382014542b4edb42b867a4a4010747536ffd213c1dc378aa4150894632d94b",
+          "source_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/source-snapshot/sources/spectralnorm/optimized.cr",
+          "source_sha256": "3c382014542b4edb42b867a4a4010747536ffd213c1dc378aa4150894632d94b",
+          "status": "qualified",
+          "physical_loc": 55,
+          "output_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/19/0/optimized.cr",
+          "output_sha256": "e8759f8aeb4e7932d2a9279620eebcb74757c3b7c3c2aabd1e73c98a2c4c489d",
+          "process_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/19/0/processes/format.json",
+            "sha256": "76a30074b67c28a38e70d8f87c0a711f4408d382f38a8f34facf6ef8fee76a02"
+          },
+          "counter_receipt": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/crystal20-format-v1/profiles/19/0/physical-count.json",
+            "sha256": "4ef65481523ee49572a16db761709657221012f414818999618974943d0a018d",
+            "binding_field": "",
+            "binding": {
+              "definition": "nonblank-noncomment-physical-lines-v1",
+              "module_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/formatted-crystal-plan-v1/physical_crystal.py",
+              "module_sha256": "26db5ae940e8bbdec5e6f367db5a5c4c4deb4d159c23926965d0fb705bf3072f",
+              "function": "mask_foreign",
+              "argument": "crystal",
+              "diagnostics": [],
+              "no_semantic_normalization": true,
+              "input_sha256": "e8759f8aeb4e7932d2a9279620eebcb74757c3b7c3c2aabd1e73c98a2c4c489d",
+              "physical_loc": 55
+            }
+          }
+        }
+      ],
+      "reasons": []
+    }
+  },
+  "actual_application_processes": 0,
+  "fixture_reexecutions": 0,
+  "chart_admission": false,
+  "common_mutex_held": true,
+  "mutex_inode": 79859134
+}

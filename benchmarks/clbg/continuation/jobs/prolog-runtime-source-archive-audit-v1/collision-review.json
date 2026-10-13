@@ -1,0 +1,306 @@
+{
+  "status": "all40-identical-directory-identities-with-unused-timestamp-differences",
+  "collisions": 40,
+  "identity_fields": [
+    "name",
+    "type",
+    "linkname",
+    "size",
+    "mode",
+    "uid",
+    "gid",
+    "uname",
+    "gname"
+  ],
+  "no_containment_failures": true,
+  "no_file_or_link_collisions": true,
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/prolog-runtime-source-archive-audit-v1/report.json": "7ff5be3f553a879c94b089c8b95a1bedbf4efcc3ec537ed50090873adbb6e1a4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/prolog-runtime-source-archive-audit-v1/members.json": "3faf92610a1dd149f763f62387fa0d6f95e315086d04b14bc489870f7c155926"
+  },
+  "pairs": [
+    {
+      "name": "swipl-10.0.2/bench",
+      "first_index": 24,
+      "repeat_index": 2035,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1769532117
+    },
+    {
+      "name": "swipl-10.0.2/packages/PDT",
+      "first_index": 472,
+      "repeat_index": 2097,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1746017790
+    },
+    {
+      "name": "swipl-10.0.2/packages/RDF",
+      "first_index": 473,
+      "repeat_index": 2103,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1746017790
+    },
+    {
+      "name": "swipl-10.0.2/packages/archive",
+      "first_index": 475,
+      "repeat_index": 2202,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1769098465
+    },
+    {
+      "name": "swipl-10.0.2/packages/bdb",
+      "first_index": 476,
+      "repeat_index": 2210,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1770814433
+    },
+    {
+      "name": "swipl-10.0.2/packages/chr",
+      "first_index": 477,
+      "repeat_index": 2222,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1761577545
+    },
+    {
+      "name": "swipl-10.0.2/packages/clib",
+      "first_index": 478,
+      "repeat_index": 2285,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1771492420
+    },
+    {
+      "name": "swipl-10.0.2/packages/clpqr",
+      "first_index": 479,
+      "repeat_index": 2391,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1746017790
+    },
+    {
+      "name": "swipl-10.0.2/packages/cpp",
+      "first_index": 484,
+      "repeat_index": 2424,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1770814516
+    },
+    {
+      "name": "swipl-10.0.2/packages/cql",
+      "first_index": 485,
+      "repeat_index": 2445,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1746017790
+    },
+    {
+      "name": "swipl-10.0.2/packages/http",
+      "first_index": 486,
+      "repeat_index": 2460,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1772813745
+    },
+    {
+      "name": "swipl-10.0.2/packages/inclpr",
+      "first_index": 487,
+      "repeat_index": 2578,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1746017790
+    },
+    {
+      "name": "swipl-10.0.2/packages/jpl",
+      "first_index": 489,
+      "repeat_index": 2596,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1770813771
+    },
+    {
+      "name": "swipl-10.0.2/packages/json",
+      "first_index": 490,
+      "repeat_index": 2855,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1769368148
+    },
+    {
+      "name": "swipl-10.0.2/packages/libedit",
+      "first_index": 491,
+      "repeat_index": 2876,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1770824836
+    },
+    {
+      "name": "swipl-10.0.2/packages/ltx2htm",
+      "first_index": 492,
+      "repeat_index": 2888,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1766087925
+    },
+    {
+      "name": "swipl-10.0.2/packages/mqi",
+      "first_index": 493,
+      "repeat_index": 2915,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1761298078
+    },
+    {
+      "name": "swipl-10.0.2/packages/nlp",
+      "first_index": 494,
+      "repeat_index": 2935,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1770461992
+    },
+    {
+      "name": "swipl-10.0.2/packages/odbc",
+      "first_index": 495,
+      "repeat_index": 3016,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1759238794
+    },
+    {
+      "name": "swipl-10.0.2/packages/paxos",
+      "first_index": 496,
+      "repeat_index": 3032,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1746017790
+    },
+    {
+      "name": "swipl-10.0.2/packages/pcre",
+      "first_index": 497,
+      "repeat_index": 3050,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1769851446
+    },
+    {
+      "name": "swipl-10.0.2/packages/pengines",
+      "first_index": 498,
+      "repeat_index": 3063,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1768852778
+    },
+    {
+      "name": "swipl-10.0.2/packages/pldoc",
+      "first_index": 499,
+      "repeat_index": 3106,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1763557639
+    },
+    {
+      "name": "swipl-10.0.2/packages/plunit",
+      "first_index": 500,
+      "repeat_index": 3176,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1765361188
+    },
+    {
+      "name": "swipl-10.0.2/packages/protobufs",
+      "first_index": 501,
+      "repeat_index": 3187,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1773189749
+    },
+    {
+      "name": "swipl-10.0.2/packages/redis",
+      "first_index": 502,
+      "repeat_index": 3252,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1746017790
+    },
+    {
+      "name": "swipl-10.0.2/packages/semweb",
+      "first_index": 503,
+      "repeat_index": 3267,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1770796310
+    },
+    {
+      "name": "swipl-10.0.2/packages/sgml",
+      "first_index": 504,
+      "repeat_index": 3458,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1769155907
+    },
+    {
+      "name": "swipl-10.0.2/packages/ssl",
+      "first_index": 505,
+      "repeat_index": 3668,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1769110766
+    },
+    {
+      "name": "swipl-10.0.2/packages/stomp",
+      "first_index": 506,
+      "repeat_index": 3760,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1761298193
+    },
+    {
+      "name": "swipl-10.0.2/packages/sweep",
+      "first_index": 507,
+      "repeat_index": 3773,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1750747526
+    },
+    {
+      "name": "swipl-10.0.2/packages/swipy",
+      "first_index": 508,
+      "repeat_index": 3789,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1738507733
+    },
+    {
+      "name": "swipl-10.0.2/packages/table",
+      "first_index": 509,
+      "repeat_index": 3844,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1769155459
+    },
+    {
+      "name": "swipl-10.0.2/packages/tipc",
+      "first_index": 510,
+      "repeat_index": 3859,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1769181533
+    },
+    {
+      "name": "swipl-10.0.2/packages/utf8proc",
+      "first_index": 511,
+      "repeat_index": 3878,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1769110953
+    },
+    {
+      "name": "swipl-10.0.2/packages/windows",
+      "first_index": 512,
+      "repeat_index": 3904,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1746017790
+    },
+    {
+      "name": "swipl-10.0.2/packages/xpce",
+      "first_index": 513,
+      "repeat_index": 3911,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1773316351
+    },
+    {
+      "name": "swipl-10.0.2/packages/yaml",
+      "first_index": 514,
+      "repeat_index": 5626,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1769098252
+    },
+    {
+      "name": "swipl-10.0.2/packages/zlib",
+      "first_index": 515,
+      "repeat_index": 5650,
+      "first_mtime": 1773563946,
+      "repeat_mtime": 1746017790
+    },
+    {
+      "name": "swipl-10.0.2/packages/libedit/libedit",
+      "first_index": 2885,
+      "repeat_index": 5665,
+      "first_mtime": 1770824836,
+      "repeat_mtime": 1770824786
+    }
+  ],
+  "actual_common_mutex_held": true,
+  "extraction_performed": false,
+  "native_subjects": 0
+}

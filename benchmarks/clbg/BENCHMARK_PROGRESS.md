@@ -1,24 +1,26 @@
-Benchmark progress as of **2026-10-13 18:40 UTC** (14:40 New York).
+Benchmark progress as of **2026-10-13 19:37 UTC** (15:37 New York).
 
-The last remotely verified checkpoint is `d92ea58bff5db3ba8278bca5ef8d060a2157366a`
+The previous remotely verified checkpoint is `57bd9d43a5afaf498e465205c287b75dd9d208b5`
 on `codex/clbg-native-benchmarks`. The language overview and complete Crystal
-inventory are published. C3's exact source counts and runtime metadata have
-now qualified locally; its chart admission is next. Nim, Gleam and Clojure
-finished all ten timing studies and are undergoing independent reconciliation.
-The 23 formatted-LOC source fixtures passed; native formatter counts remain
-pending. Durable jobs preserve their actual request, process identity and exit.
+inventory are published. C3's exact source counts, runtime metadata and current
+chart candidate have qualified and are now published through GitLab Pages
+at `https://mech-lang.org/benchmarks/`. Nim, Gleam and Clojure
+finished and passed independent reconciliation of all 90 timing runs each.
+The 23 formatted-LOC source fixtures and all 20 native Crystal formatting cases
+passed; formatted-axis integration remains pending. Durable jobs preserve their
+actual request, process identity and exit.
 
 | Cohort | Actual full samples collected | Present state |
 |---|---:|---|
 | Crystal | 90/90 | Published with 20 source forms and 60 candidate samples, plus 30 matched Mech samples in the complete study. |
-| C3 | 90/90 | Independently reconciled; 24 authored inputs / 25 compiler copies / 20 whole bundles manually reviewed and LOC sealed. Runtime metadata qualified; chart admission pending. |
-| Nim | All ten studies complete | Independent full-suite reconciliation started. Exact source-owner diagnostics still need resolution before LOC admission. |
-| Gleam | All ten studies complete | Independent full-suite reconciliation started. Qualified Gleam and authored Erlang evidence still needs whole-bundle source admission. |
-| Clojure | All ten studies complete | Independent full-suite reconciliation started. Qualified whole-source LOC overlay is retained. |
+| C3 | 90/90 | Published through GitLab Pages. Source counts, runtime metadata and current dataset qualified; all 20 forms / 60 candidate samples passed browser inspection. |
+| Nim | 90/90 | Independent full-suite reconciliation and complete receipt/pin review passed. Exact source-owner diagnostics still need resolution before LOC admission. |
+| Gleam | 90/90 | Independent full-suite reconciliation and complete receipt/pin review passed. Qualified Gleam and authored Erlang evidence still needs whole-bundle source admission. |
+| Clojure | 90/90 | Independent full-suite reconciliation and complete receipt/pin review passed. Qualified whole-source LOC overlay is retained; runtime metadata/admission remains. |
 | V | 90/90 | Full workload samples collected, including eight missing tree slots recovered additively. Independent all-ten reconciliation passed. Report-only; excluded from dataset, charts and Site. |
-| Pony | 0/90 | Four actual Pi/map work proofs retained and work metadata sealed. The tree-entry wrapper stopped before native work on a macOS Python launcher identity transition; a narrow additive repair is being reviewed. |
-| Prolog | 0/90 | Six runtime fixtures passed on bundled Python and metadata sealed. The bootstrap-entry wrapper stopped on the same launcher identity transition; private runtime/QLF/work/full runs remain. |
-| Julia AOT | 0 qualified | Native canary and n-body libraries built. Debugger attachment failed before qualified execution. Read-only environment evidence saved; a bounded generic attach calibration is queued. |
+| Pony | 0/90 | Launcher repair reached the target and completed both tree observations. Diagnostic IR extraction failed because the compiler overwrote its authored main IR with builtin output. Both tree observations and all 16 emitted files are retained; additive diagnostic recovery remains. |
+| Prolog | 0/90 | Original runtime fixtures and failed bootstrap retained. Archive failure was 40 equivalent repeated directory entries. The narrow extractor repair passed four fresh fixtures; native private bootstrap remains held for actual-argument review. |
+| Julia AOT | 0 qualified | Native canary and n-body libraries built. Generic calibration failed before LLDB on comparing the real kernel framework image with Python's distinct launcher path. No debugger-permission cause is established; kernel-image binding needs repair. |
 | Rebol | 0/90 | Faithful source bundle and six runtime intake fixtures retained; actual SDK/runtime/build/work/LOC/full qualification remains. |
 | Elixir / Kotlin | 0/90 each | Reviewed source bundles are frozen and pushed. Actual toolchain and complete qualification remain. |
 
@@ -53,6 +55,36 @@ The platform frontend candidate passed its checks, but its filters have not yet
 been integrated into the published Site. Successful historical samples and
 original failures remain immutable; additive repairs reuse successful evidence
 instead of relabeling it as a fresh run.
+
+## GitLab Pages publication — 2026-10-13
+
+The Benchmark Explorer is now public at https://mech-lang.org/benchmarks/ with
+the existing Mech website. The website repository is
+https://gitlab.com/mech-lang/web/website; commit
+`11cacf9ca1baa800736355759d4b6bd0ca815e68` was pushed to `main` and its remote
+SHA verified. Pipeline `2944032278` passed. All 29 published assets match the
+reviewed distribution by SHA-256; `/benchmarks` redirects to `/benchmarks/`.
+Homepage, Blog and Explore now link to the chart.
+
+The published dataset SHA is
+`4fe402c21360fbbbe9d650c15d1fd4c62422c17cfad8cafd24721fe7f0bd2947`.
+It retains prior records and fixed baselines and adds qualified C3's 20 source
+forms, 60 candidate samples and 19 selected endpoints. All 20 forms remain
+inspectable, including the inventory-only optimized N-body program. Local
+subdirectory and public browser checks passed; C3's log2 coordinate medians
+independently match the rendered markers. The interface uses time × best and
+the fixed hover strip above the graph. Screenshot capture was unavailable.
+
+The prior Sites packaging workflow was deliberately stopped after the user's
+destination change, before any packaging helper or new Sites deployment. Its
+original partial-session failure is retained, and qualified data was preserved.
+No benchmark or prior successful fixture was rerun for publication. Actual QA,
+commit, push, pipeline and complete public asset verification are retained in
+`continuation/jobs/gitlab-pages-publication-v1/`.
+
+All 20 Crystal programs also completed their copied-source native formatting
+checks and qualified their counts, preserving original sources and timings.
+The formatted-axis and platform UI candidate remains separate and unpublished.
 
 Update2026-10-13 13:43UTC: useraddedRed andRebol topublication scope. Primary runtime/architecture discovery started; no samples collected for either. Whole-nine qualification/integration replaces the former whole-seven inventory. Independent C3 andV full90 checks have nowpassed. The progressfile open request returnedqueued ratherthan opened, so the current summary was also delivered inline.
 
@@ -93,3 +125,42 @@ Their existing independent full-suite reconciler was launched once per cohort
 at 18:39:48 UTC. Exact current outcomes will be recorded after private lease
 closure; launch is not admission. All these jobs share the timing mutex and
 perform no scored execution. The active goal remains unfinished.
+
+## Independently reconciled Nim, Gleam and Clojure — 2026-10-13 18:53 UTC
+
+All three original full suites passed the existing independent reconciler,
+normal durable exit and a separate complete receipt/pin inspection. Each has
+20 actual candidate sources, 60 candidate samples and 30 matched Mech samples.
+No native, fixture or compiler execution occurred during reconciliation.
+Actual receipt: `continuation/jobs/completed-native-review-v1/review.json`.
+The full three samples, selected program IDs, exact medians and matched Mech
+controls remain in that receipt and each original suite. Source-count/runtime
+admission and publication are separate remaining steps.
+
+The following is **median time / that study's matched Mech median**, using
+the fastest source form per workload. Larger values mean longer execution.
+These chat/history ratios do not change the interface's best-time baseline.
+
+| Workload | Nim / Mech | Gleam / Mech | Clojure / Mech |
+| --- | ---: | ---: | ---: |
+| Regex redux | 6.035× | 18.997× | 6.474× |
+| Reverse complement | 4.740× | 64.762× | 66.413× |
+| Pi digits | 1.430× | 5.562× | 13.511× |
+| Spectral norm | 4.306× | 38.529× | 6.325× |
+| Mandelbrot | 2.805× | 109.002× | 7.573× |
+| FASTA | 4.596× | 10.710× | 17.753× |
+| K-nucleotide | 6.041× | 224.025× | 13.796× |
+| Binary trees | 3.414× | 17.358× | 2.827× |
+| N-body | 1.450× | 70.021× | 159.233× |
+| Fannkuch redux | 1.983× | 55.008× | 100.250× |
+
+The selected form is optimized except Gleam N-body and Clojure reverse
+complement/N-body, where compact is faster. These are comparison-language
+results; no Mech compiler optimization or unverified attribution is inferred.
+
+The Pony/Prolog followup-v2 repair retains distinct recorded launcher and
+framework images, exact worker-started/terminal identity, PID, birth and other
+arguments. Both entries reached their unchanged targets without repeating their
+successful seals/fixtures. Prolog failed in exact source-archive extraction;
+Pony's two bounded tree observations remain under its original common-lock
+controller. The preserved v1 failures remain failed.

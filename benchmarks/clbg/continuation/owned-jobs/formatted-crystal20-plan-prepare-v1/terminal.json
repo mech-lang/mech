@@ -1,0 +1,20 @@
+{
+  "status": "command-exited-zero-awaiting-report-review",
+  "started_at": "2026-10-13T18:55:29.072842+00:00",
+  "worker_identity": {
+    "pid": 82066,
+    "listing": "82066     1 Tue Oct 13 14:55:29 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/formatted-crystal20-plan-prepare-v1 --lease-fd 3 --go-fd 4"
+  },
+  "actual_command_started": true,
+  "exit_code": 0,
+  "qualification_granted": false,
+  "automatic_retry": false,
+  "command_pid": 82070,
+  "command_identity": {
+    "pid": 82070,
+    "listing": "82070 82066 Tue Oct 13 14:55:29 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -E -S -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/formatted-crystal-plan-v1/prepare_plan.py --revision actual-plans-v1 --source-sha256 7c5941857410c9e628848f8ee21b59781ff61ec2a2b148d00cabd90d7de9e390 --shim-sha256 26db5ae940e8bbdec5e6f367db5a5c4c4deb4d159c23926965d0fb705bf3072f --review-sha256 20ffe9c6f20962087d95e09fe6ff6b6f12f295361b9bbb4eeefeac981fbc7e33 --fixture-review-sha256 2413d79295c442cb21e1b0d9429d9f825fc57759a884ae05abcd78df3c895c74"
+  },
+  "command_identity_observation_missing": false,
+  "finished_at": "2026-10-13T18:55:33.617380+00:00",
+  "stop_signals": []
+}
