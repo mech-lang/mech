@@ -1,0 +1,19 @@
+{
+  "status": "durable-job-launched",
+  "launched_at": "2026-10-13T06:17:05.275078+00:00",
+  "job": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/platform-frontend-v3-durable-v1",
+  "worker_identity": {
+    "pid": 82042,
+    "listing": "82042 82041 Tue Oct 13 02:17:05 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/platform-frontend-v3-durable-v1 --lease-fd 3 --go-fd 4"
+  },
+  "command": [
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/qualify_platform_frontend_v3.py"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "detached_session": true,
+  "automatic_retry": false,
+  "qualification_granted": false
+}

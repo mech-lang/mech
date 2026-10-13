@@ -1,0 +1,311 @@
+"""Add live node/leaf/retention and final scored-binary allocation proofs."""
+import argparse
+import copy
+import fcntl
+import importlib.util
+import json
+import os
+from pathlib import Path
+import signal
+import sys
+
+import tree_work
+
+HERE = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(HERE))
+import guarded_prepare_v7 as preparation
+import proof_reuse_v5
+import primitive_reuse_v6
+import ownership_reuse_v7
+import fixture_runner
+import references
+
+
+def qualified_report(path, guard):
+    report = json.loads(path.read_text())
+    assert report['status'] == 'bounded-output-ownership-passed-awaiting-work-and-LOC-review'
+    assert report['active'] is None and report['full_performance_runs'] == 0 and report['chart_admission'] is False
+    assert report['fresh_profile_builds'] == 0 and report['reused_bounded_cases'] == 154
+    assert report['reused_cases_relabelled_as_attempts'] is False
+    guard.verify(report['pins'])
+    reuse_path = Path(report['prior_bounded_proof_reuse'])
+    assert preparation.sha(reuse_path) == report['prior_bounded_proof_reuse_sha256']
+    reuse = json.loads(reuse_path.read_text())
+    proof_reuse_v5.validate_prior_reports(reuse)
+    guard.verify(reuse['pins'])
+    assert len(report['profiles']) == 20 and {row['id'] for row in report['profiles']} == proof_reuse_v5.PROFILES
+    expected = {('pure-bigint-abi', None), ('gmp-abi', None), ('pcre-abi', None), ('orc-join-parent-destruction', None)}
+    expected |= {('actual-seven-map-' + variant, case) for variant in ('compact', 'optimized')
+                 for case in ('empty', 'tail-comments-crlf', 'growing')}
+    expected |= {('actual-pi-' + variant, 'n-' + str(n)) for variant in ('compact', 'optimized')
+                 for n in (0, 1, 9, 10, 11, 27, 97)}
+    assert {(item['proof'], item.get('case')) for item in report['proofs']} == expected
+    assert len(report['proofs']) == len(expected)
+    assert len(report['attempts']) == 20 and report['reused_primitive_cases'] == 3
+    assert report['reused_primitive_cases_relabelled_as_attempts'] is False
+    primitive_path=Path(report['prior_primitive_proof_reuse'])
+    assert preparation.sha(primitive_path)==report['prior_primitive_proof_reuse_sha256']
+    primitive=json.loads(primitive_path.read_text())
+    primitive_reuse_v6.validate_packet(primitive,preparation,guard)
+    assert report['toolchain_binding']==primitive['toolchain']
+    retained=[p for p in report['proofs'] if p.get('origin')=='retained-private-v5']
+    assert retained==primitive['proofs'] and len(retained)==3
+    assert report['reused_ownership_cases']==1 and report['reused_ownership_cases_relabelled_as_attempts'] is False
+    ownership_path=Path(report['prior_ownership_proof_reuse'])
+    assert preparation.sha(ownership_path)==report['prior_ownership_proof_reuse_sha256']
+    ownership=json.loads(ownership_path.read_text())
+    ownership_reuse_v7.validate_packet(ownership,preparation,guard)
+    retained_ownership=[p for p in report['proofs'] if p.get('origin')=='retained-private-v6']
+    assert retained_ownership==ownership['proofs'] and len(retained_ownership)==1
+    assert report['preserved_failed_source_work']==ownership['preserved_failed_map_trace']
+    assert report['preserved_failed_source_work']['failed_record_promoted_to_passed'] is False
+    assert report['preserved_failed_source_work']['retained_as_passed_source_proof'] is False
+    fresh=[p for p in report['proofs'] if p.get('origin') not in ('retained-private-v5','retained-private-v6')]
+    assert {p['result'] for p in fresh}=={a['supervisor_result_path'] for a in report['attempts']}
+    assert len(fresh)==20
+    by_result={a['supervisor_result_path']:a for a in report['attempts']}
+    assert len(by_result)==20
+    for proof in fresh:
+        attempt=by_result[proof['result']]
+        assert proof['proof']==attempt['id'] and proof.get('case','contract')==attempt['case']
+        if proof['proof'].startswith('actual-'):assert proof['reconciliation']==attempt['source_work_proof']
+    for item in report['proofs']:
+        assert item['status'] == 'passed'
+        if item['proof'].startswith('actual-'):
+            assert item['reconciliation']['status'] == 'passed'
+        if item['proof'].startswith('actual-seven-map') or item['proof'] == 'orc-join-parent-destruction':
+            assert item['asan'] is True
+    for attempt in report['attempts']:
+        assert attempt['qualified'] is True
+        assert attempt['exit_status'] == attempt['sampler_wait_status'] == 0
+        assert set(attempt['qualification_checks']) == proof_reuse_v5.old.EXPECTED_GATES
+        assert all(value is True for value in attempt['qualification_checks'].values())
+    for row in report['profiles']:
+        assert row==dict(proof_reuse_v5.profile_row(reuse['profiles'][row['id']]),new_native_cases=0)
+        assert preparation.sha(row['source']) == row['source_sha256']
+        assert preparation.sha(row['command'][0]) == row['binary_sha256']
+        assert preparation.sha(HERE / 'sources' / row['benchmark'] / (row['variant'] + '.nim')) == row['source_sha256']
+        assert row['maximum_compute_workers'] <= 8
+    return report, reuse
+
+
+def qualify(args):
+    print('WAIT common mutex: Nim actual allocation/retention proofs', flush=True)
+    with preparation.LOCK.open('a+') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        guard = preparation.load_guard()
+        harness = guard.load_harness()
+        harness.install_interrupt_handlers()
+        prerequisite = HERE / 'qualification' / args.qualified_revision / 'report.json'
+        qualified, reuse = qualified_report(prerequisite, guard)
+        paths = [Path(__file__).resolve(), Path(tree_work.__file__).resolve(),
+            Path(__file__).with_name('REQUIRED_SOURCE_REVIEW.md'), prerequisite,
+            Path(__file__).with_name('test_tree_work.py'), Path(__file__).with_name('full_study.py'),
+            Path(__file__).with_name('test_full_study.py'),Path(__file__).with_name('fixture_runner.py'),
+            Path(__file__).with_name('REVISION.md'), Path(__file__).with_name('arm_allocation.py'),
+            Path(__file__).with_name('ALLOCATION_REPAIR.md')]
+        failed_work = HERE / 'work-qualification/work-v3'
+        failed_report = json.loads((failed_work / 'report.json').read_text())
+        assert failed_report['status'] == 'stopped-unqualified' and failed_report['attempts'] == [] and failed_report['tree_proofs'] == []
+        assert failed_report['error'] == 'Final ARM path must allocate before any conditional/unconditional control or return'
+        old_fixture = failed_report['actual_mock_fixtures']
+        assert old_fixture['methods'] == 12 and old_fixture['zero_skips'] is True
+        assert preparation.sha(old_fixture['receipt']) == old_fixture['sha256']
+        old_spec = importlib.util.spec_from_file_location('nim_failed_work_original_fixture_inventory', HERE / 'revisions/work-full-v3/fixture_runner.py')
+        old_inventory = importlib.util.module_from_spec(old_spec); old_spec.loader.exec_module(old_inventory)
+        old_inventory.validate_receipt(json.loads(Path(old_fixture['receipt']).read_text()), 'work')
+        inspection = HERE.parents[1] / 'continuation/jobs/nim-tree-arm-inspection-v1'
+        inspected = json.loads((inspection / 'inspection.json').read_text())
+        assert inspected['status'] == 'saved-evidence-extracted-awaiting-path-review' and inspected['native_processes'] == 0
+        guard.verify(inspected['pins'])
+        optimized_inspection = HERE / 'allocation-inspections/optimized-v1'
+        optimized = json.loads((optimized_inspection / 'inspection.json').read_text())
+        assert optimized['status'] == 'actual-scored-optimized-evidence-awaiting-path-review'
+        assert optimized['creator_symbol'] == 'make__optimized_u17' and optimized['benchmark_replays'] == 0
+        selected_optimized = next(row for row in qualified['profiles'] if row['id'] == 'nim-binarytrees-optimized')
+        assert optimized['binary'] == selected_optimized['command'][0] and optimized['binary_sha256'] == selected_optimized['binary_sha256']
+        guard.verify(optimized['pins'])
+        # Work-v4 stopped in its actual14-fixture phase before any observer
+        # build/native witness. Preserve that failed record, never promote it.
+        failed_v4 = HERE/'work-qualification/work-v4'
+        failed_v4_report = json.loads((failed_v4/'report.json').read_text())
+        assert failed_v4_report['status'] == 'stopped-unqualified' and failed_v4_report['active'] is None
+        assert failed_v4_report['attempts'] == failed_v4_report['tree_proofs'] == failed_v4_report['source_reviews'] == []
+        assert failed_v4_report['full_performance_runs'] == 0 and failed_v4_report['chart_admission'] is False
+        assert failed_v4_report['error_type'] == 'AssertionError' and failed_v4_report['error'] == "('Owned command failed', 'work-fixtures', 1)"
+        assert failed_v4_report['prerequisite'] == str(prerequisite) and failed_v4_report['prerequisite_sha256'] == preparation.sha(prerequisite)
+        assert 'pins' not in failed_v4_report
+        assert not any((failed_v4/name).exists() for name in ('nim-binarytrees-compact','nim-binarytrees-optimized'))
+        failed_fixture_path = failed_v4/'fixtures/actual-inventory.json'
+        failed_fixture = json.loads(failed_fixture_path.read_text())
+        assert failed_fixture['status'] == 'failed' and failed_fixture['successful'] is False and failed_fixture['inventory'] == 'work'
+        assert type(failed_fixture['tests_run']) is type(failed_fixture['discovered_tests']) is int
+        assert failed_fixture['tests_run'] == failed_fixture['discovered_tests'] == 14
+        assert failed_fixture['expected_test_ids'] == fixture_runner.INVENTORIES['work']
+        assert len(failed_fixture['actual_test_ids']) == len(set(failed_fixture['actual_test_ids'])) == 14
+        assert set(failed_fixture['actual_test_ids']) == set(fixture_runner.INVENTORIES['work'])
+        assert failed_fixture['errors'] == failed_fixture['skipped'] == failed_fixture['expected_failures'] == failed_fixture['unexpected_successes'] == []
+        assert len(failed_fixture['failures']) == 1
+        failed_positive = 'test_tree_work.ActualGraphFixtures.test_actual_compact_exception_target_is_null_and_other_returns_allocate'
+        assert failed_fixture['failures'][0][0] == failed_positive
+        assert 'Preallocation generated C is not the exact error-flag/NIL return preamble' in failed_fixture['failures'][0][1]
+        failed_command = json.loads((failed_v4/'fixtures/work-fixtures.json').read_text())
+        assert failed_command['command'] == [sys.executable,'-B',str(HERE/'revisions/work-full-v4/fixture_runner.py'),'--set','work','--receipt',str(failed_fixture_path)]
+        assert type(failed_command['exit_status']) is type(failed_command['final_exit_status']) is int
+        assert failed_command['exit_status'] == failed_command['final_exit_status'] == 1 and failed_command['inherited_common_mutex'] is True
+        assert not any(failed_command.get(key) for key in ('cleanup_error','cleanup_errors','remaining_group_members','output_drain_error'))
+        failed_stderr = (failed_v4/'fixtures/work-fixtures.stderr').read_text()
+        assert 'Ran 14 tests' in failed_stderr and 'FAILED (failures=1)' in failed_stderr and failed_positive in failed_stderr
+        assert (failed_v4/'fixtures/work-fixtures.stdout').read_bytes() == b''
+        prior_packet = HERE/'revisions/work-full-v4'
+        unchanged_files = ('tree_work.py','test_tree_work.py','full_study.py','test_full_study.py','fixture_runner.py')
+        for name in unchanged_files:
+            assert Path(__file__).with_name(name).read_bytes() == (prior_packet/name).read_bytes(), ('Unexpected witness/fixture/full-controller change',name)
+        old_parser = (prior_packet/'arm_allocation.py').read_text()
+        wrong = r'if\(NIM_UNLIKELY\(\*nimErr_\)\)\)gotoBeforeRet_;'
+        corrected = r'if\(NIM_UNLIKELY\(\*nimErr_\)\)gotoBeforeRet_;'
+        assert old_parser.count(wrong) == 1 and Path(__file__).with_name('arm_allocation.py').read_text() == old_parser.replace(wrong,corrected)
+        pins = preparation.merge(qualified['pins'], reuse['pins'], preparation.pin_tree(failed_work), preparation.pin_tree(inspection),
+            preparation.pin_tree(optimized_inspection),
+            preparation.pin_tree(failed_v4),{str(prior_packet/name):preparation.sha(prior_packet/name) for name in (*unchanged_files,'arm_allocation.py')},
+            {str(p): preparation.sha(p) for p in paths}, {str(HERE / 'revisions/work-full-v3/fixture_runner.py'): preparation.sha(HERE / 'revisions/work-full-v3/fixture_runner.py')})
+        output = HERE / 'work-qualification' / args.revision
+        assert not output.exists(), 'No overwritten qualification, implicit resume or rerun'
+        output.mkdir(parents=True)
+        guard.OUT, guard.REPORT = output, output / 'report.json'
+        report = dict(status='qualifying', started_at=guard.now(), attempts=[], active=None,
+            prerequisite=str(prerequisite), prerequisite_sha256=preparation.sha(prerequisite),
+            full_performance_runs=0, chart_admission=False, no_automatic_retry=True,
+            qualification_revision=args.qualified_revision, source_reviews=[], tree_proofs=[],
+            preserved_failed_work_qualification=dict(report=str(failed_work / 'report.json'),
+                report_sha256=preparation.sha(failed_work / 'report.json'), original_fixture_methods=12,
+                failed_record_promoted_to_passed=False, prior_native_tree_probes=0),
+            preserved_failed_v4_fixture_phase=dict(report=str(failed_v4/'report.json'),report_sha256=preparation.sha(failed_v4/'report.json'),
+                fixture_receipt=str(failed_fixture_path),fixture_receipt_sha256=preparation.sha(failed_fixture_path),
+                original_started_methods=14,original_passed_methods=13,original_failed_methods=1,original_errors=0,original_skips=0,
+                original_native_tree_probes=0,original_observer_builds=0,failed_record_promoted_to_passed=False,
+                raw_receipts=str(failed_v4/'fixtures'),
+                failure_bytes_newly_pinned_under_current_mutex=True,original_failed_report_had_terminal_pin_map=False,
+                correction='Remove one erroneous literal closing parenthesis from the exact generated-C TLS/NIL preamble regex; no source or ARM gate change'))
+        guard.save(guard.REPORT, report)
+        try:
+            receipt=output/'fixtures/actual-inventory.json'
+            preparation.owned_command(guard,harness,
+                [sys.executable,'-B',str(Path(__file__).with_name('fixture_runner.py')),'--set','work','--receipt',str(receipt)],
+                dict(os.environ,PYTHONPATH=str(Path(__file__).parent)),output/'fixtures',lock.fileno(),60,'work-fixtures')
+            fixture_runner.validate_receipt(json.loads(receipt.read_text()),'work')
+            pins=preparation.merge(pins,preparation.pin_tree(output/'fixtures'))
+            report['actual_mock_fixtures']=dict(receipt=str(receipt),sha256=preparation.sha(receipt),methods=14,zero_skips=True)
+            build = HERE / '.build' / args.qualified_revision
+            binding=qualified['toolchain_binding']
+            compiler=Path(binding['compiler']);toolchain=Path(binding['toolchain'])
+            bigint=Path(binding['bigint']);wrapper=Path(binding['gmp_wrapper'])
+            proposal=json.loads((HERE/'proposals'/(args.qualified_revision+'.json')).read_text())
+            sdk = Path(proposal['sdk'])
+            environment = dict(os.environ, LC_ALL='C', SDKROOT=str(sdk), DYLD_LIBRARY_PATH=preparation.LIBRARY_PATH,
+                NIMBLE_DIR=str(build / 'nimble-unused'), OMP_NUM_THREADS='1', OPENBLAS_NUM_THREADS='1', VECLIB_MAXIMUM_THREADS='1')
+            for key in ('NIM_CONFIG_PATH', 'NIM_LIB_PREFIX', 'NIMBLE_PATH', 'NIMFLAGS', 'CFLAGS', 'CPPFLAGS', 'LDFLAGS',
+                        'DYLD_INSERT_LIBRARIES', 'DYLD_FRAMEWORK_PATH', 'DYLD_FALLBACK_LIBRARY_PATH'):
+                environment.pop(key, None)
+            for row in qualified['profiles']:
+                source = Path(row['source'])
+                text = source.read_text()
+                assert '\t' not in text and row['maximum_compute_workers'] <= 8
+                report['source_reviews'].append(dict(profile=row['id'], status='passed',
+                    scored_source_sha256=row['source_sha256'], complete_bounded_cases=len(row['prior_bounded_records']),
+                    worker_cap=row['maximum_compute_workers'], review=str(Path(__file__).with_name('REQUIRED_SOURCE_REVIEW.md')),
+                    counted_application_helpers='All helper definitions in the application source; generic GMP ABI adapter audited separately'))
+            for original in [row for row in qualified['profiles'] if row['benchmark'] == 'binarytrees']:
+                variant = original['variant']
+                directory = output / original['id']
+                directory.mkdir()
+                source = directory / (variant + '.nim')
+                text, edits = tree_work.instrument(Path(original['source']).read_text(), variant)
+                source.write_text(text)
+                support = directory / 'audit_support.nim'
+                support.write_text(tree_work.SUPPORT)
+                edits_path = directory / 'edits.json'
+                preparation.new_json(edits_path, edits)
+                binary = directory / 'actual-tree-work'
+                cache = directory / 'nimcache'
+                command = preparation.build_command(compiler, toolchain, bigint, wrapper, sdk, source, binary, cache)
+                preparation.owned_command(guard, harness, command, environment, directory / 'build', lock.fileno(), 180, 'build')
+                pins = preparation.merge(pins, preparation.pin_tree(cache),
+                    {str(p): preparation.sha(p) for p in (source, support, binary, edits_path)})
+                pins = preparation.merge(pins, preparation.native_images(guard, harness, binary, environment,
+                    directory / 'images', lock.fileno(), [toolchain, preparation.GMP, preparation.PCRE, preparation.CLANG.parent.parent]))
+                selected = reuse['profiles'][original['id']]
+                scored_cache = Path(selected['binary']).parent.parent / 'cache' / original['id']
+                generated = scored_cache / ('@m' + variant + '.nim.c')
+                name, creator = tree_work.creator_c(generated)
+                creator_fragment = directory / 'scored-creator.c'
+                creator_fragment.write_text(creator)
+                disassembly = preparation.owned_command(guard, harness, ['/usr/bin/otool', '-tvV', selected['binary']],
+                    environment, directory / 'scored-binary', lock.fileno(), 60, 'disassembly')['stdout'].decode()
+                arm = tree_work.creator_arm(disassembly, name, creator)
+                arm_path = directory / 'scored-allocation-review.json'
+                preparation.new_json(arm_path, dict(arm, scored_source_sha256=original['source_sha256'],
+                    scored_binary_sha256=original['binary_sha256'], generated_c=str(generated), generated_c_sha256=preparation.sha(generated),
+                    unconditional_leaf_allocation_in_generated_C=True))
+                pins = preparation.merge(pins, {str(p): preparation.sha(p) for p in (generated, creator_fragment, arm_path)},
+                    preparation.pin_tree(directory / 'scored-binary'))
+                row = copy.deepcopy(original)
+                row.update(id=original['id'] + '-work-trace', key='binarytrees:' + original['id'] + '-work-trace',
+                    source=str(source), source_sha256=preparation.sha(source), binary_sha256=preparation.sha(binary),
+                    command=[str(binary), '{n}'], runtime_environment=dict(original['runtime_environment']))
+                for n in (0, 4, 7, 9):
+                    case = 'allocated-n' + str(n)
+                    trace = output / row['id'] / case / 'trace'
+                    assert not trace.exists(), 'Native audit startup creates its own new trace directory'
+                    row['runtime_environment']['MECH_NIM_TREE_TRACE'] = str(trace)
+                    attempt = preparation.probe(guard, harness, row, n, None, references.binarytrees(n), pins,
+                        output, lock.fileno(), report, case, trace=lambda path, trace=trace, n=n, variant=variant:
+                            tree_work.reconcile(trace, n, variant))
+                    pins = preparation.merge(pins, attempt['source_work_proof']['trace_pins'])
+                    report['tree_proofs'].append(dict(status='passed', profile=original['id'], case=case,
+                        scored_source_sha256=original['source_sha256'], scored_binary_sha256=original['binary_sha256'],
+                        trace_source_sha256=row['source_sha256'], attempt=attempt['attempt'],
+                        allocation=arm, reconciliation=attempt['source_work_proof'],
+                        no_scored_timing_or_GC_pressure_claim=True))
+                    guard.save(guard.REPORT, report)
+            assert len(report['tree_proofs']) == len(report['attempts']) == 8
+            assert len(report['source_reviews']) == 20
+            pins=preparation.merge(pins,{p:d for p,d in preparation.pin_tree(output).items() if Path(p)!=guard.REPORT})
+            guard.verify(pins)
+            report.update(status='source-work-allocation-passed-awaiting-full-review-and-LOC', finished_at=guard.now(),
+                profiles=qualified['profiles'], pins=pins, pins_unchanged_at_end=True,
+                full_manifests_sealed=0, canonical_LOC_status='pending root immutable canonical overlay')
+            guard.save(guard.REPORT, report)
+        except BaseException as error:
+            report.update(status='stopped-unqualified', finished_at=guard.now(), active=None,
+                error=str(error) or type(error).__name__, error_type=type(error).__name__)
+            captured = {}
+            try:
+                for path in sorted(output.rglob('*')):
+                    if path.is_file() and path != guard.REPORT: captured[str(path)] = preparation.sha(path)
+                partial = preparation.merge(pins,captured); guard.verify(partial)
+                report.update(pins=partial,pins_unchanged_at_end=True,failed_terminal_evidence_pinned=True)
+            except BaseException as integrity:
+                report.update(terminal_integrity_failure=dict(status='failed-terminal-integrity',
+                    error=str(integrity) or type(integrity).__name__,error_type=type(integrity).__name__,
+                    newly_captured_partial_pins=captured,available_evidence_not_fully_pinned=True),failed_terminal_evidence_pinned=False)
+            guard.save(guard.REPORT, report)
+            raise
+
+
+def main():
+    def interrupted(signum, frame):
+        raise KeyboardInterrupt('Nim tree/work supervisor received signal ' + str(signum))
+    for signum in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
+        signal.signal(signum, interrupted)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--qualified-revision', required=True)
+    parser.add_argument('--revision', required=True)
+    args = parser.parse_args()
+    assert args.qualified_revision == 'private-v7'
+    assert args.revision and all(c in 'abcdefghijklmnopqrstuvwxyz0123456789-' for c in args.revision)
+    qualify(args)
+
+
+if __name__ == '__main__':
+    main()

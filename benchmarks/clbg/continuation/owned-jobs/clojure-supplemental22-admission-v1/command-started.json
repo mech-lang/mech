@@ -1,0 +1,18 @@
+{
+  "started_at": "2026-10-13T06:31:04.953530+00:00",
+  "command_pid": 83746,
+  "command_identity": {
+    "pid": 83746,
+    "listing": "83746 83741 Tue Oct 13 02:31:04 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u revisions/admit-supplemental-v1/admit.py --revision work-v1-reviewed-v2"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+    "-B",
+    "-u",
+    "revisions/admit-supplemental-v1/admit.py",
+    "--revision",
+    "work-v1-reviewed-v2"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012"
+}

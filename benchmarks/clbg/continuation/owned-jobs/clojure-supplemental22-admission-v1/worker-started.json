@@ -1,0 +1,20 @@
+{
+  "started_at": "2026-10-13T06:31:04.935510+00:00",
+  "worker_identity": {
+    "pid": 83741,
+    "listing": "83741     1 Tue Oct 13 02:31:04 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/clojure-supplemental22-admission-v1 --lease-fd 3 --go-fd 4"
+  },
+  "inherited_private_lease": true,
+  "detached_session": true,
+  "common_mutex_owned_by_target_command": true,
+  "command": [
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+    "-B",
+    "-u",
+    "revisions/admit-supplemental-v1/admit.py",
+    "--revision",
+    "work-v1-reviewed-v2"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012",
+  "qualification_granted": false
+}

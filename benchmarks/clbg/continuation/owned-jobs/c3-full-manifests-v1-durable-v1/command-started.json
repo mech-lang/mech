@@ -1,0 +1,20 @@
+{
+  "started_at": "2026-10-13T06:18:45.519372+00:00",
+  "command_pid": 82236,
+  "command_identity": {
+    "pid": 82236,
+    "listing": "82236 82232 Tue Oct 13 02:18:45 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u revisions/work-full-v3/seal_full_studies.py --work-revision work-v3 --study-revision full-v1"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+    "-B",
+    "-u",
+    "revisions/work-full-v3/seal_full_studies.py",
+    "--work-revision",
+    "work-v3",
+    "--study-revision",
+    "full-v1"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012"
+}

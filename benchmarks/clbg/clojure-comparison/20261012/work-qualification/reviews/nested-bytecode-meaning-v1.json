@@ -1,0 +1,27 @@
+{
+  "status": "passed-manual-nested-bytecode-meaning-review",
+  "review_identity": "Crystal source/actual JVM bytecode reviewer, exact private-v2 Clojure20+support, 2026-10-13",
+  "terminal": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/reviews/nested-bytecode-review-v1/actual-evidence/terminal.json",
+    "sha256": "d9206dff2d50905fba36134e14afc650a3bb29b34f814e539148507d7cfa7a6f"
+  },
+  "review_input_index": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/reviews/nested-bytecode-review-v1/actual-evidence/review-input-index.json",
+    "sha256": "03f286aef41cfb21a05dbc125fee7f5f15f84e4095809a57fa5212869d644db0"
+  },
+  "clojure-knucleotide-compact": {
+    "scored_original_nested_loop": "The preserved original histogram$fn__159.invoke initializes position0, loads PersistentHashMap.EMPTY at2 and calls core$transient.invokeStatic5 into table slot3 before the window test9..17. The nonterminal path computes substring(position,position+width) at27..49, reads the same table/key with RT.get72 and increments the actual count75, then calls core$assoc_BANG_.invokeStatic78. The returned transient is retained in slot3 at81, position increments54..58/82, and goto83 returns to the actual windows test9. On completion20..23/86 the complete table is returned; the already reviewed outer histogram invokes this exact generated class then persistent!44. All seven authored widths and all windows therefore execute real storage updates rather than query-only or literal-table substitutes.",
+    "observer_nested_loop": "The preserved observer histogram_raw$fn__250.invoke performs the same transient initialization2..5 and passes that actual returned map to observer.map_start16 before retaining it in slot3. It computes the actual substring38..60, passes table/key/position/width and a closure capturing that table/key80..92 to map_write95, stores the returned table98, increments position99, and loops100 to the windows test20. It returns the produced table103. This saved outer callback corroborates the exact map handed to the instrumented loop; complete native JSONL/window/growth/inventory reconciliation and the written assoc! callback establish the recorded update effect. No separate claim that fn__251 was newly disassembled is made.",
+    "vendor_fresh_storage": "The pinned vendor PersistentHashMap.asTransient method performs new TransientHashMap0 and invokes its constructor5 on every call. That constructor creates an AtomicReference1 containing Thread.currentThread5 and a fresh Box5 in the delegated constructor, retains root/count/edit state, and does not return EMPTY as the transient. The selected EMPTY source has no root entries. TransientHashMap.doAssoc nonnull-key path selects the current or empty bitmap root49..66, invokes actual INode.assoc81 with the edit reference, key/value and leaf flag, stores changed root97 and increments count117 for a newly inserted leaf. doPersistent clears edit5, performs new PersistentHashMap8 and transfers actual count/root/null state into its constructor28. Initial immutable EMPTY is a seed, while every histogram receives a fresh mutable transient and produces its own complete persistent result.",
+    "actual_native_correlation": "All twelve compact K cases already passed seven-map identities, all expected windows and complete key/count inventories, actual backing growth, actual thread/worker ownership, ordered received-map reads and retained same-map handoff. The unscored observer namespace and original compiled scored class inputs remain distinct and pinned. The fresh nested class capture neither recompiles nor changes source, classes or native proof records."
+  },
+  "clojure-knucleotide-optimized": {
+    "observer_actual_write_callback": "The preserved histogram_raw$fn__252.invoke loads its captured table0..1 and prepares method name put4. Its first argument is the captured next_key12..16. The value argument calls getOrDefault48 on that same captured table23 and key35, converts to long51 and increments54, then invokes Reflector.invokeInstanceMethod61 for put on the captured receiver. The callback therefore performs the actual table update and returns the real call result64. This agrees with the already reviewed original histogram's direct HashMap allocation/put and the actual same-map complete growth/ownership/window proofs.",
+    "actual_native_correlation": "All twelve optimized K cases passed complete seven-map/window inventories, real table growth, private task/thread ownership, all joins and ordered parent reads of returned complete maps. The observer-only add-opens flag enables storage inspection and is absent from scored commands."
+  },
+  "shared_capture_scope": "The actual terminal records five javap commands, zero compilation commands and zero native benchmark subjects; original scored classes and observer classes remain unchanged and the complete captured pin map reconciled at completion. Original and observer class names/classpaths, compiler JARs and exact artifacts are supplied by the actual qualified input index rather than inferred from namespace names. Terminal and per-command raw stdout/receipt pins are carried into the final manual review as supplemental evidence; root must verify them under the common mutex before admission.",
+  "unresolved": [],
+  "original_native_report_mutated": false,
+  "canonical_LOC_admitted": false,
+  "chart_admission": false
+}

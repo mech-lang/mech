@@ -1,0 +1,17 @@
+{
+  "status": "detached-read-only-observer-launched",
+  "launched_at": "2026-10-13T06:28:37.070927+00:00",
+  "pid": 83359,
+  "identity": "83359 83345 Tue Oct 13 02:28:37 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/observe_apl_exit_v1.py",
+  "command": [
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/observe_apl_exit_v1.py"
+  ],
+  "common_mutex_not_acquired": "Read-only control-plane exit registration must occur while original sampler owns the benchmark mutex.",
+  "signals_sent": 0,
+  "benchmarks_started": 0,
+  "qualification_granted": false,
+  "automatic_retry": false
+}

@@ -1,0 +1,1347 @@
+{
+  "status": "passed-exact-source-actual-bytecode-semantic-review",
+  "language": "clojure",
+  "review_identity": "Crystal source/actual bytecode reviewer, exact private-v2 Clojure20+support, 2026-10-13",
+  "actual_work_report": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/report.json",
+    "sha256": "e193dfcebfada205469caef3f2b80c8cdffa59ff0cbb955d7e6ff240fe29c371"
+  },
+  "qualified_preparation_sha256": "69bf7cdb025759e6d10cb8c1ae1c189839e253ced9aca50e4f9cc1e838d36d79",
+  "source_inventory_review": "All20 authored mains and whole clbg.support were read. Both private-v2 Nbody corrected aliases are selected; eighteen other main sources and complete helper are unchanged. Original/fresh actual compiled package, inventory, compile receipt, JAR/runtime/classpath/artifact identities remain independently qualified. Source roots are absent from measured classpaths. Application workload code is authored Clojure; standard BigInteger, JVM regex, I/O, array and map primitives are the expressly allowed libraries.",
+  "complete_static_source_review_by_benchmark": {
+    "binarytrees": "Both creators unconditionally allocate fresh object-array2 before positive-depth test and independently recurse into both children; leaves are dynamic nodes. Checker recursively reads both actual child slots. Stretch, retained root, every depth/iteration tree and final retained check are present. Optimized partitions each depth's full iterations across bounded workers, joins all jobs before totals/retained read. No constant/shared leaves or closed-form checker.",
+    "fannkuchredux": "Compact enumerates all permutations, independent prefix rotations/count carry, actual copy/reversal flip loop, signed checksum and maximum. Optimized constructs factoradic interval start permutations, enumerates every assigned rank with actual permutations/flip work, and joins bounded disjoint intervals before checksum/max. No checksum/maximum formula substitution.",
+    "nbody": "Both corrected sources retain all pairwise force contributions, both bodies' velocity updates, position updates for each step, initial momentum correction and independent initial/final energy summations. Primitive-array storage and numeric work remain in Clojure. Narrow parenthesis repairs close the authored potential loop; frozen malformed originals and compile failure remain excluded.",
+    "spectralnorm": "Both forms evaluate every matrix element formula inside complete row/column products for A and transpose, perform ten paired AtAv iterations and independent u/v dot products. Optimized partitions disjoint output rows with bounded joined workers. Typed array reads are actual Clojure/core accesses and array outputs; no external numeric kernel.",
+    "mandelbrot": "Both forms compute every pixel's complex recurrence up to50 iterations or escape, preserve width/height header and all row bytes including final partial-byte padding. Optimized rows are bounded/joined worker products, then emitted in original order. All floating recurrence and pixel/bit decisions remain authored Clojure.",
+    "pidigits": "Both forms compute independent numerator3/numerator4, divide each by actual denominator, compare actual quotients, retain both accepted and rejected recurrence paths and complete ten-column output/newline padding. Immutable standard BigInteger arithmetic is called by authored Clojure recurrence; no specialized external Pi kernel or alternative single extraction division.",
+    "fasta": "Both forms retain exact ALU repeated emission, actual LCG state and random sequence progression, both probability tables/cumulative selection and complete60-column tails. Optimized uses primitive data/string buffering while preserving RNG sequence across both generated records. All selection/generator work remains authored Clojure.",
+    "revcomp": "Both forms process all FASTA records, retain headers, normalize line input, apply full IUPAC complement and reverse complete sequence then emit60-column tails. Header/empty/comment/preheader handling is independently qualified. No record or interior sequence shortcut.",
+    "knucleotide": "Both select complete THIRD record, normalize case and build all seven widths1,2,3,4,6,12,18. Compact fresh transient maps count every substring window before persistent return; optimized fresh HashMaps roll complete packed keys through all positions and update every eligible window. Seven complete maps remain retained for two frequency tables/five queries; optimized tasks privately own maps and return complete maps only after joined futures. No five-query-only implementation or fixed capacity substitution.",
+    "regexredux": "Both use case-sensitive standard JVM patterns, complete original/cleaned length counts, all nine independent pattern counts and all five ordered substitutions with final length. Compact/optimized changes data buffering/control organization; neither switches to case-insensitive semantics or bypasses complete outputs. Workload orchestration remains authored Clojure with standard JVM regex primitive explicitly allowed."
+  },
+  "shared_helper_review": "Complete authored clbg.support is scored/counted. Input, argument, printf/flush and bounded jobs helper remain pinned. jobs uses at most min8/count workers, evaluates every job through Callable, awaits Future.get in vector order, and executes shutdown/awaitTermination in finally before returning results. Runtime/standard library sources are pinned vendor inputs, not authored LOC.",
+  "actual_saved_bytecode_review": {
+    "binarytrees-both": {
+      "creator": "make_tree.invokeStatic offsets0/3 load constant2 and call RT.object_array before depth load7/Numbers.isPos8/ifeq11. Both child recursion invokes occur35/67, each depth decremented independently, and RT.aset stores returned children40/72. Static initializer binds const6 specifically to the original namespace's make-tree Var; result returned from node slot82.",
+      "checker": "check_tree.invokeStatic reads child0 through RT.aget8 and tests nil; nonleaf path recursively invokes original check-tree Var on child0 at46 and child1 at76, sums1+both actual results via Numbers.add51/81. Static initializer binds original namespace and check-tree name.",
+      "vendor_allocation": "Pinned clojure.lang.RT.object_array(Object) Number path obtains intValue, performs actual anewarray java/lang/Object at14 and returns17. Creator's constant is Long2. Literal shared leaf/source-copy substitutes are absent.",
+      "observer": "Actual run_scored disassemblies invoke original scored make_tree/check_tree classes directly. Optimized interval invokes original make_tree42/check_tree60 with tree_root observer between, iterates until actual end and calls end_interval on normal/exception paths. Original scored class tree is a pinned compiler/runtime dependency, not copied source.",
+      "native_correlation": "Actual native JSONL/proofs cover fresh full object graphs at n0/7/9, every temporary interval iteration, identity/leaf/node reconciliation, retained root before/after churn and actual worker interval/thread/start/end/join order. Observer receives returned original nodes and reads their real object-array slots; no separate observed creator/checker exists."
+    },
+    "pidigits-compact": {
+      "original": "Actual _main performs BigInteger.divide111 and129, stores quotient slots12/13, loads both and calls BigInteger.equals144 before ifeq147 selecting recurrence/output. Numerators and denominator originate actual current recurrence operands.",
+      "observer": "Actual run_scored performs divide108/123, records actual operands/quotients via pi_step156, then loads both and equals170 before ifeq173. Instrumentation does not replace either quotient or recurrence.",
+      "native_correlation": "Actual97-digit work proof reconciles every recorded numerator3/numerator4/denominator/quotient3/quotient4 with accepted and rejected recurrence, and zero-digit work requires no extraction."
+    },
+    "pidigits-optimized": {
+      "original": "Actual _main performs BigInteger.divide163 and181, stores quotient slots13/14, loads both and equals196 before ifeq199. Both independent arithmetic numerators and shared current denominator feed these calls.",
+      "observer": "Actual run_scored performs divide160/175, records actual operands/quotients via pi_step210, then loads both and equals224 before ifeq227. Both extraction divisions remain before the branch.",
+      "native_correlation": "Actual97-digit and zero-digit proofs preserve same full recurrence/input/output/command/runtime identities as compact under independent exact source bindings."
+    },
+    "knucleotide-optimized": {
+      "original": "Actual histogram invokes new java/util/HashMap0/constructor4 before rolling loop29; compares each position to String.length35, forms complete key using current char/code/shift/mask, eligibility at75..84, getOrDefault108/inc114/put120. Index increments132 and goto29 cover all positions. Actual created map slot2 is returned151..154 after loop. Width is actual argument and exact authored seven-width vector drives all seven tasks.",
+      "observer": "The preserved histogram_raw$fn__252.invoke loads its captured table0..1 and prepares method name put4. Its first argument is the captured next_key12..16. The value argument calls getOrDefault48 on that same captured table23 and key35, converts to long51 and increments54, then invokes Reflector.invokeInstanceMethod61 for put on the captured receiver. The callback therefore performs the actual table update and returns the real call result64. This agrees with the already reviewed original histogram's direct HashMap allocation/put and the actual same-map complete growth/ownership/window proofs.",
+      "native_correlation": "Actual complete seven map inventories, every window/update, backing-table growth observations, private worker/thread map ownership, joins and parent-read chronology passed."
+    },
+    "knucleotide-compact": {
+      "scored_original_nested_loop": "The preserved original histogram$fn__159.invoke initializes position0, loads PersistentHashMap.EMPTY at2 and calls core$transient.invokeStatic5 into table slot3 before the window test9..17. The nonterminal path computes substring(position,position+width) at27..49, reads the same table/key with RT.get72 and increments the actual count75, then calls core$assoc_BANG_.invokeStatic78. The returned transient is retained in slot3 at81, position increments54..58/82, and goto83 returns to the actual windows test9. On completion20..23/86 the complete table is returned; the already reviewed outer histogram invokes this exact generated class then persistent!44. All seven authored widths and all windows therefore execute real storage updates rather than query-only or literal-table substitutes.",
+      "observer_nested_loop": "The preserved observer histogram_raw$fn__250.invoke performs the same transient initialization2..5 and passes that actual returned map to observer.map_start16 before retaining it in slot3. It computes the actual substring38..60, passes table/key/position/width and a closure capturing that table/key80..92 to map_write95, stores the returned table98, increments position99, and loops100 to the windows test20. It returns the produced table103. This saved outer callback corroborates the exact map handed to the instrumented loop; complete native JSONL/window/growth/inventory reconciliation and the written assoc! callback establish the recorded update effect. No separate claim that fn__251 was newly disassembled is made.",
+      "vendor_fresh_storage": "The pinned vendor PersistentHashMap.asTransient method performs new TransientHashMap0 and invokes its constructor5 on every call. That constructor creates an AtomicReference1 containing Thread.currentThread5 and a fresh Box5 in the delegated constructor, retains root/count/edit state, and does not return EMPTY as the transient. The selected EMPTY source has no root entries. TransientHashMap.doAssoc nonnull-key path selects the current or empty bitmap root49..66, invokes actual INode.assoc81 with the edit reference, key/value and leaf flag, stores changed root97 and increments count117 for a newly inserted leaf. doPersistent clears edit5, performs new PersistentHashMap8 and transfers actual count/root/null state into its constructor28. Initial immutable EMPTY is a seed, while every histogram receives a fresh mutable transient and produces its own complete persistent result.",
+      "actual_native_correlation": "All twelve compact K cases already passed seven-map identities, all expected windows and complete key/count inventories, actual backing growth, actual thread/worker ownership, ordered received-map reads and retained same-map handoff. The unscored observer namespace and original compiled scored class inputs remain distinct and pinned. The fresh nested class capture neither recompiles nor changes source, classes or native proof records."
+    }
+  },
+  "common_mutex_review": "Read-only saved bytecode/session26442 ran under the common mutex and verified actual report and all selected evidence/stdout pins. Actual native bounded FD proof matches original JVM PID/command/held duplicate descriptor/inode/lsof bytes. Observers use separate namespaces, class inputs and fresh output/environment fingerprints; actual original scored tree classes remain pinned and invoked.",
+  "unresolved": [],
+  "canonical_LOC_admitted": false,
+  "chart_admission": false,
+  "original_native_report_mutated": false,
+  "complete_static_source_review": true,
+  "actual_native_work_attempts": 34,
+  "supplemental_nested_bytecode_review": {
+    "status": "passed-manual-nested-bytecode-meaning-review",
+    "review_identity": "Crystal source/actual JVM bytecode reviewer, exact private-v2 Clojure20+support, 2026-10-13",
+    "terminal": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/reviews/nested-bytecode-review-v1/actual-evidence/terminal.json",
+      "sha256": "d9206dff2d50905fba36134e14afc650a3bb29b34f814e539148507d7cfa7a6f"
+    },
+    "review_input_index": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/reviews/nested-bytecode-review-v1/actual-evidence/review-input-index.json",
+      "sha256": "03f286aef41cfb21a05dbc125fee7f5f15f84e4095809a57fa5212869d644db0"
+    },
+    "clojure-knucleotide-compact": {
+      "scored_original_nested_loop": "The preserved original histogram$fn__159.invoke initializes position0, loads PersistentHashMap.EMPTY at2 and calls core$transient.invokeStatic5 into table slot3 before the window test9..17. The nonterminal path computes substring(position,position+width) at27..49, reads the same table/key with RT.get72 and increments the actual count75, then calls core$assoc_BANG_.invokeStatic78. The returned transient is retained in slot3 at81, position increments54..58/82, and goto83 returns to the actual windows test9. On completion20..23/86 the complete table is returned; the already reviewed outer histogram invokes this exact generated class then persistent!44. All seven authored widths and all windows therefore execute real storage updates rather than query-only or literal-table substitutes.",
+      "observer_nested_loop": "The preserved observer histogram_raw$fn__250.invoke performs the same transient initialization2..5 and passes that actual returned map to observer.map_start16 before retaining it in slot3. It computes the actual substring38..60, passes table/key/position/width and a closure capturing that table/key80..92 to map_write95, stores the returned table98, increments position99, and loops100 to the windows test20. It returns the produced table103. This saved outer callback corroborates the exact map handed to the instrumented loop; complete native JSONL/window/growth/inventory reconciliation and the written assoc! callback establish the recorded update effect. No separate claim that fn__251 was newly disassembled is made.",
+      "vendor_fresh_storage": "The pinned vendor PersistentHashMap.asTransient method performs new TransientHashMap0 and invokes its constructor5 on every call. That constructor creates an AtomicReference1 containing Thread.currentThread5 and a fresh Box5 in the delegated constructor, retains root/count/edit state, and does not return EMPTY as the transient. The selected EMPTY source has no root entries. TransientHashMap.doAssoc nonnull-key path selects the current or empty bitmap root49..66, invokes actual INode.assoc81 with the edit reference, key/value and leaf flag, stores changed root97 and increments count117 for a newly inserted leaf. doPersistent clears edit5, performs new PersistentHashMap8 and transfers actual count/root/null state into its constructor28. Initial immutable EMPTY is a seed, while every histogram receives a fresh mutable transient and produces its own complete persistent result.",
+      "actual_native_correlation": "All twelve compact K cases already passed seven-map identities, all expected windows and complete key/count inventories, actual backing growth, actual thread/worker ownership, ordered received-map reads and retained same-map handoff. The unscored observer namespace and original compiled scored class inputs remain distinct and pinned. The fresh nested class capture neither recompiles nor changes source, classes or native proof records."
+    },
+    "clojure-knucleotide-optimized": {
+      "observer_actual_write_callback": "The preserved histogram_raw$fn__252.invoke loads its captured table0..1 and prepares method name put4. Its first argument is the captured next_key12..16. The value argument calls getOrDefault48 on that same captured table23 and key35, converts to long51 and increments54, then invokes Reflector.invokeInstanceMethod61 for put on the captured receiver. The callback therefore performs the actual table update and returns the real call result64. This agrees with the already reviewed original histogram's direct HashMap allocation/put and the actual same-map complete growth/ownership/window proofs.",
+      "actual_native_correlation": "All twelve optimized K cases passed complete seven-map/window inventories, real table growth, private task/thread ownership, all joins and ordered parent reads of returned complete maps. The observer-only add-opens flag enables storage inspection and is absent from scored commands."
+    },
+    "shared_capture_scope": "The actual terminal records five javap commands, zero compilation commands and zero native benchmark subjects; original scored classes and observer classes remain unchanged and the complete captured pin map reconciled at completion. Original and observer class names/classpaths, compiler JARs and exact artifacts are supplied by the actual qualified input index rather than inferred from namespace names. Terminal and per-command raw stdout/receipt pins are carried into the final manual review as supplemental evidence; root must verify them under the common mutex before admission.",
+    "unresolved": [],
+    "original_native_report_mutated": false,
+    "canonical_LOC_admitted": false,
+    "chart_admission": false
+  },
+  "supplemental_evidence_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/reviews/nested-bytecode-review-v1/actual-evidence/clojure-knucleotide-compact-observer-nested-histogram.json": "e6b9b767fe6841a56922cccfafdec9a7a70d1466165e949ffa729ed35a6caaa3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/reviews/nested-bytecode-review-v1/actual-evidence/clojure-knucleotide-compact-scored-original-nested-histogram.stdout": "65b908c6725e3ed977ec810b412a805122314ebec51ed567adfc4a65ae04a98d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/reviews/nested-bytecode-review-v1/actual-evidence/vendor-PersistentHashMap$TransientHashMap.stdout": "9cb2784e7c745564869e92579b25052273c71deb21f9906687c22f9c264aa057",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/reviews/nested-bytecode-review-v1/actual-evidence/clojure-knucleotide-compact-observer-nested-histogram.stderr": "8e474876ea87f65d91eeb807b4fd86cc727499d4fe47bc3f8d215f0ac99f60e7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/reviews/nested-bytecode-review-v1/actual-evidence/clojure-knucleotide-optimized-observer-nested-histogram.stderr": "8e474876ea87f65d91eeb807b4fd86cc727499d4fe47bc3f8d215f0ac99f60e7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/reviews/nested-bytecode-review-v1/actual-evidence/review-input-index.json": "03f286aef41cfb21a05dbc125fee7f5f15f84e4095809a57fa5212869d644db0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/reviews/nested-bytecode-review-v1/actual-evidence/clojure-knucleotide-compact-observer-nested-histogram.stdout": "13e2c26fbd7fc1b19587ca5b66963987a3bc1443b778628457be90883a5afdcf",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/reviews/nested-bytecode-review-v1/actual-evidence/clojure-knucleotide-optimized-observer-nested-histogram.stdout": "bab850abab039558fd61cd8b49b608a3327d03b9ca47d0793de491df9daf8a91",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/reviews/nested-bytecode-review-v1/actual-evidence/vendor-PersistentHashMap$TransientHashMap.json": "2db4e0196b9bc9439d1033400d619a5a047ee3c6c5b7c21efed60f662bdf67b7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/reviews/nested-bytecode-review-v1/actual-evidence/clojure-knucleotide-optimized-observer-nested-histogram.json": "8dbdf7e54197b22967f1f1d66db6b1f9dc2e99850ec50c7203ae76d30bcdb096",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/reviews/nested-bytecode-review-v1/actual-evidence/clojure-knucleotide-compact-scored-original-nested-histogram.stderr": "8e474876ea87f65d91eeb807b4fd86cc727499d4fe47bc3f8d215f0ac99f60e7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/reviews/nested-bytecode-review-v1/actual-evidence/vendor-PersistentHashMap$TransientHashMap.stderr": "8e474876ea87f65d91eeb807b4fd86cc727499d4fe47bc3f8d215f0ac99f60e7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/reviews/nested-bytecode-review-v1/actual-evidence/clojure-knucleotide-compact-scored-original-nested-histogram.active.json": "b2c91be962967e1298af20ab717326b9180331e863e7a9053958a3fab4172059",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/reviews/nested-bytecode-review-v1/actual-evidence/vendor-PersistentHashMap.json": "43f3c42eb858061b57d276505df09e91dc6e8640bf3e78858c373ae2def20716",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/reviews/nested-bytecode-review-v1/actual-evidence/clojure-knucleotide-compact-scored-original-nested-histogram.json": "bbbd9413ed6bdafac9253554551de881cab059aca8b20cc1a324b535faa39569",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/reviews/nested-bytecode-review-v1/actual-evidence/vendor-PersistentHashMap.stderr": "8e474876ea87f65d91eeb807b4fd86cc727499d4fe47bc3f8d215f0ac99f60e7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/reviews/nested-bytecode-review-v1/actual-evidence/vendor-PersistentHashMap.active.json": "3e446b9c5ca442c10f21b26628e5160c8599d04253b40aa70975d4516ca17d38",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/reviews/nested-bytecode-review-v1/actual-evidence/vendor-PersistentHashMap$TransientHashMap.active.json": "ff316ee6fbf6d55860f9ee69bb15b81ae3d2f86c827abd89af94bcfe3ff150cf",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/reviews/nested-bytecode-review-v1/actual-evidence/vendor-PersistentHashMap.stdout": "3e386640856e20642ead103e9a603ed5a0a06742fea43e27072b93aff1b6d660",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/reviews/nested-bytecode-review-v1/actual-evidence/clojure-knucleotide-optimized-observer-nested-histogram.active.json": "0108e82ec68936af8e9999ddcf6d3d30578a282af622777cc8d48d995dc1b362",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/reviews/nested-bytecode-review-v1/actual-evidence/clojure-knucleotide-compact-observer-nested-histogram.active.json": "554396efae55131931cb67371161f56c2003a78020ddaf2e2e064c838eef74ac",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/reviews/nested-bytecode-review-v1/actual-evidence/terminal.json": "d9206dff2d50905fba36134e14afc650a3bb29b34f814e539148507d7cfa7a6f"
+  },
+  "supplemental_pin_admission_requirement": "Verify the exact terminal SHA and all supplemental evidence pins under the common mutex before --admit; the frozen work-v1 admission validator verifies original report pins and the reviewed JSON but does not traverse this additional field.",
+  "profiles": {
+    "clojure-binarytrees-compact": {
+      "status": "passed",
+      "review_identity": "Crystal source/actual bytecode reviewer, exact private-v2 Clojure20+support, 2026-10-13",
+      "source_sha256": "d3735e4f6e092583c76ababcdb39d159960073f1865d53230e92c2b7d3b2c7bf",
+      "binary_sha256": "83c9c5310d044e7c4262432854eb1bc5f49763d7c1e9971777a646c91b96c06d",
+      "compiled_input_inventory_sha256": "1d602ce0349bb2f5390066e9403061e1c26bdff7a604d060ca4abd2b76f280a8",
+      "source_bundle": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/packages/clojure-binarytrees-compact/sources/clbg/binarytrees/compact.clj",
+          "sha256": "d3735e4f6e092583c76ababcdb39d159960073f1865d53230e92c2b7d3b2c7bf",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v1/source-snapshot/sources/clbg/binarytrees/compact.clj",
+          "role": "application"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/packages/clojure-binarytrees-compact/support/clbg/support.clj",
+          "sha256": "ae37ffdcbfe8d1fa34632e1151d4098b5747f71ce2ad074d326043be3d289446",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v1/source-snapshot/support/clbg/support.clj",
+          "role": "application-helper"
+        }
+      ],
+      "compiled_source_bundle": [
+        "sources/clbg/binarytrees/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "complete_static_source_review": true,
+      "source_semantic_review": "Both creators unconditionally allocate fresh object-array2 before positive-depth test and independently recurse into both children; leaves are dynamic nodes. Checker recursively reads both actual child slots. Stretch, retained root, every depth/iteration tree and final retained check are present. Optimized partitions each depth's full iterations across bounded workers, joins all jobs before totals/retained read. No constant/shared leaves or closed-form checker.",
+      "shared_helper_semantic_review": "Complete authored clbg.support is scored/counted. Input, argument, printf/flush and bounded jobs helper remain pinned. jobs uses at most min8/count workers, evaluates every job through Callable, awaits Future.get in vector order, and executes shutdown/awaitTermination in finally before returning results. Runtime/standard library sources are pinned vendor inputs, not authored LOC.",
+      "unresolved": [],
+      "actual_work_flags": {
+        "actual_leaf_allocation": true,
+        "actual_fresh_node_storage": true,
+        "worker_cap_verified": true,
+        "all_iteration_graphs_verified": true,
+        "retained_identity_after_churn": true
+      },
+      "actual_observations": [
+        {
+          "status": "passed",
+          "case": "allocated-n0",
+          "attempt": 1,
+          "scored_source_sha256": "d3735e4f6e092583c76ababcdb39d159960073f1865d53230e92c2b7d3b2c7bf",
+          "observer_source_sha256": "c0d24c626890964e21b58806f669619a7427f6729589c7283e438f917097c5c6",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-binarytrees-compact.json",
+            "sha256": "8e0c049d59bbe8761da9af6d6c3956c727b172a87e48fea41790d26dfef4d0c8"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-binarytrees-compact-work-observer/allocated-n0/work-proof.json",
+            "sha256": "24953505043e1ae64694258f250549c2f36b063d18ad460a109252549c073779"
+          }
+        },
+        {
+          "status": "passed",
+          "case": "allocated-n7",
+          "attempt": 2,
+          "scored_source_sha256": "d3735e4f6e092583c76ababcdb39d159960073f1865d53230e92c2b7d3b2c7bf",
+          "observer_source_sha256": "c0d24c626890964e21b58806f669619a7427f6729589c7283e438f917097c5c6",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-binarytrees-compact.json",
+            "sha256": "8e0c049d59bbe8761da9af6d6c3956c727b172a87e48fea41790d26dfef4d0c8"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-binarytrees-compact-work-observer/allocated-n7/work-proof.json",
+            "sha256": "6234a154c4005470155b2cc128603bea120c82a72db5c76e52b210299f716652"
+          }
+        },
+        {
+          "status": "passed",
+          "case": "allocated-n9",
+          "attempt": 3,
+          "scored_source_sha256": "d3735e4f6e092583c76ababcdb39d159960073f1865d53230e92c2b7d3b2c7bf",
+          "observer_source_sha256": "c0d24c626890964e21b58806f669619a7427f6729589c7283e438f917097c5c6",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-binarytrees-compact.json",
+            "sha256": "8e0c049d59bbe8761da9af6d6c3956c727b172a87e48fea41790d26dfef4d0c8"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-binarytrees-compact-work-observer/allocated-n9/work-proof.json",
+            "sha256": "fe7c60a2402bb74a720c245e75dc33a75246596ab818c59d0301814b1d514c9a"
+          }
+        }
+      ],
+      "bytecode_review": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/bytecode/clojure-binarytrees-compact/bytecode-evidence.json",
+        "sha256": "6254466e3457a9c2eb7564e5d85b41b003f6fbdca07ad5e34f07b3063840dc11",
+        "status": "passed",
+        "exact_work_checks": {
+          "original_unconditional_array_allocation_before_depth_test": true,
+          "original_real_recursive_checker": true,
+          "pinned_actual_RT_allocation_primitive": true,
+          "observer_invokes_actual_original_creator_checker": true
+        },
+        "semantic_review": {
+          "creator": "make_tree.invokeStatic offsets0/3 load constant2 and call RT.object_array before depth load7/Numbers.isPos8/ifeq11. Both child recursion invokes occur35/67, each depth decremented independently, and RT.aset stores returned children40/72. Static initializer binds const6 specifically to the original namespace's make-tree Var; result returned from node slot82.",
+          "checker": "check_tree.invokeStatic reads child0 through RT.aget8 and tests nil; nonleaf path recursively invokes original check-tree Var on child0 at46 and child1 at76, sums1+both actual results via Numbers.add51/81. Static initializer binds original namespace and check-tree name.",
+          "vendor_allocation": "Pinned clojure.lang.RT.object_array(Object) Number path obtains intValue, performs actual anewarray java/lang/Object at14 and returns17. Creator's constant is Long2. Literal shared leaf/source-copy substitutes are absent.",
+          "observer": "Actual run_scored disassemblies invoke original scored make_tree/check_tree classes directly. Optimized interval invokes original make_tree42/check_tree60 with tree_root observer between, iterates until actual end and calls end_interval on normal/exception paths. Original scored class tree is a pinned compiler/runtime dependency, not copied source.",
+          "native_correlation": "Actual native JSONL/proofs cover fresh full object graphs at n0/7/9, every temporary interval iteration, identity/leaf/node reconciliation, retained root before/after churn and actual worker interval/thread/start/end/join order. Observer receives returned original nodes and reads their real object-array slots; no separate observed creator/checker exists."
+        }
+      }
+    },
+    "clojure-binarytrees-optimized": {
+      "status": "passed",
+      "review_identity": "Crystal source/actual bytecode reviewer, exact private-v2 Clojure20+support, 2026-10-13",
+      "source_sha256": "6899d4738d9f5a179c5f788ee698ce56843a63862db0a4b343f9331c999a33f3",
+      "binary_sha256": "83c9c5310d044e7c4262432854eb1bc5f49763d7c1e9971777a646c91b96c06d",
+      "compiled_input_inventory_sha256": "2a3a387b7fb4f34c1d1c57b578e128bf940dfe3a9455c8d8ba588a29c490bd86",
+      "source_bundle": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/packages/clojure-binarytrees-optimized/sources/clbg/binarytrees/optimized.clj",
+          "sha256": "6899d4738d9f5a179c5f788ee698ce56843a63862db0a4b343f9331c999a33f3",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v1/source-snapshot/sources/clbg/binarytrees/optimized.clj",
+          "role": "application"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/packages/clojure-binarytrees-optimized/support/clbg/support.clj",
+          "sha256": "ae37ffdcbfe8d1fa34632e1151d4098b5747f71ce2ad074d326043be3d289446",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v1/source-snapshot/support/clbg/support.clj",
+          "role": "application-helper"
+        }
+      ],
+      "compiled_source_bundle": [
+        "sources/clbg/binarytrees/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "complete_static_source_review": true,
+      "source_semantic_review": "Both creators unconditionally allocate fresh object-array2 before positive-depth test and independently recurse into both children; leaves are dynamic nodes. Checker recursively reads both actual child slots. Stretch, retained root, every depth/iteration tree and final retained check are present. Optimized partitions each depth's full iterations across bounded workers, joins all jobs before totals/retained read. No constant/shared leaves or closed-form checker.",
+      "shared_helper_semantic_review": "Complete authored clbg.support is scored/counted. Input, argument, printf/flush and bounded jobs helper remain pinned. jobs uses at most min8/count workers, evaluates every job through Callable, awaits Future.get in vector order, and executes shutdown/awaitTermination in finally before returning results. Runtime/standard library sources are pinned vendor inputs, not authored LOC.",
+      "unresolved": [],
+      "actual_work_flags": {
+        "actual_leaf_allocation": true,
+        "actual_fresh_node_storage": true,
+        "worker_cap_verified": true,
+        "all_iteration_graphs_verified": true,
+        "retained_identity_after_churn": true
+      },
+      "actual_observations": [
+        {
+          "status": "passed",
+          "case": "allocated-n0",
+          "attempt": 4,
+          "scored_source_sha256": "6899d4738d9f5a179c5f788ee698ce56843a63862db0a4b343f9331c999a33f3",
+          "observer_source_sha256": "cf178c4d9fb8c1115e9ad91622cae5da1f4017db2f8d23773d9f74a624cc87a8",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-binarytrees-optimized.json",
+            "sha256": "643c2ad97781b815e1943fd14540066a953336a4c6bd782257382c0df4e8a786"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-binarytrees-optimized-work-observer/allocated-n0/work-proof.json",
+            "sha256": "eb94d76e9d4e5c42e2bce6b75cb45ecc549fc921d13d1c201ad65fb652895e41"
+          }
+        },
+        {
+          "status": "passed",
+          "case": "allocated-n7",
+          "attempt": 5,
+          "scored_source_sha256": "6899d4738d9f5a179c5f788ee698ce56843a63862db0a4b343f9331c999a33f3",
+          "observer_source_sha256": "cf178c4d9fb8c1115e9ad91622cae5da1f4017db2f8d23773d9f74a624cc87a8",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-binarytrees-optimized.json",
+            "sha256": "643c2ad97781b815e1943fd14540066a953336a4c6bd782257382c0df4e8a786"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-binarytrees-optimized-work-observer/allocated-n7/work-proof.json",
+            "sha256": "eb29a8e95e96769c92ef7521ab2884554ec99ff182b9938f95fb4727ea2a724a"
+          }
+        },
+        {
+          "status": "passed",
+          "case": "allocated-n9",
+          "attempt": 6,
+          "scored_source_sha256": "6899d4738d9f5a179c5f788ee698ce56843a63862db0a4b343f9331c999a33f3",
+          "observer_source_sha256": "cf178c4d9fb8c1115e9ad91622cae5da1f4017db2f8d23773d9f74a624cc87a8",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-binarytrees-optimized.json",
+            "sha256": "643c2ad97781b815e1943fd14540066a953336a4c6bd782257382c0df4e8a786"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-binarytrees-optimized-work-observer/allocated-n9/work-proof.json",
+            "sha256": "0dfea90b69a187eb5633e3d2283179a91460e0b2fdfca116975b1ad8380db072"
+          }
+        }
+      ],
+      "bytecode_review": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/bytecode/clojure-binarytrees-optimized/bytecode-evidence.json",
+        "sha256": "8ae2ace40448db6a010befdc5de03d5f2c7e89d20eaaa358d9371c78b574427b",
+        "status": "passed",
+        "exact_work_checks": {
+          "original_unconditional_array_allocation_before_depth_test": true,
+          "original_real_recursive_checker": true,
+          "pinned_actual_RT_allocation_primitive": true,
+          "observer_invokes_actual_original_creator_checker": true
+        },
+        "semantic_review": {
+          "creator": "make_tree.invokeStatic offsets0/3 load constant2 and call RT.object_array before depth load7/Numbers.isPos8/ifeq11. Both child recursion invokes occur35/67, each depth decremented independently, and RT.aset stores returned children40/72. Static initializer binds const6 specifically to the original namespace's make-tree Var; result returned from node slot82.",
+          "checker": "check_tree.invokeStatic reads child0 through RT.aget8 and tests nil; nonleaf path recursively invokes original check-tree Var on child0 at46 and child1 at76, sums1+both actual results via Numbers.add51/81. Static initializer binds original namespace and check-tree name.",
+          "vendor_allocation": "Pinned clojure.lang.RT.object_array(Object) Number path obtains intValue, performs actual anewarray java/lang/Object at14 and returns17. Creator's constant is Long2. Literal shared leaf/source-copy substitutes are absent.",
+          "observer": "Actual run_scored disassemblies invoke original scored make_tree/check_tree classes directly. Optimized interval invokes original make_tree42/check_tree60 with tree_root observer between, iterates until actual end and calls end_interval on normal/exception paths. Original scored class tree is a pinned compiler/runtime dependency, not copied source.",
+          "native_correlation": "Actual native JSONL/proofs cover fresh full object graphs at n0/7/9, every temporary interval iteration, identity/leaf/node reconciliation, retained root before/after churn and actual worker interval/thread/start/end/join order. Observer receives returned original nodes and reads their real object-array slots; no separate observed creator/checker exists."
+        }
+      }
+    },
+    "clojure-fannkuchredux-compact": {
+      "status": "passed",
+      "review_identity": "Crystal source/actual bytecode reviewer, exact private-v2 Clojure20+support, 2026-10-13",
+      "source_sha256": "7056b08ea6619eb51be47067aec5d14d839a3bf628235f0400746cdef9d956b7",
+      "binary_sha256": "83c9c5310d044e7c4262432854eb1bc5f49763d7c1e9971777a646c91b96c06d",
+      "compiled_input_inventory_sha256": "9bf5959bf2ef8f1471004c8cfc51c36f93ce6d232f2c37f5164647f23d6998f7",
+      "source_bundle": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/packages/clojure-fannkuchredux-compact/sources/clbg/fannkuchredux/compact.clj",
+          "sha256": "7056b08ea6619eb51be47067aec5d14d839a3bf628235f0400746cdef9d956b7",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v1/source-snapshot/sources/clbg/fannkuchredux/compact.clj",
+          "role": "application"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/packages/clojure-fannkuchredux-compact/support/clbg/support.clj",
+          "sha256": "ae37ffdcbfe8d1fa34632e1151d4098b5747f71ce2ad074d326043be3d289446",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v1/source-snapshot/support/clbg/support.clj",
+          "role": "application-helper"
+        }
+      ],
+      "compiled_source_bundle": [
+        "sources/clbg/fannkuchredux/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "complete_static_source_review": true,
+      "source_semantic_review": "Compact enumerates all permutations, independent prefix rotations/count carry, actual copy/reversal flip loop, signed checksum and maximum. Optimized constructs factoradic interval start permutations, enumerates every assigned rank with actual permutations/flip work, and joins bounded disjoint intervals before checksum/max. No checksum/maximum formula substitution.",
+      "shared_helper_semantic_review": "Complete authored clbg.support is scored/counted. Input, argument, printf/flush and bounded jobs helper remain pinned. jobs uses at most min8/count workers, evaluates every job through Callable, awaits Future.get in vector order, and executes shutdown/awaitTermination in finally before returning results. Runtime/standard library sources are pinned vendor inputs, not authored LOC.",
+      "unresolved": []
+    },
+    "clojure-fannkuchredux-optimized": {
+      "status": "passed",
+      "review_identity": "Crystal source/actual bytecode reviewer, exact private-v2 Clojure20+support, 2026-10-13",
+      "source_sha256": "dcff2d2b86b6ce63ada0603d705361a329e793ecc1619fea57ac3d2be83bdb6e",
+      "binary_sha256": "83c9c5310d044e7c4262432854eb1bc5f49763d7c1e9971777a646c91b96c06d",
+      "compiled_input_inventory_sha256": "3ac6ac73ea8e67ca10a44716915301fc995f4c612e99f6dea6d7a98a44553429",
+      "source_bundle": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/packages/clojure-fannkuchredux-optimized/sources/clbg/fannkuchredux/optimized.clj",
+          "sha256": "dcff2d2b86b6ce63ada0603d705361a329e793ecc1619fea57ac3d2be83bdb6e",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v1/source-snapshot/sources/clbg/fannkuchredux/optimized.clj",
+          "role": "application"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/packages/clojure-fannkuchredux-optimized/support/clbg/support.clj",
+          "sha256": "ae37ffdcbfe8d1fa34632e1151d4098b5747f71ce2ad074d326043be3d289446",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v1/source-snapshot/support/clbg/support.clj",
+          "role": "application-helper"
+        }
+      ],
+      "compiled_source_bundle": [
+        "sources/clbg/fannkuchredux/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "complete_static_source_review": true,
+      "source_semantic_review": "Compact enumerates all permutations, independent prefix rotations/count carry, actual copy/reversal flip loop, signed checksum and maximum. Optimized constructs factoradic interval start permutations, enumerates every assigned rank with actual permutations/flip work, and joins bounded disjoint intervals before checksum/max. No checksum/maximum formula substitution.",
+      "shared_helper_semantic_review": "Complete authored clbg.support is scored/counted. Input, argument, printf/flush and bounded jobs helper remain pinned. jobs uses at most min8/count workers, evaluates every job through Callable, awaits Future.get in vector order, and executes shutdown/awaitTermination in finally before returning results. Runtime/standard library sources are pinned vendor inputs, not authored LOC.",
+      "unresolved": []
+    },
+    "clojure-nbody-compact": {
+      "status": "passed",
+      "review_identity": "Crystal source/actual bytecode reviewer, exact private-v2 Clojure20+support, 2026-10-13",
+      "source_sha256": "193e26ad8dfd011fd1835d9d67be04bb223d088e6cdd3e2d6302ca8cae2f46d4",
+      "binary_sha256": "83c9c5310d044e7c4262432854eb1bc5f49763d7c1e9971777a646c91b96c06d",
+      "compiled_input_inventory_sha256": "434fac97b82e1ff3b2edb9657a21dd844863d1a1370b2074fb591876d8079b19",
+      "source_bundle": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-nbody-compact/sources/clbg/nbody/compact.clj",
+          "sha256": "193e26ad8dfd011fd1835d9d67be04bb223d088e6cdd3e2d6302ca8cae2f46d4",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/revisions/private-v2/sources/clbg/nbody/compact.clj",
+          "role": "application"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-nbody-compact/support/clbg/support.clj",
+          "sha256": "ae37ffdcbfe8d1fa34632e1151d4098b5747f71ce2ad074d326043be3d289446",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/support/clbg/support.clj",
+          "role": "application-helper"
+        }
+      ],
+      "compiled_source_bundle": [
+        "revisions/private-v2/sources/clbg/nbody/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "complete_static_source_review": true,
+      "source_semantic_review": "Both corrected sources retain all pairwise force contributions, both bodies' velocity updates, position updates for each step, initial momentum correction and independent initial/final energy summations. Primitive-array storage and numeric work remain in Clojure. Narrow parenthesis repairs close the authored potential loop; frozen malformed originals and compile failure remain excluded.",
+      "shared_helper_semantic_review": "Complete authored clbg.support is scored/counted. Input, argument, printf/flush and bounded jobs helper remain pinned. jobs uses at most min8/count workers, evaluates every job through Callable, awaits Future.get in vector order, and executes shutdown/awaitTermination in finally before returning results. Runtime/standard library sources are pinned vendor inputs, not authored LOC.",
+      "unresolved": []
+    },
+    "clojure-nbody-optimized": {
+      "status": "passed",
+      "review_identity": "Crystal source/actual bytecode reviewer, exact private-v2 Clojure20+support, 2026-10-13",
+      "source_sha256": "e0d1ea88a301c26752fa0cf3bf5ade22ed79321661255956cf0cf061df4c0881",
+      "binary_sha256": "83c9c5310d044e7c4262432854eb1bc5f49763d7c1e9971777a646c91b96c06d",
+      "compiled_input_inventory_sha256": "d0850ab077bdd969dca31e62adf7a05f3238f85040c8a5d3207bf193abe650a0",
+      "source_bundle": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-nbody-optimized/sources/clbg/nbody/optimized.clj",
+          "sha256": "e0d1ea88a301c26752fa0cf3bf5ade22ed79321661255956cf0cf061df4c0881",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/revisions/private-v2/sources/clbg/nbody/optimized.clj",
+          "role": "application"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-nbody-optimized/support/clbg/support.clj",
+          "sha256": "ae37ffdcbfe8d1fa34632e1151d4098b5747f71ce2ad074d326043be3d289446",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/support/clbg/support.clj",
+          "role": "application-helper"
+        }
+      ],
+      "compiled_source_bundle": [
+        "revisions/private-v2/sources/clbg/nbody/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "complete_static_source_review": true,
+      "source_semantic_review": "Both corrected sources retain all pairwise force contributions, both bodies' velocity updates, position updates for each step, initial momentum correction and independent initial/final energy summations. Primitive-array storage and numeric work remain in Clojure. Narrow parenthesis repairs close the authored potential loop; frozen malformed originals and compile failure remain excluded.",
+      "shared_helper_semantic_review": "Complete authored clbg.support is scored/counted. Input, argument, printf/flush and bounded jobs helper remain pinned. jobs uses at most min8/count workers, evaluates every job through Callable, awaits Future.get in vector order, and executes shutdown/awaitTermination in finally before returning results. Runtime/standard library sources are pinned vendor inputs, not authored LOC.",
+      "unresolved": []
+    },
+    "clojure-spectralnorm-compact": {
+      "status": "passed",
+      "review_identity": "Crystal source/actual bytecode reviewer, exact private-v2 Clojure20+support, 2026-10-13",
+      "source_sha256": "32540cd34c495a8d7acf4e64ca04704f2e2fe8414acc3c7d5c83747a064ba2a2",
+      "binary_sha256": "83c9c5310d044e7c4262432854eb1bc5f49763d7c1e9971777a646c91b96c06d",
+      "compiled_input_inventory_sha256": "95bc20d6f822e78f9142d4cd7ddebebaf2a4c4031ad212d88dc57d98f8514a9b",
+      "source_bundle": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-spectralnorm-compact/sources/clbg/spectralnorm/compact.clj",
+          "sha256": "32540cd34c495a8d7acf4e64ca04704f2e2fe8414acc3c7d5c83747a064ba2a2",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/sources/clbg/spectralnorm/compact.clj",
+          "role": "application"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-spectralnorm-compact/support/clbg/support.clj",
+          "sha256": "ae37ffdcbfe8d1fa34632e1151d4098b5747f71ce2ad074d326043be3d289446",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/support/clbg/support.clj",
+          "role": "application-helper"
+        }
+      ],
+      "compiled_source_bundle": [
+        "sources/clbg/spectralnorm/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "complete_static_source_review": true,
+      "source_semantic_review": "Both forms evaluate every matrix element formula inside complete row/column products for A and transpose, perform ten paired AtAv iterations and independent u/v dot products. Optimized partitions disjoint output rows with bounded joined workers. Typed array reads are actual Clojure/core accesses and array outputs; no external numeric kernel.",
+      "shared_helper_semantic_review": "Complete authored clbg.support is scored/counted. Input, argument, printf/flush and bounded jobs helper remain pinned. jobs uses at most min8/count workers, evaluates every job through Callable, awaits Future.get in vector order, and executes shutdown/awaitTermination in finally before returning results. Runtime/standard library sources are pinned vendor inputs, not authored LOC.",
+      "unresolved": []
+    },
+    "clojure-spectralnorm-optimized": {
+      "status": "passed",
+      "review_identity": "Crystal source/actual bytecode reviewer, exact private-v2 Clojure20+support, 2026-10-13",
+      "source_sha256": "9d668efbc990a3dd2ea0989f8d6ee7b7314482b7869007f4c0d069ff42feaf3a",
+      "binary_sha256": "83c9c5310d044e7c4262432854eb1bc5f49763d7c1e9971777a646c91b96c06d",
+      "compiled_input_inventory_sha256": "1b1293d1a79ed7d703226ee63b51c104edd60a74edf8a6779cb731c87874ba88",
+      "source_bundle": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-spectralnorm-optimized/sources/clbg/spectralnorm/optimized.clj",
+          "sha256": "9d668efbc990a3dd2ea0989f8d6ee7b7314482b7869007f4c0d069ff42feaf3a",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/sources/clbg/spectralnorm/optimized.clj",
+          "role": "application"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-spectralnorm-optimized/support/clbg/support.clj",
+          "sha256": "ae37ffdcbfe8d1fa34632e1151d4098b5747f71ce2ad074d326043be3d289446",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/support/clbg/support.clj",
+          "role": "application-helper"
+        }
+      ],
+      "compiled_source_bundle": [
+        "sources/clbg/spectralnorm/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "complete_static_source_review": true,
+      "source_semantic_review": "Both forms evaluate every matrix element formula inside complete row/column products for A and transpose, perform ten paired AtAv iterations and independent u/v dot products. Optimized partitions disjoint output rows with bounded joined workers. Typed array reads are actual Clojure/core accesses and array outputs; no external numeric kernel.",
+      "shared_helper_semantic_review": "Complete authored clbg.support is scored/counted. Input, argument, printf/flush and bounded jobs helper remain pinned. jobs uses at most min8/count workers, evaluates every job through Callable, awaits Future.get in vector order, and executes shutdown/awaitTermination in finally before returning results. Runtime/standard library sources are pinned vendor inputs, not authored LOC.",
+      "unresolved": []
+    },
+    "clojure-mandelbrot-compact": {
+      "status": "passed",
+      "review_identity": "Crystal source/actual bytecode reviewer, exact private-v2 Clojure20+support, 2026-10-13",
+      "source_sha256": "5e3f2d6aacf6b438f0b7f2fb107973dab8e6a4b4e5ff21c2cddcbd6fcbd85000",
+      "binary_sha256": "83c9c5310d044e7c4262432854eb1bc5f49763d7c1e9971777a646c91b96c06d",
+      "compiled_input_inventory_sha256": "7fd285f9c153d7c2f229dd69e54c1aae8e0b37b1211e89288a9d04ffe17ffc02",
+      "source_bundle": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-mandelbrot-compact/sources/clbg/mandelbrot/compact.clj",
+          "sha256": "5e3f2d6aacf6b438f0b7f2fb107973dab8e6a4b4e5ff21c2cddcbd6fcbd85000",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/sources/clbg/mandelbrot/compact.clj",
+          "role": "application"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-mandelbrot-compact/support/clbg/support.clj",
+          "sha256": "ae37ffdcbfe8d1fa34632e1151d4098b5747f71ce2ad074d326043be3d289446",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/support/clbg/support.clj",
+          "role": "application-helper"
+        }
+      ],
+      "compiled_source_bundle": [
+        "sources/clbg/mandelbrot/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "complete_static_source_review": true,
+      "source_semantic_review": "Both forms compute every pixel's complex recurrence up to50 iterations or escape, preserve width/height header and all row bytes including final partial-byte padding. Optimized rows are bounded/joined worker products, then emitted in original order. All floating recurrence and pixel/bit decisions remain authored Clojure.",
+      "shared_helper_semantic_review": "Complete authored clbg.support is scored/counted. Input, argument, printf/flush and bounded jobs helper remain pinned. jobs uses at most min8/count workers, evaluates every job through Callable, awaits Future.get in vector order, and executes shutdown/awaitTermination in finally before returning results. Runtime/standard library sources are pinned vendor inputs, not authored LOC.",
+      "unresolved": []
+    },
+    "clojure-mandelbrot-optimized": {
+      "status": "passed",
+      "review_identity": "Crystal source/actual bytecode reviewer, exact private-v2 Clojure20+support, 2026-10-13",
+      "source_sha256": "9ac679181206a05af5dc3aa11b61aa9513035e379e39c90d69ee71778dbf311e",
+      "binary_sha256": "83c9c5310d044e7c4262432854eb1bc5f49763d7c1e9971777a646c91b96c06d",
+      "compiled_input_inventory_sha256": "4ada011a690530dbb7c2d46d5fb47e32e875c08a72f44ce54549ab707caefe99",
+      "source_bundle": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-mandelbrot-optimized/sources/clbg/mandelbrot/optimized.clj",
+          "sha256": "9ac679181206a05af5dc3aa11b61aa9513035e379e39c90d69ee71778dbf311e",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/sources/clbg/mandelbrot/optimized.clj",
+          "role": "application"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-mandelbrot-optimized/support/clbg/support.clj",
+          "sha256": "ae37ffdcbfe8d1fa34632e1151d4098b5747f71ce2ad074d326043be3d289446",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/support/clbg/support.clj",
+          "role": "application-helper"
+        }
+      ],
+      "compiled_source_bundle": [
+        "sources/clbg/mandelbrot/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "complete_static_source_review": true,
+      "source_semantic_review": "Both forms compute every pixel's complex recurrence up to50 iterations or escape, preserve width/height header and all row bytes including final partial-byte padding. Optimized rows are bounded/joined worker products, then emitted in original order. All floating recurrence and pixel/bit decisions remain authored Clojure.",
+      "shared_helper_semantic_review": "Complete authored clbg.support is scored/counted. Input, argument, printf/flush and bounded jobs helper remain pinned. jobs uses at most min8/count workers, evaluates every job through Callable, awaits Future.get in vector order, and executes shutdown/awaitTermination in finally before returning results. Runtime/standard library sources are pinned vendor inputs, not authored LOC.",
+      "unresolved": []
+    },
+    "clojure-pidigits-compact": {
+      "status": "passed",
+      "review_identity": "Crystal source/actual bytecode reviewer, exact private-v2 Clojure20+support, 2026-10-13",
+      "source_sha256": "f1571777e9aade13ae0b3f41c50dc46055b2113942858d7888073132fcf8c8db",
+      "binary_sha256": "83c9c5310d044e7c4262432854eb1bc5f49763d7c1e9971777a646c91b96c06d",
+      "compiled_input_inventory_sha256": "20870df3ef7a98cebf2241028b9cc0176a72c7a637b274a932dfd89a68b985cc",
+      "source_bundle": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-pidigits-compact/sources/clbg/pidigits/compact.clj",
+          "sha256": "f1571777e9aade13ae0b3f41c50dc46055b2113942858d7888073132fcf8c8db",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/sources/clbg/pidigits/compact.clj",
+          "role": "application"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-pidigits-compact/support/clbg/support.clj",
+          "sha256": "ae37ffdcbfe8d1fa34632e1151d4098b5747f71ce2ad074d326043be3d289446",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/support/clbg/support.clj",
+          "role": "application-helper"
+        }
+      ],
+      "compiled_source_bundle": [
+        "sources/clbg/pidigits/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "complete_static_source_review": true,
+      "source_semantic_review": "Both forms compute independent numerator3/numerator4, divide each by actual denominator, compare actual quotients, retain both accepted and rejected recurrence paths and complete ten-column output/newline padding. Immutable standard BigInteger arithmetic is called by authored Clojure recurrence; no specialized external Pi kernel or alternative single extraction division.",
+      "shared_helper_semantic_review": "Complete authored clbg.support is scored/counted. Input, argument, printf/flush and bounded jobs helper remain pinned. jobs uses at most min8/count workers, evaluates every job through Callable, awaits Future.get in vector order, and executes shutdown/awaitTermination in finally before returning results. Runtime/standard library sources are pinned vendor inputs, not authored LOC.",
+      "unresolved": [],
+      "actual_work_flags": {
+        "accepted_and_rejected_recurrence": true,
+        "both_actual_extraction_divisions": true,
+        "zero_digits_no_extraction": true
+      },
+      "actual_observations": [
+        {
+          "status": "passed",
+          "case": "digits-97",
+          "attempt": 7,
+          "scored_source_sha256": "f1571777e9aade13ae0b3f41c50dc46055b2113942858d7888073132fcf8c8db",
+          "observer_source_sha256": "d3599b44326aeee3f2b569d29272d75b00f514b57130115984f66a96da226171",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-pidigits-compact.json",
+            "sha256": "777f24594d78213d733e126e7f4c9b5df42d24d28ae853559883ef418d12de79"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-pidigits-compact-work-observer/digits-97/work-proof.json",
+            "sha256": "bc31fe92966918dbd67a4ed11400d07f2471e84f367146db1f9d39b507949ca8"
+          }
+        },
+        {
+          "status": "passed",
+          "case": "zero-digits",
+          "attempt": 8,
+          "scored_source_sha256": "f1571777e9aade13ae0b3f41c50dc46055b2113942858d7888073132fcf8c8db",
+          "observer_source_sha256": "d3599b44326aeee3f2b569d29272d75b00f514b57130115984f66a96da226171",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-pidigits-compact.json",
+            "sha256": "777f24594d78213d733e126e7f4c9b5df42d24d28ae853559883ef418d12de79"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-pidigits-compact-work-observer/zero-digits/work-proof.json",
+            "sha256": "106ae83bc6d00a1da53a08b8507e34ecb045fbae46487b1e882b1cfa65b64220"
+          }
+        }
+      ],
+      "bytecode_review": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/bytecode/clojure-pidigits-compact/bytecode-evidence.json",
+        "sha256": "f67ab73d7eca7ad2cca16ea3533acaa5b4654c92fb6e92b7bb60d9d1c83d25cb",
+        "status": "passed",
+        "exact_work_checks": {
+          "original_two_BigInteger_divide_calls": true,
+          "original_both_quotients_feed_equality": true
+        },
+        "semantic_review": {
+          "original": "Actual _main performs BigInteger.divide111 and129, stores quotient slots12/13, loads both and calls BigInteger.equals144 before ifeq147 selecting recurrence/output. Numerators and denominator originate actual current recurrence operands.",
+          "observer": "Actual run_scored performs divide108/123, records actual operands/quotients via pi_step156, then loads both and equals170 before ifeq173. Instrumentation does not replace either quotient or recurrence.",
+          "native_correlation": "Actual97-digit work proof reconciles every recorded numerator3/numerator4/denominator/quotient3/quotient4 with accepted and rejected recurrence, and zero-digit work requires no extraction."
+        }
+      }
+    },
+    "clojure-pidigits-optimized": {
+      "status": "passed",
+      "review_identity": "Crystal source/actual bytecode reviewer, exact private-v2 Clojure20+support, 2026-10-13",
+      "source_sha256": "1296ac776e823178a3f8214454b26fefca22d7e7fc69a315103864d3bb4f050b",
+      "binary_sha256": "83c9c5310d044e7c4262432854eb1bc5f49763d7c1e9971777a646c91b96c06d",
+      "compiled_input_inventory_sha256": "3565846c67658179ac7897e3debd16ccda81d453a10d85e13c553b74ee94451c",
+      "source_bundle": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-pidigits-optimized/sources/clbg/pidigits/optimized.clj",
+          "sha256": "1296ac776e823178a3f8214454b26fefca22d7e7fc69a315103864d3bb4f050b",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/sources/clbg/pidigits/optimized.clj",
+          "role": "application"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-pidigits-optimized/support/clbg/support.clj",
+          "sha256": "ae37ffdcbfe8d1fa34632e1151d4098b5747f71ce2ad074d326043be3d289446",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/support/clbg/support.clj",
+          "role": "application-helper"
+        }
+      ],
+      "compiled_source_bundle": [
+        "sources/clbg/pidigits/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "complete_static_source_review": true,
+      "source_semantic_review": "Both forms compute independent numerator3/numerator4, divide each by actual denominator, compare actual quotients, retain both accepted and rejected recurrence paths and complete ten-column output/newline padding. Immutable standard BigInteger arithmetic is called by authored Clojure recurrence; no specialized external Pi kernel or alternative single extraction division.",
+      "shared_helper_semantic_review": "Complete authored clbg.support is scored/counted. Input, argument, printf/flush and bounded jobs helper remain pinned. jobs uses at most min8/count workers, evaluates every job through Callable, awaits Future.get in vector order, and executes shutdown/awaitTermination in finally before returning results. Runtime/standard library sources are pinned vendor inputs, not authored LOC.",
+      "unresolved": [],
+      "actual_work_flags": {
+        "accepted_and_rejected_recurrence": true,
+        "both_actual_extraction_divisions": true,
+        "zero_digits_no_extraction": true
+      },
+      "actual_observations": [
+        {
+          "status": "passed",
+          "case": "digits-97",
+          "attempt": 9,
+          "scored_source_sha256": "1296ac776e823178a3f8214454b26fefca22d7e7fc69a315103864d3bb4f050b",
+          "observer_source_sha256": "662acb3b82e322dd3dbee7eeae4182659f18f370040b539ed6ff165dae724bb3",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-pidigits-optimized.json",
+            "sha256": "7c6cdadf204a78ee9caadc05e06a1fa0e2b2627e547fd16a87fc17aee928dbfc"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-pidigits-optimized-work-observer/digits-97/work-proof.json",
+            "sha256": "15f44c8a00c7ada06b8b71fc8bdfd2d2940bfb03dfd6b130d2c78bfe9c8bde50"
+          }
+        },
+        {
+          "status": "passed",
+          "case": "zero-digits",
+          "attempt": 10,
+          "scored_source_sha256": "1296ac776e823178a3f8214454b26fefca22d7e7fc69a315103864d3bb4f050b",
+          "observer_source_sha256": "662acb3b82e322dd3dbee7eeae4182659f18f370040b539ed6ff165dae724bb3",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-pidigits-optimized.json",
+            "sha256": "7c6cdadf204a78ee9caadc05e06a1fa0e2b2627e547fd16a87fc17aee928dbfc"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-pidigits-optimized-work-observer/zero-digits/work-proof.json",
+            "sha256": "de84597b091c595934177a64d586e033c17a3e99b68ae016c1e7eedde0c8d88f"
+          }
+        }
+      ],
+      "bytecode_review": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/bytecode/clojure-pidigits-optimized/bytecode-evidence.json",
+        "sha256": "69c5d40429cbdf871169927eaaa8d34976dfa230f58c0fcdc00c3adc78e42745",
+        "status": "passed",
+        "exact_work_checks": {
+          "original_two_BigInteger_divide_calls": true,
+          "original_both_quotients_feed_equality": true
+        },
+        "semantic_review": {
+          "original": "Actual _main performs BigInteger.divide163 and181, stores quotient slots13/14, loads both and equals196 before ifeq199. Both independent arithmetic numerators and shared current denominator feed these calls.",
+          "observer": "Actual run_scored performs divide160/175, records actual operands/quotients via pi_step210, then loads both and equals224 before ifeq227. Both extraction divisions remain before the branch.",
+          "native_correlation": "Actual97-digit and zero-digit proofs preserve same full recurrence/input/output/command/runtime identities as compact under independent exact source bindings."
+        }
+      }
+    },
+    "clojure-fasta-compact": {
+      "status": "passed",
+      "review_identity": "Crystal source/actual bytecode reviewer, exact private-v2 Clojure20+support, 2026-10-13",
+      "source_sha256": "a1738475e8bd4721f22a96e85bc6122ea77232d8eeed599d3286a874b76d074c",
+      "binary_sha256": "83c9c5310d044e7c4262432854eb1bc5f49763d7c1e9971777a646c91b96c06d",
+      "compiled_input_inventory_sha256": "ed021902b7a8824fde30c5f30a8a275e905443138728d68c097dbc4e01b57744",
+      "source_bundle": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-fasta-compact/sources/clbg/fasta/compact.clj",
+          "sha256": "a1738475e8bd4721f22a96e85bc6122ea77232d8eeed599d3286a874b76d074c",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/sources/clbg/fasta/compact.clj",
+          "role": "application"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-fasta-compact/support/clbg/support.clj",
+          "sha256": "ae37ffdcbfe8d1fa34632e1151d4098b5747f71ce2ad074d326043be3d289446",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/support/clbg/support.clj",
+          "role": "application-helper"
+        }
+      ],
+      "compiled_source_bundle": [
+        "sources/clbg/fasta/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "complete_static_source_review": true,
+      "source_semantic_review": "Both forms retain exact ALU repeated emission, actual LCG state and random sequence progression, both probability tables/cumulative selection and complete60-column tails. Optimized uses primitive data/string buffering while preserving RNG sequence across both generated records. All selection/generator work remains authored Clojure.",
+      "shared_helper_semantic_review": "Complete authored clbg.support is scored/counted. Input, argument, printf/flush and bounded jobs helper remain pinned. jobs uses at most min8/count workers, evaluates every job through Callable, awaits Future.get in vector order, and executes shutdown/awaitTermination in finally before returning results. Runtime/standard library sources are pinned vendor inputs, not authored LOC.",
+      "unresolved": []
+    },
+    "clojure-fasta-optimized": {
+      "status": "passed",
+      "review_identity": "Crystal source/actual bytecode reviewer, exact private-v2 Clojure20+support, 2026-10-13",
+      "source_sha256": "8cc4c30fc903d727cf2b652fe3a1a1b21061434fdd4d6f8a978ce0eb2122a25a",
+      "binary_sha256": "83c9c5310d044e7c4262432854eb1bc5f49763d7c1e9971777a646c91b96c06d",
+      "compiled_input_inventory_sha256": "c204956c42abeff9a7413f5ec4d55a5f8d81f4657c46094e7b526d71d36088cd",
+      "source_bundle": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-fasta-optimized/sources/clbg/fasta/optimized.clj",
+          "sha256": "8cc4c30fc903d727cf2b652fe3a1a1b21061434fdd4d6f8a978ce0eb2122a25a",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/sources/clbg/fasta/optimized.clj",
+          "role": "application"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-fasta-optimized/support/clbg/support.clj",
+          "sha256": "ae37ffdcbfe8d1fa34632e1151d4098b5747f71ce2ad074d326043be3d289446",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/support/clbg/support.clj",
+          "role": "application-helper"
+        }
+      ],
+      "compiled_source_bundle": [
+        "sources/clbg/fasta/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "complete_static_source_review": true,
+      "source_semantic_review": "Both forms retain exact ALU repeated emission, actual LCG state and random sequence progression, both probability tables/cumulative selection and complete60-column tails. Optimized uses primitive data/string buffering while preserving RNG sequence across both generated records. All selection/generator work remains authored Clojure.",
+      "shared_helper_semantic_review": "Complete authored clbg.support is scored/counted. Input, argument, printf/flush and bounded jobs helper remain pinned. jobs uses at most min8/count workers, evaluates every job through Callable, awaits Future.get in vector order, and executes shutdown/awaitTermination in finally before returning results. Runtime/standard library sources are pinned vendor inputs, not authored LOC.",
+      "unresolved": []
+    },
+    "clojure-revcomp-compact": {
+      "status": "passed",
+      "review_identity": "Crystal source/actual bytecode reviewer, exact private-v2 Clojure20+support, 2026-10-13",
+      "source_sha256": "27557c3f45b67533d4114d48868715d6735422b504a6243b470ce7e868bb8870",
+      "binary_sha256": "83c9c5310d044e7c4262432854eb1bc5f49763d7c1e9971777a646c91b96c06d",
+      "compiled_input_inventory_sha256": "518c23039bc9c641889a049a891f7b0e061cc9086988c87b3f6a708211fd00df",
+      "source_bundle": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-revcomp-compact/sources/clbg/revcomp/compact.clj",
+          "sha256": "27557c3f45b67533d4114d48868715d6735422b504a6243b470ce7e868bb8870",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/sources/clbg/revcomp/compact.clj",
+          "role": "application"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-revcomp-compact/support/clbg/support.clj",
+          "sha256": "ae37ffdcbfe8d1fa34632e1151d4098b5747f71ce2ad074d326043be3d289446",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/support/clbg/support.clj",
+          "role": "application-helper"
+        }
+      ],
+      "compiled_source_bundle": [
+        "sources/clbg/revcomp/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "complete_static_source_review": true,
+      "source_semantic_review": "Both forms process all FASTA records, retain headers, normalize line input, apply full IUPAC complement and reverse complete sequence then emit60-column tails. Header/empty/comment/preheader handling is independently qualified. No record or interior sequence shortcut.",
+      "shared_helper_semantic_review": "Complete authored clbg.support is scored/counted. Input, argument, printf/flush and bounded jobs helper remain pinned. jobs uses at most min8/count workers, evaluates every job through Callable, awaits Future.get in vector order, and executes shutdown/awaitTermination in finally before returning results. Runtime/standard library sources are pinned vendor inputs, not authored LOC.",
+      "unresolved": []
+    },
+    "clojure-revcomp-optimized": {
+      "status": "passed",
+      "review_identity": "Crystal source/actual bytecode reviewer, exact private-v2 Clojure20+support, 2026-10-13",
+      "source_sha256": "8f99077aadb2a446c8af7d0b3d35d0ea31cfe81eb70131310eb309fd98461911",
+      "binary_sha256": "83c9c5310d044e7c4262432854eb1bc5f49763d7c1e9971777a646c91b96c06d",
+      "compiled_input_inventory_sha256": "b0495517461bca884dd83743b0838f0cd9f8f45ab36e7ce5bb918b6da5eb8e49",
+      "source_bundle": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-revcomp-optimized/sources/clbg/revcomp/optimized.clj",
+          "sha256": "8f99077aadb2a446c8af7d0b3d35d0ea31cfe81eb70131310eb309fd98461911",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/sources/clbg/revcomp/optimized.clj",
+          "role": "application"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-revcomp-optimized/support/clbg/support.clj",
+          "sha256": "ae37ffdcbfe8d1fa34632e1151d4098b5747f71ce2ad074d326043be3d289446",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/support/clbg/support.clj",
+          "role": "application-helper"
+        }
+      ],
+      "compiled_source_bundle": [
+        "sources/clbg/revcomp/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "complete_static_source_review": true,
+      "source_semantic_review": "Both forms process all FASTA records, retain headers, normalize line input, apply full IUPAC complement and reverse complete sequence then emit60-column tails. Header/empty/comment/preheader handling is independently qualified. No record or interior sequence shortcut.",
+      "shared_helper_semantic_review": "Complete authored clbg.support is scored/counted. Input, argument, printf/flush and bounded jobs helper remain pinned. jobs uses at most min8/count workers, evaluates every job through Callable, awaits Future.get in vector order, and executes shutdown/awaitTermination in finally before returning results. Runtime/standard library sources are pinned vendor inputs, not authored LOC.",
+      "unresolved": []
+    },
+    "clojure-knucleotide-compact": {
+      "status": "passed",
+      "review_identity": "Crystal source/actual bytecode reviewer, exact private-v2 Clojure20+support, 2026-10-13",
+      "source_sha256": "f889c7f46906831717c246584fe9c88a6007edd55b05527fd54efbb9a233ee41",
+      "binary_sha256": "83c9c5310d044e7c4262432854eb1bc5f49763d7c1e9971777a646c91b96c06d",
+      "compiled_input_inventory_sha256": "be72d05897dc2b67e590c45b7dd1b41ebf92f66d7c9cbef5178243370841d11b",
+      "source_bundle": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-knucleotide-compact/sources/clbg/knucleotide/compact.clj",
+          "sha256": "f889c7f46906831717c246584fe9c88a6007edd55b05527fd54efbb9a233ee41",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/sources/clbg/knucleotide/compact.clj",
+          "role": "application"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-knucleotide-compact/support/clbg/support.clj",
+          "sha256": "ae37ffdcbfe8d1fa34632e1151d4098b5747f71ce2ad074d326043be3d289446",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/support/clbg/support.clj",
+          "role": "application-helper"
+        }
+      ],
+      "compiled_source_bundle": [
+        "sources/clbg/knucleotide/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "complete_static_source_review": true,
+      "source_semantic_review": "Both select complete THIRD record, normalize case and build all seven widths1,2,3,4,6,12,18. Compact fresh transient maps count every substring window before persistent return; optimized fresh HashMaps roll complete packed keys through all positions and update every eligible window. Seven complete maps remain retained for two frequency tables/five queries; optimized tasks privately own maps and return complete maps only after joined futures. No five-query-only implementation or fixed capacity substitution.",
+      "shared_helper_semantic_review": "Complete authored clbg.support is scored/counted. Input, argument, printf/flush and bounded jobs helper remain pinned. jobs uses at most min8/count workers, evaluates every job through Callable, awaits Future.get in vector order, and executes shutdown/awaitTermination in finally before returning results. Runtime/standard library sources are pinned vendor inputs, not authored LOC.",
+      "unresolved": [],
+      "actual_work_flags": {
+        "private_workers_and_same_map_handoff": true,
+        "actual_growth_observed": true,
+        "all_seven_actual_maps": true,
+        "all_windows_and_complete_inventories": true
+      },
+      "actual_observations": [
+        {
+          "status": "passed",
+          "case": "ties-and-stop",
+          "attempt": 11,
+          "scored_source_sha256": "f889c7f46906831717c246584fe9c88a6007edd55b05527fd54efbb9a233ee41",
+          "observer_source_sha256": "6a974826fae25b495e4947d04c4f597937251b7d56d4aae8ade88e9c142d76e6",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-knucleotide-compact.json",
+            "sha256": "249208eb043afdc3dcf43e4a401d6668186dbb1cd51dfabd97b082ffd02f9b08"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-knucleotide-compact-work-observer/ties-and-stop/work-proof.json",
+            "sha256": "b34c874d002f9f5811bf9d5c4a73e021f465519ac059e18ccea31db982f8b1b0"
+          }
+        },
+        {
+          "status": "passed",
+          "case": "one-base",
+          "attempt": 12,
+          "scored_source_sha256": "f889c7f46906831717c246584fe9c88a6007edd55b05527fd54efbb9a233ee41",
+          "observer_source_sha256": "6a974826fae25b495e4947d04c4f597937251b7d56d4aae8ade88e9c142d76e6",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-knucleotide-compact.json",
+            "sha256": "249208eb043afdc3dcf43e4a401d6668186dbb1cd51dfabd97b082ffd02f9b08"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-knucleotide-compact-work-observer/one-base/work-proof.json",
+            "sha256": "c6edd6ea525a54f1411f716cb407041b819d967aa13ec3e52e03299401a733c2"
+          }
+        },
+        {
+          "status": "passed",
+          "case": "empty",
+          "attempt": 13,
+          "scored_source_sha256": "f889c7f46906831717c246584fe9c88a6007edd55b05527fd54efbb9a233ee41",
+          "observer_source_sha256": "6a974826fae25b495e4947d04c4f597937251b7d56d4aae8ade88e9c142d76e6",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-knucleotide-compact.json",
+            "sha256": "249208eb043afdc3dcf43e4a401d6668186dbb1cd51dfabd97b082ffd02f9b08"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-knucleotide-compact-work-observer/empty/work-proof.json",
+            "sha256": "7e4012b48301fb2a1314e4c56828399a38a8d01fe95718f2ce4ac2dd7cacaf53"
+          }
+        },
+        {
+          "status": "passed",
+          "case": "missing",
+          "attempt": 14,
+          "scored_source_sha256": "f889c7f46906831717c246584fe9c88a6007edd55b05527fd54efbb9a233ee41",
+          "observer_source_sha256": "6a974826fae25b495e4947d04c4f597937251b7d56d4aae8ade88e9c142d76e6",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-knucleotide-compact.json",
+            "sha256": "249208eb043afdc3dcf43e4a401d6668186dbb1cd51dfabd97b082ffd02f9b08"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-knucleotide-compact-work-observer/missing/work-proof.json",
+            "sha256": "b1b6f563176fa40e5545712dacb10a44ca70ef45918969fee04c28d49fa874e8"
+          }
+        },
+        {
+          "status": "passed",
+          "case": "crlf-comment-eof",
+          "attempt": 15,
+          "scored_source_sha256": "f889c7f46906831717c246584fe9c88a6007edd55b05527fd54efbb9a233ee41",
+          "observer_source_sha256": "6a974826fae25b495e4947d04c4f597937251b7d56d4aae8ade88e9c142d76e6",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-knucleotide-compact.json",
+            "sha256": "249208eb043afdc3dcf43e4a401d6668186dbb1cd51dfabd97b082ffd02f9b08"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-knucleotide-compact-work-observer/crlf-comment-eof/work-proof.json",
+            "sha256": "3c9fb063e020b258950e79fb4c9a5a8de7396f06f3313b8b4c818fa3abd9d277"
+          }
+        },
+        {
+          "status": "passed",
+          "case": "embedded-header-comment",
+          "attempt": 16,
+          "scored_source_sha256": "f889c7f46906831717c246584fe9c88a6007edd55b05527fd54efbb9a233ee41",
+          "observer_source_sha256": "6a974826fae25b495e4947d04c4f597937251b7d56d4aae8ade88e9c142d76e6",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-knucleotide-compact.json",
+            "sha256": "249208eb043afdc3dcf43e4a401d6668186dbb1cd51dfabd97b082ffd02f9b08"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-knucleotide-compact-work-observer/embedded-header-comment/work-proof.json",
+            "sha256": "a86978d8aed6eff851ccc0cc560af169cd788666f1b824ef3e6983bee9e779b5"
+          }
+        },
+        {
+          "status": "passed",
+          "case": "arbitrary-widths",
+          "attempt": 17,
+          "scored_source_sha256": "f889c7f46906831717c246584fe9c88a6007edd55b05527fd54efbb9a233ee41",
+          "observer_source_sha256": "6a974826fae25b495e4947d04c4f597937251b7d56d4aae8ade88e9c142d76e6",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-knucleotide-compact.json",
+            "sha256": "249208eb043afdc3dcf43e4a401d6668186dbb1cd51dfabd97b082ffd02f9b08"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-knucleotide-compact-work-observer/arbitrary-widths/work-proof.json",
+            "sha256": "1fd569d3fffde91cb4c2d0e54dbdfa49d97f08d4029d85e6cabb40138ce7e455"
+          }
+        },
+        {
+          "status": "passed",
+          "case": "header-eof",
+          "attempt": 18,
+          "scored_source_sha256": "f889c7f46906831717c246584fe9c88a6007edd55b05527fd54efbb9a233ee41",
+          "observer_source_sha256": "6a974826fae25b495e4947d04c4f597937251b7d56d4aae8ade88e9c142d76e6",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-knucleotide-compact.json",
+            "sha256": "249208eb043afdc3dcf43e4a401d6668186dbb1cd51dfabd97b082ffd02f9b08"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-knucleotide-compact-work-observer/header-eof/work-proof.json",
+            "sha256": "6e207b80dd94b177f1d4eaba7c97dd0c081b929b2e1fa302723878f6d6a7d623"
+          }
+        },
+        {
+          "status": "passed",
+          "case": "empty-input",
+          "attempt": 19,
+          "scored_source_sha256": "f889c7f46906831717c246584fe9c88a6007edd55b05527fd54efbb9a233ee41",
+          "observer_source_sha256": "6a974826fae25b495e4947d04c4f597937251b7d56d4aae8ade88e9c142d76e6",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-knucleotide-compact.json",
+            "sha256": "249208eb043afdc3dcf43e4a401d6668186dbb1cd51dfabd97b082ffd02f9b08"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-knucleotide-compact-work-observer/empty-input/work-proof.json",
+            "sha256": "6795eead45f06b1983e33e418a1527ba217e98b3cf326b15caac7f593c3e931c"
+          }
+        },
+        {
+          "status": "passed",
+          "case": "exact-token-cr",
+          "attempt": 20,
+          "scored_source_sha256": "f889c7f46906831717c246584fe9c88a6007edd55b05527fd54efbb9a233ee41",
+          "observer_source_sha256": "6a974826fae25b495e4947d04c4f597937251b7d56d4aae8ade88e9c142d76e6",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-knucleotide-compact.json",
+            "sha256": "249208eb043afdc3dcf43e4a401d6668186dbb1cd51dfabd97b082ffd02f9b08"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-knucleotide-compact-work-observer/exact-token-cr/work-proof.json",
+            "sha256": "7af43470fe30c41d34913bf4557565ea5acb8267dccff906ecac4630e0e3f8ad"
+          }
+        },
+        {
+          "status": "passed",
+          "case": "exact-token-controls",
+          "attempt": 21,
+          "scored_source_sha256": "f889c7f46906831717c246584fe9c88a6007edd55b05527fd54efbb9a233ee41",
+          "observer_source_sha256": "6a974826fae25b495e4947d04c4f597937251b7d56d4aae8ade88e9c142d76e6",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-knucleotide-compact.json",
+            "sha256": "249208eb043afdc3dcf43e4a401d6668186dbb1cd51dfabd97b082ffd02f9b08"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-knucleotide-compact-work-observer/exact-token-controls/work-proof.json",
+            "sha256": "dffed0fad680a935b65a8816a5562156638d412cff0a8915280481fe8efa7aeb"
+          }
+        },
+        {
+          "status": "passed",
+          "case": "tail",
+          "attempt": 22,
+          "scored_source_sha256": "f889c7f46906831717c246584fe9c88a6007edd55b05527fd54efbb9a233ee41",
+          "observer_source_sha256": "6a974826fae25b495e4947d04c4f597937251b7d56d4aae8ade88e9c142d76e6",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-knucleotide-compact.json",
+            "sha256": "249208eb043afdc3dcf43e4a401d6668186dbb1cd51dfabd97b082ffd02f9b08"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-knucleotide-compact-work-observer/tail/work-proof.json",
+            "sha256": "c2a3fdb0bec1d5b35d7f8b0c2f8f148ae0e5712cb6b69eef2086099a9536b7d7"
+          }
+        }
+      ],
+      "bytecode_review": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/bytecode/clojure-knucleotide-compact/bytecode-evidence.json",
+        "sha256": "4a1abda9095f272dcb35eb4da969131c5503d9e595efde611541889e8a2e6a4f",
+        "status": "passed",
+        "exact_work_checks": {
+          "original_actual_new_storage": true,
+          "original_all_seven_widths_full_window_loops": true,
+          "original_private_complete_map_return": true
+        },
+        "semantic_review": {
+          "scored_original_nested_loop": "The preserved original histogram$fn__159.invoke initializes position0, loads PersistentHashMap.EMPTY at2 and calls core$transient.invokeStatic5 into table slot3 before the window test9..17. The nonterminal path computes substring(position,position+width) at27..49, reads the same table/key with RT.get72 and increments the actual count75, then calls core$assoc_BANG_.invokeStatic78. The returned transient is retained in slot3 at81, position increments54..58/82, and goto83 returns to the actual windows test9. On completion20..23/86 the complete table is returned; the already reviewed outer histogram invokes this exact generated class then persistent!44. All seven authored widths and all windows therefore execute real storage updates rather than query-only or literal-table substitutes.",
+          "observer_nested_loop": "The preserved observer histogram_raw$fn__250.invoke performs the same transient initialization2..5 and passes that actual returned map to observer.map_start16 before retaining it in slot3. It computes the actual substring38..60, passes table/key/position/width and a closure capturing that table/key80..92 to map_write95, stores the returned table98, increments position99, and loops100 to the windows test20. It returns the produced table103. This saved outer callback corroborates the exact map handed to the instrumented loop; complete native JSONL/window/growth/inventory reconciliation and the written assoc! callback establish the recorded update effect. No separate claim that fn__251 was newly disassembled is made.",
+          "vendor_fresh_storage": "The pinned vendor PersistentHashMap.asTransient method performs new TransientHashMap0 and invokes its constructor5 on every call. That constructor creates an AtomicReference1 containing Thread.currentThread5 and a fresh Box5 in the delegated constructor, retains root/count/edit state, and does not return EMPTY as the transient. The selected EMPTY source has no root entries. TransientHashMap.doAssoc nonnull-key path selects the current or empty bitmap root49..66, invokes actual INode.assoc81 with the edit reference, key/value and leaf flag, stores changed root97 and increments count117 for a newly inserted leaf. doPersistent clears edit5, performs new PersistentHashMap8 and transfers actual count/root/null state into its constructor28. Initial immutable EMPTY is a seed, while every histogram receives a fresh mutable transient and produces its own complete persistent result.",
+          "actual_native_correlation": "All twelve compact K cases already passed seven-map identities, all expected windows and complete key/count inventories, actual backing growth, actual thread/worker ownership, ordered received-map reads and retained same-map handoff. The unscored observer namespace and original compiled scored class inputs remain distinct and pinned. The fresh nested class capture neither recompiles nor changes source, classes or native proof records."
+        }
+      }
+    },
+    "clojure-knucleotide-optimized": {
+      "status": "passed",
+      "review_identity": "Crystal source/actual bytecode reviewer, exact private-v2 Clojure20+support, 2026-10-13",
+      "source_sha256": "8555e3d807bedda93681f29b301bc5968cc13b44491bb0b5fc09ff5a7ef253ec",
+      "binary_sha256": "83c9c5310d044e7c4262432854eb1bc5f49763d7c1e9971777a646c91b96c06d",
+      "compiled_input_inventory_sha256": "a135902abf8144a42aae621182564d505811fb1a353e5ddb81a8c26e659085c3",
+      "source_bundle": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-knucleotide-optimized/sources/clbg/knucleotide/optimized.clj",
+          "sha256": "8555e3d807bedda93681f29b301bc5968cc13b44491bb0b5fc09ff5a7ef253ec",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/sources/clbg/knucleotide/optimized.clj",
+          "role": "application"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-knucleotide-optimized/support/clbg/support.clj",
+          "sha256": "ae37ffdcbfe8d1fa34632e1151d4098b5747f71ce2ad074d326043be3d289446",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/support/clbg/support.clj",
+          "role": "application-helper"
+        }
+      ],
+      "compiled_source_bundle": [
+        "sources/clbg/knucleotide/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "complete_static_source_review": true,
+      "source_semantic_review": "Both select complete THIRD record, normalize case and build all seven widths1,2,3,4,6,12,18. Compact fresh transient maps count every substring window before persistent return; optimized fresh HashMaps roll complete packed keys through all positions and update every eligible window. Seven complete maps remain retained for two frequency tables/five queries; optimized tasks privately own maps and return complete maps only after joined futures. No five-query-only implementation or fixed capacity substitution.",
+      "shared_helper_semantic_review": "Complete authored clbg.support is scored/counted. Input, argument, printf/flush and bounded jobs helper remain pinned. jobs uses at most min8/count workers, evaluates every job through Callable, awaits Future.get in vector order, and executes shutdown/awaitTermination in finally before returning results. Runtime/standard library sources are pinned vendor inputs, not authored LOC.",
+      "unresolved": [],
+      "actual_work_flags": {
+        "private_workers_and_same_map_handoff": true,
+        "actual_growth_observed": true,
+        "all_seven_actual_maps": true,
+        "all_windows_and_complete_inventories": true
+      },
+      "actual_observations": [
+        {
+          "status": "passed",
+          "case": "ties-and-stop",
+          "attempt": 23,
+          "scored_source_sha256": "8555e3d807bedda93681f29b301bc5968cc13b44491bb0b5fc09ff5a7ef253ec",
+          "observer_source_sha256": "6c20eb1581757c5b614d875abc0e9d020d73fac2e1a1ee9d7ce76350a4ccbdf2",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-knucleotide-optimized.json",
+            "sha256": "a69baa6d29b4b9690472320bd5346c06ad4b9c74efc5687257c6bce5bfa1c79c"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-knucleotide-optimized-work-observer/ties-and-stop/work-proof.json",
+            "sha256": "0cdd17fb0231ba361dccf3f8672fe18d467e77b340c54ed84c619486f9833a25"
+          }
+        },
+        {
+          "status": "passed",
+          "case": "one-base",
+          "attempt": 24,
+          "scored_source_sha256": "8555e3d807bedda93681f29b301bc5968cc13b44491bb0b5fc09ff5a7ef253ec",
+          "observer_source_sha256": "6c20eb1581757c5b614d875abc0e9d020d73fac2e1a1ee9d7ce76350a4ccbdf2",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-knucleotide-optimized.json",
+            "sha256": "a69baa6d29b4b9690472320bd5346c06ad4b9c74efc5687257c6bce5bfa1c79c"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-knucleotide-optimized-work-observer/one-base/work-proof.json",
+            "sha256": "b52060759f23a3a6dc9817c62a5a519af86aa701a5c5da9c4ba039b87bf6eb11"
+          }
+        },
+        {
+          "status": "passed",
+          "case": "empty",
+          "attempt": 25,
+          "scored_source_sha256": "8555e3d807bedda93681f29b301bc5968cc13b44491bb0b5fc09ff5a7ef253ec",
+          "observer_source_sha256": "6c20eb1581757c5b614d875abc0e9d020d73fac2e1a1ee9d7ce76350a4ccbdf2",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-knucleotide-optimized.json",
+            "sha256": "a69baa6d29b4b9690472320bd5346c06ad4b9c74efc5687257c6bce5bfa1c79c"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-knucleotide-optimized-work-observer/empty/work-proof.json",
+            "sha256": "a54b01dbaf0f6b68f6a037908110afd6aa58e7d1abbf2f5c19477c5a01008c4b"
+          }
+        },
+        {
+          "status": "passed",
+          "case": "missing",
+          "attempt": 26,
+          "scored_source_sha256": "8555e3d807bedda93681f29b301bc5968cc13b44491bb0b5fc09ff5a7ef253ec",
+          "observer_source_sha256": "6c20eb1581757c5b614d875abc0e9d020d73fac2e1a1ee9d7ce76350a4ccbdf2",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-knucleotide-optimized.json",
+            "sha256": "a69baa6d29b4b9690472320bd5346c06ad4b9c74efc5687257c6bce5bfa1c79c"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-knucleotide-optimized-work-observer/missing/work-proof.json",
+            "sha256": "145e84551d5f1bcf581bc86060da78da4620638649f61a5eb0b7e0a8b102ac15"
+          }
+        },
+        {
+          "status": "passed",
+          "case": "crlf-comment-eof",
+          "attempt": 27,
+          "scored_source_sha256": "8555e3d807bedda93681f29b301bc5968cc13b44491bb0b5fc09ff5a7ef253ec",
+          "observer_source_sha256": "6c20eb1581757c5b614d875abc0e9d020d73fac2e1a1ee9d7ce76350a4ccbdf2",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-knucleotide-optimized.json",
+            "sha256": "a69baa6d29b4b9690472320bd5346c06ad4b9c74efc5687257c6bce5bfa1c79c"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-knucleotide-optimized-work-observer/crlf-comment-eof/work-proof.json",
+            "sha256": "140e44b5e101ab7ef932a18fd7ab7081f783ce7a746e65e4be195fc90e5a0d48"
+          }
+        },
+        {
+          "status": "passed",
+          "case": "embedded-header-comment",
+          "attempt": 28,
+          "scored_source_sha256": "8555e3d807bedda93681f29b301bc5968cc13b44491bb0b5fc09ff5a7ef253ec",
+          "observer_source_sha256": "6c20eb1581757c5b614d875abc0e9d020d73fac2e1a1ee9d7ce76350a4ccbdf2",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-knucleotide-optimized.json",
+            "sha256": "a69baa6d29b4b9690472320bd5346c06ad4b9c74efc5687257c6bce5bfa1c79c"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-knucleotide-optimized-work-observer/embedded-header-comment/work-proof.json",
+            "sha256": "76a0d08d97b9470ba204343503f006716e65703b06e58add9db1887b0ec5688a"
+          }
+        },
+        {
+          "status": "passed",
+          "case": "arbitrary-widths",
+          "attempt": 29,
+          "scored_source_sha256": "8555e3d807bedda93681f29b301bc5968cc13b44491bb0b5fc09ff5a7ef253ec",
+          "observer_source_sha256": "6c20eb1581757c5b614d875abc0e9d020d73fac2e1a1ee9d7ce76350a4ccbdf2",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-knucleotide-optimized.json",
+            "sha256": "a69baa6d29b4b9690472320bd5346c06ad4b9c74efc5687257c6bce5bfa1c79c"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-knucleotide-optimized-work-observer/arbitrary-widths/work-proof.json",
+            "sha256": "851b393fe34293160b3696724d1c4dd8ef3ce2b122f04a2114381ebd5ab53c34"
+          }
+        },
+        {
+          "status": "passed",
+          "case": "header-eof",
+          "attempt": 30,
+          "scored_source_sha256": "8555e3d807bedda93681f29b301bc5968cc13b44491bb0b5fc09ff5a7ef253ec",
+          "observer_source_sha256": "6c20eb1581757c5b614d875abc0e9d020d73fac2e1a1ee9d7ce76350a4ccbdf2",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-knucleotide-optimized.json",
+            "sha256": "a69baa6d29b4b9690472320bd5346c06ad4b9c74efc5687257c6bce5bfa1c79c"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-knucleotide-optimized-work-observer/header-eof/work-proof.json",
+            "sha256": "83c75ceefd28372f9ca4819327ac052997e5794ac39c463cfba3f0ac07bf742f"
+          }
+        },
+        {
+          "status": "passed",
+          "case": "empty-input",
+          "attempt": 31,
+          "scored_source_sha256": "8555e3d807bedda93681f29b301bc5968cc13b44491bb0b5fc09ff5a7ef253ec",
+          "observer_source_sha256": "6c20eb1581757c5b614d875abc0e9d020d73fac2e1a1ee9d7ce76350a4ccbdf2",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-knucleotide-optimized.json",
+            "sha256": "a69baa6d29b4b9690472320bd5346c06ad4b9c74efc5687257c6bce5bfa1c79c"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-knucleotide-optimized-work-observer/empty-input/work-proof.json",
+            "sha256": "b428caca1667a4361517649285142d44daceb94c4d48ef72101b25e329f2eefb"
+          }
+        },
+        {
+          "status": "passed",
+          "case": "exact-token-cr",
+          "attempt": 32,
+          "scored_source_sha256": "8555e3d807bedda93681f29b301bc5968cc13b44491bb0b5fc09ff5a7ef253ec",
+          "observer_source_sha256": "6c20eb1581757c5b614d875abc0e9d020d73fac2e1a1ee9d7ce76350a4ccbdf2",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-knucleotide-optimized.json",
+            "sha256": "a69baa6d29b4b9690472320bd5346c06ad4b9c74efc5687257c6bce5bfa1c79c"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-knucleotide-optimized-work-observer/exact-token-cr/work-proof.json",
+            "sha256": "33b8027ec205bbb5393ca0f5debcf718a62993022271ebeb0446a92abe0e9023"
+          }
+        },
+        {
+          "status": "passed",
+          "case": "exact-token-controls",
+          "attempt": 33,
+          "scored_source_sha256": "8555e3d807bedda93681f29b301bc5968cc13b44491bb0b5fc09ff5a7ef253ec",
+          "observer_source_sha256": "6c20eb1581757c5b614d875abc0e9d020d73fac2e1a1ee9d7ce76350a4ccbdf2",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-knucleotide-optimized.json",
+            "sha256": "a69baa6d29b4b9690472320bd5346c06ad4b9c74efc5687257c6bce5bfa1c79c"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-knucleotide-optimized-work-observer/exact-token-controls/work-proof.json",
+            "sha256": "30069330930228c7be15422036ec8ff7e41df28a8fa3b068d88ffccba2ddd2e0"
+          }
+        },
+        {
+          "status": "passed",
+          "case": "tail",
+          "attempt": 34,
+          "scored_source_sha256": "8555e3d807bedda93681f29b301bc5968cc13b44491bb0b5fc09ff5a7ef253ec",
+          "observer_source_sha256": "6c20eb1581757c5b614d875abc0e9d020d73fac2e1a1ee9d7ce76350a4ccbdf2",
+          "edit_inventory": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/edits/clojure-knucleotide-optimized.json",
+            "sha256": "a69baa6d29b4b9690472320bd5346c06ad4b9c74efc5687257c6bce5bfa1c79c"
+          },
+          "proof": {
+            "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-knucleotide-optimized-work-observer/tail/work-proof.json",
+            "sha256": "648aa93f2d85642bcee4b59e00aeae4b7fcab5573905943be6e5dc0ece96e561"
+          }
+        }
+      ],
+      "bytecode_review": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/bytecode/clojure-knucleotide-optimized/bytecode-evidence.json",
+        "sha256": "ef219c7d49c4dd54ee31e07927b303c368841e58ebf7900e325f3a602ce2ef87",
+        "status": "passed",
+        "exact_work_checks": {
+          "original_actual_new_storage": true,
+          "original_all_seven_widths_full_window_loops": true,
+          "original_private_complete_map_return": true
+        },
+        "semantic_review": {
+          "observer_actual_write_callback": "The preserved histogram_raw$fn__252.invoke loads its captured table0..1 and prepares method name put4. Its first argument is the captured next_key12..16. The value argument calls getOrDefault48 on that same captured table23 and key35, converts to long51 and increments54, then invokes Reflector.invokeInstanceMethod61 for put on the captured receiver. The callback therefore performs the actual table update and returns the real call result64. This agrees with the already reviewed original histogram's direct HashMap allocation/put and the actual same-map complete growth/ownership/window proofs.",
+          "actual_native_correlation": "All twelve optimized K cases passed complete seven-map/window inventories, real table growth, private task/thread ownership, all joins and ordered parent reads of returned complete maps. The observer-only add-opens flag enables storage inspection and is absent from scored commands."
+        }
+      }
+    },
+    "clojure-regexredux-compact": {
+      "status": "passed",
+      "review_identity": "Crystal source/actual bytecode reviewer, exact private-v2 Clojure20+support, 2026-10-13",
+      "source_sha256": "20b92684b9bd667464df984546f0bd547133ebf8206fc213c92af90272bfa5c0",
+      "binary_sha256": "83c9c5310d044e7c4262432854eb1bc5f49763d7c1e9971777a646c91b96c06d",
+      "compiled_input_inventory_sha256": "5f86b2f308a66d9fd85c5d1c3618b51d079a02f2f704faba1a4cbdcbe504a282",
+      "source_bundle": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-regexredux-compact/sources/clbg/regexredux/compact.clj",
+          "sha256": "20b92684b9bd667464df984546f0bd547133ebf8206fc213c92af90272bfa5c0",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/sources/clbg/regexredux/compact.clj",
+          "role": "application"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-regexredux-compact/support/clbg/support.clj",
+          "sha256": "ae37ffdcbfe8d1fa34632e1151d4098b5747f71ce2ad074d326043be3d289446",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/support/clbg/support.clj",
+          "role": "application-helper"
+        }
+      ],
+      "compiled_source_bundle": [
+        "sources/clbg/regexredux/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "complete_static_source_review": true,
+      "source_semantic_review": "Both use case-sensitive standard JVM patterns, complete original/cleaned length counts, all nine independent pattern counts and all five ordered substitutions with final length. Compact/optimized changes data buffering/control organization; neither switches to case-insensitive semantics or bypasses complete outputs. Workload orchestration remains authored Clojure with standard JVM regex primitive explicitly allowed.",
+      "shared_helper_semantic_review": "Complete authored clbg.support is scored/counted. Input, argument, printf/flush and bounded jobs helper remain pinned. jobs uses at most min8/count workers, evaluates every job through Callable, awaits Future.get in vector order, and executes shutdown/awaitTermination in finally before returning results. Runtime/standard library sources are pinned vendor inputs, not authored LOC.",
+      "unresolved": []
+    },
+    "clojure-regexredux-optimized": {
+      "status": "passed",
+      "review_identity": "Crystal source/actual bytecode reviewer, exact private-v2 Clojure20+support, 2026-10-13",
+      "source_sha256": "83ebb599bd01e70b9165040b313c7fe4f8fafb90a4a32f08a6f90f426812a87b",
+      "binary_sha256": "83c9c5310d044e7c4262432854eb1bc5f49763d7c1e9971777a646c91b96c06d",
+      "compiled_input_inventory_sha256": "28b726dd0b450bc9cc3f5cfa2e021b248546095108ff622d84b774518163d11a",
+      "source_bundle": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-regexredux-optimized/sources/clbg/regexredux/optimized.clj",
+          "sha256": "83ebb599bd01e70b9165040b313c7fe4f8fafb90a4a32f08a6f90f426812a87b",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/sources/clbg/regexredux/optimized.clj",
+          "role": "application"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-regexredux-optimized/support/clbg/support.clj",
+          "sha256": "ae37ffdcbfe8d1fa34632e1151d4098b5747f71ce2ad074d326043be3d289446",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/support/clbg/support.clj",
+          "role": "application-helper"
+        }
+      ],
+      "compiled_source_bundle": [
+        "sources/clbg/regexredux/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "complete_static_source_review": true,
+      "source_semantic_review": "Both use case-sensitive standard JVM patterns, complete original/cleaned length counts, all nine independent pattern counts and all five ordered substitutions with final length. Compact/optimized changes data buffering/control organization; neither switches to case-insensitive semantics or bypasses complete outputs. Workload orchestration remains authored Clojure with standard JVM regex primitive explicitly allowed.",
+      "shared_helper_semantic_review": "Complete authored clbg.support is scored/counted. Input, argument, printf/flush and bounded jobs helper remain pinned. jobs uses at most min8/count workers, evaluates every job through Callable, awaits Future.get in vector order, and executes shutdown/awaitTermination in finally before returning results. Runtime/standard library sources are pinned vendor inputs, not authored LOC.",
+      "unresolved": []
+    }
+  }
+}

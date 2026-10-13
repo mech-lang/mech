@@ -1,0 +1,23 @@
+{
+  "status": "durable-job-launched",
+  "launched_at": "2026-10-13T06:13:41.589453+00:00",
+  "job": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-work-v4-durable-v1",
+  "worker_identity": {
+    "pid": 81456,
+    "listing": "81456 81454 Tue Oct 13 02:13:41 2026     /opt/homebrew/opt/python@3.14/bin/python3.14 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-work-v4-durable-v1 --lease-fd 3 --go-fd 4"
+  },
+  "command": [
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+    "-B",
+    "-u",
+    "revisions/work-full-v4/qualify_work.py",
+    "--qualified-revision",
+    "private-v5",
+    "--revision",
+    "work-v4"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012",
+  "detached_session": true,
+  "automatic_retry": false,
+  "qualification_granted": false
+}

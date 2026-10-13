@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-13T06:13:41.633105+00:00",
+  "command": [
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+    "-B",
+    "-u",
+    "revisions/work-full-v3/work_qualify.py",
+    "--run",
+    "--revision",
+    "private-v8-work-v3",
+    "--qualification",
+    "private-v8",
+    "--manifest-sha256",
+    "00a83167f0d63f3f7ce0664096b70c841b2cd4fb77a34bc05ce2be8f71005df5"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012",
+  "common_mutex_owned_by_target_command": true,
+  "qualification_granted": false,
+  "automatic_retry": false
+}

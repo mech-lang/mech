@@ -1,0 +1,20 @@
+{
+  "started_at": "2026-10-13T06:13:41.600568+00:00",
+  "command_pid": 81459,
+  "command_identity": {
+    "pid": 81459,
+    "listing": "81459 81452 Tue Oct 13 02:13:41 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u revisions/work-full-v5/qualify_work.py --qualified-revision private-v7 --revision work-v5"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+    "-B",
+    "-u",
+    "revisions/work-full-v5/qualify_work.py",
+    "--qualified-revision",
+    "private-v7",
+    "--revision",
+    "work-v5"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012"
+}

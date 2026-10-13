@@ -1,0 +1,16 @@
+{
+  "started_at": "2026-10-13T06:10:36.723674+00:00",
+  "command_pid": 80757,
+  "command_identity": {
+    "pid": 80757,
+    "listing": "80757 80750 Tue Oct 13 02:10:36 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/git_inventory_v2.py"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/git_inventory_v2.py"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech"
+}

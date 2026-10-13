@@ -1,7 +1,7 @@
 {
-  "updated_at": "2026-10-13T05:55:00Z",
+  "updated_at": "2026-10-13T06:35:17.988786+00:00",
   "goal_status": "active",
-  "objective": "Finish remaining full benchmark tests; publish complete Nim/Crystal/Pony/C3/Gleam/Clojure suites with qualified source LOC and provenance; add Julia AOT measurements across existing Julia workloads/forms; add actual-platform filter including JVM, BEAM and .NET. V remains report-only, absent from visualization data.",
+  "objective": "Finish remaining full benchmark tests; publish complete Nim/Crystal/Pony/C3/Gleam/Clojure suites with qualified source LOC and provenance; add Julia AOT measurements across existing Julia workloads/forms; add actual-platform filter including JVM, BEAM and .NET. V remains report-only, absent from visualization data.; add Prolog to the published language list after complete qualification.",
   "worktree": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
   "branch": "codex/clbg-native-benchmarks",
   "timing_mutex": "/tmp/mech-clbg-timing.lock",
@@ -17,7 +17,8 @@
     "observed_cpu_percent": 100.0,
     "common_timing_mutex": "/tmp/mech-clbg-timing.lock",
     "all_other_root_heavy_jobs": "Julia70419,V28082,Gleam28311,Nim84171 waiting with0CPU; agentC3/Clojure saved-code reads alsoqueued",
-    "simultaneous_timed_benchmark_processes_observed": 1
+    "simultaneous_timed_benchmark_processes_observed": 1,
+    "superseded_by": "latest_live_native_observation and durable_jobs; old foreground sessions no longer exist."
   },
   "new_publication_fixture_candidate": {
     "runner": "benchmarks/clbg/continuation/qualify_publication_fixtures_v1.py",
@@ -161,25 +162,16 @@
     "benchmarks/clbg/gleam-comparison/20261012/revisions/private-v4/REPAIR.md"
   ],
   "next_actions": [
-    "Observe APL continuation; compact knucleotide live at last check. Do not interrupt or duplicate a valid sample.",
-    "V preparation20372 is alive. Completion28471 waits on it, then runs work checks/seals/detaches full studies. Watch terminal errors and fix in new preserved revision.",
-    "Review generated V tree allocation C and write allocator review after tree trace/lowering stages complete; then seal/launch tree full study.",
-    "Approve exact new Nim/Pony/Crystal proposal digests after seal and inspect receipts; agents will launch native qualification and remaining work/full pipelines.",
-    "FP guarded_prepare_v4 seal queued. Review exact proposal and run repaired three-copy preparation, then codegen/numerical review and full performance study if justified.",
-    "LOC audit18 already queued after audit17 failed one incorrect C++ formal/prototype fixture. Do not duplicate; inspect current handle and qualified results.",
-    "Reconcile Lua/LuaJIT Pi, R/Uiua complete records, APL remaining full runs, revised Mech modes and four new compact minima with canonical LOC before final data publication.",
-    "Read Sites skill when ready to publish to existing private benchmark site; V must remain absent from dataset/selector/site.",
-    "C3 added by user: agent nim_completion owns new c3-comparison/20261012 source/preparation work alongside Nim. No existing C3 toolchain or artifacts found. Official0.8.5 chosen after exact release-page verification (cached latest had0.8.4). Fixed8192-bit stdlib bigint is insufficient for canonical10000-digit Pi, so use generic growable GMP arithmetic. Pony owns separate c3-proposal-v1 canonical LOC grammar; Crystal added planned metadata and official evidence.",
-    "After passed V v2 reconciliation fixtures, independently reconcile complete regex actual records into a fresh report-only JSON. Never attach V to chart or Site data.",
-    "Final audit: all ten required full workloads for each requested new language, three real samples per selected source, complete output/work/ownership/source identity evidence, canonical LOC, published Nim/Crystal/Pony/C3 and report-only V. Never mark goal complete from partial/preparation results.",
-    "C3 first seal still unqueued: root static guard review + Crystal full-pipeline and Pony work-proof peer review found exact20 isolation inventory gate omission and diagnostic GMP function-name mismatch. Agent Nim is correcting before initial immutable seal. Verify stdlib root and actual exact fixture count/zero skip receipt before approving first seal.",
-    "MATLAB regex uses case-insensitive regexpi unlike case-sensitive Mech and canonical upstream implementations. Preserve prior sources/timings; Crystal is authoring an additive case-sensitive regexp proposal plus mixed-case qualification and exact new-source remeasurement before replacement publication. See regex-library-review-20261012.json. Generic library reuse remains legitimate; engine choice must be disclosed.",
-    "Expanded scope is now six publication languages: Nim/Crystal/Pony/C3/Gleam/Clojure. Keep all original tests and V report-only scope. Nim agent owns Gleam BEAM source/preparation, Crystal agent owns Clojure JVM source/preparation, Pony agent owns actual-platform filter candidate +C3/Gleam/Clojure LOC proposals. No Gleam/Clojure native queue or source qualification yet.",
-    "MATLAB additive --seal metadata-only worker62772/session22327 livequeued after static3 mocked fixture/currentFD>=64/complete observed byte pins/planned slots review. Review actual terminal fixture/proposal digest before18bounded subjects. Old sources/timings untouched.",
-    "Root six-language importer candidate now requires mandatory separate qualified compiler_bound_input_inventory for every profile, source-specific qualified count/semantic evidence, full source/helper sums, all90 actual records per language and actual metadata. It stages all filesystem reads/report conversion/program/file/provenance changes then commits without mutation callbacks, preserving old file metadata/captured map identities. Still unhooked/unexecuted; update fixtures for compiler-inventory absence and transaction failures before frozen under-lock fixture queue.",
-    "Additive records/suite-v2 six-language reconciliation authored using a private FunctionType copy of immutable v1 validator with only language whitelist expanded. Original v1 globals/code/7passedfixture receipt unchanged. Qualify additive fixtures undercommonmutex before use; full existing actual-record/output/identity protocol remains unchanged.",
-    "Platform candidate continuation/platform-filter-proposal-v1 exists unexecuted/unpublished. Correct old Java execution label: exact17 currently displayed Java rows match saved original samples/source hashes and OpenJDK java -cp/javac/JIT commands in3reports. Follow retime pinned original runtime receipts undercommonlock before actual year/runtime/platform publication; do not infer local GraalVM AOT from upstream filenames. Prose/augment stale AOTlabel requires metadata-only correction, no remeasurement or source/report edits.",
-    "Observe additional existing oldworker boundary-audit-19 PID56954 (livewaiting atcommonmutex); never duplicate based only on earlier LOC18 success. LOC18 snapshot remainsfrozen andsupports root compact-source review. C3 LOCv219method packet authored,unqueued untilactualv1terminal receipt +root review."
+    "Consume actual APL84 raw result + both kernel exit status events under common mutex; do not invent missing waitpid status or repeat live run.",
+    "Consume durable exact-Pygments restore and Git inventory; curate source/report backup, commit/push and verify remote.",
+    "Consume Nimv5/Gleamv4/Ponyv3 actual work; source/codegen review before full seals/runs.",
+    "Consume C3 tenfull-manifest index, root review exactinputs/orders, launch90 through durable owners.",
+    "Consume Clojure supplemental22 admission outcome/code0; then full sealer/index/90.",
+    "Restore lost queued compiler-input/LOC/metadata stages from frozen source packets only after explicit no-actual-output/no-live-owner review; use durable launchers.",
+    "Finish Julia native/noJIT observer failure diagnosis and qualified AOT measurements.",
+    "Prolog all20 equivalent-source profiles, exact runtime/source/work/LOC/full qualification; extend publication from six to seven with actual evidence.",
+    "V tenth and independent10 reconciliation remains report-only.",
+    "Whole-seven integration/platform/groups/endpoint QA, private Site publish only qualified full records."
   ],
   "stopped_duplicate": {
     "pid": 27693,
@@ -288,15 +280,22 @@
     }
   },
   "latest_live_native_observation": {
-    "checked_at": "2026-10-12T23:06:03+00:00",
-    "pid": 72649,
-    "sampler_pid": 72628,
-    "cohort_owner": 17798,
-    "native": "GNU APL",
-    "elapsed": "11:44",
-    "cpu_percent": 100.0,
-    "rss_kib": 113360,
-    "note": "Historical23:06observational snapshot only; native72649 subsequently exitednormally, actualoptimizedKsecond sample768.132089459 recorded. LatestobservedheavyjobFPv5compiler cargo76881/rustc77445, alltimedcontrollersqueued."
+    "observed_at": "2026-10-13T06:35:17.988786+00:00",
+    "sampler_pid": 68659,
+    "sampler_parent_pid": 1,
+    "native_pid": 68666,
+    "benchmark": "APL fannkuchredux",
+    "workload_n": 12,
+    "attempt": 84,
+    "sample": 2,
+    "source": "benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/fannkuchredux.compact.apl",
+    "original_coordinator_pid": 32432,
+    "original_coordinator_exited": true,
+    "process_exit_observer_pid": 83359,
+    "exit_observer_registered": "benchmarks/clbg/continuation/jobs/apl-sample84-kqueue-observer-v1/registered.json",
+    "sampler_exit_status_must_come_from_kernel_event": true,
+    "no_original_run_restarted": true,
+    "sole_observed_timed_native": true
   },
   "julia_AOT_source_candidate": "benchmarks/clbg/julia-aot-comparison/20261012/revisions/proposal-v1",
   "latest_site_metadata_read": {
@@ -468,10 +467,12 @@
     "history_entries": 18,
     "matched_measurements": 33,
     "mojo_attribution": "Open; not found in accessible inspected history. User recollection preserved.",
-    "git_inventory_session": 9828,
-    "git_inventory_status": "Queued on common timing mutex; no completed receipt yet.",
-    "notes_checkpoint": "Ready to commit; broader source/report inventory remains queued.",
-    "benchmark_serialization": "APL fannkuch full sample two is running; no concurrent timed benchmark observed."
+    "git_inventory_session": null,
+    "git_inventory_status": "Old foreground inventory ended before producing a receipt; replacement durable v2 is waiting on common mutex.",
+    "notes_checkpoint": "Committed and pushed to origin; exact remote branch SHA verified.",
+    "benchmark_serialization": "APL fannkuch full sample two is running; no concurrent timed benchmark observed.",
+    "notes_checkpoint_commit": "7c24bde2ef490c80edafa5751762c87279094d77",
+    "notes_checkpoint_remote_verified": true
   },
   "latest_continuation_addendum": {
     "completed": {
@@ -483,18 +484,6 @@
       "Julia_observer_v2": "Actual owned LLDB timeout300s; failure preserved, diagnose before additive attempt.",
       "Pony_work_metadata": "Actual sealed manifest00a83167f0d63f3f7ce0664096b70c841b2cd4fb77a34bc05ce2be8f71005df5;four fresh traces not yet launched.",
       "Native_platform_fixture_v1": "Actualfour exact fixture IDs passed, frontendv3 not yet launched."
-    },
-    "live_sessions": {
-      "APL_recovery_full": 6438,
-      "V_tenth_trees": 77706,
-      "Gleam_LOC34": 61287,
-      "Crystal_metadata_digest": 30532,
-      "Nim_input6_fixtures": 55371,
-      "MATLAB_map_digest": 14410,
-      "Erlang_helper21_fixtures": 64583,
-      "Clojure_LOC_overlay": 36456,
-      "exact_Pygments_restoration": 18356,
-      "Git_inventory": 9828
     },
     "dependency_failure": "Pony grammar33 and C3 source replay stopped before fixtures/counts because exact temporary Pygments missing. Exact-byte restoration source reviewed and queued; preserve failed packets, use unique additive revisions only after actual successful restoration.",
     "source_only_next": [
@@ -508,5 +497,83 @@
       "Nim/C3 publication metadata peer review"
     ],
     "publication_status": "Not integrated/published; V remains report-only. Full6-language/Julia/platform goal remains active."
+  },
+  "historical_foreground_sessions": {
+    "APL_recovery_full": 6438,
+    "V_tenth_trees": 77706,
+    "Gleam_LOC34": 61287,
+    "Crystal_metadata_digest": 30532,
+    "Nim_input6_fixtures": 55371,
+    "MATLAB_map_digest": 14410,
+    "Erlang_helper21_fixtures": 64583,
+    "Clojure_LOC_overlay": 36456,
+    "exact_Pygments_restoration": 18356,
+    "Git_inventory": 9828
+  },
+  "historical_foreground_sessions_status": "All handles disappeared and their foreground coordinator PIDs exited across conversation transition; do not poll or restart by session ID. Actual APL sampler/native survive separately.",
+  "durable_jobs": {
+    "apl-sample84-kqueue-observer-v1": {
+      "launch": "benchmarks/clbg/continuation/owned-jobs/apl-sample84-kqueue-observer-v1/launch.json",
+      "worker_pid": 83359,
+      "status": "detached-read-only-observer-launched"
+    },
+    "c3-full-manifests-v1-durable-v1": {
+      "launch": "benchmarks/clbg/continuation/owned-jobs/c3-full-manifests-v1-durable-v1/launch.json",
+      "worker_pid": 82232,
+      "status": "durable-job-launched",
+      "command_pid": 82236
+    },
+    "clojure-supplemental22-admission-v1": {
+      "launch": "benchmarks/clbg/continuation/owned-jobs/clojure-supplemental22-admission-v1/launch.json",
+      "worker_pid": 83741,
+      "status": "durable-job-launched",
+      "command_pid": 83746
+    },
+    "exact-pygments-restoration-durable-v1": {
+      "launch": "benchmarks/clbg/continuation/owned-jobs/exact-pygments-restoration-durable-v1/launch.json",
+      "worker_pid": 80746,
+      "status": "durable-job-launched",
+      "command_pid": 80753
+    },
+    "git-persistence-inventory-durable-v2": {
+      "launch": "benchmarks/clbg/continuation/owned-jobs/git-persistence-inventory-durable-v2/launch.json",
+      "worker_pid": 80750,
+      "status": "durable-job-launched",
+      "command_pid": 80757
+    },
+    "gleam-work-v4-durable-v1": {
+      "launch": "benchmarks/clbg/continuation/owned-jobs/gleam-work-v4-durable-v1/launch.json",
+      "worker_pid": 81456,
+      "status": "durable-job-launched",
+      "command_pid": 81466
+    },
+    "nim-work-v5-durable-v1": {
+      "launch": "benchmarks/clbg/continuation/owned-jobs/nim-work-v5-durable-v1/launch.json",
+      "worker_pid": 81452,
+      "status": "durable-job-launched",
+      "command_pid": 81459
+    },
+    "platform-frontend-v3-durable-v1": {
+      "launch": "benchmarks/clbg/continuation/owned-jobs/platform-frontend-v3-durable-v1/launch.json",
+      "worker_pid": 82042,
+      "status": "durable-job-launched",
+      "command_pid": 82046
+    },
+    "pony-work-v3-durable-v1": {
+      "launch": "benchmarks/clbg/continuation/owned-jobs/pony-work-v3-durable-v1/launch.json",
+      "worker_pid": 81464,
+      "status": "durable-job-launched",
+      "command_pid": 81470
+    }
+  },
+  "prolog_addition": {
+    "scope": "Published complete10workload candidate; all actual flags remain false pending toolchain/source/work/LOC/full qualification.",
+    "owner": "/root/nim_completion",
+    "directory": "benchmarks/clbg/prolog-comparison/20261013",
+    "source_state": "All10 compact draft algorithms authored; equivalent optimized source aliases/framework in progress, unparsed/unexecuted.",
+    "runtime_candidate": "SWI-Prolog10.0.2; planned publisher metadata only, no actual installed version claim.",
+    "measured_route": "Planned native bytecode VM/QLF startup-inclusive; not application native AOT/JIT.",
+    "publication_required_language_count": 7,
+    "whole_six_source_adapters_need_extension_after_Prolog_actual_evidence": true
   }
 }

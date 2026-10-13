@@ -1,0 +1,20 @@
+{
+  "started_at": "2026-10-13T06:13:41.659362+00:00",
+  "command_pid": 81466,
+  "command_identity": {
+    "pid": 81466,
+    "listing": "81466 81456 Tue Oct 13 02:13:41 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u revisions/work-full-v4/qualify_work.py --qualified-revision private-v5 --revision work-v4"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+    "-B",
+    "-u",
+    "revisions/work-full-v4/qualify_work.py",
+    "--qualified-revision",
+    "private-v5",
+    "--revision",
+    "work-v4"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012"
+}
