@@ -1,0 +1,17 @@
+{
+  "at": "2026-10-13T22:40:51.829833+00:00",
+  "status": "passed-closed-Prolog-preparation-proposal-review",
+  "verified_pins": 13444,
+  "proposal": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/proposals/prepare-success-halt-v1.json",
+    "sha256": "c36911c1e2f9b8c2f8897667e15474ecda619cd3284115ed590d52f0d43e8f4b"
+  },
+  "report_sha256": "c36911c1e2f9b8c2f8897667e15474ecda619cd3284115ed590d52f0d43e8f4b",
+  "body_terminal_sha256": "f26096b988659caa779a3aeac33d61976cdfe294ef7458d885fce724c37f6f7d",
+  "durable_terminal_sha256": "4f3554104e92a3915f34edff4788ddfbcec221ac64727b7e8513dae1facd2e2e",
+  "profiles": 20,
+  "bounded_cases": 156,
+  "native_processes": 0,
+  "fixture_reexecutions": 0,
+  "chart_admission": false
+}

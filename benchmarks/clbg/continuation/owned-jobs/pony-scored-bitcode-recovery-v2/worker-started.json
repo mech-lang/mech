@@ -1,0 +1,41 @@
+{
+  "started_at": "2026-10-13T22:53:03.090859+00:00",
+  "worker_identity": {
+    "pid": 33585,
+    "listing": "33585     1 Tue Oct 13 18:53:03 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/pony-scored-bitcode-recovery-v2 --lease-fd 3 --go-fd 4"
+  },
+  "inherited_private_lease": true,
+  "detached_session": true,
+  "common_mutex_owned_by_target_command": true,
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/recover.py",
+    "--recover",
+    "--revision",
+    "scored-bitcode-v2",
+    "--worker-sha256",
+    "1dc8df79aed697a907f3dcae73b6ed37e117669e78002a3b42e2370ec53d2cfa",
+    "--review-sha256",
+    "2a80012e315e9d10367ead4b49fa18e4a5f46c408a704f56050c8b0899a83bd4",
+    "--capture-outcome-sha256",
+    "fbc2c1dfd450759c893b51723a2977d16ffaf8e63c95a48fc70dcc9cca4e01e2",
+    "--capture-owner-terminal-sha256",
+    "2fbdfe6cbadad6ab6514ae43a427d46983df716b713aab6916b2be0c4d00bc32",
+    "--reader-receipt",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v1/jobs/reader-llvm23-v1/reader.json",
+    "--reader-sha256",
+    "054c7a9e376f4dc883e5e7cab60dd6193cd67d4080ee42099d4fe7c07978edca",
+    "--reader-terminal-sha256",
+    "529cf74c0f08e7dd632167b1288e85202817c717f8e0edd26ae3f56c3743b13f",
+    "--reader-owner",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/pony-llvm23-reader-qualification-v1",
+    "--reader-owner-terminal-sha256",
+    "5f35ef7c2985880f62519168002436288e24831c4b9d441ed6eb9bf6867b0062"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "qualification_granted": false
+}

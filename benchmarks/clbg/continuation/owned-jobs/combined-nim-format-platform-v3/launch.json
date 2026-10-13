@@ -1,0 +1,27 @@
+{
+  "status": "durable-job-launched",
+  "launched_at": "2026-10-13T22:44:01.510478+00:00",
+  "job": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/combined-nim-format-platform-v3",
+  "worker_identity": {
+    "pid": 31948,
+    "listing": "31948 31947 Tue Oct 13 18:44:01 2026     /opt/homebrew/opt/python@3.14/bin/python3.14 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/combined-nim-format-platform-v3 --lease-fd 3 --go-fd 4"
+  },
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/combined-chart-integration-v3/integrate.py",
+    "--plan",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/combined-chart-integration-v3/plan-v1.json",
+    "--plan-sha256",
+    "46b5665e811a57766476385a73f2bdf1fa0e602bd70c34cd8c30d62b8caeda0c",
+    "--self-sha256",
+    "890edeb5035ef1ff7473728ddf684651f019e1514edbdc054c93b6eb7f828923"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "detached_session": true,
+  "automatic_retry": false,
+  "qualification_granted": false
+}

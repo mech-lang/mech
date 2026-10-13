@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v1/recover.py", line 383, in <module>
+    main()
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v1/recover.py", line 355, in main
+    result = reader(prep, service, guard, harness, output, common.fileno(), pins) if args.qualify_reader else recover(
+                                                                                                              ^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v1/recover.py", line 214, in recover
+    request = closed(args.reader_owner.resolve(strict=True), args.reader_owner_terminal_sha256, pins)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v1/recover.py", line 97, in closed
+    assert launch['worker_identity']['listing'].split()[2:] == worker['worker_identity']['listing'].split()[2:]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

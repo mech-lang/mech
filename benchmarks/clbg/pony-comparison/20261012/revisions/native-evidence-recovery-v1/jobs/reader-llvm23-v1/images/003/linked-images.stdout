@@ -1,0 +1,3 @@
+/opt/homebrew/Cellar/zstd/1.5.7_1/lib/libzstd.1.5.7.dylib:
+	/opt/homebrew/opt/zstd/lib/libzstd.1.dylib (compatibility version 1.0.0, current version 1.5.7)
+	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1356.0.0)

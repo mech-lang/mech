@@ -1,0 +1,62 @@
+{
+  "status": "source-reviewed-descriptor-awaiting-guarded-actual-evidence-qualification",
+  "language": "gleam",
+  "label": "Gleam",
+  "execution": "JIT",
+  "backend_label": "Gleam 1.19.0 / Erlang OTP 29.1.1 ERTS 17.1 BEAM load-time JIT, native macOS ARM64",
+  "memory_label": "BEAM process-heap garbage collection (default runtime policy)",
+  "actual_compiler_version_verified": false,
+  "actual_native_architecture_verified": false,
+  "actual_memory_policy_verified": false,
+  "release_year": 2019,
+  "release_source": "https://github.com/gleam-lang/gleam/releases/tag/v0.1.0",
+  "release_note": "Uses the first numbered public release, v0.1 in April 2019, as documented by the creator in the FOSDEM 2024 history slides. Earlier experimental prototypes are excluded from this release-year basis; the measured compiler is 1.19.0.",
+  "typing": "Static",
+  "language_style": "Functional language targeting Erlang/BEAM with general authored Erlang support",
+  "color": "#ffaff3",
+  "color_source": "GitHub Linguist",
+  "color_provenance": "https://github.com/github-linguist/linguist/blob/538da05f034fa5c83bd81df128d144e208898da3/lib/linguist/languages.yml",
+  "runtime_support_by_benchmark": {
+    "regexredux": "Generic Erlang re compile/search (actual engine 10.47). Gleam performs nonoverlapping match-count loops, replacement slices/assembly, five ordered substitutions and output; the optimized form uses authored generic task support. All authored wrappers/FFI/runner count in LOC.",
+    "revcomp": "BEAM BitArray/list storage and authored byte I/O wrappers. Full FASTA header/comment/CRLF handling, complement selection and reverse line traversal remain in Gleam; optimized output is buffered.",
+    "pidigits": "BEAM growable integer arithmetic and generic formatting. Both safe-digit estimates, simultaneous state recurrence updates and output decisions remain in Gleam.",
+    "spectralnorm": "BEAM floats/list storage and generic task support in optimized form. Gleam computes every triangular coefficient and all forty complete matrix-vector products with joined phases.",
+    "mandelbrot": "BEAM arithmetic and byte buffers with generic task support in optimized form. Full escape recurrence, PBM bit packing and partial-byte tails remain authored in Gleam.",
+    "fasta": "BEAM arithmetic/list/byte storage and authored I/O helpers. Gleam performs the ALU cycle, seed 42 LCG updates, cumulative probability selection and all three record output phases.",
+    "knucleotide": "Generic BEAM dictionary storage/sort with authored comparator. Gleam visits every window and builds seven full histograms; optimized tasks retain separate ownership and joins.",
+    "binarytrees": "BEAM tagged tree values and generic fresh reference/task primitives. Gleam constructs/checks real child graphs, retains the long-lived root and accounts for temporary trees.",
+    "nbody": "BEAM floats/list storage, generic math sqrt and tuple/vector primitives. Canonical body initialization, momentum offset, all ten pairwise forces per step, positions and energies remain in Gleam.",
+    "fannkuchredux": "Generic BEAM tuple storage/vector access and capped authored task support. Gleam performs permutation carries, actual prefix flips, parity checksum and maximum over complete factorial-ranked intervals."
+  },
+  "timing_boundary": "Three sequential fresh complete BEAM processes per exact compiled source in rotated rounds with unchanged Mech AOT controls. Includes runtime startup/load-time JIT, canonical input, all computation, complete stdout and teardown. Source compilation, qualification and validation hashing are outside timing. Original full 90 process records are reused without reruns; a common mutex serializes benchmark/native/QA work with at most eight compute workers.",
+  "source_provenance": "Twenty locally authored compact/optimized Gleam adaptations retain CLBG algorithms and independent reference checks. Every actual compiler-bound main and authored Gleam/Erlang helper, including the runner, counts in canonical LOC. Pinned generic vendor/runtime and generated BEAM/abstract forms remain separate provenance. Exact source/work qualification, independent full 90 reconciliation, unchanged34+21+5 counting fixtures and the independently reviewed complete 20 LOC overlay are retained.",
+  "primary_sources": [
+    "https://github.com/gleam-lang/gleam/releases/tag/v0.1.0",
+    "https://archive.fosdem.org/2024/events/attachments/fosdem-2024-2039-gleam-past-present-future-/slides/22095/gleam_past_present_future_slides_rPz3g1U.pdf",
+    "https://gleam.run/news/gleam-version-1/",
+    "https://www.erlang.org/doc/apps/erts/garbagecollection.html",
+    "https://github.com/github-linguist/linguist/blob/538da05f034fa5c83bd81df128d144e208898da3/lib/linguist/languages.yml"
+  ],
+  "primary_source_review": "Read creator history slides specifying v0.1 April 2019, public tag, type-safe functional language overview, exact Linguist 538da color and official ERTS 17.1/OTP 29.1.1 per-process tracing/generational GC documentation. GC is the documented default runtime policy bound to saved actual version/flags/environment/source, not a newly measured collector/default-heap probe.",
+  "measured_backend_template": {
+    "key": "beam-jit",
+    "execution": "jit",
+    "label": "Gleam 1.19.0 / Erlang OTP 29.1.1 ERTS 17.1 BEAM load-time JIT, native macOS ARM64",
+    "verified": false,
+    "runtime_receipt": {
+      "verified": false,
+      "report": null,
+      "report_sha256": null,
+      "field": "/backend",
+      "value": "BEAM load-time JIT",
+      "value_encoding": "literal-saved-string"
+    }
+  },
+  "memory_strategies": [],
+  "qualified_memory_strategies_expected": [
+    "gc"
+  ],
+  "pins": {},
+  "chart_admission": false,
+  "site_changed": false
+}

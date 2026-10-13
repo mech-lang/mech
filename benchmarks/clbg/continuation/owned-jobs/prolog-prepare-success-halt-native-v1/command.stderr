@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/prepare-success-halt-v1/guarded_prepare.py", line 624, in <module>
+    main()
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/prepare-success-halt-v1/guarded_prepare.py", line 620, in main
+    (seal if args.seal else prepare)(args)
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/prepare-success-halt-v1/guarded_prepare.py", line 589, in prepare
+    raise error
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/prepare-success-halt-v1/guarded_prepare.py", line 575, in prepare
+    attempt = service.probe(guard, harness, row, n, payload, expected, pins,
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/private-v1/guarded_prepare.py", line 403, in probe
+    assert attempt['qualified'], ('Unqualified attempt retained; no automatic retry', row['id'], case)
+           ~~~~~~~^^^^^^^^^^^^^
+AssertionError: ('Unqualified attempt retained; no automatic retry', 'prolog-regexredux-compact', 'all-replacements')

@@ -1,12 +1,13 @@
-import {comparison,same,chartDomain,comparisonMetrics,languagesByYear,globalStatistics,languageFamilies,medianHistory,median,releaseYearsInWindow,clampReleaseWindow,decadeWindow,medianRankings,recordedSamplePoints,sampleDensityPoints,densityGrid,layerPresentation,chartLayerState,summaryNumber} from './math.mjs?v=20261013-layers';
-import {traitDimensions,languageTraits,emptyTraitFilters,matchesTraits,filterLanguageKeys} from './traits.mjs';
-import {renderRankingCharts} from './rankings.mjs?v=20261013-layers';
+import {comparison,same,chartDomain,comparisonMetrics,languagesByYear,globalStatistics,languageFamilies,medianHistory,median,releaseYearsInWindow,clampReleaseWindow,decadeWindow,medianRankings,recordedSamplePoints,sampleDensityPoints,densityGrid,layerPresentation,chartLayerState,summaryNumber} from './math.mjs?v=20261013-combined2';
+import {traitDimensions,languageTraits,emptyTraitFilters,matchesTraits,filterLanguageKeys} from './traits.mjs?v=20261013-combined2';
+import {renderRankingCharts} from './rankings.mjs?v=20261013-combined2';
+import {axisData,projectProgram,hasFormattedLOC,formattedText,formattedValue} from './formatted_axis.mjs?v=20261013-combined2';
 
 const $=selector=>document.querySelector(selector);
 const svgNS='http://www.w3.org/2000/svg';
 let data,model,traits,programCatalog;
 const state={benchmarks:new Set(),languages:new Set(),disabled:new Set(),ellipses:new Set(['mech']),
-  view:'summary',focus:'nbody',fast:true,small:true,sampleMode:'dim',medianMode:'highlight',densityMode:'off',focusMeans:true,global:false,trail:true,playing:false,collapsedFamilies:new Set(),releaseYearStart:null,releaseYear:null,playbackYear:null,traits:emptyTraitFilters(),languageFocus:null,
+  view:'summary',focus:'nbody',locMetric:'canonical',fast:true,small:true,sampleMode:'dim',medianMode:'highlight',densityMode:'off',focusMeans:true,global:false,trail:true,playing:false,collapsedFamilies:new Set(),releaseYearStart:null,releaseYear:null,playbackYear:null,traits:emptyTraitFilters(),languageFocus:null,
   detail:{language:'mech',benchmark:'nbody',kind:'fast',program:null,aggregate:false,file:0}};
 const colors={};
 const mechViewColors={mech:'#F6C04E','mech-jit':'#FFE59A','mech-resident':'#C99B2E'};
@@ -22,7 +23,13 @@ const benchmark=key=>data.benchmarks.find(b=>b.key===key);
 const catalogProgram=key=>Object.hasOwn(programCatalog,key)?programCatalog[key]:undefined;
 const benchmarkPrograms=(b,key)=>Object.values(programCatalog).filter(p=>p.benchmark===b&&p.language===key);
 const measuredTiming=p=>Number.isFinite(p?.seconds)&&p.seconds>0;
-const sampleProgram=program=>program;
+const residentTiming=p=>p?.execution_mode==='resident'||p?.prior_runtime_metadata?.fields?.execution_mode==='resident';
+const plotData=(metric=state.locMetric)=>axisData(comparisonData(),metric);
+const plotProgram=(program,metric=state.locMetric)=>projectProgram(program,metric);
+const sampleProgram=program=>plotProgram(program);
+const plottable=program=>measuredTiming(program)&&Number.isFinite(program.loc)&&program.loc>0&&Number.isFinite(program.x)&&program.x>0&&Number.isFinite(program.y)&&program.y>0;
+const metricName=()=>state.locMetric==='formatted'?'formatted LOC':'canonical LOC';
+
 const shortName=key=>({c:'C',cpp:'C++',mech:'Mech (AOT)',python:'Python',ruby:'Ruby',javascript:'JavaScript'}[key]??language(key).label);
 const chartName=key=>({mech:'Mech AOT','mech-jit':'Mech JIT','mech-resident':'Mech interpreted',bqn:'BQN',k:'K'}[key]??shortName(key));
 const partialEntry=entry=>entry.coverage.measured<entry.coverage.selected;
@@ -51,7 +58,9 @@ function comparisonData(){
   return {...data,programs:{...data.programs,[selected.key]:selected},benchmarks:data.benchmarks.map(b=>{
     if(b.key!==selected.benchmark)return b;
     const replacement={language:selected.language,label:shortName(selected.language),programs:[selected.key],
-      fast:measuredTiming(selected)?selected.key:null,small:selected.key};
+      fast:measuredTiming(selected)?selected.key:null,small:selected.key,
+      formatted_fast:measuredTiming(selected)&&hasFormattedLOC(selected)?selected.key:null,
+      formatted_small:hasFormattedLOC(selected)?selected.key:null};
     const present=b.groups.some(g=>g.language===selected.language);
     return {...b,groups:present?b.groups.map(g=>g.language===selected.language?{...g,...replacement}:g):[...b.groups,replacement]};
   })};
@@ -99,7 +108,7 @@ function leaveLanguageFocusForSelection(){
 }
 function languageMedianStatistics(entry){
   return Object.fromEntries(['fast','small'].map(kind=>{
-    const points=entry.inputs.map(input=>input[kind]);
+    const points=entry.inputs.map(input=>input[kind]).filter(plottable);
     if(!points.length)return [kind,null];
     const midpoint={x:2**median(points.map(p=>Math.log2(p.x))),y:2**median(points.map(p=>Math.log2(p.y)))};
     const atMedian=region=>region&&({...region,center:midpoint,boundary:region.boundary.map(p=>({x:p.x*midpoint.x/region.center.x,y:p.y*midpoint.y/region.center.y}))});
@@ -114,10 +123,11 @@ function renderLanguageOverview(){
   const covered=data.benchmarks.filter(b=>measured.some(p=>p.benchmark===b.key));
   $('#language-overview-title').textContent=`${focus.label} · ${focus.comparison?'comparison':'language overview'}`;
   $('#language-overview-summary').textContent=`${covered.length}/${data.benchmarks.length} benchmarks · ${measured.length} timed published programs · ${measured.reduce((n,p)=>n+p.samples.length,0)} recorded runs. ${data.program_inventory?'Every qualified program retained in this publication is listed below.':'This publication retains its fastest and fewest-LOC program pool.'} Unavailable timings stay blank.`;
+  if(state.locMetric==='formatted')$('#language-overview-summary').textContent+=` ${measured.filter(p=>plottable(plotProgram(p))).length} timed programs have qualified formatted coordinates; the chart omits the others. Their original timings and sources remain listed.`;
   if(focus.comparison){
-    const viewData=comparisonData(),active=viewData.benchmarks.find(b=>b.key===state.focus);
-    const missing=[...state.languages].filter(key=>!active?.groups.some(g=>g.language===key&&g.programs.some(id=>measuredTiming(viewData.programs[id]))));
-    if(missing.length)$('#language-overview-summary').textContent+=` ${missing.map(shortName).join(', ')}: no measured timing for ${benchmark(state.focus).title}.`;
+    const viewData=plotData(),active=viewData.benchmarks.find(b=>b.key===state.focus);
+    const missing=[...state.languages].filter(key=>!active?.groups.some(g=>g.language===key&&g.programs.some(id=>plottable(viewData.programs[id]))));
+    if(missing.length)$('#language-overview-summary').textContent+=` ${missing.map(shortName).join(', ')}: no eligible ${metricName()} comparison for ${benchmark(state.focus).title}.`;
   }
   $('#return-language-overview').hidden=!focus.comparison;
   $('#overview-variant').innerHTML=focus.keys.map(k=>`<option value="${k}">${esc(shortName(k))}</option>`).join('');
@@ -134,8 +144,8 @@ function renderLanguageOverview(){
   $('#overview-inspect').disabled=!programs.some(p=>p.language===focus.variant&&p.benchmark===focus.benchmark);
   $('#language-timings tbody').innerHTML=data.benchmarks.map(b=>{
     const rows=programs.filter(p=>p.benchmark===b.key);
-    if(!rows.length)return `<tr><th scope="row">${esc(b.title)}</th><td colspan="7" class="missing-timing">No published program or timing.</td></tr>`;
-    return rows.map((p,i)=>`<tr class="${p.key===focus.program?'chosen':''}">${i===0?`<th scope="rowgroup" rowspan="${rows.length}">${esc(b.title)}</th>`:''}<td>${esc(shortName(p.language))}</td><td><button data-inspect-program="${p.key}">${esc(p.id)}</button></td><td class="ratio">${p.loc}</td><td class="ratio">${measuredTiming(p)?seconds(p.seconds):'—'}</td><td class="ratio">${measuredTiming(p)?`${(p.seconds/b.baseline_seconds).toFixed(3)}×`:'—'}</td><td class="ratio">${measuredTiming(p)&&Number.isFinite(p.timing_sd)&&p.timing_sd>=0?seconds(p.timing_sd):'—'}</td><td class="sample-values">${measuredTiming(p)&&p.samples.length?p.samples.map(value=>Number(value).toFixed(6)).join(' · '):'—'}<button class="row-comparison" data-compare-program="${p.key}">Compare</button></td></tr>`).join('');
+    if(!rows.length)return `<tr><th scope="row">${esc(b.title)}</th><td colspan="8" class="missing-timing">No published program or timing.</td></tr>`;
+    return rows.map((p,i)=>`<tr class="${p.key===focus.program?'chosen':''}">${i===0?`<th scope="rowgroup" rowspan="${rows.length}">${esc(b.title)}</th>`:''}<td>${esc(shortName(p.language))}</td><td><button data-inspect-program="${p.key}">${esc(p.id)}</button></td><td class="ratio">${p.loc}</td><td class="ratio" title="${esc(formattedText(p))}">${formattedValue(p)}</td><td class="ratio">${measuredTiming(p)?seconds(p.seconds):'—'}</td><td class="ratio">${measuredTiming(p)?`${(p.seconds/b.baseline_seconds).toFixed(3)}×`:'—'}</td><td class="ratio">${measuredTiming(p)&&Number.isFinite(p.timing_sd)&&p.timing_sd>=0?seconds(p.timing_sd):'—'}</td><td class="sample-values">${measuredTiming(p)&&p.samples.length?p.samples.map(value=>Number(value).toFixed(6)).join(' · '):'—'}<button class="row-comparison" data-compare-program="${p.key}">Compare</button></td></tr>`).join('');
   }).join('');
 }
 function compareOverviewProgram(key=null){
@@ -154,38 +164,39 @@ function compareOverviewProgram(key=null){
   Object.assign(state,{fast:true,small:true,focusMeans:false,global:false,trail:false});
   if(!selectedProgram()&&$('#inspector').open){$('#inspector').close();$('#chart-detail-layout').classList.remove('inspector-open');}
   update();
-  const viewData=comparisonData();
-  const missing=[from,to].filter(k=>!viewData.benchmarks.find(item=>item.key===b).groups.some(g=>g.language===k&&g.programs.some(id=>measuredTiming(viewData.programs[id]))));
-  if(missing.length)showHoverDetails(`${missing.map(shortName).join(', ')} has no measured timing for ${benchmark(b).title}. No result is invented.`);
+  const viewData=plotData();
+  const missing=[from,to].filter(k=>!viewData.benchmarks.find(item=>item.key===b).groups.some(g=>g.language===k&&g.programs.some(id=>plottable(viewData.programs[id]))));
+  if(missing.length)showHoverDetails(`${missing.map(shortName).join(', ')} has no eligible ${metricName()} comparison for ${benchmark(b).title}. Original timing and source records remain available.`);
 }
-function languageViewDomain(){
-  const domain={...chartDomain(data,state)},keys=focusKeys();
+function languageViewDomain(metric=state.locMetric){
+  const domain={...chartDomain(axisData(data,metric),state)},keys=focusKeys();
   const include=point=>{
     if(!(point.x>0&&point.y>0))return;
     domain.xMin=Math.min(domain.xMin,Math.log2(point.x)-.15);domain.xMax=Math.max(domain.xMax,Math.log2(point.x)+.25);
     domain.yMin=Math.min(domain.yMin,Math.log2(point.y)-.18);domain.yMax=Math.max(domain.yMax,Math.log2(point.y)+.25);
   };
-  for(const p of focusPrograms())if(measuredTiming(p)){
+  for(const p of focusPrograms().map(p=>plotProgram(p,metric)).filter(plottable)){
     include(p);
     const b=benchmark(p.benchmark);
     if(!state.focusMeans)for(const elapsed of p.samples)if(Number.isFinite(elapsed)&&elapsed>0)include({x:p.x,y:elapsed/b.baseline_seconds});
   }
-  const entries=comparison(data,{benchmarks:new Set(data.benchmarks.map(b=>b.key)),languages:keys,disabled:new Set()}).entries;
+  const entries=comparison(axisData(data,metric),{benchmarks:new Set(data.benchmarks.map(b=>b.key)),languages:keys,disabled:new Set()}).entries;
   for(const entry of entries){
     const statistics=languageMedianStatistics(entry);
     for(const kind of ['fast','small']){
       if(!state.focusMeans){
         for(const p of entry.spread2[kind]?.boundary??[])include(p);
-        for(const p of statistics[kind].spread2?.boundary??[])include(p);
+        for(const p of statistics[kind]?.spread2?.boundary??[])include(p);
       }
-      include(statistics[kind].median);
+      if(statistics[kind])include(statistics[kind].median);
     }
   }
   return domain;
 }
-function sourceComparisonDomain(){
-  const domain={...chartDomain(comparisonData(),state)},p=catalogProgram(state.languageFocus?.comparisonProgram);
-  if(!p||!measuredTiming(p))return domain;
+function sourceComparisonDomain(metric=state.locMetric){
+  const domain={...chartDomain(plotData(metric),state)},original=catalogProgram(state.languageFocus?.comparisonProgram);
+  const p=original?plotProgram(original,metric):null;
+  if(!p||!plottable(p))return domain;
   const b=benchmark(p.benchmark);
   if(Number.isFinite(p.x)&&p.x>0){domain.xMin=Math.min(domain.xMin,Math.log2(p.x)-.15);domain.xMax=Math.max(domain.xMax,Math.log2(p.x)+.25);}
   if(Number.isFinite(p.y)&&p.y>0){domain.yMin=Math.min(domain.yMin,Math.log2(p.y)-.18);domain.yMax=Math.max(domain.yMax,Math.log2(p.y)+.25);}
@@ -246,8 +257,8 @@ function playYears(){
 function currentHistory(){
   const selection={benchmarks:state.view==='benchmark'?new Set(state.benchmarks.has(state.focus)?[state.focus]:[]):state.benchmarks,
     languages:state.view==='mech'?new Set(mechKeys().filter(key=>state.languages.has(key))):traitLanguageKeys(),disabled:state.disabled};
-  const key=JSON.stringify([state.languageFocus?.comparisonProgram??null,state.releaseYearStart,state.releaseYear,Object.fromEntries(Object.entries(selection).map(([k,v])=>[k,[...v].sort()]))]);
-  if(historyCache.key!==key)historyCache={key,series:medianHistory(data,selection,selectedYearWindow())};
+  const key=JSON.stringify([state.locMetric,state.languageFocus?.comparisonProgram??null,state.releaseYearStart,state.releaseYear,Object.fromEntries(Object.entries(selection).map(([k,v])=>[k,[...v].sort()]))]);
+  if(historyCache.key!==key)historyCache={key,series:medianHistory(plotData(),selection,selectedYearWindow())};
   return historyCache.series.filter(item=>item.year<=shownReleaseYear());
 }
 function renderYears(){
@@ -332,10 +343,10 @@ function renderMedianRankings(){
   $('#median-rankings-summary').textContent=`${count} variant${count===1?'':'s'} · ${state.benchmarks.size} benchmarks · ${state.releaseYearStart}–${shownReleaseYear()}`;
   $('#median-rankings-empty').hidden=count!==0;$('#median-ranking-cards').hidden=count===0;
   if(!count){$('#median-ranking-cards').replaceChildren();return;}
-  renderRankingCharts({container:$('#median-ranking-cards'),rankings,labelFor:shortName,colorFor:displayColor,onOpenLanguage:showLanguageOverview});
+  renderRankingCharts({container:$('#median-ranking-cards'),rankings,labelFor:shortName,colorFor:displayColor,onOpenLanguage:showLanguageOverview,locTitle:state.locMetric==='formatted'?'Formatted LOC':'Canonical LOC'});
 }
 function update(){
-  model=comparison(comparisonData(),allSelection());
+  model=comparison(plotData(),allSelection());
   renderYears();renderControls();renderLanguageOverview();renderMedianRankings();renderChart();renderTable();
   if($('#inspector').open)renderInspector();
   $('#selection-summary').textContent=`${state.benchmarks.size}/10 selected · ${familyCount(model.entries.map(e=>e.language.key))} languages · ${model.entries.length} variants · ${state.disabled.size} hidden`;
@@ -367,6 +378,8 @@ function renderPlotOptions(){
   }
 }
 function renderControls(){
+  $('#loc-metric').value=state.locMetric;
+  $('#formatted-loc-note').hidden=state.locMetric!=='formatted';
   const allowed=yearKeys(),enabled=effectiveLanguages();
   const active=document.activeElement;
   const focusAttribute=['data-language','data-family','data-open-language','data-open-family','data-trait-option','data-spread','data-benchmark'].find(attribute=>active?.hasAttribute(attribute));
@@ -395,7 +408,7 @@ function renderControls(){
 function currentEntries(){
   if(state.view!=='benchmark')return model.entries;
   if(!state.benchmarks.has(state.focus))return [];
-  return comparison(comparisonData(),{benchmarks:new Set([state.focus]),languages:effectiveLanguages(),disabled:state.disabled}).entries;
+  return comparison(plotData(),{benchmarks:new Set([state.focus]),languages:effectiveLanguages(),disabled:state.disabled}).entries;
 }
 function currentSampleInputs(entries=currentEntries()){
   const languageView=inLanguageView(),selectedKeys=focusKeys();
@@ -404,9 +417,12 @@ function currentSampleInputs(entries=currentEntries()){
       .filter(program=>program.language===entry.language.key&&program.benchmark===input.benchmark.key).map(sampleProgram)});
 }
 function selectedPlotDomain(){
-  if(inLanguageView())return languageViewDomain();
-  if(state.languageFocus?.comparisonProgram)return sourceComparisonDomain();
-  return chartDomain(data,state);
+  const metricDomain=metric=>inLanguageView()?languageViewDomain(metric):
+    state.languageFocus?.comparisonProgram?sourceComparisonDomain(metric):chartDomain(axisData(data,metric),state);
+  const selected=metricDomain(state.locMetric),canonical=metricDomain('canonical'),formatted=metricDomain('formatted');
+  // LOC changes its own normalization. All timing records and time baselines
+  // remain fixed; use one time extent for both source metrics and all layers.
+  return {...selected,yMin:Math.min(canonical.yMin,formatted.yMin),yMax:Math.max(canonical.yMax,formatted.yMax)};
 }
 function currentDensityField(){return densityGrid(sampleDensityPoints(currentSampleInputs()),selectedPlotDomain());}
 function openPoint(info){
@@ -479,9 +495,10 @@ function renderChart(){
   if(layers.showMedians&&!single)for(const sigma of [2,1])for(const entry of entries)if(state.ellipses.has(entry.language.key)&&!(languageView&&state.global&&selectedKeys.has(entry.language.key)))for(const kind of visibleKinds){
     const region=(sigma===2?entry.spread2:entry.spread)[kind];if(region)shapes.push({entry,kind,region,sigma});
   }
-  const domainKey=JSON.stringify([state.view,state.focusMeans,single?state.focus:[...state.benchmarks].sort(),languageView?[...selectedKeys].sort():null,state.languageFocus?.comparisonProgram??null]);
+  const domainKey=JSON.stringify([state.locMetric,state.view,state.focusMeans,single?state.focus:[...state.benchmarks].sort(),languageView?[...selectedKeys].sort():null,state.languageFocus?.comparisonProgram??null]);
   if(!domains.has(domainKey))domains.set(domainKey,selectedPlotDomain());
   currentDomain=domains.get(domainKey);
+  svg.dataset.locMetric=state.locMetric;
   const {xMin:xmin,xMax:xmax,yMin:ymin,yMax:ymax}=currentDomain;
   for(const [key,value] of Object.entries(currentDomain))svg.dataset[key]=value;
   const dx=xmax-xmin,dy=ymax-ymin;
@@ -512,7 +529,7 @@ function renderChart(){
     const value=2**exponent,y=Y(value);node('line',{x1:margins.left,x2:margins.left+w,y1:y,y2:y,class:'grid-line'},svg);
     text(svg,`${summaryNumber(value)}×`,margins.left-12,y+5,{class:'tick','text-anchor':'end'});
   }
-  text(svg,'Source lines / fewest lines · log₂',margins.left+w/2,height-17,{class:'axis-title','text-anchor':'middle'});
+  text(svg,state.locMetric==='formatted'?'Formatted source lines / fewest formatted lines · log₂':'Canonical source lines / fewest canonical lines · log₂',margins.left+w/2,height-17,{class:'axis-title','text-anchor':'middle'});
   text(svg,'Time / fastest median · log₂',0,0,{class:'axis-title','text-anchor':'middle',transform:`translate(${innerWidth<=720?14:19} ${margins.top+h/2}) rotate(-90)`});
   if(empty)return;
   const plot=node('g',{'clip-path':'url(#plot-clip)'},svg);
@@ -747,7 +764,7 @@ function renderChart(){
       labels.insertBefore(guide,label);
     }
   }
-  if(single)text(svg,`${benchmark(state.focus).baseline_loc} LOC baseline · ${seconds(benchmark(state.focus).baseline_seconds)} time baseline`,margins.left,16,{class:'chart-symbol-legend'});
+  if(single)text(svg,`${state.locMetric==='formatted'?benchmark(state.focus).baseline_formatted_loc??'—':benchmark(state.focus).baseline_loc} ${metricName()} baseline · ${seconds(benchmark(state.focus).baseline_seconds)} time baseline`,margins.left,16,{class:'chart-symbol-legend'});
   else if(shapes.length){
     const counts=shapes.map(s=>s.region.n),min=Math.min(...counts),max=Math.max(...counts);
     text(svg,`${new Set(shapes.map(s=>s.entry.language.key)).size} language spread${new Set(shapes.map(s=>s.entry.language.key)).size===1?'':'s'} · n = ${min===max?min:`${min}–${max}`}`,margins.left,16,{class:'chart-symbol-legend'});
@@ -758,7 +775,7 @@ function renderTable(){
   const entries=sortedRows('comparison',currentEntries().map(entry=>({...entry,metrics:comparisonMetrics(entry)})),(entry,key)=>key==='language'?shortName(entry.language.key):entry.metrics[key]);
   $('#mean-table thead').innerHTML='<tr>'+[
     sortHeader('comparison','language','Language'),
-    sortHeader('comparison','loc','LOC ×'),sortHeader('comparison','fastest','Fastest ×'),
+    sortHeader('comparison','loc',state.locMetric==='formatted'?'Formatted LOC ×':'Canonical LOC ×'),sortHeader('comparison','fastest','Time × best'),
     sortHeader('comparison','slope','Slope'),sortHeader('comparison','length','Length'),
     sortHeader('comparison','areaFast','2σ area','Fastest'),
     sortHeader('comparison','areaSmall','2σ area','Fewest LOC')].join('')+'</tr>';
@@ -768,17 +785,21 @@ function renderTable(){
 }
 function selectedProgram(){
   if(state.detail.program)return catalogProgram(state.detail.program);
-  const viewData=comparisonData();
+  const viewData=plotData();
   const group=viewData.benchmarks.find(b=>b.key===state.detail.benchmark)?.groups.find(g=>g.language===state.detail.language);
   if(!group)return null;
-  let candidates=group.programs.filter(k=>!state.disabled.has(k)).map(k=>viewData.programs[k]);
-  if(!candidates.length)return viewData.programs[group[state.detail.kind]??group.small];
+  let candidates=group.programs.filter(k=>!state.disabled.has(k)).map(k=>viewData.programs[k]).filter(p=>Number.isFinite(p?.loc)&&p.loc>0&&Number.isFinite(p.x)&&p.x>0);
+  if(!candidates.length){
+    const original=comparisonData().benchmarks.find(b=>b.key===state.detail.benchmark)?.groups.find(g=>g.language===state.detail.language);
+    return catalogProgram(original?.[state.detail.kind]??original?.small);
+  }
   if(state.detail.kind==='fast'&&candidates.some(p=>p.seconds!=null))candidates=candidates.filter(p=>p.seconds!=null);
-  return candidates.reduce((a,b)=>state.detail.kind==='fast'?(b.seconds<a.seconds||b.seconds===a.seconds&&b.loc<a.loc?b:a):(b.loc<a.loc||b.loc===a.loc&&b.seconds<a.seconds?b:a));
+  const selected=candidates.reduce((a,b)=>state.detail.kind==='fast'?(b.seconds<a.seconds||b.seconds===a.seconds&&b.loc<a.loc?b:a):(b.loc<a.loc||b.loc===a.loc&&b.seconds<a.seconds?b:a));
+  return catalogProgram(selected.key);
 }
 function renderInspector(){
   const program=selectedProgram();
-  if(!program)return;
+  if(!program){$('#inspector-context').textContent='Program unavailable';$('#inspector-title').textContent='Program details';$('#inspector-body').replaceChildren();return;}
   const b=benchmark(program.benchmark),lang=language(program.language),group=b.groups.find(g=>g.language===program.language);
   const entry=model.entries.find(e=>e.language.key===program.language);
   const pending=program.seconds==null;
@@ -791,7 +812,7 @@ function renderInspector(){
   $('#inspector-title').textContent=lang.label;
   const aggregate=state.detail.aggregate&&entry?`<p class="profile-note">${state.detail.kind==='fast'?'Fastest':'Fewest-LOC'} profile: <strong>${ratio(entry[state.detail.kind].x)} LOC · ${ratio(entry[state.detail.kind].y)} time</strong>, geometric means across ${coverageLabel(entry)} selected benchmarks.${partialEntry(entry)?` Missing: ${esc(missingNames(entry))}.`:''} Choose a benchmark below to inspect a contributor.</p>`:'';
   const file=data.files[program.files[Math.min(state.detail.file,program.files.length-1)]];
-  if(tableSort.timings.key==='wall_seconds'&&program.execution_mode!=='resident')tableSort.timings.key='elapsed';
+  if(tableSort.timings.key==='wall_seconds'&&!residentTiming(program))tableSort.timings.key='elapsed';
   const samples=sortedRows('timings',program.samples.map((elapsed,i)=>({...program.sample_details?.[i],run:i+1,elapsed})),(sample,key)=>sample[key]);
   const availablePrograms=benchmarkPrograms(b.key,program.language);
   const implementations=sortedRows('implementations',availablePrograms,(item,key)=>({show:state.disabled.has(item.key)?1:0,program:item.id,loc:item.loc,median:item.seconds})[key]);
@@ -800,12 +821,14 @@ function renderInspector(){
   const browsingIndex=browsing.findIndex(p=>p.key===program.key);
   const navigation=`<div class="program-navigation"><button class="quiet-button" data-step-program="-1" ${browsingIndex<=0?'disabled':''}>Previous program</button><span>${browsingIndex+1} / ${browsing.length} published programs</span><button class="quiet-button" data-step-program="1" ${browsingIndex>=browsing.length-1?'disabled':''}>Next program</button></div>${state.languageFocus&&focusKeys().has(program.language)?`<button class="inspector-comparison quiet-button" data-compare-program="${program.key}">Compare this benchmark</button>`:`<button class="inspector-comparison quiet-button" data-open-language="${program.language}">Open language overview</button>`}`;
   const bestComparison=pending?'':`<p class="profile-note best-comparison">This program: <strong>${program.seconds.toFixed(6)} s</strong> · <strong>${(program.seconds/b.baseline_seconds).toFixed(3)}× best time</strong>, against this benchmark’s fixed best-time baseline (<strong>${b.baseline_seconds.toFixed(6)} s</strong>).</p>`;
+  const formattedNote=`<p class="profile-note formatted-source-count">${esc(formattedText(program))}. ${esc((program.formatted_loc_evidence?.reasons??[]).join(' '))}${state.locMetric==='formatted'&&!plottable(plotProgram(program))?' This program has no eligible formatted chart coordinate; its original source and measured timing remain available.':''}</p>`;
   $('#inspector-body').innerHTML=`${aggregate}${navigation}<div class="inspector-controls"><label>Benchmark<select id="detail-benchmark">${available.map(item=>`<option value="${item.key}" ${item.key===b.key?'selected':''}>${esc(item.title)}</option>`).join('')}</select></label><label>Profile<select id="detail-profile"><option value="fast" ${pending?'disabled':''} ${state.detail.kind==='fast'?'selected':''}>Fastest</option><option value="small" ${state.detail.kind==='small'?'selected':''}>Fewest LOC</option></select></label><label class="program-choice">Program<select id="detail-program">${availablePrograms.map(p=>`<option value="${p.key}" ${program.key===p.key?'selected':''}>${esc(p.id)} · ${p.loc} LOC · ${seconds(p.seconds)}</option>`).join('')}</select></label></div>
     ${canonicalProgram?`<label class="inclusion"><input id="include-program" type="checkbox" ${pending||inLanguageView()?'disabled':''} ${pending||state.disabled.has(program.key)?'':'checked'}>Include this program in the speed comparison${inLanguageView()?' · all published programs shown in this view':''}</label>`:'<p class="profile-note">This qualified program is retained in the language overview. The main comparison uses the published fastest and fewest-LOC endpoints.</p>'}<p class="profile-note">${esc(b.workload)}</p>
-    <div class="detail-stats"><div class="detail-stat"><strong>${program.loc}</strong><span>source LOC</span></div><div class="detail-stat"><strong>${seconds(program.seconds)}</strong><span>median measured time</span></div><div class="detail-stat"><strong>${pending?'Not measured':seconds(program.timing_sd)}</strong><span>run-to-run SD</span></div></div>
+    <div class="detail-stats"><div class="detail-stat"><strong>${program.loc}</strong><span>canonical source LOC</span></div><div class="detail-stat"><strong>${formattedValue(program)}</strong><span>formatted source LOC</span></div><div class="detail-stat"><strong>${seconds(program.seconds)}</strong><span>median measured time</span></div><div class="detail-stat"><strong>${pending?'Not measured':seconds(program.timing_sd)}</strong><span>run-to-run SD</span></div></div>
+    ${formattedNote}
     ${bestComparison}
     ${program.timing_summary?`<p class="profile-note timing-boundary">${esc(program.timing_summary)}</p>`:''}
-    <section class="detail-section"><h3>Recorded timing samples</h3>${pending?'<p class="profile-note">Timing pending. This source is included for its audited LOC only and contributes no speed ratio, geometric mean, or standard-deviation ellipse.</p>':`<div class="timings-table-wrap"><table class="timings-table"><thead><tr>${sortHeader('timings','run','Run')}${sortHeader('timings','elapsed','Measured seconds')}${program.execution_mode==='resident'?sortHeader('timings','wall_seconds','Whole process seconds'):''}<th scope="col">${program.samples.length} samples</th></tr></thead><tbody>${samples.map(sample=>`<tr><td>${sample.run}</td><td class="sample-value">${sample.elapsed.toFixed(6)}</td>${program.execution_mode==='resident'?`<td class="sample-value">${sample.wall_seconds.toFixed(6)}</td>`:''}<td><div class="sample-bar" style="width:${sample.elapsed/Math.max(...program.samples)*100}%"></div></td></tr>`).join('')}</tbody></table></div>`}</section>
+    <section class="detail-section"><h3>Recorded timing samples</h3>${pending?'<p class="profile-note">Timing pending. This source is included for its audited LOC only and contributes no speed ratio, geometric mean, or standard-deviation ellipse.</p>':`<div class="timings-table-wrap"><table class="timings-table"><thead><tr>${sortHeader('timings','run','Run')}${sortHeader('timings','elapsed','Measured seconds')}${residentTiming(program)?sortHeader('timings','wall_seconds','Whole process seconds'):''}<th scope="col">${program.samples.length} samples</th></tr></thead><tbody>${samples.map(sample=>`<tr><td>${sample.run}</td><td class="sample-value">${sample.elapsed.toFixed(6)}</td>${residentTiming(program)?`<td class="sample-value">${sample.wall_seconds.toFixed(6)}</td>`:''}<td><div class="sample-bar" style="width:${sample.elapsed/Math.max(...program.samples)*100}%"></div></td></tr>`).join('')}</tbody></table></div>`}</section>
     ${program.physical_loc!=null&&program.physical_loc!==program.loc?`<details class="loc-audit"><summary>LOC audit: ${program.physical_loc} physical lines → ${program.loc} normalized LOC</summary><p class="profile-note">Packed sequential statements and nested assignments count separately. The original source is preserved below.</p>${program.loc_expansions.map(e=>`<p class="profile-note">Source line ${e.line}: ${e.extra_lines} extra LOC</p><pre>${esc(Array.isArray(e.units)?e.units.join('\n'):e.reason??e.original??'')}</pre>`).join('')}</details>`:''}
     <section class="detail-section"><div class="code-toolbar"><select id="detail-file" aria-label="Source file">${program.files.map((key,i)=>`<option value="${i}" ${i===Math.min(state.detail.file,program.files.length-1)?'selected':''}>${esc(data.files[key].name)}${data.files[key].role==='runtime-support'?' · runtime support':''}</option>`).join('')}</select><a id="download-source" href="#">Download source</a>${program.source_url?`<a href="${esc(program.source_url)}" target="_blank" rel="noopener">${esc(program.source_link_label??'Upstream listing')}</a>`:''}${program.license_url?`<a href="${esc(program.license_url)}" target="_blank" rel="noopener">License</a>`:''}</div><pre><code id="source-code"></code></pre><div class="source-meta">${file.loc_note?esc(file.loc_note)+'<br>':''}Verified source SHA-256: ${file.sha256}<br>Timing report: ${esc(program.report)}</div></section>
     ${program.local_adaptation?`<p class="profile-note source-provenance">${esc(program.source_provenance)}</p>`:''}${program.algorithm?.reason?`<p class="profile-note">${esc(program.algorithm.reason)}</p>`:''}${program.runtime_policy?`<p class="profile-note">Runtime policy: ${esc(program.runtime_policy)}</p>`:''}${program.runtime_support?`<p class="profile-note">${esc(program.runtime_support)}</p>`:''}
@@ -820,7 +843,11 @@ function reset(){
   state.disabled.clear();state.ellipses=new Set(['mech']);state.view='summary';state.focus='nbody';state.languageFocus=null;
   state.collapsedFamilies.clear();
   state.traits=emptyTraitFilters();
-  Object.assign(state,{fast:true,small:true,sampleMode:'dim',medianMode:'highlight',densityMode:'off',focusMeans:true,global:false,trail:true});fullReleaseWindow();update();
+  Object.assign(state,{locMetric:'canonical',fast:true,small:true,sampleMode:'dim',medianMode:'highlight',densityMode:'off',focusMeans:true,global:false,trail:true});fullReleaseWindow();update();
+}
+function setLOCMetric(metric){
+  if(!['canonical','formatted'].includes(metric))throw new Error('Unknown LOC metric.');
+  state.locMetric=metric;update();
 }
 function registerTools(){
   if(!document.modelContext?.registerTool)return;
@@ -849,7 +876,7 @@ async function start(){
   if(typeof inventory!=='object'||Array.isArray(inventory))throw new Error('Invalid qualified program inventory.');
   for(const [key,p] of Object.entries(inventory))if(Object.hasOwn(data.programs,key)){
     const canonical=data.programs[key];
-    for(const field of ['id','benchmark','language','loc','seconds','samples','files','report','binary_sha256','runtime_arguments','command'])
+    for(const field of ['id','benchmark','language','loc','physical_loc','x','y','seconds','samples','files','report','binary_sha256','runtime_arguments','command','measured_backend','execution_mode','formatted_loc','formatted_loc_status','formatted_loc_complete','formatted_loc_evidence','formatted_x'])
       if(JSON.stringify(p[field])!==JSON.stringify(canonical[field]))throw new Error(`Conflicting qualified program identity: ${key}.`);
   }
   programCatalog=Object.fromEntries(Object.entries({...inventory,...data.programs}).map(([key,p])=>{
@@ -860,7 +887,9 @@ async function start(){
     if(!Number.isSafeInteger(p.loc)||p.loc<=0||!Number.isFinite(x)||x<=0||p.seconds!=null&&(!Number.isFinite(y)||y<=0))throw new Error(`Invalid published source/timing coordinates: ${key}.`);
     return [key,{...p,key,x,y}];
   }));
-  traits=languageTraits(data);
+  // Backend aggregates cover the complete qualified inventory, independently
+  // of endpoint, LOC metric and visibility selections.
+  traits=languageTraits({...data,programs:programCatalog});
   for(const l of data.languages)colors[l.key]=darkColor(l.color);
   const yearSources=[...new Map(data.languages.map(l=>[l.release_name,l])).values()].sort((a,b)=>a.release_year-b.release_year||a.release_name.localeCompare(b.release_name));
   $('#release-year-sources').innerHTML=yearSources.map(l=>`<li><a href="${esc(l.release_source)}" target="_blank" rel="noopener">${esc(l.release_name)} · ${l.release_year}</a><span>${esc(l.release_note)}</span></li>`).join('');
@@ -898,6 +927,7 @@ async function start(){
   };
   $('#focused-benchmark').onchange=event=>{state.focus=event.target.value;update();};
   for(const [id,key] of [['fast-profile','fast'],['small-profile','small'],['show-global','global'],['show-median-trail','trail']])$('#'+id).onchange=event=>{if(event.target.disabled)return;state[key]=event.target.checked;update();};
+  $('#loc-metric').onchange=event=>setLOCMetric(event.target.value);
   $('#chart-axes').onchange=event=>{if(!['means','samples'].includes(event.target.value))return;state.focusMeans=event.target.value==='means';update();};
   for(const [id,key] of [['show-samples','sampleMode'],['show-medians','medianMode'],['show-density','densityMode']])$('#'+id).onchange=event=>{layerPresentation(event.target.value);state[key]=event.target.value;update();};
   document.addEventListener('click',event=>{
@@ -956,13 +986,13 @@ async function start(){
   new ResizeObserver(()=>requestAnimationFrame(renderChart)).observe($('#chart-wrap'));
   let rankingWidth=-1;
   new ResizeObserver(entries=>{const width=entries[0].contentRect.width;if(width!==rankingWidth){rankingWidth=width;requestAnimationFrame(renderMedianRankings);}}).observe($('#median-ranking-cards'));
-  window.benchmarkExplorer={getSelection:()=>({benchmarks:[...state.benchmarks],languages:[...effectiveLanguages()],selectedLanguages:[...state.languages],traits:Object.fromEntries(traitDimensions.map(({key})=>[key,[...state.traits[key]]])),releaseYearStart:state.releaseYearStart,releaseYear:state.releaseYear,shownReleaseYear:shownReleaseYear(),playbackYear:state.playbackYear,ellipses:[...state.ellipses],disabled:[...state.disabled],view:state.view,languageFocus:state.languageFocus?{keys:[...state.languageFocus.keys],program:state.languageFocus.program,comparison:state.languageFocus.comparison}:null,samples:samplesVisible(),sampleMode:state.sampleMode,medianMode:state.medianMode,densityMode:state.densityMode,focusMeans:state.focusMeans,global:state.global,trail:state.trail,playing:state.playing}),
+  window.benchmarkExplorer={getSelection:()=>({benchmarks:[...state.benchmarks],languages:[...effectiveLanguages()],selectedLanguages:[...state.languages],traits:Object.fromEntries(traitDimensions.map(({key})=>[key,[...state.traits[key]]])),releaseYearStart:state.releaseYearStart,releaseYear:state.releaseYear,shownReleaseYear:shownReleaseYear(),playbackYear:state.playbackYear,ellipses:[...state.ellipses],disabled:[...state.disabled],view:state.view,locMetric:state.locMetric,languageFocus:state.languageFocus?{keys:[...state.languageFocus.keys],program:state.languageFocus.program,comparison:state.languageFocus.comparison}:null,samples:samplesVisible(),sampleMode:state.sampleMode,medianMode:state.medianMode,densityMode:state.densityMode,focusMeans:state.focusMeans,global:state.global,trail:state.trail,playing:state.playing}),
     getMedianHistory:currentHistory,
     getDensity:currentDensityField,
     setLayerModes:({samples=state.sampleMode,medians=state.medianMode,density=state.densityMode}={})=>{for(const mode of [samples,medians,density])layerPresentation(mode);Object.assign(state,{sampleMode:samples,medianMode:medians,densityMode:density});update();},
     getMedianRankings:()=>medianRankings(currentEntries()),
     getGlobalStatistics:()=>inLanguageView()?currentEntries().filter(e=>focusKeys().has(e.language.key)).map(entry=>({language:entry.language.key,statistics:languageMedianStatistics(entry)})):globalStatistics(currentEntries()),
     getDomains:()=>({...currentDomain}),
-    getSummary:()=>model.entries.map(e=>({language:e.language.key,fast:e.fast,small:e.small,n:e.inputs.length,selected:e.coverage.selected,missing:e.coverage.missing.map(b=>b.key),metrics:comparisonMetrics(e)})),setReleaseYear,setReleaseWindow,inspectProgram:key=>{const program=catalogProgram(key);if(!program)throw new Error('Unknown program.');openPoint({language:program.language,benchmark:program.benchmark,program:key});}};
+    getSummary:()=>model.entries.map(e=>({language:e.language.key,fast:e.fast,small:e.small,n:e.inputs.length,selected:e.coverage.selected,missing:e.coverage.missing.map(b=>b.key),metrics:comparisonMetrics(e)})),setReleaseYear,setReleaseWindow,setLOCMetric,inspectProgram:key=>{const program=catalogProgram(key);if(!program)throw new Error('Unknown program.');openPoint({language:program.language,benchmark:program.benchmark,program:key});}};
 }
 start().catch(error=>{$('#load-error').hidden=false;$('#load-error').textContent=error.message;$('#selection-summary').textContent='Data unavailable';console.error(error);});

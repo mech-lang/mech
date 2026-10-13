@@ -1,0 +1,36 @@
+{
+  "at": "2026-10-13T22:44:01.426143+00:00",
+  "status": "root-reviewed-concrete-actual-plan-command",
+  "source_freeze": {
+    "at": "2026-10-13T22:43:49.502167+00:00",
+    "status": "root-fullsource-peer-reviewed-restoration-correction-and-actual-plan-captured",
+    "pins": {
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/combined-chart-integration-v3/integrate.py": "890edeb5035ef1ff7473728ddf684651f019e1514edbdc054c93b6eb7f828923",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/combined-chart-integration-v3/REVIEW.md": "de62b0c9dac5002c8a92e52919cd459d6bb5bd10708903a617b5bddeb5c4a9fd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/combined-chart-integration-v3/plan-v1.json": "46b5665e811a57766476385a73f2bdf1fa0e602bd70c34cd8c30d62b8caeda0c"
+    },
+    "independent_reviewers": [
+      "apl_current_admission fullsource",
+      "formatted_source_review narrow restoration delta"
+    ],
+    "native_processes": 0,
+    "fixture_reexecutions": 0
+  },
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/combined-chart-integration-v3/integrate.py",
+    "--plan",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/combined-chart-integration-v3/plan-v1.json",
+    "--plan-sha256",
+    "46b5665e811a57766476385a73f2bdf1fa0e602bd70c34cd8c30d62b8caeda0c",
+    "--self-sha256",
+    "890edeb5035ef1ff7473728ddf684651f019e1514edbdc054c93b6eb7f828923"
+  ],
+  "native_processes": 0,
+  "fixture_reexecutions": 0,
+  "live_writes": 0
+}

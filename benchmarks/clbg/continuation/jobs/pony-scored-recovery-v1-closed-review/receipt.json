@@ -1,0 +1,13 @@
+{
+  "at": "2026-10-13T22:47:59.921804+00:00",
+  "status": "closed-failed-reader-launch-image-check-before-native-recovery",
+  "verified_pins": 10067,
+  "body_terminal_sha256": "170b9a12ec83abbf9c2c9800411c15d589b6b4eb012e2595f3f8e6fed07a4bc2",
+  "durable_terminal_sha256": "a48dad8dcfad1ef4932c6e1c64730c491fbcc8ee98f8d10857f3b2e08c61b5d9",
+  "native_commands": 0,
+  "application_executions": 0,
+  "benchmark_runs": 0,
+  "reader_qualification_reexecuted": false,
+  "diagnosis": "Named reader worker31638 was saved with launcher on launch and Framework on start/terminal; old generic equality included that spelling. No diagnostic native directory created.",
+  "source_repair": "native-evidence-recovery-v2; exact named historical transition and original reader source binding, pending independent peer/freeze"
+}

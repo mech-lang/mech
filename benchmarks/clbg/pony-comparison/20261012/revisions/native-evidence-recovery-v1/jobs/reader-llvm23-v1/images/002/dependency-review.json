@@ -1,0 +1,50 @@
+{
+  "binary": "/opt/homebrew/Cellar/llvm/23.1.3_1/lib/libLLVM.23.1.dylib",
+  "architectures": [
+    "arm64"
+  ],
+  "dependencies": [
+    {
+      "install_name": "/opt/homebrew/opt/llvm/lib/libLLVM.23.1.dylib",
+      "lookup_path": "/opt/homebrew/opt/llvm/lib/libLLVM.23.1.dylib",
+      "path": "/opt/homebrew/Cellar/llvm/23.1.3_1/lib/libLLVM.23.1.dylib",
+      "sha256": "16d9f73c0593caec3d1cee218275070ee41ff417e3ee9ef4925b862b5bc78e64"
+    },
+    {
+      "install_name": "/usr/lib/libffi.dylib",
+      "scope": "OS-image-not-hashed"
+    },
+    {
+      "install_name": "/usr/lib/libedit.3.dylib",
+      "scope": "OS-image-not-hashed"
+    },
+    {
+      "install_name": "/usr/lib/libSystem.B.dylib",
+      "scope": "OS-image-not-hashed"
+    },
+    {
+      "install_name": "/opt/homebrew/opt/z3/lib/libz3.5.1.dylib",
+      "lookup_path": "/opt/homebrew/opt/z3/lib/libz3.5.1.dylib",
+      "path": "/opt/homebrew/Cellar/z3/5.1.0/lib/libz3.5.1.0.0.dylib",
+      "sha256": "45344d6a38b6f75304433c2458d6fa16bc4907d426c96e2bedf0a90603460422"
+    },
+    {
+      "install_name": "/usr/lib/libz.1.dylib",
+      "scope": "OS-image-not-hashed"
+    },
+    {
+      "install_name": "/opt/homebrew/opt/zstd/lib/libzstd.1.dylib",
+      "lookup_path": "/opt/homebrew/opt/zstd/lib/libzstd.1.dylib",
+      "path": "/opt/homebrew/Cellar/zstd/1.5.7_1/lib/libzstd.1.5.7.dylib",
+      "sha256": "602d50cbe6fad0f0da6d1b73284ae3f75316015aea482ebd55614b6df2406b43"
+    },
+    {
+      "install_name": "/usr/lib/libxml2.2.dylib",
+      "scope": "OS-image-not-hashed"
+    },
+    {
+      "install_name": "/usr/lib/libc++.1.dylib",
+      "scope": "OS-image-not-hashed"
+    }
+  ]
+}

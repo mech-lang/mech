@@ -1,0 +1,22 @@
+{
+  "at": "2026-10-13T22:45:39.112830+00:00",
+  "status": "passed-closed-combined-format-platform-candidate-review",
+  "verified_pins": 46991,
+  "candidate": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/combined-chart-integration-v3/jobs/current-nim-format-platform-v1/candidate-data.json",
+    "sha256": "8b85d35f9ff8c267171c9d91f3467ba765bf019ac438c64ed2071898a7656378"
+  },
+  "receipt_sha256": "085517e32d7547c36e99abf8320a096cbd3ba8b3b01a59d597c95f58272e9ce5",
+  "body_terminal_sha256": "30ca3d505a43f058ff61674333e379d82ea0219099ab9ad8dd21d6a87ceb723d",
+  "durable_terminal_sha256": "e9dbd62906260ebf0cab416a9196b0d5e8c05b26a5bc159103d8be57b4a8af07",
+  "programs": 798,
+  "inventory": 80,
+  "qualified_formatted_crystal_programs": 20,
+  "unqualified_formatted_coordinates_blank": true,
+  "prior_programs_sources_timings_and_canonical_coordinates_preserved": true,
+  "canonical_baselines_preserved": true,
+  "legacy_annotation_rows": 133,
+  "native_processes": 0,
+  "fixture_reexecutions": 0,
+  "chart_admission": false
+}

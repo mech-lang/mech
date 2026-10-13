@@ -1,0 +1,2 @@
+WAIT common mutex: Gleam actual publication metadata only
+{"status": "metadata-qualified-awaiting-root-current-candidate-review", "metadata": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/publication-gleam-metadata-v1/qualified/actual-metadata-v1/metadata.json", "sha256": "24c2fc111a79e9093fd2e92625bf552c1539d68ef0d53523b084eebf565b2625", "profiles": 20, "native_processes": 0, "fixture_reexecutions": 0}

@@ -1,0 +1,31 @@
+{
+  "started_at": "2026-10-13T22:42:29.795508+00:00",
+  "worker_identity": {
+    "pid": 31638,
+    "listing": "31638     1 Tue Oct 13 18:42:29 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/pony-llvm23-reader-qualification-v1 --lease-fd 3 --go-fd 4"
+  },
+  "inherited_private_lease": true,
+  "detached_session": true,
+  "common_mutex_owned_by_target_command": true,
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v1/recover.py",
+    "--qualify-reader",
+    "--revision",
+    "reader-llvm23-v1",
+    "--worker-sha256",
+    "991aab6eaa9694c3b1e0a85d3b3541625fc0a577538dd600316a124588d14cf2",
+    "--review-sha256",
+    "62aad6530a688a47861f68e872c8f9212d5c3dd82f6d57c2da33d756b345a803",
+    "--capture-outcome-sha256",
+    "fbc2c1dfd450759c893b51723a2977d16ffaf8e63c95a48fc70dcc9cca4e01e2",
+    "--capture-owner-terminal-sha256",
+    "2fbdfe6cbadad6ab6514ae43a427d46983df716b713aab6916b2be0c4d00bc32"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "qualification_granted": false
+}

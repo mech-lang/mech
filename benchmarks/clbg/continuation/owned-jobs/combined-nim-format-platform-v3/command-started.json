@@ -1,0 +1,24 @@
+{
+  "started_at": "2026-10-13T22:44:01.576431+00:00",
+  "command_pid": 31954,
+  "command_identity": {
+    "pid": 31954,
+    "listing": "31954 31948 Tue Oct 13 18:44:01 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -I -S -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/combined-chart-integration-v3/integrate.py --plan /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/combined-chart-integration-v3/plan-v1.json --plan-sha256 46b5665e811a57766476385a73f2bdf1fa0e602bd70c34cd8c30d62b8caeda0c --self-sha256 890edeb5035ef1ff7473728ddf684651f019e1514edbdc054c93b6eb7f828923"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/combined-chart-integration-v3/integrate.py",
+    "--plan",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/combined-chart-integration-v3/plan-v1.json",
+    "--plan-sha256",
+    "46b5665e811a57766476385a73f2bdf1fa0e602bd70c34cd8c30d62b8caeda0c",
+    "--self-sha256",
+    "890edeb5035ef1ff7473728ddf684651f019e1514edbdc054c93b6eb7f828923"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech"
+}

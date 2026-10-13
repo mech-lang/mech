@@ -1,0 +1,10 @@
+{
+  "at": "2026-10-13T23:02:46.762169+00:00",
+  "sha": "5934c73a39a9b565bda5c08c5cc9f502fa24b360",
+  "previous_sha": "b0082b0da35f7e41b5f4c056c6b1130922081ee8",
+  "remote_verified": true,
+  "remote_sha": "5934c73a39a9b565bda5c08c5cc9f502fa24b360",
+  "transport": "existing authenticated mac-mini-runner SSH and verified Git bundle",
+  "bundle_verify": "The bundle contains this ref:\n5934c73a39a9b565bda5c08c5cc9f502fa24b360 HEAD\nThe bundle requires this ref:\nb0082b0da35f7e41b5f4c056c6b1130922081ee8 \nThe bundle uses this hash algorithm: sha1",
+  "local_bundle_first_attempt": "raw SHA range refused an empty bundle; explicit HEAD ref succeeded, no remote mutation occurred on the failed attempt"
+}

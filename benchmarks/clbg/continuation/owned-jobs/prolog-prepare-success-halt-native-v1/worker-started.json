@@ -1,0 +1,27 @@
+{
+  "started_at": "2026-10-13T22:40:51.955197+00:00",
+  "worker_identity": {
+    "pid": 31348,
+    "listing": "31348     1 Tue Oct 13 18:40:51 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/prolog-prepare-success-halt-native-v1 --lease-fd 3 --go-fd 4"
+  },
+  "inherited_private_lease": true,
+  "detached_session": true,
+  "common_mutex_owned_by_target_command": true,
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/prepare-success-halt-v1/guarded_prepare.py",
+    "--prepare",
+    "--packet-pins",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/prolog-prepare-source-freeze-v1/packet-pins.json",
+    "--packet-pins-sha256",
+    "37076a11022e0cfbb07c86b420866eec4f81f1d722b606e186c41c25dcdc2660",
+    "--proposal-sha256",
+    "c36911c1e2f9b8c2f8897667e15474ecda619cd3284115ed590d52f0d43e8f4b"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "qualification_granted": false
+}

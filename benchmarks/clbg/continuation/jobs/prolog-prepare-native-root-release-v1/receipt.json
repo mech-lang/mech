@@ -1,0 +1,26 @@
+{
+  "at": "2026-10-13T22:40:51.836510+00:00",
+  "status": "root-reviewed-actual-proposal-and-exact-native-preparation-command",
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/prepare-success-halt-v1/guarded_prepare.py",
+    "--prepare",
+    "--packet-pins",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/prolog-prepare-source-freeze-v1/packet-pins.json",
+    "--packet-pins-sha256",
+    "37076a11022e0cfbb07c86b420866eec4f81f1d722b606e186c41c25dcdc2660",
+    "--proposal-sha256",
+    "c36911c1e2f9b8c2f8897667e15474ecda619cd3284115ed590d52f0d43e8f4b"
+  ],
+  "proposal_sha256": "c36911c1e2f9b8c2f8897667e15474ecda619cd3284115ed590d52f0d43e8f4b",
+  "closed_review_sha256": "19c8dae6012d7ef993ecfcf6c1536b7c8d2f5c18fb30ee6c1862a6b1fbfd76d4",
+  "maximum_workers": 1,
+  "bounded_cases": 156,
+  "full_benchmark_runs": 0,
+  "runtime_version_and_image_reexecutions": 0,
+  "fixture_reexecutions": 0
+}

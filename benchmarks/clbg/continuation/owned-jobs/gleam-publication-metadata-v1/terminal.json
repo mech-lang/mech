@@ -1,0 +1,20 @@
+{
+  "status": "command-exited-zero-awaiting-report-review",
+  "started_at": "2026-10-13T22:56:02.691297+00:00",
+  "worker_identity": {
+    "pid": 34599,
+    "listing": "34599     1 Tue Oct 13 18:56:02 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-publication-metadata-v1 --lease-fd 3 --go-fd 4"
+  },
+  "actual_command_started": true,
+  "exit_code": 0,
+  "qualification_granted": false,
+  "automatic_retry": false,
+  "command_pid": 34603,
+  "command_identity": {
+    "pid": 34603,
+    "listing": "34603 34599 Tue Oct 13 18:56:02 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -I -S -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/publication-gleam-metadata-v1/qualify_descriptor.py --revision actual-metadata-v1 --qualifier-sha256 1503e6a1e6bb87732eae780a83403fb145f0dc59b5a614f8b9d18c3e3ab73f3c --descriptor-sha256 ac19c1d896e556a683ece26c9ff8384dfe48c43c501ecd315b09365484ecb112 --review-sha256 e58445350df8dc342520105372dbf2710c6e9fd5d91c6ddb439a196b5ef30031 --root-review-sha256 db2e7999b951932089070f223d77649b0cdc9c1a579fdb5562102a206c303dec"
+  },
+  "command_identity_observation_missing": false,
+  "finished_at": "2026-10-13T22:56:05.134177+00:00",
+  "stop_signals": []
+}

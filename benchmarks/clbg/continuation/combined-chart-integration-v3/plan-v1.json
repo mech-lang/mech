@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "revision": "current-nim-format-platform-v1",
+  "review_sha256": "de62b0c9dac5002c8a92e52919cd459d6bb5bd10708903a617b5bddeb5c4a9fd",
+  "clojure_review_sha256": "d18f446c20bda8b3fe37c966084cb410e27e9bfcea3ea5ebf3d1290aeea94667",
+  "clojure_owner_pins": {
+    "request.json": "c014a2eae23467449142ccd70e4120d19ec0dc5dce6fe2e28c21126fd5f7a486",
+    "launch.json": "77d9c1b9a0fd6315f8b10d387d8f1e819b18b4e60138e66446db9ff4c8b2b6d5",
+    "worker-started.json": "eb55a876a975240f79eb98dad33cb61c1011d574b87251c7f9eda89f130a6ea1",
+    "command-started.json": "8b10a3143d1d229073e5044105a91dd0d7c07c6c3f676b9147d474e05d08ca21",
+    "terminal.json": "01edefc859d80c556dfd879986323992aa806c542630b24761eab51fdcc2e6b2"
+  },
+  "nim_review_sha256": "0181e9233d80342ce2db290a3298126ada95467cd78db2f3b598dc760545c151",
+  "nim_owner_pins": {
+    "request.json": "f8605881d0ed8698f917a7930fa418f081c0d27f78dc1da86d683f78a8d1acc4",
+    "launch.json": "c3201f58f98977fe4256ea41422f88c46554397a4801e390789f93c6eb0a2f54",
+    "worker-started.json": "7b68d422300114335bd842f240b30274ccb348d0587aa203c7b7f5a3d963d25d",
+    "command-started.json": "933ee74d7aa1b6e7c206ae9f1707a242576f82611b4acccddfb66d15fd170a1c",
+    "terminal.json": "f051d0a86c8016ea80a7c82fcbd0952ea5b57fb1f48f9c208bee5f1c180b3088"
+  },
+  "history_review_sha256": "56bab31baa82b5b7cc7a6e98787b0ee5ff24c20c2d6e6d2582252c4fd5a9e326",
+  "crystal_review_sha256": "d2e9e37fd0e15c4707c4de78da807d9492f60d7d70f283bed2cb3fc35320381b",
+  "history": {
+    "owner": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/legacy-platform133-literal-v4-qualification",
+    "owner_pins": {
+      "request.json": "5fed760fc2edca2d5bcfc6263b28237b532aa2b4ce36ce3b1d7366e68b1032ce",
+      "launch.json": "251e7a9a40d8cb3e44bdc71067e600a97b4b425d3723d50e730047a5f2ea657c",
+      "worker-started.json": "733aad726f605e0274729fb16de1e52ef82dffdf808e403e4b1270cc6bdef95f",
+      "command-started.json": "50ae757d3cc65f1f7b3a48c4618d5c9f65694dcdb0d573578c664c0d140283c9",
+      "terminal.json": "cc482ff23ddd295b22613f76b06c6344c5d0f5bc2fac8b25b173e3dc22bd9e1b"
+    },
+    "command": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "-B",
+      "-u",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-history-repair-v4/replay.py",
+      "--worker-sha256",
+      "4915eff8e3c27a86a7708e319c35bd87b5f640be0b80ccf510241e0fa12d413a",
+      "--routes-sha256",
+      "8a5abe0438d5e1d8d3bb5599a98e3d58cf5556691b4153762f4b81ff501448d7",
+      "--tests-sha256",
+      "bbb61a92d49901dc4463ff56497b7499f5efb7e432e1e71139550cf78f29bead",
+      "--review-sha256",
+      "e5f09202bdeff50e7bebc916bbf9df9b6e375d64632496d54223ca0908f6adbf",
+      "--closed-review-sha256",
+      "6f798421a3d6e0191f9169218ff0f411b2fed13a31e323b03bd42446f50c35f0",
+      "--stage",
+      "qualify",
+      "--revision",
+      "history-literal-routes-v4",
+      "--fixture-receipt",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/existing-native-platform-proposal-v1/jobs/fixtures-literal-routes-v4/fixture-receipt.json",
+      "--fixture-sha256",
+      "30f59901c3843dab14940059b8a2301d6032b9f63f74d3811b0c2fcd17fde31f",
+      "--fixture-terminal-sha256",
+      "1407ec3f46333b806ba7a965e3b65588c30d731d0aef902bfed99ea7a3877472"
+    ],
+    "qualification": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/existing-native-platform-proposal-v1/jobs/history-literal-routes-v4/qualified-history.json",
+      "sha256": "cfea973a22951b7efef504ba48f84b07745397e7dc8df71161b3a01182b026b9"
+    },
+    "receipt": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/existing-native-platform-proposal-v1/jobs/history-literal-routes-v4/qualification-receipt.json",
+      "sha256": "0030b48dffa6e867a69035b2e12c506e947eab72ea58010ac93a2f14460dfca0"
+    },
+    "terminal": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/existing-native-platform-proposal-v1/jobs/history-literal-routes-v4/terminal.json",
+      "sha256": "9afe129d9563f8ec27809c509259b7190d014c26cd983139ff36126d8d0ca388"
+    }
+  }
+}

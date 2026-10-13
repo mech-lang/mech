@@ -1,0 +1,61 @@
+Building builtin -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/builtin
+Building /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v6/source-snapshot/revisions/precedence-v4/sources/binarytrees/compact -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v6/source-snapshot/revisions/precedence-v4/sources/binarytrees/compact
+Building collections -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/collections
+Building pony_test -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/pony_test
+Building random -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/random
+Building time -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/time
+Building collections/persistent -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/collections/persistent
+Building itertools -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/itertools
+Building files -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/files
+Building buffered -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/buffered
+Building term -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/term
+Building promises -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/promises
+Building strings -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/strings
+Building constrained_types -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/constrained_types
+Building signals -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/signals
+Building capsicum -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/capsicum
+Building format -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/format
+Generating
+ Reachability
+ Selector painting
+ Data prototypes
+ Data types
+ Function prototypes
+ Functions
+ Descriptors
+Verifying compact
+Verifying compact.builtin
+Verifying compact.collections
+Verifying compact.pony_test
+Verifying compact.random
+Verifying compact.time
+Verifying compact.persistent
+Verifying compact.itertools
+Verifying compact.files
+Verifying compact.buffered
+Verifying compact.term
+Verifying compact.promises
+Verifying compact.strings
+Verifying compact.constrained_types
+Verifying compact.signals
+Verifying compact.capsicum
+Verifying compact.format
+Merging runtime
+Emitting 17 per-package modules
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.main.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.builtin.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.collections.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.pony_test.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.random.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.time.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.persistent.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.itertools.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.files.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.buffered.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.term.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.promises.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.strings.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.constrained_types.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.signals.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.capsicum.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.format.bc

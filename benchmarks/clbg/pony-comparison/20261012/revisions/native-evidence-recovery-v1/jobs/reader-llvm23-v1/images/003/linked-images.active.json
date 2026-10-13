@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/usr/bin/otool",
+    "-L",
+    "/opt/homebrew/Cellar/zstd/1.5.7_1/lib/libzstd.1.5.7.dylib"
+  ],
+  "started_at": "2026-10-13T22:42:54.790311+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "bounded_local_service": true,
+  "cleanup_errors": [],
+  "pid": 31805,
+  "identity": {
+    "pid": 31805,
+    "process_listing": "Tue Oct 13 18:42:54 2026     /usr/bin/otool -L /opt/homebrew/Cellar/zstd/1.5.7_1/lib/libzstd.1.5.7.dylib"
+  }
+}

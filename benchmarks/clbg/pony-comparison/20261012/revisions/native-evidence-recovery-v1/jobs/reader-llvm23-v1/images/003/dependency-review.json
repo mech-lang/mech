@@ -1,0 +1,18 @@
+{
+  "binary": "/opt/homebrew/Cellar/zstd/1.5.7_1/lib/libzstd.1.5.7.dylib",
+  "architectures": [
+    "arm64"
+  ],
+  "dependencies": [
+    {
+      "install_name": "/opt/homebrew/opt/zstd/lib/libzstd.1.dylib",
+      "lookup_path": "/opt/homebrew/opt/zstd/lib/libzstd.1.dylib",
+      "path": "/opt/homebrew/Cellar/zstd/1.5.7_1/lib/libzstd.1.5.7.dylib",
+      "sha256": "602d50cbe6fad0f0da6d1b73284ae3f75316015aea482ebd55614b6df2406b43"
+    },
+    {
+      "install_name": "/usr/lib/libSystem.B.dylib",
+      "scope": "OS-image-not-hashed"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/combined-ui-v2/test_combined_axis_tolerance_v1.mjs",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/combined-chart-integration-v3/jobs/current-nim-format-platform-v1/candidate-data.json"
+  ],
+  "exit_code": 0,
+  "stdout": "",
+  "stderr": ""
+}

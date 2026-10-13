@@ -1,0 +1,159 @@
+{
+  "at": "2026-10-13T23:08:01.402278+00:00",
+  "status": "all-ten-exact-browser-asset-URLs-match-staged-bytes",
+  "assets": {
+    "app.mjs": {
+      "url": "https://mech-lang.org/benchmarks/app.mjs?v=20261013-combined2",
+      "sha256": "7954294565314903b814c3257efcc85d5e92fbf91610fade0d1a759abf3f2f70",
+      "bytes": 95299,
+      "last_modified": "Tue, 13 Oct 2026 23:03:11 GMT"
+    },
+    "index.html": {
+      "url": "https://mech-lang.org/benchmarks/index.html",
+      "sha256": "5cf24c853bd1e65aa79f46c5d39183df22f79e2c0ee7ea082d4fa60560a70975",
+      "bytes": 29565,
+      "last_modified": "Tue, 13 Oct 2026 23:03:11 GMT"
+    },
+    "math.mjs": {
+      "url": "https://mech-lang.org/benchmarks/math.mjs?v=20261013-combined2",
+      "sha256": "78713b14872cd5e27bf94e2d7250858500b7d35984a6a9f4e21a76d46b658da6",
+      "bytes": 17096,
+      "last_modified": "Tue, 13 Oct 2026 23:03:11 GMT"
+    },
+    "rankings.mjs": {
+      "url": "https://mech-lang.org/benchmarks/rankings.mjs?v=20261013-combined2",
+      "sha256": "d55c74de5c3834e61b5b3c0a858413238ad8f094e786b21add04da034bc95266",
+      "bytes": 5554,
+      "last_modified": "Tue, 13 Oct 2026 23:03:11 GMT"
+    },
+    "style.css": {
+      "url": "https://mech-lang.org/benchmarks/style.css?v=20261013-combined2",
+      "sha256": "19533f14286e5b81b3b8917d169a6c1ec00963940707604de0c2e300d3a98d65",
+      "bytes": 31837,
+      "last_modified": "Tue, 13 Oct 2026 23:03:11 GMT"
+    },
+    "mech-palette.css": {
+      "url": "https://mech-lang.org/benchmarks/mech-palette.css",
+      "sha256": "999768eb3675a7e724faf4a0e9e42a09bba13ed6fdd72b115d8034836ea7f85a",
+      "bytes": 8359,
+      "last_modified": "Tue, 13 Oct 2026 23:03:11 GMT"
+    },
+    "traits.mjs": {
+      "url": "https://mech-lang.org/benchmarks/traits.mjs?v=20261013-combined2",
+      "sha256": "8cb0328bd48c0a554bccda58a5080673412e325cbb1047661ca2cc40d488c300",
+      "bytes": 3824,
+      "last_modified": "Tue, 13 Oct 2026 23:03:11 GMT"
+    },
+    "platform.mjs": {
+      "url": "https://mech-lang.org/benchmarks/platform.mjs",
+      "sha256": "016638bca2807fef252c3dfdde604d8412029091543e65af7de91ae682741468",
+      "bytes": 4876,
+      "last_modified": "Tue, 13 Oct 2026 23:03:11 GMT"
+    },
+    "formatted_axis.mjs": {
+      "url": "https://mech-lang.org/benchmarks/formatted_axis.mjs?v=20261013-combined2",
+      "sha256": "c2f38fb3c581807dc15571d0387383b2147701c8ad2e9c0baa3ea980206c13da",
+      "bytes": 3325,
+      "last_modified": "Tue, 13 Oct 2026 23:03:11 GMT"
+    },
+    "data.json": {
+      "url": "https://mech-lang.org/benchmarks/data.json",
+      "sha256": "8b85d35f9ff8c267171c9d91f3467ba765bf019ac438c64ed2071898a7656378",
+      "bytes": 32552165,
+      "last_modified": "Tue, 13 Oct 2026 23:03:11 GMT"
+    }
+  },
+  "observations": [
+    {
+      "name": "app.mjs",
+      "attempt": 1,
+      "sha256": "7954294565314903b814c3257efcc85d5e92fbf91610fade0d1a759abf3f2f70",
+      "match": true,
+      "last_modified": "Tue, 13 Oct 2026 23:03:11 GMT",
+      "at": "2026-10-13T23:07:45.913775+00:00"
+    },
+    {
+      "name": "index.html",
+      "attempt": 1,
+      "sha256": "5cf24c853bd1e65aa79f46c5d39183df22f79e2c0ee7ea082d4fa60560a70975",
+      "match": true,
+      "last_modified": "Tue, 13 Oct 2026 23:03:11 GMT",
+      "at": "2026-10-13T23:07:46.245085+00:00"
+    },
+    {
+      "name": "math.mjs",
+      "attempt": 1,
+      "sha256": "78713b14872cd5e27bf94e2d7250858500b7d35984a6a9f4e21a76d46b658da6",
+      "match": true,
+      "last_modified": "Tue, 13 Oct 2026 23:03:11 GMT",
+      "at": "2026-10-13T23:07:46.556284+00:00"
+    },
+    {
+      "name": "rankings.mjs",
+      "attempt": 1,
+      "sha256": "d55c74de5c3834e61b5b3c0a858413238ad8f094e786b21add04da034bc95266",
+      "match": true,
+      "last_modified": "Tue, 13 Oct 2026 23:03:11 GMT",
+      "at": "2026-10-13T23:07:46.790650+00:00"
+    },
+    {
+      "name": "style.css",
+      "attempt": 1,
+      "sha256": "e641a1dae8c2493ce275e2c2770769a61db9e2df65b08ff8ffec2f952a417ef2",
+      "match": false,
+      "last_modified": "Tue, 13 Oct 2026 22:33:56 GMT",
+      "at": "2026-10-13T23:07:46.998663+00:00"
+    },
+    {
+      "name": "style.css",
+      "attempt": 2,
+      "sha256": "19533f14286e5b81b3b8917d169a6c1ec00963940707604de0c2e300d3a98d65",
+      "match": true,
+      "last_modified": "Tue, 13 Oct 2026 23:03:11 GMT",
+      "at": "2026-10-13T23:07:57.279980+00:00"
+    },
+    {
+      "name": "mech-palette.css",
+      "attempt": 1,
+      "sha256": "999768eb3675a7e724faf4a0e9e42a09bba13ed6fdd72b115d8034836ea7f85a",
+      "match": true,
+      "last_modified": "Tue, 13 Oct 2026 23:03:11 GMT",
+      "at": "2026-10-13T23:07:57.595827+00:00"
+    },
+    {
+      "name": "traits.mjs",
+      "attempt": 1,
+      "sha256": "8cb0328bd48c0a554bccda58a5080673412e325cbb1047661ca2cc40d488c300",
+      "match": true,
+      "last_modified": "Tue, 13 Oct 2026 23:03:11 GMT",
+      "at": "2026-10-13T23:07:57.737840+00:00"
+    },
+    {
+      "name": "platform.mjs",
+      "attempt": 1,
+      "sha256": "016638bca2807fef252c3dfdde604d8412029091543e65af7de91ae682741468",
+      "match": true,
+      "last_modified": "Tue, 13 Oct 2026 23:03:11 GMT",
+      "at": "2026-10-13T23:07:58.066592+00:00"
+    },
+    {
+      "name": "formatted_axis.mjs",
+      "attempt": 1,
+      "sha256": "c2f38fb3c581807dc15571d0387383b2147701c8ad2e9c0baa3ea980206c13da",
+      "match": true,
+      "last_modified": "Tue, 13 Oct 2026 23:03:11 GMT",
+      "at": "2026-10-13T23:07:58.197518+00:00"
+    },
+    {
+      "name": "data.json",
+      "attempt": 1,
+      "sha256": "8b85d35f9ff8c267171c9d91f3467ba765bf019ac438c64ed2071898a7656378",
+      "match": true,
+      "last_modified": "Tue, 13 Oct 2026 23:03:11 GMT",
+      "at": "2026-10-13T23:08:01.118369+00:00"
+    }
+  ],
+  "pipeline_id": 2944567551,
+  "pipeline_status": "success",
+  "deployment_propagation": "Earlier responses briefly served prior deployment bytes; exact current browser asset URLs rechecked individually."
+}

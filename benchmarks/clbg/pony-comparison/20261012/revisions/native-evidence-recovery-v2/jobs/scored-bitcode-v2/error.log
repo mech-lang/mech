@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/recover.py", line 370, in main
+    result = reader(prep, service, guard, harness, output, common.fileno(), pins) if args.qualify_reader else recover(
+                                                                                                              ^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/recover.py", line 289, in recover
+    assert 'target triple = "aarch64-apple-macosx14.4.0"' in headers
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

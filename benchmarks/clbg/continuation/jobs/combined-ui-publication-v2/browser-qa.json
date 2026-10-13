@@ -1,0 +1,70 @@
+{
+  "at": "2026-10-13T23:02:20.986981+00:00",
+  "status": "local-browser-QA-passed",
+  "url": "http://127.0.0.1:58302/benchmarks/",
+  "candidate_sha256": "8b85d35f9ff8c267171c9d91f3467ba765bf019ac438c64ed2071898a7656378",
+  "canonical": {
+    "sample_runs": 2478,
+    "SamplesOff_runs": 0,
+    "SamplesOff_extra_endpoints": 0,
+    "summary_endpoints": 99,
+    "density_without_samples_or_medians": true,
+    "density_cells": 1728,
+    "density_run_weight": 2478,
+    "dim_opacity": 0.15,
+    "full_sample_framing_expands_domain": true
+  },
+  "formatted": {
+    "ordinary_runs": 54,
+    "eligible_language": "Crystal",
+    "Crystal_catalog_rows": 20,
+    "Crystal_catalog_runs": 60,
+    "Nim_format_counts": [
+      "blank",
+      "blank",
+      "blank",
+      "blank",
+      "blank",
+      "blank",
+      "blank",
+      "blank",
+      "blank",
+      "blank",
+      "blank",
+      "blank",
+      "blank",
+      "blank",
+      "blank",
+      "blank",
+      "blank",
+      "blank",
+      "blank",
+      "blank"
+    ],
+    "Nim_timings_and_source_still_inspectable": true,
+    "time_axis_envelope_preserved": true
+  },
+  "platform_jvm_filtered_languages": [
+    "Clojure"
+  ],
+  "rankings": {
+    "chart_count": 2,
+    "canonical_dots_per_chart": 50,
+    "formatted_dots_per_chart": 1
+  },
+  "mobile": {
+    "viewport_width": 390,
+    "document_width": 390,
+    "scroll_width": 390,
+    "controls_fit": true,
+    "SamplesOff_runs": 0,
+    "SamplesOff_extra_endpoints": 0,
+    "summary_endpoints": 99
+  },
+  "resident_whole_process_column_visible": true,
+  "resident_rows": 3,
+  "source_navigation_and_back_passed": true,
+  "console_errors": [],
+  "screenshot": "Capture unavailable; DOM observations retained",
+  "benchmark_runs": 0
+}

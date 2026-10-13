@@ -1,13 +1,13 @@
-Benchmark progress as of **2026-10-13 22:37 UTC** (18:37 New York).
+Benchmark progress as of **2026-10-13 23:07 UTC** (19:07 New York).
 
-The previous remotely verified checkpoint is `40170427711079ebc789727f54b465104c0b879f`
+The previous remotely verified checkpoint is `e13944851c8a570da756b70f9df2d613386ef6f8`
 on `codex/clbg-native-benchmarks`. The language overview and complete Crystal
 inventory are published. C3's exact source counts, runtime metadata and current
 chart candidate have qualified and are now published through GitLab Pages
 at `https://mech-lang.org/benchmarks/`. Nim, Gleam and Clojure
 finished and passed independent reconciliation of all 90 timing runs each.
 The 23 formatted-LOC source fixtures and all 20 native Crystal formatting cases
-passed; formatted-axis integration remains pending. Durable jobs preserve their
+passed; the formatted axis and measured platform filters are now published. Durable jobs preserve their
 actual request, process identity and exit.
 
 | Cohort | Actual full samples collected | Present state |
@@ -15,11 +15,11 @@ actual request, process identity and exit.
 | Crystal | 90/90 | Published with 20 source forms and 60 candidate samples, plus 30 matched Mech samples in the complete study. |
 | C3 | 90/90 | Published through GitLab Pages. Source counts, runtime metadata and current dataset qualified; all 20 forms / 60 candidate samples passed browser inspection. |
 | Nim | 90/90 | Published through GitLab Pages with all 20 forms and 60 candidate samples. Exact LOC, runtime metadata and current dataset checks passed; all 21 authored inputs, including GMP glue, are counted. |
-| Gleam | 90/90 | Full-suite reconciliation and complete source admission passed: 20 bundles, 30 unique authored sources and 104 measured copies. Runtime publication metadata and chart integration remain. |
+| Gleam | 90/90 | Full-suite reconciliation and complete source admission passed: 20 bundles, 30 unique authored sources and 104 measured copies. Runtime publication metadata passed for all20 forms; current chart integration remains. |
 | Clojure | 90/90 | Published. Full-suite, LOC, JVM metadata and current dataset admission passed. Root verified 5,276 candidate pins; 20 forms / 60 candidate samples are retained, with 18 selected endpoints. Public browser inspection confirmed all 20 forms and 60 runs. |
 | V | 90/90 | Full workload samples collected, including eight missing tree slots recovered additively. Independent all-ten reconciliation passed. Report-only; excluded from dataset, charts and Site. |
-| Pony | 0/90 | Both tree observations and four Pi/map traces are retained. The existing-evidence capture exited normally; original authored main IR was overwritten by builtin output. Separate bitcode/ownership recovery remains. |
-| Prolog | 0/90 | SWI-Prolog 10.0.2 ARM64 runtime qualified. Moving successful shutdown outside the catch wrapper fixed exit status; actual feature probe and seven-image closure passed. The 156 bounded workload cases, work/LOC checks and full samples remain. |
+| Pony | 0/90 | Both tree observations and four Pi/map traces are retained. The existing-evidence capture exited normally; original authored main IR was overwritten by builtin output. Separate compact entry bitcode and IR are recovered. Runtime target merge confirmation and remaining optimized native evidence are pending. |
+| Prolog | 0/90 | SWI-Prolog 10.0.2 ARM64 runtime qualified. Moving successful shutdown outside the catch wrapper fixed exit status; actual feature probe and seven-image closure passed. The first corrected bounded workload case passed using the existing compiled artifacts. The remaining155 cases/19 builds, work/LOC checks and full samples remain. |
 | Julia AOT | 0 qualified | Kernel-image binding repaired. Both bounded debugger calibration cells timed out; no native AOT helper executed. No permission cause is established. An official safe-trim/stripped-IR route is documented for the next additive attempt. |
 | Rebol | 0/90 | Faithful source bundle and six runtime intake fixtures retained; actual SDK/runtime/build/work/LOC/full qualification remains. |
 | Elixir / Kotlin | 0/90 each | Reviewed source bundles are frozen and pushed. Actual toolchain and complete qualification remain. |
@@ -53,10 +53,77 @@ source-owner/count admission where pending, complete runtime metadata,
 platform filters, Julia AOT measurement, dataset integration and browser QA.
 The platform frontend candidate passed its checks. Historical metadata now
 qualifies 120 platform and 97 execution annotations across 133 retained rows;
-13 rows remain explicitly unclassified. Filters have not yet been integrated
-into the published Site. Successful historical samples and
+13 rows remain explicitly unclassified. Filters are now integrated into the published Site. Unproved aggregate backends remain Unclassified. Successful historical samples and
 original failures remain immutable; additive repairs reuse successful evidence
 instead of relabeling it as a fresh run.
+
+## Formatted/platform publication and actual native preparation — 2026-10-13 23:07 UTC
+
+Website commit `5934c73a39a9b565bda5c08c5cc9f502fa24b360` is pushed;
+Pages pipeline `2944567551` passed. The combined dataset SHA is
+`8b85d35f9ff8c267171c9d91f3467ba765bf019ac438c64ed2071898a7656378`.
+Root verified46,991 integration pins. All798 original program records,80
+inventory records,2,478 timing runs, source bytes, canonical coordinates and
+fixed time/LOC baselines remain. The full catalog is restored after endpoint
+selection, so legacy non-endpoint sources are not silently removed.
+
+The Source metric control now switches between canonical and native-formatted
+LOC. Crystal has20 complete qualified formatted source bundles; other totals
+remain blank. JVM/BEAM/.NET/Native/JavaScript/Unclassified filters consume
+recorded backend evidence across the complete retained inventory. The133
+historical records include120 proved platforms and97 execution modes; unknown
+historical image bytes remain distinct from proved platform facts.
+
+Local and public browser checks preserve the Samples Off fix: zero raw-run
+marks and zero stray background endpoints, while99 summary endpoints remain.
+Density-only retains all2,478 runs/798 programs across1,728 grid cells. Dim
+samples have15% opacity, and both Medians and All samples framing remain
+available. Canonical/formatted metric switches preserve the time-axis envelope.
+The two compact rankings show50 variants canonically and Crystal alone for
+formatted counts. Crystal's language overview shows20 rows/60 runs; Nim's20
+formatted counts stay blank while its original timings and code remain
+inspectable. Resident Mech retains whole-process columns. The390px layout has
+no horizontal overflow and no console errors. Four existing assertion scripts
+passed; one exact-floating comparison was corrected to1e-12 tolerance, with
+its original failed assertion retained. All ten exact browser asset URLs match
+the staged bytes after Pages propagation. Evidence:
+`continuation/jobs/combined-ui-publication-v2/`.
+
+Gleam metadata qualification passed normally, with6,907 pins independently
+rechecked. It binds Gleam1.19.0, OTP29.1.1/ERTS17.1 JIT, the actual20 source
+bundles and original90 samples. Default BEAM process-heap GC is a documented
+policy, not a claimed collector probe. Metadata SHA:
+`24c2fc111a79e9093fd2e92625bf552c1539d68ef0d53523b084eebf565b2625`.
+The next current-data candidate must preserve this published formatted/platform
+baseline; Gleam is not yet added to the public chart.
+
+Prolog preparation sealed20 profiles/156 bounded cases without native reruns.
+Its first native preparation compiled two QLFs and inspected the original VM
+code, then failed: helper preload `-l` suppressed automatic main initialization,
+and the REPL consumed the input. Those three successful build commands and
+both artifacts were retained. Adding the exact source-declared entry via `-g`
+passed a separate all-replacements case: all20 ownership/output gates,254
+exact bytes,empty stderr and normal0. Root verified13,486 pins. Remaining
+preparation is155 unexecuted cases and19 unbuilt profiles. No full Prolog sample
+or work/LOC qualification is claimed. Source and actual failure/success records
+are in `prolog-comparison/20261013/` and the named closed reviews.
+
+Pony's LLVM23.1.3 reader qualified four ARM64 linked images (10,107 pins).
+An initial recovery stopped before native commands at an overly strict saved
+worker-image spelling check. The narrow repair retained exact PID/birth/argv
+and the original reader evidence. It produced compact entry and builtin
+bitcode separately, and decoded the entry successfully. A literal target check
+then stopped: main IR says `arm64-apple-macosx26.0.0` although the original
+production argv requests14.4. Root verified10,142 failure pins. Pinned compiler
+and LLVM sources explain a possible newer-Apple runtime-bitcode merge; the
+continuation must actually decode the pinned vendor header before accepting
+that explanation. Completed compact commands and original six traces are not
+repeated. No Pony source-work or benchmark result is claimed.
+
+Julia's official safe-trim build proposal and the Prolog/Pony continuations
+are saved as source proposals. No new full timing sample or Mech compiler
+optimization occurred in this checkpoint. Native work, UI QA, hashing and Git
+remain serialized under the common mutex.
 
 ## Nim publication and current qualification — 2026-10-13 22:37 UTC
 

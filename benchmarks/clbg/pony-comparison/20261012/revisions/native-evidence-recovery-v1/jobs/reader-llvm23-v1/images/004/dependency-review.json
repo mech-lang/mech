@@ -1,0 +1,22 @@
+{
+  "binary": "/opt/homebrew/Cellar/z3/5.1.0/lib/libz3.5.1.0.0.dylib",
+  "architectures": [
+    "arm64"
+  ],
+  "dependencies": [
+    {
+      "install_name": "/opt/homebrew/opt/z3/lib/libz3.5.1.dylib",
+      "lookup_path": "/opt/homebrew/opt/z3/lib/libz3.5.1.dylib",
+      "path": "/opt/homebrew/Cellar/z3/5.1.0/lib/libz3.5.1.0.0.dylib",
+      "sha256": "45344d6a38b6f75304433c2458d6fa16bc4907d426c96e2bedf0a90603460422"
+    },
+    {
+      "install_name": "/usr/lib/libc++.1.dylib",
+      "scope": "OS-image-not-hashed"
+    },
+    {
+      "install_name": "/usr/lib/libSystem.B.dylib",
+      "scope": "OS-image-not-hashed"
+    }
+  ]
+}

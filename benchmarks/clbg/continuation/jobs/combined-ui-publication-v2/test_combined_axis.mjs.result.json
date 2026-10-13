@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/combined-ui-v2/test_combined_axis.mjs",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/combined-chart-integration-v3/jobs/current-nim-format-platform-v1/candidate-data.json"
+  ],
+  "exit_code": 1,
+  "stdout": "",
+  "stderr": "node:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n+   x: 2.9999999999999996,\n-   x: 3,\n    y: 1\n  }\n\n    at file:///Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/combined-ui-v2/test_combined_axis.mjs:86:8\n    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)\n    at async node:internal/modules/esm/loader:643:26\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: true,\n  code: 'ERR_ASSERTION',\n  actual: { x: 2.9999999999999996, y: 1 },\n  expected: { x: 3, y: 1 },\n  operator: 'deepStrictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.19.0\n"
+}

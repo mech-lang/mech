@@ -1,0 +1,20 @@
+{
+  "at": "2026-10-13T22:56:02.565142+00:00",
+  "status": "closed-qualified-first-explicit-goal-bounded-case",
+  "verified_pins": 13486,
+  "report_sha256": "b3eac8a465ad303f7941925714e71ed6d7fabca757af2f1179156c060485c580",
+  "body_terminal_sha256": "edd1fdd25987bceea986fdc7cfa78d13679e8ba3aa63373bc5cd6183d652e025",
+  "durable_terminal_sha256": "7a68d7d47bcb75af741892836fec1137978b2399b39aed4ea143946b92df5b12",
+  "cases": 1,
+  "qualification_checks_passed": 20,
+  "stdout_bytes": 254,
+  "stdout_sha256": "cab36666f9ebc62cafa303203e3f7031a7eabec7e1b44d00429773b72b153b53",
+  "stderr_empty": true,
+  "successful_compiler_commands_reused": 3,
+  "successful_QLF_artifacts_reused": 2,
+  "recompilations": 0,
+  "fixture_reexecutions": 0,
+  "benchmark_runs": 0,
+  "remaining_preparation_cases": 155,
+  "remaining_source_profiles_to_build": 19
+}

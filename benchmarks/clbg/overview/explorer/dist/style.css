@@ -112,3 +112,8 @@
 @media(max-width:720px){.median-rankings{padding:16px 12px}.ranking-heading{flex-wrap:wrap}.ranking-heading h2{font-size:20px}.axes-control{flex:1 1 auto}.axes-control select{width:auto}.ranking-readout{font-size:12px}.density-legend{padding-inline:12px}.view-tabs{justify-content:flex-start}}
 
 .ranking-axis-label{fill:var(--muted);font-size:10px}.ranking-readout-language{margin-right:8px}.ranking-readout-values{font-variant-numeric:tabular-nums}.ranking-readout button:disabled{color:var(--muted);cursor:default}.ranking-chart .ranking-dot{transition:stroke-width .12s}
+.loc-metric-control{display:flex;align-items:center;flex-wrap:wrap;gap:7px;font-size:12px;color:var(--muted)}
+.loc-metric-control select{font-size:13px;padding:6px 8px;max-width:180px}
+#formatted-loc-note{margin:0 0 14px}
+.detail-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:720px){.loc-metric-control{flex:1 1 100%}.chart-toolbar .loc-metric-control select{width:auto;max-width:100%;flex:1}}

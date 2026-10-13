@@ -1,8 +1,11 @@
 // Traits describe the language and the execution path measured in this cohort.
 // Choices within one dimension are alternatives; dimensions are intersected.
+import {platformDimension,measuredPlatform} from './platform.mjs';
 export const traitDimensions = [
+  platformDimension,
   {key:'execution',label:'Execution',note:'The runtime used for these measurements.',options:[
-    {key:'aot',label:'AOT'}, {key:'jit',label:'JIT'}, {key:'interpreted',label:'Interpreted'}]},
+    {key:'aot',label:'AOT'}, {key:'jit',label:'JIT'}, {key:'interpreted',label:'Interpreted'},
+    {key:'unknown',label:'Unclassified'}]},
   {key:'typing',label:'Typing',options:[
     {key:'static',label:'Static'}, {key:'dynamic',label:'Dynamic'}]},
   {key:'style',label:'Language style',options:[
@@ -22,14 +25,32 @@ const memoryStrategies={
     'mech','mech-jit','mech-resident','chapel','pascal']),
 };
 
+function measuredMemory(data,language) {
+  const record=language.measured_memory_policy;
+  if(record===undefined)return null;
+  const evidence=record?.evidence;
+  if(record?.verified!==true||typeof record.label!=='string'||!record.label.trim()||
+      !Array.isArray(record.strategies)||!record.strategies.length||
+      new Set(record.strategies).size!==record.strategies.length||
+      record.strategies.some(value=>!['gc','rc','owned'].includes(value))||
+      typeof evidence?.path!=='string'||!evidence.path||
+      typeof evidence.sha256!=='string'||!/^[0-9a-f]{64}$/.test(evidence.sha256)||
+      data.provenance?.[evidence.path]!==evidence.sha256)return ['unknown'];
+  return record.strategies;
+}
+
 export function languageTraits(data) {
   const groups = new Map(data.language_groups.map(group=>[group.key,new Set(group.languages)]));
   const executionOverrides = {ruby:'jit',php:'jit'};
   return new Map(data.languages.map(language=>{
     const key=language.key;
-    const execution=executionOverrides[key]??['aot','jit','interpreted'].find(option=>groups.get(option)?.has(key));
-    const memory=Object.entries(memoryStrategies).filter(([,members])=>members.has(key)).map(([strategy])=>strategy);
+    const measured=measuredPlatform(data,language);
+    const execution=measured.execution_authoritative ? measured.execution??'unknown' :
+      executionOverrides[key]??['aot','jit','interpreted'].find(option=>groups.get(option)?.has(key));
+    const memory=measuredMemory(data,language)??
+      Object.entries(memoryStrategies).filter(([,members])=>members.has(key)).map(([strategy])=>strategy);
     return [key,{
+      platform:measured.platform,
       execution:new Set(execution?[execution]:[]),
       typing:new Set([groups.get('dynamic')?.has(key)?'dynamic':'static']),
       style:new Set(['array','functional'].filter(option=>groups.get(option)?.has(key))),

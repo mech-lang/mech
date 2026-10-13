@@ -1,0 +1,4 @@
+/opt/homebrew/Cellar/z3/5.1.0/lib/libz3.5.1.0.0.dylib:
+	/opt/homebrew/opt/z3/lib/libz3.5.1.dylib (compatibility version 5.1.0, current version 5.1.0)
+	/usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 2100.43.0)
+	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1356.0.0)

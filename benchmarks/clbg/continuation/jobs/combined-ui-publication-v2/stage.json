@@ -1,0 +1,58 @@
+{
+  "at": "2026-10-13T22:57:59.462217+00:00",
+  "status": "staged-for-browser-QA",
+  "candidate_sha256": "8b85d35f9ff8c267171c9d91f3467ba765bf019ac438c64ed2071898a7656378",
+  "runtime_assets": {
+    "app.mjs": "7954294565314903b814c3257efcc85d5e92fbf91610fade0d1a759abf3f2f70",
+    "index.html": "5cf24c853bd1e65aa79f46c5d39183df22f79e2c0ee7ea082d4fa60560a70975",
+    "math.mjs": "78713b14872cd5e27bf94e2d7250858500b7d35984a6a9f4e21a76d46b658da6",
+    "rankings.mjs": "d55c74de5c3834e61b5b3c0a858413238ad8f094e786b21add04da034bc95266",
+    "style.css": "19533f14286e5b81b3b8917d169a6c1ec00963940707604de0c2e300d3a98d65",
+    "mech-palette.css": "999768eb3675a7e724faf4a0e9e42a09bba13ed6fdd72b115d8034836ea7f85a",
+    "traits.mjs": "8cb0328bd48c0a554bccda58a5080673412e325cbb1047661ca2cc40d488c300",
+    "platform.mjs": "016638bca2807fef252c3dfdde604d8412029091543e65af7de91ae682741468",
+    "formatted_axis.mjs": "c2f38fb3c581807dc15571d0387383b2147701c8ad2e9c0baa3ea980206c13da"
+  },
+  "syntax_checks_passed": 6,
+  "assertion_scripts_passed": [
+    {
+      "command": [
+        "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/combined-ui-v2/test_combined_axis_tolerance_v1.mjs",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/combined-chart-integration-v3/jobs/current-nim-format-platform-v1/candidate-data.json"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/combined-ui-v2/test_layer_controls.mjs"
+      ],
+      "exit_code": 0,
+      "stdout": "Independent layer modes, actual-run density, framing and ranking presentation assertions passed.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/combined-ui-v2/test_median_rankings.mjs"
+      ],
+      "exit_code": 0,
+      "stdout": "Median rankings, recorded samples and density assertions passed.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/combined-ui-v2/test_year_window.mjs"
+      ],
+      "exit_code": 0,
+      "stdout": "Inclusive window, eight decade presets, uncrossed handles, bounded history and unchanged baselines passed.\n",
+      "stderr": ""
+    }
+  ],
+  "native_processes": 0,
+  "benchmark_runs": 0
+}

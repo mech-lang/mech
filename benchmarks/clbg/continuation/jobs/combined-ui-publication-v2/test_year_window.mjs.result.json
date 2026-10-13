@@ -1,0 +1,9 @@
+{
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/combined-ui-v2/test_year_window.mjs"
+  ],
+  "exit_code": 0,
+  "stdout": "Inclusive window, eight decade presets, uncrossed handles, bounded history and unchanged baselines passed.\n",
+  "stderr": ""
+}

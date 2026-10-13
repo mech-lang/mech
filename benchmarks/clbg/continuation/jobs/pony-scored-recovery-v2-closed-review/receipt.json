@@ -1,0 +1,57 @@
+{
+  "at": "2026-10-13T22:55:02.329692+00:00",
+  "status": "closed-failed-compact-IR-target-literal-check",
+  "verified_pins": 10142,
+  "body_terminal_sha256": "0f3248e5a2f135906c6f66588e989fcf567a88954c407fa1842fed1a0a0dcb39",
+  "durable_terminal_sha256": "17904a3e495a5b6c328b25679d14d2ff75c464bdbd50b555b2984d2ff7eb46b8",
+  "native_commands": [
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/compile/scored-bitcode.json",
+      "sha256": "d355c0fb56b6724bd3847c4e5d0cb761a957deb4a5bc6b61f7b65224c7705c2c",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/bin/ponyc",
+        "--strip",
+        "--triple",
+        "aarch64-apple-macosx14.4.0",
+        "--sysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk",
+        "--lib-path",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/lib",
+        "--lib-path",
+        "/opt/homebrew/Cellar/pcre2/10.49/lib",
+        "--lib-path",
+        "/opt/homebrew/Cellar/gmp/6.3.0/lib",
+        "--path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/regex/regex-589eb008db250aab17d4c073a41c5562ac5b8dc7",
+        "--path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/gmp4pony/gmp4pony-b14db4ba347f6a2b840f135e1602e19f85625c39",
+        "--path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v6/source-snapshot/support-v2",
+        "--output",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode",
+        "--bin-name",
+        "pony-binarytrees-compact-precedence-v4",
+        "--pass",
+        "bitcode",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v6/source-snapshot/revisions/precedence-v4/sources/binarytrees/compact"
+      ]
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/decode/entry-ir.json",
+      "sha256": "2d4c3f128ef1d0e40243dbf454576b70767c2a7cc749166445b800cd48fb4eb5",
+      "command": [
+        "/opt/homebrew/Cellar/llvm/23.1.3_1/bin/llvm-dis",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.main.bc",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/authored-entry.ll"
+      ]
+    }
+  ],
+  "application_executions": 0,
+  "benchmark_runs": 0,
+  "reader_qualification_reexecuted": false,
+  "actual_IR_target": "arm64-apple-macosx26.0.0",
+  "requested_production_target": "aarch64-apple-macosx14.4.0",
+  "diagnosis_pending": true,
+  "prior_successful_outputs_preserved": true
+}

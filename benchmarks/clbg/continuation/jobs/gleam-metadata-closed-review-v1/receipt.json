@@ -1,0 +1,16 @@
+{
+  "at": "2026-10-13T22:57:19.262510+00:00",
+  "status": "closed-qualified-Gleam-exact20-publication-metadata",
+  "verified_pins": 6907,
+  "metadata_sha256": "24c2fc111a79e9093fd2e92625bf552c1539d68ef0d53523b084eebf565b2625",
+  "runtime_sha256": "7dc62848e329047e47f46b9df9278e90b4f59f6ac99212f85ba3ee8999371da1",
+  "outcome_sha256": "452e3437a24a5fb6b9f1252d32af5872cbdd879bd2c05f240dda3ed6bb69687b",
+  "durable_terminal_sha256": "87098c03510b7830b4e7ba7dfddedf60b447e913dd51653a8465c7abd483511d",
+  "source_profiles": 20,
+  "original_full_samples": 90,
+  "native_processes": 0,
+  "fixture_reexecutions": 0,
+  "benchmark_runs": 0,
+  "chart_admission": false,
+  "closure_note": "First root receipt write stopped on wrong runtime filename before creating any receipt; actual toolchain-runtime-receipt.json used here after fresh pin verification."
+}

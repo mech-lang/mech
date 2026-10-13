@@ -1,0 +1,26 @@
+{
+  "started_at": "2026-10-13T22:55:02.483881+00:00",
+  "worker_identity": {
+    "pid": 34280,
+    "listing": "34280     1 Tue Oct 13 18:55:02 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/prolog-explicit-goal-first-case-v1 --lease-fd 3 --go-fd 4"
+  },
+  "inherited_private_lease": true,
+  "detached_session": true,
+  "common_mutex_owned_by_target_command": true,
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/explicit-goal-v1/diagnose.py",
+    "--worker-sha256",
+    "87be372a3541895e7de036f1b1d68fb245ca7f7d08ade7faab7ce1a3832a7fb4",
+    "--review-sha256",
+    "e72b3d2a7a2a8ee6d4e3954510aee8e154b1a64b89b7e1b7ee6cea7244a882ea",
+    "--closed-review-sha256",
+    "785fb78443a3a46384533b522ab124b34c2ae87a7e11da4da22a083289099b4e"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "qualification_granted": false
+}

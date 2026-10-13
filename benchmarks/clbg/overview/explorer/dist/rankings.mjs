@@ -1,4 +1,4 @@
-import {summaryNumber,rankingDotLayout} from './math.mjs?v=20261013-layers';
+import {summaryNumber,rankingDotLayout} from './math.mjs?v=20261013-combined2';
 
 const svgNS='http://www.w3.org/2000/svg';
 function html(tag,className,parent,text){
@@ -16,10 +16,10 @@ function svg(tag,attributes,parent,text){
   return element;
 }
 
-export function renderRankingCharts({container,rankings,labelFor,colorFor,onOpenLanguage}){
+export function renderRankingCharts({container,rankings,labelFor,colorFor,onOpenLanguage,locTitle='LOC'}){
   container.replaceChildren();
   const extent=Math.max(3,Math.ceil(Math.max(rankings.speed.max_abs_sigma,rankings.loc.max_abs_sigma)));
-  for(const [key,title,below,above] of [['speed','Speed','Faster','Slower'],['loc','LOC','Smaller','Larger']]){
+  for(const [key,title,below,above] of [['speed','Speed','Faster','Slower'],['loc',locTitle,'Smaller','Larger']]){
     const metric=rankings[key],card=html('article','ranking-card',container);
     card.dataset.rankingMetric=key;
     card.dataset.rankingMedian=String(metric.median);

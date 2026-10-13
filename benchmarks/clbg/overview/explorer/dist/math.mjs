@@ -189,7 +189,7 @@ export function sharedBenchmarks(data,selection){
   if(!languages.length)return [];
   return data.benchmarks.filter(b=>selection.benchmarks.has(b.key)&&languages.every(l=>{
     const group=b.groups.find(g=>g.language===l.key);
-    return group?.programs.some(k=>!selection.disabled.has(k)&&Number.isFinite(data.programs[k].seconds));
+    return group?.programs.some(k=>!selection.disabled.has(k)&&[data.programs[k]?.seconds,data.programs[k]?.loc,data.programs[k]?.x,data.programs[k]?.y].every(value=>Number.isFinite(value)&&value>0));
   }));
 }
 export function comparison(data,selection){
@@ -200,7 +200,7 @@ export function comparison(data,selection){
     const inputs=[];
     for(const benchmark of benchmarks){
       const group=benchmark.groups.find(g=>g.language===language.key);
-      const programs=(group?.programs??[]).filter(k=>!selection.disabled.has(k)).map(k=>data.programs[k]).filter(p=>Number.isFinite(p.seconds)&&p.seconds>0);
+      const programs=(group?.programs??[]).filter(k=>!selection.disabled.has(k)).map(k=>data.programs[k]).filter(p=>Number.isFinite(p?.seconds)&&p.seconds>0&&Number.isFinite(p.loc)&&p.loc>0&&Number.isFinite(p.x)&&p.x>0&&Number.isFinite(p.y)&&p.y>0);
       if(!programs.length)continue;
       const fast=programs.reduce((a,b)=>b.seconds<a.seconds||(b.seconds===a.seconds&&b.loc<a.loc)?b:a);
       const small=programs.reduce((a,b)=>b.loc<a.loc||(b.loc===a.loc&&b.seconds<a.seconds)?b:a);

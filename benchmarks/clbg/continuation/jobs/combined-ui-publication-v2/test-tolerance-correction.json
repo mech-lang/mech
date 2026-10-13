@@ -1,0 +1,9 @@
+{
+  "at": "2026-10-13T22:57:58.967731+00:00",
+  "original_test": "test_combined_axis.mjs",
+  "original_failure": "Expected x3, actual2.9999999999999996 from geometric transformation",
+  "amended_test": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/combined-ui-v2/test_combined_axis_tolerance_v1.mjs",
+  "sha256": "ce4a8fd1d5532e3018baeb3f6283de8dc3ec18b035b32f5ca609429973efc4dc",
+  "change": "Only compare this computed floating-point coordinate within absolute1e-12; no runtime source changes",
+  "runtime_syntax_checks_passed_before_test": 6
+}

@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-13T22:56:02.640837+00:00",
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/publication-gleam-metadata-v1/qualify_descriptor.py",
+    "--revision",
+    "actual-metadata-v1",
+    "--qualifier-sha256",
+    "1503e6a1e6bb87732eae780a83403fb145f0dc59b5a614f8b9d18c3e3ab73f3c",
+    "--descriptor-sha256",
+    "ac19c1d896e556a683ece26c9ff8384dfe48c43c501ecd315b09365484ecb112",
+    "--review-sha256",
+    "e58445350df8dc342520105372dbf2710c6e9fd5d91c6ddb439a196b5ef30031",
+    "--root-review-sha256",
+    "db2e7999b951932089070f223d77649b0cdc9c1a579fdb5562102a206c303dec"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "common_mutex_owned_by_target_command": true,
+  "qualification_granted": false,
+  "automatic_retry": false
+}

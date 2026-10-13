@@ -1,0 +1,80 @@
+{
+  "status": "source-reviewed-plan-awaiting-root-and-peer-review",
+  "execution_authorized": false,
+  "original_failed_recovery": "revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2",
+  "original_failed_owner": "continuation/owned-jobs/pony-scored-bitcode-recovery-v2",
+  "closed_review": "continuation/jobs/pony-scored-recovery-v2-closed-review/receipt.json",
+  "closed_review_digest": "Must be captured by root under common; no invented value",
+  "closed_review_status": "closed-failed-compact-IR-target-literal-check",
+  "closed_review_verified_pins": 10142,
+  "body_terminal_sha256": "0f3248e5a2f135906c6f66588e989fcf567a88954c407fa1842fed1a0a0dcb39",
+  "durable_terminal_sha256": "17904a3e495a5b6c328b25679d14d2ff75c464bdbd50b555b2984d2ff7eb46b8",
+  "compact_successes_to_reuse": {
+    "compile_receipt_sha256": "d355c0fb56b6724bd3847c4e5d0cb761a957deb4a5bc6b61f7b65224c7705c2c",
+    "entry_decode_receipt_sha256": "2d4c3f128ef1d0e40243dbf454576b70767c2a7cc749166445b800cd48fb4eb5",
+    "main_bitcode_sha256": "0d4e46f37c1b4e18ebbe6be018f7494a33526ad5fe37ba07c305418848bacc5c",
+    "builtin_bitcode_sha256": "c706e91f5921a59c08e99350ab6c37f9992a1eadc8f4a9047588f75e347a8a6d",
+    "authored_entry_IR_sha256": "190ab8b1a59c0b98abb33193e13c8e255ba11ac88808eeb0fe1e940312d96d61",
+    "original_scored_ARM_sha256": "3053732417af086c0754d2c82a7fc1c1cb92a4046f0d40b9ef9dec400e5fe289"
+  },
+  "requested_production_triple": "aarch64-apple-macosx14.4.0",
+  "recorded_compact_entry_triple": "arm64-apple-macosx26.0.0",
+  "recorded_untouched_builtin_IR_triple": "aarch64-apple-macosx14.4.0",
+  "runtime_bitcode": ".build/private-v6/release/0.74.0-95ad180/lib/armv8-a/libponyrt.bc",
+  "runtime_bitcode_sha256": "95e60711be95591e4b5f5e3b35e7daef1c28de30fb8bb5b46c74d89d2309438a",
+  "runtime_header_actually_decoded": false,
+  "qualified_reader": "/opt/homebrew/Cellar/llvm/23.1.3_1/bin/llvm-dis",
+  "qualified_reader_sha256": "a5f9b5c9bdd04dd73e3778a0dc46b89579dfc7686b292e9ff0db8881b492d693",
+  "qualified_reader_receipt_sha256": "054c7a9e376f4dc883e5e7cab60dd6193cd67d4080ee42099d4fe7c07978edca",
+  "qualified_reader_body_terminal_sha256": "529cf74c0f08e7dd632167b1288e85202817c717f8e0edd26ae3f56c3743b13f",
+  "qualified_reader_owner_terminal_sha256": "5f35ef7c2985880f62519168002436288e24831c4b9d441ed6eb9bf6867b0062",
+  "fresh_output": "revisions/runtime-target-continuation-v1/jobs/remaining-scored-evidence-v1",
+  "future_owned_commands_in_order": [
+    {
+      "name": "runtime-ir",
+      "timeout_seconds": 120,
+      "argv_derivation": "[qualified_reader, absolute(runtime_bitcode), '-o', absolute(fresh_output/runtime.ll)]",
+      "gate": "Owned native/final exit0, no cleanup or remaining group; actual runtime triple must be exactly arm64-apple-macosx26.0.0 before accepting retained entry header. Preserve full runtime IR."
+    },
+    {
+      "name": "compact-builtin-ir",
+      "timeout_seconds": 120,
+      "argv_derivation": "[qualified_reader, absolute(original_failed_recovery/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.builtin.bc), '-o', absolute(fresh_output/pony-binarytrees-compact-precedence-v4/builtin.ll)]",
+      "gate": "Exactly source_filename of retained builtin bitcode; target exactly requested production triple; no unprefixed authored Node/Worker/Main definitions."
+    },
+    {
+      "name": "optimized-scored-bitcode",
+      "timeout_seconds": 600,
+      "argv_derivation": "Copy the exact pinned qualification/private-v6/builds/pony-binarytrees-optimized-precedence-v4/build.json command, change only its --output value to absolute(fresh_output/pony-binarytrees-optimized-precedence-v4/bitcode), and insert ['--pass', 'bitcode'] immediately before its unchanged final authored package argument.",
+      "gate": "Unchanged compiler/source/all original arguments and qualified inputs/environment; exact17 unique per-package writes, distinct main/builtin bitcode. No executable link or application execution."
+    },
+    {
+      "name": "optimized-entry-ir",
+      "timeout_seconds": 120,
+      "argv_derivation": "[qualified_reader, absolute(fresh_output/pony-binarytrees-optimized-precedence-v4/bitcode/pony-binarytrees-optimized-precedence-v4.main.bc), '-o', absolute(fresh_output/pony-binarytrees-optimized-precedence-v4/authored-entry.ll)]",
+      "gate": "Source filename exactly emitted main path; actual target exactly independently decoded pinned runtime triple arm64-apple-macosx26.0.0; actual Node/Worker/Main definitions and recorded unchanged data layout."
+    },
+    {
+      "name": "optimized-builtin-ir",
+      "timeout_seconds": 120,
+      "argv_derivation": "[qualified_reader, absolute(fresh_output/pony-binarytrees-optimized-precedence-v4/bitcode/pony-binarytrees-optimized-precedence-v4.builtin.bc), '-o', absolute(fresh_output/pony-binarytrees-optimized-precedence-v4/builtin.ll)]",
+      "gate": "Source filename exactly emitted builtin path; target exactly requested production triple; no unprefixed authored Node/Worker/Main definitions."
+    },
+    {
+      "name": "optimized-scored-arm",
+      "timeout_seconds": 120,
+      "argv_derivation": "['/usr/bin/otool', '-tvV', absolute(.build/private-v6/bin/pony-binarytrees-optimized-precedence-v4/pony-binarytrees-optimized-precedence-v4)]",
+      "gate": "Exact original scored optimized binary SHA d2e3f363a13d4d7b7f56ffc9dc10f31f58d89f28358ee79e1a0de518ba2aa033; complete owned ARM output. No diagnostic executable substitution."
+    }
+  ],
+  "compact_compile_reexecutions": 0,
+  "compact_entry_decode_reexecutions": 0,
+  "reader_qualification_reexecutions": 0,
+  "original_trace_reexecutions": 0,
+  "fixture_reexecutions": 0,
+  "application_executions": 0,
+  "source_work_qualified": false,
+  "allocation_verdicts": null,
+  "LOC_admitted": false,
+  "chart_admission": false
+}
