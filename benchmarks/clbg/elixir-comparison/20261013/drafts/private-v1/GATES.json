@@ -1,0 +1,274 @@
+{
+  "schema": "clbg-source-only-preparation-gates-v1",
+  "status": "planned-only-unexecuted",
+  "discovered_fixture_ids": [],
+  "started_fixture_ids": [],
+  "actual_fixture_pass_count": 0,
+  "current_worklist": [
+    "nim",
+    "crystal",
+    "pony",
+    "c3",
+    "gleam",
+    "clojure",
+    "prolog",
+    "rebol3",
+    "elixir",
+    "kotlin"
+  ],
+  "removed_from_worklist": [
+    "red"
+  ],
+  "report_only": [
+    "v"
+  ],
+  "execution_authorized_by_this_file": false,
+  "actual_native_commands": 0,
+  "actual_downloads": 0,
+  "actual_compiler_commands": 0,
+  "runtime_qualified": false,
+  "source_work_qualified": false,
+  "canonical_owner_grammar_qualified": false,
+  "formatted_owner_qualified": false,
+  "bounded_output_qualified": false,
+  "full_90_qualified": false,
+  "canonical_loc": null,
+  "formatted_loc": null,
+  "chart_admission": false,
+  "dataset_mutation": false,
+  "source_original_owner_lease_required": true,
+  "common_mutex": "/tmp/mech-clbg-timing.lock",
+  "ownership_service": {
+    "candidate": "c3-comparison/20261012/revisions/private-v1/guarded_prepare.py",
+    "actual_eleven_fixture_receipt_required": true,
+    "original_source_and_receipt_byte_binding_required": true,
+    "cold_import_only_after_under_lock_snapshot_checks": true,
+    "independent_native_command_fixture_runs_proposed": 0,
+    "fixed_cwd_and_DEVNULL_interface_must_be_respected": true
+  },
+  "intake_gates": [
+    "Root-reviewed packet bytes, original/snapshot identity, complete source dependency closure, private Python pins checked under held named common inode before import.",
+    "Consume exact original owner lease, fail on live owner/changed request, no duplicate preparation/resume.",
+    "Fetch one exact official payload into exclusive private output, retain publisher checksum raw bytes and actual computed SHA; safe archive extraction rejects duplicates/traversal/link escapes.",
+    "Pin all extracted compiler/library/launcher bytes and exact reused runtime closure; record original actual receipt/report/terminal linkage without claiming inherited source/work qualification.",
+    "All subprocesses use fixture-qualified owned service with started identity, timeout/group cleanup/raw stdout/stderr/native normal exit and terminal pins; bind shell descendants/version probes.",
+    "Partial failed evidence is retained incrementally; terminal integrity failure cannot yield success; no automatic retry.",
+    "Actual runtime architecture, no emulation, collector, scheduler/processor count, flags and code/dependency paths separate from claimed JIT/method execution mode.",
+    "Exact authored per-form inputs and every imported helper and authored launcher included in canonical/formatted owner grammar and count closures.",
+    "Source-only profiles aliases must be materialized into twenty exclusive source copies and built independently; no copied timing or optimizer claim."
+  ],
+  "proposed_helper_fixture_inventory": [
+    {
+      "id": "raw-byte-roundtrip",
+      "cases": [
+        "all256",
+        "NUL",
+        "CR",
+        "LF",
+        "loneESC",
+        "EOF",
+        "multiple65536chunks",
+        "largepipe"
+      ]
+    },
+    {
+      "id": "binary64-formatting",
+      "cases": [
+        "0.0625/3=0.062",
+        "2.675/2=2.67",
+        "negative-ties",
+        "negative-rounded-zero",
+        "signed-zero",
+        "full-nine-digits",
+        "subnormal-bits"
+      ]
+    },
+    {
+      "id": "general-arbitrary-integer",
+      "cases": [
+        "above64bits",
+        "signed-divide-semantics",
+        "zero-divisor-error",
+        "distinct-three-and-four-Pi-divisions"
+      ]
+    },
+    {
+      "id": "regex-byte-case-contract",
+      "cases": [
+        "absent",
+        "present",
+        "nonoverlap",
+        "empty",
+        "sliced-boundary",
+        "mixed-case",
+        "NUL-high-byte-length",
+        "allfive-replacement-order"
+      ]
+    }
+  ],
+  "proposed_benchmark_fixtures": [
+    {
+      "benchmark": "binarytrees",
+      "sizes": [
+        0,
+        4,
+        6,
+        8
+      ],
+      "meaning": "original scored recursion and leaf allocation; distinct leaf/reference identity and real children; all short repetitions; retained long root after normal GC"
+    },
+    {
+      "benchmark": "fannkuchredux",
+      "sizes": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        7
+      ],
+      "meaning": "all factoradic permutations; independent work copy; full reversal; checksum parity and max"
+    },
+    {
+      "benchmark": "fasta",
+      "sizes": [
+        0,
+        1,
+        2,
+        59,
+        60,
+        61,
+        1000
+      ],
+      "meaning": "exact ALU; boundaries; all draws and RNG continuity"
+    },
+    {
+      "benchmark": "knucleotide",
+      "inputs": [
+        "no-THREE",
+        "THREE-token-boundary",
+        "CRLF-comment-lowercase",
+        "seven-map-growth-at-least33-K18keys",
+        "shorter-than-k",
+        "frequency-ties"
+      ],
+      "meaning": "all windows in seven fresh dynamic maps plus all five queries"
+    },
+    {
+      "benchmark": "mandelbrot",
+      "sizes": [
+        1,
+        2,
+        7,
+        8,
+        9,
+        15,
+        16,
+        31
+      ],
+      "meaning": "all pixels/iterations/escape and exact binary padding"
+    },
+    {
+      "benchmark": "nbody",
+      "sizes": [
+        0,
+        1,
+        2,
+        10,
+        1000
+      ],
+      "meaning": "exact constants, momentum, all pairs/positions and two energies"
+    },
+    {
+      "benchmark": "pidigits",
+      "sizes": [
+        0,
+        1,
+        9,
+        10,
+        11,
+        27,
+        100
+      ],
+      "meaning": "both full arbitrary divisions every extraction, recurrence and trailing padded line"
+    },
+    {
+      "benchmark": "regexredux",
+      "inputs": [
+        "empty",
+        "all-nine-mixed-case-variants",
+        "five-replacement-order",
+        "multiple-records-CRLF-NUL-highbytes"
+      ],
+      "meaning": "all nine scans and five sequential replacements"
+    },
+    {
+      "benchmark": "revcomp",
+      "inputs": [
+        "empty",
+        "multiple-records",
+        "all-ambiguities-bothcases",
+        "CRLF-comments",
+        "length59-60-61"
+      ],
+      "meaning": "all reversed positions, ordered complete records and wrapping"
+    },
+    {
+      "benchmark": "spectralnorm",
+      "sizes": [
+        1,
+        2,
+        3,
+        10,
+        100
+      ],
+      "meaning": "all n-square A/transpose loops, ten round pairs and complete dot products"
+    }
+  ],
+  "negative_proposals_required": [
+    "wrong original or snapshot bytes",
+    "missing counted helper",
+    "partial source-form inventory",
+    "wrong runtime/architecture/library",
+    "unproved JIT category",
+    "shared literal tree leaf",
+    "analytic check substitution",
+    "dropped Pi division",
+    "query-only or pre-sized fixed map",
+    "case-folded regex",
+    "skipped scan/replacement",
+    "Unicode byte conversion",
+    "GC disabled",
+    "missing raw native/sampler normal status",
+    "unclean process group",
+    "partial 90 index",
+    "copied form timings",
+    "stale terminal or index pin"
+  ],
+  "work_evidence": {
+    "physical_source_inputs_required": 20,
+    "exact_main_reviews_required": 20,
+    "compiler_artifact_to_source_binding": true,
+    "original_scored_artifact_reviews": true,
+    "allocation_and_retention_runtime_evidence_required": true,
+    "vendor_math_regex_IO_primitives_disclosed": true,
+    "host_benchmark_kernel_allowed": false,
+    "estimated_or_generated_artifact_LOC_allowed": false,
+    "formatted_axis": "Exact pinned reviewed formatter closure, source-to-formatted semantic owner equality and actual source counts; no inferred formatting cost."
+  },
+  "full_study": {
+    "subject_forms": 20,
+    "subject_samples_each": 3,
+    "reference_controls": 10,
+    "reference_samples_each": 3,
+    "literal_required_records": 90,
+    "actual_records": 0,
+    "sealed_manifest": false,
+    "sealed_index": false,
+    "typed_gates": "Every original literal environment/source/resource/normal-status/raw-byte/reference/process-ownership/power/pin gate; no weak aggregate-count substitute.",
+    "publication": false,
+    "auto_retry": false,
+    "implicit_resume": false
+  },
+  "language": "elixir"
+}

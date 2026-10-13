@@ -1,0 +1,179 @@
+ .../20261012/source-counts/OVERLAY_V2_REVIEW.md    |    40 +
+ .../20261012/source-counts/seal_overlay_v2.py      |   309 +
+ .../apl-current-publication-v1/SOURCE_REVIEW.md    |    25 +
+ .../full-owner/status.json                         |  6397 +++-
+ .../full-owner/timings-apl.json                    |    11 +-
+ .../clbg/continuation/current_chart_priority_v1.py |    81 +
+ .../clbg/continuation/current_chart_priority_v2.py |   104 +
+ .../continuation/enter_crystal_ready_current_v1.py |    48 +
+ .../fixture-receipt.json                           |   146 +
+ .../jobs/fixtures-entry-repaired-v2/fixtures.log   |    15 +
+ .../helper-entry-repair.json                       |    35 +
+ .../jobs/fixtures-entry-repaired-v2/terminal.json  |    92 +
+ .../jobs/current-chart-priority-v2/resumed.json    |    37 +
+ .../waiting-supervisors.json                       |   191 +
+ .../jobs/followup-git-checkpoint-v4/branch.stderr  |     0
+ .../jobs/followup-git-checkpoint-v4/branch.stdout  |     1 +
+ .../jobs/followup-git-checkpoint-v4/commit.stderr  |     0
+ .../jobs/followup-git-checkpoint-v4/commit.stdout  |   924 +
+ .../jobs/followup-git-checkpoint-v4/head.stderr    |     0
+ .../jobs/followup-git-checkpoint-v4/head.stdout    |     1 +
+ .../followup-git-checkpoint-v4/prior-index.stderr  |     0
+ .../followup-git-checkpoint-v4/prior-index.stdout  |     0
+ .../jobs/followup-git-checkpoint-v4/push.stderr    |     2 +
+ .../jobs/followup-git-checkpoint-v4/push.stdout    |     0
+ .../jobs/followup-git-checkpoint-v4/receipt.json   |    10 +
+ .../followup-git-checkpoint-v4/remote-head.stderr  |     0
+ .../followup-git-checkpoint-v4/remote-head.stdout  |     1 +
+ .../jobs/followup-git-checkpoint-v4/selection.json |  2498 ++
+ .../jobs/followup-git-checkpoint-v4/stage.stderr   |     0
+ .../jobs/followup-git-checkpoint-v4/stage.stdout   |     0
+ .../followup-git-checkpoint-v4/staged-stat.stderr  |     0
+ .../followup-git-checkpoint-v4/staged-stat.stdout  |   924 +
+ .../tracked-changes.stderr                         |     0
+ .../tracked-changes.stdout                         |     1 +
+ .../tracked-paths.stderr                           |     0
+ .../tracked-paths.stdout                           | 31149 ++++++++++++++++
+ .../actual-discovery.json                          |    16 +
+ .../fixture-receipt.json                           |   217 +
+ .../native-eight-explorer-fixtures-v1/fixtures.log |     9 +
+ .../input-pins.json                                |    73 +
+ .../sources/NATIVE_LANGUAGES_V2_REVIEW.md          |   150 +
+ .../sources/native_language_groups_v1.py           |    90 +
+ .../sources/native_language_groups_v2.py           |   112 +
+ .../sources/native_languages_data_v1.py            |   277 +
+ .../sources/native_languages_data_v2.py            |   405 +
+ .../sources/native_platform_metadata_v1.py         |   159 +
+ .../sources/native_platform_metadata_v2.py         |   239 +
+ .../sources/test_native_languages_data_v1.py       |   316 +
+ .../sources/test_native_languages_data_v2.py       |   319 +
+ .../sources/test_native_languages_prolog_v2.py     |   219 +
+ .../sources/test_native_platform_metadata_v1.py    |   101 +
+ .../terminal-pin.json                              |    74 +
+ .../pony-work-reviewed-next-stage-v1/failure.log   |     5 +
+ .../pony-work-reviewed-next-stage-v1/receipt.json  |     9 +
+ .../failure.log                                    |     5 +
+ .../source20-entry-repaired-v4/report.json         | 35825 +++++++++++++++++++
+ .../apl-sample84-recovery-v1/command-started.json  |    17 +
+ .../apl-sample84-recovery-v1/command.stderr        |     0
+ .../apl-sample84-recovery-v1/command.stdout        |     5 +
+ .../apl-sample84-recovery-v1/launch.json           |    20 +
+ .../apl-sample84-recovery-v1/request.json          |    15 +
+ .../apl-sample84-recovery-v1/terminal.json         |    20 +
+ .../apl-sample84-recovery-v1/worker-started.json   |    19 +
+ .../owned-jobs/apl-sample84-recovery-v1/worker.log |     0
+ .../command-started.json                           |    25 +
+ .../c3-data-owner23-fixtures-v5/command.stderr     |     0
+ .../c3-data-owner23-fixtures-v5/command.stdout     |     4 +
+ .../c3-data-owner23-fixtures-v5/launch.json        |    28 +
+ .../c3-data-owner23-fixtures-v5/request.json       |    23 +
+ .../c3-data-owner23-fixtures-v5/terminal.json      |    20 +
+ .../worker-started.json                            |    27 +
+ .../c3-data-owner23-fixtures-v5/worker.log         |     0
+ .../command-started.json                           |    18 +
+ .../command.stderr                                 |     7 +
+ .../command.stdout                                 |     2 +
+ .../current-chart-priority-window-v1/launch.json   |    21 +
+ .../current-chart-priority-window-v1/request.json  |    16 +
+ .../current-chart-priority-window-v1/terminal.json |    20 +
+ .../worker-started.json                            |    20 +
+ .../current-chart-priority-window-v1/worker.log    |     0
+ .../command-started.json                           |    18 +
+ .../command.stderr                                 |     7 +
+ .../command.stdout                                 |     2 +
+ .../current-chart-priority-window-v2/launch.json   |    21 +
+ .../current-chart-priority-window-v2/request.json  |    16 +
+ .../current-chart-priority-window-v2/terminal.json |    20 +
+ .../worker-started.json                            |    20 +
+ .../current-chart-priority-window-v2/worker.log    |     0
+ .../command-started.json                           |    16 +
+ .../followup-git-checkpoint-v4/command.stderr      |     0
+ .../followup-git-checkpoint-v4/command.stdout      |     2 +
+ .../followup-git-checkpoint-v4/launch.json         |    19 +
+ .../followup-git-checkpoint-v4/request.json        |    14 +
+ .../followup-git-checkpoint-v4/terminal.json       |    20 +
+ .../followup-git-checkpoint-v4/worker-started.json |    18 +
+ .../followup-git-checkpoint-v4/worker.log          |     0
+ .../command-started.json                           |    20 +
+ .../command.stderr                                 |     0
+ .../command.stdout                                 |     3 +
+ .../launch.json                                    |    23 +
+ .../request.json                                   |    18 +
+ .../terminal.json                                  |    20 +
+ .../worker-started.json                            |    22 +
+ .../worker.log                                     |     0
+ .../command-started.json                           |    30 +
+ .../command.stderr                                 |    17 +
+ .../command.stdout                                 |     1 +
+ .../launch.json                                    |    33 +
+ .../request.json                                   |    28 +
+ .../terminal.json                                  |    20 +
+ .../worker-started.json                            |    32 +
+ .../worker.log                                     |     0
+ .../command-started.json                           |    20 +
+ .../command.stderr                                 |     0
+ .../command.stdout                                 |     1 +
+ .../native-eight-explorer4-fixtures-v1/launch.json |    23 +
+ .../request.json                                   |    18 +
+ .../terminal.json                                  |    20 +
+ .../worker-started.json                            |    22 +
+ .../native-eight-explorer4-fixtures-v1/worker.log  |     0
+ .../command-started.json                           |    18 +
+ .../command.stderr                                 |     5 +
+ .../command.stdout                                 |     1 +
+ .../launch.json                                    |    21 +
+ .../request.json                                   |    16 +
+ .../terminal.json                                  |    20 +
+ .../worker-started.json                            |    20 +
+ .../worker.log                                     |     0
+ .../command-started.json                           |    19 +
+ .../rebol-runtime6-fixture-seal-v1/command.stderr  |     0
+ .../rebol-runtime6-fixture-seal-v1/command.stdout  |     0
+ .../rebol-runtime6-fixture-seal-v1/launch.json     |    22 +
+ .../rebol-runtime6-fixture-seal-v1/request.json    |    17 +
+ .../rebol-runtime6-fixture-seal-v1/terminal.json   |    20 +
+ .../worker-started.json                            |    21 +
+ .../rebol-runtime6-fixture-seal-v1/worker.log      |     0
+ .../clbg/continuation/preview_current_chart_v1.py  |    45 +
+ .../clbg/continuation/qualify_native_ready_v1.py   |   183 +
+ .../continuation/save_followup_checkpoint_v8.py    |   131 +
+ .../continuation/stage_crystal_chart_current_v1.py |   115 +
+ .../20261012/c3-proposal-v5/REVIEW.md              |    70 +
+ .../20261012/c3-proposal-v5/c3_mask.py             |    63 +
+ .../20261012/c3-proposal-v5/foreign_c3.py          |   507 +
+ .../jobs/fixtures-v5/fixture-receipt-pin.json      |    18 +
+ .../jobs/fixtures-v5/fixture-receipt.json          |   827 +
+ .../c3-proposal-v5/jobs/fixtures-v5/fixtures.log   |    28 +
+ .../c3-proposal-v5/jobs/fixtures-v5/launch.json    |    31 +
+ .../jobs/fixtures-v5/prior-fixture-receipt.json    |   815 +
+ .../c3-proposal-v5/jobs/fixtures-v5/process.json   |    17 +
+ .../c3-proposal-v5/jobs/fixtures-v5/state.json     |    12 +
+ .../c3-proposal-v5/jobs/fixtures-v5/worker.py      |   333 +
+ .../20261012/c3-proposal-v5/queue_fixtures.py      |   333 +
+ .../20261012/c3-proposal-v5/test_foreign_c3.py     |   218 +
+ .../entry-repair.json                              |    27 +
+ .../terminal-error.log                             |    15 +
+ .../terminal.json                                  |   415 +
+ .../20261013/prolog-proposal-v2/RUNNER_REVIEW.md   |    43 +
+ .../20261013/prolog-proposal-v2/run_fixtures.py    |   333 +
+ benchmarks/clbg/overview/explorer/dist/app.mjs     |    36 +-
+ .../clbg/rebol-comparison/20261013/CAPABILITIES.md |   168 +
+ .../rebol-comparison/20261013/RESEARCH_PLAN.md     |   114 +
+ .../drafts/private-v1/PRIMITIVE_CONTRACT.md        |   116 +
+ .../20261013/drafts/private-v1/REVIEW.md           |   116 +
+ .../20261013/drafts/private-v1/profiles.json       |    90 +
+ .../drafts/private-v1/support/clbg_primitives.c    |   296 +
+ .../runtime-v1/fixtures/discovery.json             |    18 +
+ .../runtime-v1/fixtures/fixture-receipt.json       |    40 +
+ .../runtime-v1/fixtures/fixtures.log               |    11 +
+ .../20261013/proposal-seals/runtime-v1/report.json |   129 +
+ .../proposal-seals/runtime-v1/terminal-pin.json    |   122 +
+ .../20261013/proposals/runtime-v1.json             |   169 +
+ .../20261013/revisions/primitives-v1/STATUS.json   |    34 +
+ .../20261013/revisions/runtime-v1/REVIEW.md        |   158 +
+ .../revisions/runtime-v1/bootstrap_runtime.py      |   316 +
+ .../20261013/revisions/runtime-v1/contracts.py     |   133 +
+ .../revisions/runtime-v1/fixture_runner.py         |    96 +
+ .../20261013/revisions/runtime-v1/test_runtime.py  |    80 +
+ .../clbg/v-report-only/20261012/REPORT_FULL_V4.md  |    18 +
+ 178 files changed, 89571 insertions(+), 21 deletions(-)

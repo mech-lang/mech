@@ -1,0 +1,17 @@
+{
+  "status": "published-private-successfully",
+  "project_id": "appgprj_6ac8f49664688191961eac14d8a9465b",
+  "version_id": "appgprj_6ac8f49664688191961eac14d8a9465b~appgver_defb8f94a61881919cb28b0f182512df",
+  "deployment_id": "appgdep_6ace72e07a608191827dcca1ffac875a",
+  "url": "https://mech-benchmark-explorer.refreshthen.chatgpt.site",
+  "site_source_commit": "c23339fe74db3623db8409d92826dc0d64b3b853",
+  "archive": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/current-chart-session-v2/site-artifact.tar.gz",
+  "dataset_sha256": "27b1c792b253d3d465ca6f853e7f85c9d089cb87e3b161a634feb7b5c1f69c8e",
+  "interface_time_ratio": "times benchmark best-time baseline",
+  "conversation_time_ratio": "times recorded matched Mech control",
+  "crystal_programs": 20,
+  "crystal_timing_runs": 60,
+  "prior_programs_and_baselines_unchanged": true,
+  "native_benchmarks_started": 0,
+  "source_helper_succeeded": true
+}

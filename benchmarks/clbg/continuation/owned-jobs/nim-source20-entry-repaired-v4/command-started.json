@@ -1,0 +1,16 @@
+{
+  "started_at": "2026-10-13T13:27:24.707288+00:00",
+  "command_pid": 20457,
+  "command_identity": {
+    "pid": 20457,
+    "listing": "20457 20453 Tue Oct 13 09:27:24 2026     /opt/homebrew/opt/python@3.14/bin/python3.14 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_nim_source20_v4.py"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_nim_source20_v4.py"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech"
+}

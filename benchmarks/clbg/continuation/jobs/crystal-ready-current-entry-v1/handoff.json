@@ -1,0 +1,24 @@
+{
+  "status": "entering-reviewed-fixture-and-candidate-build",
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-E",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/qualify_native_ready_v1.py",
+    "--output",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/native-ready-v1",
+    "--packet",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/crystal-ready-publication-v1.json",
+    "--packet-sha256",
+    "d9266d74a53a9916e2d79c5c3fbe5409ca5c207d89cdf91baedcda54bc08b964",
+    "--input-data",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/dist/data.json"
+  ],
+  "packet_sha256": "d9266d74a53a9916e2d79c5c3fbe5409ca5c207d89cdf91baedcda54bc08b964",
+  "common_mutex_held": true,
+  "native_processes": 0,
+  "chart_admission": false,
+  "automatic_retry": false
+}

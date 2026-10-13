@@ -1,0 +1,5 @@
+{
+  "exit_code": 127,
+  "common_mutex_retained": true,
+  "credentials_read_by_coordinator": false
+}

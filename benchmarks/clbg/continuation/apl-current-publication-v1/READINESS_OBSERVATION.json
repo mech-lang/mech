@@ -1,0 +1,74 @@
+{
+  "status": "actual-locked-header-and-dataset-inspection-with-unqualified-count-replay",
+  "inspection_actual_exit_code": 0,
+  "inspection_common_mutex_inode": 79859134,
+  "actual_native_processes_started": 0,
+  "live_dataset_mutations": 0,
+  "chart_admission": false,
+  "source_count_admission": false,
+  "native_receipts_independently_replayed_by_this_inspection": false,
+  "report": {
+    "path": "continuation/apl-sample84-recovery-v1/full-owner/timings-apl.json",
+    "sha256": "d8281e04af0cfb460364af540d7cb158074df8dad6238c78cc8d8cd971257bda",
+    "status": "partial",
+    "sample_count": 3,
+    "program_rows_including_preserved_old_forms": 37,
+    "attempt_count": 87
+  },
+  "recovery_status": {
+    "path": "continuation/apl-sample84-recovery-v1/full-owner/status.json",
+    "sha256": "b50158716bd7fb7ec91c4005c52626a70400d020a8357806d9d0a5fa80cccad7",
+    "status": "complete"
+  },
+  "old_summary": {
+    "path": "r-apl-uiua-comparison/20261011/results/summary.json",
+    "sha256": "31697968e27c34393ce6858912abe3cf988742b84c2e5b15e35a0d933f49bae6",
+    "status": "partial",
+    "apl_admitted_benchmarks": 4
+  },
+  "existing_dataset": {
+    "path": "overview/explorer/dist/data.json",
+    "sha256": "65bfa4d833f61fff69b16eb3c917e4fcd1eb21d5788bbbeed7e09e9f2382d32f",
+    "apl_source_count": 6,
+    "apl_timed_benchmarks": ["spectralnorm", "revcomp", "regexredux", "pidigits"],
+    "apl_programs": [
+      "spectralnorm:spectralnorm-apl-compact",
+      "spectralnorm:spectralnorm-apl-optimized",
+      "pidigits:pidigits-apl-compact",
+      "regexredux:regexredux-apl-v3-optimized",
+      "revcomp:revcomp-apl-v2-compact",
+      "revcomp:revcomp-apl-v2-optimized"
+    ],
+    "missing_new_benchmarks": ["fannkuchredux", "nbody", "fasta", "knucleotide", "mandelbrot"],
+    "existing_count_metric": "statement-normalized",
+    "compatibility": "Old dataset remains unchanged and the newer recovery report is unhooked."
+  },
+  "fann_observation": {
+    "key": "fannkuchredux:fannkuchredux-apl-compact",
+    "recorded_source_sha256": "e40e4b49c7f892f3a3c497a05124b07d825cf1d65906fb28b0dc3047eb11de7f",
+    "source_bytes_independently_hashed_by_this_inspection": false,
+    "producer_loc": 37,
+    "peer_reviewed_canonical_loc_proposal": 38,
+    "proposed_written_closer_line": 36,
+    "samples_seconds": [7919.4648885, 7797.184570125, 7813.675807166],
+    "median_seconds": 7813.675807166,
+    "apl_attempt_numbers": [82, 84, 87],
+    "optimized_timing_alias_of": "fannkuchredux:fannkuchredux-apl-compact",
+    "mech_control_key": "fannkuchredux:mech-control-for-apl",
+    "mech_control_samples_seconds": [1.707343, 1.734489792, 1.712786375],
+    "mech_control_median_seconds": 1.712786375,
+    "mech_control_attempt_numbers": [83, 85, 86],
+    "native_receipt_binding_status": "Numbers and samples recorded in closed report; original six receipt bodies still require independent admission replay."
+  },
+  "existing_six_source_closer_approval": {
+    "path": "loc-normalization/20261012/apl-closer-approval-job07.json",
+    "sha256": "3002ab693f1b3f1a17e78cbcf9d2d45d73127ac604102570a0a374c5aaf33819",
+    "status": "approved-exact-six-source-closer-reconciliation",
+    "covers_fann": false
+  },
+  "blockers": [
+    "APL binarytrees source and its existing optimized alias failed full output with GNU APL WS FULL; tree control remains pending.",
+    "Fann numeric canonical LOC requires actual fixture-qualified source replay and terminal, source/audit and interpreter/load binding, whole authored bundle and semantic owner review.",
+    "Fann-only timing admission requires closed original six native receipt and recovery provenance replay; no path swap or producer-LOC fallback."
+  ]
+}

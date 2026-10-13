@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-13T14:16:06.820192+00:00",
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/save_followup_checkpoint_v5.py"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "common_mutex_owned_by_target_command": true,
+  "qualification_granted": false,
+  "automatic_retry": false
+}

@@ -1,0 +1,20 @@
+{
+  "status": "command-exited-zero-awaiting-report-review",
+  "started_at": "2026-10-13T14:16:06.868261+00:00",
+  "worker_identity": {
+    "pid": 29844,
+    "listing": "29844     1 Tue Oct 13 10:16:06 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/followup-git-checkpoint-v5 --lease-fd 3 --go-fd 4"
+  },
+  "actual_command_started": true,
+  "exit_code": 0,
+  "qualification_granted": false,
+  "automatic_retry": false,
+  "command_pid": 29848,
+  "command_identity": {
+    "pid": 29848,
+    "listing": "29848 29844 Tue Oct 13 10:16:06 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/save_followup_checkpoint_v5.py"
+  },
+  "command_identity_observation_missing": false,
+  "finished_at": "2026-10-13T16:34:16.979836+00:00",
+  "stop_signals": []
+}

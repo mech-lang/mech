@@ -1,0 +1,6 @@
+{
+  "pid": 73385,
+  "common_mutex_fd": 64,
+  "credentials_read_by_coordinator": false,
+  "supported_helper_owns_site_git": true
+}

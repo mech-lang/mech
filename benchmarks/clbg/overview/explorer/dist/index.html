@@ -30,7 +30,7 @@
         </section>
         <section><div class="section-heading"><h2><button id="toggle-language-filters" class="filter-toggle" aria-expanded="true" aria-controls="language-filter-body">Languages <span id="language-filter-count"></span></button></h2><div class="text-actions"><button id="all-languages">All</button><button id="no-languages">None</button><button id="only-mech">Mech</button></div></div>
           <div class="filter-body" id="language-filter-body">
-          <p class="control-note">Select a language or its execution variants. Hover to see covariance contours; oval buttons keep them visible.</p>
+          <p class="control-note">Check to include. Click a language name for its timings, programs and comparisons. Oval buttons keep covariance contours visible.</p>
           <fieldset class="year-controls"><legend>Release year</legend>
             <div class="year-heading"><label for="release-year">Release year</label><output id="release-year-value" for="release-year"></output></div>
             <input id="release-year" type="range" step="1" aria-label="Language release year">
@@ -54,6 +54,12 @@
           <select id="focused-benchmark" aria-label="Benchmark to inspect" hidden></select>
           <div class="year-playback"><button id="play-years" class="quiet-button" aria-pressed="false">Play years</button><output id="playback-year" aria-label="Current release year"></output></div>
         </div>
+        <section id="language-overview" class="language-overview" aria-labelledby="language-overview-title" hidden>
+          <div class="language-overview-heading"><div><p class="eyebrow">Language explorer</p><h2 id="language-overview-title" tabindex="-1"></h2><p id="language-overview-summary"></p></div><div class="overview-actions"><button id="return-language-overview" class="quiet-button" hidden>Back to language overview</button><button id="leave-language-overview" class="quiet-button">Back to previous chart</button></div></div>
+          <p class="overview-statistics-note">The language chart highlights every published program and recorded run. Overlapping runs share their measured coordinates. Diamonds show coordinate medians across benchmark endpoints; 1σ / 2σ covariance contours describe variation across benchmarks. The table’s SD measures variation between repeated runs of one program. A run can fall below the 1× median baseline.</p>
+          <div class="overview-comparison-controls"><label>Execution variant<select id="overview-variant"></select></label><label>Benchmark<select id="overview-benchmark"></select></label><label>Compare with<select id="overview-comparison-language"></select></label><button id="overview-compare" class="quiet-button">Compare benchmark</button><button id="overview-inspect" class="quiet-button">Browse programs</button></div>
+          <details class="language-timings" open><summary>All published programs and timings</summary><div class="language-timings-wrap"><table id="language-timings"><thead><tr><th scope="col">Benchmark</th><th scope="col">Execution variant</th><th scope="col">Program / source</th><th scope="col">LOC</th><th scope="col">Median</th><th scope="col" title="Measured time relative to this benchmark’s fixed best-time baseline; matches the graph">Time × best</th><th scope="col">Run-to-run SD</th><th scope="col">Recorded seconds / comparison</th></tr></thead><tbody></tbody></table></div></details>
+        </section>
         <div class="chart-card">
           <div id="chart-detail-layout" class="chart-detail-layout">
           <div class="chart-plot">
@@ -63,9 +69,10 @@
             <label><input id="small-profile" type="checkbox" checked> <span class="square-symbol"></span>Fewest LOC</label>
             <label><input id="show-samples" type="checkbox" checked>Samples</label>
             <label id="focus-means-option" title="Fit axes to geometric-mean endpoints. Uncheck to fit benchmark samples and covariance contours while Samples is enabled."><input id="focus-means" type="checkbox" checked>Focus on means</label>
-            <label title="Highlight the whole-set coordinate median and covariance while fading language means and samples."><input id="show-global" type="checkbox">Global median &amp; SD</label>
+            <label title="Highlight the whole-set coordinate median and covariance while fading language means and samples."><input id="show-global" type="checkbox"><span id="median-option-label">Global median &amp; SD</span></label>
             <label title="Trace the median as languages enter the selected comparison by release year."><input id="show-median-trail" type="checkbox" checked>Median trail</label>
           </div>
+          <div class="chart-hover-details"><p id="hover-details" role="status" aria-live="polite" aria-atomic="true">Hover a point or line for details.</p></div>
           <p id="global-statistics-note" class="global-statistics-note inactive" aria-hidden="true">Global: median · 1σ / 2σ covariance</p>
           <div id="chart-wrap"><svg id="chart" role="img" aria-label="Source lines and elapsed time on logarithmic base-2 axes"></svg><div id="empty-state" hidden></div></div>
           <div class="plot-caption"><span>Fewer lines left · faster below · fixed log₂ axes</span><span>Click a point for code and timing samples.</span></div>
@@ -80,7 +87,7 @@
         </div>
         <details class="method"><summary>Measurements and how to read the chart</summary>
           <div class="method-copy"><p>Each benchmark is normalized to the full measured cohort’s fewest source lines and fastest median elapsed time. Hiding a language or program does not move those baselines. Axis limits use the full admitted cohort for the selected benchmark set and remain fixed when languages, profiles, programs, or standard-deviation ellipses are toggled. Changing the benchmark set, chart view, or Focus on means setting establishes a new range. Hiding Samples restores the means range and removes the option to fit hidden data points. Selecting benchmarks recomputes equal-weight geometric means from that subset.</p>
-          <p>Circles are the fastest included programs; squares are those with the fewest LOC. A line joins the two profiles. Faint dots are their benchmark inputs. The website includes only the fastest and fewest-LOC programs for each language and benchmark. Clicking a mean lets you inspect its contributing programs.</p>
+          <p>Circles are the fastest included programs; squares are those with the fewest LOC. A line joins the two profiles. Faint dots are their benchmark inputs. The normal comparison uses the fastest and fewest-LOC endpoint pool for each language and benchmark. Clicking a mean lets you inspect its contributing programs. Clicking a language name opens its overview: all ten workloads remain listed, every program in the publication’s qualified inventory and every recorded run is available, and missing coverage is labelled. Small hollow dots in that view show individual runs at their actual source LOC and elapsed-time ratio to the benchmark’s fixed baseline. Diamonds and covariance contours summarize the language’s benchmark endpoints; the table reports each program’s separate run-to-run SD.</p>
           <p>Global median &amp; SD highlights the coordinate median of the visible fastest and fewest-LOC endpoints, fading language means and benchmark samples. White denotes fastest; gold denotes fewest LOC. Inner contours show 1σ covariance in log₂ LOC/time space, with a lighter 2σ contour. Covariance is computed about the log-space mean and its contours are translated to the median, preserving their shape and area. Each visible execution variant has equal weight. These describe variation between entries, not timing uncertainty. At least two entries are required for covariance. The median trail follows cumulative release-year cohorts within the current benchmark, language and program selections. Play years steps only through release years in the dataset, in any chart view, and enables the median overlay. Pause or move the slider to inspect a year. Baselines and axes stay fixed throughout playback.</p>
           <p>Language checkboxes group runtime variants: Mech has AOT, JIT and interpreted execution; Lua has interpreted Lua and LuaJIT; C# and F# each have JIT and AOT; Dart has AOT and JIT. Child checkboxes keep each variant independently selectable, with separate measured endpoints and means. A partially checked parent means some variants are enabled. Lua has nine admitted workloads and no recorded pi-digits endpoint; its partial coverage is labelled, with no invented timing.</p>
           <p>The comparison table shows each language’s fewest-LOC multiple and fastest-time multiple relative to 1×. On the full chart these are equal-weight geometric means over the compared benchmarks. A 1.46× LOC value means 46% more lines than the shortest-source baseline. These two best values can come from different programs. For the line from the square to the circle, Δx = log₂(fastest LOC / fewest LOC) and Δy = log₂(fastest time / fewest-LOC time). Slope = Δy/Δx; length = √(Δx² + Δy²), in doublings rather than screen pixels. Coincident endpoints have zero length and undefined slope.</p>
@@ -105,7 +112,6 @@
     </div>
   </main>
 
-  <div id="tooltip" role="tooltip" hidden></div>
   <div id="sort-status" class="sr-only" role="status" aria-live="polite"></div>
   <footer>Mech Robotics Lab <span>Measured programs, complete source, recorded samples.</span></footer>
 </body>

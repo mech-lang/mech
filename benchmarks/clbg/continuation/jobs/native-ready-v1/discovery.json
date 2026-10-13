@@ -1,0 +1,9 @@
+{
+  "discovered_test_ids": [
+    "test_native_languages_ready_v1.NativeReadyAdmission.test_crystal_only_keeps_unchanged_twenty_source_ninety_process_validation",
+    "test_native_languages_ready_v1.NativeReadyAdmission.test_guarded_late_failures_are_atomic_and_matching_admission_is_idempotent",
+    "test_native_languages_ready_v1.NativeReadyAdmission.test_partial_unknown_eighty_nine_runtime_and_unqualified_loc_reject",
+    "test_native_languages_ready_v1.NativeReadyAdmission.test_pure_subset_platform_and_groups_preserve_prior_cohort_and_controls"
+  ],
+  "loader_errors": []
+}

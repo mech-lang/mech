@@ -1,0 +1,24 @@
+{
+  "status": "stopped-before-next-stage",
+  "dependency": "prolog-runtime-v4-seal",
+  "automatic_retry": false,
+  "benchmark_timing_authorized": false,
+  "chart_admission": false,
+  "error": "AssertionError",
+  "error_type": "AssertionError",
+  "failed_dependency_publication_bytes": {
+    "available_pins": {
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/proposals/runtime-v4.json": "c72f7ab0d41b195acafff131e5f2cd7c61577a9fa14898af15e4c543b8daa322",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/proposals/runtime-v2.json": "c72f7ab0d41b195acafff131e5f2cd7c61577a9fa14898af15e4c543b8daa322",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/proposal-seals/runtime-v4/report.json": "c72f7ab0d41b195acafff131e5f2cd7c61577a9fa14898af15e4c543b8daa322",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/proposal-seals/runtime-v4/terminal-pin.json": "9f02233865b26508b0938ca1e3a6a1b8450d30b51686b749afc49fef797d9c51",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/proposal-seals/runtime-v4/metadata-publication-outcome.json": "8bba6dc44191d370756037635d2782fc2e11d03b6c329f78d0b590d6299a927d",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/proposal-seals/runtime-v4/metadata-publication-terminal.json": "41b0e9e3981d7ad72c87069b3af15dcfcebbeb051b4cde78189f469cca77cb8f"
+    },
+    "absent_paths": [],
+    "pin_errors": [],
+    "original_status_changed": false,
+    "retries": 0,
+    "runtime_admission": false
+  }
+}

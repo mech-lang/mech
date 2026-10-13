@@ -1,0 +1,63 @@
+{
+  "status": "actual-original-four-reused-without-fixture-reexecution",
+  "original_fixture_receipt": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/native-ready-v1/fixture-receipt.json",
+    "sha256": "bce66a4cb1fc02cc827c6906f9ddc5be4b3abddb8851e2028415600972ec29b8"
+  },
+  "original_fixture_terminal": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/native-ready-v1/terminal-pin.json",
+    "sha256": "0b3a1cce3a5c2a41d27b88e2f3af8145d014c9ed3c1a2b5959c5c1613afeba59"
+  },
+  "original_durable_terminal": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/crystal-current-chart4-fixture-and-candidate-v1/terminal.json",
+    "sha256": "f0b2e420ba7976780648449b110839a241c81e7e9cb7715ceb4ffa6397364396"
+  },
+  "new_fixture_methods_executed": 0,
+  "original_fixture_methods_passed": 4,
+  "candidate_admission": {
+    "ready_languages": [
+      "crystal"
+    ],
+    "full_requested_languages": [
+      "c3",
+      "clojure",
+      "crystal",
+      "elixir",
+      "gleam",
+      "kotlin",
+      "nim",
+      "pony",
+      "prolog",
+      "rebol"
+    ],
+    "actual_full_native_processes": 90,
+    "source_count": 20,
+    "samples_per_source": 3,
+    "unchanged_existing_baselines": true,
+    "source_or_timing_mutations": 0,
+    "V_visualization_entries": 0,
+    "Red_visualization_entries": 0
+  },
+  "endpoint_admission": {
+    "ready_languages": [
+      "crystal"
+    ],
+    "retained_ready_programs": 18,
+    "unchanged_existing_baselines": true,
+    "source_or_timing_mutations": 0
+  },
+  "candidate_equal_to_original_except_inventory": true,
+  "historical_mutable_input": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/dist/data.json",
+    "original_sha256": "65bfa4d833f61fff69b16eb3c917e4fcd1eb21d5788bbbeed7e09e9f2382d32f",
+    "immutable_snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/current-chart-session-v2/input-data.json"
+  },
+  "source_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/current_chart_session_v2.py": "e80d7b75ba086b8faeb6c0d771525ce81d105202887e74074d618c2aece7eb3b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/qualify_native_ready_current_v2.py": "4118db4115c2e37af1533495e24f45423e66194c6fc7fa87d04d60e6e821a7b8",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/crystal-ready-publication-v1.json": "d9266d74a53a9916e2d79c5c3fbe5409ca5c207d89cdf91baedcda54bc08b964",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/native-ready-v1/fixture-receipt.json": "bce66a4cb1fc02cc827c6906f9ddc5be4b3abddb8851e2028415600972ec29b8",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/native-ready-v1/terminal-pin.json": "0b3a1cce3a5c2a41d27b88e2f3af8145d014c9ed3c1a2b5959c5c1613afeba59",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/crystal-current-chart4-fixture-and-candidate-v1/terminal.json": "f0b2e420ba7976780648449b110839a241c81e7e9cb7715ceb4ffa6397364396"
+  }
+}

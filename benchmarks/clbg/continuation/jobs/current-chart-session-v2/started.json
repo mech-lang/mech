@@ -1,0 +1,15 @@
+{
+  "status": "entered-single-common-grant",
+  "common_mutex_fd": 64,
+  "common_mutex_inode": 79859134,
+  "source_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/current_chart_session_v2.py": "e80d7b75ba086b8faeb6c0d771525ce81d105202887e74074d618c2aece7eb3b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/qualify_native_ready_current_v2.py": "4118db4115c2e37af1533495e24f45423e66194c6fc7fa87d04d60e6e821a7b8",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/crystal-ready-publication-v1.json": "d9266d74a53a9916e2d79c5c3fbe5409ca5c207d89cdf91baedcda54bc08b964"
+  },
+  "baseline_sha256": "65bfa4d833f61fff69b16eb3c917e4fcd1eb21d5788bbbeed7e09e9f2382d32f",
+  "immutable_worker_input": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/current-chart-session-v2/input-data.json",
+  "native_benchmarks_started": 0,
+  "secret_input_received": false,
+  "automatic_retry": false
+}

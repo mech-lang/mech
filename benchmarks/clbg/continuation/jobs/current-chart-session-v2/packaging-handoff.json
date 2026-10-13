@@ -1,0 +1,10 @@
+{
+  "status": "entering-supported-Sites-helper",
+  "common_mutex_fd": 64,
+  "candidate_sha256": "27b1c792b253d3d465ca6f853e7f85c9d089cb87e3b161a634feb7b5c1f69c8e",
+  "credentials_received": false,
+  "node": "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+  "helper": "/Users/cim310/.codex/plugins/cache/openai-curated-remote/sites/1.0.1/scripts/site-workflow.mjs",
+  "project_id": "appgprj_6ac8f49664688191961eac14d8a9465b",
+  "audience_changes": 0
+}

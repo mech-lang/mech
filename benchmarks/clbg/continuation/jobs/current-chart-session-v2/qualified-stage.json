@@ -1,0 +1,21 @@
+{
+  "status": "qualified-and-staged-awaiting-browser-QA",
+  "candidate": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/current-chart-session-v2/candidate-data.json",
+  "candidate_sha256": "27b1c792b253d3d465ca6f853e7f85c9d089cb87e3b161a634feb7b5c1f69c8e",
+  "fixture_receipt": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/native-ready-v1/fixture-receipt.json",
+    "sha256": "bce66a4cb1fc02cc827c6906f9ddc5be4b3abddb8851e2028415600972ec29b8"
+  },
+  "fixture_terminal": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/native-ready-v1/terminal-pin.json",
+    "sha256": "0b3a1cce3a5c2a41d27b88e2f3af8145d014c9ed3c1a2b5959c5c1613afeba59"
+  },
+  "retained_twenty_source_inventory": true,
+  "old_records_and_fixed_baselines_unchanged": true,
+  "staged_paths": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/dist/data.json",
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/dist/data.json"
+  ],
+  "native_benchmarks_started": 0,
+  "audience_changes": 0
+}

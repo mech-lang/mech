@@ -1,0 +1,7 @@
+{
+  "status": "failed-with-preserved-session-evidence",
+  "error": "Supported Sites helper failed",
+  "error_type": "AssertionError",
+  "native_benchmarks_started": 0,
+  "automatic_retry": false
+}

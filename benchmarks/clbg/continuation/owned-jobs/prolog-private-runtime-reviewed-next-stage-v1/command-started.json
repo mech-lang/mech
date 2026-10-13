@@ -1,0 +1,18 @@
+{
+  "started_at": "2026-10-13T14:09:55.672441+00:00",
+  "command_pid": 28920,
+  "command_identity": {
+    "pid": 28920,
+    "listing": "28920 28912 Tue Oct 13 10:09:55 2026     /opt/homebrew/opt/python@3.14/bin/python3.14 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/enter_reviewed_followup_v1.py --stage prolog-runtime"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/enter_reviewed_followup_v1.py",
+    "--stage",
+    "prolog-runtime"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech"
+}

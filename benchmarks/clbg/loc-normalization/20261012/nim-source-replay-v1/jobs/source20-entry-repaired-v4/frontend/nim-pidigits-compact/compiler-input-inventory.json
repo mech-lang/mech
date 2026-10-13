@@ -1,0 +1,2499 @@
+{
+  "status": "actual-exact-authored-Nim-frontend-inputs-awaiting-independent-review",
+  "id": "nim-pidigits-compact",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/qualification/private-v2/source-snapshot/sources/pidigits/compact.nim",
+  "source_sha256": "5c1ba8e2ec741f1586f53d9099168f41ed94184d482c6652ad347851cc4f66bd",
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/bin/nim-pidigits-compact",
+  "binary_sha256": "41325733da753db2ac967d65f7f1a91dd0581c35fd3713edce99dcec59a39de0",
+  "original_build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/bin/nim",
+    "c",
+    "--skipUserCfg:on",
+    "--skipParentCfg:on",
+    "--skipProjCfg:on",
+    "-d:release",
+    "--mm:orc",
+    "--threads:on",
+    "--parallelBuild:1",
+    "--cc:clang",
+    "--clang.exe:/opt/homebrew/Cellar/llvm@22/22.1.8/bin/clang-22",
+    "--clang.linkerexe:/opt/homebrew/Cellar/llvm@22/22.1.8/bin/clang-22",
+    "--lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib",
+    "--path:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/bigints/bigints-3b5a106b88ec1baa904a059a1430c8335d885075/src",
+    "--path:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim-gmp/nim-gmp-4e9a6a05bfc274abd02a241f2d7c9162b2300191/src",
+    "--nimcache:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/cache/nim-pidigits-compact",
+    "--out:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/bin/nim-pidigits-compact",
+    "--passC:-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk",
+    "--passL:-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk",
+    "--passC:-mmacosx-version-min=14.4",
+    "--passL:-mmacosx-version-min=14.4",
+    "--passC:-ffp-contract=off",
+    "--passC:-I/opt/homebrew/Cellar/pcre/8.45/include",
+    "--passC:-I/opt/homebrew/Cellar/gmp/6.3.0/include",
+    "--passL:-L/opt/homebrew/Cellar/gmp/6.3.0/lib",
+    "--passL:/opt/homebrew/Cellar/pcre/8.45/lib/libpcre.1.dylib",
+    "--passL:/opt/homebrew/Cellar/gmp/6.3.0/lib/libgmp.10.dylib",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/qualification/private-v2/source-snapshot/sources/pidigits/compact.nim"
+  ],
+  "original_build_receipt": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/qualification/private-v2/builds/nim-pidigits-compact/build.json",
+    "sha256": "29fc713fd3802d364f0629b770180d12dd4ef0f48b06f230ca49d8f1c4366e18"
+  },
+  "audit_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/bin/nim",
+    "c",
+    "--skipUserCfg:on",
+    "--skipParentCfg:on",
+    "--skipProjCfg:on",
+    "-d:release",
+    "--mm:orc",
+    "--threads:on",
+    "--parallelBuild:1",
+    "--cc:clang",
+    "--clang.exe:/opt/homebrew/Cellar/llvm@22/22.1.8/bin/clang-22",
+    "--clang.linkerexe:/opt/homebrew/Cellar/llvm@22/22.1.8/bin/clang-22",
+    "--lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib",
+    "--path:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/bigints/bigints-3b5a106b88ec1baa904a059a1430c8335d885075/src",
+    "--path:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim-gmp/nim-gmp-4e9a6a05bfc274abd02a241f2d7c9162b2300191/src",
+    "--nimcache:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/nim-source-replay-v1/jobs/source20-entry-repaired-v4/frontend/nim-pidigits-compact/cache",
+    "--out:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/nim-source-replay-v1/jobs/source20-entry-repaired-v4/frontend/nim-pidigits-compact/never-scored-binary",
+    "--passC:-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk",
+    "--passL:-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk",
+    "--passC:-mmacosx-version-min=14.4",
+    "--passL:-mmacosx-version-min=14.4",
+    "--passC:-ffp-contract=off",
+    "--passC:-I/opt/homebrew/Cellar/pcre/8.45/include",
+    "--passC:-I/opt/homebrew/Cellar/gmp/6.3.0/include",
+    "--passL:-L/opt/homebrew/Cellar/gmp/6.3.0/lib",
+    "--passL:/opt/homebrew/Cellar/pcre/8.45/lib/libpcre.1.dylib",
+    "--passL:/opt/homebrew/Cellar/gmp/6.3.0/lib/libgmp.10.dylib",
+    "--compileOnly:on",
+    "--processing:filenames",
+    "--filenames:abs",
+    "--colors:off",
+    "--incremental:off",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/qualification/private-v2/source-snapshot/sources/pidigits/compact.nim"
+  ],
+  "audit_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/nim-source-replay-v1/jobs/source20-entry-repaired-v4/frontend/nim-pidigits-compact/frontend-inputs.json",
+  "original_semantic_flags_preserved": true,
+  "original_binary_rebuilt": false,
+  "compiler_frontend_only": true,
+  "vendor_roots": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/bigints/bigints-3b5a106b88ec1baa904a059a1430c8335d885075/src",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim-gmp/nim-gmp-4e9a6a05bfc274abd02a241f2d7c9162b2300191/src"
+  ],
+  "processing_evidence": {
+    "events": [
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "(toplevel)",
+        "depth": 1,
+        "raw_line": "Hint: > (toplevel): import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system.nim [Processing]",
+        "line": 3
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/basic_types.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/basic_types.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/basic_types.nim [Processing]",
+        "line": 4
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/compilation.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/compilation.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/compilation.nim [Processing]",
+        "line": 5
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/arithmetics.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/arithmetics.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/arithmetics.nim [Processing]",
+        "line": 6
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/comparisons.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/comparisons.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/comparisons.nim [Processing]",
+        "line": 7
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim [Processing]",
+        "line": 8
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/hti.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/hti.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/hti.nim [Processing]",
+        "line": 9
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/exceptions.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/exceptions.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "system",
+        "depth": 2,
+        "raw_line": "Hint: >> system: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/exceptions.nim [Processing]",
+        "line": 10
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/setops.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/setops.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/setops.nim [Processing]",
+        "line": 11
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/since.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/since.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "system",
+        "depth": 2,
+        "raw_line": "Hint: >> system: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/since.nim [Processing]",
+        "line": 12
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/ctypes.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/ctypes.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "system",
+        "depth": 2,
+        "raw_line": "Hint: >> system: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/ctypes.nim [Processing]",
+        "line": 13
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/ptrarith.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/ptrarith.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/ptrarith.nim [Processing]",
+        "line": 14
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/rawquits.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/rawquits.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/rawquits.nim [Processing]",
+        "line": 15
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/sysatomics.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/sysatomics.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "system",
+        "depth": 2,
+        "raw_line": "Hint: >> system: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/sysatomics.nim [Processing]",
+        "line": 16
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/memalloc.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/memalloc.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/memalloc.nim [Processing]",
+        "line": 17
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/bitmasks.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/bitmasks.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/bitmasks.nim [Processing]",
+        "line": 18
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/iterators_1.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/iterators_1.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/iterators_1.nim [Processing]",
+        "line": 19
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/ansi_c.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/ansi_c.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "system",
+        "depth": 2,
+        "raw_line": "Hint: >> system: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/ansi_c.nim [Processing]",
+        "line": 20
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/sysmem.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/sysmem.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/sysmem.nim [Processing]",
+        "line": 21
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/syslocks.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/syslocks.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "system",
+        "depth": 2,
+        "raw_line": "Hint: >> system: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/syslocks.nim [Processing]",
+        "line": 22
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/threadlocalstorage.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/threadlocalstorage.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/threadlocalstorage.nim [Processing]",
+        "line": 23
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/threadtypes.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/threadtypes.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "system",
+        "depth": 2,
+        "raw_line": "Hint: >> system: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/threadtypes.nim [Processing]",
+        "line": 24
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "threadtypes",
+        "depth": 2,
+        "raw_line": "Hint: >> threadtypes: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim [Processing]",
+        "line": 25
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/strs_v2.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/strs_v2.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/strs_v2.nim [Processing]",
+        "line": 26
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/seqs_v2.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/seqs_v2.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/seqs_v2.nim [Processing]",
+        "line": 27
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/fatal.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/fatal.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/fatal.nim [Processing]",
+        "line": 28
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/arc.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/arc.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/arc.nim [Processing]",
+        "line": 29
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/orc.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/orc.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/orc.nim [Processing]",
+        "line": 30
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/cellseqs_v2.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/cellseqs_v2.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/cellseqs_v2.nim [Processing]",
+        "line": 31
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/threadids.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/threadids.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/threadids.nim [Processing]",
+        "line": 32
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/gc_interface.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/gc_interface.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/gc_interface.nim [Processing]",
+        "line": 33
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/excpt.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/excpt.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/excpt.nim [Processing]",
+        "line": 34
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/miscdollars.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/miscdollars.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "system",
+        "depth": 2,
+        "raw_line": "Hint: >> system: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/miscdollars.nim [Processing]",
+        "line": 35
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/digitsutils.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/digitsutils.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "miscdollars",
+        "depth": 3,
+        "raw_line": "Hint: >>> miscdollars: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/digitsutils.nim [Processing]",
+        "line": 36
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/stacktraces.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/stacktraces.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "system",
+        "depth": 2,
+        "raw_line": "Hint: >> system: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/stacktraces.nim [Processing]",
+        "line": 37
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/assertions.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/assertions.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "system",
+        "depth": 2,
+        "raw_line": "Hint: >> system: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/assertions.nim [Processing]",
+        "line": 38
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/rawquits.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/rawquits.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "assertions",
+        "depth": 2,
+        "raw_line": "Hint: >> assertions: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/rawquits.nim [Processing]",
+        "line": 39
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/fatal.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/fatal.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "assertions",
+        "depth": 2,
+        "raw_line": "Hint: >> assertions: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/fatal.nim [Processing]",
+        "line": 40
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/iterators.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/iterators.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "system",
+        "depth": 2,
+        "raw_line": "Hint: >> system: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/iterators.nim [Processing]",
+        "line": 41
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/coro_detection.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/coro_detection.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "system",
+        "depth": 2,
+        "raw_line": "Hint: >> system: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/coro_detection.nim [Processing]",
+        "line": 42
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/dollars.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/dollars.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "system",
+        "depth": 2,
+        "raw_line": "Hint: >> system: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/dollars.nim [Processing]",
+        "line": 43
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/formatfloat.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/formatfloat.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "dollars",
+        "depth": 3,
+        "raw_line": "Hint: >>> dollars: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/formatfloat.nim [Processing]",
+        "line": 44
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/dragonbox.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/dragonbox.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "formatfloat",
+        "depth": 4,
+        "raw_line": "Hint: >>>> formatfloat: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/dragonbox.nim [Processing]",
+        "line": 45
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/schubfach.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/schubfach.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "formatfloat",
+        "depth": 4,
+        "raw_line": "Hint: >>>> formatfloat: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/schubfach.nim [Processing]",
+        "line": 46
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/objectdollar.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/objectdollar.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "dollars",
+        "depth": 3,
+        "raw_line": "Hint: >>> dollars: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/objectdollar.nim [Processing]",
+        "line": 47
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/chcks.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/chcks.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/chcks.nim [Processing]",
+        "line": 48
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/indexerrors.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/indexerrors.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/indexerrors.nim [Processing]",
+        "line": 49
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/integerops.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/integerops.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/integerops.nim [Processing]",
+        "line": 50
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/threadimpl.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/threadimpl.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/threadimpl.nim [Processing]",
+        "line": 51
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/typedthreads.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/typedthreads.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "system",
+        "depth": 2,
+        "raw_line": "Hint: >> system: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/typedthreads.nim [Processing]",
+        "line": 52
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/dyncalls.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/dyncalls.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/dyncalls.nim [Processing]",
+        "line": 53
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/countbits_impl.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/countbits_impl.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "system",
+        "depth": 2,
+        "raw_line": "Hint: >> system: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/countbits_impl.nim [Processing]",
+        "line": 54
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/bitops_utils.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/bitops_utils.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "countbits_impl",
+        "depth": 3,
+        "raw_line": "Hint: >>> countbits_impl: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/bitops_utils.nim [Processing]",
+        "line": 55
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/sets.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/sets.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/sets.nim [Processing]",
+        "line": 56
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/mmdisp.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/mmdisp.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/mmdisp.nim [Processing]",
+        "line": 57
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/alloc.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/alloc.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/alloc.nim [Processing]",
+        "line": 58
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/osalloc.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/osalloc.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/osalloc.nim [Processing]",
+        "line": 59
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/strmantle.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/strmantle.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/strmantle.nim [Processing]",
+        "line": 60
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/assign.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/assign.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/assign.nim [Processing]",
+        "line": 61
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/seqs_v2_reimpl.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/seqs_v2_reimpl.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/seqs_v2_reimpl.nim [Processing]",
+        "line": 62
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/channels_builtin.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/channels_builtin.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/channels_builtin.nim [Processing]",
+        "line": 63
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/indices.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/indices.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/indices.nim [Processing]",
+        "line": 64
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/repr_v2.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/repr_v2.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "system",
+        "depth": 2,
+        "raw_line": "Hint: >> system: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/repr_v2.nim [Processing]",
+        "line": 65
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "repr_v2",
+        "depth": 2,
+        "raw_line": "Hint: >> repr_v2: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim [Processing]",
+        "line": 66
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/deepcopy.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/deepcopy.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/deepcopy.nim [Processing]",
+        "line": 67
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/widestrs.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/widestrs.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "system",
+        "depth": 2,
+        "raw_line": "Hint: >> system: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/widestrs.nim [Processing]",
+        "line": 68
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/syncio.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/syncio.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "system",
+        "depth": 2,
+        "raw_line": "Hint: >> system: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/syncio.nim [Processing]",
+        "line": 69
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "syncio",
+        "depth": 2,
+        "raw_line": "Hint: >> syncio: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim [Processing]",
+        "line": 70
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/nimhcr.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/nimhcr.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "system",
+        "depth": 1,
+        "raw_line": "Hint: > system: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/nimhcr.nim [Processing]",
+        "line": 71
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/qualification/private-v2/source-snapshot/sources/pidigits/compact.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/qualification/private-v2/source-snapshot/sources/pidigits/compact.nim",
+        "role": "application",
+        "operation": "import",
+        "caller": "(toplevel)",
+        "depth": 1,
+        "raw_line": "Hint: > (toplevel): import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/qualification/private-v2/source-snapshot/sources/pidigits/compact.nim [Processing]",
+        "line": 72
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/os.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/os.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "compact",
+        "depth": 2,
+        "raw_line": "Hint: >> compact: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/os.nim [Processing]",
+        "line": 73
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/ospaths2.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/ospaths2.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "os",
+        "depth": 3,
+        "raw_line": "Hint: >>> os: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/ospaths2.nim [Processing]",
+        "line": 74
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "ospaths2",
+        "depth": 3,
+        "raw_line": "Hint: >>> ospaths2: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim [Processing]",
+        "line": 75
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/strutils.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/strutils.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "ospaths2",
+        "depth": 4,
+        "raw_line": "Hint: >>>> ospaths2: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/strutils.nim [Processing]",
+        "line": 76
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/parseutils.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/parseutils.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "strutils",
+        "depth": 5,
+        "raw_line": "Hint: >>>>> strutils: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/parseutils.nim [Processing]",
+        "line": 77
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "parseutils",
+        "depth": 5,
+        "raw_line": "Hint: >>>>> parseutils: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim [Processing]",
+        "line": 78
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/math.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/math.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "strutils",
+        "depth": 5,
+        "raw_line": "Hint: >>>>> strutils: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/math.nim [Processing]",
+        "line": 79
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/bitops.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/bitops.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "math",
+        "depth": 6,
+        "raw_line": "Hint: >>>>>> math: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/bitops.nim [Processing]",
+        "line": 80
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/core/macros.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/core/macros.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "bitops",
+        "depth": 7,
+        "raw_line": "Hint: >>>>>>> bitops: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/core/macros.nim [Processing]",
+        "line": 81
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "macros",
+        "depth": 7,
+        "raw_line": "Hint: >>>>>>> macros: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim [Processing]",
+        "line": 82
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/fenv.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/fenv.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "math",
+        "depth": 6,
+        "raw_line": "Hint: >>>>>> math: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/fenv.nim [Processing]",
+        "line": 83
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/algorithm.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/algorithm.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "strutils",
+        "depth": 5,
+        "raw_line": "Hint: >>>>> strutils: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/algorithm.nim [Processing]",
+        "line": 84
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/enumutils.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/enumutils.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "strutils",
+        "depth": 5,
+        "raw_line": "Hint: >>>>> strutils: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/enumutils.nim [Processing]",
+        "line": 85
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/typetraits.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/typetraits.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "enumutils",
+        "depth": 6,
+        "raw_line": "Hint: >>>>>> enumutils: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/typetraits.nim [Processing]",
+        "line": 86
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/unicode.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/unicode.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "strutils",
+        "depth": 5,
+        "raw_line": "Hint: >>>>> strutils: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/unicode.nim [Processing]",
+        "line": 87
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "unicode",
+        "depth": 5,
+        "raw_line": "Hint: >>>>> unicode: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim [Processing]",
+        "line": 88
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/strbasics.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/strbasics.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "unicode",
+        "depth": 6,
+        "raw_line": "Hint: >>>>>> unicode: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/strbasics.nim [Processing]",
+        "line": 89
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/includes/unicode_ranges.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/includes/unicode_ranges.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "unicode",
+        "depth": 5,
+        "raw_line": "Hint: >>>>> unicode: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/includes/unicode_ranges.nim [Processing]",
+        "line": 90
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "strutils",
+        "depth": 4,
+        "raw_line": "Hint: >>>> strutils: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim [Processing]",
+        "line": 91
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/jsutils.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/jsutils.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "strutils",
+        "depth": 5,
+        "raw_line": "Hint: >>>>> strutils: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/jsutils.nim [Processing]",
+        "line": 92
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/strimpl.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/strimpl.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "strutils",
+        "depth": 5,
+        "raw_line": "Hint: >>>>> strutils: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/strimpl.nim [Processing]",
+        "line": 93
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/pathnorm.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/pathnorm.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "ospaths2",
+        "depth": 4,
+        "raw_line": "Hint: >>>> ospaths2: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/pathnorm.nim [Processing]",
+        "line": 94
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/osseps.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/osseps.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "pathnorm",
+        "depth": 5,
+        "raw_line": "Hint: >>>>> pathnorm: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/osseps.nim [Processing]",
+        "line": 95
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/oserrors.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/oserrors.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "ospaths2",
+        "depth": 4,
+        "raw_line": "Hint: >>>> ospaths2: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/oserrors.nim [Processing]",
+        "line": 96
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/oscommon.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/oscommon.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "ospaths2",
+        "depth": 4,
+        "raw_line": "Hint: >>>> ospaths2: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/oscommon.nim [Processing]",
+        "line": 97
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "oscommon",
+        "depth": 4,
+        "raw_line": "Hint: >>>> oscommon: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim [Processing]",
+        "line": 98
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/staticos.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/staticos.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "oscommon",
+        "depth": 5,
+        "raw_line": "Hint: >>>>> oscommon: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/staticos.nim [Processing]",
+        "line": 99
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/posix/posix.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/posix/posix.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "oscommon",
+        "depth": 5,
+        "raw_line": "Hint: >>>>> oscommon: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/posix/posix.nim [Processing]",
+        "line": 100
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/posix/posix_macos_amd64.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/posix/posix_macos_amd64.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "posix",
+        "depth": 5,
+        "raw_line": "Hint: >>>>> posix: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/posix/posix_macos_amd64.nim [Processing]",
+        "line": 101
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/posix/posix_other_consts.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/posix/posix_other_consts.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "posix",
+        "depth": 5,
+        "raw_line": "Hint: >>>>> posix: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/posix/posix_other_consts.nim [Processing]",
+        "line": 102
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/osfiles.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/osfiles.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "os",
+        "depth": 3,
+        "raw_line": "Hint: >>> os: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/osfiles.nim [Processing]",
+        "line": 103
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "osfiles",
+        "depth": 3,
+        "raw_line": "Hint: >>> osfiles: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim [Processing]",
+        "line": 104
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/ossymlinks.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/ossymlinks.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "osfiles",
+        "depth": 4,
+        "raw_line": "Hint: >>>> osfiles: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/ossymlinks.nim [Processing]",
+        "line": 105
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "ossymlinks",
+        "depth": 4,
+        "raw_line": "Hint: >>>> ossymlinks: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim [Processing]",
+        "line": 106
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/times.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/times.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "osfiles",
+        "depth": 4,
+        "raw_line": "Hint: >>>> osfiles: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/times.nim [Processing]",
+        "line": 107
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/options.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/options.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "times",
+        "depth": 5,
+        "raw_line": "Hint: >>>>> times: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/options.nim [Processing]",
+        "line": 108
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "times",
+        "depth": 4,
+        "raw_line": "Hint: >>>> times: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim [Processing]",
+        "line": 109
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/osdirs.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/osdirs.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "os",
+        "depth": 3,
+        "raw_line": "Hint: >>> os: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/osdirs.nim [Processing]",
+        "line": 110
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "osdirs",
+        "depth": 3,
+        "raw_line": "Hint: >>> osdirs: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim [Processing]",
+        "line": 111
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/osappdirs.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/osappdirs.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "os",
+        "depth": 3,
+        "raw_line": "Hint: >>> os: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/osappdirs.nim [Processing]",
+        "line": 112
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "osappdirs",
+        "depth": 3,
+        "raw_line": "Hint: >>> osappdirs: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim [Processing]",
+        "line": 113
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/envvars.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/envvars.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "osappdirs",
+        "depth": 4,
+        "raw_line": "Hint: >>>> osappdirs: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/envvars.nim [Processing]",
+        "line": 114
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "os",
+        "depth": 2,
+        "raw_line": "Hint: >> os: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim [Processing]",
+        "line": 115
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/cmdline.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/cmdline.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "os",
+        "depth": 3,
+        "raw_line": "Hint: >>> os: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/cmdline.nim [Processing]",
+        "line": 116
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "cmdline",
+        "depth": 3,
+        "raw_line": "Hint: >>> cmdline: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim [Processing]",
+        "line": 117
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/bigints/bigints-3b5a106b88ec1baa904a059a1430c8335d885075/src/bigints.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/bigints/bigints-3b5a106b88ec1baa904a059a1430c8335d885075/src/bigints.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "import",
+        "caller": "compact",
+        "depth": 2,
+        "raw_line": "Hint: >> compact: import: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/bigints/bigints-3b5a106b88ec1baa904a059a1430c8335d885075/src/bigints.nim [Processing]",
+        "line": 118
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/bigints/bigints-3b5a106b88ec1baa904a059a1430c8335d885075/src/bigints/private/literals.nim",
+        "resolved_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/bigints/bigints-3b5a106b88ec1baa904a059a1430c8335d885075/src/bigints/private/literals.nim",
+        "role": "vendor-standard-or-general-library",
+        "operation": "include",
+        "caller": "bigints",
+        "depth": 2,
+        "raw_line": "Hint: >> bigints: include: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/bigints/bigints-3b5a106b88ec1baa904a059a1430c8335d885075/src/bigints/private/literals.nim [Processing]",
+        "line": 119
+      }
+    ],
+    "files": [
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system.nim"
+        ],
+        "event_indices": [
+          0
+        ],
+        "sha256": "82925b21d981850b428f391fc90a0fbde87444126dcfdd3cd79d3584f03e0962"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/basic_types.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/basic_types.nim"
+        ],
+        "event_indices": [
+          1
+        ],
+        "sha256": "b103706027fd5b4fb9ecda4c1f981429469702d09a41cb2586e588a81619d848"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/compilation.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/compilation.nim"
+        ],
+        "event_indices": [
+          2
+        ],
+        "sha256": "21268433ecc96e80589357decf04fd78f2310df2e8c4900993d9bb5d0f0e2200"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/arithmetics.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/arithmetics.nim"
+        ],
+        "event_indices": [
+          3
+        ],
+        "sha256": "f23121ee66d997ed8c1934c3d4af3338bfd9693ea6a9fe5c875a16439688eee7"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/comparisons.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/comparisons.nim"
+        ],
+        "event_indices": [
+          4
+        ],
+        "sha256": "ab1ba14f37e93e19aefad9e7673bb7c5df0af074f7b94ab4701a1d305cb121b4"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/inclrtl.nim"
+        ],
+        "event_indices": [
+          5,
+          22,
+          63,
+          67,
+          72,
+          75,
+          79,
+          85,
+          88,
+          95,
+          101,
+          103,
+          106,
+          108,
+          110,
+          112,
+          114
+        ],
+        "sha256": "c91f2ce9b39a28a3abc1a74ec40c18874df22325558a3c8df5875c59b50171b5"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/hti.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/hti.nim"
+        ],
+        "event_indices": [
+          6
+        ],
+        "sha256": "4534d2247f7c03a0a732c7e320db4c30534befdc7d0d57bbd99882264410daac"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/exceptions.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/exceptions.nim"
+        ],
+        "event_indices": [
+          7
+        ],
+        "sha256": "a54e9b192d7d387fc11ceee75814b3271de315a8aa2c6edb4fa1f94abeddca1c"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/setops.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/setops.nim"
+        ],
+        "event_indices": [
+          8
+        ],
+        "sha256": "3cb2102775a3f90d4d4d27dc38e2d6b93859ab1284826ba1b56d35286988254d"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/since.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/since.nim"
+        ],
+        "event_indices": [
+          9
+        ],
+        "sha256": "2ad40f841644301bed994f14e57a3ac23b09086c65efc7d3b9ce787f211ad899"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/ctypes.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/ctypes.nim"
+        ],
+        "event_indices": [
+          10
+        ],
+        "sha256": "2c7b075e68141ea709c8278717f7ef8c534360e7483a3cbc5b6b3afd245e5d4e"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/ptrarith.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/ptrarith.nim"
+        ],
+        "event_indices": [
+          11
+        ],
+        "sha256": "d749abde71142e173d1e7df7982dd195598acb0e89de6af40309f85bce30e784"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/rawquits.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/rawquits.nim"
+        ],
+        "event_indices": [
+          12,
+          36
+        ],
+        "sha256": "8c4dede45b15fdc0ca423a3357cbc54b07d4aa6b9c270de3cbad7d66aba61b91"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/sysatomics.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/sysatomics.nim"
+        ],
+        "event_indices": [
+          13
+        ],
+        "sha256": "cad8354a45b75d9f8d13a5a58d62d5d34e4230e38f742e477260c0820ef0d585"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/memalloc.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/memalloc.nim"
+        ],
+        "event_indices": [
+          14
+        ],
+        "sha256": "b03ef4d9c633dd1dd775e7ceb108b7f3ec184a56214a2dce3701cdfdddc1fac6"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/bitmasks.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/bitmasks.nim"
+        ],
+        "event_indices": [
+          15
+        ],
+        "sha256": "e755b7f916a49a393c5aa2960f5d56cab9ac50e54985de8a5e78eac8b17a9872"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/iterators_1.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/iterators_1.nim"
+        ],
+        "event_indices": [
+          16
+        ],
+        "sha256": "8d7474645f194d6463f78cffff6c9ed4cfb2c2480d8ee6613241b51cd0e7cf77"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/ansi_c.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/ansi_c.nim"
+        ],
+        "event_indices": [
+          17
+        ],
+        "sha256": "d090085edb716b376dae436f8a3e37292e13e2c7bc35f7b9b51cfc682485212c"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/sysmem.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/sysmem.nim"
+        ],
+        "event_indices": [
+          18
+        ],
+        "sha256": "b5d9c2c016eccc3183c5ca59fcfb58d796793691f7d9baa07222d34dea4f988c"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/syslocks.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/syslocks.nim"
+        ],
+        "event_indices": [
+          19
+        ],
+        "sha256": "a771678a6daebd4d9b0984dce5c0374fd0cdd85d8951e01eb33146aaf8152a7f"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/threadlocalstorage.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/threadlocalstorage.nim"
+        ],
+        "event_indices": [
+          20
+        ],
+        "sha256": "39991589bee9da7ad80d7c339ab7eb3c2c75cadf2101bff798414131f4e7bd2f"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/threadtypes.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/threadtypes.nim"
+        ],
+        "event_indices": [
+          21
+        ],
+        "sha256": "9e06d9c9fe520657a2243c5ebe040c8af4aa604bfb323dd560cc3c3c6420968c"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/strs_v2.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/strs_v2.nim"
+        ],
+        "event_indices": [
+          23
+        ],
+        "sha256": "40629785d490dc2556a6a120e95532553a115da0d9e649b0e1768e3f10735351"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/seqs_v2.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/seqs_v2.nim"
+        ],
+        "event_indices": [
+          24
+        ],
+        "sha256": "fa9b7fa9e15760729e690172546c43bf3adfa5a6b1b1e0f5b3aad7826c9b8265"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/fatal.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/fatal.nim"
+        ],
+        "event_indices": [
+          25,
+          37
+        ],
+        "sha256": "fa077aa3564a3fdce2588c849e0f1db1d0e93df6d809213f78795581358fc854"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/arc.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/arc.nim"
+        ],
+        "event_indices": [
+          26
+        ],
+        "sha256": "26e0278b803b74c2ee402d6f283a51bd4b95c3a08cf6637b99d4a4a6a2fb2c94"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/orc.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/orc.nim"
+        ],
+        "event_indices": [
+          27
+        ],
+        "sha256": "1ba46fed1fd4622f7240471bf26bd2b653037938d772297668400eee71021e5a"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/cellseqs_v2.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/cellseqs_v2.nim"
+        ],
+        "event_indices": [
+          28
+        ],
+        "sha256": "5ebd1c26b7c000eb2495362a3b501c057a36953266c4953f52c9a995c0b9b418"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/threadids.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/threadids.nim"
+        ],
+        "event_indices": [
+          29
+        ],
+        "sha256": "dc7b361cf50f9ed0defe2ddc2a76f09b494dda64b706cccd0890a59540bf51bb"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/gc_interface.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/gc_interface.nim"
+        ],
+        "event_indices": [
+          30
+        ],
+        "sha256": "07fce6e7f52ac536c7fad07e28292d3a6d7eae678a114a6f36ae55a7b237faf9"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/excpt.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/excpt.nim"
+        ],
+        "event_indices": [
+          31
+        ],
+        "sha256": "89d28a6231a5e57c97e2c45debc39da8e34e14677f882bbea13d9792fc7e7968"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/miscdollars.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/miscdollars.nim"
+        ],
+        "event_indices": [
+          32
+        ],
+        "sha256": "2ea2e9502be89c389e65df30805e4672655df299f016e558d995ed6b5f105ebb"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/digitsutils.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/digitsutils.nim"
+        ],
+        "event_indices": [
+          33
+        ],
+        "sha256": "02bcb56c4c655b906656ddfc16d7cf2663bfc2c379ce4a6a1f3a2880dd802530"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/stacktraces.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/stacktraces.nim"
+        ],
+        "event_indices": [
+          34
+        ],
+        "sha256": "e90743756229d288c6a83baaebd406dcc8e36e65f24adf5d9fa544bee91ed8a4"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/assertions.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/assertions.nim"
+        ],
+        "event_indices": [
+          35
+        ],
+        "sha256": "e7aeb6bbefc2965d2193bf42449d9cab2617d3bb36154cfeed0fe10a4ed3996c"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/iterators.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/iterators.nim"
+        ],
+        "event_indices": [
+          38
+        ],
+        "sha256": "fafc6bc4bb3d3ed6a5732ac81af1430f971576403b72d41b4536bb4fd9f79e61"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/coro_detection.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/coro_detection.nim"
+        ],
+        "event_indices": [
+          39
+        ],
+        "sha256": "5afc7e7fc6b0a3c0dbac400aad30f357bf89b54022ed98b84b4d0a4b19423111"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/dollars.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/dollars.nim"
+        ],
+        "event_indices": [
+          40
+        ],
+        "sha256": "4c5845c673bde008952af4b83f0deed05318450eb384dddbf9e4a417a327b0fe"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/formatfloat.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/formatfloat.nim"
+        ],
+        "event_indices": [
+          41
+        ],
+        "sha256": "afb769108874eacc2775cfb37329910afc0d4774f7967cc849c346d349c7c25c"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/dragonbox.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/dragonbox.nim"
+        ],
+        "event_indices": [
+          42
+        ],
+        "sha256": "741ae6d91cfc84ff7710a8d0010566e9bc2ef2c5adaa2ef2a6c175136e023955"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/schubfach.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/schubfach.nim"
+        ],
+        "event_indices": [
+          43
+        ],
+        "sha256": "94befbc2a96b41cc44797d3aed41a76ddc2942ff7d042e53b540d75941a620fc"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/objectdollar.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/objectdollar.nim"
+        ],
+        "event_indices": [
+          44
+        ],
+        "sha256": "01993bfdec88edac17ce13eff5deb9ba685cd213fad407dad0d6357667390f24"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/chcks.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/chcks.nim"
+        ],
+        "event_indices": [
+          45
+        ],
+        "sha256": "261a2aa4948e776efa9d621a76eb47245e3cc46d599f466541fcba2b2da568fc"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/indexerrors.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/indexerrors.nim"
+        ],
+        "event_indices": [
+          46
+        ],
+        "sha256": "d9dfdac2333fbe89bdd84ff4ca260e97dac0965d4a10320ffd5dbc70cb92ec92"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/integerops.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/integerops.nim"
+        ],
+        "event_indices": [
+          47
+        ],
+        "sha256": "78e88981b8da2b026bd31a3ecf1a1e34d93777c4a1b40b96382ecaeb1e34b175"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/threadimpl.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/threadimpl.nim"
+        ],
+        "event_indices": [
+          48
+        ],
+        "sha256": "4777759d36979ff091a747554f828926568d111647308ab3be09953bafe79ba6"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/typedthreads.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/typedthreads.nim"
+        ],
+        "event_indices": [
+          49
+        ],
+        "sha256": "d3bc2ada09b19c8eb49fb7d6946210e01a7d9db7c0eedbcf4cdfbbda4d6d7ba7"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/dyncalls.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/dyncalls.nim"
+        ],
+        "event_indices": [
+          50
+        ],
+        "sha256": "b8adb61e35fc1e097be31ae9b9f1d6698f874b6c57d729092d01a838b483ac4c"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/countbits_impl.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/countbits_impl.nim"
+        ],
+        "event_indices": [
+          51
+        ],
+        "sha256": "36b98e9c65c417c0f058001e9776a16e4ae22f04a8033c719e8930d308b03dc7"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/bitops_utils.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/bitops_utils.nim"
+        ],
+        "event_indices": [
+          52
+        ],
+        "sha256": "4f758da768f6b911066ff64e6dac64222fafac8aaa9e75c90a056ac2391dfb76"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/sets.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/sets.nim"
+        ],
+        "event_indices": [
+          53
+        ],
+        "sha256": "1df704b70faa07b673a01fef2482a29b2fdbbfdb6d19cafc58b8798dcc0fa9ae"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/mmdisp.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/mmdisp.nim"
+        ],
+        "event_indices": [
+          54
+        ],
+        "sha256": "59f91b0bc11b6ee4ed5e2207b607da4916da49d5d82ed365789a272f3bf22c77"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/alloc.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/alloc.nim"
+        ],
+        "event_indices": [
+          55
+        ],
+        "sha256": "c0116e7cba5e9ba8207368e93b39f188141b5126c7d4857010eb3877d0be7d2f"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/osalloc.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/osalloc.nim"
+        ],
+        "event_indices": [
+          56
+        ],
+        "sha256": "5fbcb532cabe9c2f5010e6c5f2ee9c8ad0a49f812de8e906619ef50ecf9e6c9e"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/strmantle.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/strmantle.nim"
+        ],
+        "event_indices": [
+          57
+        ],
+        "sha256": "94d510a971cefc2f48c550724b2d734ed5b0c80950f65ecd74ac84b685b24fd0"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/assign.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/assign.nim"
+        ],
+        "event_indices": [
+          58
+        ],
+        "sha256": "8d7d3414ebc2aa3b475e082655fd057c5c161472f34ddab8587675312d49e1f5"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/seqs_v2_reimpl.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/seqs_v2_reimpl.nim"
+        ],
+        "event_indices": [
+          59
+        ],
+        "sha256": "14360c414413c62a0f6f49bd1b83e478b502b15bbde0cb4ed58052cb13b4ad0b"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/channels_builtin.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/channels_builtin.nim"
+        ],
+        "event_indices": [
+          60
+        ],
+        "sha256": "cc38b7e8eed02a91dbe130f468fb9076f9504981fb9f09598626ed0c7e037018"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/indices.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/indices.nim"
+        ],
+        "event_indices": [
+          61
+        ],
+        "sha256": "184c36f578e789c57906530f4585779077de49391eacd43e2a4ec9939fe08b89"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/repr_v2.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/repr_v2.nim"
+        ],
+        "event_indices": [
+          62
+        ],
+        "sha256": "5103123c8a0d7303582cdddd744d4b6b40ea6f1091a52555781429c336f8fffc"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/deepcopy.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/system/deepcopy.nim"
+        ],
+        "event_indices": [
+          64
+        ],
+        "sha256": "798979a319ed4ba400ff2adf196fcb3caa2d38f02457a33c55c038180b41621a"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/widestrs.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/widestrs.nim"
+        ],
+        "event_indices": [
+          65
+        ],
+        "sha256": "967cdf8cc1669f4ca72409a5c31ac361f249742a50199cb9bf971291661fdd74"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/syncio.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/syncio.nim"
+        ],
+        "event_indices": [
+          66
+        ],
+        "sha256": "043cfe9c04269cf8d64884cef1d36d4aca795c486e6f4458717ae9011f356093"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/nimhcr.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/nimhcr.nim"
+        ],
+        "event_indices": [
+          68
+        ],
+        "sha256": "13b1938fea6c8cb90f542fee25996d6599679d22ced9714430f610991e0ba567"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/qualification/private-v2/source-snapshot/sources/pidigits/compact.nim",
+        "role": "application",
+        "counted": true,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/qualification/private-v2/source-snapshot/sources/pidigits/compact.nim"
+        ],
+        "event_indices": [
+          69
+        ],
+        "sha256": "5c1ba8e2ec741f1586f53d9099168f41ed94184d482c6652ad347851cc4f66bd"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/os.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/os.nim"
+        ],
+        "event_indices": [
+          70
+        ],
+        "sha256": "a2bda4cf04b52a1536d1f6ffcb5e15faf1a3b07e57fb3863af6ffeeaf6e7c388"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/ospaths2.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/ospaths2.nim"
+        ],
+        "event_indices": [
+          71
+        ],
+        "sha256": "5ea5259e95c0ca618cbd526dcd630b180f91d608a4570072e3e95eaadf38a323"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/strutils.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/strutils.nim"
+        ],
+        "event_indices": [
+          73
+        ],
+        "sha256": "8d804c23146d1876d0b2d48fd8a90ec6a7ab4fa8e454265ceda34bd8945f1094"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/parseutils.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/parseutils.nim"
+        ],
+        "event_indices": [
+          74
+        ],
+        "sha256": "ce6733c39c07c5c3b644f18369e22d3458b29c729098b95934ebe1aba6d8be25"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/math.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/math.nim"
+        ],
+        "event_indices": [
+          76
+        ],
+        "sha256": "dae9501d7c61acd0a48e11450b2578846561ee8403ae6e52488e9d6cb3bb32c0"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/bitops.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/bitops.nim"
+        ],
+        "event_indices": [
+          77
+        ],
+        "sha256": "61767483e18db9b40bac8e8bb47ad709385a062eb20349f0888b2330994cd360"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/core/macros.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/core/macros.nim"
+        ],
+        "event_indices": [
+          78
+        ],
+        "sha256": "0d6068441c528e8771bac21964c9012b415666e82521b8fa38dc6360b886fab2"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/fenv.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/fenv.nim"
+        ],
+        "event_indices": [
+          80
+        ],
+        "sha256": "3b198f921194bf00e5b541e956eda79b12edbf4006a19cfc71152307328de7b4"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/algorithm.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/algorithm.nim"
+        ],
+        "event_indices": [
+          81
+        ],
+        "sha256": "1f3c49b7d3526ac8715cacb88022d2afa02a63c9690a6e9914b750b892831317"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/enumutils.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/enumutils.nim"
+        ],
+        "event_indices": [
+          82
+        ],
+        "sha256": "4835209b29dde995963db1260b0da2b16db47cad623dba2bbd0e673655d1d0fb"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/typetraits.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/typetraits.nim"
+        ],
+        "event_indices": [
+          83
+        ],
+        "sha256": "40a79dc5276cfbdc2e6ade02d99a0639e2c1e7dbe8961a22dc10ca6471b66d59"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/unicode.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/unicode.nim"
+        ],
+        "event_indices": [
+          84
+        ],
+        "sha256": "a7517e8582bb0cb48170218bd3103f53c16ca3b1e1a173563fe54bf2f4613273"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/strbasics.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/strbasics.nim"
+        ],
+        "event_indices": [
+          86
+        ],
+        "sha256": "4692e00dee4b910fc02b67460f71648822b21a276e4ef3685497604f1e97484d"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/includes/unicode_ranges.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/includes/unicode_ranges.nim"
+        ],
+        "event_indices": [
+          87
+        ],
+        "sha256": "5e906ac7b044404a98ccb8ae9fc84d1e2b83f8655d6da6c64e662c93af843779"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/jsutils.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/jsutils.nim"
+        ],
+        "event_indices": [
+          89
+        ],
+        "sha256": "49ca9c35249704026b0548661a2f9538d93c68adfc924a9d0924b211e08e9d1e"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/strimpl.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/strimpl.nim"
+        ],
+        "event_indices": [
+          90
+        ],
+        "sha256": "d2c6be844e795c04a74a4e68c1092e355e83288fafccced36c564b15af606c69"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/pathnorm.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/pathnorm.nim"
+        ],
+        "event_indices": [
+          91
+        ],
+        "sha256": "22d027c7f6d6780896eebb4e5e25768f93e25742dfe8efa751eac2103e3c8087"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/osseps.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/osseps.nim"
+        ],
+        "event_indices": [
+          92
+        ],
+        "sha256": "dadc0641080475d94e6e2adfd377c2a8b10d40254443a9e66ab629633c4770ec"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/oserrors.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/oserrors.nim"
+        ],
+        "event_indices": [
+          93
+        ],
+        "sha256": "a60e2403c28f2064d231ce38bd739f75899f94466e4c32031b7d0bb916e04bc9"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/oscommon.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/oscommon.nim"
+        ],
+        "event_indices": [
+          94
+        ],
+        "sha256": "c986ab4ef165bcf237e8dfa17cbcfeff531ed21c764d57091fd3fa40b6dadf26"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/staticos.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/staticos.nim"
+        ],
+        "event_indices": [
+          96
+        ],
+        "sha256": "5ae5ce83a9f64478d2a6f145b05d4b55eb388ad7f185b0f900f7eaac48aa4591"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/posix/posix.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/posix/posix.nim"
+        ],
+        "event_indices": [
+          97
+        ],
+        "sha256": "fdd656b50b7801c2932ca973f2314852fe524ca6df302c18417e40bcd0a4e166"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/posix/posix_macos_amd64.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/posix/posix_macos_amd64.nim"
+        ],
+        "event_indices": [
+          98
+        ],
+        "sha256": "76fc387fb2fa8148bb58a9afdaab0007adde6e26240af4d7ee981ad43187db69"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/posix/posix_other_consts.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/posix/posix_other_consts.nim"
+        ],
+        "event_indices": [
+          99
+        ],
+        "sha256": "34edc8ce0cc5b839b77d31e181425cb93319dd2e51a5341261e2bf4e7d0b2911"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/osfiles.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/osfiles.nim"
+        ],
+        "event_indices": [
+          100
+        ],
+        "sha256": "53343cea36ae5167dd6c0e84696c585e50c3ceab1bdb9582541be9cd6e7da0b9"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/ossymlinks.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/ossymlinks.nim"
+        ],
+        "event_indices": [
+          102
+        ],
+        "sha256": "25d066b787baf60e757a377f5f717bedbe0bca41d84031054391816e235b9d21"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/times.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/times.nim"
+        ],
+        "event_indices": [
+          104
+        ],
+        "sha256": "cd5594445c5013d64457d6296cd2e6a50e7ff6131b1fb8c95f8b1ef27238e1a5"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/options.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/pure/options.nim"
+        ],
+        "event_indices": [
+          105
+        ],
+        "sha256": "762b1454490e985725b48a44c9be4265417b8a9c0b1dbc7ad8f46f293a208d32"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/osdirs.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/osdirs.nim"
+        ],
+        "event_indices": [
+          107
+        ],
+        "sha256": "ff57f9594cb8a133a091152a73a43eb1de645f6d859a55c67ff54b3c2bbc8d4c"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/osappdirs.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/private/osappdirs.nim"
+        ],
+        "event_indices": [
+          109
+        ],
+        "sha256": "185e2cc5ca6ebdbad969e73a12b19b8b5f443aec21495a3f9d763be759d19007"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/envvars.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/envvars.nim"
+        ],
+        "event_indices": [
+          111
+        ],
+        "sha256": "a54e96015c42c505041da4119c44fc4757ab7603621494f317a5f15c286d4b9c"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/cmdline.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/lib/std/cmdline.nim"
+        ],
+        "event_indices": [
+          113
+        ],
+        "sha256": "48869e59c0c0b3a5accd859b68c81cd4d16cf5c54e680afe37752047f8aa1e7a"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/bigints/bigints-3b5a106b88ec1baa904a059a1430c8335d885075/src/bigints.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/bigints/bigints-3b5a106b88ec1baa904a059a1430c8335d885075/src/bigints.nim"
+        ],
+        "event_indices": [
+          115
+        ],
+        "sha256": "7c82e2488422fd8182eab9d601c69c76ca6e674e284cafa22a751ac98383c5c3"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/bigints/bigints-3b5a106b88ec1baa904a059a1430c8335d885075/src/bigints/private/literals.nim",
+        "role": "vendor-standard-or-general-library",
+        "counted": false,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/bigints/bigints-3b5a106b88ec1baa904a059a1430c8335d885075/src/bigints/private/literals.nim"
+        ],
+        "event_indices": [
+          116
+        ],
+        "sha256": "e8673d5ad7f555d7e1af93725ee7727a65e80c2435386e1f80321255ddbe7a9a"
+      }
+    ],
+    "authored_files": [
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/qualification/private-v2/source-snapshot/sources/pidigits/compact.nim",
+        "role": "application",
+        "counted": true,
+        "lookup_aliases": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/qualification/private-v2/source-snapshot/sources/pidigits/compact.nim"
+        ],
+        "event_indices": [
+          69
+        ],
+        "sha256": "5c1ba8e2ec741f1586f53d9099168f41ed94184d482c6652ad347851cc4f66bd"
+      }
+    ],
+    "complete_import_and_include_events": true,
+    "unknown_roots": [],
+    "generated_source_substitute": false
+  },
+  "source_bundle": [
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/qualification/private-v2/source-snapshot/sources/pidigits/compact.nim",
+      "sha256": "5c1ba8e2ec741f1586f53d9099168f41ed94184d482c6652ad347851cc4f66bd",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/sources/pidigits/compact.nim",
+      "role": "application",
+      "normalized_loc": 30,
+      "physical_loc": 30,
+      "diagnostics": []
+    }
+  ],
+  "actual_common_mutex_held": true,
+  "generated_source_substitute": false,
+  "canonical_LOC_admitted": false
+}

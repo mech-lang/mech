@@ -1,0 +1,434 @@
+{
+  "schema": "clbg-source-only-two-form-proposal-v1",
+  "status": "source-peer-reviewed-awaiting-root-runtime-owner-and-work-review",
+  "language": "elixir",
+  "compiler_version_candidate": "1.20.4",
+  "execution_mode_candidate": "Elixir source to BEAM; actual OTP execution mode pending evidence",
+  "implementation_forms": [
+    "compact",
+    "optimized"
+  ],
+  "distinct_optimizer_claim": false,
+  "alias_policy": "The two publication forms explicitly alias one authored baseline algorithm. A future root-reviewed preparation may byte-copy it into twenty exclusive per-form source inputs, compile independently, and collect fresh independent per-form records. No copied source qualification or timing is admitted.",
+  "physical_baseline_main_count": 10,
+  "authored_general_helpers": [
+    "support/support.ex"
+  ],
+  "authored_launcher_helpers": [],
+  "all_authored_helpers_counted": true,
+  "source_work_qualified": false,
+  "runtime_configuration_admitted": false,
+  "source_owner_grammar_qualified": false,
+  "formatted_loc_qualified": false,
+  "canonical_loc": null,
+  "formatted_loc": null,
+  "bounded_output_qualified": false,
+  "native_commands_executed": 0,
+  "full_processes_executed": 0,
+  "full_90_qualified": false,
+  "chart_admission": false,
+  "dataset_mutation": false,
+  "publication": false,
+  "profiles": [
+    {
+      "id": "elixir-binarytrees-compact",
+      "benchmark": "binarytrees",
+      "variant": "compact",
+      "source": "sources/binarytrees/main.ex",
+      "alias_of": "elixir-binarytrees-baseline-v1",
+      "source_input_materialized": false,
+      "authored_helpers": [
+        "support/support.ex"
+      ],
+      "stdin": false,
+      "maximum_subject_workers": 1,
+      "compiler_input_sha256": null,
+      "artifact_sha256": null,
+      "actual_runtime_fingerprint": null,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "work_qualified": false,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-binarytrees-optimized",
+      "benchmark": "binarytrees",
+      "variant": "optimized",
+      "source": "sources/binarytrees/main.ex",
+      "alias_of": "elixir-binarytrees-baseline-v1",
+      "source_input_materialized": false,
+      "authored_helpers": [
+        "support/support.ex"
+      ],
+      "stdin": false,
+      "maximum_subject_workers": 1,
+      "compiler_input_sha256": null,
+      "artifact_sha256": null,
+      "actual_runtime_fingerprint": null,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "work_qualified": false,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-fannkuchredux-compact",
+      "benchmark": "fannkuchredux",
+      "variant": "compact",
+      "source": "sources/fannkuchredux/main.ex",
+      "alias_of": "elixir-fannkuchredux-baseline-v1",
+      "source_input_materialized": false,
+      "authored_helpers": [
+        "support/support.ex"
+      ],
+      "stdin": false,
+      "maximum_subject_workers": 1,
+      "compiler_input_sha256": null,
+      "artifact_sha256": null,
+      "actual_runtime_fingerprint": null,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "work_qualified": false,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-fannkuchredux-optimized",
+      "benchmark": "fannkuchredux",
+      "variant": "optimized",
+      "source": "sources/fannkuchredux/main.ex",
+      "alias_of": "elixir-fannkuchredux-baseline-v1",
+      "source_input_materialized": false,
+      "authored_helpers": [
+        "support/support.ex"
+      ],
+      "stdin": false,
+      "maximum_subject_workers": 1,
+      "compiler_input_sha256": null,
+      "artifact_sha256": null,
+      "actual_runtime_fingerprint": null,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "work_qualified": false,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-fasta-compact",
+      "benchmark": "fasta",
+      "variant": "compact",
+      "source": "sources/fasta/main.ex",
+      "alias_of": "elixir-fasta-baseline-v1",
+      "source_input_materialized": false,
+      "authored_helpers": [
+        "support/support.ex"
+      ],
+      "stdin": false,
+      "maximum_subject_workers": 1,
+      "compiler_input_sha256": null,
+      "artifact_sha256": null,
+      "actual_runtime_fingerprint": null,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "work_qualified": false,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-fasta-optimized",
+      "benchmark": "fasta",
+      "variant": "optimized",
+      "source": "sources/fasta/main.ex",
+      "alias_of": "elixir-fasta-baseline-v1",
+      "source_input_materialized": false,
+      "authored_helpers": [
+        "support/support.ex"
+      ],
+      "stdin": false,
+      "maximum_subject_workers": 1,
+      "compiler_input_sha256": null,
+      "artifact_sha256": null,
+      "actual_runtime_fingerprint": null,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "work_qualified": false,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-knucleotide-compact",
+      "benchmark": "knucleotide",
+      "variant": "compact",
+      "source": "sources/knucleotide/main.ex",
+      "alias_of": "elixir-knucleotide-baseline-v1",
+      "source_input_materialized": false,
+      "authored_helpers": [
+        "support/support.ex"
+      ],
+      "stdin": true,
+      "maximum_subject_workers": 1,
+      "compiler_input_sha256": null,
+      "artifact_sha256": null,
+      "actual_runtime_fingerprint": null,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "work_qualified": false,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-knucleotide-optimized",
+      "benchmark": "knucleotide",
+      "variant": "optimized",
+      "source": "sources/knucleotide/main.ex",
+      "alias_of": "elixir-knucleotide-baseline-v1",
+      "source_input_materialized": false,
+      "authored_helpers": [
+        "support/support.ex"
+      ],
+      "stdin": true,
+      "maximum_subject_workers": 1,
+      "compiler_input_sha256": null,
+      "artifact_sha256": null,
+      "actual_runtime_fingerprint": null,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "work_qualified": false,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-mandelbrot-compact",
+      "benchmark": "mandelbrot",
+      "variant": "compact",
+      "source": "sources/mandelbrot/main.ex",
+      "alias_of": "elixir-mandelbrot-baseline-v1",
+      "source_input_materialized": false,
+      "authored_helpers": [
+        "support/support.ex"
+      ],
+      "stdin": false,
+      "maximum_subject_workers": 1,
+      "compiler_input_sha256": null,
+      "artifact_sha256": null,
+      "actual_runtime_fingerprint": null,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "work_qualified": false,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-mandelbrot-optimized",
+      "benchmark": "mandelbrot",
+      "variant": "optimized",
+      "source": "sources/mandelbrot/main.ex",
+      "alias_of": "elixir-mandelbrot-baseline-v1",
+      "source_input_materialized": false,
+      "authored_helpers": [
+        "support/support.ex"
+      ],
+      "stdin": false,
+      "maximum_subject_workers": 1,
+      "compiler_input_sha256": null,
+      "artifact_sha256": null,
+      "actual_runtime_fingerprint": null,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "work_qualified": false,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-nbody-compact",
+      "benchmark": "nbody",
+      "variant": "compact",
+      "source": "sources/nbody/main.ex",
+      "alias_of": "elixir-nbody-baseline-v1",
+      "source_input_materialized": false,
+      "authored_helpers": [
+        "support/support.ex"
+      ],
+      "stdin": false,
+      "maximum_subject_workers": 1,
+      "compiler_input_sha256": null,
+      "artifact_sha256": null,
+      "actual_runtime_fingerprint": null,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "work_qualified": false,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-nbody-optimized",
+      "benchmark": "nbody",
+      "variant": "optimized",
+      "source": "sources/nbody/main.ex",
+      "alias_of": "elixir-nbody-baseline-v1",
+      "source_input_materialized": false,
+      "authored_helpers": [
+        "support/support.ex"
+      ],
+      "stdin": false,
+      "maximum_subject_workers": 1,
+      "compiler_input_sha256": null,
+      "artifact_sha256": null,
+      "actual_runtime_fingerprint": null,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "work_qualified": false,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-pidigits-compact",
+      "benchmark": "pidigits",
+      "variant": "compact",
+      "source": "sources/pidigits/main.ex",
+      "alias_of": "elixir-pidigits-baseline-v1",
+      "source_input_materialized": false,
+      "authored_helpers": [
+        "support/support.ex"
+      ],
+      "stdin": false,
+      "maximum_subject_workers": 1,
+      "compiler_input_sha256": null,
+      "artifact_sha256": null,
+      "actual_runtime_fingerprint": null,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "work_qualified": false,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-pidigits-optimized",
+      "benchmark": "pidigits",
+      "variant": "optimized",
+      "source": "sources/pidigits/main.ex",
+      "alias_of": "elixir-pidigits-baseline-v1",
+      "source_input_materialized": false,
+      "authored_helpers": [
+        "support/support.ex"
+      ],
+      "stdin": false,
+      "maximum_subject_workers": 1,
+      "compiler_input_sha256": null,
+      "artifact_sha256": null,
+      "actual_runtime_fingerprint": null,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "work_qualified": false,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-regexredux-compact",
+      "benchmark": "regexredux",
+      "variant": "compact",
+      "source": "sources/regexredux/main.ex",
+      "alias_of": "elixir-regexredux-baseline-v1",
+      "source_input_materialized": false,
+      "authored_helpers": [
+        "support/support.ex"
+      ],
+      "stdin": true,
+      "maximum_subject_workers": 1,
+      "compiler_input_sha256": null,
+      "artifact_sha256": null,
+      "actual_runtime_fingerprint": null,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "work_qualified": false,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-regexredux-optimized",
+      "benchmark": "regexredux",
+      "variant": "optimized",
+      "source": "sources/regexredux/main.ex",
+      "alias_of": "elixir-regexredux-baseline-v1",
+      "source_input_materialized": false,
+      "authored_helpers": [
+        "support/support.ex"
+      ],
+      "stdin": true,
+      "maximum_subject_workers": 1,
+      "compiler_input_sha256": null,
+      "artifact_sha256": null,
+      "actual_runtime_fingerprint": null,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "work_qualified": false,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-revcomp-compact",
+      "benchmark": "revcomp",
+      "variant": "compact",
+      "source": "sources/revcomp/main.ex",
+      "alias_of": "elixir-revcomp-baseline-v1",
+      "source_input_materialized": false,
+      "authored_helpers": [
+        "support/support.ex"
+      ],
+      "stdin": true,
+      "maximum_subject_workers": 1,
+      "compiler_input_sha256": null,
+      "artifact_sha256": null,
+      "actual_runtime_fingerprint": null,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "work_qualified": false,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-revcomp-optimized",
+      "benchmark": "revcomp",
+      "variant": "optimized",
+      "source": "sources/revcomp/main.ex",
+      "alias_of": "elixir-revcomp-baseline-v1",
+      "source_input_materialized": false,
+      "authored_helpers": [
+        "support/support.ex"
+      ],
+      "stdin": true,
+      "maximum_subject_workers": 1,
+      "compiler_input_sha256": null,
+      "artifact_sha256": null,
+      "actual_runtime_fingerprint": null,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "work_qualified": false,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-spectralnorm-compact",
+      "benchmark": "spectralnorm",
+      "variant": "compact",
+      "source": "sources/spectralnorm/main.ex",
+      "alias_of": "elixir-spectralnorm-baseline-v1",
+      "source_input_materialized": false,
+      "authored_helpers": [
+        "support/support.ex"
+      ],
+      "stdin": false,
+      "maximum_subject_workers": 1,
+      "compiler_input_sha256": null,
+      "artifact_sha256": null,
+      "actual_runtime_fingerprint": null,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "work_qualified": false,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-spectralnorm-optimized",
+      "benchmark": "spectralnorm",
+      "variant": "optimized",
+      "source": "sources/spectralnorm/main.ex",
+      "alias_of": "elixir-spectralnorm-baseline-v1",
+      "source_input_materialized": false,
+      "authored_helpers": [
+        "support/support.ex"
+      ],
+      "stdin": false,
+      "maximum_subject_workers": 1,
+      "compiler_input_sha256": null,
+      "artifact_sha256": null,
+      "actual_runtime_fingerprint": null,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "work_qualified": false,
+      "chart_admission": false
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "status": "exact-private-v7-count-entry-binding-repaired",
+  "repaired_function_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/source20-entry-repairs-v1/replay.py",
+  "original_count_runner": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/nim-source-replay-v1/qualify_replay.py",
+  "corrected_binding": "fixture_runner is in revisions/work-full-v4, not the Nim root",
+  "actual_module_bindings": {
+    "qualify_work": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v4/qualify_work.py",
+      "sha256": "4a514a2cc22b0562fafbd58cb5ca5305bf08c52cadea3c90345121cd68e7e314"
+    },
+    "tree_work": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v4/tree_work.py",
+      "sha256": "2d205b31eea2a66ce732b869ae434d9de90e5541de18f7178a5ba1ffc283e1f5"
+    },
+    "fixture_runner": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v4/fixture_runner.py",
+      "sha256": "833034188147f9efd490c39fb8f37489d17de04a9fa8f67e1fb756f8af3d1177"
+    },
+    "guarded_prepare_v7": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/guarded_prepare_v7.py",
+      "sha256": "7b77b4cfb61ac93899153fa7ac61221f5b269d843b38cd861d6dcee0914f194f"
+    },
+    "proof_reuse_v5": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/proof_reuse_v5.py",
+      "sha256": "d01a7e190a2e854f107d7d615c6a2ddad1bfba9f5201535d0533833cb9e78730"
+    },
+    "primitive_reuse_v6": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/primitive_reuse_v6.py",
+      "sha256": "9ad43efc1808aff9a7fce6470c3f41da349459d845f71b82308397fb87b4c72a"
+    },
+    "ownership_reuse_v7": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/ownership_reuse_v7.py",
+      "sha256": "f9add361f9a893c8fd11c687d8bd982d39cb81c39784ebd5edaa2047b94d20f0"
+    },
+    "references": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/references.py",
+      "sha256": "6ba2d8d70f23ac04f2bd24e73356f14a1c3a046da35f25e936332b10a7cba1f3"
+    }
+  },
+  "fixture_runner_and_counter_bytes_changed": false,
+  "actual_source_input_fixtures_retained": 6,
+  "new_fixture_runs": 0,
+  "benchmark_processes_started": 0,
+  "qualification": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/qualification/private-v7/report.json",
+    "sha256": "6fb529f349ffaa8694d87a79c906ec86b84ecae2a23f5a7ab63a04f43a3f07da"
+  }
+}

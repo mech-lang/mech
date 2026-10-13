@@ -1,0 +1,23 @@
+WAIT common mutex: exact Nim deferred preparation import binding
+WAIT common mutex: Nim source input fixtures/replay only
+PROPOSED exact Nim source bundle: nim-regexredux-compact
+PROPOSED exact Nim source bundle: nim-regexredux-optimized
+PROPOSED exact Nim source bundle: nim-revcomp-compact
+PROPOSED exact Nim source bundle: nim-revcomp-optimized
+PROPOSED exact Nim source bundle: nim-pidigits-compact
+PROPOSED exact Nim source bundle: nim-pidigits-optimized
+PROPOSED exact Nim source bundle: nim-spectralnorm-compact
+PROPOSED exact Nim source bundle: nim-spectralnorm-optimized
+PROPOSED exact Nim source bundle: nim-mandelbrot-compact
+PROPOSED exact Nim source bundle: nim-mandelbrot-optimized
+PROPOSED exact Nim source bundle: nim-fasta-compact
+PROPOSED exact Nim source bundle: nim-fasta-optimized
+PROPOSED exact Nim source bundle: nim-knucleotide-compact
+PROPOSED exact Nim source bundle: nim-knucleotide-optimized
+PROPOSED exact Nim source bundle: nim-binarytrees-compact
+PROPOSED exact Nim source bundle: nim-binarytrees-optimized
+PROPOSED exact Nim source bundle: nim-nbody-compact
+PROPOSED exact Nim source bundle: nim-nbody-optimized
+PROPOSED exact Nim source bundle: nim-fannkuchredux-compact
+PROPOSED exact Nim source bundle: nim-fannkuchredux-optimized
+{"status": "completed-source-count-proposals", "output": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/nim-source-replay-v1/jobs/source20-entry-repaired-v4", "native_subjects": 0}
