@@ -1,5 +1,10 @@
 # Benchmarks Game purpose
 
+The branch-local [Mech optimization history](MECH_OPTIMIZATION_HISTORY.md) and
+[structured ledger](mech-optimization-history.json) preserve measured gains,
+regressions, source changes and the origin of borrowed techniques. Append to
+them and commit/push completed checkpoints as optimization work continues.
+
 This suite exposes gaps in Mech's language, standard library, memory model, and
 compiler across different domains. Expressiveness and complete source size are
 part of the result, alongside execution time. A gap is a finding to implement

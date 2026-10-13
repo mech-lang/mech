@@ -1,0 +1,787 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-10-13",
+  "scope": "Mech optimization and capability history on codex/clbg-native-benchmarks; historical receipts remain authoritative.",
+  "hardware": "Apple M3; each receipt specifies power, workers, source and timing conditions.",
+  "ratio_definition": "speedup = before_seconds / after_seconds; elapsed_change_percent = 100 * (after_seconds / before_seconds - 1). These are within-study comparisons, not x-of-Mech language rankings.",
+  "rules": [
+    "Append a dated entry after each optimization experiment; preserve failed attempts, old sources and raw samples.",
+    "Record source/compiler/library/policy changes separately; identify combined changes explicitly.",
+    "Require a measured matched cohort for a numeric effect; retain regressions and unchanged-object results.",
+    "Link raw receipts, source/compiler identity and a containing commit or frozen snapshot; a containing commit is not necessarily the exact implementation commit.",
+    "Commit and push completed checkpoints on the existing branch; never overwrite historical reports.",
+    "Keep V report-only and out of publication data."
+  ],
+  "open_attribution": [
+    {
+      "topic": "Mojo-to-Mech transfer remembered by the user",
+      "status": "not found in accessible inspected history",
+      "known": "Local Benchmark Game Evaluation Plan (2), October 9\u201310, records Mojo comparison ports and their optimization. This does not establish a Mojo-to-Mech pass.",
+      "needed": "Locate the other-computer conversation or exact pass/receipt, then append attribution without replacing the current evidence.",
+      "chat_id": "01a11c4b-7bf0-75b0-a854-cf4f0e614617"
+    }
+  ],
+  "entries": [
+    {
+      "id": "native-f64-simd",
+      "date": "2026-10-07",
+      "title": "Native f64 lowering, SIMD and explicit floating-point policies",
+      "change_kind": "compiler and opt-in policy",
+      "status": "measured",
+      "inspiration": "Scalar AOT backport from iros-workshop-benchmarks; SIMD/code-generation investigation against native submissions.",
+      "mechanism": "Lower fixed-shape ranges, gathers, combinations, reductions and updates to native loops; pack coordinates and preserve reduction order; expose FMA and algebraic powers explicitly.",
+      "evidence": [
+        "nbody/results/apple-m3-native-output-ablation-50m.json",
+        "nbody/results/apple-m3-v04-native-optimized-50m.json"
+      ],
+      "limitations": [
+        "Historical cohort: do not join its absolute times to later AC-power cohorts. FMA and algebraic powers change arithmetic policy. Refined reciprocal variants lost; no universal fast-math claim.",
+        "External scalar backport commit b10593b75ec8b9283ae33e4ac330c00dda9957d7 is a dependency provenance reference, not a Mech commit."
+      ],
+      "measurements": [
+        {
+          "label": "Strict scalar to strict SIMD",
+          "before_seconds": 2.420990084,
+          "after_seconds": 2.166537792,
+          "speedup": 1.117446505175018,
+          "elapsed_change_percent": -10.510257505044773,
+          "report": "nbody/results/apple-m3-native-output-ablation-50m.json",
+          "before_program_id": "mech-cranelift-aot-sqrt",
+          "after_program_id": "mech-cranelift-aot-simd-sqrt",
+          "timing_boundary": "Fresh-process wall time; AOT build excluded; startup, computation and output included."
+        },
+        {
+          "label": "SIMD to explicit FMA",
+          "before_seconds": 2.166537792,
+          "after_seconds": 2.0293135,
+          "speedup": 1.067621041302884,
+          "elapsed_change_percent": -6.333805600193287,
+          "report": "nbody/results/apple-m3-native-output-ablation-50m.json",
+          "before_program_id": "mech-cranelift-aot-simd-sqrt",
+          "after_program_id": "mech-cranelift-aot-simd-sqrt-contract",
+          "timing_boundary": "Fresh-process wall time; AOT build excluded; startup, computation and output included."
+        },
+        {
+          "label": "Power source: strict to algebraic powers plus FMA",
+          "before_seconds": 9.264461792,
+          "after_seconds": 2.030818334,
+          "speedup": 4.561935273527031,
+          "elapsed_change_percent": -78.079478553696,
+          "report": "nbody/results/apple-m3-native-output-ablation-50m.json",
+          "before_program_id": "mech-cranelift-aot-simd-power",
+          "after_program_id": "mech-cranelift-aot-simd-power-algebraic-contract",
+          "timing_boundary": "Fresh-process wall time; AOT build excluded; startup, computation and output included."
+        }
+      ],
+      "containing_commits": [
+        "bf9d7f2b6"
+      ]
+    },
+    {
+      "id": "chapel-pair-updates",
+      "date": "2026-10-07",
+      "title": "Chapel-inspired pair update organization",
+      "change_kind": "source rewrite",
+      "status": "measured",
+      "inspiration": "Chapel pair updates and temporary lifetime organization; accessible chat turn 01a11604-c7ef-7bf3-ad83-fbe5b5ba30c5.",
+      "mechanism": "Share displacement times magnitude and interleave both velocity contributions per pair in counted Mech source.",
+      "evidence": [
+        "nbody/results/apple-m3-chapel-tricks-50m.json",
+        "nbody/results/apple-m3-chapel-tricks-50m.table.md"
+      ],
+      "limitations": [
+        "Changes accumulation order; passes energy checks and 28 full-state comparisons with documented tolerances. Depth scheduling emitted identical hot-loop code and showed no established benefit."
+      ],
+      "measurements": [
+        {
+          "label": "Original FMA source to pairwise FMA source",
+          "before_seconds": 2.028586,
+          "after_seconds": 1.98366,
+          "speedup": 1.022648034441386,
+          "elapsed_change_percent": -2.214646063809955,
+          "report": "nbody/results/apple-m3-chapel-tricks-50m.table.md",
+          "timing_boundary": "Fresh-process wall time; AOT build excluded; startup, computation and output included.",
+          "precision": "as reported in the linked study"
+        }
+      ],
+      "containing_commits": [
+        "bf9d7f2b6"
+      ]
+    },
+    {
+      "id": "spectral-numeric",
+      "date": "2026-10-07",
+      "title": "Reusable matrix optimizations and profitability experiments",
+      "change_kind": "compiler, source and worker policy",
+      "status": "measured",
+      "inspiration": "Rust/LLVM row tiling, work partitioning, polynomial induction and integer denominator techniques; spectralnorm README documents the transfer.",
+      "mechanism": "Common-subexpression DAGs, hoisting, range-proved bounds removal, degree-two induction, f64x2 unrolling, row tiling, exclusive buffer reuse and smaller parallel chunks.",
+      "evidence": [
+        "spectralnorm/README.md",
+        "spectralnorm/results/apple-m3-optimized-5500.json",
+        "spectralnorm/results/induction-worker-counters.json",
+        "spectralnorm/results/induction-paired-counters.json",
+        "spectralnorm/results/integer-coefficient-ablation.json"
+      ],
+      "limitations": [
+        "0.808 to 0.638 seconds is a diagnostic source-plus-compiler comparison with counters, not an isolated compiler-pass speedup. Induction helped slightly at unroll two and lost at unroll four; fastest selected variant left induction off."
+      ],
+      "measurements": [
+        {
+          "label": "One-worker integer-coefficient diagnostic",
+          "before_seconds": 0.808,
+          "after_seconds": 0.638,
+          "speedup": 1.2664576802507836,
+          "elapsed_change_percent": -21.039603960396047,
+          "report": "spectralnorm/results/induction-worker-counters.json",
+          "timing_boundary": "Diagnostic worker run with counters; distinct from published fresh-process cohorts.",
+          "precision": "as reported in the linked study"
+        }
+      ],
+      "containing_commits": [
+        "bf9d7f2b6"
+      ]
+    },
+    {
+      "id": "byte-fusion-storage",
+      "date": "2026-10-08",
+      "title": "Byte fusion, SIMD and ownership-safe storage reuse",
+      "change_kind": "compiler and runtime",
+      "status": "measured",
+      "inspiration": "General single-consumer fusion, ownership and disjoint-range reasoning.",
+      "mechanism": "Fuse reverse/translate, prove 256-entry byte lookup for SIMD, reuse last-use buffers only under exclusive ownership, partition disjoint pairs and bound wrapping copies.",
+      "evidence": [
+        "revcomp/results/paired-optimizations.json",
+        "revcomp/README.md"
+      ],
+      "limitations": [
+        "The preserved first implementation uses per-line input and library formatting; its 0.354 to 0.218 comparison also changes input/storage organization. It is not an isolated same-source compiler-pass gain. Same-current-source ablations separate SIMD, fusion, reuse and partitions; effects are not additive."
+      ],
+      "measurements": [
+        {
+          "label": "Preserved implementation to combined optimized implementation",
+          "before_seconds": 0.353964708,
+          "after_seconds": 0.217913625,
+          "speedup": 1.624334907925101,
+          "elapsed_change_percent": -38.4363412298155,
+          "report": "revcomp/results/paired-optimizations.json",
+          "before_program_id": "mech-preserved-line-input-library-format",
+          "after_program_id": "mech-revcomp-optimized",
+          "timing_boundary": "Fresh-process wall time; AOT build excluded; startup, computation and output included."
+        },
+        {
+          "label": "Same current source: fusion off to on",
+          "before_seconds": 0.226009291,
+          "after_seconds": 0.217913625,
+          "speedup": 1.0371508022960931,
+          "elapsed_change_percent": -3.5820058388661535,
+          "report": "revcomp/results/paired-optimizations.json",
+          "before_program_id": "mech-revcomp-unfused",
+          "after_program_id": "mech-revcomp-optimized",
+          "timing_boundary": "Fresh-process wall time; AOT build excluded; startup, computation and output included."
+        },
+        {
+          "label": "Same current source: copying to ownership-safe reuse",
+          "before_seconds": 0.244864875,
+          "after_seconds": 0.217913625,
+          "speedup": 1.1236785905424684,
+          "elapsed_change_percent": -11.006580670257426,
+          "report": "revcomp/results/paired-optimizations.json",
+          "before_program_id": "mech-revcomp-copy",
+          "after_program_id": "mech-revcomp-optimized",
+          "timing_boundary": "Fresh-process wall time; AOT build excluded; startup, computation and output included."
+        }
+      ],
+      "containing_commits": [
+        "bf9d7f2b6"
+      ]
+    },
+    {
+      "id": "fasta-exact-streaming",
+      "date": "2026-10-08",
+      "title": "Rust-inspired periodic streaming and exact arithmetic lowering",
+      "change_kind": "compiler and generic runtime",
+      "status": "historical-output-equivalent; strict policy subsequently corrected",
+      "inspiration": "Rust submission #7 period preformatting and producer/mapper organization, documented in fasta README.",
+      "mechanism": "Prove bounded arithmetic and rounded comparison thresholds from source; replay a source-proved literal period; use a bounded two-buffer producer/mapper/output pipeline.",
+      "evidence": [
+        "fasta/results/apple-m3-exact-compare-matched-25000000.json",
+        "fasta/results/apple-m3-streaming-final-25000000.json",
+        "fasta/README.md",
+        "work-audit/20261009/README.md",
+        "work-audit/20261009/audit.json"
+      ],
+      "limitations": [
+        "Counted Mech sources remain unchanged within each matched comparison. The final result combines several changes; most expanded arithmetic gain comes from bounded-index simplification. Period and pipeline effects cannot be added to other cohorts. Full 32-bit narrowing lost and was not selected.",
+        "The October 9 required-work audit disabled floating-CDF-to-integer-cutoff lowering for strict comparison. These October 8 gains remain historical output-equivalent experiments, not current strict qualification. Corrected strict sources execute 200,000,000 fresh LCG updates and floating comparisons; fixed-string ALU caching and pipeline remain separately disclosed."
+      ],
+      "measurements": [
+        {
+          "label": "Compact exact-arithmetic stage",
+          "before_seconds": 3.006139375,
+          "after_seconds": 2.278654458,
+          "speedup": 1.3192607437454653,
+          "elapsed_change_percent": -24.199972996927333,
+          "report": "fasta/results/apple-m3-exact-compare-matched-25000000.json",
+          "before_program_id": "mech-fasta-compact-before",
+          "after_program_id": "mech-fasta-exact-compact-auto-v2",
+          "timing_boundary": "Fresh-process wall time; AOT build excluded; startup, computation and output included."
+        },
+        {
+          "label": "Expanded exact-arithmetic stage",
+          "before_seconds": 1.235645542,
+          "after_seconds": 1.119752334,
+          "speedup": 1.103498965334597,
+          "elapsed_change_percent": -9.379162879705527,
+          "report": "fasta/results/apple-m3-exact-compare-matched-25000000.json",
+          "before_program_id": "mech-fasta-optimized-before",
+          "after_program_id": "mech-fasta-exact-expanded-auto-v2",
+          "timing_boundary": "Fresh-process wall time; AOT build excluded; startup, computation and output included."
+        },
+        {
+          "label": "Compact combined final implementation",
+          "before_seconds": 3.009812584,
+          "after_seconds": 1.823449167,
+          "speedup": 1.6506150204076406,
+          "elapsed_change_percent": -39.416521258055845,
+          "report": "fasta/results/apple-m3-streaming-final-25000000.json",
+          "before_program_id": "mech-fasta-compact-before",
+          "after_program_id": "mech-fasta-final-compact-v2",
+          "timing_boundary": "Fresh-process wall time; AOT build excluded; startup, computation and output included."
+        },
+        {
+          "label": "Expanded combined final implementation",
+          "before_seconds": 1.236767417,
+          "after_seconds": 0.964123833,
+          "speedup": 1.2827889682507205,
+          "elapsed_change_percent": -22.044855019009614,
+          "report": "fasta/results/apple-m3-streaming-final-25000000.json",
+          "before_program_id": "mech-fasta-optimized-before",
+          "after_program_id": "mech-fasta-final-expanded-v2",
+          "timing_boundary": "Fresh-process wall time; AOT build excluded; startup, computation and output included."
+        },
+        {
+          "label": "Expanded pipeline ablation",
+          "before_seconds": 1.04453175,
+          "after_seconds": 0.964123833,
+          "speedup": 1.083399988930675,
+          "elapsed_change_percent": -7.697986873065366,
+          "report": "fasta/results/apple-m3-streaming-final-25000000.json",
+          "before_program_id": "mech-fasta-final-expanded-no-pipeline-v2",
+          "after_program_id": "mech-fasta-final-expanded-v2",
+          "timing_boundary": "Fresh-process wall time; AOT build excluded; startup, computation and output included."
+        }
+      ],
+      "containing_commits": [
+        "bf9d7f2b6"
+      ]
+    },
+    {
+      "id": "trees-lifetimes-inlining",
+      "date": "2026-10-08",
+      "title": "General allocation lifetimes, record layouts and recursive inlining",
+      "change_kind": "compiler and runtime",
+      "status": "measured",
+      "inspiration": "Ordinary arena/frame lifetime and recursion support; whole benchmark algorithm remains in Mech.",
+      "mechanism": "Use planned allocation lifetimes and record layout authority instead of per-node Box plus ownership bookkeeping; tune recursive inline budget.",
+      "evidence": [
+        "binarytrees/results/apple-m3-21.json",
+        "binarytrees/README.md",
+        "binarytrees/results/apple-m3-individual-box-abandoned.json"
+      ],
+      "limitations": [
+        "Inline-budget comparison uses the same historical 50-line source. Later 50-to-29-line record/match/comprehension redesign is a separate source change. Abandoned allocation study is retained."
+      ],
+      "measurements": [
+        {
+          "label": "Recursive inline budget zero to two",
+          "before_seconds": 0.950267708,
+          "after_seconds": 0.72391975,
+          "speedup": 1.3126699582377743,
+          "elapsed_change_percent": -23.819388588547096,
+          "report": "binarytrees/results/apple-m3-21.json",
+          "before_program_id": "mech-binarytrees-parallel-inline0",
+          "after_program_id": "mech-binarytrees-parallel",
+          "timing_boundary": "Fresh-process wall time; AOT build excluded; startup, computation and output included."
+        }
+      ],
+      "containing_commits": [
+        "bf9d7f2b6"
+      ]
+    },
+    {
+      "id": "broadcast-tail-products",
+      "date": "2026-10-09",
+      "title": "Canonical broadcasts, packed state tails and product reassociation",
+      "change_kind": "compiler plus separate source rewrite",
+      "status": "measured",
+      "inspiration": "LLVM-style broadcast/lane reasoning and native code inspection.",
+      "mechanism": "Canonicalize single-input shuffles; optionally pack odd state tails; opt into constant-product reassociation. A separate source puts mass multiplication earlier.",
+      "evidence": [
+        "nbody/experiments/20261009-local-simd/final-confirmation-50m.json",
+        "nbody/experiments/20261009-local-simd/post-validation.json",
+        "nbody/experiments/20261009-local-simd/mandelbrot-regression.json"
+      ],
+      "limitations": [
+        "Compact comparison keeps its source. The mass-first fast comparison changes source as well as backend policies; attribute the combined effect accordingly."
+      ],
+      "measurements": [
+        {
+          "label": "Unchanged compact source",
+          "before_seconds": 1.168187375,
+          "after_seconds": 1.121837458,
+          "speedup": 1.041316071833287,
+          "elapsed_change_percent": -3.9676783016080908,
+          "report": "nbody/experiments/20261009-local-simd/final-confirmation-50m.json",
+          "before_program_id": "before-broadcast-compact-baseline",
+          "after_program_id": "compact-baseline",
+          "timing_boundary": "Fresh-process wall time; AOT build excluded; startup, computation and output included."
+        },
+        {
+          "label": "Mass-first source plus backend changes",
+          "before_seconds": 1.129854625,
+          "after_seconds": 1.053052375,
+          "speedup": 1.0729329820845803,
+          "elapsed_change_percent": -6.797533797766231,
+          "report": "nbody/experiments/20261009-local-simd/final-confirmation-50m.json",
+          "before_program_id": "before-broadcast-pairwise-baseline",
+          "after_program_id": "pairwise-mass-tails",
+          "timing_boundary": "Fresh-process wall time; AOT build excluded; startup, computation and output included."
+        }
+      ],
+      "containing_commits": [
+        "bf9d7f2b6"
+      ]
+    },
+    {
+      "id": "source-compaction-application",
+      "date": "2026-10-09",
+      "title": "Source compaction and ordinary function application",
+      "change_kind": "language syntax and source rewrite",
+      "status": "mixed",
+      "inspiration": "Express the same work through canonical Mech forms; general transpose permutation and numeric suffix lowering.",
+      "mechanism": "Reduce source scaffolding; preserve evaluation-once application semantics and native kernels.",
+      "evidence": [
+        "function-application-audit/20261009T171437Z/RESULTS.md",
+        "function-application-audit/20261009T171437Z/application-v3/verification.json",
+        "function-application-audit/20261009T171437Z/application-v3/spectral-confirmation-10.json",
+        "nbody/experiments/20261009-source-compact/source-compaction.json",
+        "work-audit/20261009/audit.json"
+      ],
+      "limitations": [
+        "Nbody compaction 32/37 to 20/25 lines preserved object bytes. Application migration preserved 14 non-spectral compute objects and passed 174 comparisons across 81 input cases. Small timing changes do not establish a speedup.",
+        "The nine-line spectral source adds intermediate reciprocal rounding and multiplication. It was slower in nine of ten paired rounds; the faithful twelve-line form was restored. Application syntax itself is not the demonstrated cause."
+      ],
+      "measurements": [
+        {
+          "label": "Spectral source expression rewrite (regression)",
+          "before_seconds": 0.084689312,
+          "after_seconds": 0.088730396,
+          "speedup": 0.9544565990666829,
+          "elapsed_change_percent": 4.771657608931812,
+          "report": "function-application-audit/20261009T171437Z/application-v3/spectral-confirmation-10.json",
+          "timing_boundary": "Fresh-process wall time; AOT build excluded; startup, computation and output included.",
+          "precision": "as reported in the linked study"
+        }
+      ],
+      "containing_commits": [
+        "bf9d7f2b6"
+      ]
+    },
+    {
+      "id": "admission-resident-batching",
+      "date": "2026-10-10",
+      "title": "Shared admission, JIT reuse and typed resident interpretation",
+      "change_kind": "compiler and interpreter runtime",
+      "status": "mixed",
+      "inspiration": "General dependency/dispatch investigation; reusable coefficient batches rather than a cached matrix formula.",
+      "mechanism": "Share parsed documents between frontends, reparse only changed text, reuse admitted control IR, release parse storage; interpret independent coefficients in typed tiles of at most 32 independent elements/coefficient calls with whole-invocation unsigned proofs and checked fallback; inline count dispatch.",
+      "evidence": [
+        "execution-modes/20261010-final/README.md",
+        "execution-modes/20261010-final/summary.json",
+        "execution-modes/20261010-final/timings.json",
+        "execution-modes/20261010-final/snapshots.json"
+      ],
+      "limitations": [
+        "Three randomized rounds: 135 full-workload samples, 54 semantic checks and fifteen identical AOT objects. Fastest measured source is chosen independently per execution path; this is a combined change.",
+        "Resident timing begins after loading/activation; JIT uses whole fresh-process time including compilation. Do not compare these boundaries as a single pass. Resident fannkuch regressed 3.7%.",
+        "Before and after are separate completed cohorts with fresh AOT controls, not one randomized old/new paired batch. AOT control geometric-mean ratio was 0.999029530; that does not isolate each individual optimization."
+      ],
+      "measurements": [
+        {
+          "label": "Resident spectral norm",
+          "before_seconds": 5.1848855,
+          "after_seconds": 0.457014417,
+          "speedup": 11.34512458936279,
+          "elapsed_change_percent": -91.18564109082061,
+          "report": "execution-modes/20261010-final/summary.json",
+          "timing_boundary": "Loaded resident execution, fresh input and complete output; loading/activation excluded.",
+          "precision": "exact saved cohort medians",
+          "baseline_report": "execution-modes/20261010/timings.json"
+        },
+        {
+          "label": "JIT Pi digits",
+          "before_seconds": 0.719949667,
+          "after_seconds": 0.447466125,
+          "speedup": 1.6089478661652878,
+          "elapsed_change_percent": -37.847582197714935,
+          "report": "execution-modes/20261010-final/summary.json",
+          "timing_boundary": "Whole fresh process including JIT compilation.",
+          "precision": "exact saved cohort medians",
+          "baseline_report": "execution-modes/20261010/timings.json"
+        },
+        {
+          "label": "JIT FASTA",
+          "before_seconds": 1.126172125,
+          "after_seconds": 0.765849375,
+          "speedup": 1.4704877509366643,
+          "elapsed_change_percent": -31.99535328580434,
+          "report": "execution-modes/20261010-final/summary.json",
+          "timing_boundary": "Whole fresh process including JIT compilation.",
+          "precision": "exact saved cohort medians",
+          "baseline_report": "execution-modes/20261010/timings.json"
+        },
+        {
+          "label": "JIT binary trees",
+          "before_seconds": 0.733148,
+          "after_seconds": 0.525068667,
+          "speedup": 1.3962897542313262,
+          "elapsed_change_percent": -28.381627311265945,
+          "report": "execution-modes/20261010-final/summary.json",
+          "timing_boundary": "Whole fresh process including JIT compilation.",
+          "precision": "exact saved cohort medians",
+          "baseline_report": "execution-modes/20261010/timings.json"
+        },
+        {
+          "label": "JIT Mandelbrot",
+          "before_seconds": 1.066207542,
+          "after_seconds": 0.783310375,
+          "speedup": 1.3611559045161374,
+          "elapsed_change_percent": -26.53303000177051,
+          "report": "execution-modes/20261010-final/summary.json",
+          "timing_boundary": "Whole fresh process including JIT compilation.",
+          "precision": "exact saved cohort medians",
+          "baseline_report": "execution-modes/20261010/timings.json"
+        },
+        {
+          "label": "JIT fannkuch",
+          "before_seconds": 2.476234958,
+          "after_seconds": 2.02061375,
+          "speedup": 1.2254865423933694,
+          "elapsed_change_percent": -18.399756716462612,
+          "report": "execution-modes/20261010-final/summary.json",
+          "timing_boundary": "Whole fresh process including JIT compilation.",
+          "precision": "exact saved cohort medians",
+          "baseline_report": "execution-modes/20261010/timings.json"
+        },
+        {
+          "label": "JIT Nbody",
+          "before_seconds": 1.628762125,
+          "after_seconds": 1.380457333,
+          "speedup": 1.179871399183621,
+          "elapsed_change_percent": -15.245000371063998,
+          "report": "execution-modes/20261010-final/summary.json",
+          "timing_boundary": "Whole fresh process including JIT compilation.",
+          "precision": "exact saved cohort medians",
+          "baseline_report": "execution-modes/20261010/timings.json"
+        },
+        {
+          "label": "Resident fannkuch (regression)",
+          "before_seconds": 59.393436,
+          "after_seconds": 61.607568583,
+          "speedup": 0.9640607049762556,
+          "elapsed_change_percent": 3.727907883625381,
+          "report": "execution-modes/20261010-final/summary.json",
+          "timing_boundary": "Loaded resident execution; loading/activation excluded.",
+          "precision": "exact saved cohort medians",
+          "baseline_report": "execution-modes/20261010/timings.json"
+        }
+      ],
+      "containing_commits": [
+        "bf9d7f2b6"
+      ]
+    },
+    {
+      "id": "consumer-scheduling",
+      "date": "2026-10-11",
+      "title": "Consumer grouping and register-pressure scheduling",
+      "change_kind": "compiler policy",
+      "status": "measured",
+      "inspiration": "LLVM consumer grouping and C++/Chapel temporary lifetime/register-pressure inspection.",
+      "mechanism": "Schedule generic native graph regions and simplify the square accumulation seed.",
+      "evidence": [
+        "nbody/experiments/20261011-competitor-techniques/confirmation-50m.json",
+        "nbody/experiments/20261011-competitor-techniques/README.md",
+        "nbody/experiments/20261011-competitor-techniques/final-object-verification.json"
+      ],
+      "limitations": [
+        "Unchanged 20-line compact source; all thirty state bits preserved in the recorded comparisons. Fast source fresh control showed no gain."
+      ],
+      "measurements": [
+        {
+          "label": "Compact region-eight scheduling",
+          "before_seconds": 1.119697625,
+          "after_seconds": 1.089513042,
+          "speedup": 1.027704655049003,
+          "elapsed_change_percent": -2.6957798539583244,
+          "report": "nbody/experiments/20261011-competitor-techniques/confirmation-50m.json",
+          "before_program_id": "compact-before",
+          "after_program_id": "compact-regions8",
+          "timing_boundary": "Fresh-process wall time; AOT build excluded; startup, computation and output included."
+        },
+        {
+          "label": "Fast-source control",
+          "before_seconds": 1.046597166,
+          "after_seconds": 1.047539,
+          "speedup": 0.9991009079375565,
+          "elapsed_change_percent": 0.08999011564303494,
+          "report": "nbody/experiments/20261011-competitor-techniques/confirmation-50m.json",
+          "before_program_id": "pairwise-before",
+          "after_program_id": "pairwise-regions16seed",
+          "timing_boundary": "Fresh-process wall time; AOT build excluded; startup, computation and output included."
+        }
+      ],
+      "containing_commits": [
+        "bf9d7f2b6"
+      ]
+    },
+    {
+      "id": "zig-shared-products",
+      "date": "2026-10-11",
+      "title": "Rejected shared products; retained seed and schedule policy",
+      "change_kind": "compiler opt-in experiment and selected policy",
+      "status": "mixed",
+      "inspiration": "Zig-style shared displacement-times-magnitude products.",
+      "mechanism": "Investigate arithmetic sharing and compare it independently with square-seed and region-eight scheduling.",
+      "evidence": [
+        "nbody/experiments/20261011-shared-products/confirmation-50m.json",
+        "nbody/experiments/20261011-shared-products/replication-50m.json",
+        "nbody/experiments/20261011-shared-products/README.md",
+        "nbody/experiments/20261011-shared-products/native-audit.json"
+      ],
+      "limitations": [
+        "Sharing reduced static instructions from 282 to 244 but made the recorded run slower. The winning change was seed simplification plus region-eight scheduling, not the shared-product pass. Source remains unchanged."
+      ],
+      "measurements": [
+        {
+          "label": "Shared-product experiment (regression)",
+          "before_seconds": 1.052554708,
+          "after_seconds": 1.084063166,
+          "speedup": 0.9709348504882233,
+          "elapsed_change_percent": 2.993522119137215,
+          "report": "nbody/experiments/20261011-shared-products/confirmation-50m.json",
+          "before_program_id": "pairwise-before",
+          "after_program_id": "compiler-shared-regions8",
+          "timing_boundary": "Fresh-process wall time; AOT build excluded; startup, computation and output included."
+        },
+        {
+          "label": "Seed plus region-eight confirmation",
+          "before_seconds": 1.052554708,
+          "after_seconds": 1.038263625,
+          "speedup": 1.0137644068961773,
+          "elapsed_change_percent": -1.3577520381011898,
+          "report": "nbody/experiments/20261011-shared-products/confirmation-50m.json",
+          "before_program_id": "pairwise-before",
+          "after_program_id": "pairwise-seed8",
+          "timing_boundary": "Fresh-process wall time; AOT build excluded; startup, computation and output included."
+        },
+        {
+          "label": "Independent seed plus region-eight replication",
+          "before_seconds": 1.054018666,
+          "after_seconds": 1.039486459,
+          "speedup": 1.0139801792261731,
+          "elapsed_change_percent": -1.3787428504610566,
+          "report": "nbody/experiments/20261011-shared-products/replication-50m.json",
+          "before_program_id": "pairwise-before",
+          "after_program_id": "pairwise-seed8",
+          "timing_boundary": "Fresh-process wall time; AOT build excluded; startup, computation and output included."
+        }
+      ],
+      "containing_commits": [
+        "bf9d7f2b6"
+      ]
+    },
+    {
+      "id": "existing-region24",
+      "date": "2026-10-11",
+      "title": "Existing region-size policy beats scheduling prototypes",
+      "change_kind": "policy selection; no production compiler change",
+      "status": "measured",
+      "inspiration": "Dependency/scheduling exploration following native submission audits.",
+      "mechanism": "Select the already-existing region-24 policy and restore all five experimental compiler edits.",
+      "evidence": [
+        "nbody/experiments/20261011-scheduling/confirmation-50m.json",
+        "nbody/experiments/20261011-scheduling/replication-50m.json",
+        "nbody/experiments/20261011-scheduling/README.md",
+        "nbody/experiments/20261011-scheduling/restored-source-verification.json"
+      ],
+      "limitations": [
+        "Two fifteen-round cohorts show about 0.2% lower elapsed time. Production compiler and source were unchanged; this is policy tuning, not a new compiler pass."
+      ],
+      "measurements": [
+        {
+          "label": "Region eight to existing region twenty-four",
+          "before_seconds": 1.041305458,
+          "after_seconds": 1.039141792,
+          "speedup": 1.002082166280538,
+          "elapsed_change_percent": -0.20778398724192737,
+          "report": "nbody/experiments/20261011-scheduling/confirmation-50m.json",
+          "before_program_id": "pairwise-seed8",
+          "after_program_id": "pairwise-original24",
+          "timing_boundary": "Fresh-process wall time; AOT build excluded; startup, computation and output included."
+        },
+        {
+          "label": "Independent replication",
+          "before_seconds": 1.041376625,
+          "after_seconds": 1.039062708,
+          "speedup": 1.0022269271933106,
+          "elapsed_change_percent": -0.2221979007835051,
+          "report": "nbody/experiments/20261011-scheduling/replication-50m.json",
+          "before_program_id": "pairwise-seed8",
+          "after_program_id": "pairwise-original24",
+          "timing_boundary": "Fresh-process wall time; AOT build excluded; startup, computation and output included."
+        }
+      ],
+      "containing_commits": [
+        "bf9d7f2b6"
+      ]
+    },
+    {
+      "id": "libraries-counts-bigints-regex",
+      "date": "2026-10-07/09",
+      "title": "General count, bigint and regex operations",
+      "change_kind": "library/runtime and separate source variants",
+      "status": "documented-no-isolated-speedup",
+      "inspiration": "Reuse general Rust/native libraries as intended by Mech; packed-key and counting techniques compared with Rust/Julia/Chapel.",
+      "mechanism": "Optimize immutable dependency scheduling and packed extraction; use general counting containers and partitions, reusable GMP cells/direct quotient operations and generic byte-regex operations.",
+      "evidence": [
+        "knucleotide/README.md",
+        "pidigits/README.md",
+        "regexredux/README.md"
+      ],
+      "limitations": [
+        "No isolated before/after speedup is asserted here without a matched receipt. The withdrawn eight-line k-nucleotide host shortcut was replaced by counted 17/24-line Mech bodies. Mech uses Rust regex::bytes (regex 1.13.1) through general library operations; that timing does not measure a Mech-generated regex engine."
+      ],
+      "measurements": [],
+      "containing_commits": [
+        "bf9d7f2b6"
+      ]
+    },
+    {
+      "id": "array-state-arrow",
+      "date": "2026-10-11",
+      "title": "Ordinary array state forms and arrow mutation correctness",
+      "change_kind": "source expressiveness and correctness",
+      "status": "documented-no-isolated-speedup",
+      "inspiration": "Uiua array/state comparisons prompted exploration of ordinary Mech array forms.",
+      "mechanism": "Reduce Mandelbrot source state scaffolding from 20 to 11 and 29 to 16 lines; preserve mutation and return the updated state from arrow bodies.",
+      "evidence": [
+        "mandelbrot/README.md"
+      ],
+      "limitations": [
+        "Several source/execution variants were compared. A byte-identical native object for the equivalent row form does not establish a compiler speedup. Arrow mutation repair is a correctness fix; do not advertise an unmeasured runtime gain."
+      ],
+      "measurements": [],
+      "containing_commits": [
+        "005d983df",
+        "c3396db09"
+      ]
+    },
+    {
+      "id": "batched-interpreter-integration",
+      "date": "2026-10-11",
+      "title": "Batched array interpreter integration and a retained regression",
+      "change_kind": "capability and interpreter integration",
+      "status": "mixed",
+      "inspiration": "General f32 array execution support.",
+      "mechanism": "Integrate the batched interpreter while preserving the existing f64/control/collection dispatch.",
+      "evidence": [
+        "interpreter-integration/20261011/README.md",
+        "interpreter-integration/20261011/fannkuch-confirmation.json",
+        "interpreter-integration/20261011/package-control.json"
+      ],
+      "limitations": [
+        "Ninety full runs preserve capability evidence. Same-package static control excludes driver-package identity as the explanation; cause of the regression is not isolated."
+      ],
+      "measurements": [
+        {
+          "label": "Default resident fannkuch confirmation",
+          "before_seconds": 56.117233,
+          "after_seconds": 59.300908,
+          "speedup": 0.946313216654288,
+          "elapsed_change_percent": 5.67325726840453,
+          "report": "interpreter-integration/20261011/fannkuch-confirmation.json",
+          "timing_boundary": "Recorded default interpreter full run; use this study boundary only.",
+          "precision": "as reported in the linked study"
+        }
+      ],
+      "containing_commits": [
+        "45c6837ab",
+        "dac4c942b"
+      ]
+    },
+    {
+      "id": "language-gaps-algebraic",
+      "date": "2026-10-11/12",
+      "title": "Language gap repairs and pending algebraic floating point",
+      "change_kind": "correctness/capability and bounded experiment",
+      "status": "pending-or-capability-only",
+      "inspiration": "General tuple/arrow/frame/bigint support; explicit floating-point policy investigation.",
+      "mechanism": "Add canonical form support and audit an explicit-f64 algebraic prototype on bounded semantic cases.",
+      "evidence": [
+        "language-gaps/20261011/results/summary.json",
+        "interpreter-algebraic/20261012/revisions/explicit-f64-v5/preparation/report.json",
+        "interpreter-algebraic/20261012/revisions/explicit-f64-v5/review-evidence-v1/report.json"
+      ],
+      "limitations": [
+        "Language-gap study preserved fifteen prior native objects; multiple changes prevent isolated timing attribution. Algebraic prototype has zero qualified full timing runs: strict policy changed zero compared bits, broader policies changed 67 rows per copy, including special values. No claimed codegen or full-workload speedup; production resident policy unchanged."
+      ],
+      "measurements": [],
+      "containing_commits": [
+        "c3396db09",
+        "dac4c942b"
+      ]
+    },
+    {
+      "id": "required-work-corrections",
+      "date": "2026-10-09",
+      "title": "Required-work correction and transitive scalar helpers",
+      "change_kind": "compiler capability and comparison qualification",
+      "status": "qualified correction; no isolated speedup",
+      "inspiration": "Inspect source-visible required work, rather than output equality alone.",
+      "mechanism": "Follow pure transitive scalar helper calls inside matrix comprehensions; reject impurity and recursion. Restore four spectral source functions and disable integer-cutoff FASTA transformation for the strict profile.",
+      "evidence": [
+        "work-audit/20261009/README.md",
+        "work-audit/20261009/audit.json",
+        "work-audit/20261009/builds.json",
+        "work-audit/20261009/timings.json"
+      ],
+      "limitations": [
+        "51 native-sequence tests passed and 13 unchanged native compute objects remained identical. Corrected five-sample full medians are 0.088514667 seconds spectral, 1.227297416 seconds compact FASTA and 0.573187541 seconds expanded FASTA. These are new strict endpoints, not an isolated before/after optimization gain."
+      ],
+      "measurements": [],
+      "containing_commits": [
+        "bf9d7f2b6"
+      ]
+    },
+    {
+      "id": "mandelbrot-masks-recurrence",
+      "date": "2026-10-07",
+      "title": "Lane masks, recurrence organization and bounded FMA",
+      "change_kind": "source organization and compiler floating-point policy",
+      "status": "documented; no isolated timing asserted here",
+      "inspiration": "Chapel eight-pixel organization and five recurrence steps per escape check; Rust submission #4 Boolean mask/integer arithmetic investigation. Accessible turn 01a1162e-b111-7c02-b93a-9301f1658e55.",
+      "mechanism": "Keep per-lane escape state in ordinary Mech source, group recurrence steps, lower native masks and separate coordinate arithmetic from recurrence contraction.",
+      "evidence": [
+        "mandelbrot/README.md"
+      ],
+      "limitations": [
+        "Coordinate FMA changed one N=200 pixel and was rejected; recurrence-only contraction preserved the output checks. Different source/grouping/worker forms have separate measurements; this entry makes no isolated-pass speedup claim."
+      ],
+      "measurements": [],
+      "containing_commits": [
+        "bf9d7f2b6"
+      ]
+    }
+  ]
+}
