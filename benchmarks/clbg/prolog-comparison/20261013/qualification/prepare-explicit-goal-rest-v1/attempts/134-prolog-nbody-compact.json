@@ -1,0 +1,61 @@
+{
+  "key": "nbody:prolog-nbody-compact",
+  "id": "prolog-nbody-compact",
+  "benchmark": "nbody",
+  "language": "prolog",
+  "source_sha256": "d3e082e34d3fad47759021c921b016563f93a1aaec9d65220b34494ac31c3266",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/MacOS/swipl",
+    "-q",
+    "-O",
+    "-f",
+    "none",
+    "--stack-limit=8g",
+    "-l",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-nbody-compact/input/support/clbg_io.qlf",
+    "-s",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-nbody-compact/input/sources/nbody/compact.qlf",
+    "-g",
+    "clbg_io:run(clbg_nbody:main)",
+    "--",
+    "2"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-nbody-compact/input",
+  "runtime_environment": {
+    "SWI_HOME_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/Resources/swipl"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"554814b1da7c0c30595adafb758145e42a6134c696b47c8870d359008246443e\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/MacOS/swipl\", \"-q\", \"-O\", \"-f\", \"none\", \"--stack-limit=8g\", \"-l\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-nbody-compact/input/support/clbg_io.qlf\", \"-s\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-nbody-compact/input/sources/nbody/compact.qlf\", \"-g\", \"clbg_io:run(clbg_nbody:main)\", \"--\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-nbody-compact/input\", \"environment\": {\"SWI_HOME_DIR\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/Resources/swipl\"}, \"source_sha256\": \"d3e082e34d3fad47759021c921b016563f93a1aaec9d65220b34494ac31c3266\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-nbody-compact/input/sources/nbody/compact.pl\": \"d3e082e34d3fad47759021c921b016563f93a1aaec9d65220b34494ac31c3266\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-nbody-compact/input/support/clbg_io.pl\": \"bc6361457988de3b8d7dbce526bf738f0268e96e1c7bb59c35bb4798c71ebdb3\"}}",
+  "started_at": "2026-10-13T23:15:42.989218+00:00",
+  "workload_n": 2,
+  "full_workload": false,
+  "timeout_seconds": 120,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.0423045,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 26,
+  "stdout_sha256": "00ec6101b633ed9827e030241c6e423e8e57068a51535ba1802270d77f95fbee",
+  "validation": {
+    "reference_match": true,
+    "bytes": 26,
+    "sha256": "00ec6101b633ed9827e030241c6e423e8e57068a51535ba1802270d77f95fbee"
+  },
+  "finished_at": "2026-10-13T23:15:43.294414+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true
+}

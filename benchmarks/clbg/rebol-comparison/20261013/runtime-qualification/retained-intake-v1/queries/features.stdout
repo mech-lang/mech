@@ -1,0 +1,8 @@
+version=3.22.1
+platform=macOS
+function_is_interpreted_value=#(true)
+function_is_native_value=#(false)
+dynamic_rebinding=#(true)
+fresh_block_identity=#(true)
+automatic_gc_before=1
+automatic_gc_after=46

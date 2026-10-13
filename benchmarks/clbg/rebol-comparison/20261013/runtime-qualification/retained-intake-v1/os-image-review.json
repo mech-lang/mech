@@ -1,0 +1,52 @@
+{
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/rebol-comparison/20261013/.build/runtime-v1/runtime/rebol3",
+  "architectures": [
+    "arm64"
+  ],
+  "dependencies": [
+    {
+      "install_name": "/System/Library/Frameworks/AppKit.framework/Versions/C/AppKit",
+      "scope": "OS-image-not-hashed"
+    },
+    {
+      "install_name": "/System/Library/Frameworks/CoreServices.framework/Versions/A/CoreServices",
+      "scope": "OS-image-not-hashed"
+    },
+    {
+      "install_name": "/System/Library/Frameworks/CoreMIDI.framework/Versions/A/CoreMIDI",
+      "scope": "OS-image-not-hashed"
+    },
+    {
+      "install_name": "/System/Library/Frameworks/CoreGraphics.framework/Versions/A/CoreGraphics",
+      "scope": "OS-image-not-hashed"
+    },
+    {
+      "install_name": "/System/Library/Frameworks/CoreImage.framework/Versions/A/CoreImage",
+      "scope": "OS-image-not-hashed"
+    },
+    {
+      "install_name": "/System/Library/Frameworks/ImageIO.framework/Versions/A/ImageIO",
+      "scope": "OS-image-not-hashed"
+    },
+    {
+      "install_name": "/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation",
+      "scope": "OS-image-not-hashed"
+    },
+    {
+      "install_name": "/usr/lib/libiconv.2.dylib",
+      "scope": "OS-image-not-hashed"
+    },
+    {
+      "install_name": "/usr/lib/libSystem.B.dylib",
+      "scope": "OS-image-not-hashed"
+    },
+    {
+      "install_name": "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+      "scope": "OS-image-not-hashed"
+    },
+    {
+      "install_name": "/usr/lib/libobjc.A.dylib",
+      "scope": "OS-image-not-hashed"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "provider": "language-project",
+  "official_sources": [
+    "https://github.com/nim-lang/Nim/blob/8e8fbf60693418dc95bb0d762fd660231d08a583/nimpretty/nimpretty.nim",
+    "https://github.com/nim-lang/Nim/blob/8e8fbf60693418dc95bb0d762fd660231d08a583/compiler/layouter.nim",
+    "https://github.com/nim-lang/Nim/blob/8e8fbf60693418dc95bb0d762fd660231d08a583/compiler/parser.nim",
+    "https://github.com/nim-lang/Nim/blob/8e8fbf60693418dc95bb0d762fd660231d08a583/compiler/lexer.nim",
+    "https://github.com/nim-lang/Nim/blob/8e8fbf60693418dc95bb0d762fd660231d08a583/compiler/syntaxes.nim"
+  ],
+  "tool": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v3/nim/nim-2.2.12/bin/nimpretty",
+    "sha256": "cdf07fca977cfcfbeceb0189317657280ea89b11bed7220524bfef66db862cd5",
+    "version": "0.2"
+  },
+  "config": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/formatted-nim-plan-v1/jobs/actual-plans-v1/native-formatter-config.json",
+    "sha256": "b80b9a5c52aec06be91bca55c20a29487db5f7aff1e3248392d1ff8612199d86"
+  },
+  "input": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/qualification/private-v2/source-snapshot/sources/regexredux/optimized.nim",
+    "sha256": "ed5d8982939c9f1ddb3006a1079ca8fb3001a971c519fa82840edd6062540129"
+  },
+  "output": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/nim-native20-v1/profiles/15/0/formatted.nim",
+    "sha256": "17be8d80005d97ad2ef354a41593167db8c26b04f39bb97228dc562edfe97352"
+  },
+  "process_receipt": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/nim-native20-v1/profiles/15/0/processes/format.json",
+    "sha256": "c0e65e0b9fbdbdd3fcb3800a2513ef493f4b97fbdb90deebc3a2d4497ab739aa"
+  },
+  "version_receipt": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/nim-native20-v1/profiles/0/0/version-evidence.json",
+    "sha256": "830fe8079baca0e7b57e0318eadd5f0c61016983821a7224e789b46469b33000",
+    "binding_field": "/version",
+    "binding": "0.2"
+  },
+  "source_preservation_verified": true,
+  "ownership_verified": true,
+  "no_application_execution": true
+}

@@ -1,0 +1,14 @@
+{
+  "version": "0.2",
+  "stdout": "0.2\n",
+  "stderr": "",
+  "tool": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v3/nim/nim-2.2.12/bin/nimpretty",
+    "sha256": "cdf07fca977cfcfbeceb0189317657280ea89b11bed7220524bfef66db862cd5",
+    "version": "0.2"
+  },
+  "process_receipt": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/nim-native20-v1/profiles/0/0/processes/version.json",
+    "sha256": "fc78db28bc325c12fba96b530602d7e33f1fa0c017494dec7f8b0a848274447e"
+  }
+}

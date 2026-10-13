@@ -1,0 +1,21 @@
+{
+  "at": "2026-10-13T23:17:47.608672+00:00",
+  "status": "closed-qualified-all20-Prolog-bounded-preparation-awaiting-work-and-LOC",
+  "verified_pins": 14611,
+  "report_sha256": "cab6ea7f3bd8a237f8f83833ed9b9cc293bbe1878cc8a894d74fdcf41f7ffbff",
+  "body_terminal_sha256": "716ba1503f06629304bba8932569d8418d214794a41d0b0395dab60bff20029d",
+  "durable_terminal_sha256": "21d10035fea80c16dd4514f762e8a92f79af806662b2aed19f133c339906842f",
+  "profiles": 20,
+  "total_bounded_cases": 156,
+  "new_bounded_cases": 155,
+  "new_build_profiles": 19,
+  "qualification_checks_per_case": 20,
+  "successful_compiler_commands_reused": 3,
+  "successful_QLF_artifacts_reused": 2,
+  "successful_case_reexecutions": 0,
+  "fixture_reexecutions": 0,
+  "benchmark_runs": 0,
+  "source_work_qualified": false,
+  "canonical_loc": null,
+  "chart_admission": false
+}

@@ -1,0 +1,5407 @@
+{
+  "payload_url": "https://github.com/elixir-lang/elixir/releases/download/v1.20.4/elixir-otp-29.zip",
+  "payload_sha256": "7863c546cda13fecc949e562e326042451dacf8fd8698a36783cb71eeb223b46",
+  "checksum_url": "https://github.com/elixir-lang/elixir/releases/download/v1.20.4/elixir-otp-29.zip.sha256sum",
+  "checksum_sha256": "37b92a97277301498685dc7b6a81445dca02817004ac9fef7cfada322430899b",
+  "archive_members": [
+    {
+      "name": "bin/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "bin/mix",
+      "bytes": 169,
+      "crc32": 3672585873,
+      "original_mode": 33261,
+      "directory": false
+    },
+    {
+      "name": "bin/elixirc",
+      "bytes": 1471,
+      "crc32": 3515505284,
+      "original_mode": 33261,
+      "directory": false
+    },
+    {
+      "name": "bin/elixir",
+      "bytes": 6658,
+      "crc32": 3097996143,
+      "original_mode": 33261,
+      "directory": false
+    },
+    {
+      "name": "bin/iex",
+      "bytes": 1077,
+      "crc32": 238924611,
+      "original_mode": 33261,
+      "directory": false
+    },
+    {
+      "name": "bin/mix.ps1",
+      "bytes": 706,
+      "crc32": 2071711495,
+      "original_mode": 33261,
+      "directory": false
+    },
+    {
+      "name": "bin/elixir.bat",
+      "bytes": 6707,
+      "crc32": 885795113,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "bin/elixirc.bat",
+      "bytes": 1498,
+      "crc32": 3301697378,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "bin/mix.bat",
+      "bytes": 184,
+      "crc32": 727791326,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "bin/iex.bat",
+      "bytes": 1011,
+      "crc32": 3850372047,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "CHANGELOG.md",
+      "bytes": 19812,
+      "crc32": 3450328525,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/eex/ebin/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/eex/ebin/Elixir.EEx.Compiler.beam",
+      "bytes": 37444,
+      "crc32": 847472950,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/eex/ebin/Elixir.EEx.SyntaxError.beam",
+      "bytes": 4740,
+      "crc32": 3187896885,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/eex/ebin/Elixir.EEx.beam",
+      "bytes": 15276,
+      "crc32": 3886255980,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/eex/ebin/Elixir.EEx.Engine.beam",
+      "bytes": 14116,
+      "crc32": 532301714,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/eex/ebin/eex.app",
+      "bytes": 253,
+      "crc32": 1554623154,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/eex/ebin/Elixir.EEx.SmartEngine.beam",
+      "bytes": 3560,
+      "crc32": 2342438394,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/elixir/ebin/elixir_config.beam",
+      "bytes": 5204,
+      "crc32": 2195799742,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Code.Formatter.beam",
+      "bytes": 116612,
+      "crc32": 3609236193,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Enumerable.File.Stream.beam",
+      "bytes": 14316,
+      "crc32": 2823650557,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.String.Chars.DateTime.beam",
+      "bytes": 3212,
+      "crc32": 3672724110,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.String.Chars.NaiveDateTime.beam",
+      "bytes": 3044,
+      "crc32": 4121753563,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Inspect.Duration.beam",
+      "bytes": 3652,
+      "crc32": 3365249715,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.JSON.Encoder.DateTime.beam",
+      "bytes": 7332,
+      "crc32": 1821696112,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Version.Requirement.beam",
+      "bytes": 8792,
+      "crc32": 1107243170,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.ArgumentError.beam",
+      "bytes": 3808,
+      "crc32": 2730190834,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.GenServer.beam",
+      "bytes": 54800,
+      "crc32": 2356743839,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Record.Extractor.beam",
+      "bytes": 7628,
+      "crc32": 3117789450,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Registry.Partition.beam",
+      "bytes": 13900,
+      "crc32": 1405683870,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Regex.beam",
+      "bytes": 41728,
+      "crc32": 4252903261,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Collectable.HashSet.beam",
+      "bytes": 3328,
+      "crc32": 3870590976,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Agent.beam",
+      "bytes": 24080,
+      "crc32": 1546145396,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.BadFunctionError.beam",
+      "bytes": 4348,
+      "crc32": 907364053,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.JSON.Encoder.Time.beam",
+      "bytes": 3720,
+      "crc32": 3353065420,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.System.beam",
+      "bytes": 46248,
+      "crc32": 854845857,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.String.Chars.beam",
+      "bytes": 5152,
+      "crc32": 2417080006,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.URI.Error.beam",
+      "bytes": 4128,
+      "crc32": 71615241,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.String.Chars.Date.beam",
+      "bytes": 2616,
+      "crc32": 1983421933,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.KeyError.beam",
+      "bytes": 10196,
+      "crc32": 2487751624,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.StringIO.beam",
+      "bytes": 20864,
+      "crc32": 4169507366,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.MatchError.beam",
+      "bytes": 3792,
+      "crc32": 1601633618,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Enumerable.Date.Range.beam",
+      "bytes": 12084,
+      "crc32": 648451103,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Supervisor.Spec.beam",
+      "bytes": 10448,
+      "crc32": 2762730159,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Enumerable.Range.beam",
+      "bytes": 7916,
+      "crc32": 557272764,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Enumerable.beam",
+      "bytes": 9388,
+      "crc32": 3666579128,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/elixir_def.beam",
+      "bytes": 32768,
+      "crc32": 3513105021,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Inspect.PID.beam",
+      "bytes": 2548,
+      "crc32": 2022209078,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.CaseClauseError.beam",
+      "bytes": 3856,
+      "crc32": 2648536046,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.ArithmeticError.beam",
+      "bytes": 6216,
+      "crc32": 4098806666,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Code.Normalizer.beam",
+      "bytes": 31164,
+      "crc32": 2187163971,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.CompileError.beam",
+      "bytes": 4644,
+      "crc32": 703879280,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Inspect.Function.beam",
+      "bytes": 5936,
+      "crc32": 3707824124,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/elixir_clauses.beam",
+      "bytes": 36544,
+      "crc32": 1709051604,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.String.Chars.Version.beam",
+      "bytes": 2632,
+      "crc32": 2927608130,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Inspect.Time.beam",
+      "bytes": 3236,
+      "crc32": 3336487649,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.SyntaxError.beam",
+      "bytes": 5616,
+      "crc32": 43714397,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Inspect.Float.beam",
+      "bytes": 3656,
+      "crc32": 3116980837,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.String.beam",
+      "bytes": 100684,
+      "crc32": 4209361276,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Tuple.beam",
+      "bytes": 5592,
+      "crc32": 2419190334,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.GenEvent.Stream.beam",
+      "bytes": 4780,
+      "crc32": 3664936540,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.List.Chars.Atom.beam",
+      "bytes": 2524,
+      "crc32": 2926445204,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Config.beam",
+      "bytes": 16736,
+      "crc32": 81420873,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Supervisor.Default.beam",
+      "bytes": 1560,
+      "crc32": 3496096827,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Application.beam",
+      "bytes": 36092,
+      "crc32": 652388997,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Inspect.Version.beam",
+      "bytes": 3392,
+      "crc32": 3358115152,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Set.beam",
+      "bytes": 11720,
+      "crc32": 3772569023,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Task.Supervisor.beam",
+      "bytes": 31440,
+      "crc32": 2140374694,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.List.Chars.List.beam",
+      "bytes": 2348,
+      "crc32": 1057978923,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/elixir_bitstring.beam",
+      "bytes": 25708,
+      "crc32": 1090713480,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.MismatchedDelimiterError.beam",
+      "bytes": 6716,
+      "crc32": 1849309517,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.IO.Stream.beam",
+      "bytes": 3540,
+      "crc32": 1235085450,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Inspect.Atom.beam",
+      "bytes": 3272,
+      "crc32": 511021706,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.String.Chars.URI.beam",
+      "bytes": 6984,
+      "crc32": 2488781419,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Enumerable.HashSet.beam",
+      "bytes": 3932,
+      "crc32": 530900223,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Supervisor.beam",
+      "bytes": 36132,
+      "crc32": 1550699971,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/elixir_utils.beam",
+      "bytes": 14140,
+      "crc32": 3317433262,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Inspect.NaiveDateTime.beam",
+      "bytes": 4584,
+      "crc32": 2677123995,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.IO.beam",
+      "bytes": 34004,
+      "crc32": 1709487497,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.JSON.Encoder.Date.beam",
+      "bytes": 3580,
+      "crc32": 222816834,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Calendar.TimeZoneDatabase.beam",
+      "bytes": 3140,
+      "crc32": 3009862463,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Node.beam",
+      "bytes": 10552,
+      "crc32": 705180270,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.CondClauseError.beam",
+      "bytes": 3364,
+      "crc32": 922189794,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/elixir_compiler.beam",
+      "bytes": 17168,
+      "crc32": 1614671875,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Collectable.HashDict.beam",
+      "bytes": 3416,
+      "crc32": 1196556706,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/elixir_overridable.beam",
+      "bytes": 8968,
+      "crc32": 2517565415,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Inspect.HashDict.beam",
+      "bytes": 2788,
+      "crc32": 1321148326,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.List.beam",
+      "bytes": 40468,
+      "crc32": 2065594625,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Inspect.Opts.beam",
+      "bytes": 7940,
+      "crc32": 1352477903,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Calendar.beam",
+      "bytes": 33392,
+      "crc32": 1885651145,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.JSON.Encoder.Duration.beam",
+      "bytes": 2804,
+      "crc32": 414745128,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Port.beam",
+      "bytes": 9320,
+      "crc32": 2608141762,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Macro.beam",
+      "bytes": 135004,
+      "crc32": 326554115,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Enumerable.Stream.beam",
+      "bytes": 7344,
+      "crc32": 1736002086,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Float.beam",
+      "bytes": 21480,
+      "crc32": 4010762081,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/elixir_sup.beam",
+      "bytes": 1808,
+      "crc32": 986208024,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.JSON.Encoder.beam",
+      "bytes": 10356,
+      "crc32": 1113572875,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.List.Chars.beam",
+      "bytes": 5048,
+      "crc32": 186463966,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Path.beam",
+      "bytes": 28320,
+      "crc32": 4021531450,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.JSON.DecodeError.beam",
+      "bytes": 3792,
+      "crc32": 3277775677,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Collectable.List.beam",
+      "bytes": 4348,
+      "crc32": 3575684636,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Version.InvalidRequirementError.beam",
+      "bytes": 3776,
+      "crc32": 1772956646,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.String.Chars.Version.Requirement.beam",
+      "bytes": 2572,
+      "crc32": 1139045377,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/elixir_errors.beam",
+      "bytes": 28708,
+      "crc32": 564440918,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/elixir_module.beam",
+      "bytes": 38348,
+      "crc32": 2355412896,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Module.Types.Traverse.beam",
+      "bytes": 18072,
+      "crc32": 2442252712,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.System.EnvError.beam",
+      "bytes": 3644,
+      "crc32": 2070803040,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.JSON.beam",
+      "bytes": 10704,
+      "crc32": 889553188,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Inspect.HashSet.beam",
+      "bytes": 2784,
+      "crc32": 891020495,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/iex.beam",
+      "bytes": 3960,
+      "crc32": 3706752993,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Protocol.beam",
+      "bytes": 66080,
+      "crc32": 1144899482,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.PartitionSupervisor.beam",
+      "bytes": 23312,
+      "crc32": 3529517365,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/elixir_quote.beam",
+      "bytes": 35808,
+      "crc32": 1249829267,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.String.Unicode.beam",
+      "bytes": 151680,
+      "crc32": 3680371187,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Inspect.Date.beam",
+      "bytes": 4560,
+      "crc32": 3095207681,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.File.Stat.beam",
+      "bytes": 6736,
+      "crc32": 3301542837,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Inspect.MapSet.beam",
+      "bytes": 5068,
+      "crc32": 3659155110,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/elixir_erl_clauses.beam",
+      "bytes": 5280,
+      "crc32": 3053983601,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Enum.OutOfBoundsError.beam",
+      "bytes": 6176,
+      "crc32": 701435806,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Enum.beam",
+      "bytes": 187856,
+      "crc32": 2357010543,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Map.beam",
+      "bytes": 32256,
+      "crc32": 3101200072,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.ErlangError.beam",
+      "bytes": 22820,
+      "crc32": 1930907198,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/elixir_erl.beam",
+      "bytes": 41528,
+      "crc32": 1467630517,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.List.Chars.Integer.beam",
+      "bytes": 2416,
+      "crc32": 1066180179,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Inspect.Regex.beam",
+      "bytes": 5796,
+      "crc32": 2503726650,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Inspect.Algebra.beam",
+      "bytes": 78368,
+      "crc32": 1874334108,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.JSON.Encoder.NaiveDateTime.beam",
+      "bytes": 5900,
+      "crc32": 1172066529,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Task.beam",
+      "bytes": 50300,
+      "crc32": 4122525688,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Function.beam",
+      "bytes": 4444,
+      "crc32": 2943730666,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.String.Chars.Integer.beam",
+      "bytes": 2404,
+      "crc32": 3702315994,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Inspect.Macro.Env.beam",
+      "bytes": 3440,
+      "crc32": 3756478693,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/elixir_bootstrap.beam",
+      "bytes": 4344,
+      "crc32": 3385752446,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Code.Typespec.beam",
+      "bytes": 25004,
+      "crc32": 1071080831,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.IO.ANSI.Docs.beam",
+      "bytes": 49828,
+      "crc32": 2929075444,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Integer.beam",
+      "bytes": 19208,
+      "crc32": 3316245564,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Module.beam",
+      "bytes": 88336,
+      "crc32": 3224800964,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.RuntimeError.beam",
+      "bytes": 3932,
+      "crc32": 2664544320,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Registry.Supervisor.beam",
+      "bytes": 4552,
+      "crc32": 2422507388,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.OptionParser.beam",
+      "bytes": 39008,
+      "crc32": 258275110,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Date.Range.beam",
+      "bytes": 4200,
+      "crc32": 2361512371,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/elixir_lexical.beam",
+      "bytes": 9296,
+      "crc32": 4174550741,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Inspect.Stream.beam",
+      "bytes": 3616,
+      "crc32": 2918879993,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.NaiveDateTime.beam",
+      "bytes": 62076,
+      "crc32": 3945865794,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Kernel.ParallelCompiler.beam",
+      "bytes": 62352,
+      "crc32": 591207774,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Inspect.BitString.beam",
+      "bytes": 8896,
+      "crc32": 3784167372,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Code.LoadError.beam",
+      "bytes": 4584,
+      "crc32": 637833333,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Stream.beam",
+      "bytes": 79032,
+      "crc32": 1146341430,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Kernel.CLI.beam",
+      "bytes": 32792,
+      "crc32": 1404158546,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Dict.beam",
+      "bytes": 41420,
+      "crc32": 2972896562,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.IO.ANSI.beam",
+      "bytes": 29120,
+      "crc32": 3244693576,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Behaviour.beam",
+      "bytes": 8988,
+      "crc32": 153008189,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Calendar.UTCOnlyTimeZoneDatabase.beam",
+      "bytes": 3160,
+      "crc32": 1778884236,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.List.Chars.Float.beam",
+      "bytes": 2396,
+      "crc32": 2402366527,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.JSON.Encoder.Float.beam",
+      "bytes": 2380,
+      "crc32": 2544199434,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Version.beam",
+      "bytes": 16200,
+      "crc32": 2616212149,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.BadArityError.beam",
+      "bytes": 5160,
+      "crc32": 964005198,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Code.Identifier.beam",
+      "bytes": 12968,
+      "crc32": 1677364734,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Code.beam",
+      "bytes": 72372,
+      "crc32": 1655061445,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.String.Tokenizer.beam",
+      "bytes": 90768,
+      "crc32": 2710585356,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.String.Chars.Time.beam",
+      "bytes": 2804,
+      "crc32": 1987341799,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.JSON.Encoder.Atom.beam",
+      "bytes": 2628,
+      "crc32": 3531588906,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Module.Types.Of.beam",
+      "bytes": 69616,
+      "crc32": 2312840574,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Kernel.Typespec.beam",
+      "bytes": 63312,
+      "crc32": 146099440,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/elixir_env.beam",
+      "bytes": 10224,
+      "crc32": 3337078599,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Kernel.beam",
+      "bytes": 170304,
+      "crc32": 3863453747,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Inspect.Error.beam",
+      "bytes": 7060,
+      "crc32": 3836297678,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Enumerable.Map.beam",
+      "bytes": 5192,
+      "crc32": 2493752203,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Enumerable.List.beam",
+      "bytes": 5448,
+      "crc32": 987665973,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Version.InvalidVersionError.beam",
+      "bytes": 3712,
+      "crc32": 783241474,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Inspect.Date.Range.beam",
+      "bytes": 4836,
+      "crc32": 488321822,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.File.Error.beam",
+      "bytes": 4584,
+      "crc32": 1400960707,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/elixir_expand.beam",
+      "bytes": 78920,
+      "crc32": 1075433698,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Process.beam",
+      "bytes": 23368,
+      "crc32": 2888988703,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.UnicodeConversionError.beam",
+      "bytes": 4744,
+      "crc32": 2039754912,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Collectable.Map.beam",
+      "bytes": 4184,
+      "crc32": 1991959915,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/elixir_dispatch.beam",
+      "bytes": 22292,
+      "crc32": 3999256163,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/elixir_erl_for.beam",
+      "bytes": 24940,
+      "crc32": 1087987685,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Collectable.BitString.beam",
+      "bytes": 6392,
+      "crc32": 436331953,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/elixir_parser.beam",
+      "bytes": 1008532,
+      "crc32": 3682061623,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.OptionParser.ParseError.beam",
+      "bytes": 3624,
+      "crc32": 3476308819,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/elixir_import.beam",
+      "bytes": 18944,
+      "crc32": 3429985217,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.MissingApplicationsError.beam",
+      "bytes": 5148,
+      "crc32": 2343800367,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.File.beam",
+      "bytes": 72196,
+      "crc32": 2476280230,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Kernel.LexicalTracker.beam",
+      "bytes": 24732,
+      "crc32": 1861159602,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.File.LinkError.beam",
+      "bytes": 5080,
+      "crc32": 3216847647,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Module.Types.beam",
+      "bytes": 38728,
+      "crc32": 2624672750,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Inspect.Range.beam",
+      "bytes": 4316,
+      "crc32": 3472852920,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/elixir_map.beam",
+      "bytes": 19828,
+      "crc32": 3753825379,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.DateTime.beam",
+      "bytes": 120176,
+      "crc32": 1751808443,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.JSON.Encoder.BitString.beam",
+      "bytes": 2404,
+      "crc32": 3853573491,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Kernel.Utils.beam",
+      "bytes": 26328,
+      "crc32": 841892039,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Inspect.URI.beam",
+      "bytes": 3468,
+      "crc32": 2827823577,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Enumerable.Function.beam",
+      "bytes": 3876,
+      "crc32": 3364727914,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.SystemLimitError.beam",
+      "bytes": 3752,
+      "crc32": 1727353856,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Task.Supervised.beam",
+      "bytes": 29804,
+      "crc32": 199162539,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Atom.beam",
+      "bytes": 3064,
+      "crc32": 235379550,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/elixir_fn.beam",
+      "bytes": 16516,
+      "crc32": 2361211959,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Base.beam",
+      "bytes": 215284,
+      "crc32": 3868389468,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Protocol.UndefinedError.beam",
+      "bytes": 8676,
+      "crc32": 3255531432,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Record.beam",
+      "bytes": 28000,
+      "crc32": 4234877108,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Inspect.Tuple.beam",
+      "bytes": 3516,
+      "crc32": 218215723,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Kernel.SpecialForms.beam",
+      "bytes": 27552,
+      "crc32": 674051864,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Config.Provider.beam",
+      "bytes": 23340,
+      "crc32": 236875038,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.DynamicSupervisor.beam",
+      "bytes": 57940,
+      "crc32": 3773405235,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.JSON.Encoder.Integer.beam",
+      "bytes": 2396,
+      "crc32": 2747059345,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Inspect.Integer.beam",
+      "bytes": 4188,
+      "crc32": 2991066452,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.IO.StreamError.beam",
+      "bytes": 3508,
+      "crc32": 1555360619,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/elixir_tokenizer.beam",
+      "bytes": 106212,
+      "crc32": 462409263,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Module.Types.Apply.beam",
+      "bytes": 323536,
+      "crc32": 3360507441,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Inspect.Version.Requirement.beam",
+      "bytes": 3316,
+      "crc32": 3353528518,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Module.Types.Expr.beam",
+      "bytes": 104712,
+      "crc32": 3807321808,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Exception.beam",
+      "bytes": 53004,
+      "crc32": 4077221811,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Date.beam",
+      "bytes": 59368,
+      "crc32": 3825673036,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/elixir_aliases.beam",
+      "bytes": 14412,
+      "crc32": 808698161,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Duration.beam",
+      "bytes": 33388,
+      "crc32": 4203473989,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Inspect.Reference.beam",
+      "bytes": 2720,
+      "crc32": 4233752747,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.TryClauseError.beam",
+      "bytes": 3820,
+      "crc32": 3097044349,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Time.beam",
+      "bytes": 45772,
+      "crc32": 1843701696,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Version.Parser.beam",
+      "bytes": 11236,
+      "crc32": 3048524670,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Path.Wildcard.beam",
+      "bytes": 2812,
+      "crc32": 2861206719,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Stream.Reducers.beam",
+      "bytes": 24228,
+      "crc32": 4291326044,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.BadMapError.beam",
+      "bytes": 3704,
+      "crc32": 851306479,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.TokenMissingError.beam",
+      "bytes": 7592,
+      "crc32": 3919441835,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Inspect.Port.beam",
+      "bytes": 2404,
+      "crc32": 1032297510,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Keyword.beam",
+      "bytes": 47228,
+      "crc32": 354316082,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Inspect.List.beam",
+      "bytes": 10032,
+      "crc32": 1504317947,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Module.Behaviour.beam",
+      "bytes": 26060,
+      "crc32": 3261743699,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/elixir.beam",
+      "bytes": 25872,
+      "crc32": 93155544,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.String.Tokenizer.Security.beam",
+      "bytes": 191464,
+      "crc32": 2620257676,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Enum.EmptyError.beam",
+      "bytes": 3648,
+      "crc32": 3747888545,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Enumerable.HashDict.beam",
+      "bytes": 4780,
+      "crc32": 936304636,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.String.Break.beam",
+      "bytes": 6988,
+      "crc32": 2318269642,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Regex.CompileError.beam",
+      "bytes": 3636,
+      "crc32": 507235274,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.GenEvent.beam",
+      "bytes": 55788,
+      "crc32": 3939538295,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.File.RenameError.beam",
+      "bytes": 5548,
+      "crc32": 1134653758,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Macro.Env.beam",
+      "bytes": 32080,
+      "crc32": 2794026622,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.JSON.Encoder.List.beam",
+      "bytes": 2408,
+      "crc32": 330743564,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/elixir_erl_pass.beam",
+      "bytes": 50796,
+      "crc32": 1113106714,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Inspect.Map.beam",
+      "bytes": 7524,
+      "crc32": 851631254,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Enumerable.GenEvent.Stream.beam",
+      "bytes": 8684,
+      "crc32": 470189562,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/elixir_erl_var.beam",
+      "bytes": 7592,
+      "crc32": 3419045818,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Access.beam",
+      "bytes": 45764,
+      "crc32": 122662295,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Module.Types.Helpers.beam",
+      "bytes": 33684,
+      "crc32": 1498922831,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.BadBooleanError.beam",
+      "bytes": 4300,
+      "crc32": 543755155,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Inspect.DateTime.beam",
+      "bytes": 4516,
+      "crc32": 3677811437,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Code.Fragment.beam",
+      "bytes": 54696,
+      "crc32": 739906518,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.JSON.Encoder.Map.beam",
+      "bytes": 3688,
+      "crc32": 2041193463,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Collectable.MapSet.beam",
+      "bytes": 3860,
+      "crc32": 263125160,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Enumerable.MapSet.beam",
+      "bytes": 4104,
+      "crc32": 4125650209,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.String.Chars.Atom.beam",
+      "bytes": 2508,
+      "crc32": 3781633642,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.HashDict.beam",
+      "bytes": 29772,
+      "crc32": 4204346227,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/elixir_erl_compiler.beam",
+      "bytes": 11724,
+      "crc32": 3391013314,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.File.CopyError.beam",
+      "bytes": 5540,
+      "crc32": 117334893,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.String.Chars.BitString.beam",
+      "bytes": 2760,
+      "crc32": 1342308881,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/elixir_rewrite.beam",
+      "bytes": 37788,
+      "crc32": 237729626,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Bitwise.beam",
+      "bytes": 6128,
+      "crc32": 3258274216,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Kernel.TypespecError.beam",
+      "bytes": 4660,
+      "crc32": 1300123785,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/elixir_code_server.beam",
+      "bytes": 9980,
+      "crc32": 111720684,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Kernel.ParallelRequire.beam",
+      "bytes": 2836,
+      "crc32": 2775405267,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Module.Types.Pattern.beam",
+      "bytes": 122044,
+      "crc32": 1050216511,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Inspect.Any.beam",
+      "bytes": 5472,
+      "crc32": 1307915513,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Range.beam",
+      "bytes": 18740,
+      "crc32": 3578452705,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Registry.beam",
+      "bytes": 55088,
+      "crc32": 965406095,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/elixir_interpolation.beam",
+      "bytes": 20476,
+      "crc32": 844447829,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Enumerable.IO.Stream.beam",
+      "bytes": 4740,
+      "crc32": 139317254,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Calendar.ISO.beam",
+      "bytes": 84436,
+      "crc32": 2950655409,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Config.Reader.beam",
+      "bytes": 8116,
+      "crc32": 4066162478,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.File.Stream.beam",
+      "bytes": 5988,
+      "crc32": 1545947536,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/elixir_erl_try.beam",
+      "bytes": 14084,
+      "crc32": 3040244194,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.String.Chars.List.beam",
+      "bytes": 2380,
+      "crc32": 2678492940,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.String.Chars.Float.beam",
+      "bytes": 2412,
+      "crc32": 3764412086,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.WithClauseError.beam",
+      "bytes": 3904,
+      "crc32": 1250633889,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.FunctionClauseError.beam",
+      "bytes": 12316,
+      "crc32": 1366741210,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Collectable.beam",
+      "bytes": 6484,
+      "crc32": 4000370148,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Inspect.beam",
+      "bytes": 15496,
+      "crc32": 3648816724,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.URI.beam",
+      "bytes": 54784,
+      "crc32": 1888130811,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.HashSet.beam",
+      "bytes": 18696,
+      "crc32": 2627310968,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.MapSet.beam",
+      "bytes": 17088,
+      "crc32": 3335024445,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Inspect.Inspect.Error.beam",
+      "bytes": 3668,
+      "crc32": 337323107,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.UndefinedFunctionError.beam",
+      "bytes": 17900,
+      "crc32": 1488334121,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.System.SignalHandler.beam",
+      "bytes": 3172,
+      "crc32": 1970404999,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Module.ParallelChecker.beam",
+      "bytes": 43572,
+      "crc32": 2667919907,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Agent.Server.beam",
+      "bytes": 7832,
+      "crc32": 55864911,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Kernel.ErrorHandler.beam",
+      "bytes": 4620,
+      "crc32": 954727364,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Collectable.File.Stream.beam",
+      "bytes": 4704,
+      "crc32": 3690922015,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Module.Types.Descr.beam",
+      "bytes": 335552,
+      "crc32": 2546188880,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.List.Chars.BitString.beam",
+      "bytes": 2876,
+      "crc32": 4094140131,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/elixir.app",
+      "bytes": 8319,
+      "crc32": 2754057187,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.String.Tokenizer.ScriptSet.beam",
+      "bytes": 3016,
+      "crc32": 62828409,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/ebin/Elixir.Collectable.IO.Stream.beam",
+      "bytes": 3628,
+      "crc32": 2215854760,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/ebin/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/ex_unit/ebin/ex_unit.app",
+      "bytes": 1403,
+      "crc32": 627093063,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/ebin/Elixir.ExUnit.CaptureServer.beam",
+      "bytes": 23344,
+      "crc32": 572897565,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/ebin/Elixir.ExUnit.Runner.beam",
+      "bytes": 35856,
+      "crc32": 2853676210,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/ebin/Elixir.ExUnit.Test.beam",
+      "bytes": 3784,
+      "crc32": 568518375,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/ebin/Elixir.ExUnit.RunnerStats.beam",
+      "bytes": 14232,
+      "crc32": 2127507068,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/ebin/Elixir.ExUnit.OnExitHandler.beam",
+      "bytes": 8728,
+      "crc32": 2611891952,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/ebin/Elixir.ExUnit.OnExitHandler.Supervisor.beam",
+      "bytes": 3660,
+      "crc32": 373812410,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/ebin/Elixir.ExUnit.Server.beam",
+      "bytes": 23216,
+      "crc32": 1905498375,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/ebin/Elixir.ExUnit.Assertions.beam",
+      "bytes": 49976,
+      "crc32": 1486529757,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/ebin/Elixir.ExUnit.Callbacks.beam",
+      "bytes": 33652,
+      "crc32": 1052772146,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/ebin/Elixir.ExUnit.TimeoutError.beam",
+      "bytes": 4740,
+      "crc32": 3016700254,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/ebin/Elixir.ExUnit.CaptureIO.beam",
+      "bytes": 11916,
+      "crc32": 4007842659,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/ebin/Elixir.ExUnit.FailuresManifest.beam",
+      "bytes": 9168,
+      "crc32": 166426007,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/ebin/Elixir.ExUnit.TestCase.beam",
+      "bytes": 2760,
+      "crc32": 1546142069,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/ebin/Elixir.ExUnit.Diff.beam",
+      "bytes": 60420,
+      "crc32": 1630483352,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/ebin/Elixir.ExUnit.CaseTemplate.beam",
+      "bytes": 6216,
+      "crc32": 2086364432,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/ebin/Elixir.ExUnit.AssertionError.beam",
+      "bytes": 6464,
+      "crc32": 2408689359,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/ebin/Elixir.ExUnit.DocTest.Error.beam",
+      "bytes": 4712,
+      "crc32": 4039493992,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/ebin/Elixir.ExUnit.MultiError.beam",
+      "bytes": 4060,
+      "crc32": 2339039516,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/ebin/Elixir.ExUnit.CaptureLog.beam",
+      "bytes": 5500,
+      "crc32": 35458695,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/ebin/Elixir.ExUnit.beam",
+      "bytes": 17872,
+      "crc32": 3434449546,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/ebin/Elixir.ExUnit.TestModule.beam",
+      "bytes": 3528,
+      "crc32": 3068877630,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/ebin/Elixir.ExUnit.Filters.beam",
+      "bytes": 16528,
+      "crc32": 351239118,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/ebin/Elixir.ExUnit.DocTest.beam",
+      "bytes": 48220,
+      "crc32": 242839036,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/ebin/Elixir.ExUnit.Formatter.beam",
+      "bytes": 39272,
+      "crc32": 2751242439,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/ebin/Elixir.ExUnit.Case.beam",
+      "bytes": 34648,
+      "crc32": 120398488,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/ebin/Elixir.ExUnit.CLIFormatter.beam",
+      "bytes": 52716,
+      "crc32": 2433164053,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/ebin/Elixir.ExUnit.EventManager.beam",
+      "bytes": 11528,
+      "crc32": 1830144661,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/ebin/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/iex/ebin/Elixir.IEx.Info.Map.beam",
+      "bytes": 2560,
+      "crc32": 3492770635,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/ebin/Elixir.IEx.Introspection.beam",
+      "bytes": 54512,
+      "crc32": 1542653677,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/ebin/Elixir.IEx.Info.Regex.beam",
+      "bytes": 4252,
+      "crc32": 3117240995,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/ebin/Elixir.IEx.Info.Range.beam",
+      "bytes": 4148,
+      "crc32": 976141448,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/ebin/Elixir.IEx.Evaluator.beam",
+      "bytes": 26556,
+      "crc32": 2099572894,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/ebin/Elixir.IEx.Info.Function.beam",
+      "bytes": 3580,
+      "crc32": 2758702766,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/ebin/Elixir.IEx.Info.Integer.beam",
+      "bytes": 2448,
+      "crc32": 1939206445,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/ebin/Elixir.IEx.Info.List.beam",
+      "bytes": 4984,
+      "crc32": 2035746221,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/ebin/Elixir.IEx.Info.Port.beam",
+      "bytes": 3080,
+      "crc32": 3049252717,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/ebin/Elixir.IEx.Info.beam",
+      "bytes": 5212,
+      "crc32": 179292245,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/ebin/Elixir.IEx.Info.Any.beam",
+      "bytes": 3008,
+      "crc32": 3024329578,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/ebin/Elixir.IEx.Info.NaiveDateTime.beam",
+      "bytes": 4476,
+      "crc32": 1822296421,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/ebin/Elixir.IEx.Autocomplete.beam",
+      "bytes": 50764,
+      "crc32": 4143333029,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/ebin/Elixir.IEx.Config.beam",
+      "bytes": 12832,
+      "crc32": 527882748,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/ebin/Elixir.IEx.beam",
+      "bytes": 19004,
+      "crc32": 3150978047,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/ebin/Elixir.IEx.Server.beam",
+      "bytes": 25316,
+      "crc32": 3407226937,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/ebin/Elixir.IEx.Info.PID.beam",
+      "bytes": 4020,
+      "crc32": 1424213806,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/ebin/Elixir.IEx.Info.Tuple.beam",
+      "bytes": 2436,
+      "crc32": 1297692005,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/ebin/Elixir.IEx.App.beam",
+      "bytes": 2552,
+      "crc32": 123650789,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/ebin/Elixir.IEx.Info.Date.beam",
+      "bytes": 4252,
+      "crc32": 338092969,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/ebin/Elixir.IEx.Broker.beam",
+      "bytes": 17492,
+      "crc32": 3783246040,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/ebin/Elixir.IEx.Info.Atom.beam",
+      "bytes": 8036,
+      "crc32": 3834591312,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/ebin/iex.app",
+      "bytes": 1140,
+      "crc32": 413084222,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/ebin/Elixir.IEx.Info.BitString.beam",
+      "bytes": 6132,
+      "crc32": 1607350717,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/ebin/Elixir.IEx.MixListener.beam",
+      "bytes": 9212,
+      "crc32": 3995758464,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/ebin/Elixir.IEx.Info.Reference.beam",
+      "bytes": 2404,
+      "crc32": 2937319896,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/ebin/Elixir.IEx.Info.Time.beam",
+      "bytes": 4284,
+      "crc32": 4290519313,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/ebin/Elixir.IEx.Info.DateTime.beam",
+      "bytes": 4436,
+      "crc32": 3583136279,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/ebin/Elixir.IEx.History.beam",
+      "bytes": 10492,
+      "crc32": 3298584974,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/ebin/Elixir.IEx.Info.Float.beam",
+      "bytes": 2432,
+      "crc32": 3074903098,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/ebin/Elixir.IEx.Pry.beam",
+      "bytes": 50008,
+      "crc32": 1995696727,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/ebin/Elixir.IEx.Helpers.beam",
+      "bytes": 67484,
+      "crc32": 3282474043,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/logger/ebin/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/logger/ebin/Elixir.Logger.Backends.Supervisor.beam",
+      "bytes": 5656,
+      "crc32": 2403132971,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/logger/ebin/Elixir.Logger.Backends.Console.beam",
+      "bytes": 20980,
+      "crc32": 1912876466,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/logger/ebin/Elixir.Logger.Backends.Watcher.beam",
+      "bytes": 8132,
+      "crc32": 2695481889,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/logger/ebin/Elixir.Logger.Backends.Internal.beam",
+      "bytes": 10292,
+      "crc32": 2093502109,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/logger/ebin/Elixir.Logger.App.beam",
+      "bytes": 9892,
+      "crc32": 4074952548,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/logger/ebin/logger.app",
+      "bytes": 932,
+      "crc32": 3816589951,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/logger/ebin/Elixir.Logger.Backends.Config.beam",
+      "bytes": 7892,
+      "crc32": 3691066011,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/logger/ebin/Elixir.Logger.Backends.Handler.beam",
+      "bytes": 8244,
+      "crc32": 762654484,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/logger/ebin/Elixir.Logger.beam",
+      "bytes": 42908,
+      "crc32": 1933011840,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/logger/ebin/Elixir.Logger.Formatter.beam",
+      "bytes": 31652,
+      "crc32": 2298421832,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/logger/ebin/Elixir.Logger.Translator.beam",
+      "bytes": 41736,
+      "crc32": 1175618509,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/logger/ebin/Elixir.Logger.Utils.beam",
+      "bytes": 18680,
+      "crc32": 4278936171,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.WillRecompile.beam",
+      "bytes": 3328,
+      "crc32": 4202286752,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Escript.beam",
+      "bytes": 4700,
+      "crc32": 2261223897,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Dep.beam",
+      "bytes": 52676,
+      "crc32": 582807801,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Error.beam",
+      "bytes": 3596,
+      "crc32": 65100239,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Compile.beam",
+      "bytes": 12380,
+      "crc32": 2985340057,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Loadconfig.beam",
+      "bytes": 8532,
+      "crc32": 1626903464,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Archive.Build.beam",
+      "bytes": 7728,
+      "crc32": 3656307917,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Test.Coverage.beam",
+      "bytes": 20680,
+      "crc32": 2360315462,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Dep.Umbrella.beam",
+      "bytes": 6756,
+      "crc32": 1004268618,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.TasksServer.beam",
+      "bytes": 3876,
+      "crc32": 2839967878,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Local.beam",
+      "bytes": 3484,
+      "crc32": 3240087576,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Profile.Fprof.beam",
+      "bytes": 15828,
+      "crc32": 415488088,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Deps.Compile.beam",
+      "bytes": 25224,
+      "crc32": 2312131078,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Utils.beam",
+      "bytes": 54000,
+      "crc32": 2773831757,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Archive.beam",
+      "bytes": 3076,
+      "crc32": 1034583759,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Deps.Update.beam",
+      "bytes": 5100,
+      "crc32": 3173710444,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Clean.beam",
+      "bytes": 5200,
+      "crc32": 4198830351,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Profile.Eprof.beam",
+      "bytes": 15868,
+      "crc32": 2460738302,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.New.beam",
+      "bytes": 29840,
+      "crc32": 3049817059,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Run.beam",
+      "bytes": 9740,
+      "crc32": 3190105219,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Compilers.Elixir.beam",
+      "bytes": 71496,
+      "crc32": 735410410,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Generator.beam",
+      "bytes": 14056,
+      "crc32": 566716544,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.NoProjectError.beam",
+      "bytes": 3912,
+      "crc32": 1839565598,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Release.beam",
+      "bytes": 65088,
+      "crc32": 3089874881,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Source.beam",
+      "bytes": 8748,
+      "crc32": 2508100751,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Cmd.beam",
+      "bytes": 5600,
+      "crc32": 1230565705,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Format.beam",
+      "bytes": 55408,
+      "crc32": 724344234,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Sync.Lock.beam",
+      "bytes": 17480,
+      "crc32": 397946835,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Shell.beam",
+      "bytes": 6844,
+      "crc32": 2068345435,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Release.Init.beam",
+      "bytes": 21968,
+      "crc32": 826797973,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Dep.Loader.beam",
+      "bytes": 29916,
+      "crc32": 952385328,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Escript.Uninstall.beam",
+      "bytes": 2648,
+      "crc32": 3492583096,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Task.beam",
+      "bytes": 31200,
+      "crc32": 1353460998,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Compile.Elixir.beam",
+      "bytes": 12552,
+      "crc32": 1590594658,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Project.beam",
+      "bytes": 46924,
+      "crc32": 734394929,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.PubSub.Subscriber.beam",
+      "bytes": 8260,
+      "crc32": 2649173398,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Shell.IO.beam",
+      "bytes": 7280,
+      "crc32": 789036911,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Deps.Loadpaths.beam",
+      "bytes": 10640,
+      "crc32": 2081236896,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Task.Compiler.beam",
+      "bytes": 15372,
+      "crc32": 2714435010,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Profile.Tprof.beam",
+      "bytes": 19620,
+      "crc32": 3169618875,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Rebar.beam",
+      "bytes": 16104,
+      "crc32": 2215800892,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Hex.beam",
+      "bytes": 5380,
+      "crc32": 917003925,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Test.beam",
+      "bytes": 40336,
+      "crc32": 5069696,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.CLI.beam",
+      "bytes": 17164,
+      "crc32": 2363100541,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.App.Tree.beam",
+      "bytes": 7696,
+      "crc32": 2566917802,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Xref.beam",
+      "bytes": 64548,
+      "crc32": 147726742,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Escript.Install.beam",
+      "bytes": 8832,
+      "crc32": 3594874399,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.ProjectStack.beam",
+      "bytes": 25736,
+      "crc32": 1164308259,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/mix.app",
+      "bytes": 3027,
+      "crc32": 2763146736,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Archive.Check.beam",
+      "bytes": 4664,
+      "crc32": 3072963011,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Do.beam",
+      "bytes": 6856,
+      "crc32": 2215454584,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Deps.Clean.beam",
+      "bytes": 9856,
+      "crc32": 737944047,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Local.Rebar.beam",
+      "bytes": 7940,
+      "crc32": 477378777,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Local.beam",
+      "bytes": 13232,
+      "crc32": 1593702966,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Help.beam",
+      "bytes": 23880,
+      "crc32": 906859843,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Deps.beam",
+      "bytes": 9664,
+      "crc32": 3276408187,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Sync.PubSub.beam",
+      "bytes": 19404,
+      "crc32": 3182627050,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Deps.Precompile.beam",
+      "bytes": 1808,
+      "crc32": 1272167289,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.NoTaskError.beam",
+      "bytes": 7216,
+      "crc32": 1378871704,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Release.beam",
+      "bytes": 56652,
+      "crc32": 1992629395,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Profile.Cprof.beam",
+      "bytes": 13096,
+      "crc32": 979392080,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Dep.Fetcher.beam",
+      "bytes": 11168,
+      "crc32": 4009685737,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.beam",
+      "bytes": 35536,
+      "crc32": 1641899944,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Escript.Build.beam",
+      "bytes": 29260,
+      "crc32": 309234500,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.AppLoader.beam",
+      "bytes": 10636,
+      "crc32": 1043972894,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Deps.Get.beam",
+      "bytes": 4144,
+      "crc32": 101500845,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.SCM.beam",
+      "bytes": 5328,
+      "crc32": 379382944,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.State.beam",
+      "bytes": 11608,
+      "crc32": 3201192213,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Compile.Protocols.beam",
+      "bytes": 1676,
+      "crc32": 3615258055,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.App.Config.beam",
+      "bytes": 5452,
+      "crc32": 2290353324,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Compile.Leex.beam",
+      "bytes": 6192,
+      "crc32": 2512671951,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Compile.Yecc.beam",
+      "bytes": 6192,
+      "crc32": 697382845,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.ElixirVersionError.beam",
+      "bytes": 5292,
+      "crc32": 257066767,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Deps.Partition.beam",
+      "bytes": 23500,
+      "crc32": 2758289201,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Local.Hex.beam",
+      "bytes": 4996,
+      "crc32": 4021456939,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Dep.Lock.beam",
+      "bytes": 6180,
+      "crc32": 401479381,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Dep.Converger.beam",
+      "bytes": 25168,
+      "crc32": 281018856,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Config.beam",
+      "bytes": 11108,
+      "crc32": 3486034727,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.SCM.Path.beam",
+      "bytes": 7920,
+      "crc32": 4259008778,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Compilers.Test.beam",
+      "bytes": 19044,
+      "crc32": 3764502309,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.App.Start.beam",
+      "bytes": 6456,
+      "crc32": 2333196386,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Deps.Tree.beam",
+      "bytes": 12196,
+      "crc32": 566551347,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Shell.Process.beam",
+      "bytes": 7672,
+      "crc32": 4286297268,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Collectable.Mix.Shell.beam",
+      "bytes": 3624,
+      "crc32": 2862582904,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Compilers.Protocol.beam",
+      "bytes": 14252,
+      "crc32": 3459757517,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Archive.Install.beam",
+      "bytes": 10968,
+      "crc32": 3387037322,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Dep.ElixirSCM.beam",
+      "bytes": 4016,
+      "crc32": 2421675937,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.RemoteConverger.beam",
+      "bytes": 2656,
+      "crc32": 908935798,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Deps.Unlock.beam",
+      "bytes": 6988,
+      "crc32": 2056251681,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.PubSub.beam",
+      "bytes": 5980,
+      "crc32": 4061987520,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Compile.App.beam",
+      "bytes": 20860,
+      "crc32": 830974333,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.SCM.Git.beam",
+      "bytes": 25964,
+      "crc32": 2683722420,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Compilers.Erlang.beam",
+      "bytes": 23840,
+      "crc32": 188036834,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Eval.beam",
+      "bytes": 4396,
+      "crc32": 2777047447,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Iex.beam",
+      "bytes": 1812,
+      "crc32": 3852030468,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Compile.Erlang.beam",
+      "bytes": 14896,
+      "crc32": 3059822364,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Archive.Uninstall.beam",
+      "bytes": 2116,
+      "crc32": 1057096096,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Compile.All.beam",
+      "bytes": 8620,
+      "crc32": 3651831703,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Task.Compiler.Diagnostic.beam",
+      "bytes": 5344,
+      "crc32": 3725311469,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Tasks.Loadpaths.beam",
+      "bytes": 4348,
+      "crc32": 3517317337,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Local.Installer.beam",
+      "bytes": 24116,
+      "crc32": 3683627631,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.Shell.Quiet.beam",
+      "bytes": 4020,
+      "crc32": 4237191197,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/ebin/Elixir.Mix.InvalidTaskError.beam",
+      "bytes": 4500,
+      "crc32": 3044657943,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/eex/lib/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/eex/lib/eex.ex",
+      "bytes": 12813,
+      "crc32": 4190481433,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/eex/lib/eex/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/eex/lib/eex/smart_engine.ex",
+      "bytes": 1464,
+      "crc32": 4209941646,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/eex/lib/eex/compiler.ex",
+      "bytes": 17824,
+      "crc32": 3385775294,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/eex/lib/eex/engine.ex",
+      "bytes": 5972,
+      "crc32": 3906109626,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/elixir/lib/tuple.ex",
+      "bytes": 4652,
+      "crc32": 1262852901,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/version.ex",
+      "bytes": 22199,
+      "crc32": 561212851,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/node.ex",
+      "bytes": 10665,
+      "crc32": 141662297,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/record/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/elixir/lib/record/extractor.ex",
+      "bytes": 3577,
+      "crc32": 759069180,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/base.ex",
+      "bytes": 59612,
+      "crc32": 2915647873,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/string.ex",
+      "bytes": 99528,
+      "crc32": 3985699588,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/set.ex",
+      "bytes": 3435,
+      "crc32": 721433916,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/map.ex",
+      "bytes": 34315,
+      "crc32": 4133717250,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/code/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/elixir/lib/code/normalizer.ex",
+      "bytes": 17610,
+      "crc32": 1933002335,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/code/formatter.ex",
+      "bytes": 80113,
+      "crc32": 213617271,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/code/identifier.ex",
+      "bytes": 6122,
+      "crc32": 3409055948,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/code/typespec.ex",
+      "bytes": 12657,
+      "crc32": 2505313416,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/code/fragment.ex",
+      "bytes": 50147,
+      "crc32": 1858695088,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/port.ex",
+      "bytes": 12176,
+      "crc32": 559827998,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/function.ex",
+      "bytes": 6105,
+      "crc32": 283416054,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/module.ex",
+      "bytes": 81797,
+      "crc32": 736710128,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/stream/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/elixir/lib/stream/reducers.ex",
+      "bytes": 10561,
+      "crc32": 1200605023,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/io.ex",
+      "bytes": 26683,
+      "crc32": 3672578858,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/file/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/elixir/lib/file/stat.ex",
+      "bytes": 3450,
+      "crc32": 492350912,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/file/stream.ex",
+      "bytes": 7503,
+      "crc32": 2399342007,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/calendar/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/elixir/lib/calendar/time.ex",
+      "bytes": 29329,
+      "crc32": 4077515531,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/calendar/duration.ex",
+      "bytes": 18620,
+      "crc32": 63662088,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/calendar/date_range.ex",
+      "bytes": 7109,
+      "crc32": 23994628,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/calendar/naive_datetime.ex",
+      "bytes": 47782,
+      "crc32": 1054013587,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/calendar/date.ex",
+      "bytes": 35827,
+      "crc32": 1999621569,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/calendar/time_zone_database.ex",
+      "bytes": 4217,
+      "crc32": 2129151184,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/calendar/datetime.ex",
+      "bytes": 75640,
+      "crc32": 2339670770,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/calendar/iso.ex",
+      "bytes": 67362,
+      "crc32": 3652136883,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/keyword.ex",
+      "bytes": 44554,
+      "crc32": 1403955110,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/partition_supervisor.ex",
+      "bytes": 18435,
+      "crc32": 2494461092,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/gen_event/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/elixir/lib/gen_event/stream.ex",
+      "bytes": 4587,
+      "crc32": 4176511379,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/file.ex",
+      "bytes": 74571,
+      "crc32": 257841456,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/calendar.ex",
+      "bytes": 37671,
+      "crc32": 1902004342,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/gen_event.ex",
+      "bytes": 27491,
+      "crc32": 3493832835,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/dynamic_supervisor.ex",
+      "bytes": 35868,
+      "crc32": 955984769,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/code.ex",
+      "bytes": 85670,
+      "crc32": 4214667513,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/record.ex",
+      "bytes": 17057,
+      "crc32": 1960294583,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/range.ex",
+      "bytes": 14104,
+      "crc32": 1529218612,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/uri.ex",
+      "bytes": 34233,
+      "crc32": 1591739154,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/regex.ex",
+      "bytes": 35586,
+      "crc32": 3243202767,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/float.ex",
+      "bytes": 22416,
+      "crc32": 3238029323,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/enum.ex",
+      "bytes": 154291,
+      "crc32": 3268885204,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/map_set.ex",
+      "bytes": 12979,
+      "crc32": 480692881,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/exception.ex",
+      "bytes": 81081,
+      "crc32": 2017118551,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/list/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/elixir/lib/list/chars.ex",
+      "bytes": 1427,
+      "crc32": 2840908118,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/application.ex",
+      "bytes": 41656,
+      "crc32": 2949875537,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/stream.ex",
+      "bytes": 56205,
+      "crc32": 3306137245,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/integer.ex",
+      "bytes": 13746,
+      "crc32": 1759465030,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/config.ex",
+      "bytes": 12335,
+      "crc32": 1269077711,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/json.ex",
+      "bytes": 15939,
+      "crc32": 4175701402,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/task/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/elixir/lib/task/supervised.ex",
+      "bytes": 22644,
+      "crc32": 552480172,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/task/supervisor.ex",
+      "bytes": 23191,
+      "crc32": 2274788490,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/string/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/elixir/lib/string/chars.ex",
+      "bytes": 1476,
+      "crc32": 222854906,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/inspect/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/elixir/lib/inspect/algebra.ex",
+      "bytes": 46108,
+      "crc32": 1253368196,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/inspect/error.ex",
+      "bytes": 2196,
+      "crc32": 3090234778,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/agent.ex",
+      "bytes": 17398,
+      "crc32": 1540161788,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/kernel/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/elixir/lib/kernel/parallel_require.ex",
+      "bytes": 678,
+      "crc32": 123899533,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/kernel/parallel_compiler.ex",
+      "bytes": 41129,
+      "crc32": 3836838604,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/kernel/error_handler.ex",
+      "bytes": 1755,
+      "crc32": 55672684,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/kernel/cli.ex",
+      "bytes": 16655,
+      "crc32": 2703024189,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/kernel/typespec.ex",
+      "bytes": 35870,
+      "crc32": 2044272149,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/kernel/utils.ex",
+      "bytes": 12315,
+      "crc32": 662356912,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/kernel/lexical_tracker.ex",
+      "bytes": 8371,
+      "crc32": 1129764872,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/kernel/special_forms.ex",
+      "bytes": 71780,
+      "crc32": 1435160805,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/kernel.ex",
+      "bytes": 196093,
+      "crc32": 4049858626,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/list.ex",
+      "bytes": 39804,
+      "crc32": 526461054,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/supervisor.ex",
+      "bytes": 45068,
+      "crc32": 3454641561,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/registry.ex",
+      "bytes": 69755,
+      "crc32": 683454533,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/bitwise.ex",
+      "bytes": 4717,
+      "crc32": 3371489578,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/task.ex",
+      "bytes": 52325,
+      "crc32": 3604954059,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/macro.ex",
+      "bytes": 96618,
+      "crc32": 906975755,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/hash_set.ex",
+      "bytes": 7711,
+      "crc32": 540174389,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/atom.ex",
+      "bytes": 1845,
+      "crc32": 515836120,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/config/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/elixir/lib/config/provider.ex",
+      "bytes": 14178,
+      "crc32": 2369549024,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/config/reader.ex",
+      "bytes": 4309,
+      "crc32": 1846967872,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/collectable.ex",
+      "bytes": 6503,
+      "crc32": 4025726941,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/macro/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/elixir/lib/macro/env.ex",
+      "bytes": 22806,
+      "crc32": 28114871,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/process.ex",
+      "bytes": 30377,
+      "crc32": 1401932327,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/hash_dict.ex",
+      "bytes": 7675,
+      "crc32": 3728424669,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/module/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/elixir/lib/module/types.ex",
+      "bytes": 25250,
+      "crc32": 1289872416,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/module/types/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/elixir/lib/module/types/descr.ex",
+      "bytes": 230557,
+      "crc32": 1897962066,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/module/types/traverse.ex",
+      "bytes": 6417,
+      "crc32": 551902469,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/module/types/pattern.ex",
+      "bytes": 59855,
+      "crc32": 1373969948,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/module/types/of.ex",
+      "bytes": 27929,
+      "crc32": 250731965,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/module/types/expr.ex",
+      "bytes": 42139,
+      "crc32": 2289054770,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/module/types/helpers.ex",
+      "bytes": 16570,
+      "crc32": 4185505183,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/module/types/apply.ex",
+      "bytes": 86559,
+      "crc32": 4189491280,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/module/parallel_checker.ex",
+      "bytes": 21317,
+      "crc32": 3406742654,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/module/behaviour.ex",
+      "bytes": 13192,
+      "crc32": 1510367489,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/access.ex",
+      "bytes": 40380,
+      "crc32": 3120878476,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/supervisor/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/elixir/lib/supervisor/default.ex",
+      "bytes": 222,
+      "crc32": 521241504,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/supervisor/spec.ex",
+      "bytes": 9720,
+      "crc32": 2508005898,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/system.ex",
+      "bytes": 46190,
+      "crc32": 3147177250,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/gen_server.ex",
+      "bytes": 50479,
+      "crc32": 316372944,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/path.ex",
+      "bytes": 28243,
+      "crc32": 3279077737,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/behaviour.ex",
+      "bytes": 3699,
+      "crc32": 683873290,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/protocol.ex",
+      "bytes": 38981,
+      "crc32": 200943786,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/string_io.ex",
+      "bytes": 14130,
+      "crc32": 2952707336,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/agent/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/elixir/lib/agent/server.ex",
+      "bytes": 1303,
+      "crc32": 645492039,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/option_parser.ex",
+      "bytes": 32407,
+      "crc32": 806773722,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/dict.ex",
+      "bytes": 10981,
+      "crc32": 734969872,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/io/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/elixir/lib/io/stream.ex",
+      "bytes": 2056,
+      "crc32": 1553141618,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/io/ansi.ex",
+      "bytes": 10623,
+      "crc32": 437700705,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/io/ansi/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/elixir/lib/io/ansi/docs.ex",
+      "bytes": 25419,
+      "crc32": 3402755779,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/elixir/lib/inspect.ex",
+      "bytes": 23025,
+      "crc32": 1489063702,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/lib/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/ex_unit/lib/ex_unit.ex",
+      "bytes": 21366,
+      "crc32": 2218671836,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/lib/ex_unit/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/ex_unit/lib/ex_unit/callbacks.ex",
+      "bytes": 29533,
+      "crc32": 38883503,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/lib/ex_unit/doc_test.ex",
+      "bytes": 29948,
+      "crc32": 2973509384,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/lib/ex_unit/formatter.ex",
+      "bytes": 24817,
+      "crc32": 2565653072,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/lib/ex_unit/case.ex",
+      "bytes": 29618,
+      "crc32": 3463353598,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/lib/ex_unit/runner.ex",
+      "bytes": 20127,
+      "crc32": 1188152460,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/lib/ex_unit/server.ex",
+      "bytes": 6720,
+      "crc32": 1259520499,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/lib/ex_unit/capture_log.ex",
+      "bytes": 4244,
+      "crc32": 814542319,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/lib/ex_unit/failures_manifest.ex",
+      "bytes": 3507,
+      "crc32": 3801229697,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/lib/ex_unit/case_template.ex",
+      "bytes": 4387,
+      "crc32": 3766628059,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/lib/ex_unit/on_exit_handler.ex",
+      "bytes": 4119,
+      "crc32": 1105456799,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/lib/ex_unit/on_exit_handler/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/ex_unit/lib/ex_unit/on_exit_handler/supervisor.ex",
+      "bytes": 669,
+      "crc32": 336677962,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/lib/ex_unit/filters.ex",
+      "bytes": 9283,
+      "crc32": 448758932,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/lib/ex_unit/capture_server.ex",
+      "bytes": 7594,
+      "crc32": 2917472519,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/lib/ex_unit/assertions.ex",
+      "bytes": 30517,
+      "crc32": 2401507502,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/lib/ex_unit/runner_stats.ex",
+      "bytes": 3603,
+      "crc32": 428340228,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/lib/ex_unit/cli_formatter.ex",
+      "bytes": 16081,
+      "crc32": 550359289,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/lib/ex_unit/capture_io.ex",
+      "bytes": 11053,
+      "crc32": 2449433685,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/lib/ex_unit/diff.ex",
+      "bytes": 40140,
+      "crc32": 2935397915,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/ex_unit/lib/ex_unit/event_manager.ex",
+      "bytes": 2748,
+      "crc32": 4078753517,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/lib/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/iex/lib/iex.ex",
+      "bytes": 31239,
+      "crc32": 411595604,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/lib/iex/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/iex/lib/iex/broker.ex",
+      "bytes": 4567,
+      "crc32": 930549168,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/lib/iex/server.ex",
+      "bytes": 13117,
+      "crc32": 1700655795,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/lib/iex/app.ex",
+      "bytes": 541,
+      "crc32": 2899396827,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/lib/iex/autocomplete.ex",
+      "bytes": 25893,
+      "crc32": 3377502529,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/lib/iex/mix_listener.ex",
+      "bytes": 1843,
+      "crc32": 2781009528,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/lib/iex/config.ex",
+      "bytes": 5629,
+      "crc32": 3530178486,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/lib/iex/pry.ex",
+      "bytes": 22243,
+      "crc32": 1653299864,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/lib/iex/evaluator.ex",
+      "bytes": 13111,
+      "crc32": 1526557811,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/lib/iex/info.ex",
+      "bytes": 13529,
+      "crc32": 4188666289,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/lib/iex/helpers.ex",
+      "bytes": 50599,
+      "crc32": 2339481028,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/lib/iex/history.ex",
+      "bytes": 3598,
+      "crc32": 3048476724,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/iex/lib/iex/introspection.ex",
+      "bytes": 26715,
+      "crc32": 586701249,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/logger/lib/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/logger/lib/logger.ex",
+      "bytes": 42996,
+      "crc32": 1514605577,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/logger/lib/logger/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/logger/lib/logger/formatter.ex",
+      "bytes": 19585,
+      "crc32": 2188678520,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/logger/lib/logger/app.ex",
+      "bytes": 5200,
+      "crc32": 2927814984,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/logger/lib/logger/translator.ex",
+      "bytes": 23220,
+      "crc32": 2164804367,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/logger/lib/logger/backends/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/logger/lib/logger/backends/handler.ex",
+      "bytes": 3809,
+      "crc32": 1612209202,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/logger/lib/logger/backends/internal.ex",
+      "bytes": 4439,
+      "crc32": 4176528610,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/logger/lib/logger/backends/config.ex",
+      "bytes": 3465,
+      "crc32": 2858172550,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/logger/lib/logger/backends/supervisor.ex",
+      "bytes": 1600,
+      "crc32": 1855302414,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/logger/lib/logger/backends/console.ex",
+      "bytes": 8737,
+      "crc32": 3163880199,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/logger/lib/logger/backends/watcher.ex",
+      "bytes": 2185,
+      "crc32": 271331440,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/logger/lib/logger/utils.ex",
+      "bytes": 8058,
+      "crc32": 4008518555,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/mix/lib/mix.ex",
+      "bytes": 39561,
+      "crc32": 1312309526,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/mix/lib/mix/local/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/mix/lib/mix/local/installer.ex",
+      "bytes": 12457,
+      "crc32": 4128157478,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/shell/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/mix/lib/mix/shell/io.ex",
+      "bytes": 3036,
+      "crc32": 3270122196,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/shell/quiet.ex",
+      "bytes": 1834,
+      "crc32": 2955590041,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/shell/process.ex",
+      "bytes": 4611,
+      "crc32": 952931383,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/task.compiler.ex",
+      "bytes": 11939,
+      "crc32": 1354702910,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/project_stack.ex",
+      "bytes": 8309,
+      "crc32": 3748113479,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/scm/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/mix/lib/mix/scm/git.ex",
+      "bytes": 11278,
+      "crc32": 215197215,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/scm/path.ex",
+      "bytes": 1758,
+      "crc32": 2109483266,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/app_loader.ex",
+      "bytes": 4949,
+      "crc32": 2667139728,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/cli.ex",
+      "bytes": 7909,
+      "crc32": 558376640,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/state.ex",
+      "bytes": 2980,
+      "crc32": 1992118398,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/dep.ex",
+      "bytes": 17729,
+      "crc32": 2899866994,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/deps.unlock.ex",
+      "bytes": 3070,
+      "crc32": 3540522215,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/app.tree.ex",
+      "bytes": 3889,
+      "crc32": 3400430109,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/help.ex",
+      "bytes": 10487,
+      "crc32": 508312939,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/deps.compile.ex",
+      "bytes": 13428,
+      "crc32": 4122292810,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/compile.erlang.ex",
+      "bytes": 7373,
+      "crc32": 2609848731,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/app.config.ex",
+      "bytes": 2910,
+      "crc32": 2960964403,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/deps.precompile.ex",
+      "bytes": 505,
+      "crc32": 776924746,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/archive.install.ex",
+      "bytes": 6633,
+      "crc32": 1309830731,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/run.ex",
+      "bytes": 6544,
+      "crc32": 1324141549,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/deps.clean.ex",
+      "bytes": 4400,
+      "crc32": 1005501980,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/archive.ex",
+      "bytes": 1044,
+      "crc32": 1040779506,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/will_recompile.ex",
+      "bytes": 1011,
+      "crc32": 1654689592,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/release.init.ex",
+      "bytes": 16861,
+      "crc32": 2978087354,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/archive.check.ex",
+      "bytes": 1615,
+      "crc32": 3331160685,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/iex.ex",
+      "bytes": 359,
+      "crc32": 1642770592,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/escript.build.ex",
+      "bytes": 14929,
+      "crc32": 3147915128,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/deps.partition.ex",
+      "bytes": 9235,
+      "crc32": 1265427987,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/format.ex",
+      "bytes": 36655,
+      "crc32": 2499934865,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/eval.ex",
+      "bytes": 3154,
+      "crc32": 3847198402,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/archive.uninstall.ex",
+      "bytes": 617,
+      "crc32": 500477431,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/profile.fprof.ex",
+      "bytes": 11917,
+      "crc32": 3781157143,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/profile.eprof.ex",
+      "bytes": 12233,
+      "crc32": 239207015,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/compile.app.ex",
+      "bytes": 15635,
+      "crc32": 3634369379,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/compile.ex",
+      "bytes": 8000,
+      "crc32": 1459466871,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/profile.tprof.ex",
+      "bytes": 17301,
+      "crc32": 3948760685,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/test.ex",
+      "bytes": 38021,
+      "crc32": 2260520762,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/deps.tree.ex",
+      "bytes": 5865,
+      "crc32": 3794171658,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/compile.elixir.ex",
+      "bytes": 9282,
+      "crc32": 3728133865,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/new.ex",
+      "bytes": 13221,
+      "crc32": 4172686217,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/escript.ex",
+      "bytes": 1591,
+      "crc32": 1079326877,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/clean.ex",
+      "bytes": 2066,
+      "crc32": 2022352239,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/deps.get.ex",
+      "bytes": 1289,
+      "crc32": 1782124821,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/compile.leex.ex",
+      "bytes": 3001,
+      "crc32": 1266668441,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/app.start.ex",
+      "bytes": 3694,
+      "crc32": 3773400794,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/deps.ex",
+      "bytes": 10070,
+      "crc32": 4145559754,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/local.hex.ex",
+      "bytes": 2655,
+      "crc32": 1760321661,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/cmd.ex",
+      "bytes": 4011,
+      "crc32": 2160749351,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/xref.ex",
+      "bytes": 46250,
+      "crc32": 3190860137,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/compile.protocols.ex",
+      "bytes": 286,
+      "crc32": 2910315083,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/loadpaths.ex",
+      "bytes": 2534,
+      "crc32": 2296697064,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/test.coverage.ex",
+      "bytes": 13348,
+      "crc32": 916787754,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/do.ex",
+      "bytes": 3955,
+      "crc32": 2502329952,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/loadconfig.ex",
+      "bytes": 3919,
+      "crc32": 3823025149,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/escript.uninstall.ex",
+      "bytes": 670,
+      "crc32": 1915308959,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/deps.loadpaths.ex",
+      "bytes": 6149,
+      "crc32": 3012371727,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/release.ex",
+      "bytes": 58650,
+      "crc32": 2748087105,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/compile.yecc.ex",
+      "bytes": 3006,
+      "crc32": 1972034914,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/profile.cprof.ex",
+      "bytes": 10465,
+      "crc32": 570729033,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/source.ex",
+      "bytes": 2459,
+      "crc32": 853390216,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/deps.update.ex",
+      "bytes": 2323,
+      "crc32": 4282462816,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/compile.all.ex",
+      "bytes": 3886,
+      "crc32": 2930706140,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/archive.build.ex",
+      "bytes": 4491,
+      "crc32": 246157948,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/local.ex",
+      "bytes": 877,
+      "crc32": 3732384712,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/escript.install.ex",
+      "bytes": 5908,
+      "crc32": 3224498429,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks/local.rebar.ex",
+      "bytes": 4084,
+      "crc32": 2864971113,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/rebar.ex",
+      "bytes": 7144,
+      "crc32": 66064071,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/scm.ex",
+      "bytes": 4682,
+      "crc32": 2949889775,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/shell.ex",
+      "bytes": 4743,
+      "crc32": 2111170072,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/exceptions.ex",
+      "bytes": 2518,
+      "crc32": 643592278,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/config.ex",
+      "bytes": 2915,
+      "crc32": 2334256391,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/remote_converger.ex",
+      "bytes": 1184,
+      "crc32": 1147014330,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/dep/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/mix/lib/mix/dep/fetcher.ex",
+      "bytes": 5358,
+      "crc32": 2059123871,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/dep/loader.ex",
+      "bytes": 13452,
+      "crc32": 3413068143,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/dep/umbrella.ex",
+      "bytes": 1804,
+      "crc32": 783234372,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/dep/lock.ex",
+      "bytes": 2137,
+      "crc32": 1819020675,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/dep/elixir_scm.ex",
+      "bytes": 1179,
+      "crc32": 1264200022,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/dep/converger.ex",
+      "bytes": 14616,
+      "crc32": 3819528622,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/utils.ex",
+      "bytes": 32009,
+      "crc32": 1381115287,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/sync/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/mix/lib/mix/sync/lock.ex",
+      "bytes": 15082,
+      "crc32": 3029015789,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/sync/pubsub.ex",
+      "bytes": 8311,
+      "crc32": 931684496,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/task.ex",
+      "bytes": 19842,
+      "crc32": 3765980435,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/pubsub/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/mix/lib/mix/pubsub/subscriber.ex",
+      "bytes": 1298,
+      "crc32": 934616847,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/tasks_server.ex",
+      "bytes": 692,
+      "crc32": 2403826827,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/compilers/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "lib/mix/lib/mix/compilers/test.ex",
+      "bytes": 9951,
+      "crc32": 2191356881,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/compilers/erlang.ex",
+      "bytes": 11473,
+      "crc32": 1261422461,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/compilers/protocol.ex",
+      "bytes": 6973,
+      "crc32": 3837752886,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/compilers/elixir.ex",
+      "bytes": 49444,
+      "crc32": 2984770432,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/hex.ex",
+      "bytes": 2095,
+      "crc32": 446192392,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/release.ex",
+      "bytes": 29777,
+      "crc32": 101076355,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/generator.ex",
+      "bytes": 6663,
+      "crc32": 2394894670,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/local.ex",
+      "bytes": 5453,
+      "crc32": 708654691,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/pubsub.ex",
+      "bytes": 2958,
+      "crc32": 335308641,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "lib/mix/lib/mix/project.ex",
+      "bytes": 34120,
+      "crc32": 2930965839,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "LICENSE",
+      "bytes": 10173,
+      "crc32": 3099729595,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "Makefile",
+      "bytes": 12610,
+      "crc32": 3314867694,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "man/",
+      "bytes": 0,
+      "crc32": 0,
+      "original_mode": 16877,
+      "directory": true
+    },
+    {
+      "name": "man/elixir.1.in",
+      "bytes": 1741,
+      "crc32": 3994419994,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "man/iex.1.in",
+      "bytes": 2207,
+      "crc32": 400753215,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "man/elixir.1",
+      "bytes": 6235,
+      "crc32": 1002898474,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "man/common",
+      "bytes": 4503,
+      "crc32": 3664787730,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "man/elixirc.1",
+      "bytes": 1757,
+      "crc32": 1656302559,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "man/iex.1",
+      "bytes": 6701,
+      "crc32": 1722036900,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "man/mix.1",
+      "bytes": 5477,
+      "crc32": 943503561,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "README.md",
+      "bytes": 6606,
+      "crc32": 3191834183,
+      "original_mode": 33188,
+      "directory": false
+    },
+    {
+      "name": "VERSION",
+      "bytes": 7,
+      "crc32": 3963123610,
+      "original_mode": 33188,
+      "directory": false
+    }
+  ],
+  "extracted_root": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir",
+  "publisher_listing": "https://github.com/elixir-lang/elixir/releases/expanded_assets/v1.20.4"
+}

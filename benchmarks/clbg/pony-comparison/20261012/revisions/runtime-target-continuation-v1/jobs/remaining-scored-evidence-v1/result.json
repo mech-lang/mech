@@ -1,0 +1,706 @@
+{
+  "status": "remaining-scored-IR-and-ARM-captured-awaiting-semantic-review",
+  "profiles": {
+    "pony-binarytrees-compact-precedence-v4": {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v6/source-snapshot/revisions/precedence-v4/sources/binarytrees/compact/main.pony",
+      "source_sha256": "9fe1b9d288f21559aaf6d40706cd6fe3c969bfdddcbbaa0900fa3d97cc670a20",
+      "original_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/bin/pony-binarytrees-compact-precedence-v4/pony-binarytrees-compact-precedence-v4",
+      "original_binary_sha256": "32e8e965c377dfe9b872adbd0777bcaf8d34686b75606d4038c8cf0d0e0e7e30",
+      "production_build_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v6/builds/pony-binarytrees-compact-precedence-v4/build.json",
+      "production_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/bin/ponyc",
+        "--strip",
+        "--triple",
+        "aarch64-apple-macosx14.4.0",
+        "--sysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk",
+        "--lib-path",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/lib",
+        "--lib-path",
+        "/opt/homebrew/Cellar/pcre2/10.49/lib",
+        "--lib-path",
+        "/opt/homebrew/Cellar/gmp/6.3.0/lib",
+        "--path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/regex/regex-589eb008db250aab17d4c073a41c5562ac5b8dc7",
+        "--path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/gmp4pony/gmp4pony-b14db4ba347f6a2b840f135e1602e19f85625c39",
+        "--path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v6/source-snapshot/support-v2",
+        "--output",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/bin/pony-binarytrees-compact-precedence-v4",
+        "--bin-name",
+        "pony-binarytrees-compact-precedence-v4",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v6/source-snapshot/revisions/precedence-v4/sources/binarytrees/compact"
+      ],
+      "diagnostic_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/bin/ponyc",
+        "--strip",
+        "--triple",
+        "aarch64-apple-macosx14.4.0",
+        "--sysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk",
+        "--lib-path",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/lib",
+        "--lib-path",
+        "/opt/homebrew/Cellar/pcre2/10.49/lib",
+        "--lib-path",
+        "/opt/homebrew/Cellar/gmp/6.3.0/lib",
+        "--path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/regex/regex-589eb008db250aab17d4c073a41c5562ac5b8dc7",
+        "--path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/gmp4pony/gmp4pony-b14db4ba347f6a2b840f135e1602e19f85625c39",
+        "--path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v6/source-snapshot/support-v2",
+        "--output",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode",
+        "--bin-name",
+        "pony-binarytrees-compact-precedence-v4",
+        "--pass",
+        "bitcode",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v6/source-snapshot/revisions/precedence-v4/sources/binarytrees/compact"
+      ],
+      "emitted_bitcode_files": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.buffered.bc",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.builtin.bc",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.capsicum.bc",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.collections.bc",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.constrained_types.bc",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.files.bc",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.format.bc",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.itertools.bc",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.main.bc",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.persistent.bc",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.pony_test.bc",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.promises.bc",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.random.bc",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.signals.bc",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.strings.bc",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.term.bc",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.time.bc"
+      ],
+      "authored_entry_bitcode": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.main.bc",
+      "separate_builtin_bitcode": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.builtin.bc",
+      "authored_IR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/authored-entry.ll",
+      "module_headers": [
+        "; ModuleID = '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.main.bc'",
+        "source_filename = \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.main.bc\"",
+        "target datalayout = \"e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:64-S128-Fn32\"",
+        "target triple = \"arm64-apple-macosx26.0.0\"",
+        ""
+      ],
+      "separate_builtin_IR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/runtime-target-continuation-v1/jobs/remaining-scored-evidence-v1/pony-binarytrees-compact-precedence-v4/builtin.ll",
+      "builtin_module_headers": [
+        "; ModuleID = '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.builtin.bc'",
+        "source_filename = \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/pony-binarytrees-compact-precedence-v4/bitcode/pony-binarytrees-compact-precedence-v4.builtin.bc\"",
+        "target datalayout = \"e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:64-S128-Fn32\"",
+        "target triple = \"aarch64-apple-macosx14.4.0\"",
+        ""
+      ],
+      "requested_target": "aarch64-apple-macosx14.4.0",
+      "actual_runtime_merged_target": "arm64-apple-macosx26.0.0",
+      "original_scored_ARM": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v5/scored-tree-allocation/pony-binarytrees-compact-precedence-v4/arm/scored-arm.stdout",
+      "compact_compile_and_entry_decode_reused": true,
+      "leaf_path_allocates_fresh_node": null,
+      "interior_path_allocates_fresh_node": null,
+      "no_static_or_shared_tree_graph": null,
+      "long_root_storage_retained_through_worker_joins": null
+    },
+    "pony-binarytrees-optimized-precedence-v4": {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v6/source-snapshot/revisions/precedence-v4/sources/binarytrees/optimized/main.pony",
+      "source_sha256": "351177026d084edcdabdb79651db63fffcb68edaee223b908f31e55f606f295a",
+      "original_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/bin/pony-binarytrees-optimized-precedence-v4/pony-binarytrees-optimized-precedence-v4",
+      "original_binary_sha256": "d2e3f363a13d4d7b7f56ffc9dc10f31f58d89f28358ee79e1a0de518ba2aa033",
+      "production_build_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v6/builds/pony-binarytrees-optimized-precedence-v4/build.json",
+      "production_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/bin/ponyc",
+        "--strip",
+        "--triple",
+        "aarch64-apple-macosx14.4.0",
+        "--sysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk",
+        "--lib-path",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/lib",
+        "--lib-path",
+        "/opt/homebrew/Cellar/pcre2/10.49/lib",
+        "--lib-path",
+        "/opt/homebrew/Cellar/gmp/6.3.0/lib",
+        "--path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/regex/regex-589eb008db250aab17d4c073a41c5562ac5b8dc7",
+        "--path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/gmp4pony/gmp4pony-b14db4ba347f6a2b840f135e1602e19f85625c39",
+        "--path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v6/source-snapshot/support-v2",
+        "--output",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/bin/pony-binarytrees-optimized-precedence-v4",
+        "--bin-name",
+        "pony-binarytrees-optimized-precedence-v4",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v6/source-snapshot/revisions/precedence-v4/sources/binarytrees/optimized"
+      ],
+      "diagnostic_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/bin/ponyc",
+        "--strip",
+        "--triple",
+        "aarch64-apple-macosx14.4.0",
+        "--sysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk",
+        "--lib-path",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/lib",
+        "--lib-path",
+        "/opt/homebrew/Cellar/pcre2/10.49/lib",
+        "--lib-path",
+        "/opt/homebrew/Cellar/gmp/6.3.0/lib",
+        "--path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/regex/regex-589eb008db250aab17d4c073a41c5562ac5b8dc7",
+        "--path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/gmp4pony/gmp4pony-b14db4ba347f6a2b840f135e1602e19f85625c39",
+        "--path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v6/source-snapshot/support-v2",
+        "--output",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/runtime-target-continuation-v1/jobs/remaining-scored-evidence-v1/pony-binarytrees-optimized-precedence-v4/bitcode",
+        "--bin-name",
+        "pony-binarytrees-optimized-precedence-v4",
+        "--pass",
+        "bitcode",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v6/source-snapshot/revisions/precedence-v4/sources/binarytrees/optimized"
+      ],
+      "emitted_bitcode_files": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/runtime-target-continuation-v1/jobs/remaining-scored-evidence-v1/pony-binarytrees-optimized-precedence-v4/bitcode/pony-binarytrees-optimized-precedence-v4.buffered.bc",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/runtime-target-continuation-v1/jobs/remaining-scored-evidence-v1/pony-binarytrees-optimized-precedence-v4/bitcode/pony-binarytrees-optimized-precedence-v4.builtin.bc",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/runtime-target-continuation-v1/jobs/remaining-scored-evidence-v1/pony-binarytrees-optimized-precedence-v4/bitcode/pony-binarytrees-optimized-precedence-v4.capsicum.bc",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/runtime-target-continuation-v1/jobs/remaining-scored-evidence-v1/pony-binarytrees-optimized-precedence-v4/bitcode/pony-binarytrees-optimized-precedence-v4.collections.bc",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/runtime-target-continuation-v1/jobs/remaining-scored-evidence-v1/pony-binarytrees-optimized-precedence-v4/bitcode/pony-binarytrees-optimized-precedence-v4.constrained_types.bc",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/runtime-target-continuation-v1/jobs/remaining-scored-evidence-v1/pony-binarytrees-optimized-precedence-v4/bitcode/pony-binarytrees-optimized-precedence-v4.files.bc",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/runtime-target-continuation-v1/jobs/remaining-scored-evidence-v1/pony-binarytrees-optimized-precedence-v4/bitcode/pony-binarytrees-optimized-precedence-v4.format.bc",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/runtime-target-continuation-v1/jobs/remaining-scored-evidence-v1/pony-binarytrees-optimized-precedence-v4/bitcode/pony-binarytrees-optimized-precedence-v4.itertools.bc",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/runtime-target-continuation-v1/jobs/remaining-scored-evidence-v1/pony-binarytrees-optimized-precedence-v4/bitcode/pony-binarytrees-optimized-precedence-v4.main.bc",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/runtime-target-continuation-v1/jobs/remaining-scored-evidence-v1/pony-binarytrees-optimized-precedence-v4/bitcode/pony-binarytrees-optimized-precedence-v4.persistent.bc",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/runtime-target-continuation-v1/jobs/remaining-scored-evidence-v1/pony-binarytrees-optimized-precedence-v4/bitcode/pony-binarytrees-optimized-precedence-v4.pony_test.bc",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/runtime-target-continuation-v1/jobs/remaining-scored-evidence-v1/pony-binarytrees-optimized-precedence-v4/bitcode/pony-binarytrees-optimized-precedence-v4.promises.bc",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/runtime-target-continuation-v1/jobs/remaining-scored-evidence-v1/pony-binarytrees-optimized-precedence-v4/bitcode/pony-binarytrees-optimized-precedence-v4.random.bc",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/runtime-target-continuation-v1/jobs/remaining-scored-evidence-v1/pony-binarytrees-optimized-precedence-v4/bitcode/pony-binarytrees-optimized-precedence-v4.signals.bc",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/runtime-target-continuation-v1/jobs/remaining-scored-evidence-v1/pony-binarytrees-optimized-precedence-v4/bitcode/pony-binarytrees-optimized-precedence-v4.strings.bc",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/runtime-target-continuation-v1/jobs/remaining-scored-evidence-v1/pony-binarytrees-optimized-precedence-v4/bitcode/pony-binarytrees-optimized-precedence-v4.term.bc",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/runtime-target-continuation-v1/jobs/remaining-scored-evidence-v1/pony-binarytrees-optimized-precedence-v4/bitcode/pony-binarytrees-optimized-precedence-v4.time.bc"
+      ],
+      "authored_entry_bitcode": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/runtime-target-continuation-v1/jobs/remaining-scored-evidence-v1/pony-binarytrees-optimized-precedence-v4/bitcode/pony-binarytrees-optimized-precedence-v4.main.bc",
+      "separate_builtin_bitcode": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/runtime-target-continuation-v1/jobs/remaining-scored-evidence-v1/pony-binarytrees-optimized-precedence-v4/bitcode/pony-binarytrees-optimized-precedence-v4.builtin.bc",
+      "authored_IR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/runtime-target-continuation-v1/jobs/remaining-scored-evidence-v1/pony-binarytrees-optimized-precedence-v4/authored-entry.ll",
+      "module_headers": [
+        "; ModuleID = '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/runtime-target-continuation-v1/jobs/remaining-scored-evidence-v1/pony-binarytrees-optimized-precedence-v4/bitcode/pony-binarytrees-optimized-precedence-v4.main.bc'",
+        "source_filename = \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/runtime-target-continuation-v1/jobs/remaining-scored-evidence-v1/pony-binarytrees-optimized-precedence-v4/bitcode/pony-binarytrees-optimized-precedence-v4.main.bc\"",
+        "target datalayout = \"e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:64-S128-Fn32\"",
+        "target triple = \"arm64-apple-macosx26.0.0\"",
+        ""
+      ],
+      "separate_builtin_IR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/runtime-target-continuation-v1/jobs/remaining-scored-evidence-v1/pony-binarytrees-optimized-precedence-v4/builtin.ll",
+      "builtin_module_headers": [
+        "; ModuleID = '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/runtime-target-continuation-v1/jobs/remaining-scored-evidence-v1/pony-binarytrees-optimized-precedence-v4/bitcode/pony-binarytrees-optimized-precedence-v4.builtin.bc'",
+        "source_filename = \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/runtime-target-continuation-v1/jobs/remaining-scored-evidence-v1/pony-binarytrees-optimized-precedence-v4/bitcode/pony-binarytrees-optimized-precedence-v4.builtin.bc\"",
+        "target datalayout = \"e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:64-S128-Fn32\"",
+        "target triple = \"aarch64-apple-macosx14.4.0\"",
+        ""
+      ],
+      "requested_target": "aarch64-apple-macosx14.4.0",
+      "actual_runtime_merged_target": "arm64-apple-macosx26.0.0",
+      "original_scored_ARM": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/runtime-target-continuation-v1/jobs/remaining-scored-evidence-v1/pony-binarytrees-optimized-precedence-v4/arm/scored-arm.stdout",
+      "compact_compile_and_entry_decode_reused": false,
+      "leaf_path_allocates_fresh_node": null,
+      "interior_path_allocates_fresh_node": null,
+      "no_static_or_shared_tree_graph": null,
+      "long_root_storage_retained_through_worker_joins": null
+    }
+  },
+  "actual_runtime_bitcode": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/lib/armv8-a/libponyrt.bc",
+    "sha256": "95e60711be95591e4b5f5e3b35e7daef1c28de30fb8bb5b46c74d89d2309438a",
+    "decoded": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/runtime-target-continuation-v1/jobs/remaining-scored-evidence-v1/runtime.ll",
+    "decoded_sha256": "581aea4adb0ef1396e2ca90f744953a74233b4748b39cc3b475c1ec4362f30ce",
+    "actual_target": "arm64-apple-macosx26.0.0"
+  },
+  "requested_production_target": "aarch64-apple-macosx14.4.0",
+  "original_six_trace_records": [
+    {
+      "id": "pony-pidigits-compact",
+      "benchmark": "pidigits",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v3/source-snapshot/sources/pidigits/compact/main.pony",
+      "source_sha256": "a1bc3b479c995d5ecca520268a7f18ac545622b0dd1a2573045ddcbd9cb7c75b",
+      "trace_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v2/source-snapshot/sources/pidigits/compact/main.pony",
+      "trace_source_sha256": "703f17e2f64a815e763ef0c8d90f7e7bef87e46e5dc1ba842324762bb10cb08f",
+      "binary_sha256": "02df45237a58e577cd19bd2e9a6e0aa00aa1dda2544097c9981064a55ca72e80",
+      "input_n": 97,
+      "stdin": null,
+      "complete_output_match": true,
+      "trace": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v2/executions/pony-pidigits-compact-trace/trace-native.stderr",
+      "trace_sha256": "6fee0cd27e6bfecb4f2b9539b25d80a144fdec487a920d282d319fea36dea3c0",
+      "proof": {
+        "complete_work_trace": true,
+        "observed_compute_threads": [
+          6121992192
+        ],
+        "compute_thread_cap": 8,
+        "records": 416,
+        "preparation_only": true,
+        "score_eligible": false,
+        "candidate_states": 416,
+        "distinct_numerator_divisions": 832,
+        "digits": 97,
+        "actual_record_mutation_rejections": [
+          "missing-work-record",
+          "too-many-scheduler-identities"
+        ]
+      },
+      "observations": {
+        "power_at_start": {
+          "source": "AC Power",
+          "low_power_mode": 0
+        },
+        "power_at_end": {
+          "source": "AC Power",
+          "low_power_mode": 0
+        },
+        "competing_compilers": [],
+        "power_changes": [],
+        "monitor_errors": [],
+        "resource_monitor_errors": [],
+        "resource_violation": null,
+        "peak_process_group_rss_kib": 0,
+        "native": {
+          "pid": 26237,
+          "pgid": 26237,
+          "command": [
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v2/bin/pony-pidigits-compact-trace/pony-pidigits-compact-trace",
+            "97",
+            "--ponymaxthreads",
+            "8"
+          ],
+          "inherited_common_mutex": true,
+          "observer_registered_after_owned_active_journal": true
+        }
+      },
+      "qualified": true
+    },
+    {
+      "id": "pony-pidigits-optimized",
+      "benchmark": "pidigits",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v3/source-snapshot/sources/pidigits/optimized/main.pony",
+      "source_sha256": "3018bd1f17589c13f0d4204f7de6653df1f3de8b5a27d062608493eccef9975d",
+      "trace_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v2/source-snapshot/sources/pidigits/optimized/main.pony",
+      "trace_source_sha256": "9e3edb11fa2d9f1bbffca6e4c14047cc31e792a9b91b1ad7503aa403e64b6c02",
+      "binary_sha256": "d5667a83a5cc36c401b4adf771b1a8b4007780e0b247d97fb74e279d615d566c",
+      "input_n": 97,
+      "stdin": null,
+      "complete_output_match": true,
+      "trace": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v2/executions/pony-pidigits-optimized-trace/trace-native.stderr",
+      "trace_sha256": "86c204e9e0304f1be4e351fe12c377b197accff7e89821fc2938feac54448b2d",
+      "proof": {
+        "complete_work_trace": true,
+        "observed_compute_threads": [
+          6167605248
+        ],
+        "compute_thread_cap": 8,
+        "records": 416,
+        "preparation_only": true,
+        "score_eligible": false,
+        "candidate_states": 416,
+        "distinct_numerator_divisions": 832,
+        "digits": 97,
+        "actual_record_mutation_rejections": [
+          "missing-work-record",
+          "too-many-scheduler-identities"
+        ]
+      },
+      "observations": {
+        "power_at_start": {
+          "source": "AC Power",
+          "low_power_mode": 0
+        },
+        "power_at_end": {
+          "source": "AC Power",
+          "low_power_mode": 0
+        },
+        "competing_compilers": [],
+        "power_changes": [],
+        "monitor_errors": [],
+        "resource_monitor_errors": [],
+        "resource_violation": null,
+        "peak_process_group_rss_kib": 0,
+        "native": {
+          "pid": 26270,
+          "pgid": 26270,
+          "command": [
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v2/bin/pony-pidigits-optimized-trace/pony-pidigits-optimized-trace",
+            "97",
+            "--ponymaxthreads",
+            "8"
+          ],
+          "inherited_common_mutex": true,
+          "observer_registered_after_owned_active_journal": true
+        }
+      },
+      "qualified": true
+    },
+    {
+      "id": "pony-knucleotide-compact-precedence-v4",
+      "benchmark": "knucleotide",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v4/source-snapshot/revisions/precedence-v4/sources/knucleotide/compact/main.pony",
+      "source_sha256": "36f5c7b8bfd1ea57e7190b70fc200bc40bbb2d6985b26593c16e977820a13f0e",
+      "trace_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v3/source-snapshot/sources/knucleotide/compact/main.pony",
+      "trace_source_sha256": "776cf1cd003fe563ada5f3a98bb9602070708a98374573f8b0ddbb2e8fce0ff5",
+      "binary_sha256": "f5df6a0f858830060a95b8a710288b2afdbb108d7aa6fdb6511099e31365f0e4",
+      "input_n": 1000,
+      "stdin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v3/inputs/knucleotide.fasta",
+      "complete_output_match": true,
+      "trace": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v3/executions/pony-knucleotide-compact-precedence-v4-trace/trace-native.stderr",
+      "trace_sha256": "5ce9f31b683ee617c6458a229b36635eeea6c44ee8f32073bb78fa4d2e47efc0",
+      "proof": {
+        "complete_work_trace": true,
+        "observed_compute_threads": [
+          6118371328,
+          6126792704,
+          6160478208,
+          6177320960
+        ],
+        "compute_thread_cap": 8,
+        "records": 118240,
+        "preparation_only": true,
+        "score_eligible": false,
+        "seven_complete_maps": true,
+        "windows": 70108,
+        "map_entries": {
+          "1": 4,
+          "2": 16,
+          "3": 64,
+          "4": 256,
+          "6": 3705,
+          "12": 10010,
+          "18": 10004
+        },
+        "ownership_transfer_exact": true,
+        "actual_record_mutation_rejections": [
+          "missing-work-record",
+          "too-many-scheduler-identities"
+        ]
+      },
+      "observations": {
+        "power_at_start": {
+          "source": "AC Power",
+          "low_power_mode": 0
+        },
+        "power_at_end": {
+          "source": "AC Power",
+          "low_power_mode": 0
+        },
+        "competing_compilers": [],
+        "power_changes": [],
+        "monitor_errors": [],
+        "resource_monitor_errors": [],
+        "resource_violation": null,
+        "peak_process_group_rss_kib": 0,
+        "native": {
+          "pid": 93199,
+          "pgid": 93199,
+          "command": [
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v3/bin/pony-knucleotide-compact-precedence-v4-trace/pony-knucleotide-compact-precedence-v4-trace",
+            "1000",
+            "--ponymaxthreads",
+            "8"
+          ],
+          "inherited_common_mutex": true,
+          "observer_registered_after_owned_active_journal": true
+        }
+      },
+      "qualified": true
+    },
+    {
+      "id": "pony-knucleotide-optimized-shift-types-v5",
+      "benchmark": "knucleotide",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v6/source-snapshot/revisions/shift-types-v5/sources/knucleotide/optimized/main.pony",
+      "source_sha256": "b2aef299eed92772a2d49c25bc64a3194010acf04d56fffc9b327bf53732d8d0",
+      "trace_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v3/source-snapshot/sources/knucleotide/optimized/main.pony",
+      "trace_source_sha256": "6b06103c087354020727d26d628db10fd830a588881c280c12237b04c64e5d51",
+      "binary_sha256": "94eeb5e6d81c86b530a0955b9589505ae1317dd5500b1ddda7570dabb7a38b8c",
+      "input_n": 1000,
+      "stdin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v3/inputs/knucleotide.fasta",
+      "complete_output_match": true,
+      "trace": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v3/executions/pony-knucleotide-optimized-shift-types-v5-trace/trace-native.stderr",
+      "trace_sha256": "718d34d3ed88af6da3dcee65a70ac4d0014ec66843c9efbe06cef19d6e611fc1",
+      "proof": {
+        "complete_work_trace": true,
+        "observed_compute_threads": [
+          6119829504,
+          6128250880,
+          6136672256,
+          6145093632,
+          6153515008,
+          6161936384,
+          6170357760,
+          6178779136
+        ],
+        "compute_thread_cap": 8,
+        "records": 118240,
+        "preparation_only": true,
+        "score_eligible": false,
+        "seven_complete_maps": true,
+        "windows": 70108,
+        "map_entries": {
+          "2": 16,
+          "1": 4,
+          "3": 64,
+          "6": 3705,
+          "4": 256,
+          "12": 10010,
+          "18": 10004
+        },
+        "ownership_transfer_exact": true,
+        "actual_record_mutation_rejections": [
+          "missing-work-record",
+          "too-many-scheduler-identities"
+        ]
+      },
+      "observations": {
+        "power_at_start": {
+          "source": "AC Power",
+          "low_power_mode": 0
+        },
+        "power_at_end": {
+          "source": "AC Power",
+          "low_power_mode": 0
+        },
+        "competing_compilers": [],
+        "power_changes": [],
+        "monitor_errors": [],
+        "resource_monitor_errors": [],
+        "resource_violation": null,
+        "peak_process_group_rss_kib": 0,
+        "native": {
+          "pid": 93233,
+          "pgid": 93233,
+          "command": [
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v3/bin/pony-knucleotide-optimized-shift-types-v5-trace/pony-knucleotide-optimized-shift-types-v5-trace",
+            "1000",
+            "--ponymaxthreads",
+            "8"
+          ],
+          "inherited_common_mutex": true,
+          "observer_registered_after_owned_active_journal": true
+        }
+      },
+      "qualified": true
+    },
+    {
+      "id": "pony-binarytrees-compact-precedence-v4",
+      "benchmark": "binarytrees",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v6/source-snapshot/revisions/precedence-v4/sources/binarytrees/compact/main.pony",
+      "source_sha256": "9fe1b9d288f21559aaf6d40706cd6fe3c969bfdddcbbaa0900fa3d97cc670a20",
+      "trace_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v5/source-snapshot/sources/binarytrees/compact/main.pony",
+      "trace_source_sha256": "67b5c7ce6add0835b9c09fb7c7ba09fcb0884bf019124433fa3a8ec8420497a4",
+      "binary_sha256": "824332338c078e32f132e73b52816db89690da555e81cf7024ce2c9c11ac4bdc",
+      "input_n": 6,
+      "stdin": null,
+      "complete_output_match": true,
+      "trace": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v5/executions/pony-binarytrees-compact-precedence-v4-trace/trace-native.stderr",
+      "trace_sha256": "ca6fba19c76c1b4c44c13f052b054c504af8bafc865d5a7624800d99c84da1f1",
+      "proof": {
+        "complete_work_trace": true,
+        "observed_compute_threads": [
+          6141865984
+        ],
+        "compute_thread_cap": 8,
+        "records": 13276,
+        "preparation_only": true,
+        "score_eligible": false,
+        "nodes_by_depth": {
+          "7": 1,
+          "6": 19,
+          "5": 38,
+          "4": 140,
+          "3": 280,
+          "2": 560,
+          "1": 1120,
+          "0": 2240
+        },
+        "leaf_objects": 2240,
+        "check_visits": 4398,
+        "observed_finalizers_by_depth": {
+          "0": 2240,
+          "2": 560,
+          "1": 1120,
+          "3": 280,
+          "4": 140,
+          "5": 38,
+          "6": 19,
+          "7": 1
+        },
+        "allocated_nodes": 4398,
+        "finalizer_completion_fraction": 1.0,
+        "long_root_retained": true,
+        "actual_graph_identities": true,
+        "concurrent_graphs_disjoint": true,
+        "long_graph_retained_across_all_worker_joins": true,
+        "long_root_identity": 5125914624,
+        "long_graph_nodes": 127,
+        "churn_roots": {
+          "4": 64,
+          "6": 16
+        },
+        "worker_done_records": 2,
+        "worker_join_records": 2,
+        "released_graph_identity_reuse_allowed": true,
+        "scored_binary_allocation_review_still_required": true,
+        "actual_record_mutation_rejections": [
+          "missing-work-record",
+          "too-many-scheduler-identities"
+        ]
+      },
+      "observations": {
+        "power_at_start": {
+          "source": "AC Power",
+          "low_power_mode": 0
+        },
+        "power_at_end": {
+          "source": "AC Power",
+          "low_power_mode": 0
+        },
+        "competing_compilers": [],
+        "power_changes": [],
+        "monitor_errors": [],
+        "resource_monitor_errors": [],
+        "resource_violation": null,
+        "peak_process_group_rss_kib": 0,
+        "native": {
+          "pid": 81557,
+          "pgid": 81557,
+          "command": [
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v5/bin/pony-binarytrees-compact-precedence-v4-trace/pony-binarytrees-compact-precedence-v4-trace",
+            "6",
+            "--ponymaxthreads",
+            "8"
+          ],
+          "inherited_common_mutex": true,
+          "observer_registered_after_owned_active_journal": true
+        }
+      },
+      "qualified": true
+    },
+    {
+      "id": "pony-binarytrees-optimized-precedence-v4",
+      "benchmark": "binarytrees",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v6/source-snapshot/revisions/precedence-v4/sources/binarytrees/optimized/main.pony",
+      "source_sha256": "351177026d084edcdabdb79651db63fffcb68edaee223b908f31e55f606f295a",
+      "trace_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v5/source-snapshot/sources/binarytrees/optimized/main.pony",
+      "trace_source_sha256": "1fe9f5dbd501a7ecd3068c0858528a2acb2eb969548ca73be4c1c1ca899516e2",
+      "binary_sha256": "cc6a63b174212acaaaae4300148cb70da53b4ff4dbb83f4d4260bcb1dfc277c7",
+      "input_n": 6,
+      "stdin": null,
+      "complete_output_match": true,
+      "trace": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v5/executions/pony-binarytrees-optimized-precedence-v4-trace/trace-native.stderr",
+      "trace_sha256": "76d6a531661636c441103097ccf1e4329f300eca1715c7d4f38d7817a5bf02a2",
+      "proof": {
+        "complete_work_trace": true,
+        "observed_compute_threads": [
+          6106099712,
+          6114521088,
+          6122942464,
+          6131363840,
+          6139785216,
+          6148206592,
+          6156627968,
+          6165049344
+        ],
+        "compute_thread_cap": 8,
+        "records": 13276,
+        "preparation_only": true,
+        "score_eligible": false,
+        "nodes_by_depth": {
+          "7": 1,
+          "6": 19,
+          "5": 38,
+          "4": 140,
+          "3": 280,
+          "2": 560,
+          "1": 1120,
+          "0": 2240
+        },
+        "leaf_objects": 2240,
+        "check_visits": 4398,
+        "observed_finalizers_by_depth": {
+          "0": 2240,
+          "2": 560,
+          "1": 1120,
+          "3": 280,
+          "4": 140,
+          "5": 38,
+          "6": 19,
+          "7": 1
+        },
+        "allocated_nodes": 4398,
+        "finalizer_completion_fraction": 1.0,
+        "long_root_retained": true,
+        "actual_graph_identities": true,
+        "concurrent_graphs_disjoint": true,
+        "long_graph_retained_across_all_worker_joins": true,
+        "long_root_identity": 4597432320,
+        "long_graph_nodes": 127,
+        "churn_roots": {
+          "4": 64,
+          "6": 16
+        },
+        "worker_done_records": 16,
+        "worker_join_records": 16,
+        "released_graph_identity_reuse_allowed": true,
+        "scored_binary_allocation_review_still_required": true,
+        "actual_record_mutation_rejections": [
+          "missing-work-record",
+          "too-many-scheduler-identities"
+        ]
+      },
+      "observations": {
+        "power_at_start": {
+          "source": "AC Power",
+          "low_power_mode": 0
+        },
+        "power_at_end": {
+          "source": "AC Power",
+          "low_power_mode": 0
+        },
+        "competing_compilers": [],
+        "power_changes": [],
+        "monitor_errors": [],
+        "resource_monitor_errors": [],
+        "resource_violation": null,
+        "peak_process_group_rss_kib": 0,
+        "native": {
+          "pid": 81595,
+          "pgid": 81595,
+          "command": [
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v5/bin/pony-binarytrees-optimized-precedence-v4-trace/pony-binarytrees-optimized-precedence-v4-trace",
+            "6",
+            "--ponymaxthreads",
+            "8"
+          ],
+          "inherited_common_mutex": true,
+          "observer_registered_after_owned_active_journal": true
+        }
+      },
+      "qualified": true
+    }
+  ],
+  "reader_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v1/jobs/reader-llvm23-v1/reader.json",
+  "reader_sha256": "054c7a9e376f4dc883e5e7cab60dd6193cd67d4080ee42099d4fe7c07978edca",
+  "prior_failed_body": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/native-evidence-recovery-v2/jobs/scored-bitcode-v2/terminal.json",
+    "sha256": "0f3248e5a2f135906c6f66588e989fcf567a88954c407fa1842fed1a0a0dcb39"
+  },
+  "compact_compile_reexecutions": 0,
+  "compact_entry_decode_reexecutions": 0,
+  "reader_qualification_reexecutions": 0,
+  "actual_missing_evidence_commands": 6,
+  "source_work_qualified": false,
+  "application_executions": 0,
+  "fixture_reexecutions": 0,
+  "full_performance_runs": 0,
+  "diagnostic_executable_substituted": false,
+  "original_failures_preserved": true,
+  "final_LTO_ARM_review_required": true,
+  "minimum_OS_compatibility_proven": false
+}

@@ -1,0 +1,32 @@
+{
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/MacOS/swipl",
+    "-q",
+    "-O",
+    "-f",
+    "none",
+    "--stack-limit=8g",
+    "-l",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-spectralnorm-optimized/input/support/clbg_io.qlf",
+    "-l",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/prepare-success-halt-v1/tools/prepare_qlf.pl",
+    "-g",
+    "clbg_prepare:main",
+    "--",
+    "inspect",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-spectralnorm-optimized/input/sources/spectralnorm/optimized.qlf",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-spectralnorm-optimized/loaded-inputs.json",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-spectralnorm-optimized/original-scored.wam",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-spectralnorm-optimized/input"
+  ],
+  "started_at": "2026-10-13T23:11:37.077753+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 120,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 37777,
+  "identity": {
+    "pid": 37777,
+    "process_listing": "Tue Oct 13 19:11:37 2026     /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/MacOS/swipl -q -O -f none --stack-limit=8g -l /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-spectralnorm-optimized/input/support/clbg_io.qlf -l /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/prepare-success-halt-v1/tools/prepare_qlf.pl -g clbg_prepare:main -- inspect /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-spectralnorm-optimized/input/sources/spectralnorm/optimized.qlf /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-spectralnorm-optimized/loaded-inputs.json /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-spectralnorm-optimized/original-scored.wam /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-spectralnorm-optimized/input"
+  }
+}

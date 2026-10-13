@@ -1,0 +1,135 @@
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-binarytrees-compact/input/support/clbg_io.pl'
+========================================================================
+clbg_io:size/1
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x11b688b70)):
+----------------------------------------
+       0 i_enter
+       1 b_atom(argv)
+       3 b_firstvar(1)
+       5 i_call(current_prolog_flag/2)
+       7 c_ifthenelse(3,'L1')
+      10 b_unify_var(1)
+      12 h_list
+      13 h_firstvar(2)
+      15 h_pop
+      16 b_unify_exit
+      17 b_functor(atom_number/2)
+      19 b_argvar(2)
+      21 b_argvar(0)
+      23 b_pop
+      24 b_void
+      25 b_atom(fail)
+      27 i_call(catch/3)
+      29 i_integer(0)
+      31 a_enter
+      32 a_var0
+      33 a_integer(0)
+      35 a_ge
+      36 c_cut(3)
+      38 i_true
+      39 c_jmp('L2')
+L1:   41 b_functor(error/2)
+      43 b_functor(domain_error/2)
+      45 b_atom(nonnegative_integer_argument)
+      47 b_argvar(1)
+      49 b_pop
+      50 b_rfunctor((:)/2)
+      52 b_atom(clbg_io)
+      54 b_rfunctor((/)/2)
+      56 b_atom(size)
+      58 b_smallint(1)
+      60 b_pop
+      61 i_depart(throw/1)
+      63 c_var(2)
+L2:   65 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-binarytrees-compact/input/support/clbg_io.pl'
+========================================================================
+clbg_io:report_error/1
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x11b6887e0)):
+----------------------------------------
+       0 i_enter
+       1 b_atom(error)
+       3 b_var0
+       4 i_call(print_message/2)
+       6 l_nolco('L1')
+       8 l_smallint(0,1)
+      11 i_lcall(halt/1)
+L1:   13 b_smallint(1)
+      15 i_depart(halt/1)
+      17 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-binarytrees-compact/input/support/clbg_io.pl'
+========================================================================
+clbg_io:run/1
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x11b688580)):
+----------------------------------------
+       0 i_enter
+       1 b_functor(run_checked/1)
+       3 b_argvar(0)
+       5 b_pop
+       6 b_firstvar(1)
+       8 b_functor(report_error/1)
+      10 b_argvar(1)
+      12 b_pop
+      13 i_call(catch/3)
+      15 l_nolco('L1')
+      17 l_smallint(0,0)
+      20 i_lcall(halt/1)
+L1:   22 b_smallint(0)
+      24 i_depart(halt/1)
+      26 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-binarytrees-compact/input/support/clbg_io.pl'
+========================================================================
+clbg_io:run_checked/1
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x11b6888b0)):
+----------------------------------------
+       0 i_enter
+       1 b_atom(user_input)
+       3 b_functor(encoding/1)
+       5 b_atom(octet)
+       7 b_pop
+       8 i_call(set_stream/2)
+      10 b_atom(user_output)
+      12 b_functor(encoding/1)
+      14 b_atom(octet)
+      16 b_pop
+      17 i_call(set_stream/2)
+      19 c_ifthenelse(1,'L1')
+      22 b_var0
+      23 i_call1
+      24 c_cut(1)
+      26 l_nolco('L2')
+      28 l_atom(0,user_output)
+      31 i_lcall(flush_output/1)
+L2:   33 b_atom(user_output)
+      35 i_depart(flush_output/1)
+      37 c_jmp('L3')
+L1:   39 b_functor(error/2)
+      41 b_atom(application_goal_failed)
+      43 b_rfunctor((:)/2)
+      45 b_atom(clbg_io)
+      47 b_rfunctor((/)/2)
+      49 b_atom(run)
+      51 b_smallint(1)
+      53 b_pop
+      54 i_depart(throw/1)
+L3:   56 i_exit

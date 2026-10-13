@@ -1,0 +1,20 @@
+{
+  "status": "command-exited-zero-awaiting-report-review",
+  "started_at": "2026-10-13T23:26:21.372299+00:00",
+  "worker_identity": {
+    "pid": 45348,
+    "listing": "45348     1 Tue Oct 13 19:26:21 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/nim-native-formatted20-v1 --lease-fd 3 --go-fd 4"
+  },
+  "actual_command_started": true,
+  "exit_code": 0,
+  "qualification_granted": false,
+  "automatic_retry": false,
+  "command_pid": 45354,
+  "command_identity": {
+    "pid": 45354,
+    "listing": "45354 45348 Tue Oct 13 19:26:21 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -I -S -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/measure.py --plan /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/formatted-nim-plan-v1/jobs/actual-plans-v1/cohort-plan.json --plan-sha256 dddc2ee8b22bac0081351633ce89e23c0d88a404b2cd01b81ee6d778cf8b281b --revision nim-native20-v1"
+  },
+  "command_identity_observation_missing": false,
+  "finished_at": "2026-10-13T23:27:35.630230+00:00",
+  "stop_signals": []
+}

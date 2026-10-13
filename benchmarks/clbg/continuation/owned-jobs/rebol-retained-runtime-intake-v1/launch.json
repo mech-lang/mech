@@ -1,0 +1,29 @@
+{
+  "status": "durable-job-launched",
+  "launched_at": "2026-10-13T23:23:47.862015+00:00",
+  "job": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/rebol-retained-runtime-intake-v1",
+  "worker_identity": {
+    "pid": 43670,
+    "listing": "43670 43669 Tue Oct 13 19:23:47 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/rebol-retained-runtime-intake-v1 --lease-fd 3 --go-fd 4"
+  },
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/rebol-comparison/20261013/revisions/retained-runtime-intake-v1/intake.py",
+    "--worker-sha256",
+    "d439a5e39d05741e0e5da71de8621e686acf75a9704c638e49c9ebb37de8c351",
+    "--review-sha256",
+    "3063b35c8e8e26fc1ca40e7f3d81fa931794d762c49e7288cd07111d8a7fa0c3",
+    "--seal-terminal-sha256",
+    "1bcf9599ff6b3c200f2fb03ec5fb6fe0d79b656ac605a2098efc35535462d9ec",
+    "--owner-terminal-sha256",
+    "1fe91e1fcc54710e4ae9002e57456f6b52adaa1f5e762ca0583ae4474ab9163f"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "detached_session": true,
+  "automatic_retry": false,
+  "qualification_granted": false
+}

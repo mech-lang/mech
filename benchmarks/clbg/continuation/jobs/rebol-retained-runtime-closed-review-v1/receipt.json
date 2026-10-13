@@ -1,0 +1,72 @@
+{
+  "at": "2026-10-13T23:24:37.540352+00:00",
+  "status": "closed-native-successful-intake-stopped-at-boolean-text-parser",
+  "verified_pins": 152,
+  "report_sha256": "6fd68b183d0469cb13dcfcbbbb7611bbd77eaaf8cbdbb07dca30db91b133709f",
+  "body_terminal_sha256": "94b18e8f91650ff36763a7fcf317df01d378385f7cc750294e216ee5a5dc2e93",
+  "durable_terminal_sha256": "783652242552ea7691bd6d4f6c6e7efc3a48e3f9f02905400b87c951c9d84aec",
+  "successful_native_commands": [
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/rebol-comparison/20261013/runtime-qualification/retained-intake-v1/images/architecture.json",
+      "sha256": "b88be01b676f846c4147950a74083d864ee8a3c43bc6f8a58393faf6a5f6a57b",
+      "command": [
+        "/usr/bin/lipo",
+        "-archs",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/rebol-comparison/20261013/.build/runtime-v1/runtime/rebol3"
+      ]
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/rebol-comparison/20261013/runtime-qualification/retained-intake-v1/images/linked-images.json",
+      "sha256": "a741f8aef173bbc1a8266bc03c4e1a4d2101ff8fb74a8f713e02473c4017365d",
+      "command": [
+        "/usr/bin/otool",
+        "-L",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/rebol-comparison/20261013/.build/runtime-v1/runtime/rebol3"
+      ]
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/rebol-comparison/20261013/runtime-qualification/retained-intake-v1/images/mach-header.json",
+      "sha256": "a07b83d79ac29bdf88122ed3cf97b3a8e7fd15e2be2469a84393916d892e3788",
+      "command": [
+        "/usr/bin/otool",
+        "-hv",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/rebol-comparison/20261013/.build/runtime-v1/runtime/rebol3"
+      ]
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/rebol-comparison/20261013/runtime-qualification/retained-intake-v1/queries/version.json",
+      "sha256": "e3f3fa006c11b8561e9a9acde4aebed4aade9fb47b5111ae652649d8aae9ce04",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/rebol-comparison/20261013/.build/runtime-v1/runtime/rebol3",
+        "-v"
+      ]
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/rebol-comparison/20261013/runtime-qualification/retained-intake-v1/queries/features.json",
+      "sha256": "affa3bb9681a937ca56eb46399367de99d9194aa8648377cc68cf99d85e0cff1",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/rebol-comparison/20261013/.build/runtime-v1/runtime/rebol3",
+        "-q",
+        "-s",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/rebol-comparison/20261013/revisions/runtime-v1/runtime_probe.reb",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/rebol-comparison/20261013/runtime-qualification/retained-intake-v1/regular-file-all-bytes.bin"
+      ]
+    }
+  ],
+  "runtime_archive_downloads": 1,
+  "source_archive_downloads": 0,
+  "actual_boolean_serialization": {
+    "true": "#(true)",
+    "false": "#(false)"
+  },
+  "automatic_gc_counts": [
+    1,
+    46
+  ],
+  "regular_file_all256_bytes_verified": true,
+  "features_stderr_empty": true,
+  "source_tree_present": false,
+  "fixture_reexecutions": 0,
+  "benchmark_runs": 0,
+  "runtime_configuration_admitted": false
+}

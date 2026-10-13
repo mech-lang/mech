@@ -1,0 +1,19 @@
+{
+  "at": "2026-10-13T23:32:30.295951+00:00",
+  "status": "closed-complete-Rebol-saved-runtime-and-full-commit-source-intake",
+  "verified_pins": 1064,
+  "report_sha256": "0b467ff8c3fc42ba66e8a83b24d1ad412b37bc5eae43c4a990ee93f4c8d9fe42",
+  "body_terminal_sha256": "21059d5c19ee7d26b8f50d9475e105a7249781c1b690adac776ab7f4444ab373",
+  "durable_terminal_sha256": "56e4ff4edc603ab063e85934baae0cc70d2bfec94eb92df7cd39637567a51da7",
+  "source_archive_sha256": "48df5f2c4cc62d7b4085c908427dd6a698540c32ec4c2a7893a2e5c0d639f671",
+  "source_files": 898,
+  "successful_native_commands_reused": 5,
+  "native_commands": 0,
+  "runtime_downloads": 0,
+  "source_downloads": 1,
+  "fixture_reexecutions": 0,
+  "benchmark_runs": 0,
+  "source_tree_commit_independently_verified": false,
+  "generated_headers_verified": false,
+  "runtime_configuration_admitted": false
+}

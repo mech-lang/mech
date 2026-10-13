@@ -1,0 +1,34 @@
+{
+  "started_at": "2026-10-13T23:28:56.835385+00:00",
+  "command_pid": 46962,
+  "command_identity": {
+    "pid": 46962,
+    "listing": "46962 46958 Tue Oct 13 19:28:56 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -I -S -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/retained-otp-intake-v1/intake.py --revision retained-otp-toolchain-v1 --worker-sha256 51512225c30d507b1f19eef119b1402ef6455a9682d4b6cb1b80b90b5cb44cd9 --probe-sha256 95ed4047ce05389cf86421acbc8a95b20dc865fe41d3bac99d2d72901fcb5aad --runner-sha256 bdad2389d437fd4c69122e5d25b3065412b4bca0c272631667283273392ba8ff --review-sha256 36500ff5d22c1e2a48701a2d13b615e3bc51f2dd1ee3ff2f0f1b66d285af503c --input-pins-file /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/proposals/retained-otp-inputs-v1.json --input-pins-sha256 ca683f61769bc6c7930ae6d1e7c29eb55982cb9119200846b33d0b8edb215456 --runtime-review-sha256 406ac95e0f93b99efc26d7bb62d0fe593568860c8d6cc3b8bfa39918ca1f9cdc"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/retained-otp-intake-v1/intake.py",
+    "--revision",
+    "retained-otp-toolchain-v1",
+    "--worker-sha256",
+    "51512225c30d507b1f19eef119b1402ef6455a9682d4b6cb1b80b90b5cb44cd9",
+    "--probe-sha256",
+    "95ed4047ce05389cf86421acbc8a95b20dc865fe41d3bac99d2d72901fcb5aad",
+    "--runner-sha256",
+    "bdad2389d437fd4c69122e5d25b3065412b4bca0c272631667283273392ba8ff",
+    "--review-sha256",
+    "36500ff5d22c1e2a48701a2d13b615e3bc51f2dd1ee3ff2f0f1b66d285af503c",
+    "--input-pins-file",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/proposals/retained-otp-inputs-v1.json",
+    "--input-pins-sha256",
+    "ca683f61769bc6c7930ae6d1e7c29eb55982cb9119200846b33d0b8edb215456",
+    "--runtime-review-sha256",
+    "406ac95e0f93b99efc26d7bb62d0fe593568860c8d6cc3b8bfa39918ca1f9cdc"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech"
+}

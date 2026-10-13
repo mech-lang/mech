@@ -1,0 +1,15 @@
+{
+  "at": "2026-10-13T23:26:15.975808+00:00",
+  "status": "closed-qualified-Nim20-21input-native-formatter-plan",
+  "verified_pins": 39221,
+  "plan_sha256": "dddc2ee8b22bac0081351633ce89e23c0d88a404b2cd01b81ee6d778cf8b281b",
+  "body_terminal_sha256": "e4fa620d9979a56991e5edf1c4b4a670f78edb6140f4c5d6f46f741dc023b2d2",
+  "durable_terminal_sha256": "181807b4b16891cade38c3aca9b7d1fcdc4058f2f625c1a50cf0d70a19bf5d2f",
+  "profiles": 20,
+  "authored_inputs": 21,
+  "counted_GMP_helper_included": true,
+  "actual_formatter_version_observation_pending": true,
+  "actual_native_processes": 0,
+  "fixture_reexecutions": 0,
+  "chart_admission": false
+}

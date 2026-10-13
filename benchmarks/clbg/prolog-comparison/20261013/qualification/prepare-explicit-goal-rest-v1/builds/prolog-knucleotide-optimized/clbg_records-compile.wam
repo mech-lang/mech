@@ -1,0 +1,131 @@
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-knucleotide-optimized/input/support/clbg_records.pl'
+========================================================================
+clbg_records:third_header/1
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x11162a680)):
+----------------------------------------
+       0 i_enter
+       1 b_var0
+       2 b_smallint(0)
+       4 b_smallint(6)
+       6 b_void
+       7 b_string(">THREE")
+      10 i_call(sub_string/5)
+      12 b_var0
+      13 b_firstvar(1)
+      15 i_call(string_length/2)
+      17 c_fastcond(3,'L1')
+      20 a_enter
+      21 a_var1
+      22 a_integer(6)
+      24 a_eq
+      25 c_fastcut(3)
+      27 i_true
+      28 c_var(2)
+      30 c_jmp('L2')
+L1:   32 b_smallint(7)
+      34 b_var0
+      35 b_firstvar(2)
+      37 i_call(get_string_code/3)
+      39 c_fastcond(4,'L3')
+      42 a_enter
+      43 a_var2
+      44 a_integer(32)
+      46 a_eq
+      47 c_fastcut(4)
+      49 i_true
+      50 c_jmp('L2')
+L3:   52 a_enter
+      53 a_var2
+      54 a_integer(9)
+      56 a_eq
+L2:   57 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-knucleotide-optimized/input/support/clbg_records.pl'
+========================================================================
+clbg_records:sequence/2
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x11162a450)):
+----------------------------------------
+       0 i_enter
+       1 b_var0
+       2 b_firstvar(2)
+       4 i_call(reverse/2)
+       6 b_var2
+       7 b_string("")
+      10 b_var1
+      11 i_depart(atomics_to_string/3)
+      13 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-knucleotide-optimized/input/support/clbg_records.pl'
+========================================================================
+clbg_records:line/1
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x11162a180)):
+----------------------------------------
+       0 i_enter
+       1 b_atom(user_input)
+       3 b_string("\r\n")
+       6 b_string("")
+       9 b_firstvar(1)
+      11 b_firstvar(2)
+      13 i_call(read_string/5)
+      15 c_ifthenelse(3,'L1')
+      18 a_enter
+      19 a_var1
+      20 a_integer(-1)
+      22 a_eq
+      23 b_var2
+      24 b_string("")
+      27 i_call((==)/2)
+      29 c_cut(3)
+      31 b_unify_vc(0,end_of_file)
+      34 c_jmp('L2')
+L1:   36 b_unify_vv(0,2)
+L2:   39 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-knucleotide-optimized/input/support/clbg_records.pl'
+========================================================================
+clbg_records:header/1
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x11162a300)):
+----------------------------------------
+       0 i_enter
+       1 b_var0
+       2 b_smallint(0)
+       4 b_smallint(1)
+       6 b_void
+       7 b_string(">")
+      10 i_depart(sub_string/5)
+      12 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-knucleotide-optimized/input/support/clbg_records.pl'
+========================================================================
+clbg_records:comment/1
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x111629db0)):
+----------------------------------------
+       0 i_enter
+       1 b_var0
+       2 b_smallint(0)
+       4 b_smallint(1)
+       6 b_void
+       7 b_string(";")
+      10 i_depart(sub_string/5)
+      12 i_exit

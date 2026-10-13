@@ -1,6 +1,6 @@
-Benchmark progress as of **2026-10-13 23:07 UTC** (19:07 New York).
+Benchmark progress as of **2026-10-13 23:33 UTC** (19:33 New York).
 
-The previous remotely verified checkpoint is `e13944851c8a570da756b70f9df2d613386ef6f8`
+The previous remotely verified checkpoint is `c799ab6a8263ca0a125a8185ed1dbe2885286f1d`
 on `codex/clbg-native-benchmarks`. The language overview and complete Crystal
 inventory are published. C3's exact source counts, runtime metadata and current
 chart candidate have qualified and are now published through GitLab Pages
@@ -14,15 +14,16 @@ actual request, process identity and exit.
 |---|---:|---|
 | Crystal | 90/90 | Published with 20 source forms and 60 candidate samples, plus 30 matched Mech samples in the complete study. |
 | C3 | 90/90 | Published through GitLab Pages. Source counts, runtime metadata and current dataset qualified; all 20 forms / 60 candidate samples passed browser inspection. |
-| Nim | 90/90 | Published through GitLab Pages with all 20 forms and 60 candidate samples. Exact LOC, runtime metadata and current dataset checks passed; all 21 authored inputs, including GMP glue, are counted. |
+| Nim | 90/90 | Published through GitLab Pages with all 20 forms and 60 candidate samples. Exact LOC and runtime metadata passed. Native formatting now also passed for all 21 authored inputs, including GMP glue; its 20 complete formatted totals await the next dataset update. |
 | Gleam | 90/90 | Full-suite reconciliation and complete source admission passed: 20 bundles, 30 unique authored sources and 104 measured copies. Runtime publication metadata passed for all20 forms; current chart integration remains. |
 | Clojure | 90/90 | Published. Full-suite, LOC, JVM metadata and current dataset admission passed. Root verified 5,276 candidate pins; 20 forms / 60 candidate samples are retained, with 18 selected endpoints. Public browser inspection confirmed all 20 forms and 60 runs. |
 | V | 90/90 | Full workload samples collected, including eight missing tree slots recovered additively. Independent all-ten reconciliation passed. Report-only; excluded from dataset, charts and Site. |
-| Pony | 0/90 | Both tree observations and four Pi/map traces are retained. The existing-evidence capture exited normally; original authored main IR was overwritten by builtin output. Separate compact entry bitcode and IR are recovered. Runtime target merge confirmation and remaining optimized native evidence are pending. |
-| Prolog | 0/90 | SWI-Prolog 10.0.2 ARM64 runtime qualified. Moving successful shutdown outside the catch wrapper fixed exit status; actual feature probe and seven-image closure passed. The first corrected bounded workload case passed using the existing compiled artifacts. The remaining155 cases/19 builds, work/LOC checks and full samples remain. |
+| Pony | 0/90 | Both tree observations and four Pi/map traces are retained. Separate compact and optimized entry/builtin IR and original scored ARM are recovered; the bundled runtime's macOS26 target was confirmed. Semantic review supports fresh tree objects, with temporary-root stack/register promotion explicitly recorded. Final work/LOC admission and full samples remain. |
+| Prolog | 0/90 | SWI-Prolog 10.0.2 ARM64 runtime qualified. All 156 bounded correctness cases across 20 source forms passed. The first successful case and compiled artifacts were reused; 155 new cases and 19 additional forms completed. Work/LOC checks and full samples remain. |
 | Julia AOT | 0 qualified | Kernel-image binding repaired. Both bounded debugger calibration cells timed out; no native AOT helper executed. No permission cause is established. An official safe-trim/stripped-IR route is documented for the next additive attempt. |
-| Rebol | 0/90 | Faithful source bundle and six runtime intake fixtures retained; actual SDK/runtime/build/work/LOC/full qualification remains. |
-| Elixir / Kotlin | 0/90 each | Reviewed source bundles are frozen and pushed. Actual toolchain and complete qualification remain. |
+| Rebol | 0/90 | Publisher runtime and all five native image/version/feature commands succeeded. A narrow parser correction reused those outputs, then obtained the full-commit source archive and 898 source files without another native command. SDK, extension, pipe I/O, work/LOC and full samples remain. |
+| Elixir | 0/90 | Official compiler archive and checksum verified; 20 main/helper/counted-runner bundles materialized. The shell dry-run succeeded, then the expected argv spelling check stopped. Actual version/configuration, compilation, work/LOC and full qualification remain. |
+| Kotlin | 0/90 | Reviewed source bundle is frozen and pushed. Actual toolchain and complete qualification remain. |
 
 These are snapshots of completed qualified sample records, not forecasts or
 extrapolations. Each complete cohort comprises ten workloads, two source forms
@@ -56,6 +57,69 @@ qualifies 120 platform and 97 execution annotations across 133 retained rows;
 13 rows remain explicitly unclassified. Filters are now integrated into the published Site. Unproved aggregate backends remain Unclassified. Successful historical samples and
 original failures remain immutable; additive repairs reuse successful evidence
 instead of relabeling it as a fresh run.
+
+## Native formatter and retained compiler evidence — 2026-10-13 23:31 UTC
+
+Nim's plan preparation passed with 39,221 checked pins. The native formatting
+batch then passed for all 20 program forms and all 21 authored files using
+the retained official nimpretty 0.2 image. Root checked 39,561 pins, every
+formatter command's normal completion and each complete physical count.
+The optimized Pi bundle has 79 formatted lines, including its 18-line authored
+GMP helper. All source bytes and timing samples remain unchanged. Qualification
+SHA: `4e6dd5fe9cc4eb33f8ff6205d8812f196220987406f3e01013f76c99af8ebaaf`.
+These totals are qualified locally and await chart integration.
+
+Pony's six remaining native evidence commands completed normally at 23:21:56;
+root checked 10,198 pins. The vendor runtime bitcode actually declares
+`arm64-apple-macosx26.0.0`, confirming the merge explanation for the earlier
+target check. Separate entry and builtin IR are retained for both tree forms,
+together with original production ARM. Source review records compiler stack/
+register promotion of a temporary root, fresh recursive descendants and the
+retained long-lived root. These facts are not a claim that every node uses a
+heap allocation. A compatible work receipt and final semantic admission remain.
+
+Rebol's first runtime intake produced five successful native command receipts,
+automatic GC counts of 1 then 46, and all 256 exact regular-file bytes. Parsing
+stopped because the real runtime prints `#(true)` / `#(false)`. Root checked
+152 pins; the source archive had not yet been requested. The additive source
+continuation subsequently passed at 23:31:59 UTC, reusing all five native
+commands and obtaining 898 source files without another runtime download or
+native command. Root checked 1,064 pins. The newly captured source archive SHA
+is `48df5f2c4cc62d7b4085c908427dd6a698540c32ec4c2a7893a2e5c0d639f671`.
+Generated headers, source-tree correspondence and extension/pipe/work gates
+remain pending.
+
+Elixir's publisher checksum/archive, extraction and all 20 source bundles were
+preserved before an argv check stopped. The official launcher resets ERTS_BIN,
+prints PATH-resolved `erl`, and retains `bin/../lib` spelling in its dry run.
+The assumed absolute normalized argv was wrong. Root checked 7,741 pins;
+version/configuration probes and subject compilation never ran. Any continuation
+must use the actual launcher/PATH semantics and retain these successful steps.
+
+## Complete Prolog bounded preparation — 2026-10-13 23:22 UTC
+
+Prolog's remaining preparation completed normally at 23:16:51 UTC (durable
+worker 36316, target 36320). Root independently rechecked 14,611 file hashes,
+all 156 distinct case identities and all 20 output/ownership checks per case.
+All 20 program forms have exact compiler-input inventories and bounded output
+qualification. The run added 19 built forms and 155 cases, reusing the first
+successful case, three compiler commands and two QLF artifacts. No full timing
+sample or work/LOC admission is claimed. The report SHA is
+`cab6ea7f3bd8a237f8f83833ed9b9cc293bbe1878cc8a894d74fdcf41f7ffbff`;
+the root review is `continuation/jobs/prolog-remaining155-closed-review-v1/receipt.json`.
+
+Gleam's first current-data integration stopped before binding inputs because
+root omitted read-only permissions on reviewed sources. A separate corrected
+attempt retained that failure and passed the original evidence checks, then
+found a genuine adapter mismatch: its qualified LOC metric has no `expansions`
+field expected by the older chart adapter. The second failure's 53,538 pins
+were checked; no candidate or live dataset was written, and no fixture or
+benchmark was repeated. Its source mapping needs an additive correction.
+
+The public Samples Off fix remains live in website commit
+`5934c73a39a9b565bda5c08c5cc9f502fa24b360`. The recorded live check with
+Samples Off / Medians Highlight / Density Off finds zero raw-run marks and
+zero extra background endpoints; the 99 language-summary endpoints remain.
 
 ## Formatted/platform publication and actual native preparation — 2026-10-13 23:07 UTC
 

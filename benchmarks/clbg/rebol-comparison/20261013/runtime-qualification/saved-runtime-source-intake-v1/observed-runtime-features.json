@@ -1,0 +1,42 @@
+{
+  "fields": {
+    "version": "3.22.1",
+    "platform": "macOS",
+    "function_is_interpreted_value": true,
+    "function_is_native_value": false,
+    "dynamic_rebinding": true,
+    "fresh_block_identity": true,
+    "automatic_gc_before": 1,
+    "automatic_gc_after": 46
+  },
+  "observations": {
+    "interpreted_function_value_observed": true,
+    "automatic_default_gc_observed": true,
+    "regular_file_bytes_verified": true,
+    "pipe_stdin_stdout_bytes_verified": false,
+    "extension_abi_verified": false,
+    "generated_headers_verified": false,
+    "native_application_aot_proven": false,
+    "native_machine_code_jit_proven": false,
+    "runtime_configuration_admitted": false,
+    "source_work_qualified": false,
+    "full_processes_authorized": 0
+  },
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/rebol-comparison/20261013/.build/runtime-v1/runtime/rebol3",
+    "-q",
+    "-s",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/rebol-comparison/20261013/revisions/runtime-v1/runtime_probe.reb",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/rebol-comparison/20261013/runtime-qualification/retained-intake-v1/regular-file-all-bytes.bin"
+  ],
+  "original_stdout": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/rebol-comparison/20261013/runtime-qualification/retained-intake-v1/queries/features.stdout",
+    "sha256": "b7282047efd8577708cb03a6c05c66273dc1bba2f514ee9e3ef40fbb1ed9b596"
+  },
+  "boolean_serialization": "exact #(true)/#(false) mold values",
+  "runtime_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/rebol-comparison/20261013/.build/runtime-v1/runtime/rebol3",
+  "runtime_binary_sha256": "27e255625d4d9928f5d726d3f2546fa64ff82a09a2b971cbc3a236a0bbed08a2",
+  "native_commands_reexecuted": 0,
+  "regular_byte_output": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/rebol-comparison/20261013/runtime-qualification/retained-intake-v1/regular-file-all-bytes.bin",
+  "regular_byte_output_sha256": "40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880"
+}

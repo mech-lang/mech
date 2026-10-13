@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/rebol-comparison/20261013/revisions/retained-runtime-intake-v1/intake.py", line 222, in <module>
+    main()
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/rebol-comparison/20261013/revisions/retained-runtime-intake-v1/intake.py", line 215, in main
+    raise failure
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/rebol-comparison/20261013/revisions/retained-runtime-intake-v1/intake.py", line 166, in main
+    base.bootstrap(argparse.Namespace(proposal_sha256=PROPOSAL_SHA), output, pins, inherited, report)
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/rebol-comparison/20261013/revisions/runtime-v1/bootstrap_runtime.py", line 249, in bootstrap
+    fields=parse_probe(probe['stdout']);observed=c.observations(fields,bytefile.read_bytes())
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/rebol-comparison/20261013/revisions/runtime-v1/bootstrap_runtime.py", line 202, in parse_probe
+    elif key not in {'version','platform'}:assert value in {'true','false'};value=value=='true'
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

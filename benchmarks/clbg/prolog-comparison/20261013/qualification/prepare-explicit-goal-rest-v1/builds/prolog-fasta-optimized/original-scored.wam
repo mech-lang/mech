@@ -1,0 +1,647 @@
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-fasta-optimized/input/sources/fasta/optimized.pl'
+========================================================================
+clbg_fasta:cumulative/3
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x145e2c690)):
+----------------------------------------
+       0 h_nil
+       1 h_void
+       2 h_nil
+       3 i_exitfact
+----------------------------------------
+clause 2 (<clause>(0x145e2ca30)):
+----------------------------------------
+       0 h_list
+       1 h_functor((-)/2)
+       3 h_firstvar(3)
+       5 h_firstvar(4)
+       7 h_pop
+       8 h_firstvar(5)
+      10 h_pop
+      11 h_void
+      12 h_list
+      13 h_functor((-)/2)
+      15 h_var(3)
+      17 h_firstvar(6)
+      19 h_pop
+      20 h_firstvar(7)
+      22 h_pop
+      23 i_enter
+      24 b_var(6)
+      26 a_enter
+      27 a_var(4)
+      29 a_var1
+      30 a_add
+      31 a_is
+      32 l_nolco('L1')
+      34 l_var(0,5)
+      37 l_var(1,6)
+      40 l_var(2,7)
+      43 i_tcall
+L1:   44 b_var(5)
+      46 b_var(6)
+      48 b_var(7)
+      50 i_depart(cumulative/3)
+      52 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-fasta-optimized/input/sources/fasta/optimized.pl'
+========================================================================
+clbg_fasta:alu/1
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x145e2c490)):
+----------------------------------------
+       0 h_string("GGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAA")
+      39 i_exitfact
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-fasta-optimized/input/sources/fasta/optimized.pl'
+========================================================================
+clbg_fasta:iub/1
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x156073400)):
+----------------------------------------
+       0 h_list
+       1 h_functor((-)/2)
+       3 h_smallint(97)
+       5 h_float(0.27)
+       7 h_pop
+       8 h_rlist
+       9 h_functor((-)/2)
+      11 h_smallint(99)
+      13 h_float(0.12)
+      15 h_pop
+      16 h_rlist
+      17 h_functor((-)/2)
+      19 h_smallint(103)
+      21 h_float(0.12)
+      23 h_pop
+      24 h_rlist
+      25 h_functor((-)/2)
+      27 h_smallint(116)
+      29 h_float(0.27)
+      31 h_pop
+      32 h_rlist
+      33 h_functor((-)/2)
+      35 h_smallint(66)
+      37 h_float(0.02)
+      39 h_pop
+      40 h_rlist
+      41 h_functor((-)/2)
+      43 h_smallint(68)
+      45 h_float(0.02)
+      47 h_pop
+      48 h_rlist
+      49 h_functor((-)/2)
+      51 h_smallint(72)
+      53 h_float(0.02)
+      55 h_pop
+      56 h_rlist
+      57 h_functor((-)/2)
+      59 h_smallint(75)
+      61 h_float(0.02)
+      63 h_pop
+      64 h_rlist
+      65 h_functor((-)/2)
+      67 h_smallint(77)
+      69 h_float(0.02)
+      71 h_pop
+      72 h_rlist
+      73 h_functor((-)/2)
+      75 h_smallint(78)
+      77 h_float(0.02)
+      79 h_pop
+      80 h_rlist
+      81 h_functor((-)/2)
+      83 h_smallint(82)
+      85 h_float(0.02)
+      87 h_pop
+      88 h_rlist
+      89 h_functor((-)/2)
+      91 h_smallint(83)
+      93 h_float(0.02)
+      95 h_pop
+      96 h_rlist
+      97 h_functor((-)/2)
+      99 h_smallint(86)
+     101 h_float(0.02)
+     103 h_pop
+     104 h_rlist
+     105 h_functor((-)/2)
+     107 h_smallint(87)
+     109 h_float(0.02)
+     111 h_pop
+     112 h_rlist
+     113 h_functor((-)/2)
+     115 h_smallint(89)
+     117 h_float(0.02)
+     119 h_pop
+     120 h_nil
+     121 h_pop
+     122 i_exitfact
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-fasta-optimized/input/sources/fasta/optimized.pl'
+========================================================================
+clbg_fasta:homo/1
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x145e2c300)):
+----------------------------------------
+       0 h_list
+       1 h_functor((-)/2)
+       3 h_smallint(97)
+       5 h_float(0.302954942668)
+       7 h_pop
+       8 h_rlist
+       9 h_functor((-)/2)
+      11 h_smallint(99)
+      13 h_float(0.1979883004921)
+      15 h_pop
+      16 h_rlist
+      17 h_functor((-)/2)
+      19 h_smallint(103)
+      21 h_float(0.1975473066391)
+      23 h_pop
+      24 h_rlist
+      25 h_functor((-)/2)
+      27 h_smallint(116)
+      29 h_float(0.3015094502008)
+      31 h_pop
+      32 h_nil
+      33 h_pop
+      34 i_exitfact
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-fasta-optimized/input/sources/fasta/optimized.pl'
+========================================================================
+clbg_fasta:main/0
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x145e2e1d0)):
+----------------------------------------
+       0 i_enter
+       1 b_firstvar(0)
+       3 i_call(size/1)
+       5 b_firstvar(1)
+       7 i_call(alu/1)
+       9 b_var1
+      10 b_firstvar(2)
+      12 i_call(string_length/2)
+      14 a_enter
+      15 a_var0
+      16 a_integer(2)
+      18 a_mul
+      19 a_firstvar_is(3)
+      21 b_atom('>ONE Homo sapiens alu~n')
+      23 b_nil
+      24 i_call(format/2)
+      26 b_var(3)
+      28 b_smallint(0)
+      30 b_var1
+      31 b_var2
+      32 i_call(repeat_lines/4)
+      34 b_firstvar(4)
+      36 i_call(iub/1)
+      38 b_var(4)
+      40 b_float(0.0)
+      42 b_firstvar(5)
+      44 i_call(cumulative/3)
+      46 a_enter
+      47 a_var0
+      48 a_integer(3)
+      50 a_mul
+      51 a_firstvar_is(6)
+      53 b_atom('>TWO IUB ambiguity codes~n')
+      55 b_nil
+      56 i_call(format/2)
+      58 b_var(6)
+      60 b_var(5)
+      62 b_smallint(42)
+      64 b_firstvar(7)
+      66 i_call(random_lines/4)
+      68 b_firstvar(8)
+      70 i_call(homo/1)
+      72 b_var(8)
+      74 b_float(0.0)
+      76 b_firstvar(9)
+      78 i_call(cumulative/3)
+      80 a_enter
+      81 a_var0
+      82 a_integer(5)
+      84 a_mul
+      85 a_firstvar_is(10)
+      87 b_atom('>THREE Homo sapiens frequency~n')
+      89 b_nil
+      90 i_call(format/2)
+      92 l_nolco('L1')
+      94 l_var(0,10)
+      97 l_var(1,9)
+     100 l_var(2,7)
+     103 l_void(3)
+     105 i_lcall(random_lines/4)
+L1:  107 b_var(10)
+     109 b_var(9)
+     111 b_var(7)
+     113 b_void
+     114 i_depart(random_lines/4)
+     116 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-fasta-optimized/input/sources/fasta/optimized.pl'
+========================================================================
+clbg_fasta:repeat_codes/6
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x145e2c840)):
+----------------------------------------
+       0 h_smallint(0)
+       2 h_void_n(3)
+       4 h_nil
+       5 h_var(1)
+       7 i_enter
+       8 i_cut
+       9 i_exit
+----------------------------------------
+clause 2 (<clause>(0x145e2cc20)):
+----------------------------------------
+       0 h_void_n(4)
+       2 h_list_ff(6,7)
+       5 i_enter
+       6 a_add_fc(8,1,1)
+      10 b_var(8)
+      12 b_var2
+      13 b_var(6)
+      15 i_call(get_string_code/3)
+      17 a_enter
+      18 a_var(3)
+      20 a_integer(1)
+      22 a_var1
+      23 a_add
+      24 a_func2((mod)/2)
+      26 a_firstvar_is(9)
+      28 a_add_fc(10,0,-1)
+      32 l_nolco('L1')
+      34 l_var(0,10)
+      37 l_var(1,9)
+      40 l_var(4,7)
+      43 i_tcall
+L1:   44 b_var(10)
+      46 b_var(9)
+      48 b_var2
+      49 b_var(3)
+      51 b_var(7)
+      53 b_var(5)
+      55 i_depart(repeat_codes/6)
+      57 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-fasta-optimized/input/sources/fasta/optimized.pl'
+========================================================================
+clbg_fasta:repeat_lines/4
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x145e2d1f0)):
+----------------------------------------
+       0 h_smallint(0)
+       2 i_enter
+       3 i_cut
+       4 i_exit
+----------------------------------------
+clause 2 (<clause>(0x145e2cfe0)):
+----------------------------------------
+       0 i_enter
+       1 a_enter
+       2 a_var0
+       3 a_integer(60)
+       5 a_func2(min/2)
+       7 a_firstvar_is(4)
+       9 b_var(4)
+      11 b_var1
+      12 b_var2
+      13 b_var(3)
+      15 b_firstvar(5)
+      17 b_firstvar(6)
+      19 i_call(repeat_codes/6)
+      21 b_atom('~s~n')
+      23 b_list
+      24 b_argvar(5)
+      26 b_nil
+      27 b_pop
+      28 i_call(format/2)
+      30 a_enter
+      31 a_var(4)
+      33 a_var0
+      34 a_func2((-)/2)
+      36 a_firstvar_is(7)
+      38 l_nolco('L1')
+      40 l_var(0,7)
+      43 l_var(1,6)
+      46 i_tcall
+L1:   47 b_var(7)
+      49 b_var(6)
+      51 b_var2
+      52 b_var(3)
+      54 i_depart(repeat_lines/4)
+      56 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-fasta-optimized/input/sources/fasta/optimized.pl'
+========================================================================
+clbg_fasta:select/3
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x145e2d640)):
+----------------------------------------
+       0 h_list
+       1 h_functor((-)/2)
+       3 h_firstvar(3)
+       5 h_pop
+       6 h_nil
+       7 h_pop
+       8 h_void
+       9 h_var(3)
+      11 i_enter
+      12 i_cut
+      13 i_exit
+----------------------------------------
+clause 2 (<clause>(0x145e2d710)):
+----------------------------------------
+       0 h_list
+       1 h_functor((-)/2)
+       3 h_firstvar(3)
+       5 h_firstvar(4)
+       7 h_pop
+       8 h_firstvar(5)
+      10 h_pop
+      11 i_enter
+      12 c_fastcond(6,'L1')
+      15 a_enter
+      16 a_var1
+      17 a_var(4)
+      19 a_lt
+      20 c_fastcut(6)
+      22 b_unify_vv(2,3)
+      25 c_jmp('L2')
+L1:   27 l_nolco('L3')
+      29 l_var(0,5)
+      32 i_tcall
+L3:   33 b_var(5)
+      35 b_var1
+      36 b_var2
+      37 i_depart(select/3)
+L2:   39 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-fasta-optimized/input/sources/fasta/optimized.pl'
+========================================================================
+clbg_fasta:random_codes/5
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x145e2d550)):
+----------------------------------------
+       0 h_smallint(0)
+       2 h_void_n(2)
+       4 h_nil
+       5 h_var(2)
+       7 i_enter
+       8 i_cut
+       9 i_exit
+----------------------------------------
+clause 2 (<clause>(0x145e2dac0)):
+----------------------------------------
+       0 h_void_n(3)
+       2 h_list_ff(5,6)
+       5 i_enter
+       6 a_enter
+       7 a_integer(139968)
+       9 a_integer(29573)
+      11 a_integer(3877)
+      13 a_var2
+      14 a_mul
+      15 a_add
+      16 a_func2((mod)/2)
+      18 a_firstvar_is(7)
+      20 a_enter
+      21 a_double(139968.0)
+      23 a_var(7)
+      25 a_func2((/)/2)
+      27 a_firstvar_is(8)
+      29 b_var1
+      30 b_var(8)
+      32 b_var(5)
+      34 i_call(select/3)
+      36 a_add_fc(9,0,-1)
+      40 l_nolco('L1')
+      42 l_var(0,9)
+      45 l_var(2,7)
+      48 l_var(3,6)
+      51 i_tcall
+L1:   52 b_var(9)
+      54 b_var1
+      55 b_var(7)
+      57 b_var(6)
+      59 b_var(4)
+      61 i_depart(random_codes/5)
+      63 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-fasta-optimized/input/sources/fasta/optimized.pl'
+========================================================================
+clbg_fasta:random_lines/4
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x145e2d9a0)):
+----------------------------------------
+       0 h_smallint(0)
+       2 h_void_n(2)
+       4 h_var(2)
+       6 i_enter
+       7 i_cut
+       8 i_exit
+----------------------------------------
+clause 2 (<clause>(0x145e2df10)):
+----------------------------------------
+       0 i_enter
+       1 a_enter
+       2 a_var0
+       3 a_integer(60)
+       5 a_func2(min/2)
+       7 a_firstvar_is(4)
+       9 b_var(4)
+      11 b_var1
+      12 b_var2
+      13 b_firstvar(5)
+      15 b_firstvar(6)
+      17 i_call(random_codes/5)
+      19 b_atom('~s~n')
+      21 b_list
+      22 b_argvar(5)
+      24 b_nil
+      25 b_pop
+      26 i_call(format/2)
+      28 a_enter
+      29 a_var(4)
+      31 a_var0
+      32 a_func2((-)/2)
+      34 a_firstvar_is(7)
+      36 l_nolco('L1')
+      38 l_var(0,7)
+      41 l_var(2,6)
+      44 i_tcall
+L1:   45 b_var(7)
+      47 b_var1
+      48 b_var(6)
+      50 b_var(3)
+      52 i_depart(random_lines/4)
+      54 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-fasta-optimized/input/support/clbg_io.pl'
+========================================================================
+clbg_io:size/1
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x156904080)):
+----------------------------------------
+       0 i_enter
+       1 b_atom(argv)
+       3 b_firstvar(1)
+       5 i_call(current_prolog_flag/2)
+       7 c_ifthenelse(3,'L1')
+      10 b_unify_var(1)
+      12 h_list
+      13 h_firstvar(2)
+      15 h_pop
+      16 b_unify_exit
+      17 b_functor(atom_number/2)
+      19 b_argvar(2)
+      21 b_argvar(0)
+      23 b_pop
+      24 b_void
+      25 b_atom(fail)
+      27 i_call(catch/3)
+      29 i_integer(0)
+      31 a_enter
+      32 a_var0
+      33 a_integer(0)
+      35 a_ge
+      36 c_cut(3)
+      38 i_true
+      39 c_jmp('L2')
+L1:   41 b_functor(error/2)
+      43 b_functor(domain_error/2)
+      45 b_atom(nonnegative_integer_argument)
+      47 b_argvar(1)
+      49 b_pop
+      50 b_rfunctor((:)/2)
+      52 b_atom(clbg_io)
+      54 b_rfunctor((/)/2)
+      56 b_atom(size)
+      58 b_smallint(1)
+      60 b_pop
+      61 i_depart(throw/1)
+      63 c_var(2)
+L2:   65 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-fasta-optimized/input/support/clbg_io.pl'
+========================================================================
+clbg_io:report_error/1
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x1568e9b10)):
+----------------------------------------
+       0 i_enter
+       1 b_atom(error)
+       3 b_var0
+       4 i_call(print_message/2)
+       6 l_nolco('L1')
+       8 l_smallint(0,1)
+      11 i_lcall(halt/1)
+L1:   13 b_smallint(1)
+      15 i_depart(halt/1)
+      17 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-fasta-optimized/input/support/clbg_io.pl'
+========================================================================
+clbg_io:run/1
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x15698ad30)):
+----------------------------------------
+       0 i_enter
+       1 b_functor(run_checked/1)
+       3 b_argvar(0)
+       5 b_pop
+       6 b_firstvar(1)
+       8 b_functor(report_error/1)
+      10 b_argvar(1)
+      12 b_pop
+      13 i_call(catch/3)
+      15 l_nolco('L1')
+      17 l_smallint(0,0)
+      20 i_lcall(halt/1)
+L1:   22 b_smallint(0)
+      24 i_depart(halt/1)
+      26 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-fasta-optimized/input/support/clbg_io.pl'
+========================================================================
+clbg_io:run_checked/1
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x1568e7750)):
+----------------------------------------
+       0 i_enter
+       1 b_atom(user_input)
+       3 b_functor(encoding/1)
+       5 b_atom(octet)
+       7 b_pop
+       8 i_call(set_stream/2)
+      10 b_atom(user_output)
+      12 b_functor(encoding/1)
+      14 b_atom(octet)
+      16 b_pop
+      17 i_call(set_stream/2)
+      19 c_ifthenelse(1,'L1')
+      22 b_var0
+      23 i_call1
+      24 c_cut(1)
+      26 l_nolco('L2')
+      28 l_atom(0,user_output)
+      31 i_lcall(flush_output/1)
+L2:   33 b_atom(user_output)
+      35 i_depart(flush_output/1)
+      37 c_jmp('L3')
+L1:   39 b_functor(error/2)
+      41 b_atom(application_goal_failed)
+      43 b_rfunctor((:)/2)
+      45 b_atom(clbg_io)
+      47 b_rfunctor((/)/2)
+      49 b_atom(run)
+      51 b_smallint(1)
+      53 b_pop
+      54 i_depart(throw/1)
+L3:   56 i_exit

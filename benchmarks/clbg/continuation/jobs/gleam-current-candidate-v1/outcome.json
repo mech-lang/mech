@@ -1,0 +1,15 @@
+{
+  "status": "failed-current-Gleam-candidate",
+  "chart_admission": false,
+  "native_commands": 0,
+  "fixture_reexecutions": 0,
+  "error": "Reviewed frozen source/packet required",
+  "error_type": "ValueError",
+  "pins": {},
+  "available_evidence_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/gleam-current-candidate-v1/error.log": "24bf5d3fc459a5c3f4e6be4a40bf1d9b7afa177d851f94101521e55e0a8d087b"
+  },
+  "common_mutex_held": true,
+  "common_timing_mutex": "/tmp/mech-clbg-timing.lock",
+  "live_dataset_mutations": 0
+}

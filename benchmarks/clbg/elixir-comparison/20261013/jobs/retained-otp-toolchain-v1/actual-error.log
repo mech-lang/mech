@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/retained-otp-intake-v1/intake.py", line 275, in main
+    run(args,output,build,pins,common.fileno());outcome['status'] = 'publisher-toolchain-and-exact20-inputs-ready-awaiting-compiler-stdio-owner-review'
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/retained-otp-intake-v1/intake.py", line 222, in run
+    assert dry['stdout'].decode().split() == expected,'Actual Elixir script launch differs'
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Actual Elixir script launch differs

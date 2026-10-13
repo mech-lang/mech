@@ -1,0 +1,27 @@
+{
+  "status": "reviewed-completed-native-language-subset",
+  "ready_languages": [
+    "gleam"
+  ],
+  "future_requested_languages": [
+    "elixir",
+    "kotlin"
+  ],
+  "unresolved": [],
+  "languages": {
+    "gleam": {
+      "suite": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/reconciliation/full-v4-suite-v2.json",
+        "sha256": "e2b4a772153c9997d4ab5f749dfa950cbcf4ebaad825201b3c6338454f4e2594"
+      },
+      "canonical_loc": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/semantic-exact20-v2/qualified-loc-overlay.json",
+        "sha256": "dd51c9a33d0eade6b5f4f94266ad1561b0f36770ac03a9c1691d2f19cbc04fce"
+      },
+      "metadata": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/publication-gleam-metadata-v1/qualified/actual-metadata-v1/metadata.json",
+        "sha256": "24c2fc111a79e9093fd2e92625bf552c1539d68ef0d53523b084eebf565b2625"
+      }
+    }
+  }
+}

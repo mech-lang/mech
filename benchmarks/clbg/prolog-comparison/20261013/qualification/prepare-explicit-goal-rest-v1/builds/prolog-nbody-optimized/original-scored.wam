@@ -1,0 +1,944 @@
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-nbody-optimized/input/sources/nbody/optimized.pl'
+========================================================================
+clbg_nbody:offset_momentum/2
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x12a69cbc0)):
+----------------------------------------
+       0 i_enter
+       1 b_smallint(1)
+       3 b_var0
+       4 b_float(0.0)
+       6 b_float(0.0)
+       8 b_float(0.0)
+      10 b_firstvar(2)
+      12 b_firstvar(3)
+      14 b_firstvar(4)
+      16 i_call(momentum/8)
+      18 b_arg_cf(1,0,5)
+      22 a_enter
+      23 a_var1
+      24 a_var2
+      25 a_func1((-)/1)
+      27 a_func2((/)/2)
+      29 a_firstvar_is(6)
+      31 a_enter
+      32 a_var1
+      33 a_var(3)
+      35 a_func1((-)/1)
+      37 a_func2((/)/2)
+      39 a_firstvar_is(7)
+      41 a_enter
+      42 a_var1
+      43 a_var(4)
+      45 a_func1((-)/1)
+      47 a_func2((/)/2)
+      49 a_firstvar_is(8)
+      51 b_smallint(4)
+      53 b_var(5)
+      55 b_var(6)
+      57 i_call(nb_setarg/3)
+      59 b_smallint(5)
+      61 b_var(5)
+      63 b_var(7)
+      65 i_call(nb_setarg/3)
+      67 l_nolco('L1')
+      69 l_smallint(0,6)
+      72 l_var(1,5)
+      75 l_var(2,8)
+      78 i_lcall(nb_setarg/3)
+L1:   80 b_smallint(6)
+      82 b_var(5)
+      84 b_var(8)
+      86 i_depart(nb_setarg/3)
+      88 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-nbody-optimized/input/sources/nbody/optimized.pl'
+========================================================================
+clbg_nbody:initial_bodies/2
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x12a80ee00)):
+----------------------------------------
+       0 i_enter
+       1 b_var1
+       2 a_enter
+       3 a_double(3.141592653589793)
+       5 a_double(3.141592653589793)
+       7 a_double(4.0)
+       9 a_mul
+      10 a_mul
+      11 a_is
+      12 b_unify_firstvar(2)
+      14 b_float(365.24)
+      16 b_unify_exit
+      17 b_var0
+      18 b_atom(bodies)
+      20 b_smallint(5)
+      22 i_call(functor/3)
+      24 b_arg_cf(1,0,3)
+      28 b_float(0.0)
+      30 b_float(0.0)
+      32 b_float(0.0)
+      34 b_float(0.0)
+      36 b_float(0.0)
+      38 b_float(0.0)
+      40 b_var1
+      41 b_var(3)
+      43 i_call(new_body/8)
+      45 b_arg_cf(2,0,4)
+      49 b_float(4.841431442464721)
+      51 b_float(-1.1603200440274284)
+      53 b_float(-0.10362204447112311)
+      55 b_float(0.001660076642744037)
+      57 b_float(0.007699011184197404)
+      59 b_float(-6.90460016972063e-05)
+      61 b_float(0.0009547919384243266)
+      63 b_var1
+      64 b_var2
+      65 b_var(4)
+      67 i_call(new_planet/10)
+      69 b_arg_cf(3,0,5)
+      73 b_float(8.34336671824458)
+      75 b_float(4.124798564124305)
+      77 b_float(-0.4035234171143214)
+      79 b_float(-0.002767425107268624)
+      81 b_float(0.004998528012349172)
+      83 b_float(2.3041729757376393e-05)
+      85 b_float(0.0002858859806661308)
+      87 b_var1
+      88 b_var2
+      89 b_var(5)
+      91 i_call(new_planet/10)
+      93 b_arg_cf(4,0,6)
+      97 b_float(12.894369562139131)
+      99 b_float(-15.111151401698631)
+     101 b_float(-0.22330757889265573)
+     103 b_float(0.002964601375647616)
+     105 b_float(0.0023784717395948095)
+     107 b_float(-2.9658956854023756e-05)
+     109 b_float(4.366244043351563e-05)
+     111 b_var1
+     112 b_var2
+     113 b_var(6)
+     115 i_call(new_planet/10)
+     117 b_arg_cf(5,0,7)
+     121 b_float(15.379697114850917)
+     123 b_float(-25.919314609987964)
+     125 b_float(0.17925877295037118)
+     127 b_float(0.0026806777249038932)
+     129 b_float(0.001628241700382423)
+     131 b_float(-9.515922545197159e-05)
+     133 b_float(5.1513890204661145e-05)
+     135 b_var1
+     136 b_var2
+     137 b_var(7)
+     139 i_depart(new_planet/10)
+     141 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-nbody-optimized/input/sources/nbody/optimized.pl'
+========================================================================
+clbg_nbody:velocity/7
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x12a69d580)):
+----------------------------------------
+       0 i_enter
+       1 b_arg_vf(0,5,7)
+       5 b_arg_vf(0,6,8)
+       9 a_enter
+      10 a_var2
+      11 a_var(4)
+      13 a_var1
+      14 a_mul
+      15 a_mul
+      16 a_var(7)
+      18 a_func2((-)/2)
+      20 a_firstvar_is(9)
+      22 a_enter
+      23 a_var2
+      24 a_var(3)
+      26 a_var1
+      27 a_mul
+      28 a_mul
+      29 a_var(8)
+      31 a_add
+      32 a_firstvar_is(10)
+      34 b_var0
+      35 b_var(5)
+      37 b_var(9)
+      39 i_call(nb_setarg/3)
+      41 l_nolco('L1')
+      43 l_var(1,6)
+      46 l_var(2,10)
+      49 i_lcall(nb_setarg/3)
+L1:   51 b_var0
+      52 b_var(6)
+      54 b_var(10)
+      56 i_depart(nb_setarg/3)
+      58 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-nbody-optimized/input/sources/nbody/optimized.pl'
+========================================================================
+clbg_nbody:main/0
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x12a69e990)):
+----------------------------------------
+       0 i_enter
+       1 b_firstvar(0)
+       3 i_call(size/1)
+       5 b_firstvar(1)
+       7 b_firstvar(2)
+       9 i_call(initial_bodies/2)
+      11 b_var1
+      12 b_var2
+      13 i_call(offset_momentum/2)
+      15 b_smallint(1)
+      17 b_var1
+      18 b_float(0.0)
+      20 b_firstvar(3)
+      22 i_call(energy/4)
+      24 b_atom('~9f~n')
+      26 b_list
+      27 b_argvar(3)
+      29 b_nil
+      30 b_pop
+      31 i_call(format/2)
+      33 b_var0
+      34 b_var1
+      35 b_float(0.01)
+      37 i_call(advance/3)
+      39 b_smallint(1)
+      41 b_var1
+      42 b_float(0.0)
+      44 b_firstvar(4)
+      46 i_call(energy/4)
+      48 b_atom('~9f~n')
+      50 b_list
+      51 b_argvar(4)
+      53 b_nil
+      54 b_pop
+      55 i_depart(format/2)
+      57 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-nbody-optimized/input/sources/nbody/optimized.pl'
+========================================================================
+clbg_nbody:new_body/8
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x12a69c090)):
+----------------------------------------
+       0 i_enter
+       1 b_var(7)
+       3 b_atom(body)
+       5 b_smallint(7)
+       7 i_call(functor/3)
+       9 b_smallint(1)
+      11 b_var(7)
+      13 b_var0
+      14 i_call(arg/3)
+      16 b_smallint(2)
+      18 b_var(7)
+      20 b_var1
+      21 i_call(arg/3)
+      23 b_smallint(3)
+      25 b_var(7)
+      27 b_var2
+      28 i_call(arg/3)
+      30 b_smallint(4)
+      32 b_var(7)
+      34 b_var(3)
+      36 i_call(arg/3)
+      38 b_smallint(5)
+      40 b_var(7)
+      42 b_var(4)
+      44 i_call(arg/3)
+      46 b_smallint(6)
+      48 b_var(7)
+      50 b_var(5)
+      52 i_call(arg/3)
+      54 l_nolco('L1')
+      56 l_smallint(0,7)
+      59 l_var(1,7)
+      62 l_var(2,6)
+      65 i_lcall(arg/3)
+L1:   67 b_smallint(7)
+      69 b_var(7)
+      71 b_var(6)
+      73 i_depart(arg/3)
+      75 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-nbody-optimized/input/sources/nbody/optimized.pl'
+========================================================================
+clbg_nbody:right_forces/4
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x12a69dc80)):
+----------------------------------------
+       0 i_enter
+       1 c_fastcond(6,'L1')
+       4 a_enter
+       5 a_var0
+       6 a_integer(5)
+       8 a_le
+       9 c_fastcut(6)
+      11 b_arg_vf(0,2,4)
+      15 b_var1
+      16 b_var(4)
+      18 b_var(3)
+      20 i_call(force/3)
+      22 a_add_fc(5,0,1)
+      26 l_nolco('L2')
+      28 l_var(0,5)
+      31 i_tcall
+L2:   32 b_var(5)
+      34 b_var1
+      35 b_var2
+      36 b_var(3)
+      38 i_depart(right_forces/4)
+      40 c_jmp('L3')
+L1:   42 i_true
+      43 c_var_n(4,2)
+L3:   46 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-nbody-optimized/input/sources/nbody/optimized.pl'
+========================================================================
+clbg_nbody:positions/3
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x12a80e400)):
+----------------------------------------
+       0 i_enter
+       1 c_fastcond(14,'L1')
+       4 a_enter
+       5 a_var0
+       6 a_integer(5)
+       8 a_le
+       9 c_fastcut(14)
+      11 b_arg_vf(0,1,3)
+      15 b_arg_cf(1,3,4)
+      19 b_arg_cf(4,3,5)
+      23 b_arg_cf(2,3,6)
+      27 b_arg_cf(5,3,7)
+      31 b_arg_cf(3,3,8)
+      35 b_arg_cf(6,3,9)
+      39 a_enter
+      40 a_var(5)
+      42 a_var2
+      43 a_mul
+      44 a_var(4)
+      46 a_add
+      47 a_firstvar_is(10)
+      49 a_enter
+      50 a_var(7)
+      52 a_var2
+      53 a_mul
+      54 a_var(6)
+      56 a_add
+      57 a_firstvar_is(11)
+      59 a_enter
+      60 a_var(9)
+      62 a_var2
+      63 a_mul
+      64 a_var(8)
+      66 a_add
+      67 a_firstvar_is(12)
+      69 b_smallint(1)
+      71 b_var(3)
+      73 b_var(10)
+      75 i_call(nb_setarg/3)
+      77 b_smallint(2)
+      79 b_var(3)
+      81 b_var(11)
+      83 i_call(nb_setarg/3)
+      85 b_smallint(3)
+      87 b_var(3)
+      89 b_var(12)
+      91 i_call(nb_setarg/3)
+      93 a_add_fc(13,0,1)
+      97 l_nolco('L2')
+      99 l_var(0,13)
+     102 i_tcall
+L2:  103 b_var(13)
+     105 b_var1
+     106 b_var2
+     107 i_depart(positions/3)
+     109 c_jmp('L3')
+L1:  111 i_true
+     112 c_var_n(3,2)
+     115 c_var_n(5,2)
+     118 c_var_n(7,2)
+     121 c_var_n(9,2)
+     124 c_var_n(11,2)
+     127 c_var(13)
+L3:  129 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-nbody-optimized/input/sources/nbody/optimized.pl'
+========================================================================
+clbg_nbody:potential/5
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x12a69e650)):
+----------------------------------------
+       0 i_enter
+       1 c_fastcond(12,'L1')
+       4 a_enter
+       5 a_var0
+       6 a_integer(5)
+       8 a_le
+       9 c_fastcut(12)
+      11 b_arg_vf(0,2,5)
+      15 b_var1
+      16 b_var(5)
+      18 b_void
+      19 b_void
+      20 b_void
+      21 b_firstvar(6)
+      23 i_call(distance/6)
+      25 a_enter
+      26 a_var(6)
+      28 a_func1(sqrt/1)
+      30 a_firstvar_is(7)
+      32 b_arg_cf(7,1,8)
+      36 b_arg_cf(7,5,9)
+      40 a_enter
+      41 a_var(7)
+      43 a_var(9)
+      45 a_var(8)
+      47 a_mul
+      48 a_func2((/)/2)
+      50 a_var(3)
+      52 a_func2((-)/2)
+      54 a_firstvar_is(10)
+      56 a_add_fc(11,0,1)
+      60 l_nolco('L2')
+      62 l_var(0,11)
+      65 l_var(3,10)
+      68 i_tcall
+L2:   69 b_var(11)
+      71 b_var1
+      72 b_var2
+      73 b_var(10)
+      75 b_var(4)
+      77 i_depart(potential/5)
+      79 c_jmp('L3')
+L1:   81 b_unify_vv(4,3)
+      84 c_var_n(5,2)
+      87 c_var_n(7,2)
+      90 c_var_n(9,2)
+      93 c_var(11)
+L3:   95 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-nbody-optimized/input/sources/nbody/optimized.pl'
+========================================================================
+clbg_nbody:distance/6
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x12a69d0e0)):
+----------------------------------------
+       0 i_enter
+       1 b_arg_cf(1,0,6)
+       5 b_arg_cf(1,1,7)
+       9 b_arg_cf(2,0,8)
+      13 b_arg_cf(2,1,9)
+      17 b_arg_cf(3,0,10)
+      21 b_arg_cf(3,1,11)
+      25 b_var2
+      26 a_enter
+      27 a_var(7)
+      29 a_var(6)
+      31 a_func2((-)/2)
+      33 a_is
+      34 b_var(3)
+      36 a_enter
+      37 a_var(9)
+      39 a_var(8)
+      41 a_func2((-)/2)
+      43 a_is
+      44 b_var(4)
+      46 a_enter
+      47 a_var(11)
+      49 a_var(10)
+      51 a_func2((-)/2)
+      53 a_is
+      54 b_var(5)
+      56 a_enter
+      57 a_var(4)
+      59 a_var(4)
+      61 a_mul
+      62 a_var(3)
+      64 a_var(3)
+      66 a_mul
+      67 a_var2
+      68 a_var2
+      69 a_mul
+      70 a_add
+      71 a_add
+      72 a_is
+      73 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-nbody-optimized/input/sources/nbody/optimized.pl'
+========================================================================
+clbg_nbody:momentum/8
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x12a80f400)):
+----------------------------------------
+       0 i_enter
+       1 c_fastcond(17,'L1')
+       4 a_enter
+       5 a_var0
+       6 a_integer(5)
+       8 a_le
+       9 c_fastcut(17)
+      11 b_arg_vf(0,1,8)
+      15 b_arg_cf(4,8,9)
+      19 b_arg_cf(5,8,10)
+      23 b_arg_cf(6,8,11)
+      27 b_arg_cf(7,8,12)
+      31 a_enter
+      32 a_var(9)
+      34 a_var(12)
+      36 a_mul
+      37 a_var2
+      38 a_add
+      39 a_firstvar_is(13)
+      41 a_enter
+      42 a_var(10)
+      44 a_var(12)
+      46 a_mul
+      47 a_var(3)
+      49 a_add
+      50 a_firstvar_is(14)
+      52 a_enter
+      53 a_var(11)
+      55 a_var(12)
+      57 a_mul
+      58 a_var(4)
+      60 a_add
+      61 a_firstvar_is(15)
+      63 a_add_fc(16,0,1)
+      67 l_nolco('L2')
+      69 l_var(0,16)
+      72 l_var(2,13)
+      75 l_var(3,14)
+      78 l_var(4,15)
+      81 i_tcall
+L2:   82 b_var(16)
+      84 b_var1
+      85 b_var(13)
+      87 b_var(14)
+      89 b_var(15)
+      91 b_var(5)
+      93 b_var(6)
+      95 b_var(7)
+      97 i_depart(momentum/8)
+      99 c_jmp('L3')
+L1:  101 b_unify_vv(5,2)
+     104 b_unify_vv(6,3)
+     107 b_unify_vv(7,4)
+     110 c_var_n(8,2)
+     113 c_var_n(10,2)
+     116 c_var_n(12,2)
+     119 c_var_n(14,2)
+     122 c_var(16)
+L3:  124 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-nbody-optimized/input/sources/nbody/optimized.pl'
+========================================================================
+clbg_nbody:new_planet/10
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x12a69c540)):
+----------------------------------------
+       0 i_enter
+       1 a_enter
+       2 a_var(8)
+       4 a_var(3)
+       6 a_mul
+       7 a_firstvar_is(10)
+       9 a_enter
+      10 a_var(8)
+      12 a_var(4)
+      14 a_mul
+      15 a_firstvar_is(11)
+      17 a_enter
+      18 a_var(8)
+      20 a_var(5)
+      22 a_mul
+      23 a_firstvar_is(12)
+      25 a_enter
+      26 a_var(7)
+      28 a_var(6)
+      30 a_mul
+      31 a_firstvar_is(13)
+      33 l_nolco('L1')
+      35 l_var(3,10)
+      38 l_var(4,11)
+      41 l_var(5,12)
+      44 l_var(6,13)
+      47 l_var(7,9)
+      50 i_lcall(new_body/8)
+L1:   52 b_var0
+      53 b_var1
+      54 b_var2
+      55 b_var(10)
+      57 b_var(11)
+      59 b_var(12)
+      61 b_var(13)
+      63 b_var(9)
+      65 i_depart(new_body/8)
+      67 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-nbody-optimized/input/sources/nbody/optimized.pl'
+========================================================================
+clbg_nbody:advance/3
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x12a69e260)):
+----------------------------------------
+       0 h_smallint(0)
+       2 i_enter
+       3 i_cut
+       4 i_exit
+----------------------------------------
+clause 2 (<clause>(0x12a69e2f0)):
+----------------------------------------
+       0 i_enter
+       1 b_smallint(1)
+       3 b_var1
+       4 b_var2
+       5 i_call(forces/3)
+       7 b_smallint(1)
+       9 b_var1
+      10 b_var2
+      11 i_call(positions/3)
+      13 a_add_fc(3,0,-1)
+      17 l_nolco('L1')
+      19 l_var(0,3)
+      22 i_tcall
+L1:   23 b_var(3)
+      25 b_var1
+      26 b_var2
+      27 i_depart(advance/3)
+      29 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-nbody-optimized/input/sources/nbody/optimized.pl'
+========================================================================
+clbg_nbody:forces/3
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x12a69da80)):
+----------------------------------------
+       0 i_enter
+       1 c_fastcond(5,'L1')
+       4 a_enter
+       5 a_var0
+       6 a_integer(5)
+       8 a_lt
+       9 c_fastcut(5)
+      11 b_arg_vf(0,1,3)
+      15 a_add_fc(4,0,1)
+      19 b_var(4)
+      21 b_var(3)
+      23 b_var1
+      24 b_var2
+      25 i_call(right_forces/4)
+      27 l_nolco('L2')
+      29 l_var(0,4)
+      32 i_tcall
+L2:   33 b_var(4)
+      35 b_var1
+      36 b_var2
+      37 i_depart(forces/3)
+      39 c_jmp('L3')
+L1:   41 i_true
+      42 c_var_n(3,2)
+L3:   45 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-nbody-optimized/input/sources/nbody/optimized.pl'
+========================================================================
+clbg_nbody:force/3
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x12a69d7a0)):
+----------------------------------------
+       0 i_enter
+       1 b_var0
+       2 b_var1
+       3 b_firstvar(3)
+       5 b_firstvar(4)
+       7 b_firstvar(5)
+       9 b_firstvar(6)
+      11 i_call(distance/6)
+      13 a_enter
+      14 a_var(6)
+      16 a_func1(sqrt/1)
+      18 a_firstvar_is(7)
+      20 a_enter
+      21 a_var(7)
+      23 a_var(6)
+      25 a_mul
+      26 a_var2
+      27 a_func2((/)/2)
+      29 a_firstvar_is(8)
+      31 b_arg_cf(7,0,9)
+      35 b_arg_cf(7,1,10)
+      39 b_smallint(4)
+      41 b_var(3)
+      43 b_var(8)
+      45 b_var(9)
+      47 b_var(10)
+      49 b_var0
+      50 b_var1
+      51 i_call(velocity/7)
+      53 b_smallint(5)
+      55 b_var(4)
+      57 b_var(8)
+      59 b_var(9)
+      61 b_var(10)
+      63 b_var0
+      64 b_var1
+      65 i_call(velocity/7)
+      67 b_smallint(6)
+      69 b_var(5)
+      71 b_var(8)
+      73 b_var(9)
+      75 b_var(10)
+      77 b_var0
+      78 b_var1
+      79 i_depart(velocity/7)
+      81 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-nbody-optimized/input/sources/nbody/optimized.pl'
+========================================================================
+clbg_nbody:energy/4
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x12a69eba0)):
+----------------------------------------
+       0 i_enter
+       1 c_fastcond(13,'L1')
+       4 a_enter
+       5 a_var0
+       6 a_integer(5)
+       8 a_le
+       9 c_fastcut(13)
+      11 b_arg_vf(0,1,4)
+      15 b_arg_cf(4,4,5)
+      19 b_arg_cf(5,4,6)
+      23 b_arg_cf(6,4,7)
+      27 b_arg_cf(7,4,8)
+      31 a_enter
+      32 a_var(7)
+      34 a_var(7)
+      36 a_mul
+      37 a_var(6)
+      39 a_var(6)
+      41 a_mul
+      42 a_var(5)
+      44 a_var(5)
+      46 a_mul
+      47 a_add
+      48 a_add
+      49 a_var(8)
+      51 a_double(0.5)
+      53 a_mul
+      54 a_mul
+      55 a_firstvar_is(9)
+      57 a_enter
+      58 a_var(9)
+      60 a_var2
+      61 a_add
+      62 a_firstvar_is(10)
+      64 a_add_fc(11,0,1)
+      68 b_var(11)
+      70 b_var(4)
+      72 b_var1
+      73 b_var(10)
+      75 b_firstvar(12)
+      77 i_call(potential/5)
+      79 l_nolco('L2')
+      81 l_var(0,11)
+      84 l_var(2,12)
+      87 i_tcall
+L2:   88 b_var(11)
+      90 b_var1
+      91 b_var(12)
+      93 b_var(3)
+      95 i_depart(energy/4)
+      97 c_jmp('L3')
+L1:   99 b_unify_vv(3,2)
+     102 c_var_n(4,2)
+     105 c_var_n(6,2)
+     108 c_var_n(8,2)
+     111 c_var_n(10,2)
+     114 c_var(12)
+L3:  116 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-nbody-optimized/input/support/clbg_io.pl'
+========================================================================
+clbg_io:size/1
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x12a61b650)):
+----------------------------------------
+       0 i_enter
+       1 b_atom(argv)
+       3 b_firstvar(1)
+       5 i_call(current_prolog_flag/2)
+       7 c_ifthenelse(3,'L1')
+      10 b_unify_var(1)
+      12 h_list
+      13 h_firstvar(2)
+      15 h_pop
+      16 b_unify_exit
+      17 b_functor(atom_number/2)
+      19 b_argvar(2)
+      21 b_argvar(0)
+      23 b_pop
+      24 b_void
+      25 b_atom(fail)
+      27 i_call(catch/3)
+      29 i_integer(0)
+      31 a_enter
+      32 a_var0
+      33 a_integer(0)
+      35 a_ge
+      36 c_cut(3)
+      38 i_true
+      39 c_jmp('L2')
+L1:   41 b_functor(error/2)
+      43 b_functor(domain_error/2)
+      45 b_atom(nonnegative_integer_argument)
+      47 b_argvar(1)
+      49 b_pop
+      50 b_rfunctor((:)/2)
+      52 b_atom(clbg_io)
+      54 b_rfunctor((/)/2)
+      56 b_atom(size)
+      58 b_smallint(1)
+      60 b_pop
+      61 i_depart(throw/1)
+      63 c_var(2)
+L2:   65 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-nbody-optimized/input/support/clbg_io.pl'
+========================================================================
+clbg_io:report_error/1
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x12a61aa30)):
+----------------------------------------
+       0 i_enter
+       1 b_atom(error)
+       3 b_var0
+       4 i_call(print_message/2)
+       6 l_nolco('L1')
+       8 l_smallint(0,1)
+      11 i_lcall(halt/1)
+L1:   13 b_smallint(1)
+      15 i_depart(halt/1)
+      17 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-nbody-optimized/input/support/clbg_io.pl'
+========================================================================
+clbg_io:run/1
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x12a61aed0)):
+----------------------------------------
+       0 i_enter
+       1 b_functor(run_checked/1)
+       3 b_argvar(0)
+       5 b_pop
+       6 b_firstvar(1)
+       8 b_functor(report_error/1)
+      10 b_argvar(1)
+      12 b_pop
+      13 i_call(catch/3)
+      15 l_nolco('L1')
+      17 l_smallint(0,0)
+      20 i_lcall(halt/1)
+L1:   22 b_smallint(0)
+      24 i_depart(halt/1)
+      26 i_exit
+
+source '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-nbody-optimized/input/support/clbg_io.pl'
+========================================================================
+clbg_io:run_checked/1
+========================================================================
+       0 s_virgin
+       1 i_exit
+----------------------------------------
+clause 1 (<clause>(0x12a61aff0)):
+----------------------------------------
+       0 i_enter
+       1 b_atom(user_input)
+       3 b_functor(encoding/1)
+       5 b_atom(octet)
+       7 b_pop
+       8 i_call(set_stream/2)
+      10 b_atom(user_output)
+      12 b_functor(encoding/1)
+      14 b_atom(octet)
+      16 b_pop
+      17 i_call(set_stream/2)
+      19 c_ifthenelse(1,'L1')
+      22 b_var0
+      23 i_call1
+      24 c_cut(1)
+      26 l_nolco('L2')
+      28 l_atom(0,user_output)
+      31 i_lcall(flush_output/1)
+L2:   33 b_atom(user_output)
+      35 i_depart(flush_output/1)
+      37 c_jmp('L3')
+L1:   39 b_functor(error/2)
+      41 b_atom(application_goal_failed)
+      43 b_rfunctor((:)/2)
+      45 b_atom(clbg_io)
+      47 b_rfunctor((/)/2)
+      49 b_atom(run)
+      51 b_smallint(1)
+      53 b_pop
+      54 i_depart(throw/1)
+L3:   56 i_exit

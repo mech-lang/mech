@@ -1,0 +1,24 @@
+{
+  "started_at": "2026-10-13T23:31:58.059174+00:00",
+  "command_pid": 48933,
+  "command_identity": {
+    "pid": 48933,
+    "listing": "48933 48929 Tue Oct 13 19:31:58 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -I -S -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/rebol-comparison/20261013/revisions/saved-runtime-source-intake-v1/resume.py --worker-sha256 382a87ddba21477325c3f54978df5d2369878395a7d0c3742d2d845a1aed7aa9 --review-sha256 b76d26ed7b9e2156f3b71ea762adf49d9a36567ce98fa88c3a15d0f22eb51591 --closed-review-sha256 7fa46c85521038aabe1be7431f4a8bd2217a32e15d261248162ad611e1fcf32a"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/rebol-comparison/20261013/revisions/saved-runtime-source-intake-v1/resume.py",
+    "--worker-sha256",
+    "382a87ddba21477325c3f54978df5d2369878395a7d0c3742d2d845a1aed7aa9",
+    "--review-sha256",
+    "b76d26ed7b9e2156f3b71ea762adf49d9a36567ce98fa88c3a15d0f22eb51591",
+    "--closed-review-sha256",
+    "7fa46c85521038aabe1be7431f4a8bd2217a32e15d261248162ad611e1fcf32a"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech"
+}

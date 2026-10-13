@@ -1,0 +1,28 @@
+{
+  "started_at": "2026-10-13T23:09:34.678331+00:00",
+  "worker_identity": {
+    "pid": 36316,
+    "listing": "36316     1 Tue Oct 13 19:09:34 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/prolog-remaining155-preparation-v1 --lease-fd 3 --go-fd 4"
+  },
+  "inherited_private_lease": true,
+  "detached_session": true,
+  "common_mutex_owned_by_target_command": true,
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/prepare-explicit-goal-rest-v1/prepare.py",
+    "--worker-sha256",
+    "f74bb1604cb1559305b8b435af26768e3c5c462afd000c3deae4939632ed6a59",
+    "--review-sha256",
+    "4fc9e5574840c2867b5bd68e0998b5e363a5936b5eff4c5f13c70e63b7fcbd40",
+    "--closed-review-sha256",
+    "785fb78443a3a46384533b522ab124b34c2ae87a7e11da4da22a083289099b4e",
+    "--success-review-sha256",
+    "234973fa0437b6b344d8ebe19ad07a4518d78a09086593579e06a70cc3456f22"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "qualification_granted": false
+}

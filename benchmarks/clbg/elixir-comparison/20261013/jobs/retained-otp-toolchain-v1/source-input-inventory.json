@@ -1,0 +1,991 @@
+{
+  "status": "exact20-inputs-materialized-not-compiled",
+  "forms": [
+    {
+      "id": "elixir-binarytrees-compact",
+      "benchmark": "binarytrees",
+      "variant": "compact",
+      "alias_of": "elixir-binarytrees-baseline-v1",
+      "physical_inputs": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-binarytrees-compact/main.ex",
+          "sha256": "0c2eebb4da9ddf35624923f7d882db4635c91a143b37679729bc313948e4a225",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/sources/binarytrees/main.ex",
+          "role": "application",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-binarytrees-compact/support.ex",
+          "sha256": "c9fbb60888c46fb50195245761a411716f1256145af367e03a23f70aea270e89",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/support/support.ex",
+          "role": "application-helper",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-binarytrees-compact/runner.exs",
+          "sha256": "bdad2389d437fd4c69122e5d25b3065412b4bca0c272631667283273392ba8ff",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/retained-otp-intake-v1/runner.exs",
+          "role": "application-launcher",
+          "counted": true
+        }
+      ],
+      "source_input_materialized": true,
+      "compile_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixirc",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-binarytrees-compact/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-binarytrees-compact/support.ex",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-binarytrees-compact/main.ex"
+      ],
+      "runtime_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixir",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-binarytrees-compact/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-binarytrees-compact/runner.exs",
+        "{n}"
+      ],
+      "subject_compiler_executed": false,
+      "work_qualified": false,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-binarytrees-optimized",
+      "benchmark": "binarytrees",
+      "variant": "optimized",
+      "alias_of": "elixir-binarytrees-baseline-v1",
+      "physical_inputs": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-binarytrees-optimized/main.ex",
+          "sha256": "0c2eebb4da9ddf35624923f7d882db4635c91a143b37679729bc313948e4a225",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/sources/binarytrees/main.ex",
+          "role": "application",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-binarytrees-optimized/support.ex",
+          "sha256": "c9fbb60888c46fb50195245761a411716f1256145af367e03a23f70aea270e89",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/support/support.ex",
+          "role": "application-helper",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-binarytrees-optimized/runner.exs",
+          "sha256": "bdad2389d437fd4c69122e5d25b3065412b4bca0c272631667283273392ba8ff",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/retained-otp-intake-v1/runner.exs",
+          "role": "application-launcher",
+          "counted": true
+        }
+      ],
+      "source_input_materialized": true,
+      "compile_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixirc",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-binarytrees-optimized/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-binarytrees-optimized/support.ex",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-binarytrees-optimized/main.ex"
+      ],
+      "runtime_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixir",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-binarytrees-optimized/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-binarytrees-optimized/runner.exs",
+        "{n}"
+      ],
+      "subject_compiler_executed": false,
+      "work_qualified": false,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-fannkuchredux-compact",
+      "benchmark": "fannkuchredux",
+      "variant": "compact",
+      "alias_of": "elixir-fannkuchredux-baseline-v1",
+      "physical_inputs": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-fannkuchredux-compact/main.ex",
+          "sha256": "26a2a049e658f1ac138a77c1a8bfbd362cded954fa7fe56e2e0da0892ddf240a",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/sources/fannkuchredux/main.ex",
+          "role": "application",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-fannkuchredux-compact/support.ex",
+          "sha256": "c9fbb60888c46fb50195245761a411716f1256145af367e03a23f70aea270e89",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/support/support.ex",
+          "role": "application-helper",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-fannkuchredux-compact/runner.exs",
+          "sha256": "bdad2389d437fd4c69122e5d25b3065412b4bca0c272631667283273392ba8ff",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/retained-otp-intake-v1/runner.exs",
+          "role": "application-launcher",
+          "counted": true
+        }
+      ],
+      "source_input_materialized": true,
+      "compile_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixirc",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-fannkuchredux-compact/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-fannkuchredux-compact/support.ex",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-fannkuchredux-compact/main.ex"
+      ],
+      "runtime_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixir",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-fannkuchredux-compact/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-fannkuchredux-compact/runner.exs",
+        "{n}"
+      ],
+      "subject_compiler_executed": false,
+      "work_qualified": false,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-fannkuchredux-optimized",
+      "benchmark": "fannkuchredux",
+      "variant": "optimized",
+      "alias_of": "elixir-fannkuchredux-baseline-v1",
+      "physical_inputs": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-fannkuchredux-optimized/main.ex",
+          "sha256": "26a2a049e658f1ac138a77c1a8bfbd362cded954fa7fe56e2e0da0892ddf240a",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/sources/fannkuchredux/main.ex",
+          "role": "application",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-fannkuchredux-optimized/support.ex",
+          "sha256": "c9fbb60888c46fb50195245761a411716f1256145af367e03a23f70aea270e89",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/support/support.ex",
+          "role": "application-helper",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-fannkuchredux-optimized/runner.exs",
+          "sha256": "bdad2389d437fd4c69122e5d25b3065412b4bca0c272631667283273392ba8ff",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/retained-otp-intake-v1/runner.exs",
+          "role": "application-launcher",
+          "counted": true
+        }
+      ],
+      "source_input_materialized": true,
+      "compile_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixirc",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-fannkuchredux-optimized/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-fannkuchredux-optimized/support.ex",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-fannkuchredux-optimized/main.ex"
+      ],
+      "runtime_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixir",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-fannkuchredux-optimized/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-fannkuchredux-optimized/runner.exs",
+        "{n}"
+      ],
+      "subject_compiler_executed": false,
+      "work_qualified": false,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-fasta-compact",
+      "benchmark": "fasta",
+      "variant": "compact",
+      "alias_of": "elixir-fasta-baseline-v1",
+      "physical_inputs": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-fasta-compact/main.ex",
+          "sha256": "b86e3c1e478342940bc46d96473eeafa704de656915e2c4dcf6e2a08f62f8a55",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/sources/fasta/main.ex",
+          "role": "application",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-fasta-compact/support.ex",
+          "sha256": "c9fbb60888c46fb50195245761a411716f1256145af367e03a23f70aea270e89",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/support/support.ex",
+          "role": "application-helper",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-fasta-compact/runner.exs",
+          "sha256": "bdad2389d437fd4c69122e5d25b3065412b4bca0c272631667283273392ba8ff",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/retained-otp-intake-v1/runner.exs",
+          "role": "application-launcher",
+          "counted": true
+        }
+      ],
+      "source_input_materialized": true,
+      "compile_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixirc",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-fasta-compact/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-fasta-compact/support.ex",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-fasta-compact/main.ex"
+      ],
+      "runtime_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixir",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-fasta-compact/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-fasta-compact/runner.exs",
+        "{n}"
+      ],
+      "subject_compiler_executed": false,
+      "work_qualified": false,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-fasta-optimized",
+      "benchmark": "fasta",
+      "variant": "optimized",
+      "alias_of": "elixir-fasta-baseline-v1",
+      "physical_inputs": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-fasta-optimized/main.ex",
+          "sha256": "b86e3c1e478342940bc46d96473eeafa704de656915e2c4dcf6e2a08f62f8a55",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/sources/fasta/main.ex",
+          "role": "application",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-fasta-optimized/support.ex",
+          "sha256": "c9fbb60888c46fb50195245761a411716f1256145af367e03a23f70aea270e89",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/support/support.ex",
+          "role": "application-helper",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-fasta-optimized/runner.exs",
+          "sha256": "bdad2389d437fd4c69122e5d25b3065412b4bca0c272631667283273392ba8ff",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/retained-otp-intake-v1/runner.exs",
+          "role": "application-launcher",
+          "counted": true
+        }
+      ],
+      "source_input_materialized": true,
+      "compile_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixirc",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-fasta-optimized/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-fasta-optimized/support.ex",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-fasta-optimized/main.ex"
+      ],
+      "runtime_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixir",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-fasta-optimized/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-fasta-optimized/runner.exs",
+        "{n}"
+      ],
+      "subject_compiler_executed": false,
+      "work_qualified": false,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-knucleotide-compact",
+      "benchmark": "knucleotide",
+      "variant": "compact",
+      "alias_of": "elixir-knucleotide-baseline-v1",
+      "physical_inputs": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-knucleotide-compact/main.ex",
+          "sha256": "325d3d1992f3fcd2128973802904dd842659c34d20d48ff8ffa73a21620f863c",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/sources/knucleotide/main.ex",
+          "role": "application",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-knucleotide-compact/support.ex",
+          "sha256": "c9fbb60888c46fb50195245761a411716f1256145af367e03a23f70aea270e89",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/support/support.ex",
+          "role": "application-helper",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-knucleotide-compact/runner.exs",
+          "sha256": "bdad2389d437fd4c69122e5d25b3065412b4bca0c272631667283273392ba8ff",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/retained-otp-intake-v1/runner.exs",
+          "role": "application-launcher",
+          "counted": true
+        }
+      ],
+      "source_input_materialized": true,
+      "compile_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixirc",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-knucleotide-compact/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-knucleotide-compact/support.ex",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-knucleotide-compact/main.ex"
+      ],
+      "runtime_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixir",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-knucleotide-compact/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-knucleotide-compact/runner.exs",
+        "{n}"
+      ],
+      "subject_compiler_executed": false,
+      "work_qualified": false,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-knucleotide-optimized",
+      "benchmark": "knucleotide",
+      "variant": "optimized",
+      "alias_of": "elixir-knucleotide-baseline-v1",
+      "physical_inputs": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-knucleotide-optimized/main.ex",
+          "sha256": "325d3d1992f3fcd2128973802904dd842659c34d20d48ff8ffa73a21620f863c",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/sources/knucleotide/main.ex",
+          "role": "application",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-knucleotide-optimized/support.ex",
+          "sha256": "c9fbb60888c46fb50195245761a411716f1256145af367e03a23f70aea270e89",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/support/support.ex",
+          "role": "application-helper",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-knucleotide-optimized/runner.exs",
+          "sha256": "bdad2389d437fd4c69122e5d25b3065412b4bca0c272631667283273392ba8ff",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/retained-otp-intake-v1/runner.exs",
+          "role": "application-launcher",
+          "counted": true
+        }
+      ],
+      "source_input_materialized": true,
+      "compile_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixirc",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-knucleotide-optimized/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-knucleotide-optimized/support.ex",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-knucleotide-optimized/main.ex"
+      ],
+      "runtime_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixir",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-knucleotide-optimized/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-knucleotide-optimized/runner.exs",
+        "{n}"
+      ],
+      "subject_compiler_executed": false,
+      "work_qualified": false,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-mandelbrot-compact",
+      "benchmark": "mandelbrot",
+      "variant": "compact",
+      "alias_of": "elixir-mandelbrot-baseline-v1",
+      "physical_inputs": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-mandelbrot-compact/main.ex",
+          "sha256": "9125c96396190b069e72dffb9b74e110d505075976cf98e1b38661d001c0c148",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/sources/mandelbrot/main.ex",
+          "role": "application",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-mandelbrot-compact/support.ex",
+          "sha256": "c9fbb60888c46fb50195245761a411716f1256145af367e03a23f70aea270e89",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/support/support.ex",
+          "role": "application-helper",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-mandelbrot-compact/runner.exs",
+          "sha256": "bdad2389d437fd4c69122e5d25b3065412b4bca0c272631667283273392ba8ff",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/retained-otp-intake-v1/runner.exs",
+          "role": "application-launcher",
+          "counted": true
+        }
+      ],
+      "source_input_materialized": true,
+      "compile_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixirc",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-mandelbrot-compact/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-mandelbrot-compact/support.ex",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-mandelbrot-compact/main.ex"
+      ],
+      "runtime_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixir",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-mandelbrot-compact/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-mandelbrot-compact/runner.exs",
+        "{n}"
+      ],
+      "subject_compiler_executed": false,
+      "work_qualified": false,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-mandelbrot-optimized",
+      "benchmark": "mandelbrot",
+      "variant": "optimized",
+      "alias_of": "elixir-mandelbrot-baseline-v1",
+      "physical_inputs": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-mandelbrot-optimized/main.ex",
+          "sha256": "9125c96396190b069e72dffb9b74e110d505075976cf98e1b38661d001c0c148",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/sources/mandelbrot/main.ex",
+          "role": "application",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-mandelbrot-optimized/support.ex",
+          "sha256": "c9fbb60888c46fb50195245761a411716f1256145af367e03a23f70aea270e89",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/support/support.ex",
+          "role": "application-helper",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-mandelbrot-optimized/runner.exs",
+          "sha256": "bdad2389d437fd4c69122e5d25b3065412b4bca0c272631667283273392ba8ff",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/retained-otp-intake-v1/runner.exs",
+          "role": "application-launcher",
+          "counted": true
+        }
+      ],
+      "source_input_materialized": true,
+      "compile_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixirc",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-mandelbrot-optimized/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-mandelbrot-optimized/support.ex",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-mandelbrot-optimized/main.ex"
+      ],
+      "runtime_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixir",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-mandelbrot-optimized/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-mandelbrot-optimized/runner.exs",
+        "{n}"
+      ],
+      "subject_compiler_executed": false,
+      "work_qualified": false,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-nbody-compact",
+      "benchmark": "nbody",
+      "variant": "compact",
+      "alias_of": "elixir-nbody-baseline-v1",
+      "physical_inputs": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-nbody-compact/main.ex",
+          "sha256": "253d24ca9ce83817df37811d3101db561070d5f39b360b540fa8730d3b3a622c",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/sources/nbody/main.ex",
+          "role": "application",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-nbody-compact/support.ex",
+          "sha256": "c9fbb60888c46fb50195245761a411716f1256145af367e03a23f70aea270e89",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/support/support.ex",
+          "role": "application-helper",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-nbody-compact/runner.exs",
+          "sha256": "bdad2389d437fd4c69122e5d25b3065412b4bca0c272631667283273392ba8ff",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/retained-otp-intake-v1/runner.exs",
+          "role": "application-launcher",
+          "counted": true
+        }
+      ],
+      "source_input_materialized": true,
+      "compile_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixirc",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-nbody-compact/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-nbody-compact/support.ex",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-nbody-compact/main.ex"
+      ],
+      "runtime_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixir",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-nbody-compact/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-nbody-compact/runner.exs",
+        "{n}"
+      ],
+      "subject_compiler_executed": false,
+      "work_qualified": false,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-nbody-optimized",
+      "benchmark": "nbody",
+      "variant": "optimized",
+      "alias_of": "elixir-nbody-baseline-v1",
+      "physical_inputs": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-nbody-optimized/main.ex",
+          "sha256": "253d24ca9ce83817df37811d3101db561070d5f39b360b540fa8730d3b3a622c",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/sources/nbody/main.ex",
+          "role": "application",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-nbody-optimized/support.ex",
+          "sha256": "c9fbb60888c46fb50195245761a411716f1256145af367e03a23f70aea270e89",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/support/support.ex",
+          "role": "application-helper",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-nbody-optimized/runner.exs",
+          "sha256": "bdad2389d437fd4c69122e5d25b3065412b4bca0c272631667283273392ba8ff",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/retained-otp-intake-v1/runner.exs",
+          "role": "application-launcher",
+          "counted": true
+        }
+      ],
+      "source_input_materialized": true,
+      "compile_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixirc",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-nbody-optimized/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-nbody-optimized/support.ex",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-nbody-optimized/main.ex"
+      ],
+      "runtime_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixir",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-nbody-optimized/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-nbody-optimized/runner.exs",
+        "{n}"
+      ],
+      "subject_compiler_executed": false,
+      "work_qualified": false,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-pidigits-compact",
+      "benchmark": "pidigits",
+      "variant": "compact",
+      "alias_of": "elixir-pidigits-baseline-v1",
+      "physical_inputs": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-pidigits-compact/main.ex",
+          "sha256": "3dbdd57da9314f2b24c5c8f9555698608bf3bc995d9ebe2a19515b51d0b43516",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/sources/pidigits/main.ex",
+          "role": "application",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-pidigits-compact/support.ex",
+          "sha256": "c9fbb60888c46fb50195245761a411716f1256145af367e03a23f70aea270e89",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/support/support.ex",
+          "role": "application-helper",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-pidigits-compact/runner.exs",
+          "sha256": "bdad2389d437fd4c69122e5d25b3065412b4bca0c272631667283273392ba8ff",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/retained-otp-intake-v1/runner.exs",
+          "role": "application-launcher",
+          "counted": true
+        }
+      ],
+      "source_input_materialized": true,
+      "compile_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixirc",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-pidigits-compact/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-pidigits-compact/support.ex",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-pidigits-compact/main.ex"
+      ],
+      "runtime_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixir",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-pidigits-compact/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-pidigits-compact/runner.exs",
+        "{n}"
+      ],
+      "subject_compiler_executed": false,
+      "work_qualified": false,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-pidigits-optimized",
+      "benchmark": "pidigits",
+      "variant": "optimized",
+      "alias_of": "elixir-pidigits-baseline-v1",
+      "physical_inputs": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-pidigits-optimized/main.ex",
+          "sha256": "3dbdd57da9314f2b24c5c8f9555698608bf3bc995d9ebe2a19515b51d0b43516",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/sources/pidigits/main.ex",
+          "role": "application",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-pidigits-optimized/support.ex",
+          "sha256": "c9fbb60888c46fb50195245761a411716f1256145af367e03a23f70aea270e89",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/support/support.ex",
+          "role": "application-helper",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-pidigits-optimized/runner.exs",
+          "sha256": "bdad2389d437fd4c69122e5d25b3065412b4bca0c272631667283273392ba8ff",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/retained-otp-intake-v1/runner.exs",
+          "role": "application-launcher",
+          "counted": true
+        }
+      ],
+      "source_input_materialized": true,
+      "compile_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixirc",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-pidigits-optimized/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-pidigits-optimized/support.ex",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-pidigits-optimized/main.ex"
+      ],
+      "runtime_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixir",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-pidigits-optimized/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-pidigits-optimized/runner.exs",
+        "{n}"
+      ],
+      "subject_compiler_executed": false,
+      "work_qualified": false,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-regexredux-compact",
+      "benchmark": "regexredux",
+      "variant": "compact",
+      "alias_of": "elixir-regexredux-baseline-v1",
+      "physical_inputs": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-regexredux-compact/main.ex",
+          "sha256": "6120545c6ed6bec3eb7eb04e26805cc6a880954a23e0b6cfb46115ee4771585f",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/sources/regexredux/main.ex",
+          "role": "application",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-regexredux-compact/support.ex",
+          "sha256": "c9fbb60888c46fb50195245761a411716f1256145af367e03a23f70aea270e89",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/support/support.ex",
+          "role": "application-helper",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-regexredux-compact/runner.exs",
+          "sha256": "bdad2389d437fd4c69122e5d25b3065412b4bca0c272631667283273392ba8ff",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/retained-otp-intake-v1/runner.exs",
+          "role": "application-launcher",
+          "counted": true
+        }
+      ],
+      "source_input_materialized": true,
+      "compile_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixirc",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-regexredux-compact/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-regexredux-compact/support.ex",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-regexredux-compact/main.ex"
+      ],
+      "runtime_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixir",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-regexredux-compact/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-regexredux-compact/runner.exs",
+        "{n}"
+      ],
+      "subject_compiler_executed": false,
+      "work_qualified": false,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-regexredux-optimized",
+      "benchmark": "regexredux",
+      "variant": "optimized",
+      "alias_of": "elixir-regexredux-baseline-v1",
+      "physical_inputs": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-regexredux-optimized/main.ex",
+          "sha256": "6120545c6ed6bec3eb7eb04e26805cc6a880954a23e0b6cfb46115ee4771585f",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/sources/regexredux/main.ex",
+          "role": "application",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-regexredux-optimized/support.ex",
+          "sha256": "c9fbb60888c46fb50195245761a411716f1256145af367e03a23f70aea270e89",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/support/support.ex",
+          "role": "application-helper",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-regexredux-optimized/runner.exs",
+          "sha256": "bdad2389d437fd4c69122e5d25b3065412b4bca0c272631667283273392ba8ff",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/retained-otp-intake-v1/runner.exs",
+          "role": "application-launcher",
+          "counted": true
+        }
+      ],
+      "source_input_materialized": true,
+      "compile_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixirc",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-regexredux-optimized/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-regexredux-optimized/support.ex",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-regexredux-optimized/main.ex"
+      ],
+      "runtime_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixir",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-regexredux-optimized/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-regexredux-optimized/runner.exs",
+        "{n}"
+      ],
+      "subject_compiler_executed": false,
+      "work_qualified": false,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-revcomp-compact",
+      "benchmark": "revcomp",
+      "variant": "compact",
+      "alias_of": "elixir-revcomp-baseline-v1",
+      "physical_inputs": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-revcomp-compact/main.ex",
+          "sha256": "f05e59218a33ab6399572d03e1f6be363241531d114911b394c546f4308b732d",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/sources/revcomp/main.ex",
+          "role": "application",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-revcomp-compact/support.ex",
+          "sha256": "c9fbb60888c46fb50195245761a411716f1256145af367e03a23f70aea270e89",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/support/support.ex",
+          "role": "application-helper",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-revcomp-compact/runner.exs",
+          "sha256": "bdad2389d437fd4c69122e5d25b3065412b4bca0c272631667283273392ba8ff",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/retained-otp-intake-v1/runner.exs",
+          "role": "application-launcher",
+          "counted": true
+        }
+      ],
+      "source_input_materialized": true,
+      "compile_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixirc",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-revcomp-compact/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-revcomp-compact/support.ex",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-revcomp-compact/main.ex"
+      ],
+      "runtime_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixir",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-revcomp-compact/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-revcomp-compact/runner.exs",
+        "{n}"
+      ],
+      "subject_compiler_executed": false,
+      "work_qualified": false,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-revcomp-optimized",
+      "benchmark": "revcomp",
+      "variant": "optimized",
+      "alias_of": "elixir-revcomp-baseline-v1",
+      "physical_inputs": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-revcomp-optimized/main.ex",
+          "sha256": "f05e59218a33ab6399572d03e1f6be363241531d114911b394c546f4308b732d",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/sources/revcomp/main.ex",
+          "role": "application",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-revcomp-optimized/support.ex",
+          "sha256": "c9fbb60888c46fb50195245761a411716f1256145af367e03a23f70aea270e89",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/support/support.ex",
+          "role": "application-helper",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-revcomp-optimized/runner.exs",
+          "sha256": "bdad2389d437fd4c69122e5d25b3065412b4bca0c272631667283273392ba8ff",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/retained-otp-intake-v1/runner.exs",
+          "role": "application-launcher",
+          "counted": true
+        }
+      ],
+      "source_input_materialized": true,
+      "compile_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixirc",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-revcomp-optimized/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-revcomp-optimized/support.ex",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-revcomp-optimized/main.ex"
+      ],
+      "runtime_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixir",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-revcomp-optimized/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-revcomp-optimized/runner.exs",
+        "{n}"
+      ],
+      "subject_compiler_executed": false,
+      "work_qualified": false,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-spectralnorm-compact",
+      "benchmark": "spectralnorm",
+      "variant": "compact",
+      "alias_of": "elixir-spectralnorm-baseline-v1",
+      "physical_inputs": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-spectralnorm-compact/main.ex",
+          "sha256": "6a3b0cfe0d493924fc7c68793f0b3d5c17bf05309ca659a9df429ef7d987680a",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/sources/spectralnorm/main.ex",
+          "role": "application",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-spectralnorm-compact/support.ex",
+          "sha256": "c9fbb60888c46fb50195245761a411716f1256145af367e03a23f70aea270e89",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/support/support.ex",
+          "role": "application-helper",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-spectralnorm-compact/runner.exs",
+          "sha256": "bdad2389d437fd4c69122e5d25b3065412b4bca0c272631667283273392ba8ff",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/retained-otp-intake-v1/runner.exs",
+          "role": "application-launcher",
+          "counted": true
+        }
+      ],
+      "source_input_materialized": true,
+      "compile_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixirc",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-spectralnorm-compact/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-spectralnorm-compact/support.ex",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-spectralnorm-compact/main.ex"
+      ],
+      "runtime_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixir",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-spectralnorm-compact/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-spectralnorm-compact/runner.exs",
+        "{n}"
+      ],
+      "subject_compiler_executed": false,
+      "work_qualified": false,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "chart_admission": false
+    },
+    {
+      "id": "elixir-spectralnorm-optimized",
+      "benchmark": "spectralnorm",
+      "variant": "optimized",
+      "alias_of": "elixir-spectralnorm-baseline-v1",
+      "physical_inputs": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-spectralnorm-optimized/main.ex",
+          "sha256": "6a3b0cfe0d493924fc7c68793f0b3d5c17bf05309ca659a9df429ef7d987680a",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/sources/spectralnorm/main.ex",
+          "role": "application",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-spectralnorm-optimized/support.ex",
+          "sha256": "c9fbb60888c46fb50195245761a411716f1256145af367e03a23f70aea270e89",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/support/support.ex",
+          "role": "application-helper",
+          "counted": true
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-spectralnorm-optimized/runner.exs",
+          "sha256": "bdad2389d437fd4c69122e5d25b3065412b4bca0c272631667283273392ba8ff",
+          "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/retained-otp-intake-v1/runner.exs",
+          "role": "application-launcher",
+          "counted": true
+        }
+      ],
+      "source_input_materialized": true,
+      "compile_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixirc",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-spectralnorm-optimized/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-spectralnorm-optimized/support.ex",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-spectralnorm-optimized/main.ex"
+      ],
+      "runtime_command_proposed": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixir",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-spectralnorm-optimized/ebin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-spectralnorm-optimized/runner.exs",
+        "{n}"
+      ],
+      "subject_compiler_executed": false,
+      "work_qualified": false,
+      "canonical_loc": null,
+      "formatted_loc": null,
+      "chart_admission": false
+    }
+  ],
+  "original_input_packet": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/proposals/retained-otp-inputs-v1.json",
+    "sha256": "ca683f61769bc6c7930ae6d1e7c29eb55982cb9119200846b33d0b8edb215456"
+  },
+  "runner_counted": true,
+  "distinct_optimizer_claim": false
+}

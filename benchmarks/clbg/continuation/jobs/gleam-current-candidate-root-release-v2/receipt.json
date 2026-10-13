@@ -1,0 +1,34 @@
+{
+  "at": "2026-10-13T23:19:33.013106+00:00",
+  "status": "root-and-peer-full-source-reviewed-read-only-frozen-awaiting-serialized-launch",
+  "source_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/qualify_gleam_current_candidate_v2.py": "1ea421879d7088889832a5d8d41afb74eabe65ee0a287f53f938ddbe87d1fe22",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/gleam-ready-publication-v1.json": "5cfcbdb90ce977089a225be4861edaf2b6aa6c52532ec23525970e7416bf25bd",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/GLEAM_CURRENT_CANDIDATE_V2_REVIEW.md": "b2d54d0b1d0555b7eb5ee2dbd097061d5673b208f110e6e5fe1909345a79bc87",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/qualify_native_ready_current_v2.py": "4118db4115c2e37af1533495e24f45423e66194c6fc7fa87d04d60e6e821a7b8"
+  },
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/qualify_gleam_current_candidate_v2.py",
+    "--worker-sha256",
+    "1ea421879d7088889832a5d8d41afb74eabe65ee0a287f53f938ddbe87d1fe22",
+    "--packet-sha256",
+    "5cfcbdb90ce977089a225be4861edaf2b6aa6c52532ec23525970e7416bf25bd",
+    "--metadata-sha256",
+    "24c2fc111a79e9093fd2e92625bf552c1539d68ef0d53523b084eebf565b2625",
+    "--review-sha256",
+    "b2d54d0b1d0555b7eb5ee2dbd097061d5673b208f110e6e5fe1909345a79bc87",
+    "--metadata-review-sha256",
+    "406ac95e0f93b99efc26d7bb62d0fe593568860c8d6cc3b8bfa39918ca1f9cdc",
+    "--baseline-review-sha256",
+    "bb369ef1b1dab6579e788c220c148082aba3a185c89468572e0056e2711d647f"
+  ],
+  "peer": "apl_current_admission fullv1 and exactv2 delta accepted",
+  "native_processes": 0,
+  "fixture_reexecutions": 0,
+  "live_dataset_mutations": 0
+}

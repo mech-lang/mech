@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-13T23:20:27.189320+00:00",
+  "status": "closed-failed-candidate-at-Gleam-LOC-schema-mapping",
+  "verified_pins": 53538,
+  "outcome_sha256": "8f64f4ad1df17adca809cc5cc5b15af3f17e8ed53141807657196f373831e4e4",
+  "durable_terminal_sha256": "273daef2538bb7bea4ccd3bdd104068d6f3d9ea3b4a190980fa8ab37299f5d08",
+  "native_processes": 0,
+  "fixture_reexecutions": 0,
+  "live_dataset_mutations": 0,
+  "candidate_written": false,
+  "error": "KeyError: 'expansions' in original ready program_record"
+}

@@ -1,0 +1,19 @@
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/qualify_gleam_current_candidate_v2.py", line 387, in <module>
+    if __name__ == '__main__': main()
+                               ^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/qualify_gleam_current_candidate_v2.py", line 384, in main
+    run(args)
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/qualify_gleam_current_candidate_v2.py", line 310, in run
+    admission = ready.add_ready_native_languages(CLBG,candidate,packet_path=PACKET,
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/native-ready-v1/snapshot/native_languages_ready_v1.py", line 307, in add_ready_native_languages
+    staged = prepare_ready(data, entries, packet_path.relative_to(root).as_posix(), provenance)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/native-ready-v1/snapshot/native_languages_ready_v1.py", line 165, in prepare_ready
+    record = program_record(language, meta, row); key, identity = record['key'], record['id']
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/native-ready-v1/snapshot/native_languages_ready_v1.py", line 96, in program_record
+    loc_expansions=deepcopy(metric['expansions']), binary_sha256=row['binary_sha256'], required_work_validated=True,
+                            ~~~~~~^^^^^^^^^^^^^^
+KeyError: 'expansions'

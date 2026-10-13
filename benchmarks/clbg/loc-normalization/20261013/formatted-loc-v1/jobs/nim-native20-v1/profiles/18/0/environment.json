@@ -1,0 +1,10 @@
+{
+  "environment": {
+    "PATH": "/usr/bin:/bin",
+    "HOME": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/nim-native20-v1/profiles/18/0/home",
+    "XDG_CONFIG_HOME": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/nim-native20-v1/profiles/18/0/home",
+    "LANG": "C",
+    "LC_ALL": "C"
+  },
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/jobs/nim-native20-v1/profiles/18/0"
+}

@@ -1,0 +1,22 @@
+{
+  "schema": "frozen-elixir-intake-inputs-v1",
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/TOOLCHAIN_CANDIDATE.json": "10ce0779c7a2fb00f033fdc65132681c990cad5fcf2b9827d83f43c4d5d720c5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/RESEARCH_PLAN.md": "2b8ec3a3affd6d88eaf87ab497ff4ea286423f0309a54d4f7a0dde0ba6a662b6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/profiles.json": "e8b2a08237edba2b0a8187b26a5e38c3f488fb97b1e575870c1ddad8b21805db",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/GATES.json": "88da61e22449699a18bf2a2c4fd95de1b92ca32644c69663c97f828d76b2b49f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/REVIEW.md": "54400261de8d1e5746814f5a41b32b688ee1f3d7f6c1085d02fde1071e262884",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/ROOT_REVIEW.md": "30bc4b1ea6f2524bf85209bc1cfee623eb6ce08b8be3ad2d4e54f53d092b96b9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/support/support.ex": "c9fbb60888c46fb50195245761a411716f1256145af367e03a23f70aea270e89",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/sources/binarytrees/main.ex": "0c2eebb4da9ddf35624923f7d882db4635c91a143b37679729bc313948e4a225",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/sources/fannkuchredux/main.ex": "26a2a049e658f1ac138a77c1a8bfbd362cded954fa7fe56e2e0da0892ddf240a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/sources/fasta/main.ex": "b86e3c1e478342940bc46d96473eeafa704de656915e2c4dcf6e2a08f62f8a55",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/sources/knucleotide/main.ex": "325d3d1992f3fcd2128973802904dd842659c34d20d48ff8ffa73a21620f863c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/sources/mandelbrot/main.ex": "9125c96396190b069e72dffb9b74e110d505075976cf98e1b38661d001c0c148",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/sources/nbody/main.ex": "253d24ca9ce83817df37811d3101db561070d5f39b360b540fa8730d3b3a622c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/sources/pidigits/main.ex": "3dbdd57da9314f2b24c5c8f9555698608bf3bc995d9ebe2a19515b51d0b43516",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/sources/regexredux/main.ex": "6120545c6ed6bec3eb7eb04e26805cc6a880954a23e0b6cfb46115ee4771585f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/sources/revcomp/main.ex": "f05e59218a33ab6399572d03e1f6be363241531d114911b394c546f4308b732d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/drafts/private-v1/sources/spectralnorm/main.ex": "6a3b0cfe0d493924fc7c68793f0b3d5c17bf05309ca659a9df429ef7d987680a"
+  }
+}

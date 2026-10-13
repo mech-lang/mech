@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-13T23:20:48.650979+00:00",
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/runtime-target-continuation-v1/continue.py",
+    "--worker-sha256",
+    "799873683afb97f64f8d69f9d9755fe5456f53072b2dd9d6f84a366188deae48",
+    "--review-sha256",
+    "d8f0ca46b57ff7601b019bcfa4493616be3e3e842579847ddbd0e624fb9f7a95",
+    "--plan-sha256",
+    "bccfd11f2229cf5287c7ec72c13ece24ca443ade17e1c8477d4e7ee4d87588c9",
+    "--closed-review-sha256",
+    "63f6fdffa6aabb772cd9b136819dc46e856869ef965f10efd1df5ff969a8f8b7"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "common_mutex_owned_by_target_command": true,
+  "qualification_granted": false,
+  "automatic_retry": false
+}

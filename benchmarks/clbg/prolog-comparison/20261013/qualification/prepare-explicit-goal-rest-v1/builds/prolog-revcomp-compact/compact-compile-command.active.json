@@ -1,0 +1,30 @@
+{
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/MacOS/swipl",
+    "-q",
+    "-O",
+    "-f",
+    "none",
+    "--stack-limit=8g",
+    "-l",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/prepare-success-halt-v1/tools/prepare_qlf.pl",
+    "-g",
+    "clbg_prepare:main",
+    "--",
+    "compile",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-revcomp-compact/input/sources/revcomp/compact.pl",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-revcomp-compact/compact-compile.json",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-revcomp-compact/compact-compile.wam",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-revcomp-compact/input"
+  ],
+  "started_at": "2026-10-13T23:10:02.363872+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 120,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 36552,
+  "identity": {
+    "pid": 36552,
+    "process_listing": "Tue Oct 13 19:10:02 2026     /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/MacOS/swipl -q -O -f none --stack-limit=8g -l /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/prepare-success-halt-v1/tools/prepare_qlf.pl -g clbg_prepare:main -- compile /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-revcomp-compact/input/sources/revcomp/compact.pl /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-revcomp-compact/compact-compile.json /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-revcomp-compact/compact-compile.wam /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-revcomp-compact/input"
+  }
+}

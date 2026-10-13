@@ -1,0 +1,27 @@
+{
+  "command": [
+    "/opt/homebrew/Cellar/llvm/23.1.3_1/bin/llvm-dis",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/lib/armv8-a/libponyrt.bc",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/runtime-target-continuation-v1/jobs/remaining-scored-evidence-v1/runtime.ll"
+  ],
+  "started_at": "2026-10-13T23:21:39.014875+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 120,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "bounded_local_service": true,
+  "cleanup_errors": [],
+  "pid": 43074,
+  "identity": {
+    "pid": 43074,
+    "process_listing": "Tue Oct 13 19:21:39 2026     /opt/homebrew/Cellar/llvm/23.1.3_1/bin/llvm-dis /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/lib/armv8-a/libponyrt.bc -o /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/runtime-target-continuation-v1/jobs/remaining-scored-evidence-v1/runtime.ll"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-13T23:21:39.123719+00:00",
+  "final_exit_status": 0,
+  "leader_reaped": true,
+  "remaining_group_members": [],
+  "cleanup_complete": true,
+  "journal_finished_at": "2026-10-13T23:21:39.242831+00:00"
+}

@@ -1,0 +1,25 @@
+{
+  "language": "nim",
+  "distribution": "Nim2.2.12",
+  "tool": "nimpretty",
+  "version": "0.2",
+  "argv": [
+    "--indent:0",
+    "--maxLineLen:80",
+    "--out:{output}",
+    "{input}"
+  ],
+  "output_mode": "file",
+  "indent": "official default autodetection",
+  "max_line_length": 80,
+  "explicit_file_only": true,
+  "ambient_config_files_read": false,
+  "separate_required_output": true,
+  "source_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v3/nim/nim-2.2.12/nimpretty/nimpretty.nim": "ef9b8a1f6f05a3cdbb10d7b026d01b10f2e93b6a8299fdce9621948a22914ed9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v3/nim/nim-2.2.12/compiler/layouter.nim": "7e031c686f5b0cbcf734900a250b2ad63c64e2c74c0eaf9f9eec4e760349b88c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v3/nim/nim-2.2.12/compiler/parser.nim": "f265cadcbd7af215be90edd96cf38206e6b400bfa623b9b3bdba34454e6b97ce",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v3/nim/nim-2.2.12/compiler/lexer.nim": "3b952e6b76079621d6e62f8b8d44b9bb6a7ae6cf89e5f1fc4d55b70fd65dc9ff",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v3/nim/nim-2.2.12/compiler/syntaxes.nim": "e832aba48943663abf0867dcca0a682fb81a9aa7cff0ec1b8934c2db2a6ad1ad"
+  }
+}

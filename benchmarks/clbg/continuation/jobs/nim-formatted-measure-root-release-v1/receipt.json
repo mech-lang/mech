@@ -1,0 +1,22 @@
+{
+  "at": "2026-10-13T23:26:15.975808+00:00",
+  "status": "reviewed-actual20-plan-awaiting-serialized-native-formatter-batch",
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261013/formatted-loc-v1/measure.py",
+    "--plan",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/formatted-nim-plan-v1/jobs/actual-plans-v1/cohort-plan.json",
+    "--plan-sha256",
+    "dddc2ee8b22bac0081351633ce89e23c0d88a404b2cd01b81ee6d778cf8b281b",
+    "--revision",
+    "nim-native20-v1"
+  ],
+  "plan_sha256": "dddc2ee8b22bac0081351633ce89e23c0d88a404b2cd01b81ee6d778cf8b281b",
+  "profiles": 20,
+  "authored_inputs": 21,
+  "benchmark_runs": 0
+}

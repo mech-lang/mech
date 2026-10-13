@@ -1,0 +1,11 @@
+{
+  "definition": "nonblank-noncomment-physical-lines-v1",
+  "module_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/formatted-nim-plan-v1/physical_nim.py",
+  "module_sha256": "ca715d690eb924e9848277180f240c3e2d8c1373d0ffa29797d6f7b61d2f407c",
+  "function": "mask_foreign",
+  "argument": "nim",
+  "diagnostics": [],
+  "no_semantic_normalization": true,
+  "input_sha256": "a4b1bf6f833cac670ca47606c1515b11c5e11385bde392b6944383d5708ee018",
+  "physical_loc": 40
+}

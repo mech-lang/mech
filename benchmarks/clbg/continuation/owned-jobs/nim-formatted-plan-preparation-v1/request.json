@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-13T23:24:57.366980+00:00",
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/formatted-nim-plan-v1/prepare_plan.py",
+    "--revision",
+    "actual-plans-v1",
+    "--source-sha256",
+    "b19cd4bc60d1df16d7f3b3fc44a0531fcf2832dc1cb94f855a667335ebb7d689",
+    "--shim-sha256",
+    "ca715d690eb924e9848277180f240c3e2d8c1373d0ffa29797d6f7b61d2f407c",
+    "--review-sha256",
+    "480b48abed2d35de61b01c6ef00d77c1ffec06d723188dddb518c96e2e93d050",
+    "--fixture-review-sha256",
+    "2413d79295c442cb21e1b0d9429d9f825fc57759a884ae05abcd78df3c895c74",
+    "--baseline-review-sha256",
+    "bb369ef1b1dab6579e788c220c148082aba3a185c89468572e0056e2711d647f",
+    "--metadata-review-sha256",
+    "1082d7709da62a12a4da3f5def71c39e647d1fa1c05fccb29885c34b34b4bb68"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "common_mutex_owned_by_target_command": true,
+  "qualification_granted": false,
+  "automatic_retry": false
+}

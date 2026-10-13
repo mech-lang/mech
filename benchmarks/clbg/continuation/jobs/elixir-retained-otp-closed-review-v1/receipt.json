@@ -1,0 +1,22 @@
+{
+  "at": "2026-10-13T23:30:17.374989+00:00",
+  "status": "closed-successful-publisher-intake-stopped-at-dry-launch-spelling-check",
+  "verified_pins": 7741,
+  "outcome_sha256": "d76a2d019e4ec3a480df223392b76eff4cf2b6efcea74b7cf1b48c964622aed5",
+  "durable_terminal_sha256": "ed9bb4ac28092872d87915aeb5e35318ed912659946a3c578d56b7dd0dbe2c45",
+  "publisher_intake_sha256": "29857ceb0f0eef651490ea683d9ff3381d394e3e858eb1557d2f3f627c6f70f6",
+  "source_inventory_sha256": "80309d98f655c9d0894cf4c17c99d1909fcb3bd31d9408282b36bd0f5ecb6caf",
+  "successful_dry_command": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/jobs/retained-otp-toolchain-v1/launch/resolved-version-launch.json",
+    "sha256": "d9310eabb28d0acfd477e7a3e0d895dbe161854363d290d2b23a2b10a82e2942"
+  },
+  "materialized_forms": 20,
+  "authored_inputs_per_form": 3,
+  "publisher_downloads": 2,
+  "beam_version_commands": 0,
+  "configuration_probes": 0,
+  "subject_compiler_commands": 0,
+  "fixture_reexecutions": 0,
+  "benchmark_runs": 0,
+  "root_cause": "Official launcher resets ERTS_BIN and preserves bin/../lib in argv; dry output starts PATH-resolved erl rather than assumed absolute normalized spelling."
+}

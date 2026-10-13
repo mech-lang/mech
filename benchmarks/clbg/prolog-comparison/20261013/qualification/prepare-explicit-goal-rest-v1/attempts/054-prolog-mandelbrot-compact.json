@@ -1,0 +1,61 @@
+{
+  "key": "mandelbrot:prolog-mandelbrot-compact",
+  "id": "prolog-mandelbrot-compact",
+  "benchmark": "mandelbrot",
+  "language": "prolog",
+  "source_sha256": "97e78601578af9c54a73bdc1cfed6ae6a36c90e8438fbc849a935d7f657fe09d",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/MacOS/swipl",
+    "-q",
+    "-O",
+    "-f",
+    "none",
+    "--stack-limit=8g",
+    "-l",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-mandelbrot-compact/input/support/clbg_io.qlf",
+    "-s",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-mandelbrot-compact/input/sources/mandelbrot/compact.qlf",
+    "-g",
+    "clbg_io:run(clbg_mandelbrot:main)",
+    "--",
+    "3"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-mandelbrot-compact/input",
+  "runtime_environment": {
+    "SWI_HOME_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/Resources/swipl"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"554814b1da7c0c30595adafb758145e42a6134c696b47c8870d359008246443e\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/MacOS/swipl\", \"-q\", \"-O\", \"-f\", \"none\", \"--stack-limit=8g\", \"-l\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-mandelbrot-compact/input/support/clbg_io.qlf\", \"-s\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-mandelbrot-compact/input/sources/mandelbrot/compact.qlf\", \"-g\", \"clbg_io:run(clbg_mandelbrot:main)\", \"--\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-mandelbrot-compact/input\", \"environment\": {\"SWI_HOME_DIR\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/.build/swi-runtime-directory-v1/arm64-app/SWI-Prolog.app/Contents/Resources/swipl\"}, \"source_sha256\": \"97e78601578af9c54a73bdc1cfed6ae6a36c90e8438fbc849a935d7f657fe09d\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-mandelbrot-compact/input/sources/mandelbrot/compact.pl\": \"97e78601578af9c54a73bdc1cfed6ae6a36c90e8438fbc849a935d7f657fe09d\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/qualification/prepare-explicit-goal-rest-v1/builds/prolog-mandelbrot-compact/input/support/clbg_io.pl\": \"bc6361457988de3b8d7dbce526bf738f0268e96e1c7bb59c35bb4798c71ebdb3\"}}",
+  "started_at": "2026-10-13T23:11:59.615503+00:00",
+  "workload_n": 3,
+  "full_workload": false,
+  "timeout_seconds": 120,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.032031208,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 10,
+  "stdout_sha256": "283b41658c4a4006825d9a3a188f42018305cdc5a19247921d2470c56121ee76",
+  "validation": {
+    "reference_match": true,
+    "bytes": 10,
+    "sha256": "283b41658c4a4006825d9a3a188f42018305cdc5a19247921d2470c56121ee76"
+  },
+  "finished_at": "2026-10-13T23:11:59.876920+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true
+}

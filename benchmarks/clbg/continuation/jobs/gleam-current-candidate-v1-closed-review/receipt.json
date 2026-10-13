@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-13T23:18:54.548462+00:00",
+  "status": "closed-failed-before-candidate-at-source-read-only-gate",
+  "outcome_sha256": "6cb0b22e826e57dac506aa31c5659b6f19dcdb776104882614da06f2e1e9dcfa",
+  "durable_terminal_sha256": "019b49c9a8a0974409cd8260428a98bbbe5da064f1c7d7b6296d0026e250acd1",
+  "native_processes": 0,
+  "fixture_reexecutions": 0,
+  "live_dataset_mutations": 0,
+  "successful_candidate_steps": 0,
+  "root_cause": "Root hashed reviewed sources without setting read-only permissions before launch."
+}

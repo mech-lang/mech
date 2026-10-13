@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/qualify_gleam_current_candidate_v1.py", line 222, in run
+    require(not path.stat().st_mode & 0o222, 'Reviewed frozen source/packet required')
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/qualify_gleam_current_candidate_v1.py", line 69, in require
+    if not value: raise ValueError(why)
+                  ^^^^^^^^^^^^^^^^^^^^^
+ValueError: Reviewed frozen source/packet required
