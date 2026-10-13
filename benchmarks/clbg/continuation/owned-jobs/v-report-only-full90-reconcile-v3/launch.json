@@ -1,0 +1,19 @@
+{
+  "status": "durable-job-launched",
+  "launched_at": "2026-10-13T12:20:39.050168+00:00",
+  "job": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/v-report-only-full90-reconcile-v3",
+  "worker_identity": {
+    "pid": 5626,
+    "listing": "5626  5625 Tue Oct 13 08:20:39 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/v-report-only-full90-reconcile-v3 --lease-fd 3 --go-fd 4"
+  },
+  "command": [
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+    "-B",
+    "-u",
+    "reconcile_suite_v3.py"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012",
+  "detached_session": true,
+  "automatic_retry": false,
+  "qualification_granted": false
+}

@@ -611,5 +611,458 @@
     "never_chart_eligible": true
   },
   "historical_live_processes": "  PID  PPID  ELAPSED      TIME  %CPU    RSS STAT COMMAND\n17798     1 02:41:15   0:22.38   0.0  25824 Ss   /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/apl-argv-v1/continuation.py --run --manifest-sha256 cfc246e46aa4e67db659dae89009259d5d9188381b007f486b0266cc973ed1b8\n20372  1058 02:30:22   0:03.50   0.0  45440 Ss   /tmp/mech-nbody-plot-runtime/bin/python3 -B -u prepare_builder_v3_cohort.py --revision production-builder-v3\n28471  1058 02:07:22   0:01.68   0.0  29664 Ss   /tmp/mech-nbody-plot-runtime/bin/python3 -B -u complete_builder_v3.py\n43896     1 01:04:38   0:00.51   0.0  26976 Ss   /tmp/mech-nbody-plot-runtime/bin/python3 -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/full_study.py --run --benchmark revcomp --manifest-sha256 1d8e74257bac07f674e017c12b83ee9a3d62cb7f14fc51abd585d91790ac347d\n44477 44442 01:03:14  63:13.52 100.0  73120 Rs   /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl --silent --noCIN --noCONT --noColor --noSV --cc 1 -f /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-knucleotide-v2/sources/knucleotide.compact.apl\n44492  1058 01:03:06   0:00.02   0.0  20304 Ss   /tmp/mech-nbody-plot-runtime/bin/python3 -B -u guarded_prepare_v4.py --prepare --proposal-sha256 4e4e45bc06660b891ed1fbbd0b0d09a1ff744513a0a6af0a4d9720cedfa3487b\n44652  1058 01:02:43   0:00.06   0.0  30608 Ss   /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u benchmarks/clbg/crystal-comparison/20261012/guarded_prepare_v6.py --run --proposal-file benchmarks/clbg/crystal-comparison/20261012/proposals/private-input-archive-filter-v6.json --proposal-sha256 1c319443c3948709eeadc05526ad3244d785c0ce99cc724c8a6a025868b5ac1c --revision private-input-archive-filter-v6\n44704  1058 01:02:33   0:00.04   0.0  22912 Ss   /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u benchmarks/clbg/crystal-comparison/20261012/source-counts/replay_sources.py --fixture-receipt benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-18/fixture-receipt.json --output benchmarks/clbg/crystal-comparison/20261012/source-counts/boundary-audit-18-source-proposals-v1.json\n45366  1058    59:49   0:00.03   0.0  22560 Ss   /tmp/mech-nbody-plot-runtime/bin/python3 -B -u reconcile_full_v2.py --benchmark regexredux --output reconciliation/regexredux-three-full-samples-v2.json\n45394     1    59:48   0:00.06   0.0  30464 Ss   /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/guarded_prepare_v6.py --run --proposal-file /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/proposals/private-v6.json --proposal-sha256 ecf8bf803cfae8860309447db518174fc4d991f10bfc5d38cc77c8fb8e246cde --revision private-v6\n45441     1    59:44   0:00.06   0.0  30320 Ss   /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u -B /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/guarded_prepare_v5.py --run --proposal-file /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/proposals/private-v5.json --proposal-sha256 90cb7f87e43ae7f54d68501eab1daebdede78d856ce5564a8b9077a0c5ac57aa --revision private-v5\n46330     1    56:26   0:00.04   0.0  21504 Ss   /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-proposal-v1/jobs/fixtures-v1/worker.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-proposal-v1/jobs/fixtures-v1\n47063     1    54:00   0:00.07   0.0  20704 Ss   /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/work-full-v1/await_qualification.py --job /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/jobs/private-v6-work-seal\n56954     1    24:42   0:00.04   0.0  21744 Ss   /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-19/worker.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-19\n57083     1    24:22   0:00.06   0.0  30384 Ss   /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u -B /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/private-v1/guarded_prepare.py --seal --proposal-file /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/proposals/private-v1.json\n57320  1058    22:49   0:00.04   0.0  23008 Ss   /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u review_pending_minima_v1.py --output pending-minima-source-reconciliation-v1.json\n62772  1058    01:41   0:00.05   0.0  28480 Ss   /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/controller.py --seal\n",
-  "live_processes": "See latest_live_native_observation and durable_jobs; old raw process listing retained as historical_live_processes."
+  "live_processes": "See latest_live_native_observation and durable_jobs; old raw process listing retained as historical_live_processes.",
+  "continuation_20261013_1244": {
+    "recorded_at": "2026-10-13T12:57:27.801014+00:00",
+    "prior_turn_classification": "progress: actual completed qualifications, branch commit/push, additive repairs and durable next-stage launches",
+    "preserved_commit": "8c80a49cbd58d36cb50fb2b0eb591df03f1c80b1",
+    "preserved_file_count": 17102,
+    "remote_exact_SHA_verified": true,
+    "remote_verification_command": [
+      "git",
+      "ls-remote",
+      "origin",
+      "refs/heads/codex/clbg-native-benchmarks"
+    ],
+    "initial_push_command_reported_HTTP_400_but_remote_upload_succeeded": true,
+    "native_contention_policy": "One shared timing mutex; no simultaneous benchmarks.",
+    "completed_evidence": {
+      "nim_work_v5": "source-work-allocation-passed-awaiting-full-review-and-LOC; actual14 fixtures and8 tree proofs",
+      "gleam_work_v4": "source-work-allocation-passed-awaiting-full-review-and-LOC; actual17 fixtures and48 work proofs",
+      "clojure_supplemental22": "completed guard;22 unchanged supplemental pins;20 source reviews and34 work cases",
+      "prolog_private_v1": "actual6 fixtures passed; sealed proposal5b9186bb51e748fe69b16dcd35a632dd9ed8556abdbc30cbab45159a36a1bf88; runtime not yet discovered",
+      "matlab_regexp16": "actual16 fixtures passed; receipt9f943cabf4a27eeb7010f2178a7b45e5310382cfeaa08c04bbbdab6a65fae7cd",
+      "pygments_restoration_v2": "completed-exact-restoration; all338 exact.py bytes;7 preexisting.pyc files preserved atquarantined-bytecode",
+      "apl_sample84": "actual7797.184570125s/raw29bytes; both exactkernelwaitstatus0; originalreport/rawimmutable; recovery20gate replay queued",
+      "v_binarytrees": "complete retained1/fresh8; compact5.92802075s/Mech0.488659875s; independentall10reconciliation queued, report-only"
+    },
+    "unresolved_actual_failures": {
+      "pony_work_v3": "two K plus two Pi completed; compact tree diagnosticString iso compile failed255; v4 soleString val fix/four retained/two fresh metadata seal queued",
+      "nim_source20_restored_v2": "wrongfixture_runner module path beforecompiler commands; preserved original6 fixtures/counter; corrected entry queued",
+      "gleam_source20_restored_v2": "private-v5 missingdirectload_guard interface; preserved34fixtures; load_service adapter queued",
+      "gleam_erlang_helpers_v1": "same service interface; both21/5not-started; corrected entry queued",
+      "crystal_metadata_v1": "five actualimage directories lackedhistoricalreceiptpins; v2 freshownedimage capture foronly5unchangedbinaries queued;15reused",
+      "prolog_runtime_v2": "oneunittest_FailedTest beforeactualfixturestart, cause lost; v3 unchanged6fixture loaderdiagnostic queued",
+      "julia_aot": "canary/nbodylibrariesbuilt; noqualifiedAOT; oldobserverattach stalled; read-onlyenvironmentdiagnostic queued, genericattach calibration source beingauthored"
+    },
+    "publication_pending": "Seven language cohorts/Julia AOT/platform integration + UI/Site QA; V never dataset/chart/Site.",
+    "prolog_source_owner_proposal": "loc-normalization/20261013/prolog-proposal-v1; pinnedSWIread_term scanner/projector28fixtures source-only, rootmeaningreview+runtimequalification stillrequired",
+    "durable_jobs": [
+      {
+        "job": "apl-sample84-kqueue-observer-v1",
+        "worker_pid": 83359
+      },
+      {
+        "job": "apl-sample84-recovery-v1",
+        "worker_pid": 6108,
+        "command_pid": 6115
+      },
+      {
+        "job": "c3-full-manifests-v1-durable-v1",
+        "worker_pid": 82232,
+        "command_pid": 82236,
+        "terminal_status": "command-exited-zero-awaiting-report-review",
+        "exit_code": 0
+      },
+      {
+        "job": "c3-full90-launch-v1",
+        "worker_pid": 99668,
+        "command_pid": 99672,
+        "terminal_status": "command-exited-zero-awaiting-report-review",
+        "exit_code": 0
+      },
+      {
+        "job": "c3-source24-compiled25-replay-v2",
+        "worker_pid": 7651,
+        "command_pid": 7658
+      },
+      {
+        "job": "clojure-full-manifests-v1",
+        "worker_pid": 721,
+        "command_pid": 725,
+        "terminal_status": "command-exited-zero-awaiting-report-review",
+        "exit_code": 0
+      },
+      {
+        "job": "clojure-full-v1-binarytrees",
+        "worker_pid": 3996,
+        "command_pid": 4003
+      },
+      {
+        "job": "clojure-full-v1-fannkuchredux",
+        "worker_pid": 4010,
+        "command_pid": 4014
+      },
+      {
+        "job": "clojure-full-v1-fasta",
+        "worker_pid": 3982,
+        "command_pid": 3987
+      },
+      {
+        "job": "clojure-full-v1-knucleotide",
+        "worker_pid": 3988,
+        "command_pid": 3994
+      },
+      {
+        "job": "clojure-full-v1-mandelbrot",
+        "worker_pid": 3975,
+        "command_pid": 3980
+      },
+      {
+        "job": "clojure-full-v1-nbody",
+        "worker_pid": 4000,
+        "command_pid": 4008
+      },
+      {
+        "job": "clojure-full-v1-pidigits",
+        "worker_pid": 3961,
+        "command_pid": 3966
+      },
+      {
+        "job": "clojure-full-v1-regexredux",
+        "worker_pid": 3947,
+        "command_pid": 3954
+      },
+      {
+        "job": "clojure-full-v1-revcomp",
+        "worker_pid": 3952,
+        "command_pid": 3959
+      },
+      {
+        "job": "clojure-full-v1-spectralnorm",
+        "worker_pid": 3968,
+        "command_pid": 3973
+      },
+      {
+        "job": "clojure-full90-launch-v1",
+        "worker_pid": 3610,
+        "command_pid": 3617,
+        "terminal_status": "command-exited-zero-awaiting-report-review",
+        "exit_code": 0
+      },
+      {
+        "job": "clojure-loc21-overlay-v2",
+        "worker_pid": 7663,
+        "command_pid": 7673
+      },
+      {
+        "job": "clojure-supplemental22-admission-v1",
+        "worker_pid": 83741,
+        "command_pid": 83746,
+        "terminal_status": "command-exited-zero-awaiting-report-review",
+        "exit_code": 0
+      },
+      {
+        "job": "crystal-publication-metadata-v1",
+        "worker_pid": 1295,
+        "command_pid": 1303,
+        "terminal_status": "command-failed",
+        "exit_code": 1
+      },
+      {
+        "job": "crystal-publication-metadata-v2",
+        "worker_pid": 8666,
+        "command_pid": 8672
+      },
+      {
+        "job": "curated-git-checkpoint-v3",
+        "worker_pid": 4264,
+        "command_pid": 4270,
+        "terminal_status": "command-failed",
+        "exit_code": 1
+      },
+      {
+        "job": "exact-pygments-restoration-durable-v1",
+        "worker_pid": 80746,
+        "command_pid": 80753,
+        "terminal_status": "command-failed",
+        "exit_code": 1
+      },
+      {
+        "job": "exact-pygments-restoration-durable-v2",
+        "worker_pid": 99495,
+        "command_pid": 99501,
+        "terminal_status": "command-exited-zero-awaiting-report-review",
+        "exit_code": 0
+      },
+      {
+        "job": "followup-digests-v1",
+        "worker_pid": 1433,
+        "command_pid": 1437,
+        "terminal_status": "command-exited-zero-awaiting-report-review",
+        "exit_code": 0
+      },
+      {
+        "job": "git-persistence-inventory-durable-v2",
+        "worker_pid": 80750,
+        "command_pid": 80757,
+        "terminal_status": "command-exited-zero-awaiting-report-review",
+        "exit_code": 0
+      },
+      {
+        "job": "gleam-erlang-helpers26-entry-repaired-v2",
+        "worker_pid": 11815
+      },
+      {
+        "job": "gleam-full-manifests-v4",
+        "worker_pid": 1041,
+        "command_pid": 1046,
+        "terminal_status": "command-exited-zero-awaiting-report-review",
+        "exit_code": 0
+      },
+      {
+        "job": "gleam-full90-launch-v4",
+        "worker_pid": 3622,
+        "command_pid": 3630,
+        "terminal_status": "command-exited-zero-awaiting-report-review",
+        "exit_code": 0
+      },
+      {
+        "job": "gleam-source20-entry-repaired-v3",
+        "worker_pid": 4653,
+        "command_pid": 4665
+      },
+      {
+        "job": "gleam-source20-replay-v2",
+        "worker_pid": 1281,
+        "command_pid": 1290,
+        "terminal_status": "command-failed",
+        "exit_code": 1
+      },
+      {
+        "job": "gleam-work-v4-durable-v1",
+        "worker_pid": 81456,
+        "command_pid": 81466,
+        "terminal_status": "command-exited-zero-awaiting-report-review",
+        "exit_code": 0
+      },
+      {
+        "job": "julia-attach-environment-v1",
+        "worker_pid": 6007,
+        "command_pid": 6014
+      },
+      {
+        "job": "legacy133-platform10-fixtures-v1",
+        "worker_pid": 9795,
+        "command_pid": 9801
+      },
+      {
+        "job": "matlab-regexp-source2-v1",
+        "worker_pid": 4775,
+        "command_pid": 4781,
+        "terminal_status": "command-failed",
+        "exit_code": 1
+      },
+      {
+        "job": "matlab-regexp16-fixtures-v1",
+        "worker_pid": 1287,
+        "command_pid": 1297,
+        "terminal_status": "command-exited-zero-awaiting-report-review",
+        "exit_code": 0
+      },
+      {
+        "job": "nim-full-manifests-v6",
+        "worker_pid": 3614,
+        "command_pid": 3624,
+        "terminal_status": "command-exited-zero-awaiting-report-review",
+        "exit_code": 0
+      },
+      {
+        "job": "nim-full90-launch-v6",
+        "worker_pid": 5008,
+        "command_pid": 5017,
+        "terminal_status": "command-exited-zero-awaiting-report-review",
+        "exit_code": 0
+      },
+      {
+        "job": "nim-source20-entry-repaired-v3",
+        "worker_pid": 4647,
+        "command_pid": 4655
+      },
+      {
+        "job": "nim-source20-replay-v2",
+        "worker_pid": 1276,
+        "command_pid": 1283,
+        "terminal_status": "command-failed",
+        "exit_code": 1
+      },
+      {
+        "job": "nim-work-v5-durable-v1",
+        "worker_pid": 81452,
+        "command_pid": 81459,
+        "terminal_status": "command-exited-zero-awaiting-report-review",
+        "exit_code": 0
+      },
+      {
+        "job": "platform-frontend-v3-durable-v1",
+        "worker_pid": 82042,
+        "command_pid": 82046,
+        "terminal_status": "command-exited-zero-awaiting-report-review",
+        "exit_code": 0
+      },
+      {
+        "job": "pony-grammar33-fixtures-v2",
+        "worker_pid": 7655,
+        "command_pid": 7665
+      },
+      {
+        "job": "pony-work-v3-durable-v1",
+        "worker_pid": 81464,
+        "command_pid": 81470,
+        "terminal_status": "command-failed",
+        "exit_code": 1
+      },
+      {
+        "job": "pony-work-v4-seal",
+        "worker_pid": 5258,
+        "command_pid": 5266,
+        "terminal_status": "command-failed",
+        "exit_code": 1
+      },
+      {
+        "job": "prolog-private-v1-seal",
+        "worker_pid": 89702,
+        "command_pid": 89706,
+        "terminal_status": "command-exited-zero-awaiting-report-review",
+        "exit_code": 0
+      },
+      {
+        "job": "prolog-runtime-v2-seal",
+        "worker_pid": 1666,
+        "command_pid": 1672,
+        "terminal_status": "command-failed",
+        "exit_code": 1
+      },
+      {
+        "job": "prolog-runtime-v3-loader-diagnostic",
+        "worker_pid": 6012,
+        "command_pid": 6020
+      },
+      {
+        "job": "push-checkpoint-8c80-v1",
+        "worker_pid": 5004,
+        "command_pid": 5011,
+        "terminal_status": "command-exited-zero-awaiting-report-review",
+        "exit_code": 0
+      },
+      {
+        "job": "v-report-only-full90-reconcile-v3",
+        "worker_pid": 5626,
+        "command_pid": 5632
+      },
+      {
+        "job": "v-trees-remaining-eight-v1",
+        "worker_pid": 87184,
+        "command_pid": 87188,
+        "terminal_status": "command-exited-zero-awaiting-report-review",
+        "exit_code": 0
+      }
+    ]
+  },
+  "continuation_20261013_1328": {
+    "snapshot_utc": "2026-10-13T13:28:00Z",
+    "remotely_verified_checkpoint": "8c80a49cbd58d36cb50fb2b0eb591df03f1c80b1",
+    "native_full_qualified_sample_counts": {
+      "crystal": 90,
+      "c3": 90,
+      "nim": 10,
+      "gleam": 34,
+      "clojure": 40
+    },
+    "site_expansion_published": false,
+    "V_report_only_never_dataset_chart_site": true,
+    "current_summary": "benchmarks/clbg/BENCHMARK_PROGRESS.md",
+    "actual_completed_followups": [
+      "crystal-publication-metadata-v2",
+      "c3-source24-compiled25-replay-v2",
+      "gleam-source20-entry-repaired-v3",
+      "clojure-loc21-overlay-v2",
+      "pony-grammar33-fixtures-v2",
+      "gleam-erlang-helpers26-entry-repaired-v2",
+      "julia-attach-environment-v1"
+    ],
+    "c3_source_replay_status": "46 exact comma diagnostics in six data initializer mains; additive grammar correction being authored; no canonical LOC admitted",
+    "prolog_runtime_v3_actual_cause": "pyexpat requires _XML_SetAllocTrackerActivationThreshold absent in selected system Expat; zero six-fixture methods started",
+    "prolog_runtime_v4": "same six frozen fixtures on already installed bundled Python3.12 with built-in pyexpat; metadata seal queued; no download/runtime launch yet",
+    "julia_environment_observations": "Developer mode disabled; signing/entitlement evidence saved; no attach cause proven; bounded two-cell generic calibration queued",
+    "queued_followups": [
+      "v-report-only-full90-reconcile-v4",
+      "c3-full90-independent-reconcile-v2",
+      "matlab-regexp-source2-entry-repaired-v2",
+      "pony-work-v5-seal",
+      "julia-generic-attach-calibration-v1",
+      "prolog-runtime-v4-seal",
+      "nim-source20-entry-repaired-v4",
+      "legacy133-platform10-fixtures-repaired-v2"
+    ],
+    "preserve_failed_entries": [
+      "Pony v4 JSON map-key mismatch",
+      "Nim source20 v3 deferred import",
+      "MATLAB source2 v1 fingerprint support/null metadata",
+      "V suite v3 missing verify helper",
+      "legacy platform v1 duplicate exact alias",
+      "Prolog runtime v2/v3 Python Expat import"
+    ],
+    "shared_timing_mutex": "/tmp/mech-clbg-timing.lock",
+    "simultaneous_timing_subjects_authorized": 0,
+    "pending": "remaining full cohorts, Pony two tree observations and full seal, Prolog actual runtime/20QLF/156bounded/work/full90/counts, Julia attach/AOT, exact source-owner reviews, platform133 qualification, whole7 integration and Site QA/publish"
+  },
+  "scope_update_20261013_1343": {
+    "new_requested_languages": [
+      "red",
+      "rebol"
+    ],
+    "publication_inventory_count": 9,
+    "primary_runtime_architecture_discovery": "delegated nim_completion",
+    "completed_independent_full90": [
+      "c3",
+      "V-report-only"
+    ],
+    "current_common_native_subject": "APL final fannkuch recovered sample3",
+    "next_push": "followup-git-checkpoint-v4 queued, not yet claimed complete",
+    "ledger_open": "queued by Codex; status delivered inline"
+  },
+  "followups_20261013_1353": {
+    "c3_data_owner23_fixture_job": "c3-data-owner23-fixtures-v5",
+    "fixture_job_qualification": "pending common slot; original19+four new methods; no benchmark source count yet",
+    "red_primary_platform_evidence": [
+      "https://www.red-lang.org/2026/07/c-libraries-linking.html",
+      "https://support.apple.com/en-us/103076"
+    ],
+    "red_choice_question": "pending native support vs separate emulated report; keep pending while awaiting optional choice",
+    "rebol_primary_asset": "https://github.com/Oldes/Rebol3/releases/expanded_assets/3.22.1",
+    "rebol_selected_candidate": "Oldes/Rebol3 3.22.1 bulk macOSARM64; publisher digest6f078cfba45dcfc43502fee6795361180ce0f1ed6964521278a488613408311a; actual downloaded/nativeversion/arch/feature evidence stillpending",
+    "prolog_owner_v2": "source-only31 methods; fixes nestedcontrol, vendorimport binding, exactcontext packet; notexecuted",
+    "next_stage_watch_controller": "unexecuted source underpeerreview; waits metadata leases; no automaticretry or full timing admission",
+    "pony_run_cold_import_entry": "source beingauthored byPony"
+  },
+  "scope_and_queued_dependencies_20261013_1410": {
+    "active_requested_publication_languages": [
+      "nim",
+      "crystal",
+      "pony",
+      "c3",
+      "gleam",
+      "clojure",
+      "prolog",
+      "rebol"
+    ],
+    "Red_removed_by_user": true,
+    "V_report_only": true,
+    "active_goal_confirmed_after_user_edit": true,
+    "future_owned_stages": [
+      "pony-two-tree-reviewed-next-stage-v1",
+      "prolog-private-runtime-reviewed-next-stage-v1"
+    ],
+    "strict_preconditions": "closed exact dependency lease, normal durable completion/request/start identity, authoritative sealed artifact hashes undercommon; no automatic retries, no full timing or runtime/chart admission by watcher",
+    "pony_entry": "reviewed cold exact source/loader under heldcommon; original function bodies unchanged; onlytwo trees+scoredallocation afterseal succeeds",
+    "queued_checkpoints": [
+      "followup-git-checkpoint-v4",
+      "followup-git-checkpoint-v5",
+      "followup-git-checkpoint-v6"
+    ],
+    "v5_save_scope": "ordered afterv4 lease, newC3grammar23 packet, Prologowner31 packet, Rebolfrozen source packet, Vtextreport; active source/timing files excluded",
+    "last_verified_remote": "8c80a49cbd58d36cb50fb2b0eb591df03f1c80b1",
+    "v6_save_scope": "ordered afterv5 lease; overview/explorer eight-language candidates and frozen Rebol .reb/.r3/C/loader source drafts; unexecuted qualification honestly labeled"
+  }
 }

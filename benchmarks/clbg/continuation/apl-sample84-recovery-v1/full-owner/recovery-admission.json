@@ -1,0 +1,117 @@
+{
+  "status": "passed-exact-kernel-status-and-original-twenty-gate-replay",
+  "original_manifest": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/apl-after-tree-failure-v1/full-owner/manifest.json",
+    "sha256": "afe92e55cea508e497e943143ae1934531330abd023c67020d03bf5e2c71e1ed"
+  },
+  "original_report": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/apl-after-tree-failure-v1/full-owner/timings-apl.json",
+    "sha256": "18b7e9f25c7d038eaf176c6b85b515d57af2113c0e0094a0550debd9c574f789"
+  },
+  "original_raw84": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/apl-after-tree-failure-v1/full-owner/attempts/084-fannkuchredux-apl-compact.json",
+    "sha256": "c56fb7a54709c8d6d1f434b776ced834220984efd314ea9e39f7d68595109255"
+  },
+  "observer": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/apl-sample84-kqueue-observer-v1/terminal.json",
+    "sha256": "4f8c4b00766c4aed4b0a81b606ea0482cb3deb0d7523786ac6a939d682db10cf"
+  },
+  "literal_kernel_wait_statuses": {
+    "68659": 0,
+    "68666": 0
+  },
+  "original82_83_replayed_checks": {
+    "82": {
+      "sampler_exited_normally": true,
+      "authoritative_native_group_received": true,
+      "native_inherited_common_mutex": true,
+      "native_exited_normally": true,
+      "no_execution_error": true,
+      "no_wrapper_integrity_error": true,
+      "no_resource_violation": true,
+      "no_resource_monitor_errors": true,
+      "no_compiler_power_monitor_errors": true,
+      "no_monitor_finish_error": true,
+      "no_execute_cleanup_error": true,
+      "no_remaining_execute_group": true,
+      "no_supervisor_cleanup": true,
+      "no_supervisor_remaining_group": true,
+      "valid_environment": true,
+      "actual_full_workload": true,
+      "exact_command_and_group": true,
+      "complete_output_reference_match": true,
+      "complete_output_bytes_and_hash": true,
+      "pins_unchanged": true
+    },
+    "83": {
+      "sampler_exited_normally": true,
+      "authoritative_native_group_received": true,
+      "native_inherited_common_mutex": true,
+      "native_exited_normally": true,
+      "no_execution_error": true,
+      "no_wrapper_integrity_error": true,
+      "no_resource_violation": true,
+      "no_resource_monitor_errors": true,
+      "no_compiler_power_monitor_errors": true,
+      "no_monitor_finish_error": true,
+      "no_execute_cleanup_error": true,
+      "no_remaining_execute_group": true,
+      "no_supervisor_cleanup": true,
+      "no_supervisor_remaining_group": true,
+      "valid_environment": true,
+      "actual_full_workload": true,
+      "exact_command_and_group": true,
+      "complete_output_reference_match": true,
+      "complete_output_bytes_and_hash": true,
+      "pins_unchanged": true
+    }
+  },
+  "recovered84_checks": {
+    "sampler_exited_normally": true,
+    "authoritative_native_group_received": true,
+    "native_inherited_common_mutex": true,
+    "native_exited_normally": true,
+    "no_execution_error": true,
+    "no_wrapper_integrity_error": true,
+    "no_resource_violation": true,
+    "no_resource_monitor_errors": true,
+    "no_compiler_power_monitor_errors": true,
+    "no_monitor_finish_error": true,
+    "no_execute_cleanup_error": true,
+    "no_remaining_execute_group": true,
+    "no_supervisor_cleanup": true,
+    "no_supervisor_remaining_group": true,
+    "valid_environment": true,
+    "actual_full_workload": true,
+    "exact_command_and_group": true,
+    "complete_output_reference_match": true,
+    "complete_output_bytes_and_hash": true,
+    "pins_unchanged": true
+  },
+  "retained_seconds": [
+    7919.4648885,
+    7797.184570125
+  ],
+  "recovered_supervisor": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/apl-sample84-recovery-v1/full-owner/recovered-084.supervisor.json",
+    "sha256": "dca4d5be82ae1ed4a2ae75f1f8dd188ac6064b5afb23d7aea69d49b0d3fa9167"
+  },
+  "missing_slots": [
+    {
+      "sample": 2,
+      "key": "fannkuchredux:mech-control-for-apl"
+    },
+    {
+      "sample": 3,
+      "key": "fannkuchredux:mech-control-for-apl"
+    },
+    {
+      "sample": 3,
+      "key": "fannkuchredux:fannkuchredux-apl-compact"
+    }
+  ],
+  "already_running_sample_restarted": false,
+  "old_process_signals_sent": 0,
+  "fresh_full_processes": 0,
+  "chart_admission": false
+}

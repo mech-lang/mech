@@ -1,0 +1,9 @@
+{
+  "status": "remote-exact-commit-verified",
+  "commit": "8c80a49cbd58d36cb50fb2b0eb591df03f1c80b1",
+  "remote_commit": "8c80a49cbd58d36cb50fb2b0eb591df03f1c80b1",
+  "common_timing_mutex_held": true,
+  "force_push": false,
+  "transport_options_persisted": false,
+  "prior_remote_commit": "363b4ffb20e895a7ce92bade44d38e9c3e58dd3d"
+}

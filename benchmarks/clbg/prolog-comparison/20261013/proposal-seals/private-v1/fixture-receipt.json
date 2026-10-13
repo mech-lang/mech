@@ -1,0 +1,36 @@
+{
+  "status": "passed",
+  "expected_test_ids": [
+    "test_contracts.PreparationContracts.test_twenty_profiles_and_explicit_same_source_aliases",
+    "test_contracts.PreparationContracts.test_compiler_inventory_requires_each_helper_and_no_foreign_authored_root",
+    "test_contracts.PreparationContracts.test_actual_runtime_flags_reject_bounded_or_x86_or_disabled_gc",
+    "test_contracts.PreparationContracts.test_native_counter_and_workload_boolean_substitution_is_rejected",
+    "test_contracts.PreparationContracts.test_isolation_requires_exact_twenty_boolean_gates_and_clean_ownership",
+    "test_contracts.PreparationContracts.test_full_admission_requires_actual_scored_allocation_not_source_assertion"
+  ],
+  "actual_test_ids": [
+    "test_contracts.PreparationContracts.test_actual_runtime_flags_reject_bounded_or_x86_or_disabled_gc",
+    "test_contracts.PreparationContracts.test_compiler_inventory_requires_each_helper_and_no_foreign_authored_root",
+    "test_contracts.PreparationContracts.test_full_admission_requires_actual_scored_allocation_not_source_assertion",
+    "test_contracts.PreparationContracts.test_isolation_requires_exact_twenty_boolean_gates_and_clean_ownership",
+    "test_contracts.PreparationContracts.test_native_counter_and_workload_boolean_substitution_is_rejected",
+    "test_contracts.PreparationContracts.test_twenty_profiles_and_explicit_same_source_aliases"
+  ],
+  "discovered_test_ids": [
+    "test_contracts.PreparationContracts.test_actual_runtime_flags_reject_bounded_or_x86_or_disabled_gc",
+    "test_contracts.PreparationContracts.test_compiler_inventory_requires_each_helper_and_no_foreign_authored_root",
+    "test_contracts.PreparationContracts.test_full_admission_requires_actual_scored_allocation_not_source_assertion",
+    "test_contracts.PreparationContracts.test_isolation_requires_exact_twenty_boolean_gates_and_clean_ownership",
+    "test_contracts.PreparationContracts.test_native_counter_and_workload_boolean_substitution_is_rejected",
+    "test_contracts.PreparationContracts.test_twenty_profiles_and_explicit_same_source_aliases"
+  ],
+  "discovered_tests": 6,
+  "tests_run": 6,
+  "execution_completed": true,
+  "inherited_common_mutex": true,
+  "failures": [],
+  "errors": [],
+  "skips": [],
+  "expected_failures": [],
+  "unexpected_successes": []
+}

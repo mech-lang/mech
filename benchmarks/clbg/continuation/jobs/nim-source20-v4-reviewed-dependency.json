@@ -1,0 +1,20 @@
+{
+  "status": "completed-failed-terminal-digest-capture",
+  "actual_failed_terminal": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/nim-source-replay-v1/jobs/source20-repaired-v3/terminal-pins.json",
+  "actual_failed_terminal_sha256": "fb05275b1c79c67c4b6a1decfe92b3235a56d393ad76e1afd7129bba04409b04",
+  "target": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/nim-source20-entry-repair-v2/replay.py",
+  "target_sha256": "1e8c7681128c1ccb8fde80370a6ba97aff07fc8132d96289a4a7a125db6e5662",
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/nim-source20-entry-repair-v2/replay.py",
+    "--revision",
+    "source20-entry-repaired-v4",
+    "--failed-terminal-sha256",
+    "fb05275b1c79c67c4b6a1decfe92b3235a56d393ad76e1afd7129bba04409b04"
+  ],
+  "common_mutex_held": true,
+  "new_fixture_runs": 0,
+  "native_subjects": 0
+}

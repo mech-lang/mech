@@ -1,0 +1,20 @@
+{
+  "status": "command-exited-zero-awaiting-report-review",
+  "started_at": "2026-10-13T13:14:31.045039+00:00",
+  "worker_identity": {
+    "pid": 15603,
+    "listing": "15603     1 Tue Oct 13 09:14:30 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/v-report-only-full90-reconcile-v4 --lease-fd 3 --go-fd 4"
+  },
+  "actual_command_started": true,
+  "exit_code": 0,
+  "qualification_granted": false,
+  "automatic_retry": false,
+  "command_pid": 15609,
+  "command_identity": {
+    "pid": 15609,
+    "listing": "15609 15603 Tue Oct 13 09:14:31 2026     /opt/homebrew/opt/python@3.14/bin/python3.14 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/reconcile_suite_v4.py"
+  },
+  "command_identity_observation_missing": false,
+  "finished_at": "2026-10-13T13:31:13.921967+00:00",
+  "stop_signals": []
+}

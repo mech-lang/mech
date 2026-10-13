@@ -1,0 +1,34 @@
+{
+  "status": "running",
+  "old_sample_signals_sent": 0,
+  "original_report_mutated": false,
+  "original_raw_mutated": false,
+  "no_automatic_retry": true,
+  "chart_admission": false,
+  "fresh_full_processes": 3,
+  "required_fresh_full_processes": 3,
+  "started_at": "2026-10-13T12:57:55.303578+00:00",
+  "supervisor": {
+    "pid": 6115,
+    "process_listing": "Tue Oct 13 08:24:36 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/apl-sample84-recovery-v1/controller.py --run"
+  },
+  "manifest_sha256": "0b1112355ea0a5d9d75c0b269734c2b6329bda8c5beb8555706fb2d38b2a2ddb",
+  "literal_kernel_wait_statuses": {
+    "68659": 0,
+    "68666": 0
+  },
+  "planned_slots": [
+    {
+      "sample": 2,
+      "key": "fannkuchredux:mech-control-for-apl"
+    },
+    {
+      "sample": 3,
+      "key": "fannkuchredux:mech-control-for-apl"
+    },
+    {
+      "sample": 3,
+      "key": "fannkuchredux:fannkuchredux-apl-compact"
+    }
+  ]
+}

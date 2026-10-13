@@ -1,0 +1,26 @@
+{
+  "started_at": "2026-10-13T13:16:10.522014+00:00",
+  "worker_identity": {
+    "pid": 17383,
+    "listing": "17383     1 Tue Oct 13 09:16:10 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/c3-full90-independent-reconcile-v2 --lease-fd 3 --go-fd 4"
+  },
+  "inherited_private_lease": true,
+  "detached_session": true,
+  "common_mutex_owned_by_target_command": true,
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/reconcile_native_suite_v2.py",
+    "--language",
+    "c3",
+    "--study-root",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1",
+    "--reviewed-index-sha256",
+    "05ed934ffd9e81136b0a8bd802aff4adda31e8f6f364df345dc2141f57deeece",
+    "--output",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/reconciliation/full-v1-suite-v2.json"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "qualification_granted": false
+}

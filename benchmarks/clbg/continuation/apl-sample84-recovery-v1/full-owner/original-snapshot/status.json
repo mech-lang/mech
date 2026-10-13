@@ -1,0 +1,18 @@
+{
+  "status": "running",
+  "supervisor": {
+    "pid": 32432,
+    "process_listing": "Mon Oct 12 22:21:52 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/apl-after-tree-failure-v1/controller.py --run --manifest-sha256 afe92e55cea508e497e943143ae1934531330abd023c67020d03bf5e2c71e1ed"
+  },
+  "manifest_sha256": "afe92e55cea508e497e943143ae1934531330abd023c67020d03bf5e2c71e1ed",
+  "stages": [
+    {
+      "language": "apl",
+      "benchmark": "nbody",
+      "started_at": "2026-10-13T02:21:55.351519+00:00",
+      "status": "complete",
+      "finished_at": "2026-10-13T02:43:23.132945+00:00"
+    }
+  ],
+  "started_at": "2026-10-13T02:21:55.351023+00:00"
+}

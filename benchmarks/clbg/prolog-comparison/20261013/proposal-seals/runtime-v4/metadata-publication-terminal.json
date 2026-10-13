@@ -1,0 +1,11 @@
+{
+  "status": "completed",
+  "outcome": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/proposal-seals/runtime-v4/metadata-publication-outcome.json",
+  "outcome_sha256": "8bba6dc44191d370756037635d2782fc2e11d03b6c329f78d0b590d6299a927d",
+  "actual_proposal_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/proposals/runtime-v4.json": "c72f7ab0d41b195acafff131e5f2cd7c61577a9fa14898af15e4c543b8daa322",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/proposals/runtime-v2.json": "c72f7ab0d41b195acafff131e5f2cd7c61577a9fa14898af15e4c543b8daa322"
+  },
+  "success_requires_actual_command_exit_zero": true,
+  "runtime_configuration_admitted": false
+}

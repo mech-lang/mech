@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/save_curated_checkpoint_v3.py", line 78, in <module>
+    command(['git', 'push', 'origin', 'HEAD:refs/heads/codex/clbg-native-benchmarks'], output, 'push')
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/save_curated_checkpoint_v3.py", line 24, in command
+    assert result.returncode == 0, ('Git operation failed; preserve journal', name, result.returncode)
+           ^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('Git operation failed; preserve journal', 'push', 1)

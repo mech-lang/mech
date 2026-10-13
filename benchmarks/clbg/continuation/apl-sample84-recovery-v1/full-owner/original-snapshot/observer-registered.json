@@ -1,0 +1,54 @@
+{
+  "status": "both-live-identities-registered",
+  "registered_at": "2026-10-13T06:28:37.119884+00:00",
+  "observer_pid": 83359,
+  "identities": {
+    "68659": "Tue Oct 13 01:11:26 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/apl-after-tree-failure-v1/controller.py --run --manifest-sha256 afe92e55cea508e497e943143ae1934531330abd023c67020d03bf5e2c71e1ed",
+    "68666": "Tue Oct 13 01:11:27 2026     /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl --silent --noCIN --noCONT --noColor --noSV --cc 1 -f /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/fannkuchredux.compact.apl -- 12"
+  },
+  "report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/apl-after-tree-failure-v1/full-owner/timings-apl.json",
+  "saved_active": {
+    "attempt": 84,
+    "round": 2,
+    "id": "fannkuchredux-apl-compact",
+    "sampler_pid": 68659,
+    "sampler_identity": {
+      "pid": 68659,
+      "process_listing": "Tue Oct 13 01:11:26 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/apl-after-tree-failure-v1/controller.py --run --manifest-sha256 afe92e55cea508e497e943143ae1934531330abd023c67020d03bf5e2c71e1ed"
+    },
+    "started_at": "2026-10-13T05:11:26.831560+00:00",
+    "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/apl-after-tree-failure-v1/full-owner/attempts/084-fannkuchredux-apl-compact.json",
+    "sampler_inherited_common_mutex": true,
+    "key": "fannkuchredux:fannkuchredux-apl-compact",
+    "sample": 2,
+    "native": {
+      "type": "native-group-started",
+      "pid": 68666,
+      "pgid": 68666,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "1",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/fannkuchredux.compact.apl",
+        "--",
+        "12"
+      ],
+      "inherited_common_mutex": true,
+      "identity": {
+        "pid": 68666,
+        "process_listing": "Tue Oct 13 01:11:27 2026     /bin/sh /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh --cc 1 -f /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/fannkuchredux.compact.apl -- 12"
+      }
+    }
+  },
+  "filter": "EVFILT_PROC",
+  "note_exit": 2147483648,
+  "note_exitstatus": 67108864,
+  "api_basis_header": "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/sys/event.h",
+  "api_basis_primary_source": "https://github.com/apple-oss-distributions/xnu/blob/main/bsd/kern/kern_event.c",
+  "signals_sent": 0,
+  "benchmarks_started": 0,
+  "debugger_attached": false,
+  "common_mutex_required_for_later_pin_review": true,
+  "qualification_granted": false
+}

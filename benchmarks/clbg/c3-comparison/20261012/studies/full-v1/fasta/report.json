@@ -1,0 +1,1432 @@
+{
+  "status": "complete",
+  "started_at": "2026-10-13T11:58:57.842434+00:00",
+  "benchmark": "fasta",
+  "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/fasta/manifest.json",
+  "manifest_sha256": "fe5472cc1081e00fa56dbd92264296b76e9d821718a6c4350ed63d37f54c1288",
+  "sample_count": 3,
+  "profiles": {
+    "c3-fasta-compact": {
+      "id": "c3-fasta-compact",
+      "benchmark": "fasta",
+      "variant": "compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/sources/fasta/compact.c3",
+      "status": "qualified-source-awaiting-three-full-samples",
+      "maximum_compute_workers": 1,
+      "application_helpers": [],
+      "general_library_support": [],
+      "compiled_source_bundle": [
+        "sources/fasta/compact.c3"
+      ],
+      "eligible_for_chart": false,
+      "loc": null,
+      "key": "fasta:c3-fasta-compact",
+      "language": "c3",
+      "source_sha256": "a18b0d92e4038879b5e64dd7a17e945d381e6850362309bb5eacadbba5bb0d3c",
+      "binary_sha256": "97982e60fe5e75953908b22d3035bc8a904a5260b8b3e4de2884fdfd7eb6895b",
+      "source_bundle": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/sources/fasta/compact.c3",
+          "sha256": "a18b0d92e4038879b5e64dd7a17e945d381e6850362309bb5eacadbba5bb0d3c"
+        }
+      ],
+      "support": {},
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-fasta-compact",
+        "{n}"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012",
+      "runtime_environment": {
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "compiler_version": "0.8.5",
+      "bundled_llvm_version": "23.1.2",
+      "explicit_backend": "llvm",
+      "explicit_target": "macos-aarch64",
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/c3c",
+        "compile",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/sources/fasta/compact.c3",
+        "-O3",
+        "--safe=no",
+        "--backend=llvm",
+        "--target",
+        "macos-aarch64",
+        "--fp-math=strict",
+        "--threads",
+        "1",
+        "--single-module=yes",
+        "--ansi=no",
+        "--stdlib",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib",
+        "--cc",
+        "/opt/homebrew/Cellar/llvm@22/22.1.8/bin/clang-22",
+        "--linker=cc",
+        "--macos-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk",
+        "--macos-min-version",
+        "14.4",
+        "--macos-sdk-version",
+        "14.4",
+        "--build-dir",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-fasta-compact",
+        "--obj-out",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-fasta-compact/objects",
+        "--llvm-out",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-fasta-compact/llvm",
+        "--asm-out",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-fasta-compact/asm",
+        "--emit-llvm",
+        "--emit-asm",
+        "--keep-obj",
+        "--print-linking",
+        "--print-input",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-fasta-compact"
+      ],
+      "cache": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-fasta-compact",
+      "measured_architecture": "arm64",
+      "qualification_origin": "retained-private-v2-exact-source-binary-and-records",
+      "new_native_cases": 0,
+      "prior_bounded_records": [
+        {
+          "case": "n-0",
+          "prior_attempt": 77,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/077-c3-fasta-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/077-c3-fasta-compact.supervisor.json",
+          "stdout_sha256": "585adac6f7b1f9bbad88ad6c7256cf6fe5238b9dac6bb56cfc1eb303d4634db1",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "n-1",
+          "prior_attempt": 78,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/078-c3-fasta-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/078-c3-fasta-compact.supervisor.json",
+          "stdout_sha256": "bc2d94bbf4bc00febcf2923e99da45fae29b0739d79c642c4a63538a58bf124c",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "n-2",
+          "prior_attempt": 79,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/079-c3-fasta-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/079-c3-fasta-compact.supervisor.json",
+          "stdout_sha256": "6a88bbb8e503afd1f389eff7440feceb134b1f525ccfdd93459a9043c5955ac0",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "n-29",
+          "prior_attempt": 80,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/080-c3-fasta-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/080-c3-fasta-compact.supervisor.json",
+          "stdout_sha256": "969c687cb04ef79ef68ba80582c6e2a20a5bfab76cdeab0110433ee5a7bd9657",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "n-30",
+          "prior_attempt": 81,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/081-c3-fasta-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/081-c3-fasta-compact.supervisor.json",
+          "stdout_sha256": "4614e8f02cb5252cebed238fe1744f81bd0c87b828437c1d7aea98086daa0cee",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "n-31",
+          "prior_attempt": 82,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/082-c3-fasta-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/082-c3-fasta-compact.supervisor.json",
+          "stdout_sha256": "c3011a2455e766d0e4d199164c0c6f41e46fd866586da89f65ba7ff9364a2f7d",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "n-60",
+          "prior_attempt": 83,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/083-c3-fasta-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/083-c3-fasta-compact.supervisor.json",
+          "stdout_sha256": "d4f1059c3c47b7de5d11ab3d78778ab3141c15555a91bfd6a56f2b9b10fe272b",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "n-61",
+          "prior_attempt": 84,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/084-c3-fasta-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/084-c3-fasta-compact.supervisor.json",
+          "stdout_sha256": "2cc46407f201985a5d635236e4a016eec338b3b4a6f00149521043ddefe84926",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "n-287",
+          "prior_attempt": 85,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/085-c3-fasta-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/085-c3-fasta-compact.supervisor.json",
+          "stdout_sha256": "d4cde0829fe7376ffc0a61f248d1d44db166b73a79578b869f97ba1cda4d7037",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "n-574",
+          "prior_attempt": 86,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/086-c3-fasta-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/086-c3-fasta-compact.supervisor.json",
+          "stdout_sha256": "708ec5a72487245c30630213306bf706585836d0b5db926500ff408b15ef5bc8",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "n-20000",
+          "prior_attempt": 87,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/087-c3-fasta-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/087-c3-fasta-compact.supervisor.json",
+          "stdout_sha256": "0ce07366d3a3bf8dd9dd7b993c1d6490687a5bea1c7919bce5673d4349b491b7",
+          "origin": "retained-private-v2"
+        }
+      ],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-fasta-compact",
+      "maximum_workers": 1,
+      "producer_loc": null,
+      "loc_status": "pending qualified canonical LOC overlay",
+      "qualification_status": "source-output-work-allocation-passed",
+      "chart_admission": false,
+      "role": "Qualified complete C3 compact application",
+      "required_work_review": {
+        "status": "passed",
+        "source_sha256": "a18b0d92e4038879b5e64dd7a17e945d381e6850362309bb5eacadbba5bb0d3c",
+        "method": "Exact source review and all bounded outputs; actual seven LibcAllocator maps/all windows/worker ownership, both real Pi divisions and original scored ARM64 tree allocation/retention proofs",
+        "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/work-full-v3/REQUIRED_SOURCE_REVIEW.md",
+        "qualification": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/work-qualification/work-v3/report.json"
+      },
+      "samples_seconds": [
+        2.526749042,
+        2.285280625,
+        2.314954209
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "attempts": [
+        1,
+        6,
+        8
+      ],
+      "measurement_status": "measured",
+      "median_seconds": 2.314954209,
+      "sample_stdev_seconds": 0.13168432536523905,
+      "time_x_mech": 3.9298487596902443,
+      "matched_mech_control": "mech-aot-control",
+      "matched_mech_source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602"
+    },
+    "c3-fasta-optimized": {
+      "id": "c3-fasta-optimized",
+      "benchmark": "fasta",
+      "variant": "optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/sources/fasta/optimized.c3",
+      "status": "qualified-source-awaiting-three-full-samples",
+      "maximum_compute_workers": 1,
+      "application_helpers": [],
+      "general_library_support": [
+        "support/buffer.c3"
+      ],
+      "compiled_source_bundle": [
+        "sources/fasta/optimized.c3",
+        "support/buffer.c3"
+      ],
+      "eligible_for_chart": false,
+      "loc": null,
+      "key": "fasta:c3-fasta-optimized",
+      "language": "c3",
+      "source_sha256": "4ed46ab09ab395f0fca96d4a77ec79b100e2cc1a392eafc219842d435e3c986b",
+      "binary_sha256": "840d0ecb3c7e5c06271e5d4bf196508403a1d19bc138f0b49cb915b0886e345f",
+      "source_bundle": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/sources/fasta/optimized.c3",
+          "sha256": "4ed46ab09ab395f0fca96d4a77ec79b100e2cc1a392eafc219842d435e3c986b"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/buffer.c3",
+          "sha256": "1975203b07f2cdd300b86536e6726883dfa917935d4bcbd1070db4a25bf3f564"
+        }
+      ],
+      "support": {
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/buffer.c3": "1975203b07f2cdd300b86536e6726883dfa917935d4bcbd1070db4a25bf3f564"
+      },
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-fasta-optimized",
+        "{n}"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012",
+      "runtime_environment": {
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "compiler_version": "0.8.5",
+      "bundled_llvm_version": "23.1.2",
+      "explicit_backend": "llvm",
+      "explicit_target": "macos-aarch64",
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/c3c",
+        "compile",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/sources/fasta/optimized.c3",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/buffer.c3",
+        "-O3",
+        "--safe=no",
+        "--backend=llvm",
+        "--target",
+        "macos-aarch64",
+        "--fp-math=strict",
+        "--threads",
+        "1",
+        "--single-module=yes",
+        "--ansi=no",
+        "--stdlib",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib",
+        "--cc",
+        "/opt/homebrew/Cellar/llvm@22/22.1.8/bin/clang-22",
+        "--linker=cc",
+        "--macos-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk",
+        "--macos-min-version",
+        "14.4",
+        "--macos-sdk-version",
+        "14.4",
+        "--build-dir",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-fasta-optimized",
+        "--obj-out",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-fasta-optimized/objects",
+        "--llvm-out",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-fasta-optimized/llvm",
+        "--asm-out",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-fasta-optimized/asm",
+        "--emit-llvm",
+        "--emit-asm",
+        "--keep-obj",
+        "--print-linking",
+        "--print-input",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-fasta-optimized"
+      ],
+      "cache": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-fasta-optimized",
+      "measured_architecture": "arm64",
+      "qualification_origin": "retained-private-v2-exact-source-binary-and-records",
+      "new_native_cases": 0,
+      "prior_bounded_records": [
+        {
+          "case": "n-0",
+          "prior_attempt": 88,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/088-c3-fasta-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/088-c3-fasta-optimized.supervisor.json",
+          "stdout_sha256": "585adac6f7b1f9bbad88ad6c7256cf6fe5238b9dac6bb56cfc1eb303d4634db1",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "n-1",
+          "prior_attempt": 89,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/089-c3-fasta-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/089-c3-fasta-optimized.supervisor.json",
+          "stdout_sha256": "bc2d94bbf4bc00febcf2923e99da45fae29b0739d79c642c4a63538a58bf124c",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "n-2",
+          "prior_attempt": 90,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/090-c3-fasta-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/090-c3-fasta-optimized.supervisor.json",
+          "stdout_sha256": "6a88bbb8e503afd1f389eff7440feceb134b1f525ccfdd93459a9043c5955ac0",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "n-29",
+          "prior_attempt": 91,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/091-c3-fasta-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/091-c3-fasta-optimized.supervisor.json",
+          "stdout_sha256": "969c687cb04ef79ef68ba80582c6e2a20a5bfab76cdeab0110433ee5a7bd9657",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "n-30",
+          "prior_attempt": 92,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/092-c3-fasta-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/092-c3-fasta-optimized.supervisor.json",
+          "stdout_sha256": "4614e8f02cb5252cebed238fe1744f81bd0c87b828437c1d7aea98086daa0cee",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "n-31",
+          "prior_attempt": 93,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/093-c3-fasta-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/093-c3-fasta-optimized.supervisor.json",
+          "stdout_sha256": "c3011a2455e766d0e4d199164c0c6f41e46fd866586da89f65ba7ff9364a2f7d",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "n-60",
+          "prior_attempt": 94,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/094-c3-fasta-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/094-c3-fasta-optimized.supervisor.json",
+          "stdout_sha256": "d4f1059c3c47b7de5d11ab3d78778ab3141c15555a91bfd6a56f2b9b10fe272b",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "n-61",
+          "prior_attempt": 95,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/095-c3-fasta-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/095-c3-fasta-optimized.supervisor.json",
+          "stdout_sha256": "2cc46407f201985a5d635236e4a016eec338b3b4a6f00149521043ddefe84926",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "n-287",
+          "prior_attempt": 96,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/096-c3-fasta-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/096-c3-fasta-optimized.supervisor.json",
+          "stdout_sha256": "d4cde0829fe7376ffc0a61f248d1d44db166b73a79578b869f97ba1cda4d7037",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "n-574",
+          "prior_attempt": 97,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/097-c3-fasta-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/097-c3-fasta-optimized.supervisor.json",
+          "stdout_sha256": "708ec5a72487245c30630213306bf706585836d0b5db926500ff408b15ef5bc8",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "n-20000",
+          "prior_attempt": 98,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/098-c3-fasta-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/098-c3-fasta-optimized.supervisor.json",
+          "stdout_sha256": "0ce07366d3a3bf8dd9dd7b993c1d6490687a5bea1c7919bce5673d4349b491b7",
+          "origin": "retained-private-v2"
+        }
+      ],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-fasta-optimized",
+      "maximum_workers": 1,
+      "producer_loc": null,
+      "loc_status": "pending qualified canonical LOC overlay",
+      "qualification_status": "source-output-work-allocation-passed",
+      "chart_admission": false,
+      "role": "Qualified complete C3 optimized application",
+      "required_work_review": {
+        "status": "passed",
+        "source_sha256": "4ed46ab09ab395f0fca96d4a77ec79b100e2cc1a392eafc219842d435e3c986b",
+        "method": "Exact source review and all bounded outputs; actual seven LibcAllocator maps/all windows/worker ownership, both real Pi divisions and original scored ARM64 tree allocation/retention proofs",
+        "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/work-full-v3/REQUIRED_SOURCE_REVIEW.md",
+        "qualification": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/work-qualification/work-v3/report.json"
+      },
+      "samples_seconds": [
+        2.205036917,
+        1.976161625,
+        1.966161166
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "attempts": [
+        2,
+        4,
+        9
+      ],
+      "measurement_status": "measured",
+      "median_seconds": 1.976161625,
+      "sample_stdev_seconds": 0.13512064540261176,
+      "time_x_mech": 3.3547170310156695,
+      "matched_mech_control": "mech-aot-control",
+      "matched_mech_source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602"
+    },
+    "mech-aot-control": {
+      "id": "mech-aot-control",
+      "key": "fasta:c3-full-study:mech-control",
+      "benchmark": "fasta",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta-optimized.mec",
+      "source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating",
+      "binary_sha256": "37c24e617689fbbec6221ff4c107d9ea35f18eb62ed7387286bfa7d6224a92e4",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "loc": null,
+      "published_chart_key": "fasta:mech-fasta-final-expanded-v2",
+      "previous_seconds": 0.541193292,
+      "previous_report": "fasta/investigations/20261009-floating-cdf/results.json",
+      "algorithm": {
+        "strict": true,
+        "status": "corrected",
+        "reason": "Strict comparison disables the general exact-integer-cutoff transform. Emitted objects retain floating division/comparison. Each random nucleotide advances the naive LCG. The only repeated-sequence cache is for the supplied fixed ALU string.",
+        "full_work": {
+          "n": 25000000,
+          "fixed_sequence_bytes": 50000000,
+          "random_nucleotides": 200000000,
+          "lcg_updates": 200000000
+        },
+        "required_build_environment": {
+          "MECH_CONTROL_EXACT_FLOAT_COMPARE": "0"
+        },
+        "evidence": [
+          {
+            "path": "fasta/fasta.mec",
+            "sha256": "5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066"
+          },
+          {
+            "path": "fasta/fasta-optimized.mec",
+            "sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602"
+          },
+          {
+            "path": "../../hosts/gpu/src/control/compiler.rs",
+            "sha256": "b0d992df5b4c67a6dd1cb2a12b82f7f90e9dc845c46f13ca81a9aceb18ff3286"
+          },
+          {
+            "path": "work-audit/20261009/timings.json",
+            "sha256": "9c85e39d8d72357ee9f0867cdebb0968eba37f3577d013d3d21f661027abc33a"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fasta.html",
+        "native_benchmark_kernel": false
+      },
+      "control_for": "r",
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "producer_loc": 43,
+      "loc_status": "pending qualified canonical LOC overlay",
+      "maximum_workers": 8,
+      "role": "Fresh unchanged current Mech AOT source control",
+      "samples_seconds": [
+        0.589069542,
+        0.591385458,
+        0.548127
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "attempts": [
+        3,
+        5,
+        7
+      ],
+      "measurement_status": "measured",
+      "median_seconds": 0.589069542,
+      "sample_stdev_seconds": 0.024334301581918516,
+      "time_x_mech": 1.0,
+      "matched_mech_control": "mech-aot-control",
+      "matched_mech_source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602"
+    }
+  },
+  "orders": [
+    {
+      "round": 1,
+      "profiles": [
+        "c3-fasta-compact",
+        "c3-fasta-optimized",
+        "mech-aot-control"
+      ]
+    },
+    {
+      "round": 2,
+      "profiles": [
+        "c3-fasta-optimized",
+        "mech-aot-control",
+        "c3-fasta-compact"
+      ]
+    },
+    {
+      "round": 3,
+      "profiles": [
+        "mech-aot-control",
+        "c3-fasta-compact",
+        "c3-fasta-optimized"
+      ]
+    }
+  ],
+  "attempts": [
+    {
+      "key": "fasta:c3-fasta-compact",
+      "id": "c3-fasta-compact",
+      "benchmark": "fasta",
+      "language": "c3",
+      "source_sha256": "a18b0d92e4038879b5e64dd7a17e945d381e6850362309bb5eacadbba5bb0d3c",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-fasta-compact",
+        "25000000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012",
+      "runtime_environment": {
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"97982e60fe5e75953908b22d3035bc8a904a5260b8b3e4de2884fdfd7eb6895b\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-fasta-compact\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"a18b0d92e4038879b5e64dd7a17e945d381e6850362309bb5eacadbba5bb0d3c\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/sources/fasta/compact.c3\": \"a18b0d92e4038879b5e64dd7a17e945d381e6850362309bb5eacadbba5bb0d3c\"}}",
+      "started_at": "2026-10-13T11:59:53.834353+00:00",
+      "workload_n": 25000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 2.526749042,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 1248,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 254166745,
+      "stdout_sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+      "validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T11:59:56.771024+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 1,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/fasta/attempts/001-c3-fasta-compact.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 370,
+        "pgid": 370,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-fasta-compact",
+          "25000000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/fasta/attempts/001-c3-fasta-compact.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "fasta:c3-fasta-optimized",
+      "id": "c3-fasta-optimized",
+      "benchmark": "fasta",
+      "language": "c3",
+      "source_sha256": "4ed46ab09ab395f0fca96d4a77ec79b100e2cc1a392eafc219842d435e3c986b",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-fasta-optimized",
+        "25000000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012",
+      "runtime_environment": {
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"840d0ecb3c7e5c06271e5d4bf196508403a1d19bc138f0b49cb915b0886e345f\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-fasta-optimized\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"4ed46ab09ab395f0fca96d4a77ec79b100e2cc1a392eafc219842d435e3c986b\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/sources/fasta/optimized.c3\": \"4ed46ab09ab395f0fca96d4a77ec79b100e2cc1a392eafc219842d435e3c986b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/buffer.c3\": \"1975203b07f2cdd300b86536e6726883dfa917935d4bcbd1070db4a25bf3f564\"}}",
+      "started_at": "2026-10-13T12:01:42.402154+00:00",
+      "workload_n": 25000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 2.205036917,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 1424,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 254166745,
+      "stdout_sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+      "validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T12:01:44.988844+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 2,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/fasta/attempts/002-c3-fasta-optimized.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 1141,
+        "pgid": 1141,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-fasta-optimized",
+          "25000000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/fasta/attempts/002-c3-fasta-optimized.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "fasta:c3-full-study:mech-control",
+      "id": "mech-aot-control",
+      "benchmark": "fasta",
+      "language": "mech",
+      "source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating",
+        "25000000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"37c24e617689fbbec6221ff4c107d9ea35f18eb62ed7387286bfa7d6224a92e4\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602\", \"support\": {\"../../hosts/gpu/src/control/compiler.rs\": \"b0d992df5b4c67a6dd1cb2a12b82f7f90e9dc845c46f13ca81a9aceb18ff3286\", \"fasta/fasta-optimized.mec\": \"b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602\", \"fasta/fasta.mec\": \"5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066\", \"work-audit/20261009/timings.json\": \"9c85e39d8d72357ee9f0867cdebb0968eba37f3577d013d3d21f661027abc33a\"}}",
+      "started_at": "2026-10-13T12:03:09.938523+00:00",
+      "workload_n": 25000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.589069542,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 254166745,
+      "stdout_sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+      "validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T12:03:10.932204+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 3,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/fasta/attempts/003-mech-aot-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 1562,
+        "pgid": 1562,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating",
+          "25000000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/fasta/attempts/003-mech-aot-control.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "fasta:c3-fasta-optimized",
+      "id": "c3-fasta-optimized",
+      "benchmark": "fasta",
+      "language": "c3",
+      "source_sha256": "4ed46ab09ab395f0fca96d4a77ec79b100e2cc1a392eafc219842d435e3c986b",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-fasta-optimized",
+        "25000000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012",
+      "runtime_environment": {
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"840d0ecb3c7e5c06271e5d4bf196508403a1d19bc138f0b49cb915b0886e345f\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-fasta-optimized\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"4ed46ab09ab395f0fca96d4a77ec79b100e2cc1a392eafc219842d435e3c986b\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/sources/fasta/optimized.c3\": \"4ed46ab09ab395f0fca96d4a77ec79b100e2cc1a392eafc219842d435e3c986b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/buffer.c3\": \"1975203b07f2cdd300b86536e6726883dfa917935d4bcbd1070db4a25bf3f564\"}}",
+      "started_at": "2026-10-13T12:04:26.693266+00:00",
+      "workload_n": 25000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 1.976161625,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 1408,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 254166745,
+      "stdout_sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+      "validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T12:04:29.054532+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 4,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/fasta/attempts/004-c3-fasta-optimized.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 1959,
+        "pgid": 1959,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-fasta-optimized",
+          "25000000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/fasta/attempts/004-c3-fasta-optimized.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "fasta:c3-full-study:mech-control",
+      "id": "mech-aot-control",
+      "benchmark": "fasta",
+      "language": "mech",
+      "source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating",
+        "25000000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"37c24e617689fbbec6221ff4c107d9ea35f18eb62ed7387286bfa7d6224a92e4\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602\", \"support\": {\"../../hosts/gpu/src/control/compiler.rs\": \"b0d992df5b4c67a6dd1cb2a12b82f7f90e9dc845c46f13ca81a9aceb18ff3286\", \"fasta/fasta-optimized.mec\": \"b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602\", \"fasta/fasta.mec\": \"5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066\", \"work-audit/20261009/timings.json\": \"9c85e39d8d72357ee9f0867cdebb0968eba37f3577d013d3d21f661027abc33a\"}}",
+      "started_at": "2026-10-13T12:05:35.460753+00:00",
+      "workload_n": 25000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.591385458,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 254166745,
+      "stdout_sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+      "validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T12:05:36.458181+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 5,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/fasta/attempts/005-mech-aot-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 2470,
+        "pgid": 2470,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating",
+          "25000000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/fasta/attempts/005-mech-aot-control.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "fasta:c3-fasta-compact",
+      "id": "c3-fasta-compact",
+      "benchmark": "fasta",
+      "language": "c3",
+      "source_sha256": "a18b0d92e4038879b5e64dd7a17e945d381e6850362309bb5eacadbba5bb0d3c",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-fasta-compact",
+        "25000000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012",
+      "runtime_environment": {
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"97982e60fe5e75953908b22d3035bc8a904a5260b8b3e4de2884fdfd7eb6895b\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-fasta-compact\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"a18b0d92e4038879b5e64dd7a17e945d381e6850362309bb5eacadbba5bb0d3c\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/sources/fasta/compact.c3\": \"a18b0d92e4038879b5e64dd7a17e945d381e6850362309bb5eacadbba5bb0d3c\"}}",
+      "started_at": "2026-10-13T12:06:53.486547+00:00",
+      "workload_n": 25000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 2.285280625,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 1248,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 254166745,
+      "stdout_sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+      "validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T12:06:56.181198+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 6,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/fasta/attempts/006-c3-fasta-compact.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 2817,
+        "pgid": 2817,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-fasta-compact",
+          "25000000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/fasta/attempts/006-c3-fasta-compact.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "fasta:c3-full-study:mech-control",
+      "id": "mech-aot-control",
+      "benchmark": "fasta",
+      "language": "mech",
+      "source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating",
+        "25000000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"37c24e617689fbbec6221ff4c107d9ea35f18eb62ed7387286bfa7d6224a92e4\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602\", \"support\": {\"../../hosts/gpu/src/control/compiler.rs\": \"b0d992df5b4c67a6dd1cb2a12b82f7f90e9dc845c46f13ca81a9aceb18ff3286\", \"fasta/fasta-optimized.mec\": \"b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602\", \"fasta/fasta.mec\": \"5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066\", \"work-audit/20261009/timings.json\": \"9c85e39d8d72357ee9f0867cdebb0968eba37f3577d013d3d21f661027abc33a\"}}",
+      "started_at": "2026-10-13T12:08:33.435914+00:00",
+      "workload_n": 25000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.548127,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 254166745,
+      "stdout_sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+      "validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T12:08:34.354587+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 7,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/fasta/attempts/007-mech-aot-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 3315,
+        "pgid": 3315,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating",
+          "25000000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/fasta/attempts/007-mech-aot-control.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "fasta:c3-fasta-compact",
+      "id": "c3-fasta-compact",
+      "benchmark": "fasta",
+      "language": "c3",
+      "source_sha256": "a18b0d92e4038879b5e64dd7a17e945d381e6850362309bb5eacadbba5bb0d3c",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-fasta-compact",
+        "25000000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012",
+      "runtime_environment": {
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"97982e60fe5e75953908b22d3035bc8a904a5260b8b3e4de2884fdfd7eb6895b\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-fasta-compact\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"a18b0d92e4038879b5e64dd7a17e945d381e6850362309bb5eacadbba5bb0d3c\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/sources/fasta/compact.c3\": \"a18b0d92e4038879b5e64dd7a17e945d381e6850362309bb5eacadbba5bb0d3c\"}}",
+      "started_at": "2026-10-13T12:09:51.217126+00:00",
+      "workload_n": 25000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 2.314954209,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 1248,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 254166745,
+      "stdout_sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+      "validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T12:09:53.937091+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 8,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/fasta/attempts/008-c3-fasta-compact.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 3750,
+        "pgid": 3750,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-fasta-compact",
+          "25000000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/fasta/attempts/008-c3-fasta-compact.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "fasta:c3-fasta-optimized",
+      "id": "c3-fasta-optimized",
+      "benchmark": "fasta",
+      "language": "c3",
+      "source_sha256": "4ed46ab09ab395f0fca96d4a77ec79b100e2cc1a392eafc219842d435e3c986b",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-fasta-optimized",
+        "25000000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012",
+      "runtime_environment": {
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"840d0ecb3c7e5c06271e5d4bf196508403a1d19bc138f0b49cb915b0886e345f\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-fasta-optimized\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"4ed46ab09ab395f0fca96d4a77ec79b100e2cc1a392eafc219842d435e3c986b\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/sources/fasta/optimized.c3\": \"4ed46ab09ab395f0fca96d4a77ec79b100e2cc1a392eafc219842d435e3c986b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/buffer.c3\": \"1975203b07f2cdd300b86536e6726883dfa917935d4bcbd1070db4a25bf3f564\"}}",
+      "started_at": "2026-10-13T12:12:56.263278+00:00",
+      "workload_n": 25000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 1.966161166,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 1408,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 254166745,
+      "stdout_sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+      "validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T12:12:58.638253+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 9,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/fasta/attempts/009-c3-fasta-optimized.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 4295,
+        "pgid": 4295,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-fasta-optimized",
+          "25000000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/fasta/attempts/009-c3-fasta-optimized.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    }
+  ],
+  "active": null,
+  "supervisor": {
+    "pid": 99744,
+    "process_listing": "Tue Oct 13 07:58:50 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u -B /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/work-full-v3/full_study.py --run --benchmark fasta --revision full-v1 --manifest-sha256 fe5472cc1081e00fa56dbd92264296b76e9d821718a6c4350ed63d37f54c1288"
+  },
+  "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+  "full_workload_n": 25000000,
+  "chart_admission": false,
+  "no_automatic_retry": true,
+  "canonical_LOC_status": "pending separate immutable count overlay",
+  "isolated_failed_profiles": [],
+  "skipped_failed_profile_slots": [],
+  "finished_at": "2026-10-13T12:14:18.487437+00:00",
+  "pins_unchanged_at_end": true,
+  "all_profiles_fully_measured": true
+}

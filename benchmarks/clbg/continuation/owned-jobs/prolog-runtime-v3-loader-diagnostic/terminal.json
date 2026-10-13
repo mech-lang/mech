@@ -1,0 +1,20 @@
+{
+  "status": "command-failed",
+  "started_at": "2026-10-13T12:23:48.494775+00:00",
+  "worker_identity": {
+    "pid": 6012,
+    "listing": "6012     1 Tue Oct 13 08:23:48 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/prolog-runtime-v3-loader-diagnostic --lease-fd 3 --go-fd 4"
+  },
+  "actual_command_started": true,
+  "exit_code": 1,
+  "qualification_granted": false,
+  "automatic_retry": false,
+  "command_pid": 6020,
+  "command_identity": {
+    "pid": 6020,
+    "listing": "6020  6012 Tue Oct 13 08:23:48 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u revisions/runtime-v3/diagnose_fixture_loader_v3.py --seal --proposal-sha256 5b9186bb51e748fe69b16dcd35a632dd9ed8556abdbc30cbab45159a36a1bf88"
+  },
+  "command_identity_observation_missing": false,
+  "finished_at": "2026-10-13T12:57:51.866117+00:00",
+  "stop_signals": []
+}

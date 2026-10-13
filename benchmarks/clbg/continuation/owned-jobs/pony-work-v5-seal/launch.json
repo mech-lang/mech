@@ -1,0 +1,24 @@
+{
+  "status": "durable-job-launched",
+  "launched_at": "2026-10-13T13:20:52.993241+00:00",
+  "job": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/pony-work-v5-seal",
+  "worker_identity": {
+    "pid": 18369,
+    "listing": "18369 18368 Tue Oct 13 09:20:52 2026     /opt/homebrew/opt/python@3.14/bin/python3.14 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/pony-work-v5-seal --lease-fd 3 --go-fd 4"
+  },
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/work-full-v5/work_qualify.py",
+    "--seal",
+    "--revision",
+    "private-v8-work-v5",
+    "--qualification",
+    "private-v8"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "detached_session": true,
+  "automatic_retry": false,
+  "qualification_granted": false
+}

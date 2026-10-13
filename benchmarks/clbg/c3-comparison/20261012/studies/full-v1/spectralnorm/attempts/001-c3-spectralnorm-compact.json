@@ -1,0 +1,53 @@
+{
+  "key": "spectralnorm:c3-spectralnorm-compact",
+  "id": "c3-spectralnorm-compact",
+  "benchmark": "spectralnorm",
+  "language": "c3",
+  "source_sha256": "64fccafeee38ae10926c139effe90c792b6fb6cc1409b544ba28b9d9986b3e39",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-spectralnorm-compact",
+    "5500"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012",
+  "runtime_environment": {
+    "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+    "LC_ALL": "C",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"60dce2ee2f7edfccc8fcfef4f0807321a18f512bb7d0c13ff500d5fbbfe6034f\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-spectralnorm-compact\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"64fccafeee38ae10926c139effe90c792b6fb6cc1409b544ba28b9d9986b3e39\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/sources/spectralnorm/compact.c3\": \"64fccafeee38ae10926c139effe90c792b6fb6cc1409b544ba28b9d9986b3e39\"}}",
+  "started_at": "2026-10-13T11:59:30.887052+00:00",
+  "workload_n": 5500,
+  "full_workload": true,
+  "timeout_seconds": 14400,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.948511333,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 12,
+  "stdout_sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+  "validation": {
+    "bytes": 12,
+    "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+    "reference_match": true
+  },
+  "finished_at": "2026-10-13T11:59:32.048664+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true
+}

@@ -1,0 +1,40 @@
+{
+  "status": "service-entry-binding-repaired-awaiting-original-qualified-report",
+  "adapter": "private-v5 preparation.load_service().load_guard()",
+  "repaired_function_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/gleam-helper-entry-repair-v1/replay.py",
+  "original_count_runner": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/qualify_helpers.py",
+  "original_seven_files": {
+    "qualify_helpers.py": "976d228248c312e39306105d7679af3a202e20d48d24543064429768c479c725",
+    "REVIEW.md": "5373f59a5df39dbdb843219addedf43907adf70bea20ffc3b86f885613c9883f",
+    "combine_proposals.py": "56ab4843277f7176554394fbb6adc1526ac5afc5a5611b814eb0f6dc1f30cba6",
+    "erlang_owners.py": "fa52abc2b986034753dfe50e2281bb0e5412b37aba39c798f131baad149152d6",
+    "owner_fixture_cases.py": "2b6c319f90227438aa4703f08e2111361d262e929f26146ecbfa4c02b7287ed9",
+    "original_owner_probe.erl": "1887fc4bc404627e3a8b3515b80528b913eac05b5cccc62f3d156cd13d4b3ae7",
+    "OWNER_RULES_PROPOSAL.md": "944c2209b7af7b6076914ddc192b20a22d521448b2bef5333cecbced63bf49de"
+  },
+  "original_counter_and_owner_semantics_changed": false,
+  "qualification": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/qualification/private-v5/report.json",
+    "sha256": "a19f2d079b917f1172b54d09e494e72c5a7aea9d6a9301ef0974633b4d4f30dc"
+  },
+  "preparation": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/revisions/private-v5/guarded_prepare.py",
+    "sha256": "e13958b40312df99965590e18cd83b341f799c07cd4a6eea71620aadba2a0da1"
+  },
+  "actual_input_service": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/private-v1/guarded_prepare.py",
+    "sha256": "78b9f2870e0627b2aa6cc87ddcbd9ba54c1581ef7f28392f1859b79509dff9d4"
+  },
+  "actual_native_guard": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining_owner.py",
+    "sha256": "55581d56609803243b3be264e6a2e37229be06789c22788bbf8cdb6ff6828544"
+  },
+  "preserved_not_started_failure": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-v1",
+  "prior_owner_fixture_cases": 0,
+  "prior_legacy_fixture_cases": 0,
+  "first_actual_owner_fixture_cases_required": 21,
+  "first_actual_legacy_fixture_cases_required": 5,
+  "benchmark_processes_started": 0,
+  "canonical_LOC_admitted": false,
+  "chart_admission": false
+}

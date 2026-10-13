@@ -1,0 +1,24 @@
+{
+  "started_at": "2026-10-13T12:30:56.173441+00:00",
+  "worker_identity": {
+    "pid": 7663,
+    "listing": "7663     1 Tue Oct 13 08:30:56 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/clojure-loc21-overlay-v2 --lease-fd 3 --go-fd 4"
+  },
+  "inherited_private_lease": true,
+  "detached_session": true,
+  "common_mutex_owned_by_target_command": true,
+  "command": [
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+    "-B",
+    "-u",
+    "benchmarks/clbg/clojure-comparison/20261012/source-counts/seal_overlay_v3.py",
+    "--revision",
+    "qualified-grammar-v3-overlay-restored-v2",
+    "--review-file",
+    "benchmarks/clbg/clojure-comparison/20261012/source-counts/semantic-source-review-v3.json",
+    "--review-sha256",
+    "9a0d8414733b10a9fd2991e32efacee05528c43eef947eca8a62922d040047c1"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "qualification_granted": false
+}

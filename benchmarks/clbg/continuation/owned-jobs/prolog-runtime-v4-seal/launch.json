@@ -1,0 +1,24 @@
+{
+  "status": "durable-job-launched",
+  "launched_at": "2026-10-13T13:27:24.507810+00:00",
+  "job": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/prolog-runtime-v4-seal",
+  "worker_identity": {
+    "pid": 20443,
+    "listing": "20443 20442 Tue Oct 13 09:27:24 2026     /opt/homebrew/opt/python@3.14/bin/python3.14 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/prolog-runtime-v4-seal --lease-fd 3 --go-fd 4"
+  },
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-E",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-v4/seal_runtime_v4.py",
+    "--seal",
+    "--proposal-sha256",
+    "5b9186bb51e748fe69b16dcd35a632dd9ed8556abdbc30cbab45159a36a1bf88"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "detached_session": true,
+  "automatic_retry": false,
+  "qualification_granted": false
+}

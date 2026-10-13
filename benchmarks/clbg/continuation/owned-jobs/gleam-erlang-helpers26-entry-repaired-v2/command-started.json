@@ -1,0 +1,18 @@
+{
+  "started_at": "2026-10-13T12:57:27.819953+00:00",
+  "command_pid": 11821,
+  "command_identity": {
+    "pid": 11821,
+    "listing": "11821 11815 Tue Oct 13 08:57:27 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u benchmarks/clbg/continuation/gleam-helper-entry-repair-v1/replay.py --revision helpers-entry-repaired-v2"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+    "-B",
+    "-u",
+    "benchmarks/clbg/continuation/gleam-helper-entry-repair-v1/replay.py",
+    "--revision",
+    "helpers-entry-repaired-v2"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech"
+}

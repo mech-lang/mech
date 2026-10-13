@@ -1,0 +1,92 @@
+{
+  "key": "knucleotide:c3-knucleotide-compact",
+  "id": "c3-knucleotide-compact",
+  "benchmark": "knucleotide",
+  "language": "c3",
+  "source_sha256": "e53016c215b1846e1e484fcee50662bd973d627a52085412fe28599553f9daad",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-knucleotide-compact",
+    "25000000"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012",
+  "runtime_environment": {
+    "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+    "LC_ALL": "C",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"50986540f3c9f77f341a4e0314dc2f388a6fbb87a74cc7d359cce0800e7c1398\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-knucleotide-compact\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"e53016c215b1846e1e484fcee50662bd973d627a52085412fe28599553f9daad\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/sources/knucleotide/compact.c3\": \"e53016c215b1846e1e484fcee50662bd973d627a52085412fe28599553f9daad\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/buffer.c3\": \"1975203b07f2cdd300b86536e6726883dfa917935d4bcbd1070db4a25bf3f564\"}}",
+  "started_at": "2026-10-13T12:09:58.688980+00:00",
+  "workload_n": 25000000,
+  "full_workload": true,
+  "timeout_seconds": 14400,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 8.926056,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 388976,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 259,
+  "stdout_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+  "validation": {
+    "bytes": 259,
+    "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+    "reference_match": true
+  },
+  "finished_at": "2026-10-13T12:10:07.831137+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true,
+  "round": 3,
+  "attempt": 8,
+  "sampler_wait_status": 0,
+  "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/knucleotide/attempts/008-c3-knucleotide-compact.json",
+  "supervised_native_group": {
+    "type": "native-group-started",
+    "pid": 3780,
+    "pgid": 3780,
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-knucleotide-compact",
+      "25000000"
+    ],
+    "inherited_common_mutex": true
+  },
+  "supervisor_remaining_members": [],
+  "qualification_checks": {
+    "sampler_exited_normally": true,
+    "authoritative_native_group_received": true,
+    "native_inherited_common_mutex": true,
+    "native_exited_normally": true,
+    "no_execution_error": true,
+    "no_wrapper_integrity_error": true,
+    "no_resource_violation": true,
+    "no_resource_monitor_errors": true,
+    "no_compiler_power_monitor_errors": true,
+    "no_monitor_finish_error": true,
+    "no_execute_cleanup_error": true,
+    "no_remaining_execute_group": true,
+    "no_supervisor_cleanup": true,
+    "no_supervisor_remaining_group": true,
+    "valid_environment": true,
+    "actual_full_workload": true,
+    "exact_command_and_group": true,
+    "complete_output_reference_match": true,
+    "complete_output_bytes_and_hash": true,
+    "pins_unchanged": true
+  },
+  "qualified": true,
+  "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/knucleotide/attempts/008-c3-knucleotide-compact.supervisor.json"
+}

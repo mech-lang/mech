@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/usr/bin/codesign",
+    "-d",
+    "--entitlements",
+    ":-",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/canary"
+  ],
+  "started_at": "2026-10-13T12:57:51.204862+00:00",
+  "read_only_query": true,
+  "inherited_common_mutex": true,
+  "timeout_seconds": 15,
+  "exit_status": 0,
+  "owned_query_group_cleanup": null,
+  "pid": 11858,
+  "pgid": 11858,
+  "query_group_absent_after_reap": true,
+  "finished_at": "2026-10-13T12:57:51.229262+00:00"
+}

@@ -1,0 +1,21 @@
+{
+  "started_at": "2026-10-13T13:27:24.587749+00:00",
+  "command_pid": 20450,
+  "command_identity": {
+    "pid": 20450,
+    "listing": "20450 20443 Tue Oct 13 09:27:24 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -E -S -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-v4/seal_runtime_v4.py --seal --proposal-sha256 5b9186bb51e748fe69b16dcd35a632dd9ed8556abdbc30cbab45159a36a1bf88"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-E",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-v4/seal_runtime_v4.py",
+    "--seal",
+    "--proposal-sha256",
+    "5b9186bb51e748fe69b16dcd35a632dd9ed8556abdbc30cbab45159a36a1bf88"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech"
+}

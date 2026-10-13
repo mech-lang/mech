@@ -1,0 +1,2 @@
+Executable=/Library/Developer/CommandLineTools/usr/bin/lldb
+warning: Specifying ':' in the path is deprecated and will not work in a future release

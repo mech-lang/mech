@@ -1,0 +1,20 @@
+{
+  "status": "command-exited-zero-awaiting-report-review",
+  "started_at": "2026-10-13T12:57:27.793941+00:00",
+  "worker_identity": {
+    "pid": 11815,
+    "listing": "11815     1 Tue Oct 13 08:57:27 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-erlang-helpers26-entry-repaired-v2 --lease-fd 3 --go-fd 4"
+  },
+  "actual_command_started": true,
+  "exit_code": 0,
+  "qualification_granted": false,
+  "automatic_retry": false,
+  "command_pid": 11821,
+  "command_identity": {
+    "pid": 11821,
+    "listing": "11821 11815 Tue Oct 13 08:57:27 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u benchmarks/clbg/continuation/gleam-helper-entry-repair-v1/replay.py --revision helpers-entry-repaired-v2"
+  },
+  "command_identity_observation_missing": false,
+  "finished_at": "2026-10-13T13:15:31.953489+00:00",
+  "stop_signals": []
+}

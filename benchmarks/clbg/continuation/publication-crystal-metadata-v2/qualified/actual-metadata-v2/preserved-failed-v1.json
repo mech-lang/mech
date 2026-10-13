@@ -1,0 +1,27 @@
+{
+  "status": "preserved-failed-v1-metadata",
+  "outcome": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/publication-crystal-metadata-v1/qualified/actual-metadata-v1/outcome.json",
+  "outcome_sha256": "2acaa64ef9ec2195cd4cb7a5def472a0075619c4944f4bc0310d0a76fb077036",
+  "failure_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/publication-crystal-metadata-v1/qualified/actual-metadata-v1/actual-error.log",
+  "failure_log_historically_pinned_sha256": "f71646f189041b156c95eaef4ef4afa2d9edf8502e0552fa7158dc46e03eb099",
+  "durable_terminal": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/crystal-publication-metadata-v1/terminal.json",
+  "exit_code": 1,
+  "newly_captured_failed_bytes_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/publication-crystal-metadata-v1/qualified/actual-metadata-v1/actual-error.log": "f71646f189041b156c95eaef4ef4afa2d9edf8502e0552fa7158dc46e03eb099",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/publication-crystal-metadata-v1/qualified/actual-metadata-v1/outcome.json": "2acaa64ef9ec2195cd4cb7a5def472a0075619c4944f4bc0310d0a76fb077036",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/crystal-publication-metadata-v1/command-started.json": "b403f71004a3decab1326c62ac2c853eb0aa0c9db8aacd64c62a9128ce00a24d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/crystal-publication-metadata-v1/command.stderr": "3a8650f1a46c2534df5a69c2a5c8cc15549ec9f0771229ef7f622850a4c4448b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/crystal-publication-metadata-v1/command.stdout": "6a721c1c4c78b7f00b102d2ee933fbac9ef141b947d42406376016c205328716",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/crystal-publication-metadata-v1/launch.json": "c816402737819ce30b5e7a9c223dc9c88e9e70ece452acd66279e717ca600f70",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/crystal-publication-metadata-v1/owner.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/crystal-publication-metadata-v1/request.json": "22791af7a703ca6d8ba8c6422e7257921437a44ef3266ed3f0eb3c84a6f168b1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/crystal-publication-metadata-v1/terminal.json": "342e7b0b0614978ca6b719667e702213b22b020d3c5629fbb0acbed4102974ce",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/crystal-publication-metadata-v1/worker-started.json": "9d9db2697405a8f1db87baabf6fe919105b74e615d4b879361dbc9cc15f14aa4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/crystal-publication-metadata-v1/worker.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/publication-crystal-metadata-v1/qualify_descriptor.py": "c2e33cd0fb9a9431b448d81465b49399ec37a761efee3fc6e1a35c8b9c9b1471",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/publication-crystal-metadata-v1/REVIEW.md": "f3865941adf32c9d86ed9abbcf0464ab26bc57bc2989185d59f26ef11012366e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/publication-crystal-metadata-v1/descriptor.json": "a5f1c6f08cf0ed603c372267d95d974bec1e23e44dc72d6b0ce09dd9db46054b"
+  },
+  "failed_record_promoted_to_passed": false,
+  "original_missing_images_given_invented_historical_SHA": false
+}

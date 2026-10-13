@@ -1,0 +1,19 @@
+WAIT common mutex: C3 full-study initial review pidigits
+WAIT common mutex: C3 full pidigits 1 c3-pidigits-compact
+FULL pidigits 1 c3-pidigits-compact 10000
+WAIT common mutex: C3 full pidigits 1 c3-pidigits-optimized
+FULL pidigits 1 c3-pidigits-optimized 10000
+WAIT common mutex: C3 full pidigits 1 mech-aot-control
+FULL pidigits 1 mech-aot-control 10000
+WAIT common mutex: C3 full pidigits 2 c3-pidigits-optimized
+FULL pidigits 2 c3-pidigits-optimized 10000
+WAIT common mutex: C3 full pidigits 2 mech-aot-control
+FULL pidigits 2 mech-aot-control 10000
+WAIT common mutex: C3 full pidigits 2 c3-pidigits-compact
+FULL pidigits 2 c3-pidigits-compact 10000
+WAIT common mutex: C3 full pidigits 3 mech-aot-control
+FULL pidigits 3 mech-aot-control 10000
+WAIT common mutex: C3 full pidigits 3 c3-pidigits-compact
+FULL pidigits 3 c3-pidigits-compact 10000
+WAIT common mutex: C3 full pidigits 3 c3-pidigits-optimized
+FULL pidigits 3 c3-pidigits-optimized 10000

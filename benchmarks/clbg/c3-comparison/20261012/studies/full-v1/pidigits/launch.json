@@ -1,0 +1,26 @@
+{
+  "benchmark": "pidigits",
+  "pid": 99738,
+  "identity": {
+    "pid": 99738,
+    "process_listing": "Tue Oct 13 07:58:50 2026     /opt/homebrew/opt/python@3.14/bin/python3.14 -u -B /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/work-full-v3/full_study.py --run --benchmark pidigits --revision full-v1 --manifest-sha256 4e2b31aaab31bf97f6d43040dc711a05a717e3757711202ab104906b4d5051f2"
+  },
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-u",
+    "-B",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/work-full-v3/full_study.py",
+    "--run",
+    "--benchmark",
+    "pidigits",
+    "--revision",
+    "full-v1",
+    "--manifest-sha256",
+    "4e2b31aaab31bf97f6d43040dc711a05a717e3757711202ab104906b4d5051f2"
+  ],
+  "launched_at": "2026-10-13T11:58:50.124008+00:00",
+  "manifest_sha256": "4e2b31aaab31bf97f6d43040dc711a05a717e3757711202ab104906b4d5051f2",
+  "reviewed_index_sha256": "05ed934ffd9e81136b0a8bd802aff4adda31e8f6f364df345dc2141f57deeece",
+  "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+  "waiting_child_not_joined_under_mutex": true
+}

@@ -1,0 +1,19 @@
+WAIT common mutex: C3 full-study initial review spectralnorm
+WAIT common mutex: C3 full spectralnorm 1 c3-spectralnorm-compact
+FULL spectralnorm 1 c3-spectralnorm-compact 5500
+WAIT common mutex: C3 full spectralnorm 1 c3-spectralnorm-optimized
+FULL spectralnorm 1 c3-spectralnorm-optimized 5500
+WAIT common mutex: C3 full spectralnorm 1 mech-aot-control
+FULL spectralnorm 1 mech-aot-control 5500
+WAIT common mutex: C3 full spectralnorm 2 c3-spectralnorm-optimized
+FULL spectralnorm 2 c3-spectralnorm-optimized 5500
+WAIT common mutex: C3 full spectralnorm 2 mech-aot-control
+FULL spectralnorm 2 mech-aot-control 5500
+WAIT common mutex: C3 full spectralnorm 2 c3-spectralnorm-compact
+FULL spectralnorm 2 c3-spectralnorm-compact 5500
+WAIT common mutex: C3 full spectralnorm 3 mech-aot-control
+FULL spectralnorm 3 mech-aot-control 5500
+WAIT common mutex: C3 full spectralnorm 3 c3-spectralnorm-compact
+FULL spectralnorm 3 c3-spectralnorm-compact 5500
+WAIT common mutex: C3 full spectralnorm 3 c3-spectralnorm-optimized
+FULL spectralnorm 3 c3-spectralnorm-optimized 5500

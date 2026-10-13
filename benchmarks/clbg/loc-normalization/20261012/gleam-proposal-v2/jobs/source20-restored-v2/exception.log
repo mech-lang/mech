@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-proposal-v2/replay_sources.py", line 109, in run
+    guard = qualification_module.preparation.load_guard()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'guarded_prepare' has no attribute 'load_guard'

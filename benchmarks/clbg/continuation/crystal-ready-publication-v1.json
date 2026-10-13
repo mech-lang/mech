@@ -1,0 +1,22 @@
+{
+  "status": "reviewed-completed-native-language-subset",
+  "ready_languages": ["crystal"],
+  "future_requested_languages": ["elixir", "kotlin"],
+  "unresolved": [],
+  "languages": {
+    "crystal": {
+      "suite": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/reconciliation/full-v1-suite-v2.json",
+        "sha256": "386356315c9fc5c680e99077fa70fe52db130c369fe74f7e0aa301e5f7ea6490"
+      },
+      "canonical_loc": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/source-counts/corrected-qualified-overlay-v2/qualified-loc-overlay.json",
+        "sha256": "e22140622a5154a1e3b9512580eb469c8c078beda4a2ae9812bf429e51e089e2"
+      },
+      "metadata": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/publication-crystal-metadata-v2/qualified/actual-metadata-v2/metadata.json",
+        "sha256": "63b93da6f941ae4ea276d6e595d29b438ba64e315b29f461874a0edbedfa1a1f"
+      }
+    }
+  }
+}

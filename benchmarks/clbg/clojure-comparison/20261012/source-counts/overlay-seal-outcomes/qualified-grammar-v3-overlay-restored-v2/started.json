@@ -1,0 +1,15 @@
+{
+  "status": "started",
+  "common_timing_mutex": "/tmp/mech-clbg-timing.lock",
+  "actual_common_mutex_held": true,
+  "replay": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/clojure-grammar-v3/jobs/grammar-v3-source-replay-v1/source-proposals.json",
+    "sha256": "ef10308e6dad994658c626ca34e7c4f21d78e4e91afc92f2a7b58fbe7a6c4bd7"
+  },
+  "semantic_review": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/source-counts/semantic-source-review-v3.json",
+    "sha256": "9a0d8414733b10a9fd2991e32efacee05528c43eef947eca8a62922d040047c1"
+  },
+  "chart_admission": false,
+  "original_sources_or_timings_mutated": false
+}

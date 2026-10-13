@@ -1,0 +1,15 @@
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-v3/diagnose_fixture_loader_v3.py", line 168, in <module>
+    main()
+    ~~~~^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-v3/diagnose_fixture_loader_v3.py", line 164, in main
+    seal(args)
+    ~~~~^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-v3/diagnose_fixture_loader_v3.py", line 148, in seal
+    raise error
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-v3/diagnose_fixture_loader_v3.py", line 105, in seal
+    actual = runner.run(output, pins, sha, verify, save, ORIGINAL)
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-v3/fixture_runner_v3.py", line 97, in run
+    assert receipt['loader_errors'] == receipt['failed_loader_tests'] == []
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

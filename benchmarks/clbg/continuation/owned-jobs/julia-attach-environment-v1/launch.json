@@ -1,0 +1,25 @@
+{
+  "status": "durable-job-launched",
+  "launched_at": "2026-10-13T12:23:48.395779+00:00",
+  "job": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/julia-attach-environment-v1",
+  "worker_identity": {
+    "pid": 6007,
+    "listing": "6007  6006 Tue Oct 13 08:23:48 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/julia-attach-environment-v1 --lease-fd 3 --go-fd 4"
+  },
+  "command": [
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+    "-B",
+    "-u",
+    "benchmarks/clbg/julia-aot-comparison/20261012/revisions/attach-environment-diagnostic-v1/diagnose_environment.py",
+    "--revision",
+    "attach-environment-v1",
+    "--v1-report-sha256",
+    "d3c3e8dc3d5dbe64cb30f31a9254cd9e0f0f5dc975a5e7aa81e67597faf99ca2",
+    "--v2-report-sha256",
+    "a9c4ee54fa04e41ee51b20cf1c6a5676169e323681bfdce33044841b51617ba6"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "detached_session": true,
+  "automatic_retry": false,
+  "qualification_granted": false
+}

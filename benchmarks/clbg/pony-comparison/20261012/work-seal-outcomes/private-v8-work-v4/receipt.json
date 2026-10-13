@@ -1,0 +1,13 @@
+{
+  "status": "failed-stop",
+  "revision": "private-v8-work-v4",
+  "actual_common_mutex_held": true,
+  "common_mutex_fd": 4,
+  "actual_native_subjects": 0,
+  "chart_admission": false,
+  "error": "AssertionError",
+  "error_type": "AssertionError",
+  "available_evidence_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-seal-outcomes/private-v8-work-v4/actual-error.log": "2433658983082c3982585cda2d0f8a2e760a709b2f1a904dcae9379997d787d3"
+  }
+}

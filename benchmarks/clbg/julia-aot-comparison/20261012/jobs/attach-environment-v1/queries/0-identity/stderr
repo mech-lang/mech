@@ -1,0 +1,26 @@
+Executable=/Library/Developer/CommandLineTools/usr/bin/lldb
+Identifier=com.apple.lldb
+Format=Mach-O universal (x86_64 arm64)
+CodeDirectory v=20400 size=2738 flags=0x0(none) hashes=80+2 location=embedded
+VersionPlatform=1
+VersionMin=851968
+VersionSDK=918528
+Hash type=sha256 size=32
+CandidateCDHash sha256=e49e904bea273f26031bdb5673997e4142ef83b5
+CandidateCDHashFull sha256=e49e904bea273f26031bdb5673997e4142ef83b55768380175eaa65cd8e87efe
+Hash choices=sha256
+CMSDigest=e49e904bea273f26031bdb5673997e4142ef83b55768380175eaa65cd8e87efe
+CMSDigestType=2
+Executable Segment base=0
+Executable Segment limit=196608
+Executable Segment flags=0x1
+Page size=4096
+CDHash=e49e904bea273f26031bdb5673997e4142ef83b5
+Signature size=4412
+Authority=Software Signing
+Authority=Apple Code Signing Certification Authority
+Authority=Apple Root CA
+Info.plist entries=6
+TeamIdentifier=59GAB85EFG
+Sealed Resources=none
+Internal requirements count=1 size=64

@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/usr/bin/codesign",
+    "-d",
+    "--entitlements",
+    ":-",
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/bin/python3.14"
+  ],
+  "started_at": "2026-10-13T12:57:51.255430+00:00",
+  "read_only_query": true,
+  "inherited_common_mutex": true,
+  "timeout_seconds": 15,
+  "exit_status": 0,
+  "owned_query_group_cleanup": null,
+  "pid": 11860,
+  "pgid": 11860,
+  "query_group_absent_after_reap": true,
+  "finished_at": "2026-10-13T12:57:51.279809+00:00"
+}

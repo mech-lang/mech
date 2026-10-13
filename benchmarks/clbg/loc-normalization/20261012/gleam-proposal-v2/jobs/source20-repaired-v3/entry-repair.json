@@ -1,0 +1,22 @@
+{
+  "status": "exact-private-v5-count-entry-service-binding-repaired",
+  "repaired_function_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/source20-entry-repairs-v1/replay.py",
+  "original_count_runner": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-proposal-v2/replay_sources.py",
+  "adapter": "private-v5 preparation.load_service().load_guard()",
+  "preparation": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/revisions/private-v5/guarded_prepare.py",
+    "sha256": "e13958b40312df99965590e18cd83b341f799c07cd4a6eea71620aadba2a0da1"
+  },
+  "actual_input_service": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/private-v1/guarded_prepare.py",
+    "sha256": "78b9f2870e0627b2aa6cc87ddcbd9ba54c1581ef7f28392f1859b79509dff9d4"
+  },
+  "actual_native_guard": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining_owner.py",
+    "sha256": "55581d56609803243b3be264e6a2e37229be06789c22788bbf8cdb6ff6828544"
+  },
+  "original_fixture_and_counter_bytes_changed": false,
+  "actual_fixtures_retained": 34,
+  "new_fixture_runs": 0,
+  "benchmark_processes_started": 0
+}

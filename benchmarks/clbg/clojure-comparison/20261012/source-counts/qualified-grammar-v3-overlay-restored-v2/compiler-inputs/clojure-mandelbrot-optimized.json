@@ -1,0 +1,97 @@
+{
+  "status": "qualified-exact-authored-compiler-inputs",
+  "profile": "clojure-mandelbrot-optimized",
+  "source_sha256": "9ac679181206a05af5dc3aa11b61aa9513035e379e39c90d69ee71778dbf311e",
+  "binary_sha256": "83c9c5310d044e7c4262432854eb1bc5f49763d7c1e9971777a646c91b96c06d",
+  "files": [
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-mandelbrot-optimized/sources/clbg/mandelbrot/optimized.clj",
+      "sha256": "9ac679181206a05af5dc3aa11b61aa9513035e379e39c90d69ee71778dbf311e"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-mandelbrot-optimized/support/clbg/support.clj",
+      "sha256": "ae37ffdcbfe8d1fa34632e1151d4098b5747f71ce2ad074d326043be3d289446"
+    }
+  ],
+  "independently_retained_compiler_input_evidence": {
+    "status": "actual-compiler-inputs-bound-for-unadmitted-source-replay",
+    "inventory": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/builds/clojure-mandelbrot-optimized/compiler-input-inventory.json",
+    "inventory_sha256": "4ada011a690530dbb7c2d46d5fb47e32e875c08a72f44ce54549ab707caefe99",
+    "compile_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/builds/clojure-mandelbrot-optimized/compile.json",
+    "compile_receipt_sha256": "b81dce19f98d0cf505e244874cb47a7414d8427bbf1d2411fe24eff1ad41c155",
+    "compiler_jar": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/clojure-1.12.6.jar",
+    "compiler_sha256": "21b578db389a8e74b286ce79c4a7f86ec641e26d88b12f18d69030916b0e18ca",
+    "build_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/jdk/jdk-25.0.4.1+1/Contents/Home/bin/java",
+      "-XX:ActiveProcessorCount=8",
+      "-Xms64m",
+      "-Xmx8g",
+      "-XX:+UseG1GC",
+      "-cp",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-mandelbrot-optimized/sources:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-mandelbrot-optimized/support:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/clojure-1.12.6.jar:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/spec.alpha-0.5.238.jar:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/core.specs.alpha-0.4.74.jar",
+      "clojure.main",
+      "-e",
+      "(binding [*compile-path* \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-mandelbrot-optimized\" *compiler-options* {:direct-linking true}] (compile 'clbg.support) (compile 'clbg.mandelbrot.optimized))"
+    ],
+    "runtime_classpath": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-mandelbrot-optimized",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/clojure-1.12.6.jar",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/spec.alpha-0.5.238.jar",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/core.specs.alpha-0.4.74.jar"
+    ],
+    "compiled_artifacts": {
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-mandelbrot-optimized/clbg/support$jobs$fn$reify__145.class": "27d41e24c0219cc4d2dc3d52058db2ebbe55a1d888f4cb8fceb22bc5fe39c46e",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-mandelbrot-optimized/clbg/support$jobs.class": "9f86cf015761d0333ea6a4c9a26dd7b73b14eeec6afec2da2120dacf545f94c2",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-mandelbrot-optimized/clbg/support$jobs$fn__144.class": "97eba2881cf370ead0f932634baf3be4cb3601652939667f4e35944f1aa93dce",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-mandelbrot-optimized/clbg/support$printf.class": "1458604caa86b8cdfcbebb0acffe175e9c83fd4d671b9ec561ed1d9401aa9d59",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-mandelbrot-optimized/clbg/support$input_text.class": "578f14470aca2707ed2d9d44880db92b7c7df59c4f47091f645b680acd88e840",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-mandelbrot-optimized/clbg/support__init.class": "4547a02ecbf914586f64a4438ee9a46687c4f325b9e4741258133358021b4b45",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-mandelbrot-optimized/clbg/support$argument.class": "ce407506fc463f2f8b87c96b4d22d5236996eac56a1c681c5cdbc4e538d1c209",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-mandelbrot-optimized/clbg/support$jobs$fn__148.class": "0dfff75cc6ef5d57857a5c84f6e5819fb1ad6e5fdd1674fcb4ad4c373ddc20f0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-mandelbrot-optimized/clbg/support$fn__138.class": "9ee7fe1fa8d4faee5fef20b10d2ff99872294e174e15a3ba1ffd363ff6577531",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-mandelbrot-optimized/clbg/support$loading__6812__auto____136.class": "5d8afa8fc8a32cb0bffe4a5eadb45fcd15493b7506303c83be19871c7a0b646c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-mandelbrot-optimized/clbg/mandelbrot/optimized$_main$fn__164$fn__165.class": "748bf585fa95137d2d11eb64535a7fa8d71cbf9ef5c59b25da267fa047d79aed",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-mandelbrot-optimized/clbg/mandelbrot/optimized$rows.class": "ea35378c4669481e88e564b9973938ce155bd3dd7853540cbd01c96a55ee22db",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-mandelbrot-optimized/clbg/mandelbrot/optimized$inside_QMARK_.class": "33d2ff0bc4000ecc79f74c6c29366e5f35926af4d8731fa98cf0beb4d43779ff",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-mandelbrot-optimized/clbg/mandelbrot/optimized$_main$fn__162.class": "d5650d68d1259ee79428e7ad3518f9a601aaa2893204dfdc334b4bc4abbc2fce",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-mandelbrot-optimized/clbg/mandelbrot/optimized$_main$fn__164.class": "2b498c48716f879a2a6c24e4cd2fd5d4550237a490636eac177d9220c131cc9a",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-mandelbrot-optimized/clbg/mandelbrot/optimized$fn__153.class": "ebeb5412d978da076cda125ee5b5d97da9f59a10d1a5261f0c04ad46f374c4f2",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-mandelbrot-optimized/clbg/mandelbrot/optimized$rows$fn__156.class": "efee9099e39769dae12ed1ee7f321390b317a1d05775272fa2181cd7d3be92b8",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-mandelbrot-optimized/clbg/mandelbrot/optimized$loading__6812__auto____151.class": "d1dff5cda94d7ba8c223af7c14affc5f533c8aa8864415349723b1a181fad20b",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-mandelbrot-optimized/clbg/mandelbrot/optimized$_main.class": "bc118ff9d93adcfc921ff4e1e2ffaf3ac1ab13437cd2e65b050c694ae128c848",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-mandelbrot-optimized/clbg/mandelbrot/optimized.class": "a086de7243efb7f1a7cacb44c3cfcda1b3574344595afc8b80af6926f2fab169",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-mandelbrot-optimized/clbg/mandelbrot/optimized__init.class": "07bfef82e32c72f83aa37b044b7abe4dba20fe1e9bd29923f7f3eb689568de65"
+    },
+    "files": [
+      {
+        "authored_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/mandelbrot/optimized.clj",
+        "sha256": "9ac679181206a05af5dc3aa11b61aa9513035e379e39c90d69ee71778dbf311e",
+        "role": "application",
+        "actual_compiled_copy": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-mandelbrot-optimized/sources/clbg/mandelbrot/optimized.clj",
+        "actual_snapshot_origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/sources/clbg/mandelbrot/optimized.clj"
+      },
+      {
+        "authored_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/support/clbg/support.clj",
+        "sha256": "ae37ffdcbfe8d1fa34632e1151d4098b5747f71ce2ad074d326043be3d289446",
+        "role": "application-helper",
+        "actual_compiled_copy": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-mandelbrot-optimized/support/clbg/support.clj",
+        "actual_snapshot_origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/support/clbg/support.clj"
+      }
+    ]
+  },
+  "original_compiler_inventory": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/builds/clojure-mandelbrot-optimized/compiler-input-inventory.json",
+    "sha256": "4ada011a690530dbb7c2d46d5fb47e32e875c08a72f44ce54549ab707caefe99"
+  },
+  "qualified_preparation": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/report.json",
+    "sha256": "69bf7cdb025759e6d10cb8c1ae1c189839e253ced9aca50e4f9cc1e838d36d79"
+  },
+  "exact_source_role_review": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/source-counts/semantic-source-review-v3.json",
+    "sha256": "9a0d8414733b10a9fd2991e32efacee05528c43eef947eca8a62922d040047c1"
+  },
+  "inventory_derived_from_original_actual_compile_receipt": true,
+  "authored_application_helpers_complete": true,
+  "generated_class_files_counted_as_source": false
+}

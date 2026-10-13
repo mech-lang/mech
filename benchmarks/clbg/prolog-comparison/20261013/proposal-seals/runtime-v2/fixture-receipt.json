@@ -1,0 +1,21 @@
+{
+  "status": "failed",
+  "expected_test_ids": [
+    "test_image_closure_v2.RuntimeClosure.test_scoped_arm64_header_and_load_command_inventory",
+    "test_image_closure_v2.RuntimeClosure.test_dylib_install_id_is_not_a_dependency",
+    "test_image_closure_v2.RuntimeClosure.test_executable_and_loader_anchors_differ_for_a_library",
+    "test_image_closure_v2.RuntimeClosure.test_rpaths_require_actual_unique_private_images",
+    "test_image_closure_v2.RuntimeClosure.test_fresh_import_rejects_cache_or_changed_source_before_execution",
+    "test_image_closure_v2.RuntimeClosure.test_partial_attach_preserves_actual_device_entities_without_detach_authority"
+  ],
+  "actual_test_ids": [],
+  "discovered_test_ids": [
+    "unittest.loader._FailedTest.test_image_closure_v2"
+  ],
+  "discovered_tests": 1,
+  "tests_run": 0,
+  "execution_completed": false,
+  "inherited_common_mutex": true,
+  "error": "AssertionError",
+  "error_type": "AssertionError"
+}

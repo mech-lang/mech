@@ -1,0 +1,19 @@
+WAIT common mutex: C3 full-study initial review revcomp
+WAIT common mutex: C3 full revcomp 1 c3-revcomp-compact
+FULL revcomp 1 c3-revcomp-compact 25000000
+WAIT common mutex: C3 full revcomp 1 c3-revcomp-optimized
+FULL revcomp 1 c3-revcomp-optimized 25000000
+WAIT common mutex: C3 full revcomp 1 mech-aot-control
+FULL revcomp 1 mech-aot-control 25000000
+WAIT common mutex: C3 full revcomp 2 c3-revcomp-optimized
+FULL revcomp 2 c3-revcomp-optimized 25000000
+WAIT common mutex: C3 full revcomp 2 mech-aot-control
+FULL revcomp 2 mech-aot-control 25000000
+WAIT common mutex: C3 full revcomp 2 c3-revcomp-compact
+FULL revcomp 2 c3-revcomp-compact 25000000
+WAIT common mutex: C3 full revcomp 3 mech-aot-control
+FULL revcomp 3 mech-aot-control 25000000
+WAIT common mutex: C3 full revcomp 3 c3-revcomp-compact
+FULL revcomp 3 c3-revcomp-compact 25000000
+WAIT common mutex: C3 full revcomp 3 c3-revcomp-optimized
+FULL revcomp 3 c3-revcomp-optimized 25000000

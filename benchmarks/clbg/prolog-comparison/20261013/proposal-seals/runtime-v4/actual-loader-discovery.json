@@ -1,0 +1,21 @@
+{
+  "loader_errors": [],
+  "failed_loader_tests": [],
+  "actual_discovery_sys_path": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/proposal-seals/runtime-v4/fixture-sources",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/proposal-seals/runtime-v4/python",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-v4",
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/lib/python312.zip",
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/lib/python3.12",
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/lib-dynload"
+  ],
+  "discovered_test_ids": [
+    "test_image_closure_v2.RuntimeClosure.test_dylib_install_id_is_not_a_dependency",
+    "test_image_closure_v2.RuntimeClosure.test_executable_and_loader_anchors_differ_for_a_library",
+    "test_image_closure_v2.RuntimeClosure.test_fresh_import_rejects_cache_or_changed_source_before_execution",
+    "test_image_closure_v2.RuntimeClosure.test_partial_attach_preserves_actual_device_entities_without_detach_authority",
+    "test_image_closure_v2.RuntimeClosure.test_rpaths_require_actual_unique_private_images",
+    "test_image_closure_v2.RuntimeClosure.test_scoped_arm64_header_and_load_command_inventory"
+  ],
+  "discovered_tests": 6
+}

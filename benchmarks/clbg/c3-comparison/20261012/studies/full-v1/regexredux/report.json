@@ -1,0 +1,1363 @@
+{
+  "status": "complete",
+  "started_at": "2026-10-13T11:58:51.380787+00:00",
+  "benchmark": "regexredux",
+  "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/regexredux/manifest.json",
+  "manifest_sha256": "34e419fab7932baea5590508411b7358f4620e20864715bcb8d3d4097b7bbef4",
+  "sample_count": 3,
+  "profiles": {
+    "c3-regexredux-compact": {
+      "id": "c3-regexredux-compact",
+      "benchmark": "regexredux",
+      "variant": "compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/revisions/private-v2/sources/regexredux/compact.c3",
+      "status": "qualified-source-awaiting-three-full-samples",
+      "maximum_compute_workers": 1,
+      "application_helpers": [],
+      "general_library_support": [
+        "support/buffer.c3",
+        "support/pcre2.c3"
+      ],
+      "compiled_source_bundle": [
+        "revisions/private-v2/sources/regexredux/compact.c3",
+        "support/buffer.c3",
+        "support/pcre2.c3"
+      ],
+      "eligible_for_chart": false,
+      "loc": null,
+      "key": "regexredux:c3-regexredux-compact",
+      "language": "c3",
+      "source_sha256": "d142eea8a4a5c07a6511656b1fe6db8061cdb3d63cc96ff1f8d9dc28180b8621",
+      "binary_sha256": "94f8d080e80035bc14fea337fd5f82bc78960407bcc6d0b15fe57c7645608a5b",
+      "source_bundle": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/revisions/private-v2/sources/regexredux/compact.c3",
+          "sha256": "d142eea8a4a5c07a6511656b1fe6db8061cdb3d63cc96ff1f8d9dc28180b8621"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/buffer.c3",
+          "sha256": "1975203b07f2cdd300b86536e6726883dfa917935d4bcbd1070db4a25bf3f564"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/pcre2.c3",
+          "sha256": "2b46f2f3be49a5910a5c3c2b77d905b767ffc0ff108da92589854852694f53a5"
+        }
+      ],
+      "support": {
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/buffer.c3": "1975203b07f2cdd300b86536e6726883dfa917935d4bcbd1070db4a25bf3f564",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/pcre2.c3": "2b46f2f3be49a5910a5c3c2b77d905b767ffc0ff108da92589854852694f53a5"
+      },
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-regexredux-compact",
+        "{n}"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012",
+      "runtime_environment": {
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "compiler_version": "0.8.5",
+      "bundled_llvm_version": "23.1.2",
+      "explicit_backend": "llvm",
+      "explicit_target": "macos-aarch64",
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/c3c",
+        "compile",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/revisions/private-v2/sources/regexredux/compact.c3",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/buffer.c3",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/pcre2.c3",
+        "-O3",
+        "--safe=no",
+        "--backend=llvm",
+        "--target",
+        "macos-aarch64",
+        "--fp-math=strict",
+        "--threads",
+        "1",
+        "--single-module=yes",
+        "--ansi=no",
+        "--stdlib",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib",
+        "--cc",
+        "/opt/homebrew/Cellar/llvm@22/22.1.8/bin/clang-22",
+        "--linker=cc",
+        "--macos-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk",
+        "--macos-min-version",
+        "14.4",
+        "--macos-sdk-version",
+        "14.4",
+        "--build-dir",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-regexredux-compact",
+        "--obj-out",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-regexredux-compact/objects",
+        "--llvm-out",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-regexredux-compact/llvm",
+        "--asm-out",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-regexredux-compact/asm",
+        "--emit-llvm",
+        "--emit-asm",
+        "--keep-obj",
+        "--print-linking",
+        "--print-input",
+        "-z",
+        "/opt/homebrew/Cellar/pcre2/10.49/lib/libpcre2-8.0.dylib",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-regexredux-compact"
+      ],
+      "cache": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-regexredux-compact",
+      "measured_architecture": "arm64",
+      "qualification_origin": "retained-private-v2-exact-source-binary-and-records",
+      "new_native_cases": 0,
+      "prior_bounded_records": [
+        {
+          "case": "all-replacements",
+          "prior_attempt": 1,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/001-c3-regexredux-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/001-c3-regexredux-compact.supervisor.json",
+          "stdout_sha256": "cab36666f9ebc62cafa303203e3f7031a7eabec7e1b44d00429773b72b153b53",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "records",
+          "prior_attempt": 2,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/002-c3-regexredux-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/002-c3-regexredux-compact.supervisor.json",
+          "stdout_sha256": "4ec84e9ad994dc5841d07441b18fb0b64da1695742d13e6cf7a48e8066487f52",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "header-eof",
+          "prior_attempt": 3,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/003-c3-regexredux-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/003-c3-regexredux-compact.supervisor.json",
+          "stdout_sha256": "9b4606a445208bbf134ef6f4e9731824919ffc90b8b07b18215a1945f38593e2",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "replacement-boundaries",
+          "prior_attempt": 4,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/004-c3-regexredux-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/004-c3-regexredux-compact.supervisor.json",
+          "stdout_sha256": "6addd585c9972ffd65697bede209df156f70dfc6eba5eb3dbbb0e588406911a2",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "empty",
+          "prior_attempt": 5,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/005-c3-regexredux-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/005-c3-regexredux-compact.supervisor.json",
+          "stdout_sha256": "f081054482d3004e3643f41a3e11674f4c63c7c33fc830773b743138667a7aba",
+          "origin": "retained-private-v2"
+        }
+      ],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-regexredux-compact",
+      "maximum_workers": 1,
+      "producer_loc": null,
+      "loc_status": "pending qualified canonical LOC overlay",
+      "qualification_status": "source-output-work-allocation-passed",
+      "chart_admission": false,
+      "role": "Qualified complete C3 compact application",
+      "required_work_review": {
+        "status": "passed",
+        "source_sha256": "d142eea8a4a5c07a6511656b1fe6db8061cdb3d63cc96ff1f8d9dc28180b8621",
+        "method": "Exact source review and all bounded outputs; actual seven LibcAllocator maps/all windows/worker ownership, both real Pi divisions and original scored ARM64 tree allocation/retention proofs",
+        "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/work-full-v3/REQUIRED_SOURCE_REVIEW.md",
+        "qualification": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/work-qualification/work-v3/report.json"
+      },
+      "samples_seconds": [
+        9.426091667,
+        9.511406375,
+        9.551921583
+      ],
+      "sample_validation": [
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        }
+      ],
+      "attempts": [
+        1,
+        6,
+        8
+      ],
+      "measurement_status": "measured",
+      "median_seconds": 9.511406375,
+      "sample_stdev_seconds": 0.06423037863941518,
+      "time_x_mech": 18.82671679311787,
+      "matched_mech_control": "mech-aot-control",
+      "matched_mech_source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d"
+    },
+    "c3-regexredux-optimized": {
+      "id": "c3-regexredux-optimized",
+      "benchmark": "regexredux",
+      "variant": "optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/revisions/private-v2/sources/regexredux/optimized.c3",
+      "status": "qualified-source-awaiting-three-full-samples",
+      "maximum_compute_workers": 8,
+      "application_helpers": [],
+      "general_library_support": [
+        "support/buffer.c3",
+        "support/pcre2.c3",
+        "support/threads.c3"
+      ],
+      "compiled_source_bundle": [
+        "revisions/private-v2/sources/regexredux/optimized.c3",
+        "support/buffer.c3",
+        "support/pcre2.c3",
+        "support/threads.c3"
+      ],
+      "eligible_for_chart": false,
+      "loc": null,
+      "key": "regexredux:c3-regexredux-optimized",
+      "language": "c3",
+      "source_sha256": "fb8cca9e7fe2c676dea2a9d7fda373d792506b0558fb723417ec048227803412",
+      "binary_sha256": "d4fb19902faaa20469a905ff704a53c5d228c3b36892da9e5d1dc81749d96b34",
+      "source_bundle": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/revisions/private-v2/sources/regexredux/optimized.c3",
+          "sha256": "fb8cca9e7fe2c676dea2a9d7fda373d792506b0558fb723417ec048227803412"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/buffer.c3",
+          "sha256": "1975203b07f2cdd300b86536e6726883dfa917935d4bcbd1070db4a25bf3f564"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/pcre2.c3",
+          "sha256": "2b46f2f3be49a5910a5c3c2b77d905b767ffc0ff108da92589854852694f53a5"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/threads.c3",
+          "sha256": "acff1f78af8233552d720d90d5ae971d64a12b5cddf9b98830d1539eda3a5248"
+        }
+      ],
+      "support": {
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/buffer.c3": "1975203b07f2cdd300b86536e6726883dfa917935d4bcbd1070db4a25bf3f564",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/pcre2.c3": "2b46f2f3be49a5910a5c3c2b77d905b767ffc0ff108da92589854852694f53a5",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/threads.c3": "acff1f78af8233552d720d90d5ae971d64a12b5cddf9b98830d1539eda3a5248"
+      },
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-regexredux-optimized",
+        "{n}"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012",
+      "runtime_environment": {
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "compiler_version": "0.8.5",
+      "bundled_llvm_version": "23.1.2",
+      "explicit_backend": "llvm",
+      "explicit_target": "macos-aarch64",
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/c3c",
+        "compile",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/revisions/private-v2/sources/regexredux/optimized.c3",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/buffer.c3",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/pcre2.c3",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/threads.c3",
+        "-O3",
+        "--safe=no",
+        "--backend=llvm",
+        "--target",
+        "macos-aarch64",
+        "--fp-math=strict",
+        "--threads",
+        "1",
+        "--single-module=yes",
+        "--ansi=no",
+        "--stdlib",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib",
+        "--cc",
+        "/opt/homebrew/Cellar/llvm@22/22.1.8/bin/clang-22",
+        "--linker=cc",
+        "--macos-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk",
+        "--macos-min-version",
+        "14.4",
+        "--macos-sdk-version",
+        "14.4",
+        "--build-dir",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-regexredux-optimized",
+        "--obj-out",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-regexredux-optimized/objects",
+        "--llvm-out",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-regexredux-optimized/llvm",
+        "--asm-out",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-regexredux-optimized/asm",
+        "--emit-llvm",
+        "--emit-asm",
+        "--keep-obj",
+        "--print-linking",
+        "--print-input",
+        "-z",
+        "/opt/homebrew/Cellar/pcre2/10.49/lib/libpcre2-8.0.dylib",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-regexredux-optimized"
+      ],
+      "cache": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-regexredux-optimized",
+      "measured_architecture": "arm64",
+      "qualification_origin": "retained-private-v2-exact-source-binary-and-records",
+      "new_native_cases": 0,
+      "prior_bounded_records": [
+        {
+          "case": "all-replacements",
+          "prior_attempt": 6,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/006-c3-regexredux-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/006-c3-regexredux-optimized.supervisor.json",
+          "stdout_sha256": "cab36666f9ebc62cafa303203e3f7031a7eabec7e1b44d00429773b72b153b53",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "records",
+          "prior_attempt": 7,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/007-c3-regexredux-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/007-c3-regexredux-optimized.supervisor.json",
+          "stdout_sha256": "4ec84e9ad994dc5841d07441b18fb0b64da1695742d13e6cf7a48e8066487f52",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "header-eof",
+          "prior_attempt": 8,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/008-c3-regexredux-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/008-c3-regexredux-optimized.supervisor.json",
+          "stdout_sha256": "9b4606a445208bbf134ef6f4e9731824919ffc90b8b07b18215a1945f38593e2",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "replacement-boundaries",
+          "prior_attempt": 9,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/009-c3-regexredux-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/009-c3-regexredux-optimized.supervisor.json",
+          "stdout_sha256": "6addd585c9972ffd65697bede209df156f70dfc6eba5eb3dbbb0e588406911a2",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "empty",
+          "prior_attempt": 10,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/010-c3-regexredux-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/010-c3-regexredux-optimized.supervisor.json",
+          "stdout_sha256": "f081054482d3004e3643f41a3e11674f4c63c7c33fc830773b743138667a7aba",
+          "origin": "retained-private-v2"
+        }
+      ],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-regexredux-optimized",
+      "maximum_workers": 8,
+      "producer_loc": null,
+      "loc_status": "pending qualified canonical LOC overlay",
+      "qualification_status": "source-output-work-allocation-passed",
+      "chart_admission": false,
+      "role": "Qualified complete C3 optimized application",
+      "required_work_review": {
+        "status": "passed",
+        "source_sha256": "fb8cca9e7fe2c676dea2a9d7fda373d792506b0558fb723417ec048227803412",
+        "method": "Exact source review and all bounded outputs; actual seven LibcAllocator maps/all windows/worker ownership, both real Pi divisions and original scored ARM64 tree allocation/retention proofs",
+        "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/work-full-v3/REQUIRED_SOURCE_REVIEW.md",
+        "qualification": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/work-qualification/work-v3/report.json"
+      },
+      "samples_seconds": [
+        4.503768917,
+        4.221720042,
+        4.186686125
+      ],
+      "sample_validation": [
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        }
+      ],
+      "attempts": [
+        2,
+        4,
+        9
+      ],
+      "measurement_status": "measured",
+      "median_seconds": 4.221720042,
+      "sample_stdev_seconds": 0.17383921700412538,
+      "time_x_mech": 8.356401196301919,
+      "matched_mech_control": "mech-aot-control",
+      "matched_mech_source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d"
+    },
+    "mech-aot-control": {
+      "id": "mech-aot-control",
+      "key": "regexredux:c3-full-study:mech-control",
+      "benchmark": "regexredux",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/regexredux.mec",
+      "source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after",
+      "binary_sha256": "026fa8c40c7d425282349c20a8cb155db271f2b7f4fdfefc1699408adcee0eef",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after"
+      ],
+      "runtime_environment": {
+        "MECH_SEQUENCE_ASYNC": "1",
+        "MECH_SEQUENCE_BUFFER_REUSE": "1"
+      },
+      "loc": null,
+      "published_chart_key": "regexredux:mech-regex-final-reuse-signed",
+      "previous_seconds": 0.489611584,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "Nine independent regex counts, each using its prescribed pattern, and five ordered regex substitutions. The general regex library handles each operation; there is no combined-pattern benchmark matcher.",
+        "full_work": {
+          "input_bytes": 50833411,
+          "count_patterns": 9,
+          "ordered_substitutions": 5
+        },
+        "evidence": [
+          {
+            "path": "regexredux/regexredux.mec",
+            "sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/regexredux.html",
+        "native_benchmark_kernel": false
+      },
+      "control_for": "r",
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "producer_loc": 24,
+      "loc_status": "pending qualified canonical LOC overlay",
+      "maximum_workers": 8,
+      "role": "Fresh unchanged current Mech AOT source control",
+      "samples_seconds": [
+        0.513618125,
+        0.505207917,
+        0.504897833
+      ],
+      "sample_validation": [
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        }
+      ],
+      "attempts": [
+        3,
+        5,
+        7
+      ],
+      "measurement_status": "measured",
+      "median_seconds": 0.505207917,
+      "sample_stdev_seconds": 0.004947579260870661,
+      "time_x_mech": 1.0,
+      "matched_mech_control": "mech-aot-control",
+      "matched_mech_source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d"
+    }
+  },
+  "orders": [
+    {
+      "round": 1,
+      "profiles": [
+        "c3-regexredux-compact",
+        "c3-regexredux-optimized",
+        "mech-aot-control"
+      ]
+    },
+    {
+      "round": 2,
+      "profiles": [
+        "c3-regexredux-optimized",
+        "mech-aot-control",
+        "c3-regexredux-compact"
+      ]
+    },
+    {
+      "round": 3,
+      "profiles": [
+        "mech-aot-control",
+        "c3-regexredux-compact",
+        "c3-regexredux-optimized"
+      ]
+    }
+  ],
+  "attempts": [
+    {
+      "key": "regexredux:c3-regexredux-compact",
+      "id": "c3-regexredux-compact",
+      "benchmark": "regexredux",
+      "language": "c3",
+      "source_sha256": "d142eea8a4a5c07a6511656b1fe6db8061cdb3d63cc96ff1f8d9dc28180b8621",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-regexredux-compact",
+        "5000000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012",
+      "runtime_environment": {
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"94f8d080e80035bc14fea337fd5f82bc78960407bcc6d0b15fe57c7645608a5b\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-regexredux-compact\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"d142eea8a4a5c07a6511656b1fe6db8061cdb3d63cc96ff1f8d9dc28180b8621\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/revisions/private-v2/sources/regexredux/compact.c3\": \"d142eea8a4a5c07a6511656b1fe6db8061cdb3d63cc96ff1f8d9dc28180b8621\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/buffer.c3\": \"1975203b07f2cdd300b86536e6726883dfa917935d4bcbd1070db4a25bf3f564\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/pcre2.c3\": \"2b46f2f3be49a5910a5c3c2b77d905b767ffc0ff108da92589854852694f53a5\"}}",
+      "started_at": "2026-10-13T11:59:04.829359+00:00",
+      "workload_n": 5000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 9.426091667,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 325968,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 298,
+      "stdout_sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+      "validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T11:59:14.474105+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 1,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/regexredux/attempts/001-c3-regexredux-compact.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 99930,
+        "pgid": 99930,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-regexredux-compact",
+          "5000000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/regexredux/attempts/001-c3-regexredux-compact.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "regexredux:c3-regexredux-optimized",
+      "id": "c3-regexredux-optimized",
+      "benchmark": "regexredux",
+      "language": "c3",
+      "source_sha256": "fb8cca9e7fe2c676dea2a9d7fda373d792506b0558fb723417ec048227803412",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-regexredux-optimized",
+        "5000000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012",
+      "runtime_environment": {
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"d4fb19902faaa20469a905ff704a53c5d228c3b36892da9e5d1dc81749d96b34\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-regexredux-optimized\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"fb8cca9e7fe2c676dea2a9d7fda373d792506b0558fb723417ec048227803412\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/revisions/private-v2/sources/regexredux/optimized.c3\": \"fb8cca9e7fe2c676dea2a9d7fda373d792506b0558fb723417ec048227803412\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/buffer.c3\": \"1975203b07f2cdd300b86536e6726883dfa917935d4bcbd1070db4a25bf3f564\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/pcre2.c3\": \"2b46f2f3be49a5910a5c3c2b77d905b767ffc0ff108da92589854852694f53a5\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/threads.c3\": \"acff1f78af8233552d720d90d5ae971d64a12b5cddf9b98830d1539eda3a5248\"}}",
+      "started_at": "2026-10-13T12:01:05.683928+00:00",
+      "workload_n": 5000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 4.503768917,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 254176,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 298,
+      "stdout_sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+      "validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T12:01:10.383709+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 2,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/regexredux/attempts/002-c3-regexredux-optimized.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 915,
+        "pgid": 915,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-regexredux-optimized",
+          "5000000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/regexredux/attempts/002-c3-regexredux-optimized.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "regexredux:c3-full-study:mech-control",
+      "id": "mech-aot-control",
+      "benchmark": "regexredux",
+      "language": "mech",
+      "source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "MECH_SEQUENCE_ASYNC": "1",
+        "MECH_SEQUENCE_BUFFER_REUSE": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"026fa8c40c7d425282349c20a8cb155db271f2b7f4fdfefc1699408adcee0eef\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"MECH_SEQUENCE_ASYNC\": \"1\", \"MECH_SEQUENCE_BUFFER_REUSE\": \"1\"}, \"source_sha256\": \"69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d\", \"support\": {\"regexredux/regexredux.mec\": \"69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d\"}}",
+      "started_at": "2026-10-13T12:02:32.540110+00:00",
+      "workload_n": 5000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.513618125,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 298,
+      "stdout_sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+      "validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T12:02:33.288692+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 3,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/regexredux/attempts/003-mech-aot-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 1388,
+        "pgid": 1388,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/regexredux/attempts/003-mech-aot-control.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "regexredux:c3-regexredux-optimized",
+      "id": "c3-regexredux-optimized",
+      "benchmark": "regexredux",
+      "language": "c3",
+      "source_sha256": "fb8cca9e7fe2c676dea2a9d7fda373d792506b0558fb723417ec048227803412",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-regexredux-optimized",
+        "5000000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012",
+      "runtime_environment": {
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"d4fb19902faaa20469a905ff704a53c5d228c3b36892da9e5d1dc81749d96b34\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-regexredux-optimized\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"fb8cca9e7fe2c676dea2a9d7fda373d792506b0558fb723417ec048227803412\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/revisions/private-v2/sources/regexredux/optimized.c3\": \"fb8cca9e7fe2c676dea2a9d7fda373d792506b0558fb723417ec048227803412\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/buffer.c3\": \"1975203b07f2cdd300b86536e6726883dfa917935d4bcbd1070db4a25bf3f564\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/pcre2.c3\": \"2b46f2f3be49a5910a5c3c2b77d905b767ffc0ff108da92589854852694f53a5\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/threads.c3\": \"acff1f78af8233552d720d90d5ae971d64a12b5cddf9b98830d1539eda3a5248\"}}",
+      "started_at": "2026-10-13T12:03:51.742806+00:00",
+      "workload_n": 5000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 4.221720042,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 175776,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 298,
+      "stdout_sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+      "validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T12:03:56.177579+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 4,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/regexredux/attempts/004-c3-regexredux-optimized.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 1734,
+        "pgid": 1734,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-regexredux-optimized",
+          "5000000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/regexredux/attempts/004-c3-regexredux-optimized.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "regexredux:c3-full-study:mech-control",
+      "id": "mech-aot-control",
+      "benchmark": "regexredux",
+      "language": "mech",
+      "source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "MECH_SEQUENCE_ASYNC": "1",
+        "MECH_SEQUENCE_BUFFER_REUSE": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"026fa8c40c7d425282349c20a8cb155db271f2b7f4fdfefc1699408adcee0eef\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"MECH_SEQUENCE_ASYNC\": \"1\", \"MECH_SEQUENCE_BUFFER_REUSE\": \"1\"}, \"source_sha256\": \"69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d\", \"support\": {\"regexredux/regexredux.mec\": \"69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d\"}}",
+      "started_at": "2026-10-13T12:05:06.840018+00:00",
+      "workload_n": 5000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.505207917,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 298,
+      "stdout_sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+      "validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T12:05:07.564321+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 5,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/regexredux/attempts/005-mech-aot-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 2305,
+        "pgid": 2305,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/regexredux/attempts/005-mech-aot-control.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "regexredux:c3-regexredux-compact",
+      "id": "c3-regexredux-compact",
+      "benchmark": "regexredux",
+      "language": "c3",
+      "source_sha256": "d142eea8a4a5c07a6511656b1fe6db8061cdb3d63cc96ff1f8d9dc28180b8621",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-regexredux-compact",
+        "5000000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012",
+      "runtime_environment": {
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"94f8d080e80035bc14fea337fd5f82bc78960407bcc6d0b15fe57c7645608a5b\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-regexredux-compact\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"d142eea8a4a5c07a6511656b1fe6db8061cdb3d63cc96ff1f8d9dc28180b8621\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/revisions/private-v2/sources/regexredux/compact.c3\": \"d142eea8a4a5c07a6511656b1fe6db8061cdb3d63cc96ff1f8d9dc28180b8621\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/buffer.c3\": \"1975203b07f2cdd300b86536e6726883dfa917935d4bcbd1070db4a25bf3f564\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/pcre2.c3\": \"2b46f2f3be49a5910a5c3c2b77d905b767ffc0ff108da92589854852694f53a5\"}}",
+      "started_at": "2026-10-13T12:06:05.395443+00:00",
+      "workload_n": 5000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 9.511406375,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 313664,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 298,
+      "stdout_sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+      "validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T12:06:15.119120+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 6,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/regexredux/attempts/006-c3-regexredux-compact.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 2651,
+        "pgid": 2651,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-regexredux-compact",
+          "5000000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/regexredux/attempts/006-c3-regexredux-compact.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "regexredux:c3-full-study:mech-control",
+      "id": "mech-aot-control",
+      "benchmark": "regexredux",
+      "language": "mech",
+      "source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "MECH_SEQUENCE_ASYNC": "1",
+        "MECH_SEQUENCE_BUFFER_REUSE": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"026fa8c40c7d425282349c20a8cb155db271f2b7f4fdfefc1699408adcee0eef\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"MECH_SEQUENCE_ASYNC\": \"1\", \"MECH_SEQUENCE_BUFFER_REUSE\": \"1\"}, \"source_sha256\": \"69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d\", \"support\": {\"regexredux/regexredux.mec\": \"69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d\"}}",
+      "started_at": "2026-10-13T12:08:05.319945+00:00",
+      "workload_n": 5000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.504897833,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 298,
+      "stdout_sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+      "validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T12:08:06.040549+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 7,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/regexredux/attempts/007-mech-aot-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 3108,
+        "pgid": 3108,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/regexredux/attempts/007-mech-aot-control.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "regexredux:c3-regexredux-compact",
+      "id": "c3-regexredux-compact",
+      "benchmark": "regexredux",
+      "language": "c3",
+      "source_sha256": "d142eea8a4a5c07a6511656b1fe6db8061cdb3d63cc96ff1f8d9dc28180b8621",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-regexredux-compact",
+        "5000000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012",
+      "runtime_environment": {
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"94f8d080e80035bc14fea337fd5f82bc78960407bcc6d0b15fe57c7645608a5b\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-regexredux-compact\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"d142eea8a4a5c07a6511656b1fe6db8061cdb3d63cc96ff1f8d9dc28180b8621\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/revisions/private-v2/sources/regexredux/compact.c3\": \"d142eea8a4a5c07a6511656b1fe6db8061cdb3d63cc96ff1f8d9dc28180b8621\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/buffer.c3\": \"1975203b07f2cdd300b86536e6726883dfa917935d4bcbd1070db4a25bf3f564\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/pcre2.c3\": \"2b46f2f3be49a5910a5c3c2b77d905b767ffc0ff108da92589854852694f53a5\"}}",
+      "started_at": "2026-10-13T12:09:03.064620+00:00",
+      "workload_n": 5000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 9.551921583,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 296720,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 298,
+      "stdout_sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+      "validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T12:09:12.827810+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 8,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/regexredux/attempts/008-c3-regexredux-compact.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 3526,
+        "pgid": 3526,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-regexredux-compact",
+          "5000000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/regexredux/attempts/008-c3-regexredux-compact.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "regexredux:c3-regexredux-optimized",
+      "id": "c3-regexredux-optimized",
+      "benchmark": "regexredux",
+      "language": "c3",
+      "source_sha256": "fb8cca9e7fe2c676dea2a9d7fda373d792506b0558fb723417ec048227803412",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-regexredux-optimized",
+        "5000000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012",
+      "runtime_environment": {
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"d4fb19902faaa20469a905ff704a53c5d228c3b36892da9e5d1dc81749d96b34\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-regexredux-optimized\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"fb8cca9e7fe2c676dea2a9d7fda373d792506b0558fb723417ec048227803412\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/revisions/private-v2/sources/regexredux/optimized.c3\": \"fb8cca9e7fe2c676dea2a9d7fda373d792506b0558fb723417ec048227803412\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/buffer.c3\": \"1975203b07f2cdd300b86536e6726883dfa917935d4bcbd1070db4a25bf3f564\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/pcre2.c3\": \"2b46f2f3be49a5910a5c3c2b77d905b767ffc0ff108da92589854852694f53a5\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/threads.c3\": \"acff1f78af8233552d720d90d5ae971d64a12b5cddf9b98830d1539eda3a5248\"}}",
+      "started_at": "2026-10-13T12:11:03.076695+00:00",
+      "workload_n": 5000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 4.186686125,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 175760,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 298,
+      "stdout_sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+      "validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T12:11:07.478558+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 9,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/regexredux/attempts/009-c3-regexredux-optimized.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 3925,
+        "pgid": 3925,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-regexredux-optimized",
+          "5000000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/regexredux/attempts/009-c3-regexredux-optimized.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    }
+  ],
+  "active": null,
+  "supervisor": {
+    "pid": 99734,
+    "process_listing": "Tue Oct 13 07:58:50 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u -B /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/work-full-v3/full_study.py --run --benchmark regexredux --revision full-v1 --manifest-sha256 34e419fab7932baea5590508411b7358f4620e20864715bcb8d3d4097b7bbef4"
+  },
+  "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+  "full_workload_n": 5000000,
+  "chart_admission": false,
+  "no_automatic_retry": true,
+  "canonical_LOC_status": "pending separate immutable count overlay",
+  "isolated_failed_profiles": [],
+  "skipped_failed_profile_slots": [],
+  "finished_at": "2026-10-13T12:13:35.585898+00:00",
+  "pins_unchanged_at_end": true,
+  "all_profiles_fully_measured": true
+}

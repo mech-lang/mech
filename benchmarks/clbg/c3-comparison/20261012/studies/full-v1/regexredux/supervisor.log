@@ -1,0 +1,19 @@
+WAIT common mutex: C3 full-study initial review regexredux
+WAIT common mutex: C3 full regexredux 1 c3-regexredux-compact
+FULL regexredux 1 c3-regexredux-compact 5000000
+WAIT common mutex: C3 full regexredux 1 c3-regexredux-optimized
+FULL regexredux 1 c3-regexredux-optimized 5000000
+WAIT common mutex: C3 full regexredux 1 mech-aot-control
+FULL regexredux 1 mech-aot-control 5000000
+WAIT common mutex: C3 full regexredux 2 c3-regexredux-optimized
+FULL regexredux 2 c3-regexredux-optimized 5000000
+WAIT common mutex: C3 full regexredux 2 mech-aot-control
+FULL regexredux 2 mech-aot-control 5000000
+WAIT common mutex: C3 full regexredux 2 c3-regexredux-compact
+FULL regexredux 2 c3-regexredux-compact 5000000
+WAIT common mutex: C3 full regexredux 3 mech-aot-control
+FULL regexredux 3 mech-aot-control 5000000
+WAIT common mutex: C3 full regexredux 3 c3-regexredux-compact
+FULL regexredux 3 c3-regexredux-compact 5000000
+WAIT common mutex: C3 full regexredux 3 c3-regexredux-optimized
+FULL regexredux 3 c3-regexredux-optimized 5000000

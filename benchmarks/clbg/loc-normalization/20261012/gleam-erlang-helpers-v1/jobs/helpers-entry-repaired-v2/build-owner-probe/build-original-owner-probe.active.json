@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/opt/homebrew/Cellar/erlang/29.1.1_2/bin/erlc",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/tool",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/tool/original_owner_probe.erl"
+  ],
+  "started_at": "2026-10-13T13:15:23.282367+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 60,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 15836,
+  "identity": {
+    "pid": 15836,
+    "process_listing": "Tue Oct 13 09:15:23 2026     /bin/sh /opt/homebrew/Cellar/erlang/29.1.1_2/bin/erl +S1 +sbtu +A0 +P 65536 +Q 1024 -noinput -mode minimal -boot no_dot_erlang -s erl_compile compile_cmdline -extra -o /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/tool /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/tool/original_owner_probe.erl"
+  }
+}

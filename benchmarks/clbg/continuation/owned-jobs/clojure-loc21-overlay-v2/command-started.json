@@ -1,0 +1,22 @@
+{
+  "started_at": "2026-10-13T12:30:56.185632+00:00",
+  "command_pid": 7673,
+  "command_identity": {
+    "pid": 7673,
+    "listing": "7673  7663 Tue Oct 13 08:30:56 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u benchmarks/clbg/clojure-comparison/20261012/source-counts/seal_overlay_v3.py --revision qualified-grammar-v3-overlay-restored-v2 --review-file benchmarks/clbg/clojure-comparison/20261012/source-counts/semantic-source-review-v3.json --review-sha256 9a0d8414733b10a9fd2991e32efacee05528c43eef947eca8a62922d040047c1"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+    "-B",
+    "-u",
+    "benchmarks/clbg/clojure-comparison/20261012/source-counts/seal_overlay_v3.py",
+    "--revision",
+    "qualified-grammar-v3-overlay-restored-v2",
+    "--review-file",
+    "benchmarks/clbg/clojure-comparison/20261012/source-counts/semantic-source-review-v3.json",
+    "--review-sha256",
+    "9a0d8414733b10a9fd2991e32efacee05528c43eef947eca8a62922d040047c1"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech"
+}

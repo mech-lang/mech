@@ -1,0 +1,2 @@
+WAIT common mutex: Pony-owned grammar fixture/source proposals
+{"fixture": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pony-grammar-v2/jobs/grammar-v2-fixtures-restored-v2/fixture-receipt.json", "fixture_sha256": "9046c1bb664b87790671451b594e2aecf3cea336261768d59c49cb23d23c6448", "actual_fixture_methods": 33, "source_counting_started": false, "canonical_LOC_admitted": false}

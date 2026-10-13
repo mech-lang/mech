@@ -1,0 +1,10 @@
+regexredux optimized 49.819 x Mech
+revcomp optimized 9.376 x Mech
+pidigits optimized 8.064 x Mech
+spectralnorm optimized 1.324 x Mech
+mandelbrot optimized 1.506 x Mech
+fasta optimized 3.797 x Mech
+knucleotide optimized 6.605 x Mech
+binarytrees compact 12.131 x Mech
+nbody optimized 1.520 x Mech
+fannkuchredux optimized 2.606 x Mech

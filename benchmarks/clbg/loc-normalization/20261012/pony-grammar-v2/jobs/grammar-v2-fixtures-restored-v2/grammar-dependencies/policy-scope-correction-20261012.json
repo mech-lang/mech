@@ -1,0 +1,176 @@
+{
+  "status": "approved-additive-scope-clarification",
+  "rule_version": "canonical-source-units-20261012-approved-rule-v2",
+  "authority": "Parent review messages in the LOC normalization task; approval history remains preserved.",
+  "supersedes": {
+    "decision": "Earlier temporary Elm/Haskell local let opening counted as a separate header.",
+    "correction": "A declaration-block let opening is structural zero. A let attached to one binding belongs to that binding and adds no duplicate header."
+  },
+  "decisions": [
+    {
+      "form": "Proven named function with local let/in scope",
+      "example": "f x = let a=1 in a+x",
+      "languages": [
+        "elm",
+        "fsharp",
+        "haskell when an ownership pathway is qualified"
+      ],
+      "units": 4,
+      "components": {
+        "outer_function_header": 1,
+        "declaration_let_open": 0,
+        "local_binding": 1,
+        "written_in_close": 1,
+        "final_expression": 1
+      },
+      "gate": "Only proven local declaration scope ownership; iteration/member/data in tokens remain structural."
+    },
+    {
+      "form": "Pascal var/const/type declaration-section introducer",
+      "units": 0,
+      "gate": "Actual independent declarations/type headers retain their units."
+    },
+    {
+      "form": "Fortran contains declaration-section introducer",
+      "units": 0,
+      "gate": "Actual subprogram headers retain their units."
+    },
+    {
+      "form": "Proven call/data suffix after an executable callback close",
+      "example": "run([&x]{a=1;b=2;});",
+      "units": 4,
+      "components": {
+        "callback_header": 1,
+        "body_statements": 2,
+        "written_executable_close": 1,
+        "owned_argument_suffix": 0
+      },
+      "gate": "Real following expressions/calls or unproven suffix ownership require review."
+    },
+    {
+      "form": "Proven Smalltalk methodsFor/category-only file-in metadata delimiters",
+      "units": 0,
+      "gate": "Actual selector headers and written executable method closes retain one each; unknown bang ownership requires review."
+    },
+    {
+      "form": "Recognized Smalltalk standard class declaration",
+      "components": {
+        "type_header": 1,
+        "each_named_instance_or_class_field": 1,
+        "empty_field_lists": 0,
+        "written_type_close": 1
+      },
+      "gate": "Only proven reflective declaration field strings; arbitrary strings never become declarations."
+    },
+    {
+      "form": "Proven Smalltalk independent cascade message sends sharing a receiver",
+      "example": "out nextPutAll: value; print: count; lf",
+      "units": 3,
+      "gate": "Argument-only composed messages/data stay one composition; unclear send ownership requires review."
+    },
+    {
+      "form": "Proven Smalltalk documentation-only comment chunk terminal bang",
+      "units": 0,
+      "gate": "Only exact comment-only chunk ownership; no blanket bang deletion."
+    },
+    {
+      "form": "Proven C/C++ typedef aggregate attached alias suffix",
+      "components": {
+        "complete_typedef_aggregate_header_including_primary_alias": 1,
+        "fields_separately": 1,
+        "written_aggregate_close": 1,
+        "primary_attached_alias_suffix": 0,
+        "each_additional_attached_alias": 1
+      },
+      "gate": "Actual object declarations after an aggregate are separate bindings; unknown typedef/object suffix ownership remains reviewed."
+    },
+    {
+      "form": "Proven Pony recover with one construction/call result and no independent locals",
+      "units": 1,
+      "gate": "One value composition; unknown purity or ownership remains reviewed."
+    },
+    {
+      "form": "Proven Pony recover with independent local bindings",
+      "components": {
+        "recover_header": 1,
+        "each_independent_body_binding": 1,
+        "final_expression": 1,
+        "written_end_close": 1
+      },
+      "gate": "Prove executable recover-region ownership before expanding."
+    },
+    {
+      "form": "Crystal constructor @field formal parameters",
+      "components": {
+        "constructor_header": 1,
+        "additional_formal_parameter_units": 0,
+        "imputed_compiler_generated_assignments_or_getters": 0
+      },
+      "gate": "Only proven constructor formals; separately written field/property declarations count and split normally."
+    },
+    {
+      "form": "Proven immediate Smalltalk unary callback invocation suffix",
+      "spellings": [
+        "whileTrue",
+        "whileFalse",
+        "value"
+      ],
+      "units": 0,
+      "gate": "Only the same immediately attached callback/control invocation; written header/body/close retain units, other sends/arguments/operators/subsequent statements remain reviewed."
+    },
+    {
+      "form": "Explicit meaningful compiler annotation group",
+      "languages": [
+        "c",
+        "cpp",
+        "csharp",
+        "nim"
+      ],
+      "spellings": [
+        "__attribute__((...))",
+        "[Attribute(...)]",
+        "{.pragma.}"
+      ],
+      "units": 1,
+      "components": {
+        "each_written_group": 1,
+        "settings_and_arguments": 0,
+        "imputed_generated_source": 0
+      },
+      "gate": "Known annotation owner separate from attached function/declaration header; unknown annotation or macro/codegen ownership reviewed."
+    },
+    {
+      "form": "Proven Nim expression-only proc callback operand",
+      "units": 1,
+      "gate": "One composed call or binding only when no independent local definitions/statements; imperative callback header absorbs outer call/binding prefix, then body units count; owned call parenthesis0, no imputed close."
+    },
+    {
+      "form": "Pony outer binding containing imperative recover scope",
+      "example": "let result = recover iso let x = Array[U8]; x end",
+      "units": 5,
+      "components": {
+        "outer_binding": 1,
+        "recover_header": 1,
+        "body_binding": 1,
+        "final_expression": 1,
+        "written_end": 1
+      },
+      "gate": "Standalone scope4; pure recover operand remains within one outer composition; unclear ownership reviewed."
+    },
+    {
+      "form": "Proven scalar string interpolation expression",
+      "languages": [
+        "csharp",
+        "dart"
+      ],
+      "components": {
+        "additional_units_beyond_outer_string_call_or_binding": 0
+      },
+      "gate": "A single call/member/index/operator/conditional composition irrespective of callee name/purity; independent bindings, sequencing, executable callbacks/control and malformed/unknown interpolation remain reviewed. Required-work/native-kernel eligibility is separate."
+    }
+  ],
+  "source_bytes_changed": false,
+  "producer_loc_changed": false,
+  "timing_records_changed": false,
+  "chart_admitted": false
+}

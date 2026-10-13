@@ -1,0 +1,19 @@
+WAIT common mutex: C3 full-study initial review binarytrees
+WAIT common mutex: C3 full binarytrees 1 c3-binarytrees-compact
+FULL binarytrees 1 c3-binarytrees-compact 21
+WAIT common mutex: C3 full binarytrees 1 c3-binarytrees-optimized
+FULL binarytrees 1 c3-binarytrees-optimized 21
+WAIT common mutex: C3 full binarytrees 1 mech-aot-control
+FULL binarytrees 1 mech-aot-control 21
+WAIT common mutex: C3 full binarytrees 2 c3-binarytrees-optimized
+FULL binarytrees 2 c3-binarytrees-optimized 21
+WAIT common mutex: C3 full binarytrees 2 mech-aot-control
+FULL binarytrees 2 mech-aot-control 21
+WAIT common mutex: C3 full binarytrees 2 c3-binarytrees-compact
+FULL binarytrees 2 c3-binarytrees-compact 21
+WAIT common mutex: C3 full binarytrees 3 mech-aot-control
+FULL binarytrees 3 mech-aot-control 21
+WAIT common mutex: C3 full binarytrees 3 c3-binarytrees-compact
+FULL binarytrees 3 c3-binarytrees-compact 21
+WAIT common mutex: C3 full binarytrees 3 c3-binarytrees-optimized
+FULL binarytrees 3 c3-binarytrees-optimized 21

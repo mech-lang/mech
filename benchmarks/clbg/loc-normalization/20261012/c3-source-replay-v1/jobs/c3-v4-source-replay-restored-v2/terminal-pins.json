@@ -1,0 +1,19 @@
+{
+  "status": "completed-source-proposal-evidence-retained",
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-source-replay-v1/jobs/c3-v4-source-replay-restored-v2/compiler-input-proposals.json": "549d6c0b81f981a1884aee4306640f7cf6590cc71be264c76de22611debcbc09",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-source-replay-v1/jobs/c3-v4-source-replay-restored-v2/packet/REVIEW.md": "b2f7d0903c3cfac8350c4a4e4363fa48c6ac096356a39988c9042251e62d22ea",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-source-replay-v1/jobs/c3-v4-source-replay-restored-v2/packet/qualify_replay.py": "07ed39bae95bd80954019f48b1478f69ce78a9ef181228e0755e213bf0ba2a70",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-source-replay-v1/jobs/c3-v4-source-replay-restored-v2/snapshot/REVIEW.md": "4606ab78809d820e9545f5dda7c74ff681700e8740bf533d52db5df5c92614bb",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-source-replay-v1/jobs/c3-v4-source-replay-restored-v2/snapshot/c3_mask.py": "d8bd8bbfa37446c28d8aefe0a3cb61fb495d199196e194cf369105f38a061e94",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-source-replay-v1/jobs/c3-v4-source-replay-restored-v2/snapshot/canonical.py": "4568ecaa00623b18de165d228f37752c973db58e9254f5b587e1b820bbbe56da",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-source-replay-v1/jobs/c3-v4-source-replay-restored-v2/snapshot/foreign_c3.py": "c311c845f5a9d9f3a51722984cbad244d4796599ab495176c718bc49bd8aa407",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-source-replay-v1/jobs/c3-v4-source-replay-restored-v2/snapshot/foreign_core.py": "62a79d27740647f5f4918c3f29df6ba977e72f61777f8cf3f431e0ec66ba5be5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-source-replay-v1/jobs/c3-v4-source-replay-restored-v2/snapshot/test_foreign_c3.py": "10e1b6e4ada04b6389b331155a043a5038b9f426ee929167963880c89d4654ba",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-source-replay-v1/jobs/c3-v4-source-replay-restored-v2/source-count-proposals.json": "38487bfa7a1e996b79eb91575ab4b51ed4ea579b4fd9e693bda863882b4c96a3"
+  },
+  "exclusive_mutex_held": true,
+  "common_timing_mutex": "/tmp/mech-clbg-timing.lock",
+  "canonical_LOC_admitted": false,
+  "chart_admission": false
+}

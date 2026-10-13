@@ -1,0 +1,20 @@
+{
+  "status": "command-exited-zero-awaiting-report-review",
+  "started_at": "2026-10-13T13:20:53.065983+00:00",
+  "worker_identity": {
+    "pid": 18369,
+    "listing": "18369     1 Tue Oct 13 09:20:52 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/pony-work-v5-seal --lease-fd 3 --go-fd 4"
+  },
+  "actual_command_started": true,
+  "exit_code": 0,
+  "qualification_granted": false,
+  "automatic_retry": false,
+  "command_pid": 18375,
+  "command_identity": {
+    "pid": 18375,
+    "listing": "18375 18369 Tue Oct 13 09:20:53 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/work-full-v5/work_qualify.py --seal --revision private-v8-work-v5 --qualification private-v8"
+  },
+  "command_identity_observation_missing": false,
+  "finished_at": "2026-10-13T15:42:48.248499+00:00",
+  "stop_signals": []
+}

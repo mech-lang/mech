@@ -1,0 +1,11 @@
+test_dylib_install_id_is_not_a_dependency (test_image_closure_v2.RuntimeClosure.test_dylib_install_id_is_not_a_dependency) ... ok
+test_executable_and_loader_anchors_differ_for_a_library (test_image_closure_v2.RuntimeClosure.test_executable_and_loader_anchors_differ_for_a_library) ... ok
+test_fresh_import_rejects_cache_or_changed_source_before_execution (test_image_closure_v2.RuntimeClosure.test_fresh_import_rejects_cache_or_changed_source_before_execution) ... ok
+test_partial_attach_preserves_actual_device_entities_without_detach_authority (test_image_closure_v2.RuntimeClosure.test_partial_attach_preserves_actual_device_entities_without_detach_authority) ... ok
+test_rpaths_require_actual_unique_private_images (test_image_closure_v2.RuntimeClosure.test_rpaths_require_actual_unique_private_images) ... ok
+test_scoped_arm64_header_and_load_command_inventory (test_image_closure_v2.RuntimeClosure.test_scoped_arm64_header_and_load_command_inventory) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.006s
+
+OK

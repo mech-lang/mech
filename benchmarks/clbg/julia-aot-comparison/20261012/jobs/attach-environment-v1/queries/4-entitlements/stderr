@@ -1,0 +1,2 @@
+Executable=/Library/Developer/CommandLineTools/Library/PrivateFrameworks/LLDB.framework/Versions/A/Resources/debugserver
+warning: Specifying ':' in the path is deprecated and will not work in a future release

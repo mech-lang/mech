@@ -1,0 +1,1341 @@
+{
+  "status": "complete",
+  "started_at": "2026-10-13T11:58:54.864152+00:00",
+  "benchmark": "spectralnorm",
+  "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/spectralnorm/manifest.json",
+  "manifest_sha256": "a01cc06493318dc12ae6d7d6d53fd010f9c13d2a9d2e34248b40daee12584144",
+  "sample_count": 3,
+  "profiles": {
+    "c3-spectralnorm-compact": {
+      "id": "c3-spectralnorm-compact",
+      "benchmark": "spectralnorm",
+      "variant": "compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/sources/spectralnorm/compact.c3",
+      "status": "qualified-source-awaiting-three-full-samples",
+      "maximum_compute_workers": 1,
+      "application_helpers": [],
+      "general_library_support": [],
+      "compiled_source_bundle": [
+        "sources/spectralnorm/compact.c3"
+      ],
+      "eligible_for_chart": false,
+      "loc": null,
+      "key": "spectralnorm:c3-spectralnorm-compact",
+      "language": "c3",
+      "source_sha256": "64fccafeee38ae10926c139effe90c792b6fb6cc1409b544ba28b9d9986b3e39",
+      "binary_sha256": "60dce2ee2f7edfccc8fcfef4f0807321a18f512bb7d0c13ff500d5fbbfe6034f",
+      "source_bundle": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/sources/spectralnorm/compact.c3",
+          "sha256": "64fccafeee38ae10926c139effe90c792b6fb6cc1409b544ba28b9d9986b3e39"
+        }
+      ],
+      "support": {},
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-spectralnorm-compact",
+        "{n}"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012",
+      "runtime_environment": {
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "compiler_version": "0.8.5",
+      "bundled_llvm_version": "23.1.2",
+      "explicit_backend": "llvm",
+      "explicit_target": "macos-aarch64",
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/c3c",
+        "compile",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/sources/spectralnorm/compact.c3",
+        "-O3",
+        "--safe=no",
+        "--backend=llvm",
+        "--target",
+        "macos-aarch64",
+        "--fp-math=strict",
+        "--threads",
+        "1",
+        "--single-module=yes",
+        "--ansi=no",
+        "--stdlib",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib",
+        "--cc",
+        "/opt/homebrew/Cellar/llvm@22/22.1.8/bin/clang-22",
+        "--linker=cc",
+        "--macos-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk",
+        "--macos-min-version",
+        "14.4",
+        "--macos-sdk-version",
+        "14.4",
+        "--build-dir",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-spectralnorm-compact",
+        "--obj-out",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-spectralnorm-compact/objects",
+        "--llvm-out",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-spectralnorm-compact/llvm",
+        "--asm-out",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-spectralnorm-compact/asm",
+        "--emit-llvm",
+        "--emit-asm",
+        "--keep-obj",
+        "--print-linking",
+        "--print-input",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-spectralnorm-compact"
+      ],
+      "cache": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-spectralnorm-compact",
+      "measured_architecture": "arm64",
+      "qualification_origin": "retained-private-v2-exact-source-binary-and-records",
+      "new_native_cases": 0,
+      "prior_bounded_records": [
+        {
+          "case": "n-1",
+          "prior_attempt": 39,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/039-c3-spectralnorm-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/039-c3-spectralnorm-compact.supervisor.json",
+          "stdout_sha256": "90ef14b959beca18ba75fbb936c693828ea88b6d5735c6a685559ee80601bd59",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "n-2",
+          "prior_attempt": 40,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/040-c3-spectralnorm-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/040-c3-spectralnorm-compact.supervisor.json",
+          "stdout_sha256": "057ead07dbe9d60e50a916042eccaaa67142c9ba8bf863244bf9bc73ab499a36",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "n-3",
+          "prior_attempt": 41,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/041-c3-spectralnorm-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/041-c3-spectralnorm-compact.supervisor.json",
+          "stdout_sha256": "5fc9125d807dd627a9f3f0d9e2a45f183d08cbbc200ac5b2f81a2fde90bdff1a",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "n-5",
+          "prior_attempt": 42,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/042-c3-spectralnorm-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/042-c3-spectralnorm-compact.supervisor.json",
+          "stdout_sha256": "9718ce59aa9b65d76d565495ea85d11576413c0ff63aaef51756f692f1ae6db9",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "n-9",
+          "prior_attempt": 43,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/043-c3-spectralnorm-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/043-c3-spectralnorm-compact.supervisor.json",
+          "stdout_sha256": "5da74e54c86bbfab8ae988dbfa6f00f292a3361df7fb33011d3e5fe683f42fd4",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "n-100",
+          "prior_attempt": 44,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/044-c3-spectralnorm-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/044-c3-spectralnorm-compact.supervisor.json",
+          "stdout_sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+          "origin": "retained-private-v2"
+        }
+      ],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-spectralnorm-compact",
+      "maximum_workers": 1,
+      "producer_loc": null,
+      "loc_status": "pending qualified canonical LOC overlay",
+      "qualification_status": "source-output-work-allocation-passed",
+      "chart_admission": false,
+      "role": "Qualified complete C3 compact application",
+      "required_work_review": {
+        "status": "passed",
+        "source_sha256": "64fccafeee38ae10926c139effe90c792b6fb6cc1409b544ba28b9d9986b3e39",
+        "method": "Exact source review and all bounded outputs; actual seven LibcAllocator maps/all windows/worker ownership, both real Pi divisions and original scored ARM64 tree allocation/retention proofs",
+        "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/work-full-v3/REQUIRED_SOURCE_REVIEW.md",
+        "qualification": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/work-qualification/work-v3/report.json"
+      },
+      "samples_seconds": [
+        0.948511333,
+        0.740310333,
+        0.735784334
+      ],
+      "sample_validation": [
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        }
+      ],
+      "attempts": [
+        1,
+        6,
+        8
+      ],
+      "measurement_status": "measured",
+      "median_seconds": 0.740310333,
+      "sample_stdev_seconds": 0.12153251771404913,
+      "time_x_mech": 7.903957347198608,
+      "matched_mech_control": "mech-aot-control",
+      "matched_mech_source_sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290"
+    },
+    "c3-spectralnorm-optimized": {
+      "id": "c3-spectralnorm-optimized",
+      "benchmark": "spectralnorm",
+      "variant": "optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/sources/spectralnorm/optimized.c3",
+      "status": "qualified-source-awaiting-three-full-samples",
+      "maximum_compute_workers": 8,
+      "application_helpers": [],
+      "general_library_support": [
+        "support/threads.c3"
+      ],
+      "compiled_source_bundle": [
+        "sources/spectralnorm/optimized.c3",
+        "support/threads.c3"
+      ],
+      "eligible_for_chart": false,
+      "loc": null,
+      "key": "spectralnorm:c3-spectralnorm-optimized",
+      "language": "c3",
+      "source_sha256": "89be54970c119d906d84dc7e218cfa10531f970a7b59f713ff5d47b80f5a0d23",
+      "binary_sha256": "0940dc63d880be7779742dbd11afe345381e4f1ffd7ae8fa1a6056c08aa45c0e",
+      "source_bundle": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/sources/spectralnorm/optimized.c3",
+          "sha256": "89be54970c119d906d84dc7e218cfa10531f970a7b59f713ff5d47b80f5a0d23"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/threads.c3",
+          "sha256": "acff1f78af8233552d720d90d5ae971d64a12b5cddf9b98830d1539eda3a5248"
+        }
+      ],
+      "support": {
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/threads.c3": "acff1f78af8233552d720d90d5ae971d64a12b5cddf9b98830d1539eda3a5248"
+      },
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-spectralnorm-optimized",
+        "{n}"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012",
+      "runtime_environment": {
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "compiler_version": "0.8.5",
+      "bundled_llvm_version": "23.1.2",
+      "explicit_backend": "llvm",
+      "explicit_target": "macos-aarch64",
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/c3c",
+        "compile",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/sources/spectralnorm/optimized.c3",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/threads.c3",
+        "-O3",
+        "--safe=no",
+        "--backend=llvm",
+        "--target",
+        "macos-aarch64",
+        "--fp-math=strict",
+        "--threads",
+        "1",
+        "--single-module=yes",
+        "--ansi=no",
+        "--stdlib",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/lib",
+        "--cc",
+        "/opt/homebrew/Cellar/llvm@22/22.1.8/bin/clang-22",
+        "--linker=cc",
+        "--macos-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk",
+        "--macos-min-version",
+        "14.4",
+        "--macos-sdk-version",
+        "14.4",
+        "--build-dir",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-spectralnorm-optimized",
+        "--obj-out",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-spectralnorm-optimized/objects",
+        "--llvm-out",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-spectralnorm-optimized/llvm",
+        "--asm-out",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-spectralnorm-optimized/asm",
+        "--emit-llvm",
+        "--emit-asm",
+        "--keep-obj",
+        "--print-linking",
+        "--print-input",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-spectralnorm-optimized"
+      ],
+      "cache": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/cache/c3-spectralnorm-optimized",
+      "measured_architecture": "arm64",
+      "qualification_origin": "retained-private-v2-exact-source-binary-and-records",
+      "new_native_cases": 0,
+      "prior_bounded_records": [
+        {
+          "case": "n-1",
+          "prior_attempt": 45,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/045-c3-spectralnorm-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/045-c3-spectralnorm-optimized.supervisor.json",
+          "stdout_sha256": "90ef14b959beca18ba75fbb936c693828ea88b6d5735c6a685559ee80601bd59",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "n-2",
+          "prior_attempt": 46,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/046-c3-spectralnorm-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/046-c3-spectralnorm-optimized.supervisor.json",
+          "stdout_sha256": "057ead07dbe9d60e50a916042eccaaa67142c9ba8bf863244bf9bc73ab499a36",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "n-3",
+          "prior_attempt": 47,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/047-c3-spectralnorm-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/047-c3-spectralnorm-optimized.supervisor.json",
+          "stdout_sha256": "5fc9125d807dd627a9f3f0d9e2a45f183d08cbbc200ac5b2f81a2fde90bdff1a",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "n-5",
+          "prior_attempt": 48,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/048-c3-spectralnorm-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/048-c3-spectralnorm-optimized.supervisor.json",
+          "stdout_sha256": "9718ce59aa9b65d76d565495ea85d11576413c0ff63aaef51756f692f1ae6db9",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "n-9",
+          "prior_attempt": 49,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/049-c3-spectralnorm-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/049-c3-spectralnorm-optimized.supervisor.json",
+          "stdout_sha256": "5da74e54c86bbfab8ae988dbfa6f00f292a3361df7fb33011d3e5fe683f42fd4",
+          "origin": "retained-private-v2"
+        },
+        {
+          "case": "n-100",
+          "prior_attempt": 50,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/050-c3-spectralnorm-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/attempts/050-c3-spectralnorm-optimized.supervisor.json",
+          "stdout_sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+          "origin": "retained-private-v2"
+        }
+      ],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-spectralnorm-optimized",
+      "maximum_workers": 8,
+      "producer_loc": null,
+      "loc_status": "pending qualified canonical LOC overlay",
+      "qualification_status": "source-output-work-allocation-passed",
+      "chart_admission": false,
+      "role": "Qualified complete C3 optimized application",
+      "required_work_review": {
+        "status": "passed",
+        "source_sha256": "89be54970c119d906d84dc7e218cfa10531f970a7b59f713ff5d47b80f5a0d23",
+        "method": "Exact source review and all bounded outputs; actual seven LibcAllocator maps/all windows/worker ownership, both real Pi divisions and original scored ARM64 tree allocation/retention proofs",
+        "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/work-full-v3/REQUIRED_SOURCE_REVIEW.md",
+        "qualification": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/work-qualification/work-v3/report.json"
+      },
+      "samples_seconds": [
+        0.459693791,
+        0.209027,
+        0.227356042
+      ],
+      "sample_validation": [
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        }
+      ],
+      "attempts": [
+        2,
+        4,
+        9
+      ],
+      "measurement_status": "measured",
+      "median_seconds": 0.227356042,
+      "sample_stdev_seconds": 0.13973225796814806,
+      "time_x_mech": 2.4273772477465814,
+      "matched_mech_control": "mech-aot-control",
+      "matched_mech_source_sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290"
+    },
+    "mech-aot-control": {
+      "id": "mech-aot-control",
+      "key": "spectralnorm:c3-full-study:mech-control",
+      "benchmark": "spectralnorm",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/sources/spectralnorm-four-functions.mec",
+      "source_sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions",
+      "binary_sha256": "18e1664f3374fd80f356e4b2f496a3d6add7534854930a82d7037e9306358e69",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "loc": null,
+      "published_chart_key": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8",
+      "previous_seconds": 0.086075292,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "corrected",
+        "reason": "Four source functions: coefficient, apply, apply-transpose, and step. Twenty power-method applications execute forty matrix-vector products. Coefficients are computed by emitted Mech arithmetic; no stored matrix or answer shortcut.",
+        "full_work": {
+          "n": 5500,
+          "power_applications": 20,
+          "matrix_vector_products": 40,
+          "weighted_contributions": 1210000000
+        },
+        "evidence": [
+          {
+            "path": "work-audit/20261009/sources/spectralnorm-four-functions.mec",
+            "sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290"
+          },
+          {
+            "path": "work-audit/20261009/timings.json",
+            "sha256": "9c85e39d8d72357ee9f0867cdebb0968eba37f3577d013d3d21f661027abc33a"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/spectralnorm.html",
+        "native_benchmark_kernel": false
+      },
+      "control_for": "r",
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "producer_loc": 12,
+      "loc_status": "pending qualified canonical LOC overlay",
+      "maximum_workers": 8,
+      "role": "Fresh unchanged current Mech AOT source control",
+      "samples_seconds": [
+        0.12401625,
+        0.090178208,
+        0.09366325
+      ],
+      "sample_validation": [
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        }
+      ],
+      "attempts": [
+        3,
+        5,
+        7
+      ],
+      "measurement_status": "measured",
+      "median_seconds": 0.09366325,
+      "sample_stdev_seconds": 0.018612107229504883,
+      "time_x_mech": 1.0,
+      "matched_mech_control": "mech-aot-control",
+      "matched_mech_source_sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290"
+    }
+  },
+  "orders": [
+    {
+      "round": 1,
+      "profiles": [
+        "c3-spectralnorm-compact",
+        "c3-spectralnorm-optimized",
+        "mech-aot-control"
+      ]
+    },
+    {
+      "round": 2,
+      "profiles": [
+        "c3-spectralnorm-optimized",
+        "mech-aot-control",
+        "c3-spectralnorm-compact"
+      ]
+    },
+    {
+      "round": 3,
+      "profiles": [
+        "mech-aot-control",
+        "c3-spectralnorm-compact",
+        "c3-spectralnorm-optimized"
+      ]
+    }
+  ],
+  "attempts": [
+    {
+      "key": "spectralnorm:c3-spectralnorm-compact",
+      "id": "c3-spectralnorm-compact",
+      "benchmark": "spectralnorm",
+      "language": "c3",
+      "source_sha256": "64fccafeee38ae10926c139effe90c792b6fb6cc1409b544ba28b9d9986b3e39",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-spectralnorm-compact",
+        "5500"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012",
+      "runtime_environment": {
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"60dce2ee2f7edfccc8fcfef4f0807321a18f512bb7d0c13ff500d5fbbfe6034f\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-spectralnorm-compact\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"64fccafeee38ae10926c139effe90c792b6fb6cc1409b544ba28b9d9986b3e39\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/sources/spectralnorm/compact.c3\": \"64fccafeee38ae10926c139effe90c792b6fb6cc1409b544ba28b9d9986b3e39\"}}",
+      "started_at": "2026-10-13T11:59:30.887052+00:00",
+      "workload_n": 5500,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.948511333,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 12,
+      "stdout_sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+      "validation": {
+        "bytes": 12,
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T11:59:32.048664+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 1,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/spectralnorm/attempts/001-c3-spectralnorm-compact.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 205,
+        "pgid": 205,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-spectralnorm-compact",
+          "5500"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/spectralnorm/attempts/001-c3-spectralnorm-compact.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "spectralnorm:c3-spectralnorm-optimized",
+      "id": "c3-spectralnorm-optimized",
+      "benchmark": "spectralnorm",
+      "language": "c3",
+      "source_sha256": "89be54970c119d906d84dc7e218cfa10531f970a7b59f713ff5d47b80f5a0d23",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-spectralnorm-optimized",
+        "5500"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012",
+      "runtime_environment": {
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"0940dc63d880be7779742dbd11afe345381e4f1ffd7ae8fa1a6056c08aa45c0e\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-spectralnorm-optimized\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"89be54970c119d906d84dc7e218cfa10531f970a7b59f713ff5d47b80f5a0d23\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/sources/spectralnorm/optimized.c3\": \"89be54970c119d906d84dc7e218cfa10531f970a7b59f713ff5d47b80f5a0d23\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/threads.c3\": \"acff1f78af8233552d720d90d5ae971d64a12b5cddf9b98830d1539eda3a5248\"}}",
+      "started_at": "2026-10-13T12:01:27.443675+00:00",
+      "workload_n": 5500,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.459693791,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 12,
+      "stdout_sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+      "validation": {
+        "bytes": 12,
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T12:01:28.095783+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 2,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/spectralnorm/attempts/002-c3-spectralnorm-optimized.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 1060,
+        "pgid": 1060,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-spectralnorm-optimized",
+          "5500"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/spectralnorm/attempts/002-c3-spectralnorm-optimized.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "spectralnorm:c3-full-study:mech-control",
+      "id": "mech-aot-control",
+      "benchmark": "spectralnorm",
+      "language": "mech",
+      "source_sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions",
+        "5500"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"18e1664f3374fd80f356e4b2f496a3d6add7534854930a82d7037e9306358e69\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290\", \"support\": {\"work-audit/20261009/sources/spectralnorm-four-functions.mec\": \"eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290\", \"work-audit/20261009/timings.json\": \"9c85e39d8d72357ee9f0867cdebb0968eba37f3577d013d3d21f661027abc33a\"}}",
+      "started_at": "2026-10-13T12:02:58.001707+00:00",
+      "workload_n": 5500,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.12401625,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 12,
+      "stdout_sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+      "validation": {
+        "bytes": 12,
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T12:02:58.315736+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 3,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/spectralnorm/attempts/003-mech-aot-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 1521,
+        "pgid": 1521,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions",
+          "5500"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/spectralnorm/attempts/003-mech-aot-control.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "spectralnorm:c3-spectralnorm-optimized",
+      "id": "c3-spectralnorm-optimized",
+      "benchmark": "spectralnorm",
+      "language": "c3",
+      "source_sha256": "89be54970c119d906d84dc7e218cfa10531f970a7b59f713ff5d47b80f5a0d23",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-spectralnorm-optimized",
+        "5500"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012",
+      "runtime_environment": {
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"0940dc63d880be7779742dbd11afe345381e4f1ffd7ae8fa1a6056c08aa45c0e\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-spectralnorm-optimized\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"89be54970c119d906d84dc7e218cfa10531f970a7b59f713ff5d47b80f5a0d23\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/sources/spectralnorm/optimized.c3\": \"89be54970c119d906d84dc7e218cfa10531f970a7b59f713ff5d47b80f5a0d23\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/threads.c3\": \"acff1f78af8233552d720d90d5ae971d64a12b5cddf9b98830d1539eda3a5248\"}}",
+      "started_at": "2026-10-13T12:04:12.164137+00:00",
+      "workload_n": 5500,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.209027,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 12,
+      "stdout_sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+      "validation": {
+        "bytes": 12,
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T12:04:12.573006+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 4,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/spectralnorm/attempts/004-c3-spectralnorm-optimized.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 1895,
+        "pgid": 1895,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-spectralnorm-optimized",
+          "5500"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/spectralnorm/attempts/004-c3-spectralnorm-optimized.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "spectralnorm:c3-full-study:mech-control",
+      "id": "mech-aot-control",
+      "benchmark": "spectralnorm",
+      "language": "mech",
+      "source_sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions",
+        "5500"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"18e1664f3374fd80f356e4b2f496a3d6add7534854930a82d7037e9306358e69\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290\", \"support\": {\"work-audit/20261009/sources/spectralnorm-four-functions.mec\": \"eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290\", \"work-audit/20261009/timings.json\": \"9c85e39d8d72357ee9f0867cdebb0968eba37f3577d013d3d21f661027abc33a\"}}",
+      "started_at": "2026-10-13T12:05:23.388426+00:00",
+      "workload_n": 5500,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.090178208,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 12,
+      "stdout_sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+      "validation": {
+        "bytes": 12,
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T12:05:23.687490+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 5,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/spectralnorm/attempts/005-mech-aot-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 2416,
+        "pgid": 2416,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions",
+          "5500"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/spectralnorm/attempts/005-mech-aot-control.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "spectralnorm:c3-spectralnorm-compact",
+      "id": "c3-spectralnorm-compact",
+      "benchmark": "spectralnorm",
+      "language": "c3",
+      "source_sha256": "64fccafeee38ae10926c139effe90c792b6fb6cc1409b544ba28b9d9986b3e39",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-spectralnorm-compact",
+        "5500"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012",
+      "runtime_environment": {
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"60dce2ee2f7edfccc8fcfef4f0807321a18f512bb7d0c13ff500d5fbbfe6034f\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-spectralnorm-compact\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"64fccafeee38ae10926c139effe90c792b6fb6cc1409b544ba28b9d9986b3e39\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/sources/spectralnorm/compact.c3\": \"64fccafeee38ae10926c139effe90c792b6fb6cc1409b544ba28b9d9986b3e39\"}}",
+      "started_at": "2026-10-13T12:06:31.117944+00:00",
+      "workload_n": 5500,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.740310333,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 12,
+      "stdout_sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+      "validation": {
+        "bytes": 12,
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T12:06:32.071641+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 6,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/spectralnorm/attempts/006-c3-spectralnorm-compact.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 2742,
+        "pgid": 2742,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-spectralnorm-compact",
+          "5500"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/spectralnorm/attempts/006-c3-spectralnorm-compact.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "spectralnorm:c3-full-study:mech-control",
+      "id": "mech-aot-control",
+      "benchmark": "spectralnorm",
+      "language": "mech",
+      "source_sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions",
+        "5500"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"18e1664f3374fd80f356e4b2f496a3d6add7534854930a82d7037e9306358e69\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290\", \"support\": {\"work-audit/20261009/sources/spectralnorm-four-functions.mec\": \"eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290\", \"work-audit/20261009/timings.json\": \"9c85e39d8d72357ee9f0867cdebb0968eba37f3577d013d3d21f661027abc33a\"}}",
+      "started_at": "2026-10-13T12:08:21.534745+00:00",
+      "workload_n": 5500,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.09366325,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 12,
+      "stdout_sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+      "validation": {
+        "bytes": 12,
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T12:08:21.833019+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 7,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/spectralnorm/attempts/007-mech-aot-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 3275,
+        "pgid": 3275,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions",
+          "5500"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/spectralnorm/attempts/007-mech-aot-control.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "spectralnorm:c3-spectralnorm-compact",
+      "id": "c3-spectralnorm-compact",
+      "benchmark": "spectralnorm",
+      "language": "c3",
+      "source_sha256": "64fccafeee38ae10926c139effe90c792b6fb6cc1409b544ba28b9d9986b3e39",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-spectralnorm-compact",
+        "5500"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012",
+      "runtime_environment": {
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"60dce2ee2f7edfccc8fcfef4f0807321a18f512bb7d0c13ff500d5fbbfe6034f\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-spectralnorm-compact\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"64fccafeee38ae10926c139effe90c792b6fb6cc1409b544ba28b9d9986b3e39\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/sources/spectralnorm/compact.c3\": \"64fccafeee38ae10926c139effe90c792b6fb6cc1409b544ba28b9d9986b3e39\"}}",
+      "started_at": "2026-10-13T12:09:29.013759+00:00",
+      "workload_n": 5500,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.735784334,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 12,
+      "stdout_sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+      "validation": {
+        "bytes": 12,
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T12:09:29.940647+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 8,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/spectralnorm/attempts/008-c3-spectralnorm-compact.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 3666,
+        "pgid": 3666,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-spectralnorm-compact",
+          "5500"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/spectralnorm/attempts/008-c3-spectralnorm-compact.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "spectralnorm:c3-spectralnorm-optimized",
+      "id": "c3-spectralnorm-optimized",
+      "benchmark": "spectralnorm",
+      "language": "c3",
+      "source_sha256": "89be54970c119d906d84dc7e218cfa10531f970a7b59f713ff5d47b80f5a0d23",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-spectralnorm-optimized",
+        "5500"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012",
+      "runtime_environment": {
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"0940dc63d880be7779742dbd11afe345381e4f1ffd7ae8fa1a6056c08aa45c0e\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-spectralnorm-optimized\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"89be54970c119d906d84dc7e218cfa10531f970a7b59f713ff5d47b80f5a0d23\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/sources/spectralnorm/optimized.c3\": \"89be54970c119d906d84dc7e218cfa10531f970a7b59f713ff5d47b80f5a0d23\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/threads.c3\": \"acff1f78af8233552d720d90d5ae971d64a12b5cddf9b98830d1539eda3a5248\"}}",
+      "started_at": "2026-10-13T12:12:41.350684+00:00",
+      "workload_n": 5500,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.227356042,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 12,
+      "stdout_sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+      "validation": {
+        "bytes": 12,
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T12:12:41.763914+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 9,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/spectralnorm/attempts/009-c3-spectralnorm-optimized.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 4225,
+        "pgid": 4225,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v2/bin/c3-spectralnorm-optimized",
+          "5500"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/spectralnorm/attempts/009-c3-spectralnorm-optimized.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    }
+  ],
+  "active": null,
+  "supervisor": {
+    "pid": 99740,
+    "process_listing": "Tue Oct 13 07:58:50 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u -B /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/work-full-v3/full_study.py --run --benchmark spectralnorm --revision full-v1 --manifest-sha256 a01cc06493318dc12ae6d7d6d53fd010f9c13d2a9d2e34248b40daee12584144"
+  },
+  "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+  "full_workload_n": 5500,
+  "chart_admission": false,
+  "no_automatic_retry": true,
+  "canonical_LOC_status": "pending separate immutable count overlay",
+  "isolated_failed_profiles": [],
+  "skipped_failed_profile_slots": [],
+  "finished_at": "2026-10-13T12:13:48.733620+00:00",
+  "pins_unchanged_at_end": true,
+  "all_profiles_fully_measured": true
+}

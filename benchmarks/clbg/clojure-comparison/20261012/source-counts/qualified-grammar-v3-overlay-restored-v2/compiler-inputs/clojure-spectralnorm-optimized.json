@@ -1,0 +1,99 @@
+{
+  "status": "qualified-exact-authored-compiler-inputs",
+  "profile": "clojure-spectralnorm-optimized",
+  "source_sha256": "9d668efbc990a3dd2ea0989f8d6ee7b7314482b7869007f4c0d069ff42feaf3a",
+  "binary_sha256": "83c9c5310d044e7c4262432854eb1bc5f49763d7c1e9971777a646c91b96c06d",
+  "files": [
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-spectralnorm-optimized/sources/clbg/spectralnorm/optimized.clj",
+      "sha256": "9d668efbc990a3dd2ea0989f8d6ee7b7314482b7869007f4c0d069ff42feaf3a"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-spectralnorm-optimized/support/clbg/support.clj",
+      "sha256": "ae37ffdcbfe8d1fa34632e1151d4098b5747f71ce2ad074d326043be3d289446"
+    }
+  ],
+  "independently_retained_compiler_input_evidence": {
+    "status": "actual-compiler-inputs-bound-for-unadmitted-source-replay",
+    "inventory": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/builds/clojure-spectralnorm-optimized/compiler-input-inventory.json",
+    "inventory_sha256": "1b1293d1a79ed7d703226ee63b51c104edd60a74edf8a6779cb731c87874ba88",
+    "compile_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/builds/clojure-spectralnorm-optimized/compile.json",
+    "compile_receipt_sha256": "3416d80ae8bda3b12b4c8c8cae21bcccc9bd2d4bd67c9d2d96ca279f8d82584e",
+    "compiler_jar": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/clojure-1.12.6.jar",
+    "compiler_sha256": "21b578db389a8e74b286ce79c4a7f86ec641e26d88b12f18d69030916b0e18ca",
+    "build_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/jdk/jdk-25.0.4.1+1/Contents/Home/bin/java",
+      "-XX:ActiveProcessorCount=8",
+      "-Xms64m",
+      "-Xmx8g",
+      "-XX:+UseG1GC",
+      "-cp",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-spectralnorm-optimized/sources:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-spectralnorm-optimized/support:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/clojure-1.12.6.jar:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/spec.alpha-0.5.238.jar:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/core.specs.alpha-0.4.74.jar",
+      "clojure.main",
+      "-e",
+      "(binding [*compile-path* \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-spectralnorm-optimized\" *compiler-options* {:direct-linking true}] (compile 'clbg.support) (compile 'clbg.spectralnorm.optimized))"
+    ],
+    "runtime_classpath": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-spectralnorm-optimized",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/clojure-1.12.6.jar",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/spec.alpha-0.5.238.jar",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/core.specs.alpha-0.4.74.jar"
+    ],
+    "compiled_artifacts": {
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-spectralnorm-optimized/clbg/support$jobs$fn$reify__145.class": "27d41e24c0219cc4d2dc3d52058db2ebbe55a1d888f4cb8fceb22bc5fe39c46e",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-spectralnorm-optimized/clbg/support$jobs.class": "9f86cf015761d0333ea6a4c9a26dd7b73b14eeec6afec2da2120dacf545f94c2",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-spectralnorm-optimized/clbg/support$jobs$fn__144.class": "97eba2881cf370ead0f932634baf3be4cb3601652939667f4e35944f1aa93dce",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-spectralnorm-optimized/clbg/support$printf.class": "1458604caa86b8cdfcbebb0acffe175e9c83fd4d671b9ec561ed1d9401aa9d59",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-spectralnorm-optimized/clbg/support$input_text.class": "578f14470aca2707ed2d9d44880db92b7c7df59c4f47091f645b680acd88e840",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-spectralnorm-optimized/clbg/support__init.class": "4547a02ecbf914586f64a4438ee9a46687c4f325b9e4741258133358021b4b45",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-spectralnorm-optimized/clbg/support$argument.class": "ce407506fc463f2f8b87c96b4d22d5236996eac56a1c681c5cdbc4e538d1c209",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-spectralnorm-optimized/clbg/support$jobs$fn__148.class": "0dfff75cc6ef5d57857a5c84f6e5819fb1ad6e5fdd1674fcb4ad4c373ddc20f0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-spectralnorm-optimized/clbg/support$fn__138.class": "9ee7fe1fa8d4faee5fef20b10d2ff99872294e174e15a3ba1ffd363ff6577531",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-spectralnorm-optimized/clbg/support$loading__6812__auto____136.class": "5d8afa8fc8a32cb0bffe4a5eadb45fcd15493b7506303c83be19871c7a0b646c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-spectralnorm-optimized/clbg/spectralnorm/optimized$result.class": "82018e0ae90041a670d52849f13397f5b8d61d754302518bc34fb240182b4ab4",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-spectralnorm-optimized/clbg/spectralnorm/optimized$multiply$fn__159.class": "942a9b242a29a1692b5c7c4e676090b5eec54afdf9bbe8915d7f7b6ff6326b98",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-spectralnorm-optimized/clbg/spectralnorm/optimized$fn__153.class": "2de53e61c25a1bbf3c14c2e173fbc737d4e314a71d522d5e9a1ddfde54851993",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-spectralnorm-optimized/clbg/spectralnorm/optimized$multiply$fn__159$fn__160.class": "afda3c0b470a39b485fcf4985607e45ca3bcab7f8ff6b26bceec5a614546643c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-spectralnorm-optimized/clbg/spectralnorm/optimized$ata.class": "df5dee6b2c81df97407029bd8aed8469f9572d4ab7117d5a06dfa7d45cf612d7",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-spectralnorm-optimized/clbg/spectralnorm/optimized$loading__6812__auto____151.class": "b3fa444b38fe7107ad3e39798e21daf3cc7258cb2c2ad7b7db26cb29d6ec0e1d",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-spectralnorm-optimized/clbg/spectralnorm/optimized$_main.class": "92933c6d16ed22639d28cf525962d1060253da0e560655210b12e5f587783c19",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-spectralnorm-optimized/clbg/spectralnorm/optimized$interval$fn__156.class": "4db12ad7a82da3774c6af6c257dfec9f440d0253723b8f0ef6f02bb1512733e1",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-spectralnorm-optimized/clbg/spectralnorm/optimized$denominator.class": "f7e106eaa8a19701862a5937db8ee370d1b136a660ae8c82108f3137f94be891",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-spectralnorm-optimized/clbg/spectralnorm/optimized.class": "520457c2a115fae768bfe2794e1cbcf804365ae4ce42e8ea4b6cf113ee7d620f",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-spectralnorm-optimized/clbg/spectralnorm/optimized$multiply.class": "8769b0038b0bb76295d5ba567dbcd35c2d2acb1bc1a947c6bc5ed3c4f534568c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-spectralnorm-optimized/clbg/spectralnorm/optimized$interval.class": "499e197365809ec31017081a6560cc8d7d2dfc4aed2134894969a016b159e26a",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-spectralnorm-optimized/clbg/spectralnorm/optimized__init.class": "29c9f9676c540cbc40fbf05894b965cc5783fdbb3184ceab967bfd5b95cade04"
+    },
+    "files": [
+      {
+        "authored_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/spectralnorm/optimized.clj",
+        "sha256": "9d668efbc990a3dd2ea0989f8d6ee7b7314482b7869007f4c0d069ff42feaf3a",
+        "role": "application",
+        "actual_compiled_copy": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-spectralnorm-optimized/sources/clbg/spectralnorm/optimized.clj",
+        "actual_snapshot_origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/sources/clbg/spectralnorm/optimized.clj"
+      },
+      {
+        "authored_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/support/clbg/support.clj",
+        "sha256": "ae37ffdcbfe8d1fa34632e1151d4098b5747f71ce2ad074d326043be3d289446",
+        "role": "application-helper",
+        "actual_compiled_copy": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-spectralnorm-optimized/support/clbg/support.clj",
+        "actual_snapshot_origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/source-snapshot/support/clbg/support.clj"
+      }
+    ]
+  },
+  "original_compiler_inventory": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/builds/clojure-spectralnorm-optimized/compiler-input-inventory.json",
+    "sha256": "1b1293d1a79ed7d703226ee63b51c104edd60a74edf8a6779cb731c87874ba88"
+  },
+  "qualified_preparation": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/report.json",
+    "sha256": "69bf7cdb025759e6d10cb8c1ae1c189839e253ced9aca50e4f9cc1e838d36d79"
+  },
+  "exact_source_role_review": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/source-counts/semantic-source-review-v3.json",
+    "sha256": "9a0d8414733b10a9fd2991e32efacee05528c43eef947eca8a62922d040047c1"
+  },
+  "inventory_derived_from_original_actual_compile_receipt": true,
+  "authored_application_helpers_complete": true,
+  "generated_class_files_counted_as_source": false
+}

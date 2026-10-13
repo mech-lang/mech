@@ -1,0 +1,19 @@
+WAIT common mutex: C3 full-study initial review fasta
+WAIT common mutex: C3 full fasta 1 c3-fasta-compact
+FULL fasta 1 c3-fasta-compact 25000000
+WAIT common mutex: C3 full fasta 1 c3-fasta-optimized
+FULL fasta 1 c3-fasta-optimized 25000000
+WAIT common mutex: C3 full fasta 1 mech-aot-control
+FULL fasta 1 mech-aot-control 25000000
+WAIT common mutex: C3 full fasta 2 c3-fasta-optimized
+FULL fasta 2 c3-fasta-optimized 25000000
+WAIT common mutex: C3 full fasta 2 mech-aot-control
+FULL fasta 2 mech-aot-control 25000000
+WAIT common mutex: C3 full fasta 2 c3-fasta-compact
+FULL fasta 2 c3-fasta-compact 25000000
+WAIT common mutex: C3 full fasta 3 mech-aot-control
+FULL fasta 3 mech-aot-control 25000000
+WAIT common mutex: C3 full fasta 3 c3-fasta-compact
+FULL fasta 3 c3-fasta-compact 25000000
+WAIT common mutex: C3 full fasta 3 c3-fasta-optimized
+FULL fasta 3 c3-fasta-optimized 25000000

@@ -1,0 +1,11 @@
+{
+  "status": "stopped-unqualified",
+  "compiler_commands_started": 0,
+  "actual_benchmark_processes": 0,
+  "full_performance_runs": 0,
+  "canonical_LOC_admitted": false,
+  "chart_admission": false,
+  "actual_common_mutex_held": true,
+  "error": "No module named 'guarded_prepare_v5'",
+  "error_type": "ModuleNotFoundError"
+}

@@ -1,0 +1,17 @@
+benchmarks/clbg/continuation/root-recovery-20261012.json
+benchmarks/clbg/overview/explorer/augment_data.py
+benchmarks/clbg/r-apl-uiua-comparison/20261011/results/summary.csv
+benchmarks/clbg/r-apl-uiua-comparison/20261011/results/summary.json
+benchmarks/clbg/r-apl-uiua-comparison/20261011/results/summary.md
+benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-apl.json
+benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-r.json
+benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-uiua.json
+benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/README.md
+benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/manifest.json
+benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/prepare.py
+benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/prepare_manifest.py
+benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/results/instrumented.ua
+benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/results/source-audit.json
+benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/results/validation.log
+benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/sources/fast.ua
+benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/validate.py

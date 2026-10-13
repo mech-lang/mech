@@ -1,0 +1,15 @@
+{
+  "status": "preparing-sample84-recovery",
+  "old_sample_signals_sent": 0,
+  "original_report_mutated": false,
+  "original_raw_mutated": false,
+  "no_automatic_retry": true,
+  "chart_admission": false,
+  "fresh_full_processes": 0,
+  "required_fresh_full_processes": 3,
+  "actual_argv": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/apl-sample84-recovery-v1/controller.py",
+    "--run"
+  ],
+  "common_descriptor": 6
+}

@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/reconcile_suite_v3.py", line 45, in <module>
+    module.verify(report['pins'])
+    ^^^^^^^^^^^^^
+AttributeError: module 'v_shared_durable_sampler' has no attribute 'verify'

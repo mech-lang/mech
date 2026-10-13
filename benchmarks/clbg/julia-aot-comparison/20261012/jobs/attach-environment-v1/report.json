@@ -1,0 +1,747 @@
+{
+  "status": "read-only-attach-environment-saved-awaiting-interpretation",
+  "started_at": "2026-10-13T12:57:50.612010+00:00",
+  "exclusive_common_timing_mutex_held": true,
+  "common_timing_mutex": "/tmp/mech-clbg-timing.lock",
+  "runtime_aot_proven": false,
+  "chart_admission": false,
+  "actual_benchmark_runs": 0,
+  "actual_attach_attempts": 0,
+  "native_canary_executions": 0,
+  "permission_changes": 0,
+  "automatic_retry": false,
+  "source_or_algorithm_modified": false,
+  "queries": [
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/developer-tools-status/receipt.json",
+      "command": [
+        "/usr/sbin/DevToolsSecurity",
+        "-status"
+      ],
+      "started_at": "2026-10-13T12:57:50.836874+00:00",
+      "read_only_query": true,
+      "inherited_common_mutex": true,
+      "timeout_seconds": 15,
+      "exit_status": 0,
+      "owned_query_group_cleanup": null,
+      "pid": 11853,
+      "pgid": 11853,
+      "query_group_absent_after_reap": true,
+      "finished_at": "2026-10-13T12:57:51.047513+00:00"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/current-identity/receipt.json",
+      "command": [
+        "/usr/bin/id"
+      ],
+      "started_at": "2026-10-13T12:57:51.049653+00:00",
+      "read_only_query": true,
+      "inherited_common_mutex": true,
+      "timeout_seconds": 15,
+      "exit_status": 0,
+      "owned_query_group_cleanup": null,
+      "pid": 11854,
+      "pgid": 11854,
+      "query_group_absent_after_reap": true,
+      "finished_at": "2026-10-13T12:57:51.075094+00:00"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/0-identity/receipt.json",
+      "command": [
+        "/usr/bin/codesign",
+        "-d",
+        "--verbose=4",
+        "/Library/Developer/CommandLineTools/usr/bin/lldb"
+      ],
+      "started_at": "2026-10-13T12:57:51.079115+00:00",
+      "read_only_query": true,
+      "inherited_common_mutex": true,
+      "timeout_seconds": 15,
+      "exit_status": 0,
+      "owned_query_group_cleanup": null,
+      "pid": 11855,
+      "pgid": 11855,
+      "query_group_absent_after_reap": true,
+      "finished_at": "2026-10-13T12:57:51.127990+00:00"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/0-entitlements/receipt.json",
+      "command": [
+        "/usr/bin/codesign",
+        "-d",
+        "--entitlements",
+        ":-",
+        "/Library/Developer/CommandLineTools/usr/bin/lldb"
+      ],
+      "started_at": "2026-10-13T12:57:51.129117+00:00",
+      "read_only_query": true,
+      "inherited_common_mutex": true,
+      "timeout_seconds": 15,
+      "exit_status": 0,
+      "owned_query_group_cleanup": null,
+      "pid": 11856,
+      "pgid": 11856,
+      "query_group_absent_after_reap": true,
+      "finished_at": "2026-10-13T12:57:51.177941+00:00"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/1-identity/receipt.json",
+      "command": [
+        "/usr/bin/codesign",
+        "-d",
+        "--verbose=4",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/canary"
+      ],
+      "started_at": "2026-10-13T12:57:51.179108+00:00",
+      "read_only_query": true,
+      "inherited_common_mutex": true,
+      "timeout_seconds": 15,
+      "exit_status": 0,
+      "owned_query_group_cleanup": null,
+      "pid": 11857,
+      "pgid": 11857,
+      "query_group_absent_after_reap": true,
+      "finished_at": "2026-10-13T12:57:51.203876+00:00"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/1-entitlements/receipt.json",
+      "command": [
+        "/usr/bin/codesign",
+        "-d",
+        "--entitlements",
+        ":-",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/canary"
+      ],
+      "started_at": "2026-10-13T12:57:51.204862+00:00",
+      "read_only_query": true,
+      "inherited_common_mutex": true,
+      "timeout_seconds": 15,
+      "exit_status": 0,
+      "owned_query_group_cleanup": null,
+      "pid": 11858,
+      "pgid": 11858,
+      "query_group_absent_after_reap": true,
+      "finished_at": "2026-10-13T12:57:51.229262+00:00"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/2-identity/receipt.json",
+      "command": [
+        "/usr/bin/codesign",
+        "-d",
+        "--verbose=4",
+        "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/bin/python3.14"
+      ],
+      "started_at": "2026-10-13T12:57:51.230196+00:00",
+      "read_only_query": true,
+      "inherited_common_mutex": true,
+      "timeout_seconds": 15,
+      "exit_status": 0,
+      "owned_query_group_cleanup": null,
+      "pid": 11859,
+      "pgid": 11859,
+      "query_group_absent_after_reap": true,
+      "finished_at": "2026-10-13T12:57:51.254392+00:00"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/2-entitlements/receipt.json",
+      "command": [
+        "/usr/bin/codesign",
+        "-d",
+        "--entitlements",
+        ":-",
+        "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/bin/python3.14"
+      ],
+      "started_at": "2026-10-13T12:57:51.255430+00:00",
+      "read_only_query": true,
+      "inherited_common_mutex": true,
+      "timeout_seconds": 15,
+      "exit_status": 0,
+      "owned_query_group_cleanup": null,
+      "pid": 11860,
+      "pgid": 11860,
+      "query_group_absent_after_reap": true,
+      "finished_at": "2026-10-13T12:57:51.279809+00:00"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/3-identity/receipt.json",
+      "command": [
+        "/usr/bin/codesign",
+        "-d",
+        "--verbose=4",
+        "/Library/Developer/CommandLineTools/Library/PrivateFrameworks/LLDB.framework/Versions/A/LLDB"
+      ],
+      "started_at": "2026-10-13T12:57:51.280824+00:00",
+      "read_only_query": true,
+      "inherited_common_mutex": true,
+      "timeout_seconds": 15,
+      "exit_status": 0,
+      "owned_query_group_cleanup": null,
+      "pid": 11861,
+      "pgid": 11861,
+      "query_group_absent_after_reap": true,
+      "finished_at": "2026-10-13T12:57:51.329231+00:00"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/3-entitlements/receipt.json",
+      "command": [
+        "/usr/bin/codesign",
+        "-d",
+        "--entitlements",
+        ":-",
+        "/Library/Developer/CommandLineTools/Library/PrivateFrameworks/LLDB.framework/Versions/A/LLDB"
+      ],
+      "started_at": "2026-10-13T12:57:51.330248+00:00",
+      "read_only_query": true,
+      "inherited_common_mutex": true,
+      "timeout_seconds": 15,
+      "exit_status": 0,
+      "owned_query_group_cleanup": null,
+      "pid": 11862,
+      "pgid": 11862,
+      "query_group_absent_after_reap": true,
+      "finished_at": "2026-10-13T12:57:51.379097+00:00"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/4-identity/receipt.json",
+      "command": [
+        "/usr/bin/codesign",
+        "-d",
+        "--verbose=4",
+        "/Library/Developer/CommandLineTools/Library/PrivateFrameworks/LLDB.framework/Versions/A/Resources/debugserver"
+      ],
+      "started_at": "2026-10-13T12:57:51.379986+00:00",
+      "read_only_query": true,
+      "inherited_common_mutex": true,
+      "timeout_seconds": 15,
+      "exit_status": 0,
+      "owned_query_group_cleanup": null,
+      "pid": 11863,
+      "pgid": 11863,
+      "query_group_absent_after_reap": true,
+      "finished_at": "2026-10-13T12:57:51.404147+00:00"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/4-entitlements/receipt.json",
+      "command": [
+        "/usr/bin/codesign",
+        "-d",
+        "--entitlements",
+        ":-",
+        "/Library/Developer/CommandLineTools/Library/PrivateFrameworks/LLDB.framework/Versions/A/Resources/debugserver"
+      ],
+      "started_at": "2026-10-13T12:57:51.404892+00:00",
+      "read_only_query": true,
+      "inherited_common_mutex": true,
+      "timeout_seconds": 15,
+      "exit_status": 0,
+      "owned_query_group_cleanup": null,
+      "pid": 11864,
+      "pgid": 11864,
+      "query_group_absent_after_reap": true,
+      "finished_at": "2026-10-13T12:57:51.428840+00:00"
+    }
+  ],
+  "failure_inventory": {
+    "v1": {
+      "report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/report.json",
+      "report_sha256": "d3c3e8dc3d5dbe64cb30f31a9254cd9e0f0f5dc975a5e7aa81e67597faf99ca2",
+      "original_status": "failed",
+      "original_error_type": "AssertionError",
+      "original_error": "AssertionError",
+      "files": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/debugger/actual-canary-observation.active.json",
+          "sha256": "aa6885adf25c6c82b8fa01e858a3f603565c2637287f0ccf9e92d0c78ee71dc4",
+          "bytes": 1244,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/debugger/actual-canary-observation.json",
+          "sha256": "f870a03731fc60a7baae3678831274ce33e99d3f00740ee15fcbd935a51e43d8",
+          "bytes": 1343,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/debugger/actual-canary-observation.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/debugger/actual-canary-observation.stdout",
+          "sha256": "b2512424198c7e6173c023b40baa43fa533aabdeb0e27d0a0cb2e8213788a2fd",
+          "bytes": 765,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/failure.log",
+          "sha256": "1ab7c9801f7478e53ed94fead121c314bff69008ab825af0b99eb2d0c31e5eb2",
+          "bytes": 386,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/native-observation/actual-error.log",
+          "sha256": "4e71bd371e1e982d46124485a3e44400d314cc02354639c2ebcafadc044f86b6",
+          "bytes": 347,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/native-observation/native.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/native-observation/native.stdout",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/native-observation/prelaunch-breakpoints.json",
+          "sha256": "c99d9efb56a9b00b1a5466c2c01aa24a7aab3c9c94b99d7110ffcb24e6fd1374",
+          "bytes": 40323,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/native-observation/prelaunch-modules.json",
+          "sha256": "36038cb93ac4140598f103e62086ebdf06c1021742dac3e519167a20b092b67d",
+          "bytes": 141069,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/native-observation/report.json",
+          "sha256": "524e163bbed4aac9c8a3fd334aa846e487d8a23c225eb2fca12ea496c6cf30f0",
+          "bytes": 659,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/report.json",
+          "sha256": "d3c3e8dc3d5dbe64cb30f31a9254cd9e0f0f5dc975a5e7aa81e67597faf99ca2",
+          "bytes": 2414601,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/request.json",
+          "sha256": "e31ef4a08a884acda29eda7b356f5075d8cad5c533e1439ad9140d9f8d67f27f",
+          "bytes": 12176,
+          "pin_scope": "reconciled-original-receipt-pin"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/snapshot/observe_lldb.py",
+          "sha256": "d35ae71d39cf6e8b72bfa7b0e3dc9752ffe6a0322b7341c71e9d76d24a3631e4",
+          "bytes": 10778,
+          "pin_scope": "reconciled-original-receipt-pin"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/terminal-pins.json",
+          "sha256": "076a201922208a138a4e207a12695cf0320c84eed1ec6c20ae74b73e802f711e",
+          "bytes": 6202,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/tools/lldb-location/location.active.json",
+          "sha256": "fddfa6c222c13db8679f517cda710121305041ad3098e03e66dc5a540f287fdd",
+          "bytes": 377,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/tools/lldb-location/location.json",
+          "sha256": "98275723cfce90e4f8251f5e7af47ffbd77f89d50ce5b177634de8025b5bb2b7",
+          "bytes": 476,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/tools/lldb-location/location.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/tools/lldb-location/location.stdout",
+          "sha256": "8686664364388ec06947cc3497795955840cbd3a22b2d31e695c166c6533269b",
+          "bytes": 49,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/tools/lldb-python/python-path.active.json",
+          "sha256": "d6833209f117841b0aa78b8680f15003e5a6fe7396b0f076af9fdc23e51910e3",
+          "bytes": 420,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/tools/lldb-python/python-path.json",
+          "sha256": "f5de6b0fd62114c167d95198f4c16b9afeb24dbe9774bd4c865694f031106cfc",
+          "bytes": 519,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/tools/lldb-python/python-path.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/tools/lldb-python/python-path.stdout",
+          "sha256": "f82efad24d4eaee534e8c425bd4709d002c6c04a5b54c46e021d08883bd91335",
+          "bytes": 94,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/tools/lldb-version/version.active.json",
+          "sha256": "814c5d70fd81db9ce97237fff376e65440452f75ff9939c841735e78714ef852",
+          "bytes": 434,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/tools/lldb-version/version.json",
+          "sha256": "d4884982a4e263c42896994bc0c2320c68887a67b6bc5ac598a586fd53d70d4e",
+          "bytes": 533,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/tools/lldb-version/version.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/tools/lldb-version/version.stdout",
+          "sha256": "28bbb5e76e367062010e12f64d116222454ed84bea4025d290fe527a20dd75ae",
+          "bytes": 82,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        }
+      ],
+      "observation_files": {
+        "prelaunch-breakpoints.json": true,
+        "prelaunch-modules.json": true,
+        "owned-native.json": false,
+        "events.jsonl": false,
+        "actual-error.log": true,
+        "report.json": true
+      },
+      "original_benchmark_or_observer_retry_performed": false
+    },
+    "v2": {
+      "report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/report.json",
+      "report_sha256": "a9c4ee54fa04e41ee51b20cf1c6a5676169e323681bfdce33044841b51617ba6",
+      "original_status": "failed",
+      "original_error_type": "TimeoutExpired",
+      "original_error": "Command '['/Library/Developer/CommandLineTools/usr/bin/lldb', '--no-lldbinit', '--batch', '-o', 'command script import /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/snapshot/observe_lldb.py', '-o', \"script observe_lldb.observe(lldb.debugger, '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/request.json')\", '-o', 'quit']' timed out after 300 seconds",
+      "files": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/debugger/actual-canary-observation.active.json",
+          "sha256": "b998109dde5d30076eead717a9f8948603d7fbd8a8e564d29768bb28cc4abc5c",
+          "bytes": 1244,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/debugger/actual-canary-observation.json",
+          "sha256": "372dab4676fbe7ca2e8ce405343b230d70f6521584838b3d2a03c750f967d3bc",
+          "bytes": 1826,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/debugger/actual-canary-observation.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/debugger/actual-canary-observation.stdout",
+          "sha256": "9fcbe85a211ac60567e1dbdd6997beba6cfc4ae061673e542cc8d8e1cd691e98",
+          "bytes": 368,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/failure.log",
+          "sha256": "a58bcdf246d17aeb499346ba03d2e1e733b7ec1343197b748767f193279916d9",
+          "bytes": 2098,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/native-observation/prelaunch-breakpoints.json",
+          "sha256": "c99d9efb56a9b00b1a5466c2c01aa24a7aab3c9c94b99d7110ffcb24e6fd1374",
+          "bytes": 40323,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/native-observation/prelaunch-modules.json",
+          "sha256": "36038cb93ac4140598f103e62086ebdf06c1021742dac3e519167a20b092b67d",
+          "bytes": 141069,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/native-output/native.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/native-output/native.stdout",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/native-output/parent-owned-before-exec.json",
+          "sha256": "f5890bec9129805a750627f10d9fe90d5348dc6a44982ddfdad7b950b804759c",
+          "bytes": 502,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/report.json",
+          "sha256": "a9c4ee54fa04e41ee51b20cf1c6a5676169e323681bfdce33044841b51617ba6",
+          "bytes": 2415808,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/request.json",
+          "sha256": "c7d2f9aa389cdce9c8a67bb68a6597c94593834fe751c72bc0fc1d29d84f7bef",
+          "bytes": 12736,
+          "pin_scope": "reconciled-original-receipt-pin"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/snapshot/observe_lldb.py",
+          "sha256": "71a223ef13e864aafc38b8b51b58295e95df17f2df937e0ee095bfd81ddbd8ed",
+          "bytes": 11509,
+          "pin_scope": "reconciled-original-receipt-pin"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/snapshot/suspended_child.py",
+          "sha256": "7b6f72a1b77ba65e6b3c4406dde4e212f3f467c5550e091026f4cff7932a9481",
+          "bytes": 5186,
+          "pin_scope": "reconciled-original-receipt-pin"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/terminal-pins.json",
+          "sha256": "9004a9a093f962dce3a6f1f5a4489af4f5f0d8589d26cd596f9f4782be2af787",
+          "bytes": 6197,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/tools/lldb-location/location.active.json",
+          "sha256": "49d57bf43160bf05ede1f4cfc12dc2ce6767309759842825c2a5db202d627d54",
+          "bytes": 377,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/tools/lldb-location/location.json",
+          "sha256": "f55d2df8b6a0322f5777cf5c23a883d9ee8a8e2e332b3a914b66ddccb4df6bdf",
+          "bytes": 476,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/tools/lldb-location/location.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/tools/lldb-location/location.stdout",
+          "sha256": "8686664364388ec06947cc3497795955840cbd3a22b2d31e695c166c6533269b",
+          "bytes": 49,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/tools/lldb-python/python-path.active.json",
+          "sha256": "33c26b9db9a21bf8cac165fb6ca5d309267631f36b31b1e0bf48d8ccfbe0fcd4",
+          "bytes": 420,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/tools/lldb-python/python-path.json",
+          "sha256": "993de63daa3ddc7f593037a63164510fc4e5e4982c763031985ddc497c8a97e0",
+          "bytes": 519,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/tools/lldb-python/python-path.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/tools/lldb-python/python-path.stdout",
+          "sha256": "f82efad24d4eaee534e8c425bd4709d002c6c04a5b54c46e021d08883bd91335",
+          "bytes": 94,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/tools/lldb-version/version.active.json",
+          "sha256": "cdc31567e4737f423d01af157556784bf6e5a5eab250046f6622b2d1bd49a40b",
+          "bytes": 434,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/tools/lldb-version/version.json",
+          "sha256": "8c534a3f8eee940432ff4a659fc11ee5ebee3ee95a45c70741fddb16a6980ae6",
+          "bytes": 533,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/tools/lldb-version/version.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/tools/lldb-version/version.stdout",
+          "sha256": "28bbb5e76e367062010e12f64d116222454ed84bea4025d290fe527a20dd75ae",
+          "bytes": 82,
+          "pin_scope": "new-capture-of-preserved-failure-bytes"
+        }
+      ],
+      "observation_files": {
+        "prelaunch-breakpoints.json": true,
+        "prelaunch-modules.json": true,
+        "owned-native.json": false,
+        "events.jsonl": false,
+        "actual-error.log": false,
+        "report.json": false
+      },
+      "original_benchmark_or_observer_retry_performed": false
+    }
+  },
+  "signing_images": [
+    {
+      "role": "preserved-lldb-executable",
+      "path": "/Library/Developer/CommandLineTools/usr/bin/lldb",
+      "historical_pin": true,
+      "sha256": "cf8f665b6c5b2007c958c7acdf5245f2595b50e4d251a48afc191bfb6699d44c"
+    },
+    {
+      "role": "preserved-canary-post-exec-image; not yet execed at failed attach",
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/canary",
+      "historical_pin": true,
+      "sha256": "1ac9e4557e6436c8d7603f3181795c91e6d572956622e997b7ba1f572a557a5a"
+    },
+    {
+      "role": "current-diagnostic-worker-python; historical-pre-exec-image-identity-not-captured",
+      "path": "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+      "historical_pin": false,
+      "sha256": "e401ac7a95cda75dee34a0cfe1e4faf0a6df1a501cf67887f177fb78cd4eb60a"
+    },
+    {
+      "role": "lldb-framework-or-debugserver-current-image",
+      "path": "/Library/Developer/CommandLineTools/Library/PrivateFrameworks/LLDB.framework/Versions/A/LLDB",
+      "historical_pin": true,
+      "sha256": "1b5b600a627c8797c38a574ac80f9027f9cd0472bbf1ddf8fc3968f67d917528"
+    },
+    {
+      "role": "lldb-framework-or-debugserver-current-image",
+      "path": "/Library/Developer/CommandLineTools/Library/PrivateFrameworks/LLDB.framework/Versions/A/Resources/debugserver",
+      "historical_pin": false,
+      "sha256": "c9a57d66f3b69d80d4ac149fc6391ac2c4a51a8fc888ad111085f30e15d912e5"
+    }
+  ],
+  "observed_stage_boundary": "Saved prelaunch artifacts exist; successful attach receipt/event stream absent. No cause proven.",
+  "historical_preexec_image_identity_verified": false,
+  "current_environment_is_historical_permission_proof": false,
+  "attach_capability_proven": false,
+  "observer_sequence_proven": false,
+  "pins_unchanged_at_end": true,
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/revisions/attach-environment-diagnostic-v1/diagnose_environment.py": "d170d1c009ce31654a0cca9f502baa800c58e042e4ee619d347644a3ce574932",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/revisions/attach-environment-diagnostic-v1/REVIEW.md": "dbe3d8ca1196fe6206ca3a5e117423796f76711810ebfaa7e9ecff13ff27987c",
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/bin/python3.14": "e401ac7a95cda75dee34a0cfe1e4faf0a6df1a501cf67887f177fb78cd4eb60a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/report.json": "d3c3e8dc3d5dbe64cb30f31a9254cd9e0f0f5dc975a5e7aa81e67597faf99ca2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/debugger/actual-canary-observation.active.json": "aa6885adf25c6c82b8fa01e858a3f603565c2637287f0ccf9e92d0c78ee71dc4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/debugger/actual-canary-observation.json": "f870a03731fc60a7baae3678831274ce33e99d3f00740ee15fcbd935a51e43d8",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/debugger/actual-canary-observation.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/debugger/actual-canary-observation.stdout": "b2512424198c7e6173c023b40baa43fa533aabdeb0e27d0a0cb2e8213788a2fd",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/failure.log": "1ab7c9801f7478e53ed94fead121c314bff69008ab825af0b99eb2d0c31e5eb2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/native-observation/actual-error.log": "4e71bd371e1e982d46124485a3e44400d314cc02354639c2ebcafadc044f86b6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/native-observation/native.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/native-observation/native.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/native-observation/prelaunch-breakpoints.json": "c99d9efb56a9b00b1a5466c2c01aa24a7aab3c9c94b99d7110ffcb24e6fd1374",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/native-observation/prelaunch-modules.json": "36038cb93ac4140598f103e62086ebdf06c1021742dac3e519167a20b092b67d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/native-observation/report.json": "524e163bbed4aac9c8a3fd334aa846e487d8a23c225eb2fca12ea496c6cf30f0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/request.json": "e31ef4a08a884acda29eda7b356f5075d8cad5c533e1439ad9140d9f8d67f27f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/snapshot/observe_lldb.py": "d35ae71d39cf6e8b72bfa7b0e3dc9752ffe6a0322b7341c71e9d76d24a3631e4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/terminal-pins.json": "076a201922208a138a4e207a12695cf0320c84eed1ec6c20ae74b73e802f711e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/tools/lldb-location/location.active.json": "fddfa6c222c13db8679f517cda710121305041ad3098e03e66dc5a540f287fdd",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/tools/lldb-location/location.json": "98275723cfce90e4f8251f5e7af47ffbd77f89d50ce5b177634de8025b5bb2b7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/tools/lldb-location/location.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/tools/lldb-location/location.stdout": "8686664364388ec06947cc3497795955840cbd3a22b2d31e695c166c6533269b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/tools/lldb-python/python-path.active.json": "d6833209f117841b0aa78b8680f15003e5a6fe7396b0f076af9fdc23e51910e3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/tools/lldb-python/python-path.json": "f5de6b0fd62114c167d95198f4c16b9afeb24dbe9774bd4c865694f031106cfc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/tools/lldb-python/python-path.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/tools/lldb-python/python-path.stdout": "f82efad24d4eaee534e8c425bd4709d002c6c04a5b54c46e021d08883bd91335",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/tools/lldb-version/version.active.json": "814c5d70fd81db9ce97237fff376e65440452f75ff9939c841735e78714ef852",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/tools/lldb-version/version.json": "d4884982a4e263c42896994bc0c2320c68887a67b6bc5ac598a586fd53d70d4e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/tools/lldb-version/version.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/tools/lldb-version/version.stdout": "28bbb5e76e367062010e12f64d116222454ed84bea4025d290fe527a20dd75ae",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/report.json": "a9c4ee54fa04e41ee51b20cf1c6a5676169e323681bfdce33044841b51617ba6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/debugger/actual-canary-observation.active.json": "b998109dde5d30076eead717a9f8948603d7fbd8a8e564d29768bb28cc4abc5c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/debugger/actual-canary-observation.json": "372dab4676fbe7ca2e8ce405343b230d70f6521584838b3d2a03c750f967d3bc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/debugger/actual-canary-observation.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/debugger/actual-canary-observation.stdout": "9fcbe85a211ac60567e1dbdd6997beba6cfc4ae061673e542cc8d8e1cd691e98",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/failure.log": "a58bcdf246d17aeb499346ba03d2e1e733b7ec1343197b748767f193279916d9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/native-observation/prelaunch-breakpoints.json": "c99d9efb56a9b00b1a5466c2c01aa24a7aab3c9c94b99d7110ffcb24e6fd1374",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/native-observation/prelaunch-modules.json": "36038cb93ac4140598f103e62086ebdf06c1021742dac3e519167a20b092b67d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/native-output/native.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/native-output/native.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/native-output/parent-owned-before-exec.json": "f5890bec9129805a750627f10d9fe90d5348dc6a44982ddfdad7b950b804759c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/request.json": "c7d2f9aa389cdce9c8a67bb68a6597c94593834fe751c72bc0fc1d29d84f7bef",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/snapshot/observe_lldb.py": "71a223ef13e864aafc38b8b51b58295e95df17f2df937e0ee095bfd81ddbd8ed",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/snapshot/suspended_child.py": "7b6f72a1b77ba65e6b3c4406dde4e212f3f467c5550e091026f4cff7932a9481",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/terminal-pins.json": "9004a9a093f962dce3a6f1f5a4489af4f5f0d8589d26cd596f9f4782be2af787",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/tools/lldb-location/location.active.json": "49d57bf43160bf05ede1f4cfc12dc2ce6767309759842825c2a5db202d627d54",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/tools/lldb-location/location.json": "f55d2df8b6a0322f5777cf5c23a883d9ee8a8e2e332b3a914b66ddccb4df6bdf",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/tools/lldb-location/location.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/tools/lldb-location/location.stdout": "8686664364388ec06947cc3497795955840cbd3a22b2d31e695c166c6533269b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/tools/lldb-python/python-path.active.json": "33c26b9db9a21bf8cac165fb6ca5d309267631f36b31b1e0bf48d8ccfbe0fcd4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/tools/lldb-python/python-path.json": "993de63daa3ddc7f593037a63164510fc4e5e4982c763031985ddc497c8a97e0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/tools/lldb-python/python-path.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/tools/lldb-python/python-path.stdout": "f82efad24d4eaee534e8c425bd4709d002c6c04a5b54c46e021d08883bd91335",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/tools/lldb-version/version.active.json": "cdc31567e4737f423d01af157556784bf6e5a5eab250046f6622b2d1bd49a40b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/tools/lldb-version/version.json": "8c534a3f8eee940432ff4a659fc11ee5ebee3ee95a45c70741fddb16a6980ae6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/tools/lldb-version/version.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/tools/lldb-version/version.stdout": "28bbb5e76e367062010e12f64d116222454ed84bea4025d290fe527a20dd75ae",
+    "/Library/Developer/CommandLineTools/usr/bin/lldb": "cf8f665b6c5b2007c958c7acdf5245f2595b50e4d251a48afc191bfb6699d44c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/canary": "1ac9e4557e6436c8d7603f3181795c91e6d572956622e997b7ba1f572a557a5a",
+    "/Library/Developer/CommandLineTools/Library/PrivateFrameworks/LLDB.framework/Versions/A/LLDB": "1b5b600a627c8797c38a574ac80f9027f9cd0472bbf1ddf8fc3968f67d917528",
+    "/Library/Developer/CommandLineTools/Library/PrivateFrameworks/LLDB.framework/Versions/A/Resources/debugserver": "c9a57d66f3b69d80d4ac149fc6391ac2c4a51a8fc888ad111085f30e15d912e5",
+    "/usr/sbin/DevToolsSecurity": "c204e9ce7a6fecbad80cd4436ad9d4dc9cd5d0c207c26c08ae423c75e065c6a8",
+    "/usr/bin/id": "52b514a7a48570c2d74826da5c747f26a78f6e10ef443c640436781191a7ddd3",
+    "/usr/bin/codesign": "de395f0ff80209a5f14bde83eb21ef42c9840767d5c3bf8b522520fae8c6b533",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/3-identity/stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/3-identity/stderr": "2eb040d0c461d05e07b117783ec2ed22fa68a79b922c87498f426c84d3efe53b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/3-identity/receipt.json": "106c40075053162990a0435cce4f548362a087d265b0ea6e9b534062c59e18a1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/2-identity/stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/2-identity/stderr": "237e18dddeede1c43c4893d962e075289854b253f34d49a6cfeaae913dd5e12a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/2-identity/receipt.json": "d0dea0af6b4db4383456c3dff169865848ad150354989c67c84e9c6dd0d17b61",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/4-identity/stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/4-identity/stderr": "d7c2317ab116956c6fd83c34e5cc7ebf3e7abada76243e29dc64c04f29dcda10",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/4-identity/receipt.json": "70389145792b1ff4e302313df732ee5c46fc036049ef7bfd394a1202fad934e3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/2-entitlements/stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/2-entitlements/stderr": "130b120ec4d6f1b92de6de6e11e8b7ab1d2d09cefbab691d8f7a9320d02b888f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/2-entitlements/receipt.json": "09a1dc8e4d9a983fb92c15f5149664888c09f58f00207d6187b9352626b3adec",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/3-entitlements/stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/3-entitlements/stderr": "b0464fca7eb1cc72ad912e12a238a988954add2082bb19f8be62db7652e74943",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/3-entitlements/receipt.json": "441ccffc48bf40d250e121427f3a4c136419209ec39d388bf6a9192c1eb3f7f1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/4-entitlements/stdout": "9af364890474de75e17730056e084682b41437c5a1298bbaec7eeffcc606b03d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/4-entitlements/stderr": "6e857fe71f0b6356a117a640690db026c97ef285d30f0794c6ffbe3c87857f61",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/4-entitlements/receipt.json": "018abd00893bbdc0a7920a1c7b797032ef38a482dffc1356750b0a53bea08e37",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/1-entitlements/stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/1-entitlements/stderr": "d8abc81a2c311cfb9d731d3a3a0193ba9a19b4518b59ec45bf3fc6bba0db65a5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/1-entitlements/receipt.json": "2144d68b9f4c108d89ba86af0ff34910c3b015ac3066804cb0f850f8ab8c1a3b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/0-identity/stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/0-identity/stderr": "0b6a2afa289a16a302ddd26025151fcb62fe69fcc9de9feac791734871e52a06",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/0-identity/receipt.json": "4bdc26442a16abe951ab0c390cf3332e9af2ae5f14def87fee1a309f6879b929",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/1-identity/stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/1-identity/stderr": "cc2a0eec70099cec98cd96747ac5b8175a8d559d8910e2e919918fdda41007e6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/1-identity/receipt.json": "cdd0ffd5f58f5be5f8401f0fc6d648bb871b3ba6780deb70a5a8d700ecf10d68",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/current-identity/stdout": "65ab2733ef50c2d24c0f2c6acfb55fdf985454df47f9c12cf610de488be87abf",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/current-identity/stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/current-identity/receipt.json": "8bb4b0569c445053f6acf31af15eb12302f5a9f1419b26aeeccfd6fcfee7ea4d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/0-entitlements/stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/0-entitlements/stderr": "54894a8a47a6d6e00273f2e3390c0a4d8a2ff0607194187219d6a9a4a4b96c19",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/0-entitlements/receipt.json": "2a911e0e8034d41d5ecb3961938c88ee2fe263a6e2781fc9dff26b7c22f68f44",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/developer-tools-status/stdout": "6b0b50655a6c77982eb3b673ec0e8eab027f980084a62fea3c65f445862e4fff",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/developer-tools-status/stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/queries/developer-tools-status/receipt.json": "cf6ed75dc7734d0cfb77ab55bfd71990b7128a98dcf4f4baa0de0846d58362fc"
+  },
+  "finished_at": "2026-10-13T12:57:51.698421+00:00"
+}

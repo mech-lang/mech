@@ -1,0 +1,21 @@
+test_actual_char_read_transpose_and_nonconjugate_transpose (test_foreign_matlab.MatlabRegexpFixtures.test_actual_char_read_transpose_and_nonconjugate_transpose) ... ok
+test_array_matrix_and_argument_separators_are_structural (test_foreign_matlab.MatlabRegexpFixtures.test_array_matrix_and_argument_separators_are_structural) ... ok
+test_array_owner_cannot_hide_assignment_call_or_callback (test_foreign_matlab.MatlabRegexpFixtures.test_array_owner_cannot_hide_assignment_call_or_callback) ... ok
+test_callbacks_and_dynamic_readers_are_diagnostic (test_foreign_matlab.MatlabRegexpFixtures.test_callbacks_and_dynamic_readers_are_diagnostic) ... ok
+test_command_comma_and_semicolon_expose_independent_work (test_foreign_matlab.MatlabRegexpFixtures.test_command_comma_and_semicolon_expose_independent_work) ... ok
+test_for_inline_expanded_and_nested_owners (test_foreign_matlab.MatlabRegexpFixtures.test_for_inline_expanded_and_nested_owners) ... ok
+test_function_headers_parameters_and_written_closes (test_foreign_matlab.MatlabRegexpFixtures.test_function_headers_parameters_and_written_closes) ... ok
+test_function_signature_and_iterator_cannot_hide_effect (test_foreign_matlab.MatlabRegexpFixtures.test_function_signature_and_iterator_cannot_hide_effect) ... ok
+test_index_end_does_not_close_a_function_or_loop (test_foreign_matlab.MatlabRegexpFixtures.test_index_end_does_not_close_a_function_or_loop) ... ok
+test_initialized_bindings_clear_and_field_writes_are_work (test_foreign_matlab.MatlabRegexpFixtures.test_initialized_bindings_clear_and_field_writes_are_work) ... ok
+test_line_and_alone_block_comments_do_not_own_code (test_foreign_matlab.MatlabRegexpFixtures.test_line_and_alone_block_comments_do_not_own_code) ... ok
+test_quoted_regex_text_and_doubled_quotes_keep_exact_spans (test_foreign_matlab.MatlabRegexpFixtures.test_quoted_regex_text_and_doubled_quotes_keep_exact_spans) ... ok
+test_selected_regex_shapes_keep_both_loops_and_all_body_work (test_foreign_matlab.MatlabRegexpFixtures.test_selected_regex_shapes_keep_both_loops_and_all_body_work) ... ok
+test_unselected_continuation_ambiguous_quote_and_unclosed_text_gate (test_foreign_matlab.MatlabRegexpFixtures.test_unselected_continuation_ambiguous_quote_and_unclosed_text_gate) ... ok
+test_unsupported_controls_and_malformed_owners_are_gated (test_foreign_matlab.MatlabRegexpFixtures.test_unsupported_controls_and_malformed_owners_are_gated) ... ok
+test_wrapped_literal_data_rows_are_preserved (test_foreign_matlab.MatlabRegexpFixtures.test_wrapped_literal_data_rows_are_preserved) ... ok
+
+----------------------------------------------------------------------
+Ran 16 tests in 0.003s
+
+OK

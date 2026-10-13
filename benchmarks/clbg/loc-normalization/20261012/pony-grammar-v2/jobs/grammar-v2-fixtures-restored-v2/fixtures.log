@@ -1,0 +1,38 @@
+test_boxed_recursive_scalar_graph_check_has_actual_source_facts (test_foreign_pony.PonyFixtures.test_boxed_recursive_scalar_graph_check_has_actual_source_facts) ... ok
+test_capabilities_partial_markers_and_formals_are_structural (test_foreign_pony.PonyFixtures.test_capabilities_partial_markers_and_formals_are_structural) ... ok
+test_control_nested_in_method_keeps_bodies (test_foreign_pony.PonyFixtures.test_control_nested_in_method_keeps_bodies) ... ok
+test_data_wrapping_is_preserved (test_foreign_pony.PonyFixtures.test_data_wrapping_is_preserved) ... ok
+test_embedded_imperative_recover_keeps_outer_binding (test_foreign_pony.PonyFixtures.test_embedded_imperative_recover_keeps_outer_binding) ... ok
+test_embedded_unknown_or_mutating_calls_keep_binding_and_real_control (test_foreign_pony.PonyFixtures.test_embedded_unknown_or_mutating_calls_keep_binding_and_real_control) ... ok
+test_expression_only_anonymous_lambda_is_composition (test_foreign_pony.PonyFixtures.test_expression_only_anonymous_lambda_is_composition) ... ok
+test_ffi_declaration_is_source_not_generated_body (test_foreign_pony.PonyFixtures.test_ffi_declaration_is_source_not_generated_body) ... ok
+test_for_iteration_patterns_are_header_owned (test_foreign_pony.PonyFixtures.test_for_iteration_patterns_are_header_owned) ... ok
+test_imperative_match_arms_and_written_close (test_foreign_pony.PonyFixtures.test_imperative_match_arms_and_written_close) ... ok
+test_imperative_method_exposes_locals_and_tail (test_foreign_pony.PonyFixtures.test_imperative_method_exposes_locals_and_tail) ... ok
+test_imperative_recover_exposes_header_body_and_end (test_foreign_pony.PonyFixtures.test_imperative_recover_exposes_header_body_and_end) ... ok
+test_imperative_try_header_and_written_end (test_foreign_pony.PonyFixtures.test_imperative_try_header_and_written_end) ... ok
+test_independent_constructor_statements (test_foreign_pony.PonyFixtures.test_independent_constructor_statements) ... ok
+test_mixed_error_value_controls_remain_gated (test_foreign_pony.PonyFixtures.test_mixed_error_value_controls_remain_gated) ... ok
+test_nearer_formal_local_and_type_shadow_reject_scalar_resolution (test_foreign_pony.PonyFixtures.test_nearer_formal_local_and_type_shadow_reject_scalar_resolution) ... ok
+test_nested_comments_literals_and_apostrophe_names (test_foreign_pony.PonyFixtures.test_nested_comments_literals_and_apostrophe_names) ... ok
+test_numeric_operators_and_partial_reference_are_not_bindings (test_foreign_pony.PonyFixtures.test_numeric_operators_and_partial_reference_are_not_bindings) ... ok
+test_pure_match_patterns_are_not_local_bindings (test_foreign_pony.PonyFixtures.test_pure_match_patterns_are_not_local_bindings) ... ok
+test_pure_method_is_one_composition (test_foreign_pony.PonyFixtures.test_pure_method_is_one_composition) ... ok
+test_pure_partial_try_value_is_composition (test_foreign_pony.PonyFixtures.test_pure_partial_try_value_is_composition) ... ok
+test_pure_recover_constructor_is_one_composition (test_foreign_pony.PonyFixtures.test_pure_recover_constructor_is_one_composition) ... ok
+test_receiver_composition_keeps_written_wrapping (test_foreign_pony.PonyFixtures.test_receiver_composition_keeps_written_wrapping) ... ok
+test_receiving_binding_and_reset_are_two_independent_writes (test_foreign_pony.PonyFixtures.test_receiving_binding_and_reset_are_two_independent_writes) ... ok
+test_return_hint_duplicate_helper_actor_and_vendor_calls_are_not_proof (test_foreign_pony.PonyFixtures.test_return_hint_duplicate_helper_actor_and_vendor_calls_are_not_proof) ... ok
+test_scalar_method_requires_actual_entire_owned_source_body (test_foreign_pony.PonyFixtures.test_scalar_method_requires_actual_entire_owned_source_body) ... ok
+test_scheduling_output_and_actor_factory_controls_keep_all_written_owners (test_foreign_pony.PonyFixtures.test_scheduling_output_and_actor_factory_controls_keep_all_written_owners) ... ok
+test_type_and_member_layout_have_no_imputed_end (test_foreign_pony.PonyFixtures.test_type_and_member_layout_have_no_imputed_end) ... ok
+test_union_tuple_and_generic_data_are_structural (test_foreign_pony.PonyFixtures.test_union_tuple_and_generic_data_are_structural) ... ok
+test_unknown_type_annotation_and_control_forms_remain_gated (test_foreign_pony.PonyFixtures.test_unknown_type_annotation_and_control_forms_remain_gated) ... ok
+test_value_if_operand_is_one_outer_binding (test_foreign_pony.PonyFixtures.test_value_if_operand_is_one_outer_binding) ... ok
+test_where_named_arguments_are_not_assignments (test_foreign_pony.PonyFixtures.test_where_named_arguments_are_not_assignments) ... ok
+test_written_control_end_and_branches (test_foreign_pony.PonyFixtures.test_written_control_end_and_branches) ... ok
+
+----------------------------------------------------------------------
+Ran 33 tests in 0.019s
+
+OK

@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/work-full-v4/work_qualify.py", line 363, in <module>
+    main()
+    ~~~~^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/work-full-v4/work_qualify.py", line 357, in main
+    if args.seal: seal(args.revision, args.qualification)
+                  ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/work-full-v4/work_qualify.py", line 54, in seal
+    seal_locked(revision, qualification, lock)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/work-full-v4/work_qualify.py", line 80, in seal_locked
+    reused = reuse_work_v3.reconstruct(preparation, guard, harness, generate_traces, check_traces, references, packet_pins)
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/work-full-v4/reuse_work_v3.py", line 144, in reconstruct
+    assert dict(proof, actual_record_mutation_rejections=mutations) == attempt['proof']
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

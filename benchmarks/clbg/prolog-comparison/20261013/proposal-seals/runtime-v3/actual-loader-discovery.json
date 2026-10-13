@@ -1,0 +1,25 @@
+{
+  "loader_errors": [
+    "Failed to import test module: test_image_closure_v2\nTraceback (most recent call last):\n  File \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/proposal-seals/runtime-v3/python/unittest/loader.py\", line 141, in loadTestsFromName\n    module = __import__(module_name)\n  File \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/proposal-seals/runtime-v3/fixture-sources/test_image_closure_v2.py\", line 3, in <module>\n    import plistlib\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/lib/python3.14/plistlib.py\", line 70, in <module>\n    from xml.parsers.expat import ParserCreate\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/lib/python3.14/xml/parsers/expat.py\", line 4, in <module>\n    from pyexpat import *\nImportError: dlopen(/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/pyexpat.cpython-314-darwin.so, 0x0002): Symbol not found: _XML_SetAllocTrackerActivationThreshold\n  Referenced from: <3E5EDC6B-FAC1-3077-AFE0-E21F8A8894A1> /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/pyexpat.cpython-314-darwin.so\n  Expected in:     <4D62FA9D-D86A-3DD0-98F2-C6D0718849E8> /usr/lib/libexpat.1.dylib\n"
+  ],
+  "failed_loader_tests": [
+    {
+      "id": "unittest.loader._FailedTest.test_image_closure_v2",
+      "exception_type": "ImportError",
+      "exception": "Failed to import test module: test_image_closure_v2\nTraceback (most recent call last):\n  File \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/proposal-seals/runtime-v3/python/unittest/loader.py\", line 141, in loadTestsFromName\n    module = __import__(module_name)\n  File \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/proposal-seals/runtime-v3/fixture-sources/test_image_closure_v2.py\", line 3, in <module>\n    import plistlib\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/lib/python3.14/plistlib.py\", line 70, in <module>\n    from xml.parsers.expat import ParserCreate\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/lib/python3.14/xml/parsers/expat.py\", line 4, in <module>\n    from pyexpat import *\nImportError: dlopen(/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/pyexpat.cpython-314-darwin.so, 0x0002): Symbol not found: _XML_SetAllocTrackerActivationThreshold\n  Referenced from: <3E5EDC6B-FAC1-3077-AFE0-E21F8A8894A1> /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/pyexpat.cpython-314-darwin.so\n  Expected in:     <4D62FA9D-D86A-3DD0-98F2-C6D0718849E8> /usr/lib/libexpat.1.dylib\n"
+    }
+  ],
+  "actual_discovery_sys_path": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/proposal-seals/runtime-v3/fixture-sources",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/proposal-seals/runtime-v3/python",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-v3",
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/lib/python314.zip",
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/lib/python3.14",
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload",
+    "/opt/homebrew/lib/python3.14/site-packages"
+  ],
+  "discovered_test_ids": [
+    "unittest.loader._FailedTest.test_image_closure_v2"
+  ],
+  "discovered_tests": 1
+}

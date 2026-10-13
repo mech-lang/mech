@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/usr/bin/otool",
+    "-hv",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-input-archive-filter-v6/bin/crystal-pidigits-compact"
+  ],
+  "started_at": "2026-10-13T13:01:45.301802+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 12478,
+  "identity": {
+    "pid": 12478,
+    "process_listing": "Tue Oct 13 09:01:45 2026     /usr/bin/otool -hv /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-input-archive-filter-v6/bin/crystal-pidigits-compact"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-13T13:01:45.327066+00:00",
+  "final_exit_status": 0
+}

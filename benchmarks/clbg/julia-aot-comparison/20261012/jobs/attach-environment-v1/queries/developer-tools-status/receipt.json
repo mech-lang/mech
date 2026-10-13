@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/usr/sbin/DevToolsSecurity",
+    "-status"
+  ],
+  "started_at": "2026-10-13T12:57:50.836874+00:00",
+  "read_only_query": true,
+  "inherited_common_mutex": true,
+  "timeout_seconds": 15,
+  "exit_status": 0,
+  "owned_query_group_cleanup": null,
+  "pid": 11853,
+  "pgid": 11853,
+  "query_group_absent_after_reap": true,
+  "finished_at": "2026-10-13T12:57:51.047513+00:00"
+}

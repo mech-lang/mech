@@ -1,0 +1,27 @@
+{
+  "command": [
+    "/opt/homebrew/Cellar/erlang/29.1.1_2/bin/erl",
+    "+S",
+    "1:1",
+    "-noshell",
+    "-pa",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/tool",
+    "-run",
+    "original_owner_probe",
+    "main",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/qualification/private-v5/source-snapshot/support/clbg_runner.erl"
+  ],
+  "started_at": "2026-10-13T13:15:30.768533+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 16998,
+  "identity": {
+    "pid": 16998,
+    "process_listing": "Tue Oct 13 09:15:30 2026     /bin/sh /opt/homebrew/Cellar/erlang/29.1.1_2/bin/erl +S 1:1 -noshell -pa /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/tool -run original_owner_probe main /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/qualification/private-v5/source-snapshot/support/clbg_runner.erl"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-13T13:15:30.904763+00:00",
+  "final_exit_status": 0
+}

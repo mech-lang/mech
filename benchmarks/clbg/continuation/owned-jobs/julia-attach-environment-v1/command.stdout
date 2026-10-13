@@ -1,0 +1,2 @@
+WAIT common mutex: Julia saved failure and read-only signing environment
+{"status": "read-only-attach-environment-saved-awaiting-interpretation", "report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/report.json", "report_sha256": "aa4d725c15347daecf75be5f8110c125f6e1759ed9e2d8d1cd868ae833470e94"}

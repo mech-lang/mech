@@ -1,0 +1,26 @@
+{
+  "benchmark": "revcomp",
+  "pid": 99736,
+  "identity": {
+    "pid": 99736,
+    "process_listing": "Tue Oct 13 07:58:50 2026     /opt/homebrew/opt/python@3.14/bin/python3.14 -u -B /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/work-full-v3/full_study.py --run --benchmark revcomp --revision full-v1 --manifest-sha256 8dedae314a360fdecacd9c37a881a3b309d62d33661dd9e5e0c12a5d85bc3cc6"
+  },
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-u",
+    "-B",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/work-full-v3/full_study.py",
+    "--run",
+    "--benchmark",
+    "revcomp",
+    "--revision",
+    "full-v1",
+    "--manifest-sha256",
+    "8dedae314a360fdecacd9c37a881a3b309d62d33661dd9e5e0c12a5d85bc3cc6"
+  ],
+  "launched_at": "2026-10-13T11:58:50.114102+00:00",
+  "manifest_sha256": "8dedae314a360fdecacd9c37a881a3b309d62d33661dd9e5e0c12a5d85bc3cc6",
+  "reviewed_index_sha256": "05ed934ffd9e81136b0a8bd802aff4adda31e8f6f364df345dc2141f57deeece",
+  "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+  "waiting_child_not_joined_under_mutex": true
+}

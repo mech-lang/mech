@@ -1,0 +1,23 @@
+Executable=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/canary
+Identifier=canary
+Format=Mach-O thin (arm64)
+CodeDirectory v=20400 size=383 flags=0x20002(adhoc,linker-signed) hashes=9+0 location=embedded
+VersionPlatform=1
+VersionMin=918528
+VersionSDK=918528
+Hash type=sha256 size=32
+CandidateCDHash sha256=ae63c14c959915352a7c70ae8b1e2a3b185e596b
+CandidateCDHashFull sha256=ae63c14c959915352a7c70ae8b1e2a3b185e596ba3c9bd12955c8d035be15fe3
+Hash choices=sha256
+CMSDigest=ae63c14c959915352a7c70ae8b1e2a3b185e596ba3c9bd12955c8d035be15fe3
+CMSDigestType=2
+Executable Segment base=0
+Executable Segment limit=476
+Executable Segment flags=0x1
+Page size=4096
+CDHash=ae63c14c959915352a7c70ae8b1e2a3b185e596b
+Signature=adhoc
+Info.plist=not bound
+TeamIdentifier=not set
+Sealed Resources=none
+Internal requirements=none

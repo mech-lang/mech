@@ -1,0 +1,21 @@
+{
+  "started_at": "2026-10-13T12:17:46.852721+00:00",
+  "command_pid": 5266,
+  "command_identity": {
+    "pid": 5266,
+    "listing": "5266  5258 Tue Oct 13 08:17:46 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u revisions/work-full-v4/work_qualify.py --seal --revision private-v8-work-v4 --qualification private-v8"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+    "-B",
+    "-u",
+    "revisions/work-full-v4/work_qualify.py",
+    "--seal",
+    "--revision",
+    "private-v8-work-v4",
+    "--qualification",
+    "private-v8"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012"
+}

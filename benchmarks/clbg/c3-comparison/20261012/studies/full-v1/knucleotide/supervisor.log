@@ -1,0 +1,19 @@
+WAIT common mutex: C3 full-study initial review knucleotide
+WAIT common mutex: C3 full knucleotide 1 c3-knucleotide-compact
+FULL knucleotide 1 c3-knucleotide-compact 25000000
+WAIT common mutex: C3 full knucleotide 1 c3-knucleotide-optimized
+FULL knucleotide 1 c3-knucleotide-optimized 25000000
+WAIT common mutex: C3 full knucleotide 1 mech-aot-control
+FULL knucleotide 1 mech-aot-control 25000000
+WAIT common mutex: C3 full knucleotide 2 c3-knucleotide-optimized
+FULL knucleotide 2 c3-knucleotide-optimized 25000000
+WAIT common mutex: C3 full knucleotide 2 mech-aot-control
+FULL knucleotide 2 mech-aot-control 25000000
+WAIT common mutex: C3 full knucleotide 2 c3-knucleotide-compact
+FULL knucleotide 2 c3-knucleotide-compact 25000000
+WAIT common mutex: C3 full knucleotide 3 mech-aot-control
+FULL knucleotide 3 mech-aot-control 25000000
+WAIT common mutex: C3 full knucleotide 3 c3-knucleotide-compact
+FULL knucleotide 3 c3-knucleotide-compact 25000000
+WAIT common mutex: C3 full knucleotide 3 c3-knucleotide-optimized
+FULL knucleotide 3 c3-knucleotide-optimized 25000000

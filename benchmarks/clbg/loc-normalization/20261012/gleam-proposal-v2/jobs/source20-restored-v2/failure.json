@@ -1,0 +1,9 @@
+{
+  "status": "failed-stop",
+  "error": "module 'guarded_prepare' has no attribute 'load_guard'",
+  "error_type": "AttributeError",
+  "actual_common_mutex_held": true,
+  "native_processes_started": 0,
+  "canonical_LOC_admitted": false,
+  "chart_admission": false
+}

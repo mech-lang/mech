@@ -1,0 +1,18 @@
+{
+  "started_at": "2026-10-13T12:30:56.070171+00:00",
+  "command_pid": 7658,
+  "command_identity": {
+    "pid": 7658,
+    "listing": "7658  7651 Tue Oct 13 08:30:56 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-source-replay-v1/qualify_replay.py --revision c3-v4-source-replay-restored-v2"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-source-replay-v1/qualify_replay.py",
+    "--revision",
+    "c3-v4-source-replay-restored-v2"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech"
+}

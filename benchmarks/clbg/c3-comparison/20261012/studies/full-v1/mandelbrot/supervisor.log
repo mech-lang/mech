@@ -1,0 +1,19 @@
+WAIT common mutex: C3 full-study initial review mandelbrot
+WAIT common mutex: C3 full mandelbrot 1 c3-mandelbrot-compact
+FULL mandelbrot 1 c3-mandelbrot-compact 16000
+WAIT common mutex: C3 full mandelbrot 1 c3-mandelbrot-optimized
+FULL mandelbrot 1 c3-mandelbrot-optimized 16000
+WAIT common mutex: C3 full mandelbrot 1 mech-aot-control
+FULL mandelbrot 1 mech-aot-control 16000
+WAIT common mutex: C3 full mandelbrot 2 c3-mandelbrot-optimized
+FULL mandelbrot 2 c3-mandelbrot-optimized 16000
+WAIT common mutex: C3 full mandelbrot 2 mech-aot-control
+FULL mandelbrot 2 mech-aot-control 16000
+WAIT common mutex: C3 full mandelbrot 2 c3-mandelbrot-compact
+FULL mandelbrot 2 c3-mandelbrot-compact 16000
+WAIT common mutex: C3 full mandelbrot 3 mech-aot-control
+FULL mandelbrot 3 mech-aot-control 16000
+WAIT common mutex: C3 full mandelbrot 3 c3-mandelbrot-compact
+FULL mandelbrot 3 c3-mandelbrot-compact 16000
+WAIT common mutex: C3 full mandelbrot 3 c3-mandelbrot-optimized
+FULL mandelbrot 3 c3-mandelbrot-optimized 16000

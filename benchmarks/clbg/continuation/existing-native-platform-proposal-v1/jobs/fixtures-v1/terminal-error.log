@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/existing-native-platform-proposal-v1/guarded_qualify.py", line 220, in run
+    if args.stage=='fixtures':fixture_stage(output,directory,pins,lock);completed='completed-fixtures'
+                              ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/existing-native-platform-proposal-v1/guarded_qualify.py", line 132, in fixture_stage
+    assert result.wasSuccessful() and result.testsRun==10 and sorted(receipt['started_ids'])==IDS and len(set(receipt['started_ids']))==10
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

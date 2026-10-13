@@ -1,0 +1,263 @@
+WAIT common mutex: Nim exact reviewed full-suite launch
+[
+  {
+    "benchmark": "regexredux",
+    "pid": 11310,
+    "identity": {
+      "pid": 11310,
+      "process_listing": "Tue Oct 13 08:54:03 2026     /opt/homebrew/opt/python@3.14/bin/python3.14 -u -B /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v5/full_study.py --run --benchmark regexredux --revision full-v6 --manifest-sha256 a137d2b0bce57a5933c22fd95e504828e083ed54981216e5e0d10d54812726bb"
+    },
+    "command": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "-u",
+      "-B",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v5/full_study.py",
+      "--run",
+      "--benchmark",
+      "regexredux",
+      "--revision",
+      "full-v6",
+      "--manifest-sha256",
+      "a137d2b0bce57a5933c22fd95e504828e083ed54981216e5e0d10d54812726bb"
+    ],
+    "launched_at": "2026-10-13T12:54:03.430424+00:00",
+    "manifest_sha256": "a137d2b0bce57a5933c22fd95e504828e083ed54981216e5e0d10d54812726bb",
+    "reviewed_index_sha256": "462bfa79e8fdd4900b6c4b575b7645c25675ac81f0161ad229d1941241eb9923",
+    "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+    "waiting_child_not_joined_under_mutex": true
+  },
+  {
+    "benchmark": "revcomp",
+    "pid": 11312,
+    "identity": {
+      "pid": 11312,
+      "process_listing": "Tue Oct 13 08:54:03 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u -B /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v5/full_study.py --run --benchmark revcomp --revision full-v6 --manifest-sha256 7224719109f03e2c418cacb954ef375ffbac5b3969b3d030a40becf510823a52"
+    },
+    "command": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "-u",
+      "-B",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v5/full_study.py",
+      "--run",
+      "--benchmark",
+      "revcomp",
+      "--revision",
+      "full-v6",
+      "--manifest-sha256",
+      "7224719109f03e2c418cacb954ef375ffbac5b3969b3d030a40becf510823a52"
+    ],
+    "launched_at": "2026-10-13T12:54:03.441739+00:00",
+    "manifest_sha256": "7224719109f03e2c418cacb954ef375ffbac5b3969b3d030a40becf510823a52",
+    "reviewed_index_sha256": "462bfa79e8fdd4900b6c4b575b7645c25675ac81f0161ad229d1941241eb9923",
+    "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+    "waiting_child_not_joined_under_mutex": true
+  },
+  {
+    "benchmark": "pidigits",
+    "pid": 11314,
+    "identity": {
+      "pid": 11314,
+      "process_listing": "Tue Oct 13 08:54:03 2026     /opt/homebrew/opt/python@3.14/bin/python3.14 -u -B /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v5/full_study.py --run --benchmark pidigits --revision full-v6 --manifest-sha256 e72290e1c0e932fecfe335b413768a123d5f6b097a9613283ff873aa5fd9282e"
+    },
+    "command": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "-u",
+      "-B",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v5/full_study.py",
+      "--run",
+      "--benchmark",
+      "pidigits",
+      "--revision",
+      "full-v6",
+      "--manifest-sha256",
+      "e72290e1c0e932fecfe335b413768a123d5f6b097a9613283ff873aa5fd9282e"
+    ],
+    "launched_at": "2026-10-13T12:54:03.451604+00:00",
+    "manifest_sha256": "e72290e1c0e932fecfe335b413768a123d5f6b097a9613283ff873aa5fd9282e",
+    "reviewed_index_sha256": "462bfa79e8fdd4900b6c4b575b7645c25675ac81f0161ad229d1941241eb9923",
+    "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+    "waiting_child_not_joined_under_mutex": true
+  },
+  {
+    "benchmark": "spectralnorm",
+    "pid": 11316,
+    "identity": {
+      "pid": 11316,
+      "process_listing": "Tue Oct 13 08:54:03 2026     /opt/homebrew/opt/python@3.14/bin/python3.14 -u -B /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v5/full_study.py --run --benchmark spectralnorm --revision full-v6 --manifest-sha256 5baef8355d1378960fc8ae66924ed0634ce682175e8697b1438223e6a916c2f3"
+    },
+    "command": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "-u",
+      "-B",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v5/full_study.py",
+      "--run",
+      "--benchmark",
+      "spectralnorm",
+      "--revision",
+      "full-v6",
+      "--manifest-sha256",
+      "5baef8355d1378960fc8ae66924ed0634ce682175e8697b1438223e6a916c2f3"
+    ],
+    "launched_at": "2026-10-13T12:54:03.461561+00:00",
+    "manifest_sha256": "5baef8355d1378960fc8ae66924ed0634ce682175e8697b1438223e6a916c2f3",
+    "reviewed_index_sha256": "462bfa79e8fdd4900b6c4b575b7645c25675ac81f0161ad229d1941241eb9923",
+    "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+    "waiting_child_not_joined_under_mutex": true
+  },
+  {
+    "benchmark": "mandelbrot",
+    "pid": 11318,
+    "identity": {
+      "pid": 11318,
+      "process_listing": "Tue Oct 13 08:54:03 2026     /opt/homebrew/opt/python@3.14/bin/python3.14 -u -B /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v5/full_study.py --run --benchmark mandelbrot --revision full-v6 --manifest-sha256 84a82106b2add316aaa771ecaf889c5804dc9ec0524710e9b694c8dcc4cb896d"
+    },
+    "command": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "-u",
+      "-B",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v5/full_study.py",
+      "--run",
+      "--benchmark",
+      "mandelbrot",
+      "--revision",
+      "full-v6",
+      "--manifest-sha256",
+      "84a82106b2add316aaa771ecaf889c5804dc9ec0524710e9b694c8dcc4cb896d"
+    ],
+    "launched_at": "2026-10-13T12:54:03.472768+00:00",
+    "manifest_sha256": "84a82106b2add316aaa771ecaf889c5804dc9ec0524710e9b694c8dcc4cb896d",
+    "reviewed_index_sha256": "462bfa79e8fdd4900b6c4b575b7645c25675ac81f0161ad229d1941241eb9923",
+    "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+    "waiting_child_not_joined_under_mutex": true
+  },
+  {
+    "benchmark": "fasta",
+    "pid": 11320,
+    "identity": {
+      "pid": 11320,
+      "process_listing": "Tue Oct 13 08:54:03 2026     (python3.14)"
+    },
+    "command": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "-u",
+      "-B",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v5/full_study.py",
+      "--run",
+      "--benchmark",
+      "fasta",
+      "--revision",
+      "full-v6",
+      "--manifest-sha256",
+      "a3f7f8763272943e56e7de0e0e9ebfbae6ec3cac15c879b034d77c71c6063ab1"
+    ],
+    "launched_at": "2026-10-13T12:54:03.486192+00:00",
+    "manifest_sha256": "a3f7f8763272943e56e7de0e0e9ebfbae6ec3cac15c879b034d77c71c6063ab1",
+    "reviewed_index_sha256": "462bfa79e8fdd4900b6c4b575b7645c25675ac81f0161ad229d1941241eb9923",
+    "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+    "waiting_child_not_joined_under_mutex": true
+  },
+  {
+    "benchmark": "knucleotide",
+    "pid": 11322,
+    "identity": {
+      "pid": 11322,
+      "process_listing": "Tue Oct 13 08:54:03 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u -B /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v5/full_study.py --run --benchmark knucleotide --revision full-v6 --manifest-sha256 fd7bffc958565f7c3807521e1ddd76a0abdd63635c83af7b73cf5e936f2978ee"
+    },
+    "command": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "-u",
+      "-B",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v5/full_study.py",
+      "--run",
+      "--benchmark",
+      "knucleotide",
+      "--revision",
+      "full-v6",
+      "--manifest-sha256",
+      "fd7bffc958565f7c3807521e1ddd76a0abdd63635c83af7b73cf5e936f2978ee"
+    ],
+    "launched_at": "2026-10-13T12:54:03.511327+00:00",
+    "manifest_sha256": "fd7bffc958565f7c3807521e1ddd76a0abdd63635c83af7b73cf5e936f2978ee",
+    "reviewed_index_sha256": "462bfa79e8fdd4900b6c4b575b7645c25675ac81f0161ad229d1941241eb9923",
+    "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+    "waiting_child_not_joined_under_mutex": true
+  },
+  {
+    "benchmark": "binarytrees",
+    "pid": 11324,
+    "identity": {
+      "pid": 11324,
+      "process_listing": "Tue Oct 13 08:54:03 2026     (python3.14)"
+    },
+    "command": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "-u",
+      "-B",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v5/full_study.py",
+      "--run",
+      "--benchmark",
+      "binarytrees",
+      "--revision",
+      "full-v6",
+      "--manifest-sha256",
+      "33ee4ff22fffdca0fd63bf8aa3b175f6efecbc092ee0e5f6a54eb5d9391e12e7"
+    ],
+    "launched_at": "2026-10-13T12:54:03.525271+00:00",
+    "manifest_sha256": "33ee4ff22fffdca0fd63bf8aa3b175f6efecbc092ee0e5f6a54eb5d9391e12e7",
+    "reviewed_index_sha256": "462bfa79e8fdd4900b6c4b575b7645c25675ac81f0161ad229d1941241eb9923",
+    "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+    "waiting_child_not_joined_under_mutex": true
+  },
+  {
+    "benchmark": "nbody",
+    "pid": 11326,
+    "identity": {
+      "pid": 11326,
+      "process_listing": "Tue Oct 13 08:54:03 2026     /opt/homebrew/opt/python@3.14/bin/python3.14 -u -B /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v5/full_study.py --run --benchmark nbody --revision full-v6 --manifest-sha256 8abf2cb8381d188c29126776a448da61993fb28507644ec4abdec4845cfbd1b0"
+    },
+    "command": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "-u",
+      "-B",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v5/full_study.py",
+      "--run",
+      "--benchmark",
+      "nbody",
+      "--revision",
+      "full-v6",
+      "--manifest-sha256",
+      "8abf2cb8381d188c29126776a448da61993fb28507644ec4abdec4845cfbd1b0"
+    ],
+    "launched_at": "2026-10-13T12:54:03.535710+00:00",
+    "manifest_sha256": "8abf2cb8381d188c29126776a448da61993fb28507644ec4abdec4845cfbd1b0",
+    "reviewed_index_sha256": "462bfa79e8fdd4900b6c4b575b7645c25675ac81f0161ad229d1941241eb9923",
+    "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+    "waiting_child_not_joined_under_mutex": true
+  },
+  {
+    "benchmark": "fannkuchredux",
+    "pid": 11328,
+    "identity": {
+      "pid": 11328,
+      "process_listing": "Tue Oct 13 08:54:03 2026     /opt/homebrew/opt/python@3.14/bin/python3.14 -u -B /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v5/full_study.py --run --benchmark fannkuchredux --revision full-v6 --manifest-sha256 5c747620a7ca65e460cf0a074595ee2a5b1283252f2ba7b69db9c4399579b685"
+    },
+    "command": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "-u",
+      "-B",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v5/full_study.py",
+      "--run",
+      "--benchmark",
+      "fannkuchredux",
+      "--revision",
+      "full-v6",
+      "--manifest-sha256",
+      "5c747620a7ca65e460cf0a074595ee2a5b1283252f2ba7b69db9c4399579b685"
+    ],
+    "launched_at": "2026-10-13T12:54:03.548139+00:00",
+    "manifest_sha256": "5c747620a7ca65e460cf0a074595ee2a5b1283252f2ba7b69db9c4399579b685",
+    "reviewed_index_sha256": "462bfa79e8fdd4900b6c4b575b7645c25675ac81f0161ad229d1941241eb9923",
+    "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+    "waiting_child_not_joined_under_mutex": true
+  }
+]

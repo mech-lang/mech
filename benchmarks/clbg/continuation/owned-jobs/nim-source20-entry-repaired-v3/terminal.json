@@ -1,0 +1,20 @@
+{
+  "status": "command-failed",
+  "started_at": "2026-10-13T12:14:47.019447+00:00",
+  "worker_identity": {
+    "pid": 4647,
+    "listing": "4647     1 Tue Oct 13 08:14:46 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/nim-source20-entry-repaired-v3 --lease-fd 3 --go-fd 4"
+  },
+  "actual_command_started": true,
+  "exit_code": 1,
+  "qualification_granted": false,
+  "automatic_retry": false,
+  "command_pid": 4655,
+  "command_identity": {
+    "pid": 4655,
+    "listing": "4655  4647 Tue Oct 13 08:14:47 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/source20-entry-repairs-v1/replay.py --language nim --revision source20-repaired-v3"
+  },
+  "command_identity_observation_missing": false,
+  "finished_at": "2026-10-13T13:08:32.733614+00:00",
+  "stop_signals": []
+}

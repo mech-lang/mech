@@ -1,0 +1,24 @@
+{
+  "command": [
+    "/opt/homebrew/Cellar/erlang/29.1.1_2/bin/erl",
+    "+S",
+    "1:1",
+    "-noshell",
+    "-pa",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/tool",
+    "-run",
+    "original_owner_probe",
+    "main",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-expanded-receive-arm-body-close.erl"
+  ],
+  "started_at": "2026-10-13T13:15:25.963516+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 16246,
+  "identity": {
+    "pid": 16246,
+    "process_listing": "Tue Oct 13 09:15:25 2026     /bin/sh /opt/homebrew/Cellar/erlang/29.1.1_2/bin/erl +S 1:1 -noshell -pa /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/tool -run original_owner_probe main /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-expanded-receive-arm-body-close.erl"
+  }
+}

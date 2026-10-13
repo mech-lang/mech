@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/usr/bin/id"
+  ],
+  "started_at": "2026-10-13T12:57:51.049653+00:00",
+  "read_only_query": true,
+  "inherited_common_mutex": true,
+  "timeout_seconds": 15,
+  "exit_status": 0,
+  "owned_query_group_cleanup": null,
+  "pid": 11854,
+  "pgid": 11854,
+  "query_group_absent_after_reap": true,
+  "finished_at": "2026-10-13T12:57:51.075094+00:00"
+}

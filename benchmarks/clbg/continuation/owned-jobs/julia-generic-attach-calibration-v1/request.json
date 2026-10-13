@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-13T13:21:57.875600+00:00",
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/revisions/attach-calibration-v1/calibrate.py",
+    "--revision",
+    "generic-attach-calibration-v1",
+    "--environment-report",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/report.json",
+    "--environment-report-sha256",
+    "aa4d725c15347daecf75be5f8110c125f6e1759ed9e2d8d1cd868ae833470e94"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "common_mutex_owned_by_target_command": true,
+  "qualification_granted": false,
+  "automatic_retry": false
+}

@@ -1,0 +1,26 @@
+Executable=/Library/Developer/CommandLineTools/Library/PrivateFrameworks/LLDB.framework/Versions/A/Resources/debugserver
+Identifier=com.apple.debugserver
+Format=Mach-O universal (x86_64 arm64e arm64)
+CodeDirectory v=20400 size=7865 flags=0x0(none) hashes=235+7 location=embedded
+VersionPlatform=1
+VersionMin=851968
+VersionSDK=918528
+Hash type=sha256 size=32
+CandidateCDHash sha256=a2d32c2f3e9600b78dd5a6054819bca59b5742c5
+CandidateCDHashFull sha256=a2d32c2f3e9600b78dd5a6054819bca59b5742c5561643f4a19b514ad7e6d54a
+Hash choices=sha256
+CMSDigest=a2d32c2f3e9600b78dd5a6054819bca59b5742c5561643f4a19b514ad7e6d54a
+CMSDigestType=2
+Executable Segment base=0
+Executable Segment limit=622592
+Executable Segment flags=0x21
+Page size=4096
+CDHash=a2d32c2f3e9600b78dd5a6054819bca59b5742c5
+Signature size=4412
+Authority=Software Signing
+Authority=Apple Code Signing Certification Authority
+Authority=Apple Root CA
+Info.plist entries=5
+TeamIdentifier=59GAB85EFG
+Sealed Resources=none
+Internal requirements count=1 size=72

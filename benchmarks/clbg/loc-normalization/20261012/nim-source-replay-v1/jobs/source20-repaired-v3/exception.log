@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/nim-source-replay-v1/qualify_replay.py", line 312, in run
+    qualifier,guard,harness,report,reuse = qualified(pins)
+                                           ~~~~~~~~~^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/source20-entry-repairs-v1/replay.py", line 69, in qualified
+    report, reuse = qualifier.qualified_report(original.QUALIFICATION, guard)
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v4/qualify_work.py", line 34, in qualified_report
+    proof_reuse_v5.validate_prior_reports(reuse)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/proof_reuse_v5.py", line 214, in validate_prior_reports
+    import guarded_prepare_v5 as preparation
+ModuleNotFoundError: No module named 'guarded_prepare_v5'

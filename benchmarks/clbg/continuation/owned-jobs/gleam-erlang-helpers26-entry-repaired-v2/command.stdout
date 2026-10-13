@@ -1,0 +1,3 @@
+WAIT common mutex: first21+5 unchanged helper fixtures; repaired service entry
+WAIT common mutex: original authored Erlang helper AST counts
+{"path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/helper-count-proposals.json", "sha256": "8ba774ecc399ec7dc94778db7afdce55ad20e1c0c1b8dbb0e808abc3be4e2d02", "measured_helper_copies": 51, "original_aliases": 10}

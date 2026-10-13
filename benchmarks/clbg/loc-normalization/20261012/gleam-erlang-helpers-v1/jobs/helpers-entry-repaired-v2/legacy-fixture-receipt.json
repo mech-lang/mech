@@ -1,0 +1,126 @@
+{
+  "status": "passed",
+  "expected_ids": [
+    "independent-bindings",
+    "tuple-data",
+    "call-arguments",
+    "list-data-and-comment",
+    "nested-block"
+  ],
+  "started_ids": [
+    "independent-bindings",
+    "tuple-data",
+    "call-arguments",
+    "list-data-and-comment",
+    "nested-block"
+  ],
+  "actual_cases": 5,
+  "failures": 0,
+  "errors": 0,
+  "skips": 0,
+  "raw_case_receipts": [
+    {
+      "id": "independent-bindings",
+      "expected": 5,
+      "actual": {
+        "physical_loc": 3,
+        "normalized_loc": 5,
+        "expansions": [
+          {
+            "line": 3,
+            "extra": 2,
+            "source": "f(X) -> Y = X, Z = X, Y + Z.",
+            "reason": "Actual original Erlang clause/block expression sequence; tuple/list/call/guard separators excluded"
+          }
+        ],
+        "actual_AST_stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/fixture-independent-bindings/original-source-AST-count.stdout",
+        "actual_command_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/fixture-independent-bindings/original-source-AST-count.json",
+        "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/fixture-independent-bindings.erl",
+        "original_source_sha256": "37292c386f55b7d0fde1386b8dc50f8b5843108a821d38de6c66b522a2261f58",
+        "source_language": "erlang",
+        "generated_source_substitute": false,
+        "chart_admission": false,
+        "semantic_admission": false
+      }
+    },
+    {
+      "id": "tuple-data",
+      "expected": 3,
+      "actual": {
+        "physical_loc": 3,
+        "normalized_loc": 3,
+        "expansions": [],
+        "actual_AST_stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/fixture-tuple-data/original-source-AST-count.stdout",
+        "actual_command_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/fixture-tuple-data/original-source-AST-count.json",
+        "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/fixture-tuple-data.erl",
+        "original_source_sha256": "6e9ab3545defadea6385a13921f0c15f2140e1ef2f2492c9f554f48812cf9bde",
+        "source_language": "erlang",
+        "generated_source_substitute": false,
+        "chart_admission": false,
+        "semantic_admission": false
+      }
+    },
+    {
+      "id": "call-arguments",
+      "expected": 3,
+      "actual": {
+        "physical_loc": 3,
+        "normalized_loc": 3,
+        "expansions": [],
+        "actual_AST_stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/fixture-call-arguments/original-source-AST-count.stdout",
+        "actual_command_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/fixture-call-arguments/original-source-AST-count.json",
+        "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/fixture-call-arguments.erl",
+        "original_source_sha256": "d2309332e4221f029a30171c2afb9cabcc5fde66a10681953209033687230bdb",
+        "source_language": "erlang",
+        "generated_source_substitute": false,
+        "chart_admission": false,
+        "semantic_admission": false
+      }
+    },
+    {
+      "id": "list-data-and-comment",
+      "expected": 3,
+      "actual": {
+        "physical_loc": 3,
+        "normalized_loc": 3,
+        "expansions": [],
+        "actual_AST_stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/fixture-list-data-and-comment/original-source-AST-count.stdout",
+        "actual_command_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/fixture-list-data-and-comment/original-source-AST-count.json",
+        "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/fixture-list-data-and-comment.erl",
+        "original_source_sha256": "e9101d54bfd5ac17bc175b2f154bc2e074e37a92b54359afa448401ded5f05e3",
+        "source_language": "erlang",
+        "generated_source_substitute": false,
+        "chart_admission": false,
+        "semantic_admission": false
+      }
+    },
+    {
+      "id": "nested-block",
+      "expected": 4,
+      "actual": {
+        "physical_loc": 3,
+        "normalized_loc": 4,
+        "expansions": [
+          {
+            "line": 3,
+            "extra": 1,
+            "source": "f(X) -> begin Y = X, Y end.",
+            "reason": "Actual original Erlang clause/block expression sequence; tuple/list/call/guard separators excluded"
+          }
+        ],
+        "actual_AST_stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/fixture-nested-block/original-source-AST-count.stdout",
+        "actual_command_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/fixture-nested-block/original-source-AST-count.json",
+        "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/fixture-nested-block.erl",
+        "original_source_sha256": "ba8efd964763cae48927395aeba3f55d24ba3c53aa760ed1c897cd54a9a2d111",
+        "source_language": "erlang",
+        "generated_source_substitute": false,
+        "chart_admission": false,
+        "semantic_admission": false
+      }
+    }
+  ],
+  "actual_common_mutex_held": true,
+  "actual_benchmark_processes": 0,
+  "original_counter_source_sha256": "4397dec13918804bf0fe83b454e1a187ed7da6e85988547b741a28fff36daf5b",
+  "metric": "preserved-legacy-expression-sequence-metric-not-relabelled-as-new-owner-metric"
+}

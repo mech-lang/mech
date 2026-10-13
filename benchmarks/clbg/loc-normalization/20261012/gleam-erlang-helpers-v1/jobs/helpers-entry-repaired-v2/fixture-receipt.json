@@ -1,0 +1,3070 @@
+{
+  "status": "passed-original-source-owner-fixtures",
+  "expected_ids": [
+    "named-header-and-value",
+    "inline-first-callback",
+    "expanded-first-callback",
+    "independent-callback-effect",
+    "two-real-callbacks",
+    "inline-receive-arm-body-close",
+    "expanded-receive-arm-body-close",
+    "nested-receive-two-outer-arms",
+    "packed-case-pattern-and-data",
+    "independent-case-arm-effect",
+    "runner-try-catch-two-effects",
+    "literal-keywords-and-separators",
+    "wrapped-data-retains-physical-row",
+    "independent-chained-matches",
+    "additional-anonymous-clause",
+    "unknown-authored-include",
+    "actual-parser-error",
+    "unknown-comprehension-owner",
+    "earlier-effect-before-callback",
+    "intervening-effect-between-callbacks",
+    "written-selector-matches-remain-gated"
+  ],
+  "started_ids": [
+    "named-header-and-value",
+    "inline-first-callback",
+    "expanded-first-callback",
+    "independent-callback-effect",
+    "two-real-callbacks",
+    "inline-receive-arm-body-close",
+    "expanded-receive-arm-body-close",
+    "nested-receive-two-outer-arms",
+    "packed-case-pattern-and-data",
+    "independent-case-arm-effect",
+    "runner-try-catch-two-effects",
+    "literal-keywords-and-separators",
+    "wrapped-data-retains-physical-row",
+    "independent-chained-matches",
+    "additional-anonymous-clause",
+    "unknown-authored-include",
+    "actual-parser-error",
+    "unknown-comprehension-owner",
+    "earlier-effect-before-callback",
+    "intervening-effect-between-callbacks",
+    "written-selector-matches-remain-gated"
+  ],
+  "actual_cases": 21,
+  "failures": 0,
+  "errors": 0,
+  "skips": 0,
+  "raw_case_receipts": [
+    {
+      "id": "named-header-and-value",
+      "expected_normalized_loc": 4,
+      "actual": {
+        "physical_loc": 3,
+        "normalized_loc": 4,
+        "canonical_events": [
+          {
+            "kind": "directive",
+            "start": 0,
+            "end": 24,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "-module(owner_fixture).\n"
+          },
+          {
+            "kind": "directive",
+            "start": 24,
+            "end": 40,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "-export([f/1]).\n"
+          },
+          {
+            "kind": "function-header",
+            "start": 40,
+            "end": 47,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "f(X) ->"
+          },
+          {
+            "kind": "body",
+            "start": 48,
+            "end": 49,
+            "units": 1,
+            "scope": "erlang-independent-expression-and-matches",
+            "original_source": "X"
+          }
+        ],
+        "expansions": [
+          {
+            "line": 1,
+            "original": "-module(owner_fixture).",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "directive",
+                "start": 0,
+                "end": 24,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "-module(owner_fixture).\n"
+              }
+            ]
+          },
+          {
+            "line": 2,
+            "original": "-export([f/1]).",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "directive",
+                "start": 24,
+                "end": 40,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "-export([f/1]).\n"
+              }
+            ]
+          },
+          {
+            "line": 3,
+            "original": "f(X) -> X.",
+            "units": 2,
+            "extra_lines": 1,
+            "canonical_events": [
+              {
+                "kind": "function-header",
+                "start": 40,
+                "end": 47,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "f(X) ->"
+              },
+              {
+                "kind": "body",
+                "start": 48,
+                "end": 49,
+                "units": 1,
+                "scope": "erlang-independent-expression-and-matches",
+                "original_source": "X"
+              }
+            ]
+          }
+        ],
+        "diagnostics": [],
+        "original_scanner_AST_binding": {
+          "function_names_arities_and_clause_body_counts_verified": true,
+          "original_control_locations_verified": true,
+          "all_original_form_order_directives_and_no_error_forms_verified": true,
+          "every_original_control_body_sequence_verified": true,
+          "every_written_arm_annotation_verified": true,
+          "selected_case_and_try_headers_hide_no_written_matches": true,
+          "actual_function_forms": 1,
+          "actual_nested_controls": 0
+        },
+        "proposal_only": true,
+        "generated_source_substitute": false,
+        "canonical_LOC_admitted": false,
+        "chart_admission": false,
+        "actual_original_scanner_AST_stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-named-header-and-value/original-source-scanner-AST.stdout",
+        "actual_command_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-named-header-and-value/original-source-scanner-AST.json",
+        "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-named-header-and-value.erl",
+        "original_source_sha256": "e85a7b4a975e6f51fcda9876e0a69e03f1aff83d457ad37e880c8196fa12cb85",
+        "source_language": "erlang",
+        "source_counter_metric": "explicit-original-clause-callback-control-arm-body-and-written-close-owners",
+        "semantic_admission": false,
+        "actual_AST_corruption_subcases": [
+          {
+            "id": "wrong-scanner-source-column",
+            "status": "rejected",
+            "diagnostics": [
+              {
+                "kind": "erlang-original-source-owner-review",
+                "message": "AssertionError"
+              }
+            ]
+          },
+          {
+            "id": "wrong-original-function-name",
+            "status": "rejected",
+            "diagnostics": [
+              {
+                "kind": "erlang-original-source-owner-review",
+                "message": "AssertionError"
+              }
+            ]
+          },
+          {
+            "id": "boolean-original-arity",
+            "status": "rejected",
+            "diagnostics": [
+              {
+                "kind": "erlang-original-source-owner-review",
+                "message": "AssertionError"
+              }
+            ]
+          },
+          {
+            "id": "omitted-original-body-expression",
+            "status": "rejected",
+            "diagnostics": [
+              {
+                "kind": "erlang-original-source-owner-review",
+                "message": "AssertionError"
+              }
+            ]
+          },
+          {
+            "id": "error-form-inside-claimed-success",
+            "status": "rejected",
+            "diagnostics": [
+              {
+                "kind": "erlang-original-source-owner-review",
+                "message": "AssertionError"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "inline-first-callback",
+      "expected_normalized_loc": 7,
+      "actual": {
+        "physical_loc": 3,
+        "normalized_loc": 7,
+        "canonical_events": [
+          {
+            "kind": "directive",
+            "start": 0,
+            "end": 24,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "-module(owner_fixture).\n"
+          },
+          {
+            "kind": "directive",
+            "start": 24,
+            "end": 40,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "-export([f/0]).\n"
+          },
+          {
+            "kind": "function-header",
+            "start": 40,
+            "end": 46,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "f() ->"
+          },
+          {
+            "kind": "header",
+            "start": 47,
+            "end": 75,
+            "units": 1,
+            "scope": "erlang-first-direct-prefix-composition",
+            "original_source": "Pid = spawn_monitor(fun() ->"
+          },
+          {
+            "kind": "body",
+            "start": 76,
+            "end": 90,
+            "units": 1,
+            "scope": "erlang-independent-expression-and-matches",
+            "original_source": "Owner ! work()"
+          },
+          {
+            "kind": "close",
+            "start": 91,
+            "end": 94,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "end"
+          },
+          {
+            "kind": "structural-suffix",
+            "start": 94,
+            "end": 95,
+            "units": 0,
+            "scope": "erlang-original-owner",
+            "original_source": ")"
+          },
+          {
+            "kind": "body",
+            "start": 97,
+            "end": 100,
+            "units": 1,
+            "scope": "erlang-independent-expression-and-matches",
+            "original_source": "Pid"
+          }
+        ],
+        "expansions": [
+          {
+            "line": 1,
+            "original": "-module(owner_fixture).",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "directive",
+                "start": 0,
+                "end": 24,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "-module(owner_fixture).\n"
+              }
+            ]
+          },
+          {
+            "line": 2,
+            "original": "-export([f/0]).",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "directive",
+                "start": 24,
+                "end": 40,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "-export([f/0]).\n"
+              }
+            ]
+          },
+          {
+            "line": 3,
+            "original": "f() -> Pid = spawn_monitor(fun() -> Owner ! work() end), Pid.",
+            "units": 5,
+            "extra_lines": 4,
+            "canonical_events": [
+              {
+                "kind": "function-header",
+                "start": 40,
+                "end": 46,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "f() ->"
+              },
+              {
+                "kind": "header",
+                "start": 47,
+                "end": 75,
+                "units": 1,
+                "scope": "erlang-first-direct-prefix-composition",
+                "original_source": "Pid = spawn_monitor(fun() ->"
+              },
+              {
+                "kind": "body",
+                "start": 76,
+                "end": 90,
+                "units": 1,
+                "scope": "erlang-independent-expression-and-matches",
+                "original_source": "Owner ! work()"
+              },
+              {
+                "kind": "close",
+                "start": 91,
+                "end": 94,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "end"
+              },
+              {
+                "kind": "structural-suffix",
+                "start": 94,
+                "end": 95,
+                "units": 0,
+                "scope": "erlang-original-owner",
+                "original_source": ")"
+              },
+              {
+                "kind": "body",
+                "start": 97,
+                "end": 100,
+                "units": 1,
+                "scope": "erlang-independent-expression-and-matches",
+                "original_source": "Pid"
+              }
+            ]
+          }
+        ],
+        "diagnostics": [],
+        "original_scanner_AST_binding": {
+          "function_names_arities_and_clause_body_counts_verified": true,
+          "original_control_locations_verified": true,
+          "all_original_form_order_directives_and_no_error_forms_verified": true,
+          "every_original_control_body_sequence_verified": true,
+          "every_written_arm_annotation_verified": true,
+          "selected_case_and_try_headers_hide_no_written_matches": true,
+          "actual_function_forms": 1,
+          "actual_nested_controls": 1
+        },
+        "proposal_only": true,
+        "generated_source_substitute": false,
+        "canonical_LOC_admitted": false,
+        "chart_admission": false,
+        "actual_original_scanner_AST_stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-inline-first-callback/original-source-scanner-AST.stdout",
+        "actual_command_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-inline-first-callback/original-source-scanner-AST.json",
+        "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-inline-first-callback.erl",
+        "original_source_sha256": "df502dd31abdb01d0785fc321a3dcee18712484ab2fecbb8673305656188805e",
+        "source_language": "erlang",
+        "source_counter_metric": "explicit-original-clause-callback-control-arm-body-and-written-close-owners",
+        "semantic_admission": false
+      }
+    },
+    {
+      "id": "expanded-first-callback",
+      "expected_normalized_loc": 7,
+      "actual": {
+        "physical_loc": 8,
+        "normalized_loc": 7,
+        "canonical_events": [
+          {
+            "kind": "directive",
+            "start": 0,
+            "end": 24,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "-module(owner_fixture).\n"
+          },
+          {
+            "kind": "directive",
+            "start": 24,
+            "end": 40,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "-export([f/0]).\n"
+          },
+          {
+            "kind": "function-header",
+            "start": 40,
+            "end": 46,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "f() ->"
+          },
+          {
+            "kind": "header",
+            "start": 49,
+            "end": 82,
+            "units": 1,
+            "scope": "erlang-first-direct-prefix-composition",
+            "original_source": "Pid = spawn_monitor(\n    fun() ->"
+          },
+          {
+            "kind": "body",
+            "start": 89,
+            "end": 103,
+            "units": 1,
+            "scope": "erlang-independent-expression-and-matches",
+            "original_source": "Owner ! work()"
+          },
+          {
+            "kind": "close",
+            "start": 108,
+            "end": 111,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "end"
+          },
+          {
+            "kind": "structural-suffix",
+            "start": 111,
+            "end": 112,
+            "units": 0,
+            "scope": "erlang-original-owner",
+            "original_source": ")"
+          },
+          {
+            "kind": "body",
+            "start": 116,
+            "end": 119,
+            "units": 1,
+            "scope": "erlang-independent-expression-and-matches",
+            "original_source": "Pid"
+          }
+        ],
+        "expansions": [
+          {
+            "line": 1,
+            "original": "-module(owner_fixture).",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "directive",
+                "start": 0,
+                "end": 24,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "-module(owner_fixture).\n"
+              }
+            ]
+          },
+          {
+            "line": 2,
+            "original": "-export([f/0]).",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "directive",
+                "start": 24,
+                "end": 40,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "-export([f/0]).\n"
+              }
+            ]
+          },
+          {
+            "line": 3,
+            "original": "f() ->",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "function-header",
+                "start": 40,
+                "end": 46,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "f() ->"
+              }
+            ]
+          },
+          {
+            "line": 4,
+            "original": "  Pid = spawn_monitor(",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "header",
+                "start": 49,
+                "end": 82,
+                "units": 1,
+                "scope": "erlang-first-direct-prefix-composition",
+                "original_source": "Pid = spawn_monitor(\n    fun() ->"
+              }
+            ]
+          },
+          {
+            "line": 5,
+            "original": "    fun() ->",
+            "units": 0,
+            "extra_lines": -1,
+            "canonical_events": []
+          },
+          {
+            "line": 6,
+            "original": "      Owner ! work()",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "body",
+                "start": 89,
+                "end": 103,
+                "units": 1,
+                "scope": "erlang-independent-expression-and-matches",
+                "original_source": "Owner ! work()"
+              }
+            ]
+          },
+          {
+            "line": 7,
+            "original": "    end),",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "close",
+                "start": 108,
+                "end": 111,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "end"
+              },
+              {
+                "kind": "structural-suffix",
+                "start": 111,
+                "end": 112,
+                "units": 0,
+                "scope": "erlang-original-owner",
+                "original_source": ")"
+              }
+            ]
+          },
+          {
+            "line": 8,
+            "original": "  Pid.",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "body",
+                "start": 116,
+                "end": 119,
+                "units": 1,
+                "scope": "erlang-independent-expression-and-matches",
+                "original_source": "Pid"
+              }
+            ]
+          }
+        ],
+        "diagnostics": [],
+        "original_scanner_AST_binding": {
+          "function_names_arities_and_clause_body_counts_verified": true,
+          "original_control_locations_verified": true,
+          "all_original_form_order_directives_and_no_error_forms_verified": true,
+          "every_original_control_body_sequence_verified": true,
+          "every_written_arm_annotation_verified": true,
+          "selected_case_and_try_headers_hide_no_written_matches": true,
+          "actual_function_forms": 1,
+          "actual_nested_controls": 1
+        },
+        "proposal_only": true,
+        "generated_source_substitute": false,
+        "canonical_LOC_admitted": false,
+        "chart_admission": false,
+        "actual_original_scanner_AST_stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-expanded-first-callback/original-source-scanner-AST.stdout",
+        "actual_command_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-expanded-first-callback/original-source-scanner-AST.json",
+        "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-expanded-first-callback.erl",
+        "original_source_sha256": "a997261192d6397d5bb855fce91d3e6e42cc29eebcfe8385de6978a96111f33f",
+        "source_language": "erlang",
+        "source_counter_metric": "explicit-original-clause-callback-control-arm-body-and-written-close-owners",
+        "semantic_admission": false
+      }
+    },
+    {
+      "id": "independent-callback-effect",
+      "expected_normalized_loc": 8,
+      "actual": {
+        "physical_loc": 3,
+        "normalized_loc": 8,
+        "canonical_events": [
+          {
+            "kind": "directive",
+            "start": 0,
+            "end": 24,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "-module(owner_fixture).\n"
+          },
+          {
+            "kind": "directive",
+            "start": 24,
+            "end": 40,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "-export([f/0]).\n"
+          },
+          {
+            "kind": "function-header",
+            "start": 40,
+            "end": 46,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "f() ->"
+          },
+          {
+            "kind": "header",
+            "start": 47,
+            "end": 75,
+            "units": 1,
+            "scope": "erlang-first-direct-prefix-composition",
+            "original_source": "Pid = spawn_monitor(fun() ->"
+          },
+          {
+            "kind": "body",
+            "start": 76,
+            "end": 84,
+            "units": 1,
+            "scope": "erlang-independent-expression-and-matches",
+            "original_source": "report()"
+          },
+          {
+            "kind": "body",
+            "start": 86,
+            "end": 100,
+            "units": 1,
+            "scope": "erlang-independent-expression-and-matches",
+            "original_source": "Owner ! work()"
+          },
+          {
+            "kind": "close",
+            "start": 101,
+            "end": 104,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "end"
+          },
+          {
+            "kind": "structural-suffix",
+            "start": 104,
+            "end": 105,
+            "units": 0,
+            "scope": "erlang-original-owner",
+            "original_source": ")"
+          },
+          {
+            "kind": "body",
+            "start": 107,
+            "end": 110,
+            "units": 1,
+            "scope": "erlang-independent-expression-and-matches",
+            "original_source": "Pid"
+          }
+        ],
+        "expansions": [
+          {
+            "line": 1,
+            "original": "-module(owner_fixture).",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "directive",
+                "start": 0,
+                "end": 24,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "-module(owner_fixture).\n"
+              }
+            ]
+          },
+          {
+            "line": 2,
+            "original": "-export([f/0]).",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "directive",
+                "start": 24,
+                "end": 40,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "-export([f/0]).\n"
+              }
+            ]
+          },
+          {
+            "line": 3,
+            "original": "f() -> Pid = spawn_monitor(fun() -> report(), Owner ! work() end), Pid.",
+            "units": 6,
+            "extra_lines": 5,
+            "canonical_events": [
+              {
+                "kind": "function-header",
+                "start": 40,
+                "end": 46,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "f() ->"
+              },
+              {
+                "kind": "header",
+                "start": 47,
+                "end": 75,
+                "units": 1,
+                "scope": "erlang-first-direct-prefix-composition",
+                "original_source": "Pid = spawn_monitor(fun() ->"
+              },
+              {
+                "kind": "body",
+                "start": 76,
+                "end": 84,
+                "units": 1,
+                "scope": "erlang-independent-expression-and-matches",
+                "original_source": "report()"
+              },
+              {
+                "kind": "body",
+                "start": 86,
+                "end": 100,
+                "units": 1,
+                "scope": "erlang-independent-expression-and-matches",
+                "original_source": "Owner ! work()"
+              },
+              {
+                "kind": "close",
+                "start": 101,
+                "end": 104,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "end"
+              },
+              {
+                "kind": "structural-suffix",
+                "start": 104,
+                "end": 105,
+                "units": 0,
+                "scope": "erlang-original-owner",
+                "original_source": ")"
+              },
+              {
+                "kind": "body",
+                "start": 107,
+                "end": 110,
+                "units": 1,
+                "scope": "erlang-independent-expression-and-matches",
+                "original_source": "Pid"
+              }
+            ]
+          }
+        ],
+        "diagnostics": [],
+        "original_scanner_AST_binding": {
+          "function_names_arities_and_clause_body_counts_verified": true,
+          "original_control_locations_verified": true,
+          "all_original_form_order_directives_and_no_error_forms_verified": true,
+          "every_original_control_body_sequence_verified": true,
+          "every_written_arm_annotation_verified": true,
+          "selected_case_and_try_headers_hide_no_written_matches": true,
+          "actual_function_forms": 1,
+          "actual_nested_controls": 1
+        },
+        "proposal_only": true,
+        "generated_source_substitute": false,
+        "canonical_LOC_admitted": false,
+        "chart_admission": false,
+        "actual_original_scanner_AST_stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-independent-callback-effect/original-source-scanner-AST.stdout",
+        "actual_command_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-independent-callback-effect/original-source-scanner-AST.json",
+        "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-independent-callback-effect.erl",
+        "original_source_sha256": "e9138a0d59619c6333a9653777a7df8fd29a4d46921f3beada0aacc7231cc64c",
+        "source_language": "erlang",
+        "source_counter_metric": "explicit-original-clause-callback-control-arm-body-and-written-close-owners",
+        "semantic_admission": false
+      }
+    },
+    {
+      "id": "two-real-callbacks",
+      "expected_normalized_loc": 9,
+      "actual": {
+        "physical_loc": 3,
+        "normalized_loc": 9,
+        "canonical_events": [
+          {
+            "kind": "directive",
+            "start": 0,
+            "end": 24,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "-module(owner_fixture).\n"
+          },
+          {
+            "kind": "directive",
+            "start": 24,
+            "end": 40,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "-export([f/0]).\n"
+          },
+          {
+            "kind": "function-header",
+            "start": 40,
+            "end": 46,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "f() ->"
+          },
+          {
+            "kind": "header",
+            "start": 47,
+            "end": 60,
+            "units": 1,
+            "scope": "erlang-first-direct-prefix-composition",
+            "original_source": "pair(fun() ->"
+          },
+          {
+            "kind": "body",
+            "start": 61,
+            "end": 64,
+            "units": 1,
+            "scope": "erlang-independent-expression-and-matches",
+            "original_source": "a()"
+          },
+          {
+            "kind": "close",
+            "start": 65,
+            "end": 68,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "end"
+          },
+          {
+            "kind": "header",
+            "start": 70,
+            "end": 78,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "fun() ->"
+          },
+          {
+            "kind": "body",
+            "start": 79,
+            "end": 82,
+            "units": 1,
+            "scope": "erlang-independent-expression-and-matches",
+            "original_source": "b()"
+          },
+          {
+            "kind": "close",
+            "start": 83,
+            "end": 86,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "end"
+          },
+          {
+            "kind": "structural-suffix",
+            "start": 86,
+            "end": 87,
+            "units": 0,
+            "scope": "erlang-original-owner",
+            "original_source": ")"
+          }
+        ],
+        "expansions": [
+          {
+            "line": 1,
+            "original": "-module(owner_fixture).",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "directive",
+                "start": 0,
+                "end": 24,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "-module(owner_fixture).\n"
+              }
+            ]
+          },
+          {
+            "line": 2,
+            "original": "-export([f/0]).",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "directive",
+                "start": 24,
+                "end": 40,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "-export([f/0]).\n"
+              }
+            ]
+          },
+          {
+            "line": 3,
+            "original": "f() -> pair(fun() -> a() end, fun() -> b() end).",
+            "units": 7,
+            "extra_lines": 6,
+            "canonical_events": [
+              {
+                "kind": "function-header",
+                "start": 40,
+                "end": 46,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "f() ->"
+              },
+              {
+                "kind": "header",
+                "start": 47,
+                "end": 60,
+                "units": 1,
+                "scope": "erlang-first-direct-prefix-composition",
+                "original_source": "pair(fun() ->"
+              },
+              {
+                "kind": "body",
+                "start": 61,
+                "end": 64,
+                "units": 1,
+                "scope": "erlang-independent-expression-and-matches",
+                "original_source": "a()"
+              },
+              {
+                "kind": "close",
+                "start": 65,
+                "end": 68,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "end"
+              },
+              {
+                "kind": "header",
+                "start": 70,
+                "end": 78,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "fun() ->"
+              },
+              {
+                "kind": "body",
+                "start": 79,
+                "end": 82,
+                "units": 1,
+                "scope": "erlang-independent-expression-and-matches",
+                "original_source": "b()"
+              },
+              {
+                "kind": "close",
+                "start": 83,
+                "end": 86,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "end"
+              },
+              {
+                "kind": "structural-suffix",
+                "start": 86,
+                "end": 87,
+                "units": 0,
+                "scope": "erlang-original-owner",
+                "original_source": ")"
+              }
+            ]
+          }
+        ],
+        "diagnostics": [],
+        "original_scanner_AST_binding": {
+          "function_names_arities_and_clause_body_counts_verified": true,
+          "original_control_locations_verified": true,
+          "all_original_form_order_directives_and_no_error_forms_verified": true,
+          "every_original_control_body_sequence_verified": true,
+          "every_written_arm_annotation_verified": true,
+          "selected_case_and_try_headers_hide_no_written_matches": true,
+          "actual_function_forms": 1,
+          "actual_nested_controls": 2
+        },
+        "proposal_only": true,
+        "generated_source_substitute": false,
+        "canonical_LOC_admitted": false,
+        "chart_admission": false,
+        "actual_original_scanner_AST_stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-two-real-callbacks/original-source-scanner-AST.stdout",
+        "actual_command_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-two-real-callbacks/original-source-scanner-AST.json",
+        "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-two-real-callbacks.erl",
+        "original_source_sha256": "45c9753ba74adc583295495b0ed4ad393baff2d04375db1719b9031c3220fe53",
+        "source_language": "erlang",
+        "source_counter_metric": "explicit-original-clause-callback-control-arm-body-and-written-close-owners",
+        "semantic_admission": false
+      }
+    },
+    {
+      "id": "inline-receive-arm-body-close",
+      "expected_normalized_loc": 7,
+      "actual": {
+        "physical_loc": 3,
+        "normalized_loc": 7,
+        "canonical_events": [
+          {
+            "kind": "directive",
+            "start": 0,
+            "end": 24,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "-module(owner_fixture).\n"
+          },
+          {
+            "kind": "directive",
+            "start": 24,
+            "end": 40,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "-export([f/0]).\n"
+          },
+          {
+            "kind": "function-header",
+            "start": 40,
+            "end": 46,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "f() ->"
+          },
+          {
+            "kind": "header",
+            "start": 47,
+            "end": 54,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "receive"
+          },
+          {
+            "kind": "arm",
+            "start": 55,
+            "end": 66,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "{tag, V} ->"
+          },
+          {
+            "kind": "body",
+            "start": 67,
+            "end": 68,
+            "units": 1,
+            "scope": "erlang-independent-expression-and-matches",
+            "original_source": "V"
+          },
+          {
+            "kind": "close",
+            "start": 69,
+            "end": 72,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "end"
+          }
+        ],
+        "expansions": [
+          {
+            "line": 1,
+            "original": "-module(owner_fixture).",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "directive",
+                "start": 0,
+                "end": 24,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "-module(owner_fixture).\n"
+              }
+            ]
+          },
+          {
+            "line": 2,
+            "original": "-export([f/0]).",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "directive",
+                "start": 24,
+                "end": 40,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "-export([f/0]).\n"
+              }
+            ]
+          },
+          {
+            "line": 3,
+            "original": "f() -> receive {tag, V} -> V end.",
+            "units": 5,
+            "extra_lines": 4,
+            "canonical_events": [
+              {
+                "kind": "function-header",
+                "start": 40,
+                "end": 46,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "f() ->"
+              },
+              {
+                "kind": "header",
+                "start": 47,
+                "end": 54,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "receive"
+              },
+              {
+                "kind": "arm",
+                "start": 55,
+                "end": 66,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "{tag, V} ->"
+              },
+              {
+                "kind": "body",
+                "start": 67,
+                "end": 68,
+                "units": 1,
+                "scope": "erlang-independent-expression-and-matches",
+                "original_source": "V"
+              },
+              {
+                "kind": "close",
+                "start": 69,
+                "end": 72,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "end"
+              }
+            ]
+          }
+        ],
+        "diagnostics": [],
+        "original_scanner_AST_binding": {
+          "function_names_arities_and_clause_body_counts_verified": true,
+          "original_control_locations_verified": true,
+          "all_original_form_order_directives_and_no_error_forms_verified": true,
+          "every_original_control_body_sequence_verified": true,
+          "every_written_arm_annotation_verified": true,
+          "selected_case_and_try_headers_hide_no_written_matches": true,
+          "actual_function_forms": 1,
+          "actual_nested_controls": 1
+        },
+        "proposal_only": true,
+        "generated_source_substitute": false,
+        "canonical_LOC_admitted": false,
+        "chart_admission": false,
+        "actual_original_scanner_AST_stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-inline-receive-arm-body-close/original-source-scanner-AST.stdout",
+        "actual_command_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-inline-receive-arm-body-close/original-source-scanner-AST.json",
+        "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-inline-receive-arm-body-close.erl",
+        "original_source_sha256": "b158bd67e7437b60460047caae01b1ab78a09bb26dd639acf5aedbac5729e8f2",
+        "source_language": "erlang",
+        "source_counter_metric": "explicit-original-clause-callback-control-arm-body-and-written-close-owners",
+        "semantic_admission": false,
+        "actual_AST_corruption_subcases": [
+          {
+            "id": "unrelated-original-control-location",
+            "status": "rejected",
+            "diagnostics": [
+              {
+                "kind": "erlang-original-source-owner-review",
+                "message": "AssertionError"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "expanded-receive-arm-body-close",
+      "expected_normalized_loc": 7,
+      "actual": {
+        "physical_loc": 7,
+        "normalized_loc": 7,
+        "canonical_events": [
+          {
+            "kind": "directive",
+            "start": 0,
+            "end": 24,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "-module(owner_fixture).\n"
+          },
+          {
+            "kind": "directive",
+            "start": 24,
+            "end": 40,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "-export([f/0]).\n"
+          },
+          {
+            "kind": "function-header",
+            "start": 40,
+            "end": 46,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "f() ->"
+          },
+          {
+            "kind": "header",
+            "start": 49,
+            "end": 56,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "receive"
+          },
+          {
+            "kind": "arm",
+            "start": 61,
+            "end": 72,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "{tag, V} ->"
+          },
+          {
+            "kind": "body",
+            "start": 79,
+            "end": 80,
+            "units": 1,
+            "scope": "erlang-independent-expression-and-matches",
+            "original_source": "V"
+          },
+          {
+            "kind": "close",
+            "start": 83,
+            "end": 86,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "end"
+          }
+        ],
+        "expansions": [
+          {
+            "line": 1,
+            "original": "-module(owner_fixture).",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "directive",
+                "start": 0,
+                "end": 24,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "-module(owner_fixture).\n"
+              }
+            ]
+          },
+          {
+            "line": 2,
+            "original": "-export([f/0]).",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "directive",
+                "start": 24,
+                "end": 40,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "-export([f/0]).\n"
+              }
+            ]
+          },
+          {
+            "line": 3,
+            "original": "f() ->",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "function-header",
+                "start": 40,
+                "end": 46,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "f() ->"
+              }
+            ]
+          },
+          {
+            "line": 4,
+            "original": "  receive",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "header",
+                "start": 49,
+                "end": 56,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "receive"
+              }
+            ]
+          },
+          {
+            "line": 5,
+            "original": "    {tag, V} ->",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "arm",
+                "start": 61,
+                "end": 72,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "{tag, V} ->"
+              }
+            ]
+          },
+          {
+            "line": 6,
+            "original": "      V",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "body",
+                "start": 79,
+                "end": 80,
+                "units": 1,
+                "scope": "erlang-independent-expression-and-matches",
+                "original_source": "V"
+              }
+            ]
+          },
+          {
+            "line": 7,
+            "original": "  end.",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "close",
+                "start": 83,
+                "end": 86,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "end"
+              }
+            ]
+          }
+        ],
+        "diagnostics": [],
+        "original_scanner_AST_binding": {
+          "function_names_arities_and_clause_body_counts_verified": true,
+          "original_control_locations_verified": true,
+          "all_original_form_order_directives_and_no_error_forms_verified": true,
+          "every_original_control_body_sequence_verified": true,
+          "every_written_arm_annotation_verified": true,
+          "selected_case_and_try_headers_hide_no_written_matches": true,
+          "actual_function_forms": 1,
+          "actual_nested_controls": 1
+        },
+        "proposal_only": true,
+        "generated_source_substitute": false,
+        "canonical_LOC_admitted": false,
+        "chart_admission": false,
+        "actual_original_scanner_AST_stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-expanded-receive-arm-body-close/original-source-scanner-AST.stdout",
+        "actual_command_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-expanded-receive-arm-body-close/original-source-scanner-AST.json",
+        "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-expanded-receive-arm-body-close.erl",
+        "original_source_sha256": "b18fe37347c4716ecd41ec81fc82695978c31376d7dcd5c1b042eb62b34064e4",
+        "source_language": "erlang",
+        "source_counter_metric": "explicit-original-clause-callback-control-arm-body-and-written-close-owners",
+        "semantic_admission": false
+      }
+    },
+    {
+      "id": "nested-receive-two-outer-arms",
+      "expected_normalized_loc": 12,
+      "actual": {
+        "physical_loc": 3,
+        "normalized_loc": 12,
+        "canonical_events": [
+          {
+            "kind": "directive",
+            "start": 0,
+            "end": 24,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "-module(owner_fixture).\n"
+          },
+          {
+            "kind": "directive",
+            "start": 24,
+            "end": 40,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "-export([f/0]).\n"
+          },
+          {
+            "kind": "function-header",
+            "start": 40,
+            "end": 46,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "f() ->"
+          },
+          {
+            "kind": "header",
+            "start": 47,
+            "end": 54,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "receive"
+          },
+          {
+            "kind": "arm",
+            "start": 55,
+            "end": 66,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "{tag, V} ->"
+          },
+          {
+            "kind": "header",
+            "start": 67,
+            "end": 74,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "receive"
+          },
+          {
+            "kind": "arm",
+            "start": 75,
+            "end": 80,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "ok ->"
+          },
+          {
+            "kind": "body",
+            "start": 81,
+            "end": 82,
+            "units": 1,
+            "scope": "erlang-independent-expression-and-matches",
+            "original_source": "V"
+          },
+          {
+            "kind": "close",
+            "start": 83,
+            "end": 86,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "end"
+          },
+          {
+            "kind": "arm",
+            "start": 88,
+            "end": 98,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "missing ->"
+          },
+          {
+            "kind": "body",
+            "start": 99,
+            "end": 104,
+            "units": 1,
+            "scope": "erlang-independent-expression-and-matches",
+            "original_source": "error"
+          },
+          {
+            "kind": "close",
+            "start": 105,
+            "end": 108,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "end"
+          }
+        ],
+        "expansions": [
+          {
+            "line": 1,
+            "original": "-module(owner_fixture).",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "directive",
+                "start": 0,
+                "end": 24,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "-module(owner_fixture).\n"
+              }
+            ]
+          },
+          {
+            "line": 2,
+            "original": "-export([f/0]).",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "directive",
+                "start": 24,
+                "end": 40,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "-export([f/0]).\n"
+              }
+            ]
+          },
+          {
+            "line": 3,
+            "original": "f() -> receive {tag, V} -> receive ok -> V end; missing -> error end.",
+            "units": 10,
+            "extra_lines": 9,
+            "canonical_events": [
+              {
+                "kind": "function-header",
+                "start": 40,
+                "end": 46,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "f() ->"
+              },
+              {
+                "kind": "header",
+                "start": 47,
+                "end": 54,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "receive"
+              },
+              {
+                "kind": "arm",
+                "start": 55,
+                "end": 66,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "{tag, V} ->"
+              },
+              {
+                "kind": "header",
+                "start": 67,
+                "end": 74,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "receive"
+              },
+              {
+                "kind": "arm",
+                "start": 75,
+                "end": 80,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "ok ->"
+              },
+              {
+                "kind": "body",
+                "start": 81,
+                "end": 82,
+                "units": 1,
+                "scope": "erlang-independent-expression-and-matches",
+                "original_source": "V"
+              },
+              {
+                "kind": "close",
+                "start": 83,
+                "end": 86,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "end"
+              },
+              {
+                "kind": "arm",
+                "start": 88,
+                "end": 98,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "missing ->"
+              },
+              {
+                "kind": "body",
+                "start": 99,
+                "end": 104,
+                "units": 1,
+                "scope": "erlang-independent-expression-and-matches",
+                "original_source": "error"
+              },
+              {
+                "kind": "close",
+                "start": 105,
+                "end": 108,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "end"
+              }
+            ]
+          }
+        ],
+        "diagnostics": [],
+        "original_scanner_AST_binding": {
+          "function_names_arities_and_clause_body_counts_verified": true,
+          "original_control_locations_verified": true,
+          "all_original_form_order_directives_and_no_error_forms_verified": true,
+          "every_original_control_body_sequence_verified": true,
+          "every_written_arm_annotation_verified": true,
+          "selected_case_and_try_headers_hide_no_written_matches": true,
+          "actual_function_forms": 1,
+          "actual_nested_controls": 2
+        },
+        "proposal_only": true,
+        "generated_source_substitute": false,
+        "canonical_LOC_admitted": false,
+        "chart_admission": false,
+        "actual_original_scanner_AST_stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-nested-receive-two-outer-arms/original-source-scanner-AST.stdout",
+        "actual_command_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-nested-receive-two-outer-arms/original-source-scanner-AST.json",
+        "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-nested-receive-two-outer-arms.erl",
+        "original_source_sha256": "90222a1f12141d9a4faa52e3de31cebec64412d89f03daad361afac8632a5a51",
+        "source_language": "erlang",
+        "source_counter_metric": "explicit-original-clause-callback-control-arm-body-and-written-close-owners",
+        "semantic_admission": false
+      }
+    },
+    {
+      "id": "packed-case-pattern-and-data",
+      "expected_normalized_loc": 9,
+      "actual": {
+        "physical_loc": 3,
+        "normalized_loc": 9,
+        "canonical_events": [
+          {
+            "kind": "directive",
+            "start": 0,
+            "end": 24,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "-module(owner_fixture).\n"
+          },
+          {
+            "kind": "directive",
+            "start": 24,
+            "end": 40,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "-export([f/1]).\n"
+          },
+          {
+            "kind": "function-header",
+            "start": 40,
+            "end": 47,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "f(X) ->"
+          },
+          {
+            "kind": "header",
+            "start": 48,
+            "end": 57,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "case X of"
+          },
+          {
+            "kind": "arm",
+            "start": 58,
+            "end": 67,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "{a, V} ->"
+          },
+          {
+            "kind": "body",
+            "start": 68,
+            "end": 75,
+            "units": 1,
+            "scope": "erlang-independent-expression-and-matches",
+            "original_source": "{ok, V}"
+          },
+          {
+            "kind": "arm",
+            "start": 77,
+            "end": 84,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "none ->"
+          },
+          {
+            "kind": "body",
+            "start": 85,
+            "end": 90,
+            "units": 1,
+            "scope": "erlang-independent-expression-and-matches",
+            "original_source": "error"
+          },
+          {
+            "kind": "close",
+            "start": 91,
+            "end": 94,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "end"
+          }
+        ],
+        "expansions": [
+          {
+            "line": 1,
+            "original": "-module(owner_fixture).",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "directive",
+                "start": 0,
+                "end": 24,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "-module(owner_fixture).\n"
+              }
+            ]
+          },
+          {
+            "line": 2,
+            "original": "-export([f/1]).",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "directive",
+                "start": 24,
+                "end": 40,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "-export([f/1]).\n"
+              }
+            ]
+          },
+          {
+            "line": 3,
+            "original": "f(X) -> case X of {a, V} -> {ok, V}; none -> error end.",
+            "units": 7,
+            "extra_lines": 6,
+            "canonical_events": [
+              {
+                "kind": "function-header",
+                "start": 40,
+                "end": 47,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "f(X) ->"
+              },
+              {
+                "kind": "header",
+                "start": 48,
+                "end": 57,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "case X of"
+              },
+              {
+                "kind": "arm",
+                "start": 58,
+                "end": 67,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "{a, V} ->"
+              },
+              {
+                "kind": "body",
+                "start": 68,
+                "end": 75,
+                "units": 1,
+                "scope": "erlang-independent-expression-and-matches",
+                "original_source": "{ok, V}"
+              },
+              {
+                "kind": "arm",
+                "start": 77,
+                "end": 84,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "none ->"
+              },
+              {
+                "kind": "body",
+                "start": 85,
+                "end": 90,
+                "units": 1,
+                "scope": "erlang-independent-expression-and-matches",
+                "original_source": "error"
+              },
+              {
+                "kind": "close",
+                "start": 91,
+                "end": 94,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "end"
+              }
+            ]
+          }
+        ],
+        "diagnostics": [],
+        "original_scanner_AST_binding": {
+          "function_names_arities_and_clause_body_counts_verified": true,
+          "original_control_locations_verified": true,
+          "all_original_form_order_directives_and_no_error_forms_verified": true,
+          "every_original_control_body_sequence_verified": true,
+          "every_written_arm_annotation_verified": true,
+          "selected_case_and_try_headers_hide_no_written_matches": true,
+          "actual_function_forms": 1,
+          "actual_nested_controls": 1
+        },
+        "proposal_only": true,
+        "generated_source_substitute": false,
+        "canonical_LOC_admitted": false,
+        "chart_admission": false,
+        "actual_original_scanner_AST_stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-packed-case-pattern-and-data/original-source-scanner-AST.stdout",
+        "actual_command_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-packed-case-pattern-and-data/original-source-scanner-AST.json",
+        "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-packed-case-pattern-and-data.erl",
+        "original_source_sha256": "d5fae9a1723753d092423922e4d00695f0e5ca76eef446aa7087e9bbd717e373",
+        "source_language": "erlang",
+        "source_counter_metric": "explicit-original-clause-callback-control-arm-body-and-written-close-owners",
+        "semantic_admission": false
+      }
+    },
+    {
+      "id": "independent-case-arm-effect",
+      "expected_normalized_loc": 10,
+      "actual": {
+        "physical_loc": 3,
+        "normalized_loc": 10,
+        "canonical_events": [
+          {
+            "kind": "directive",
+            "start": 0,
+            "end": 24,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "-module(owner_fixture).\n"
+          },
+          {
+            "kind": "directive",
+            "start": 24,
+            "end": 40,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "-export([f/1]).\n"
+          },
+          {
+            "kind": "function-header",
+            "start": 40,
+            "end": 47,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "f(X) ->"
+          },
+          {
+            "kind": "header",
+            "start": 48,
+            "end": 57,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "case X of"
+          },
+          {
+            "kind": "arm",
+            "start": 58,
+            "end": 67,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "{a, V} ->"
+          },
+          {
+            "kind": "body",
+            "start": 68,
+            "end": 85,
+            "units": 1,
+            "scope": "erlang-independent-expression-and-matches",
+            "original_source": "io:format(\"\", [])"
+          },
+          {
+            "kind": "body",
+            "start": 87,
+            "end": 94,
+            "units": 1,
+            "scope": "erlang-independent-expression-and-matches",
+            "original_source": "{ok, V}"
+          },
+          {
+            "kind": "arm",
+            "start": 96,
+            "end": 103,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "none ->"
+          },
+          {
+            "kind": "body",
+            "start": 104,
+            "end": 109,
+            "units": 1,
+            "scope": "erlang-independent-expression-and-matches",
+            "original_source": "error"
+          },
+          {
+            "kind": "close",
+            "start": 110,
+            "end": 113,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "end"
+          }
+        ],
+        "expansions": [
+          {
+            "line": 1,
+            "original": "-module(owner_fixture).",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "directive",
+                "start": 0,
+                "end": 24,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "-module(owner_fixture).\n"
+              }
+            ]
+          },
+          {
+            "line": 2,
+            "original": "-export([f/1]).",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "directive",
+                "start": 24,
+                "end": 40,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "-export([f/1]).\n"
+              }
+            ]
+          },
+          {
+            "line": 3,
+            "original": "f(X) -> case X of {a, V} -> io:format(\"\", []), {ok, V}; none -> error end.",
+            "units": 8,
+            "extra_lines": 7,
+            "canonical_events": [
+              {
+                "kind": "function-header",
+                "start": 40,
+                "end": 47,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "f(X) ->"
+              },
+              {
+                "kind": "header",
+                "start": 48,
+                "end": 57,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "case X of"
+              },
+              {
+                "kind": "arm",
+                "start": 58,
+                "end": 67,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "{a, V} ->"
+              },
+              {
+                "kind": "body",
+                "start": 68,
+                "end": 85,
+                "units": 1,
+                "scope": "erlang-independent-expression-and-matches",
+                "original_source": "io:format(\"\", [])"
+              },
+              {
+                "kind": "body",
+                "start": 87,
+                "end": 94,
+                "units": 1,
+                "scope": "erlang-independent-expression-and-matches",
+                "original_source": "{ok, V}"
+              },
+              {
+                "kind": "arm",
+                "start": 96,
+                "end": 103,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "none ->"
+              },
+              {
+                "kind": "body",
+                "start": 104,
+                "end": 109,
+                "units": 1,
+                "scope": "erlang-independent-expression-and-matches",
+                "original_source": "error"
+              },
+              {
+                "kind": "close",
+                "start": 110,
+                "end": 113,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "end"
+              }
+            ]
+          }
+        ],
+        "diagnostics": [],
+        "original_scanner_AST_binding": {
+          "function_names_arities_and_clause_body_counts_verified": true,
+          "original_control_locations_verified": true,
+          "all_original_form_order_directives_and_no_error_forms_verified": true,
+          "every_original_control_body_sequence_verified": true,
+          "every_written_arm_annotation_verified": true,
+          "selected_case_and_try_headers_hide_no_written_matches": true,
+          "actual_function_forms": 1,
+          "actual_nested_controls": 1
+        },
+        "proposal_only": true,
+        "generated_source_substitute": false,
+        "canonical_LOC_admitted": false,
+        "chart_admission": false,
+        "actual_original_scanner_AST_stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-independent-case-arm-effect/original-source-scanner-AST.stdout",
+        "actual_command_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-independent-case-arm-effect/original-source-scanner-AST.json",
+        "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-independent-case-arm-effect.erl",
+        "original_source_sha256": "ca199f226291fd144713384c07c8e0ae425aae0282d2caa0d30f1d8fc4dbc9b7",
+        "source_language": "erlang",
+        "source_counter_metric": "explicit-original-clause-callback-control-arm-body-and-written-close-owners",
+        "semantic_admission": false
+      }
+    },
+    {
+      "id": "runner-try-catch-two-effects",
+      "expected_normalized_loc": 10,
+      "actual": {
+        "physical_loc": 3,
+        "normalized_loc": 10,
+        "canonical_events": [
+          {
+            "kind": "directive",
+            "start": 0,
+            "end": 24,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "-module(owner_fixture).\n"
+          },
+          {
+            "kind": "directive",
+            "start": 24,
+            "end": 40,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "-export([f/0]).\n"
+          },
+          {
+            "kind": "function-header",
+            "start": 40,
+            "end": 46,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "f() ->"
+          },
+          {
+            "kind": "header",
+            "start": 47,
+            "end": 70,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "try benchmark:main() of"
+          },
+          {
+            "kind": "arm",
+            "start": 71,
+            "end": 75,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "_ ->"
+          },
+          {
+            "kind": "body",
+            "start": 76,
+            "end": 78,
+            "units": 1,
+            "scope": "erlang-independent-expression-and-matches",
+            "original_source": "ok"
+          },
+          {
+            "kind": "arm",
+            "start": 79,
+            "end": 93,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "catch C:R:S ->"
+          },
+          {
+            "kind": "body",
+            "start": 94,
+            "end": 111,
+            "units": 1,
+            "scope": "erlang-independent-expression-and-matches",
+            "original_source": "io:format(\"\", [])"
+          },
+          {
+            "kind": "body",
+            "start": 113,
+            "end": 120,
+            "units": 1,
+            "scope": "erlang-independent-expression-and-matches",
+            "original_source": "halt(2)"
+          },
+          {
+            "kind": "close",
+            "start": 121,
+            "end": 124,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "end"
+          }
+        ],
+        "expansions": [
+          {
+            "line": 1,
+            "original": "-module(owner_fixture).",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "directive",
+                "start": 0,
+                "end": 24,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "-module(owner_fixture).\n"
+              }
+            ]
+          },
+          {
+            "line": 2,
+            "original": "-export([f/0]).",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "directive",
+                "start": 24,
+                "end": 40,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "-export([f/0]).\n"
+              }
+            ]
+          },
+          {
+            "line": 3,
+            "original": "f() -> try benchmark:main() of _ -> ok catch C:R:S -> io:format(\"\", []), halt(2) end.",
+            "units": 8,
+            "extra_lines": 7,
+            "canonical_events": [
+              {
+                "kind": "function-header",
+                "start": 40,
+                "end": 46,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "f() ->"
+              },
+              {
+                "kind": "header",
+                "start": 47,
+                "end": 70,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "try benchmark:main() of"
+              },
+              {
+                "kind": "arm",
+                "start": 71,
+                "end": 75,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "_ ->"
+              },
+              {
+                "kind": "body",
+                "start": 76,
+                "end": 78,
+                "units": 1,
+                "scope": "erlang-independent-expression-and-matches",
+                "original_source": "ok"
+              },
+              {
+                "kind": "arm",
+                "start": 79,
+                "end": 93,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "catch C:R:S ->"
+              },
+              {
+                "kind": "body",
+                "start": 94,
+                "end": 111,
+                "units": 1,
+                "scope": "erlang-independent-expression-and-matches",
+                "original_source": "io:format(\"\", [])"
+              },
+              {
+                "kind": "body",
+                "start": 113,
+                "end": 120,
+                "units": 1,
+                "scope": "erlang-independent-expression-and-matches",
+                "original_source": "halt(2)"
+              },
+              {
+                "kind": "close",
+                "start": 121,
+                "end": 124,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "end"
+              }
+            ]
+          }
+        ],
+        "diagnostics": [],
+        "original_scanner_AST_binding": {
+          "function_names_arities_and_clause_body_counts_verified": true,
+          "original_control_locations_verified": true,
+          "all_original_form_order_directives_and_no_error_forms_verified": true,
+          "every_original_control_body_sequence_verified": true,
+          "every_written_arm_annotation_verified": true,
+          "selected_case_and_try_headers_hide_no_written_matches": true,
+          "actual_function_forms": 1,
+          "actual_nested_controls": 1
+        },
+        "proposal_only": true,
+        "generated_source_substitute": false,
+        "canonical_LOC_admitted": false,
+        "chart_admission": false,
+        "actual_original_scanner_AST_stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-runner-try-catch-two-effects/original-source-scanner-AST.stdout",
+        "actual_command_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-runner-try-catch-two-effects/original-source-scanner-AST.json",
+        "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-runner-try-catch-two-effects.erl",
+        "original_source_sha256": "ce229233512dd7df46b6452d2aaccdfc5378def66d7c3223ef86c88679c2cb9a",
+        "source_language": "erlang",
+        "source_counter_metric": "explicit-original-clause-callback-control-arm-body-and-written-close-owners",
+        "semantic_admission": false
+      }
+    },
+    {
+      "id": "literal-keywords-and-separators",
+      "expected_normalized_loc": 4,
+      "actual": {
+        "physical_loc": 3,
+        "normalized_loc": 4,
+        "canonical_events": [
+          {
+            "kind": "directive",
+            "start": 0,
+            "end": 24,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "-module(owner_fixture).\n"
+          },
+          {
+            "kind": "directive",
+            "start": 24,
+            "end": 40,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "-export([f/0]).\n"
+          },
+          {
+            "kind": "function-header",
+            "start": 40,
+            "end": 46,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "f() ->"
+          },
+          {
+            "kind": "body",
+            "start": 47,
+            "end": 81,
+            "units": 1,
+            "scope": "erlang-independent-expression-and-matches",
+            "original_source": "{\"receive fun -> end\", 'case', $;}"
+          }
+        ],
+        "expansions": [
+          {
+            "line": 1,
+            "original": "-module(owner_fixture).",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "directive",
+                "start": 0,
+                "end": 24,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "-module(owner_fixture).\n"
+              }
+            ]
+          },
+          {
+            "line": 2,
+            "original": "-export([f/0]).",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "directive",
+                "start": 24,
+                "end": 40,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "-export([f/0]).\n"
+              }
+            ]
+          },
+          {
+            "line": 3,
+            "original": "f() -> {\"receive fun -> end\", 'case', $;}. % case -> end",
+            "units": 2,
+            "extra_lines": 1,
+            "canonical_events": [
+              {
+                "kind": "function-header",
+                "start": 40,
+                "end": 46,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "f() ->"
+              },
+              {
+                "kind": "body",
+                "start": 47,
+                "end": 81,
+                "units": 1,
+                "scope": "erlang-independent-expression-and-matches",
+                "original_source": "{\"receive fun -> end\", 'case', $;}"
+              }
+            ]
+          }
+        ],
+        "diagnostics": [],
+        "original_scanner_AST_binding": {
+          "function_names_arities_and_clause_body_counts_verified": true,
+          "original_control_locations_verified": true,
+          "all_original_form_order_directives_and_no_error_forms_verified": true,
+          "every_original_control_body_sequence_verified": true,
+          "every_written_arm_annotation_verified": true,
+          "selected_case_and_try_headers_hide_no_written_matches": true,
+          "actual_function_forms": 1,
+          "actual_nested_controls": 0
+        },
+        "proposal_only": true,
+        "generated_source_substitute": false,
+        "canonical_LOC_admitted": false,
+        "chart_admission": false,
+        "actual_original_scanner_AST_stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-literal-keywords-and-separators/original-source-scanner-AST.stdout",
+        "actual_command_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-literal-keywords-and-separators/original-source-scanner-AST.json",
+        "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-literal-keywords-and-separators.erl",
+        "original_source_sha256": "c637b9b2b07a8abe33cae274f7e62d32c59a5be62a1e38664c5f8b2429790104",
+        "source_language": "erlang",
+        "source_counter_metric": "explicit-original-clause-callback-control-arm-body-and-written-close-owners",
+        "semantic_admission": false
+      }
+    },
+    {
+      "id": "wrapped-data-retains-physical-row",
+      "expected_normalized_loc": 5,
+      "actual": {
+        "physical_loc": 4,
+        "normalized_loc": 5,
+        "canonical_events": [
+          {
+            "kind": "directive",
+            "start": 0,
+            "end": 24,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "-module(owner_fixture).\n"
+          },
+          {
+            "kind": "directive",
+            "start": 24,
+            "end": 40,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "-export([f/1]).\n"
+          },
+          {
+            "kind": "function-header",
+            "start": 40,
+            "end": 47,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "f(X) ->"
+          },
+          {
+            "kind": "body",
+            "start": 48,
+            "end": 55,
+            "units": 1,
+            "scope": "erlang-independent-expression-and-matches",
+            "original_source": "{X,\n X}"
+          }
+        ],
+        "expansions": [
+          {
+            "line": 1,
+            "original": "-module(owner_fixture).",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "directive",
+                "start": 0,
+                "end": 24,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "-module(owner_fixture).\n"
+              }
+            ]
+          },
+          {
+            "line": 2,
+            "original": "-export([f/1]).",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "directive",
+                "start": 24,
+                "end": 40,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "-export([f/1]).\n"
+              }
+            ]
+          },
+          {
+            "line": 3,
+            "original": "f(X) -> {X,",
+            "units": 2,
+            "extra_lines": 1,
+            "canonical_events": [
+              {
+                "kind": "function-header",
+                "start": 40,
+                "end": 47,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "f(X) ->"
+              },
+              {
+                "kind": "body",
+                "start": 48,
+                "end": 55,
+                "units": 1,
+                "scope": "erlang-independent-expression-and-matches",
+                "original_source": "{X,\n X}"
+              }
+            ]
+          }
+        ],
+        "diagnostics": [],
+        "original_scanner_AST_binding": {
+          "function_names_arities_and_clause_body_counts_verified": true,
+          "original_control_locations_verified": true,
+          "all_original_form_order_directives_and_no_error_forms_verified": true,
+          "every_original_control_body_sequence_verified": true,
+          "every_written_arm_annotation_verified": true,
+          "selected_case_and_try_headers_hide_no_written_matches": true,
+          "actual_function_forms": 1,
+          "actual_nested_controls": 0
+        },
+        "proposal_only": true,
+        "generated_source_substitute": false,
+        "canonical_LOC_admitted": false,
+        "chart_admission": false,
+        "actual_original_scanner_AST_stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-wrapped-data-retains-physical-row/original-source-scanner-AST.stdout",
+        "actual_command_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-wrapped-data-retains-physical-row/original-source-scanner-AST.json",
+        "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-wrapped-data-retains-physical-row.erl",
+        "original_source_sha256": "eff301de66be07581385a806abf209073865bc0431fc5aa4a9da8a4cbd7a3d19",
+        "source_language": "erlang",
+        "source_counter_metric": "explicit-original-clause-callback-control-arm-body-and-written-close-owners",
+        "semantic_admission": false
+      }
+    },
+    {
+      "id": "independent-chained-matches",
+      "expected_normalized_loc": 6,
+      "actual": {
+        "physical_loc": 3,
+        "normalized_loc": 6,
+        "canonical_events": [
+          {
+            "kind": "directive",
+            "start": 0,
+            "end": 24,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "-module(owner_fixture).\n"
+          },
+          {
+            "kind": "directive",
+            "start": 24,
+            "end": 40,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "-export([f/0]).\n"
+          },
+          {
+            "kind": "function-header",
+            "start": 40,
+            "end": 46,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "f() ->"
+          },
+          {
+            "kind": "body",
+            "start": 47,
+            "end": 56,
+            "units": 2,
+            "scope": "erlang-independent-expression-and-matches",
+            "original_source": "X = Y = 1"
+          },
+          {
+            "kind": "body",
+            "start": 58,
+            "end": 59,
+            "units": 1,
+            "scope": "erlang-independent-expression-and-matches",
+            "original_source": "X"
+          }
+        ],
+        "expansions": [
+          {
+            "line": 1,
+            "original": "-module(owner_fixture).",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "directive",
+                "start": 0,
+                "end": 24,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "-module(owner_fixture).\n"
+              }
+            ]
+          },
+          {
+            "line": 2,
+            "original": "-export([f/0]).",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "directive",
+                "start": 24,
+                "end": 40,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "-export([f/0]).\n"
+              }
+            ]
+          },
+          {
+            "line": 3,
+            "original": "f() -> X = Y = 1, X.",
+            "units": 4,
+            "extra_lines": 3,
+            "canonical_events": [
+              {
+                "kind": "function-header",
+                "start": 40,
+                "end": 46,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "f() ->"
+              },
+              {
+                "kind": "body",
+                "start": 47,
+                "end": 56,
+                "units": 2,
+                "scope": "erlang-independent-expression-and-matches",
+                "original_source": "X = Y = 1"
+              },
+              {
+                "kind": "body",
+                "start": 58,
+                "end": 59,
+                "units": 1,
+                "scope": "erlang-independent-expression-and-matches",
+                "original_source": "X"
+              }
+            ]
+          }
+        ],
+        "diagnostics": [],
+        "original_scanner_AST_binding": {
+          "function_names_arities_and_clause_body_counts_verified": true,
+          "original_control_locations_verified": true,
+          "all_original_form_order_directives_and_no_error_forms_verified": true,
+          "every_original_control_body_sequence_verified": true,
+          "every_written_arm_annotation_verified": true,
+          "selected_case_and_try_headers_hide_no_written_matches": true,
+          "actual_function_forms": 1,
+          "actual_nested_controls": 0
+        },
+        "proposal_only": true,
+        "generated_source_substitute": false,
+        "canonical_LOC_admitted": false,
+        "chart_admission": false,
+        "actual_original_scanner_AST_stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-independent-chained-matches/original-source-scanner-AST.stdout",
+        "actual_command_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-independent-chained-matches/original-source-scanner-AST.json",
+        "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-independent-chained-matches.erl",
+        "original_source_sha256": "5dea916086ebd16687ad58a9cbd5c0df5c1548801564973bf0aace9741353812",
+        "source_language": "erlang",
+        "source_counter_metric": "explicit-original-clause-callback-control-arm-body-and-written-close-owners",
+        "semantic_admission": false
+      }
+    },
+    {
+      "id": "additional-anonymous-clause",
+      "expected_normalized_loc": 8,
+      "actual": {
+        "physical_loc": 3,
+        "normalized_loc": 8,
+        "canonical_events": [
+          {
+            "kind": "directive",
+            "start": 0,
+            "end": 24,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "-module(owner_fixture).\n"
+          },
+          {
+            "kind": "directive",
+            "start": 24,
+            "end": 40,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "-export([f/0]).\n"
+          },
+          {
+            "kind": "function-header",
+            "start": 40,
+            "end": 46,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "f() ->"
+          },
+          {
+            "kind": "header",
+            "start": 47,
+            "end": 56,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "fun(a) ->"
+          },
+          {
+            "kind": "body",
+            "start": 57,
+            "end": 58,
+            "units": 1,
+            "scope": "erlang-independent-expression-and-matches",
+            "original_source": "a"
+          },
+          {
+            "kind": "arm",
+            "start": 60,
+            "end": 66,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "(b) ->"
+          },
+          {
+            "kind": "body",
+            "start": 67,
+            "end": 68,
+            "units": 1,
+            "scope": "erlang-independent-expression-and-matches",
+            "original_source": "b"
+          },
+          {
+            "kind": "close",
+            "start": 69,
+            "end": 72,
+            "units": 1,
+            "scope": "erlang-original-owner",
+            "original_source": "end"
+          }
+        ],
+        "expansions": [
+          {
+            "line": 1,
+            "original": "-module(owner_fixture).",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "directive",
+                "start": 0,
+                "end": 24,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "-module(owner_fixture).\n"
+              }
+            ]
+          },
+          {
+            "line": 2,
+            "original": "-export([f/0]).",
+            "units": 1,
+            "extra_lines": 0,
+            "canonical_events": [
+              {
+                "kind": "directive",
+                "start": 24,
+                "end": 40,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "-export([f/0]).\n"
+              }
+            ]
+          },
+          {
+            "line": 3,
+            "original": "f() -> fun(a) -> a; (b) -> b end.",
+            "units": 6,
+            "extra_lines": 5,
+            "canonical_events": [
+              {
+                "kind": "function-header",
+                "start": 40,
+                "end": 46,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "f() ->"
+              },
+              {
+                "kind": "header",
+                "start": 47,
+                "end": 56,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "fun(a) ->"
+              },
+              {
+                "kind": "body",
+                "start": 57,
+                "end": 58,
+                "units": 1,
+                "scope": "erlang-independent-expression-and-matches",
+                "original_source": "a"
+              },
+              {
+                "kind": "arm",
+                "start": 60,
+                "end": 66,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "(b) ->"
+              },
+              {
+                "kind": "body",
+                "start": 67,
+                "end": 68,
+                "units": 1,
+                "scope": "erlang-independent-expression-and-matches",
+                "original_source": "b"
+              },
+              {
+                "kind": "close",
+                "start": 69,
+                "end": 72,
+                "units": 1,
+                "scope": "erlang-original-owner",
+                "original_source": "end"
+              }
+            ]
+          }
+        ],
+        "diagnostics": [],
+        "original_scanner_AST_binding": {
+          "function_names_arities_and_clause_body_counts_verified": true,
+          "original_control_locations_verified": true,
+          "all_original_form_order_directives_and_no_error_forms_verified": true,
+          "every_original_control_body_sequence_verified": true,
+          "every_written_arm_annotation_verified": true,
+          "selected_case_and_try_headers_hide_no_written_matches": true,
+          "actual_function_forms": 1,
+          "actual_nested_controls": 1
+        },
+        "proposal_only": true,
+        "generated_source_substitute": false,
+        "canonical_LOC_admitted": false,
+        "chart_admission": false,
+        "actual_original_scanner_AST_stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-additional-anonymous-clause/original-source-scanner-AST.stdout",
+        "actual_command_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-additional-anonymous-clause/original-source-scanner-AST.json",
+        "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-additional-anonymous-clause.erl",
+        "original_source_sha256": "3c9c6126c6de5d0924c9376b8200969e0818a3dd9e2393f4b48e5431b88e5cf3",
+        "source_language": "erlang",
+        "source_counter_metric": "explicit-original-clause-callback-control-arm-body-and-written-close-owners",
+        "semantic_admission": false
+      }
+    },
+    {
+      "id": "unknown-authored-include",
+      "expected_normalized_loc": null,
+      "actual": {
+        "physical_loc": null,
+        "normalized_loc": null,
+        "canonical_events": [],
+        "expansions": [],
+        "diagnostics": [
+          {
+            "kind": "erlang-original-source-owner-review",
+            "message": "AssertionError"
+          }
+        ],
+        "proposal_only": true,
+        "generated_source_substitute": false,
+        "canonical_LOC_admitted": false,
+        "chart_admission": false,
+        "actual_original_scanner_AST_stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-unknown-authored-include/original-source-scanner-AST.stdout",
+        "actual_command_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-unknown-authored-include/original-source-scanner-AST.json",
+        "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-unknown-authored-include.erl",
+        "original_source_sha256": "53332f246aeb6be471b02b032b84ee03d873f12811898c92c5513490be2c6585",
+        "source_language": "erlang",
+        "source_counter_metric": "explicit-original-clause-callback-control-arm-body-and-written-close-owners",
+        "semantic_admission": false
+      }
+    },
+    {
+      "id": "actual-parser-error",
+      "expected_normalized_loc": null,
+      "actual": {
+        "physical_loc": null,
+        "normalized_loc": null,
+        "canonical_events": [],
+        "expansions": [],
+        "diagnostics": [
+          {
+            "kind": "erlang-original-source-owner-review",
+            "message": "AssertionError"
+          }
+        ],
+        "proposal_only": true,
+        "generated_source_substitute": false,
+        "canonical_LOC_admitted": false,
+        "chart_admission": false,
+        "actual_original_scanner_AST_stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-actual-parser-error/original-source-scanner-AST.stdout",
+        "actual_command_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-actual-parser-error/original-source-scanner-AST.json",
+        "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-actual-parser-error.erl",
+        "original_source_sha256": "6f4f22da146b859cb6a2b03dbe09cfbc545b4b3e9d04d00404a8b88433754ad0",
+        "source_language": "erlang",
+        "source_counter_metric": "explicit-original-clause-callback-control-arm-body-and-written-close-owners",
+        "semantic_admission": false
+      }
+    },
+    {
+      "id": "unknown-comprehension-owner",
+      "expected_normalized_loc": null,
+      "actual": {
+        "physical_loc": null,
+        "normalized_loc": null,
+        "canonical_events": [],
+        "expansions": [],
+        "diagnostics": [
+          {
+            "kind": "erlang-original-source-owner-review",
+            "message": "Unsupported executable/source form"
+          }
+        ],
+        "proposal_only": true,
+        "generated_source_substitute": false,
+        "canonical_LOC_admitted": false,
+        "chart_admission": false,
+        "actual_original_scanner_AST_stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-unknown-comprehension-owner/original-source-scanner-AST.stdout",
+        "actual_command_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-unknown-comprehension-owner/original-source-scanner-AST.json",
+        "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-unknown-comprehension-owner.erl",
+        "original_source_sha256": "a5cc59fd079a638d2a790de88b26057bdfd7e84aab1c90040495d497b59e38c1",
+        "source_language": "erlang",
+        "source_counter_metric": "explicit-original-clause-callback-control-arm-body-and-written-close-owners",
+        "semantic_admission": false
+      }
+    },
+    {
+      "id": "earlier-effect-before-callback",
+      "expected_normalized_loc": null,
+      "actual": {
+        "physical_loc": null,
+        "normalized_loc": null,
+        "canonical_events": [],
+        "expansions": [],
+        "diagnostics": [
+          {
+            "kind": "erlang-original-source-owner-review",
+            "message": "Unknown effect/argument before callable/control prefix"
+          }
+        ],
+        "proposal_only": true,
+        "generated_source_substitute": false,
+        "canonical_LOC_admitted": false,
+        "chart_admission": false,
+        "actual_original_scanner_AST_stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-earlier-effect-before-callback/original-source-scanner-AST.stdout",
+        "actual_command_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-earlier-effect-before-callback/original-source-scanner-AST.json",
+        "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-earlier-effect-before-callback.erl",
+        "original_source_sha256": "dc2dd48eacc8827a66e9ab8e4371c97904a22cad2502a3a32254b18ada92836c",
+        "source_language": "erlang",
+        "source_counter_metric": "explicit-original-clause-callback-control-arm-body-and-written-close-owners",
+        "semantic_admission": false
+      }
+    },
+    {
+      "id": "intervening-effect-between-callbacks",
+      "expected_normalized_loc": null,
+      "actual": {
+        "physical_loc": null,
+        "normalized_loc": null,
+        "canonical_events": [],
+        "expansions": [],
+        "diagnostics": [
+          {
+            "kind": "erlang-original-source-owner-review",
+            "message": "Unknown effect/argument between nested owners"
+          }
+        ],
+        "proposal_only": true,
+        "generated_source_substitute": false,
+        "canonical_LOC_admitted": false,
+        "chart_admission": false,
+        "actual_original_scanner_AST_stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-intervening-effect-between-callbacks/original-source-scanner-AST.stdout",
+        "actual_command_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-intervening-effect-between-callbacks/original-source-scanner-AST.json",
+        "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-intervening-effect-between-callbacks.erl",
+        "original_source_sha256": "59088edf24a1cd483a73e4c32a1961cccadafa7e5dafd0b8c2390b62f4c59a10",
+        "source_language": "erlang",
+        "source_counter_metric": "explicit-original-clause-callback-control-arm-body-and-written-close-owners",
+        "semantic_admission": false
+      }
+    },
+    {
+      "id": "written-selector-matches-remain-gated",
+      "expected_normalized_loc": null,
+      "actual": {
+        "physical_loc": null,
+        "normalized_loc": null,
+        "canonical_events": [],
+        "expansions": [],
+        "diagnostics": [
+          {
+            "kind": "erlang-original-source-owner-review",
+            "message": "Written matches in a control selector require separate owners"
+          }
+        ],
+        "proposal_only": true,
+        "generated_source_substitute": false,
+        "canonical_LOC_admitted": false,
+        "chart_admission": false,
+        "actual_original_scanner_AST_stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-written-selector-matches-remain-gated/original-source-scanner-AST.stdout",
+        "actual_command_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-written-selector-matches-remain-gated/original-source-scanner-AST.json",
+        "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/owner-fixture-written-selector-matches-remain-gated.erl",
+        "original_source_sha256": "77d31fee0b48157050506b55f7ea5be8f5c5a768b0023967cc06899a7399b9ec",
+        "source_language": "erlang",
+        "source_counter_metric": "explicit-original-clause-callback-control-arm-body-and-written-close-owners",
+        "semantic_admission": false
+      }
+    }
+  ],
+  "actual_common_mutex_held": true,
+  "actual_benchmark_processes": 0,
+  "legacy_sequence_metric_preserved_separately": true,
+  "legacy_fixture_receipt": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/jobs/helpers-entry-repaired-v2/legacy-fixture-receipt.json",
+    "sha256": "99d74a74298546e897e498eda126a35c61ca4c359c0ed01728181cab0c129a48",
+    "actual_cases": 5
+  }
+}

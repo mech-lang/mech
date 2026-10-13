@@ -1,0 +1,92 @@
+{
+  "key": "binarytrees:c3-binarytrees-optimized",
+  "id": "c3-binarytrees-optimized",
+  "benchmark": "binarytrees",
+  "language": "c3",
+  "source_sha256": "be1130c6fe4c65ae83f49d18549ca1fc8cd55a9edc38db167e6758eb5f33a93d",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v3/bin/c3-binarytrees-optimized",
+    "21"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012",
+  "runtime_environment": {
+    "LC_ALL": "C",
+    "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"f0acf9be08c7d27604029e0d9a64051c53422ad6f12304c33ae967dcc53d95c5\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v3/bin/c3-binarytrees-optimized\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"be1130c6fe4c65ae83f49d18549ca1fc8cd55a9edc38db167e6758eb5f33a93d\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v3/source-snapshot/revisions/private-v3/sources/binarytrees/optimized.c3\": \"be1130c6fe4c65ae83f49d18549ca1fc8cd55a9edc38db167e6758eb5f33a93d\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v3/source-snapshot/support/threads.c3\": \"acff1f78af8233552d720d90d5ae971d64a12b5cddf9b98830d1539eda3a5248\"}}",
+  "started_at": "2026-10-13T12:04:40.497213+00:00",
+  "workload_n": 21,
+  "full_workload": true,
+  "timeout_seconds": 14400,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 4.662692584,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 233712,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 455,
+  "stdout_sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+  "validation": {
+    "bytes": 455,
+    "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+    "reference_match": true
+  },
+  "finished_at": "2026-10-13T12:04:45.374723+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true,
+  "round": 2,
+  "attempt": 4,
+  "sampler_wait_status": 0,
+  "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/binarytrees/attempts/004-c3-binarytrees-optimized.json",
+  "supervised_native_group": {
+    "type": "native-group-started",
+    "pid": 2073,
+    "pgid": 2073,
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v3/bin/c3-binarytrees-optimized",
+      "21"
+    ],
+    "inherited_common_mutex": true
+  },
+  "supervisor_remaining_members": [],
+  "qualification_checks": {
+    "sampler_exited_normally": true,
+    "authoritative_native_group_received": true,
+    "native_inherited_common_mutex": true,
+    "native_exited_normally": true,
+    "no_execution_error": true,
+    "no_wrapper_integrity_error": true,
+    "no_resource_violation": true,
+    "no_resource_monitor_errors": true,
+    "no_compiler_power_monitor_errors": true,
+    "no_monitor_finish_error": true,
+    "no_execute_cleanup_error": true,
+    "no_remaining_execute_group": true,
+    "no_supervisor_cleanup": true,
+    "no_supervisor_remaining_group": true,
+    "valid_environment": true,
+    "actual_full_workload": true,
+    "exact_command_and_group": true,
+    "complete_output_reference_match": true,
+    "complete_output_bytes_and_hash": true,
+    "pins_unchanged": true
+  },
+  "qualified": true,
+  "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/studies/full-v1/binarytrees/attempts/004-c3-binarytrees-optimized.supervisor.json"
+}

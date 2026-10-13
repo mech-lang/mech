@@ -1,0 +1,2 @@
+Executable=/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/bin/python3.14
+warning: Specifying ':' in the path is deprecated and will not work in a future release

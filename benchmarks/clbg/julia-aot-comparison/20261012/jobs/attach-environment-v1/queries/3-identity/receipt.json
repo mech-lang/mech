@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/usr/bin/codesign",
+    "-d",
+    "--verbose=4",
+    "/Library/Developer/CommandLineTools/Library/PrivateFrameworks/LLDB.framework/Versions/A/LLDB"
+  ],
+  "started_at": "2026-10-13T12:57:51.280824+00:00",
+  "read_only_query": true,
+  "inherited_common_mutex": true,
+  "timeout_seconds": 15,
+  "exit_status": 0,
+  "owned_query_group_cleanup": null,
+  "pid": 11861,
+  "pgid": 11861,
+  "query_group_absent_after_reap": true,
+  "finished_at": "2026-10-13T12:57:51.329231+00:00"
+}

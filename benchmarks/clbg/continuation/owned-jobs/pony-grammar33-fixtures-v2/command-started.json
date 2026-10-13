@@ -1,0 +1,20 @@
+{
+  "started_at": "2026-10-13T12:30:56.119742+00:00",
+  "command_pid": 7665,
+  "command_identity": {
+    "pid": 7665,
+    "listing": "7665  7655 Tue Oct 13 08:30:56 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pony-grammar-v2/qualify_replay.py --revision grammar-v2-fixtures-restored-v2 --stage fixtures"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pony-grammar-v2/qualify_replay.py",
+    "--revision",
+    "grammar-v2-fixtures-restored-v2",
+    "--stage",
+    "fixtures"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech"
+}

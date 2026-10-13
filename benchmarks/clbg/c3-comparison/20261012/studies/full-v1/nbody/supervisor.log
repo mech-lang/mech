@@ -1,0 +1,19 @@
+WAIT common mutex: C3 full-study initial review nbody
+WAIT common mutex: C3 full nbody 1 c3-nbody-compact
+FULL nbody 1 c3-nbody-compact 50000000
+WAIT common mutex: C3 full nbody 1 c3-nbody-optimized
+FULL nbody 1 c3-nbody-optimized 50000000
+WAIT common mutex: C3 full nbody 1 mech-aot-control
+FULL nbody 1 mech-aot-control 50000000
+WAIT common mutex: C3 full nbody 2 c3-nbody-optimized
+FULL nbody 2 c3-nbody-optimized 50000000
+WAIT common mutex: C3 full nbody 2 mech-aot-control
+FULL nbody 2 mech-aot-control 50000000
+WAIT common mutex: C3 full nbody 2 c3-nbody-compact
+FULL nbody 2 c3-nbody-compact 50000000
+WAIT common mutex: C3 full nbody 3 mech-aot-control
+FULL nbody 3 mech-aot-control 50000000
+WAIT common mutex: C3 full nbody 3 c3-nbody-compact
+FULL nbody 3 c3-nbody-compact 50000000
+WAIT common mutex: C3 full nbody 3 c3-nbody-optimized
+FULL nbody 3 c3-nbody-optimized 50000000

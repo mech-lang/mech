@@ -1,0 +1,20 @@
+{
+  "status": "command-failed",
+  "started_at": "2026-10-13T12:12:49.313805+00:00",
+  "worker_identity": {
+    "pid": 4264,
+    "listing": "4264     1 Tue Oct 13 08:12:49 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/curated-git-checkpoint-v3 --lease-fd 3 --go-fd 4"
+  },
+  "actual_command_started": true,
+  "exit_code": 1,
+  "qualification_granted": false,
+  "automatic_retry": false,
+  "command_pid": 4270,
+  "command_identity": {
+    "pid": 4270,
+    "listing": "4270  4264 Tue Oct 13 08:12:49 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/save_curated_checkpoint_v3.py"
+  },
+  "command_identity_observation_missing": false,
+  "finished_at": "2026-10-13T12:14:14.609108+00:00",
+  "stop_signals": []
+}
