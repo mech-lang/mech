@@ -1,0 +1,7 @@
+{
+  "pid": 12986,
+  "started_at": "2026-10-13T21:23:28.743818+00:00",
+  "lock": "/tmp/mech-clbg-timing.lock",
+  "inode": 79859134,
+  "scope": "UI verification, publication and checkpoint; no benchmarks"
+}

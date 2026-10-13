@@ -1,0 +1,19 @@
+{
+  "status": "closed-probe-exit1-preserved",
+  "at": "2026-10-13T21:14:41.798076+00:00",
+  "verified_pins": 13213,
+  "durable_terminal_sha256": "3d2240941209d7557bc4a4dc99e6dab87dd7e06ae06efdd31af78c57c0eba58e",
+  "report_sha256": "f143a7b6627af26bc46741ac287c50ef80980d355411be468b1104ded09cfe66",
+  "report_terminal_sha256": "1f534082e617e804a300e5f3abe887746b8a2e0d20511e0ce525f037d3c7f878",
+  "actual_native_commands": 1,
+  "benchmark_runs": 0,
+  "fixture_reexecutions": 0,
+  "version_reexecutions": 0,
+  "probe_exit": 1,
+  "probe_result_sha256": "5e1ffe68eccc864e4ba45fcd562f700eb9e07af37f2ec76f639ff709555a86af",
+  "probe_receipt_sha256": "835221d6c6ba1754a40e12bc6cfff3590f270fe62e062345781a953e5052f165",
+  "result_and_receipt_paths_distinct": true,
+  "images_executed": false,
+  "runtime_configuration_admitted": false,
+  "notes": "Corrected imported initializer did not resolve native exit1. Complete raw feature result exists and separate owned receipt now preserves actual exit1. No successful runtime qualification or retry inferred."
+}

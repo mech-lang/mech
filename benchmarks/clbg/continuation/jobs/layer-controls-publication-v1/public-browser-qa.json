@@ -1,0 +1,44 @@
+{
+  "status": "passed",
+  "url": "https://mech-lang.org/benchmarks/",
+  "loading_observation": "First snapshot preceded data completion; explicit visible row wait completed before assertions.",
+  "app_url": "./app.mjs?v=20261013-layers",
+  "variants": 49,
+  "recorded_runs": 2418,
+  "axes_visible_enabled": true,
+  "means_domain": {
+    "xMin": -0.15,
+    "xMax": 5.0015340594975894,
+    "yMin": -0.18,
+    "yMax": 8.46134735637159
+  },
+  "all_samples_domain": {
+    "xMin": -0.15,
+    "xMax": 7.036637346111604,
+    "yMin": -0.18,
+    "yMax": 14.870042696401296
+  },
+  "density_only": {
+    "dots": 0,
+    "medians": 0,
+    "cells": 1728,
+    "runs": 2418,
+    "programs": 778,
+    "variants": 49
+  },
+  "rankings": {
+    "charts": 2,
+    "dots_each": 49,
+    "medians": [
+      "4.8\u00d7 best",
+      "3.8\u00d7 best"
+    ]
+  },
+  "clojure": {
+    "programs": 20,
+    "runs": 60
+  },
+  "console_errors": [],
+  "final_state": "Summary with default Dim samples, Highlight medians, density Off, Medians axes. Tab retained as deliverable.",
+  "at": "2026-10-13T21:31:09.038523+00:00"
+}

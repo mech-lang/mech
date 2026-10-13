@@ -1,11 +1,12 @@
-import {comparison,same,chartDomain,comparisonMetrics,languagesByYear,globalStatistics,languageFamilies,medianHistory,median,releaseYearsInWindow,clampReleaseWindow,decadeWindow,medianRankings,recordedSamplePoints,comparisonDensityPoints,densityGrid} from './math.mjs?v=20261013-views';
+import {comparison,same,chartDomain,comparisonMetrics,languagesByYear,globalStatistics,languageFamilies,medianHistory,median,releaseYearsInWindow,clampReleaseWindow,decadeWindow,medianRankings,recordedSamplePoints,sampleDensityPoints,densityGrid,layerPresentation,chartLayerState,summaryNumber} from './math.mjs?v=20261013-layers';
 import {traitDimensions,languageTraits,emptyTraitFilters,matchesTraits,filterLanguageKeys} from './traits.mjs';
+import {renderRankingCharts} from './rankings.mjs?v=20261013-layers';
 
 const $=selector=>document.querySelector(selector);
 const svgNS='http://www.w3.org/2000/svg';
 let data,model,traits,programCatalog;
 const state={benchmarks:new Set(),languages:new Set(),disabled:new Set(),ellipses:new Set(['mech']),
-  view:'summary',focus:'nbody',fast:true,small:true,samples:true,focusMeans:true,global:false,trail:true,playing:false,collapsedFamilies:new Set(),releaseYearStart:null,releaseYear:null,playbackYear:null,traits:emptyTraitFilters(),languageFocus:null,
+  view:'summary',focus:'nbody',fast:true,small:true,sampleMode:'dim',medianMode:'highlight',densityMode:'off',focusMeans:true,global:false,trail:true,playing:false,collapsedFamilies:new Set(),releaseYearStart:null,releaseYear:null,playbackYear:null,traits:emptyTraitFilters(),languageFocus:null,
   detail:{language:'mech',benchmark:'nbody',kind:'fast',program:null,aggregate:false,file:0}};
 const colors={};
 const mechViewColors={mech:'#F6C04E','mech-jit':'#FFE59A','mech-resident':'#C99B2E'};
@@ -14,7 +15,7 @@ let currentDomain=null;
 let playbackTimer=null,historyCache={key:null,series:[]};
 const tableSort={comparison:{key:null,direction:1},timings:{key:'run',direction:1},implementations:{key:null,direction:1}};
 const esc=text=>String(text).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const ratio=n=>`${n.toFixed(2)}×`;
+const ratio=n=>`${summaryNumber(n)}×`;
 const seconds=n=>n==null?'Not measured':`${n.toFixed(n<1?6:n>=100?2:3)} s`;
 const language=key=>data.languages.find(l=>l.key===key);
 const benchmark=key=>data.benchmarks.find(b=>b.key===key);
@@ -32,6 +33,8 @@ const isMechLanguage=key=>language(key)?.family==='mech'||key==='mech';
 const mechKeys=()=>data.languages.filter(l=>isMechLanguage(l.key)).map(l=>l.key);
 const displayColor=key=>state.view==='mech'?(mechViewColors[key]??colors[key]):colors[key];
 const inLanguageView=()=>state.view==='language'&&!!state.languageFocus;
+const samplesVisible=()=>layerPresentation(state.sampleMode).visible;
+const densityVisible=()=>layerPresentation(state.densityMode).visible;
 const focusKeys=()=>new Set(state.languageFocus?.keys??[]);
 function savedChartSelection(){
   return {...state,benchmarks:new Set(state.benchmarks),languages:new Set(state.languages),disabled:new Set(state.disabled),ellipses:new Set(state.ellipses),collapsedFamilies:new Set(state.collapsedFamilies),traits:Object.fromEntries(Object.entries(state.traits).map(([key,values])=>[key,new Set(values)])),detail:{...state.detail},languageFocus:null,playing:false,inspectorOpen:$('#inspector').open};
@@ -165,14 +168,16 @@ function languageViewDomain(){
   for(const p of focusPrograms())if(measuredTiming(p)){
     include(p);
     const b=benchmark(p.benchmark);
-    for(const elapsed of p.samples)if(Number.isFinite(elapsed)&&elapsed>0)include({x:p.x,y:elapsed/b.baseline_seconds});
+    if(!state.focusMeans)for(const elapsed of p.samples)if(Number.isFinite(elapsed)&&elapsed>0)include({x:p.x,y:elapsed/b.baseline_seconds});
   }
   const entries=comparison(data,{benchmarks:new Set(data.benchmarks.map(b=>b.key)),languages:keys,disabled:new Set()}).entries;
   for(const entry of entries){
     const statistics=languageMedianStatistics(entry);
     for(const kind of ['fast','small']){
-      for(const p of entry.spread2[kind]?.boundary??[])include(p);
-      for(const p of statistics[kind].spread2?.boundary??[])include(p);
+      if(!state.focusMeans){
+        for(const p of entry.spread2[kind]?.boundary??[])include(p);
+        for(const p of statistics[kind].spread2?.boundary??[])include(p);
+      }
       include(statistics[kind].median);
     }
   }
@@ -184,7 +189,7 @@ function sourceComparisonDomain(){
   const b=benchmark(p.benchmark);
   if(Number.isFinite(p.x)&&p.x>0){domain.xMin=Math.min(domain.xMin,Math.log2(p.x)-.15);domain.xMax=Math.max(domain.xMax,Math.log2(p.x)+.25);}
   if(Number.isFinite(p.y)&&p.y>0){domain.yMin=Math.min(domain.yMin,Math.log2(p.y)-.18);domain.yMax=Math.max(domain.yMax,Math.log2(p.y)+.25);}
-  for(const elapsed of p.samples)if(Number.isFinite(elapsed)&&elapsed>0){
+  if(!state.focusMeans)for(const elapsed of p.samples)if(Number.isFinite(elapsed)&&elapsed>0){
     const y=Math.log2(elapsed/b.baseline_seconds);
     domain.yMin=Math.min(domain.yMin,y-.18);domain.yMax=Math.max(domain.yMax,y+.25);
   }
@@ -324,23 +329,12 @@ function renderMedianRankings(){
   const active=state.view==='rankings',panel=$('#median-rankings');panel.hidden=!active;$('.chart-card').hidden=active;
   if(!active)return;
   const rankings=medianRankings(currentEntries()),count=rankings.speed.n;
-  $('#median-rankings-summary').textContent=`${count} eligible execution variant${count===1?'':'s'} · ${state.benchmarks.size} selected benchmark${state.benchmarks.size===1?'':'s'} · release window ${state.releaseYearStart}–${shownReleaseYear()}`;
+  $('#median-rankings-summary').textContent=`${count} variant${count===1?'':'s'} · ${state.benchmarks.size} benchmarks · ${state.releaseYearStart}–${shownReleaseYear()}`;
   $('#median-rankings-empty').hidden=count!==0;$('#median-ranking-cards').hidden=count===0;
   if(!count){$('#median-ranking-cards').replaceChildren();return;}
-  const coordinate=value=>`${value.toLocaleString('en',{maximumSignificantDigits:6})}×`;
-  const signed=value=>`${value<0?'−':value>0?'+':''}${Math.abs(value).toFixed(2)}σ`;
-  const list=(rows,metric)=>rows.length?`<ol class="ranking-list">${rows.map(row=>{
-    const entry=row.entry,key=entry.language.key;
-    return `<li data-ranking-language="${esc(key)}" data-ranking-metric="${metric}" data-median-ratio="${row.ratio_to_median}" data-sigma-distance="${row.sigma_distance}"><button data-open-language="${esc(key)}" class="ranking-language"><span class="color-key" style="${colorKeyStyle(key)}"></span><span>${esc(shortName(key))}<small class="ranking-coverage">${coverageLabel(entry)} benchmarks${partialEntry(entry)?' · partial':''}</small></span></button><span class="ranking-values"><span title="${row.ratio_to_median}">${coordinate(row.ratio_to_median)} median</span><small title="${row.sigma_distance}">${signed(row.sigma_distance)}</small></span></li>`;
-  }).join('')}</ol>`:'<p class="ranking-none">No variants in this band.</p>';
-  $('#median-ranking-cards').innerHTML=[['speed','Speed','Faster','Slower'],['loc','LOC','Smaller','Larger']].map(([key,label,below,above])=>{
-    const metric=rankings[key],bands=Array.from({length:Math.max(3,metric.bands.length)},(_,index)=>metric.bands[index]??{lower_sigma:index,upper_sigma:index+1,below:[],above:[]});
-    const note=metric.log_sample_sd===0?'Zero log spread; no σ departure.':`Sample log₂ SD ${metric.log_sample_sd.toFixed(3)}.`;
-    return `<article class="ranking-card" data-ranking-metric="${key}" data-ranking-median="${metric.median}" data-ranking-log-sd="${metric.log_sample_sd}"><h3>${label}</h3><p class="ranking-metric-summary">Coordinate median ${coordinate(metric.median)} best. ${note}</p>${metric.ties.length?`<section class="ranking-ties"><h4>At the median · ${metric.ties.length}</h4>${list(metric.ties,key)}</section>`:''}${bands.map(band=>`<section class="ranking-band" data-ranking-band="${band.upper_sigma}"><h4>${band.lower_sigma===0?'Within 1σ':`${band.lower_sigma}–${band.upper_sigma}σ`}</h4><div class="ranking-directions"><div><h5>${below}</h5>${list(band.below,key)}</div><div><h5>${above}</h5>${list(band.above,key)}</div></div></section>`).join('')}</article>`;
-  }).join('');
+  renderRankingCharts({container:$('#median-ranking-cards'),rankings,labelFor:shortName,colorFor:displayColor,onOpenLanguage:showLanguageOverview});
 }
 function update(){
-  if(state.view!=='benchmark'&&!state.samples)state.focusMeans=true;
   model=comparison(comparisonData(),allSelection());
   renderYears();renderControls();renderLanguageOverview();renderMedianRankings();renderChart();renderTable();
   if($('#inspector').open)renderInspector();
@@ -355,25 +349,22 @@ function update(){
   $('#focused-benchmark').hidden=state.view!=='benchmark';
   $('#focused-benchmark').value=state.focus;
   renderPlotOptions();
-  for(const [id,key] of [['fast-profile','fast'],['small-profile','small'],['show-samples','samples'],['focus-means','focusMeans'],['show-global','global'],['show-median-trail','trail']])$('#'+id).checked=state[key];
+  for(const [id,key] of [['fast-profile','fast'],['small-profile','small'],['show-global','global'],['show-median-trail','trail']])$('#'+id).checked=state[key];
 }
 function renderPlotOptions(){
-  const single=state.view==='benchmark',languageView=inLanguageView(),density=state.view==='density',samples=$('#show-samples'),focus=$('#focus-means'),option=$('#focus-means-option');
-  const samplesNote=languageView?'Show recorded runs for every enabled, measured program in this language’s published catalog.':'Show recorded runs for enabled programs in the selected comparison. Samples are independent of Fastest, Fewest LOC and the median overlay.';
-  const focusNote=density?'Density uses the full fixed chart domain, independent of the means-focus option.':languageView?'Language overview fits all program medians, recorded runs and covariance contours.':single?'Benchmark view fits axes to its endpoints and global covariance contours. Focus on means applies in Geometric means and Mech views.':'Fit axes to geometric-mean endpoints. Uncheck to fit benchmark samples and covariance contours while Samples is enabled.';
-  samples.disabled=false;
-  focus.disabled=single||languageView||density||!state.samples;
-  $('#median-option-label').textContent=languageView?'Language median & SD':'Global median & SD';
-  $('#show-global').closest('label').title=languageView?'Coordinate medians and 1σ / 2σ covariance across each highlighted execution variant’s benchmark endpoints.':'Highlight the whole-set coordinate median and covariance while fading profile means. Recorded samples stay independently visible.';
-  $('#show-median-trail').disabled=languageView;
-  samples.closest('label').title=samplesNote;
-  option.title=focusNote;
-  for(const [input,note] of [[samples,samplesNote],[focus,focusNote]]){
-    input.title=note;
-    input.setAttribute('aria-description',note);
+  const samples=$('#show-samples'),medians=$('#show-medians'),density=$('#show-density'),axes=$('#chart-axes');
+  const samplesNote='Actual recorded runs: Off removes dots, Dim shows them faintly, Highlight shows them at full contrast. Independent of medians and density.';
+  const medianNote='Profile summaries, benchmark medians, links, labels and SD. Global median & SD adds summary statistics within this layer. Off removes the entire median family.';
+  const densityNote='Density of actual recorded runs, each run weighted equally. Independent of dots, medians, profiles and global overlay.';
+  const axesNote='Medians fits source/profile summaries; All samples fits every recorded run and covariance envelope. Changing any layer leaves this range unchanged.';
+  samples.disabled=medians.disabled=density.disabled=axes.disabled=false;
+  samples.value=state.sampleMode;medians.value=state.medianMode;density.value=state.densityMode;axes.value=state.focusMeans?'means':'samples';
+  $('#median-option-label').textContent=inLanguageView()?'Language median & SD':'Global median & SD';
+  $('#show-global').closest('label').title='Include coordinate medians and covariance in the Medians layer. Its Off, Dim or Highlight mode controls this overlay too.';
+  $('#show-median-trail').disabled=inLanguageView();
+  for(const [input,note] of [[samples,samplesNote],[medians,medianNote],[density,densityNote],[axes,axesNote]]){
+    input.closest('label').title=note;input.title=note;input.setAttribute('aria-description',note);
   }
-  option.classList.toggle('unavailable',density||!single&&!state.samples);
-  option.setAttribute('aria-hidden',density||!single&&!state.samples);
 }
 function renderControls(){
   const allowed=yearKeys(),enabled=effectiveLanguages();
@@ -406,6 +397,18 @@ function currentEntries(){
   if(!state.benchmarks.has(state.focus))return [];
   return comparison(comparisonData(),{benchmarks:new Set([state.focus]),languages:effectiveLanguages(),disabled:state.disabled}).entries;
 }
+function currentSampleInputs(entries=currentEntries()){
+  const languageView=inLanguageView(),selectedKeys=focusKeys();
+  return recordedSamplePoints(entries,{disabled:state.disabled,programsForInput:(input,entry)=>
+    (languageView&&selectedKeys.has(entry.language.key)?benchmarkPrograms(input.benchmark.key,entry.language.key):input.programs)
+      .filter(program=>program.language===entry.language.key&&program.benchmark===input.benchmark.key).map(sampleProgram)});
+}
+function selectedPlotDomain(){
+  if(inLanguageView())return languageViewDomain();
+  if(state.languageFocus?.comparisonProgram)return sourceComparisonDomain();
+  return chartDomain(data,state);
+}
+function currentDensityField(){return densityGrid(sampleDensityPoints(currentSampleInputs()),selectedPlotDomain());}
 function openPoint(info){
   const explicit=catalogProgram(info.program);
   state.detail={language:explicit?.language??info.language,benchmark:explicit?.benchmark??info.benchmark??state.focus,kind:info.kind??'fast',
@@ -444,24 +447,23 @@ function showHoverDetails(description){
 function renderChart(){
   const svg=$('#chart');svg.replaceChildren();
   const languageView=inLanguageView(),selectedKeys=focusKeys();
-  svg.classList.toggle('median-focus',state.global&&!languageView);
+  svg.classList.remove('median-focus');
   delete svg.dataset.highlightLanguage;svg.onpointerleave=null;clearHoverDetails();
-  const entries=currentEntries(),isMech=state.view==='mech',single=state.view==='benchmark',density=state.view==='density';
+  const entries=currentEntries(),isMech=state.view==='mech',single=state.view==='benchmark',density=densityVisible();
   const selectedComparison=state.languageFocus?.comparison?catalogProgram(state.languageFocus.comparisonProgram):null;
-  const sampleInputs=recordedSamplePoints(entries,{disabled:state.disabled,programsForInput:(input,entry)=>
-    (languageView&&selectedKeys.has(entry.language.key)?benchmarkPrograms(input.benchmark.key,entry.language.key):input.programs)
-      .filter(program=>program.language===entry.language.key&&program.benchmark===input.benchmark.key).map(sampleProgram)});
-  const rawSamples=state.samples?sampleInputs:[];
-  $('#chart-title').textContent=density?'Density across selected comparisons':languageView?`${state.languageFocus.label} across all ten benchmarks`:single?benchmark(state.focus).title:isMech?'Mech across selected benchmarks':`${state.benchmarks.size} selected benchmark${state.benchmarks.size===1?'':'s'}`;
+  const sampleInputs=currentSampleInputs(entries);
+  const layers=chartLayerState({samples:state.sampleMode,medians:state.medianMode,density:state.densityMode,fast:state.fast,small:state.small,global:state.global,sampleCount:sampleInputs.length,entryCount:entries.length});
+  const rawSamples=layers.showSamples?sampleInputs:[];
+  $('#chart-title').textContent=languageView?`${state.languageFocus.label} across all ten benchmarks`:single?benchmark(state.focus).title:isMech?'Mech across selected benchmarks':`${state.benchmarks.size} selected benchmark${state.benchmarks.size===1?'':'s'}`;
   if(isMech){
     $('#chart-subtitle').innerHTML=mechKeys().map(key=>`<span class="mech-mode-key" data-mode-key="${key}" style="color:${displayColor(key)}"><svg width="22" height="8" viewBox="0 0 22 8" aria-hidden="true"><line x1="0" y1="4" x2="22" y2="4" stroke="currentColor" stroke-width="2.5" ${lineDash(key)?`stroke-dasharray="${lineDash(key)}"`:''}/></svg>${esc(language(key).variant_label)}</span>`).join('')+'<span>Benchmark endpoints</span>';
   }else{
     const selectedSource=state.languageFocus?.comparison?catalogProgram(state.languageFocus.comparisonProgram):null;
-    $('#chart-subtitle').textContent=density?'Gaussian density of enabled mean profile positions · equal execution-variant weights':languageView?'Highlighted program medians, individual runs and benchmark covariance · other languages provide context':single?`${selectedSource?`${selectedSource.id} · selected source · `:''}${benchmark(state.focus).workload}`:entries.some(partialEntry)?'Equal-weight geometric means · partial suites labelled n/selected':'Equal-weight geometric means · selected benchmark subset';
+    $('#chart-subtitle').textContent=languageView?'Highlighted program medians, individual runs and benchmark covariance · other languages provide context':single?`${selectedSource?`${selectedSource.id} · selected source · `:''}${benchmark(state.focus).workload}`:entries.some(partialEntry)?'Equal-weight geometric means · partial suites labelled n/selected':'Equal-weight geometric means · selected benchmark subset';
   }
-  const empty=!entries.length||!state.fast&&!state.small&&!rawSamples.length;
+  const empty=layers.empty;
   $('#empty-state').hidden=!empty;
-  $('#empty-state').textContent=single&&!state.benchmarks.has(state.focus)?'Check this benchmark to include it on the chart.':!state.benchmarks.size?'Select at least one benchmark.':!state.fast&&!state.small?'Enable Samples, Fastest or Fewest LOC to show measured points.':state.languages.size&&!allSelection().languages.size?'No enabled languages match this release-year window. Adjust either handle or choose All years.':'No measured comparisons. Enable a language or restore its programs.';
+  $('#empty-state').textContent=single&&!state.benchmarks.has(state.focus)?'Check this benchmark to include it on the chart.':!state.benchmarks.size?'Select at least one benchmark.':entries.length&&!layers.showSamples&&!layers.showMedians&&!layers.showDensity?'Choose Dim or Highlight for Samples, Medians or Density to show a layer.':state.languages.size&&!allSelection().languages.size?'No enabled languages match this release-year window. Adjust either handle or choose All years.':'No measured comparisons. Enable a language or restore its programs.';
   const width=Math.max(290,svg.clientWidth),height=innerWidth<=720?Math.max(330,width*.86):Math.min(690,Math.max(440,width*.59));
   svg.setAttribute('viewBox',`0 0 ${width} ${height}`);svg.style.aspectRatio=`${width}/${height}`;
   const margins={left:innerWidth<=720?75:80,right:25,top:30,bottom:72};
@@ -470,15 +472,15 @@ function renderChart(){
   const global=globalStatistics(entries);
   const overlayEntries=languageView?entries.filter(e=>selectedKeys.has(e.language.key)).map(entry=>({entry,statistics:languageMedianStatistics(entry)})):[{entry:null,statistics:global}];
   const globalNote=$('#global-statistics-note');
-  globalNote.classList.toggle('inactive',!state.global||empty);
-  globalNote.setAttribute('aria-hidden',!state.global||empty);
+  globalNote.classList.toggle('inactive',!layers.showGlobal||empty);
+  globalNote.setAttribute('aria-hidden',!layers.showGlobal||empty);
   globalNote.innerHTML=languageView?'Language coordinate medians · 1σ / 2σ covariance across measured benchmarks · run-to-run SD is in the timings table':`Global median: <span style="color:#edf3f6;opacity:${state.fast?1:.4}">Fastest</span> / <span style="color:#f6c04e;opacity:${state.small?1:.4}">Fewest LOC</span> · 1σ / 2σ covariance · <span class="global-count">${entries.length}</span> visible variants${state.trail?' · trail by release year':''}`;
   const shapes=[];
-  if(!single)for(const sigma of [2,1])for(const entry of entries)if(state.ellipses.has(entry.language.key)&&!(languageView&&state.global&&selectedKeys.has(entry.language.key)))for(const kind of visibleKinds){
+  if(layers.showMedians&&!single)for(const sigma of [2,1])for(const entry of entries)if(state.ellipses.has(entry.language.key)&&!(languageView&&state.global&&selectedKeys.has(entry.language.key)))for(const kind of visibleKinds){
     const region=(sigma===2?entry.spread2:entry.spread)[kind];if(region)shapes.push({entry,kind,region,sigma});
   }
-  const domainKey=JSON.stringify([state.view,density?false:state.focusMeans,single?state.focus:[...state.benchmarks].sort(),languageView?[...selectedKeys].sort():null,state.languageFocus?.comparisonProgram??null]);
-  if(!domains.has(domainKey))domains.set(domainKey,languageView?languageViewDomain():state.languageFocus?.comparisonProgram?sourceComparisonDomain():chartDomain(data,density?{...state,focusMeans:false}:state));
+  const domainKey=JSON.stringify([state.view,state.focusMeans,single?state.focus:[...state.benchmarks].sort(),languageView?[...selectedKeys].sort():null,state.languageFocus?.comparisonProgram??null]);
+  if(!domains.has(domainKey))domains.set(domainKey,selectedPlotDomain());
   currentDomain=domains.get(domainKey);
   const {xMin:xmin,xMax:xmax,yMin:ymin,yMax:ymax}=currentDomain;
   for(const [key,value] of Object.entries(currentDomain))svg.dataset[key]=value;
@@ -490,9 +492,9 @@ function renderChart(){
   node('rect',{x:X(1),y:margins.top,width:margins.left+w-X(1),height:Y(1)-margins.top},baselineClip);
   $('#density-legend').hidden=!density;
   if(density){
-    const field=densityGrid(comparisonDensityPoints(entries,{fast:state.fast,small:state.small}),currentDomain);
-    const heat=node('g',{class:'density-field','clip-path':'url(#plot-clip)','pointer-events':'none',
-      'data-density-variants':field.variants,'data-density-positions':field.profile_positions,'data-density-peak':field.peak},svg);
+    const field=densityGrid(sampleDensityPoints(sampleInputs),currentDomain);
+    const heat=node('g',{class:'density-field','clip-path':'url(#plot-clip)','pointer-events':'none',opacity:layers.densityLayer.opacity,
+      'data-layer':'density','data-layer-mode':state.densityMode,'data-density-variants':field.variants,'data-density-runs':field.runs,'data-density-programs':field.programs,'data-density-peak':field.peak},svg);
     const stops=[[21,27,33],[30,92,122],[48,176,160],[246,192,78]];
     const color=value=>{
       const scaled=field.peak?Math.sqrt(value/field.peak)*3:0,index=Math.min(2,Math.floor(scaled)),fraction=scaled-index;
@@ -500,22 +502,24 @@ function renderChart(){
     };
     for(const cell of field.cells)node('rect',{x:margins.left+cell.column*w/field.columns,y:margins.top+h-(cell.row+1)*h/field.rows,
       width:w/field.columns+.25,height:h/field.rows+.25,fill:color(cell.value),'data-density-cell':`${cell.column}:${cell.row}`},heat);
-    $('#density-population').textContent=field.variants?`${field.variants} execution variants · ${field.profile_positions} distinct enabled profile positions · equal variant weights, split between distinct positions · Gaussian smoothing ${field.bandwidth_x.toFixed(3)} × ${field.bandwidth_y.toFixed(3)} log₂ doublings. Color shows square-root-scaled density relative to this selection’s peak; raw samples are a separate overlay.`:'No enabled profile positions contribute density. Enable Fastest or Fewest LOC; Samples can still show recorded runs independently.';
+    $('#density-population').textContent=field.runs?`${field.runs} recorded runs · ${field.programs} programs · ${field.variants} variants · equal run weights · smoothing ${summaryNumber(field.bandwidth_x)} × ${summaryNumber(field.bandwidth_y)} log₂ doublings. Relative intensity; dot visibility does not change density.`:'No recorded runs in the current data selection.';
   }
   for(let exponent=Math.ceil(xmin);exponent<=Math.floor(xmin+dx);exponent++){
     const value=2**exponent,x=X(value);node('line',{x1:x,x2:x,y1:margins.top,y2:margins.top+h,class:'grid-line'},svg);
-    text(svg,`${value>=1?value:value.toFixed(2)}×`,x,margins.top+h+23,{class:'tick','text-anchor':'middle'});
+    text(svg,`${summaryNumber(value)}×`,x,margins.top+h+23,{class:'tick','text-anchor':'middle'});
   }
   for(let exponent=Math.ceil(ymin);exponent<=Math.floor(ymin+dy);exponent++){
     const value=2**exponent,y=Y(value);node('line',{x1:margins.left,x2:margins.left+w,y1:y,y2:y,class:'grid-line'},svg);
-    text(svg,`${value>=1?value:value.toFixed(2)}×`,margins.left-12,y+5,{class:'tick','text-anchor':'end'});
+    text(svg,`${summaryNumber(value)}×`,margins.left-12,y+5,{class:'tick','text-anchor':'end'});
   }
   text(svg,'Source lines / fewest lines · log₂',margins.left+w/2,height-17,{class:'axis-title','text-anchor':'middle'});
   text(svg,'Time / fastest median · log₂',0,0,{class:'axis-title','text-anchor':'middle',transform:`translate(${innerWidth<=720?14:19} ${margins.top+h/2}) rotate(-90)`});
   if(empty)return;
   const plot=node('g',{'clip-path':'url(#plot-clip)'},svg);
-  const globalRegions=node('g',{class:'global-regions','pointer-events':'none'},plot);
-  if(state.global)for(const {entry,statistics} of overlayEntries)for(const kind of visibleKinds)for(const sigma of [2,1]){
+  const medianPlot=node('g',{'data-layer':'medians','data-layer-mode':state.medianMode,opacity:layers.medianLayer.opacity},plot);
+  const samplePlot=node('g',{'data-layer':'samples','data-layer-mode':state.sampleMode,opacity:layers.sampleLayer.opacity},plot);
+  const globalRegions=node('g',{class:'global-regions','pointer-events':'none'},medianPlot);
+  if(layers.showGlobal)for(const {entry,statistics} of overlayEntries)for(const kind of visibleKinds)for(const sigma of [2,1]){
     if(entry&&!state.ellipses.has(entry.language.key))continue;
     const region=(sigma===2?statistics[kind]?.spread2:statistics[kind]?.spread);if(!region)continue;
     const color=entry?displayColor(entry.language.key):kind==='fast'?'#edf3f6':'#f6c04e';
@@ -527,7 +531,7 @@ function renderChart(){
       'clip-path':languageView?null:'url(#baseline-clip)',
       'aria-label':`${entry?shortName(entry.language.key):'Global'} ${kind==='fast'?'fastest':'fewest LOC'} ${sigma}σ covariance across ${region.n} ${languageView?'benchmarks':'visible execution variants'}`},globalRegions);
   }
-  const hoverSpreads=node('g',{class:'hover-spreads'},plot);
+  const hoverSpreads=node('g',{class:'hover-spreads'},medianPlot);
   const lineLabels=[],labelObstacles=[],hitPoints=[],hitLines=[];
   let hoveredLanguage=null,focusedLanguage=null,highlightedLanguage;
   function updateHighlight(){
@@ -536,7 +540,7 @@ function renderChart(){
     highlightedLanguage=key;
     if(key)svg.dataset.highlightLanguage=key;else delete svg.dataset.highlightLanguage;
     hoverSpreads.replaceChildren();
-    if(key&&!single&&!state.ellipses.has(key)){
+    if(layers.showMedians&&key&&!single&&!state.ellipses.has(key)){
       const entry=entries.find(item=>item.language.key===key);
       if(entry)for(const sigma of [2,1])for(const kind of visibleKinds){
         const region=(sigma===2?entry.spread2:entry.spread)[kind];
@@ -546,7 +550,7 @@ function renderChart(){
     for(const piece of plot.querySelectorAll('[data-chart-language]')){
       const selected=key?piece.dataset.chartLanguage===key:languageView&&selectedKeys.has(piece.dataset.chartLanguage);
       piece.classList.toggle('chart-dimmed',(!!key||languageView)&&!selected);
-      piece.classList.toggle('sample-highlighted',selected&&piece.dataset.sample==='true');
+      piece.classList.toggle('sample-highlighted',selected&&piece.classList.contains('timing-run'));
       if(piece.classList.contains('label-crowded'))piece.classList.toggle('label-revealed',selected);
     }
   }
@@ -583,7 +587,7 @@ function renderChart(){
     for(const line of hitLines){const d=distance(line);if(d<nearest-.25){chosen=line;nearest=d;}}
     return chosen;
   }
-  function drawSpread({entry,kind,region,sigma},parent=plot,hover=false){
+  function drawSpread({entry,kind,region,sigma},parent=medianPlot,hover=false){
     const d=region.boundary.map((p,i)=>`${i?'L':'M'}${X(p.x)},${Y(p.y)}`).join(' ')+'Z';
     node('path',{d,fill:displayColor(entry.language.key),'fill-opacity':sigma===2?(kind==='fast'?.035:.018):(kind==='fast'?.10:.05),
       stroke:displayColor(entry.language.key),'stroke-opacity':sigma===2?.3:.6,'stroke-width':sigma===2?.9:1.2,
@@ -595,17 +599,18 @@ function renderChart(){
   }
   for(const shape of shapes)drawSpread(shape);
   // Wide line hover targets sit below every marker, preserving point clicks.
-  const connectorHits=node('g',{class:'connector-hit-regions'},plot);
+  const connectorHits=node('g',{class:'connector-hit-regions'},medianPlot);
   function marker(point,entry,kind,{faint=false,mean=false,program=null,benchmarkKey=null,label=null}={}){
+    if(!layers.showMedians)return null;
     const color=displayColor(entry.language.key),size=faint?3.3:mean?state.ellipses.has(entry.language.key)?8.5:7.2:7;
     const attrs={fill:color,stroke:mean&&state.ellipses.has(entry.language.key)?'#f3f3e6':color,'stroke-width':mean?1:.7,
-      opacity:faint?.23:1,class:`endpoint ${mean?'mean-mark':''}`,'data-language':entry.language.key,'data-profile':kind,
-      'data-chart-language':entry.language.key,style:`--chart-opacity:${faint?.23:1}`,
-      'data-program':program?.key??null,'data-mean':mean?'true':null,'data-sample':faint?'true':null,tabindex:faint?-1:0,role:'button'};
+      opacity:1,class:`endpoint ${mean?'mean-mark':''}`,'data-language':entry.language.key,'data-profile':kind,
+      'data-chart-language':entry.language.key,style:'--chart-opacity:1',
+      'data-program':program?.key??null,'data-mean':mean?'true':null,'data-profile-median':'true',tabindex:0,role:'button'};
     const name=label??`${shortName(entry.language.key)} · ${kind==='fast'?'fastest':'fewest LOC'}`;
     const description=program?`${name}\n${benchmark(benchmarkKey).title} · ${program.loc} LOC · ${seconds(program.seconds)}\n${program.samples.length} timing samples`:`${name}\n${ratio(point.x)} LOC · ${ratio(point.y)} time\n${coverageLabel(entry)} selected benchmarks${partialEntry(entry)?` · missing ${missingNames(entry)}`:''}`;
     attrs['aria-label']=description.replaceAll('\n',', ');
-    const mark=kind==='small'?node('rect',{...attrs,x:X(point.x)-size,y:Y(point.y)-size,width:size*2,height:size*2},plot):node('circle',{...attrs,cx:X(point.x),cy:Y(point.y),r:size},plot);
+    const mark=kind==='small'?node('rect',{...attrs,x:X(point.x)-size,y:Y(point.y)-size,width:size*2,height:size*2},medianPlot):node('circle',{...attrs,cx:X(point.x),cy:Y(point.y),r:size},medianPlot);
     if(!faint)labelObstacles.push({x:X(point.x)-size-2,y:Y(point.y)-size-2,width:size*2+4,height:size*2+4});
     const info={language:entry.language.key,kind,program:program?.key,benchmark:benchmarkKey,aggregate:mean};
     const hit={x:X(point.x),y:Y(point.y),size,faint,kind,info,description};hitPoints.push(hit);
@@ -621,11 +626,12 @@ function renderChart(){
     return mark;
   }
   function pair(entry,fast,small,{mean=false,faint=false,benchmarkKey=null,label=null}={}){
+    if(!layers.showMedians)return;
     if(state.fast&&state.small&&!same(fast,small)){
       const geometry={x1:X(small.x),y1:Y(small.y),x2:X(fast.x),y2:Y(fast.y)};
       node('line',{...geometry,stroke:displayColor(entry.language.key),
         'stroke-width':mean&&isMechLanguage(entry.language.key)?2.8:1.9,'stroke-dasharray':lineDash(entry.language.key),opacity:faint?.15:1,
-        class:'connector','data-chart-language':entry.language.key,style:`--chart-opacity:${faint?.15:1}`},plot);
+        class:'connector','data-chart-language':entry.language.key,style:`--chart-opacity:${faint?.15:1}`},medianPlot);
       const hit={a:{x:geometry.x1,y:geometry.y1},b:{x:geometry.x2,y:geometry.y2},language:entry.language.key,
         description:`${label??shortName(entry.language.key)}\nFastest: ${ratio(fast.x)} LOC · ${ratio(fast.y)} time\nFewest LOC: ${ratio(small.x)} LOC · ${ratio(small.y)} time`};
       hitLines.push(hit);
@@ -640,7 +646,7 @@ function renderChart(){
       lineLabels.push({label,language:entry.language.key,benchmark:benchmarkKey,a:{x:X(a.x),y:Y(a.y)},b:{x:X(b.x),y:Y(b.y)}});
     }
   }
-  if(!single&&!isMech)for(const entry of entries)for(const input of entry.inputs){
+  if(layers.showMedians&&!single&&!isMech)for(const entry of entries)for(const input of entry.inputs){
     if(languageView&&selectedKeys.has(entry.language.key))continue;
     if(state.small)marker(input.small,entry,'small',{faint:true,program:input.small,benchmarkKey:input.benchmark.key});
     if(state.fast)marker(input.fast,entry,'fast',{faint:true,program:input.fast,benchmarkKey:input.benchmark.key});
@@ -650,13 +656,13 @@ function renderChart(){
     // Runs share the program's actual source coordinate; no jitter or invented values.
       const description=`${shortName(program.language)} · ${inputBenchmark.title}\n${program.id} · run ${runNumber}: ${seconds(elapsed)} · ${program.loc} LOC\nRun time / fixed benchmark median baseline: ${ratio(point.y)}`;
       const run=node('circle',{cx:X(point.x),cy:Y(point.y),r:2.4,fill:'none',stroke:displayColor(entry.language.key),'stroke-width':1.15,
-        class:'timing-run','data-sample':'true','data-chart-language':program.language,'data-program':program.key,'data-timing-run':runNumber,'data-run-seconds':elapsed,'data-ratio-x':point.x,'data-ratio-y':point.y,style:'--chart-opacity:.65',tabindex:0,role:'button','aria-label':description.replaceAll('\n',', ')},plot);
+        class:'timing-run','data-sample':'true','data-chart-language':program.language,'data-program':program.key,'data-timing-run':runNumber,'data-run-seconds':elapsed,'data-ratio-x':point.x,'data-ratio-y':point.y,style:'--chart-opacity:1',tabindex:0,role:'button','aria-label':description.replaceAll('\n',', ')},samplePlot);
       const inspect=()=>openPoint({language:program.language,benchmark:program.benchmark,program:program.key});
       run.addEventListener('click',inspect);run.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();inspect();}});
       run.addEventListener('pointerenter',event=>highlightPointer(event,program.language,description));run.addEventListener('pointermove',event=>highlightPointer(event,program.language,description));run.addEventListener('pointerleave',clearHover);
       run.addEventListener('focus',()=>{focusedLanguage=program.language;updateHighlight();showHoverDetails(description);});run.addEventListener('blur',()=>{focusedLanguage=null;updateHighlight();clearHoverDetails();});
   }
-  if((languageView||selectedComparison)&&(state.fast||state.small)){
+  if(layers.showMedians&&(languageView||selectedComparison)){
     const seenPrograms=new Set();
     for(const {program,entry} of sampleInputs){
       if(seenPrograms.has(program.key)||!(languageView?selectedKeys.has(entry.language.key):entry.language.key===selectedComparison.language))continue;
@@ -669,22 +675,22 @@ function renderChart(){
     if(single||isMech||languageView&&selectedKeys.has(entry.language.key))for(const input of entry.inputs)pair(entry,input.fast,input.small,{benchmarkKey:input.benchmark.key,label:isMech||languageView?`${input.benchmark.title} · ${entry.language.variant_label??chartName(entry.language.key)}`:chartName(entry.language.key)});
     if(!single)pair(entry,entry.fast,entry.small,{mean:true,label:isMech?`${entry.language.execution??'AOT'} geometric mean`:meanChartName(entry)});
   }
-  if(state.global&&state.trail)for(const kind of visibleKinds){
+  if(layers.showGlobal&&state.trail)for(const kind of visibleKinds){
     const history=currentHistory().filter(item=>item.statistics[kind]);
     const color=kind==='fast'?'#edf3f6':'#f6c04e';
     node('path',{d:history.map((item,i)=>{const p=item.statistics[kind].median;return `${i?'L':'M'}${X(p.x)},${Y(p.y)}`;}).join(' '),
       class:'median-trail','data-global-profile':kind,fill:'none',stroke:color,'stroke-width':2,'stroke-opacity':.75,
-      'stroke-dasharray':kind==='small'?'5 4':null},plot);
+      'stroke-dasharray':kind==='small'?'5 4':null},medianPlot);
     for(const item of history){
       const p=item.statistics[kind].median;
       const mark=node('circle',{cx:X(p.x),cy:Y(p.y),r:2.8,fill:color,class:'median-trail-point',
-        'data-global-profile':kind,'data-year':item.year,'data-ratio-x':p.x,'data-ratio-y':p.y},plot);
+        'data-global-profile':kind,'data-year':item.year,'data-ratio-x':p.x,'data-ratio-y':p.y},medianPlot);
       const description=`${item.year} · global ${kind==='fast'?'fastest':'fewest LOC'} median\n${ratio(p.x)} LOC · ${ratio(p.y)} time\n${item.statistics[kind].n} visible execution variants`;
       mark.addEventListener('pointerenter',event=>{clearHover();showHoverDetails(description);});
       mark.addEventListener('pointermove',event=>showHoverDetails(description));mark.addEventListener('pointerleave',clearHover);
     }
   }
-  if(state.global)for(const {entry,statistics} of overlayEntries)for(const kind of visibleKinds){
+  if(layers.showGlobal)for(const {entry,statistics} of overlayEntries)for(const kind of visibleKinds){
     if(!statistics[kind])continue;
     const statistic='median',point=statistics[kind].median,x=X(point.x),y=Y(point.y),size=8;
     const name=`${entry?shortName(entry.language.key):'Global'} ${kind==='fast'?'fastest':'fewest LOC'} median`;
@@ -693,8 +699,8 @@ function renderChart(){
     const mark=node('path',{d:`M${x},${y-size}l${size},${size}l${-size},${size}l${-size},${-size}Z`,
       class:'global-center','data-global-profile':kind,'data-global-statistic':statistic,
       'data-ratio-x':point.x,'data-ratio-y':point.y,'data-median-language':entry?.language.key??null,fill:color,
-      stroke:'#151b21','stroke-width':2,tabindex:0,role:'img','aria-label':description.replaceAll('\n',', ')},plot);
-    text(plot,`${entry?`${entry.language.variant_label??chartName(entry.language.key)} · `:''}${kind==='fast'?'Fastest':'Fewest LOC'} median`,x+12,y-12,{class:'median-label',fill:color});
+      stroke:'#151b21','stroke-width':2,tabindex:0,role:'img','aria-label':description.replaceAll('\n',', ')},medianPlot);
+    text(medianPlot,`${entry?`${entry.language.variant_label??chartName(entry.language.key)} · `:''}${kind==='fast'?'Fastest':'Fewest LOC'} median`,x+12,y-12,{class:'median-label',fill:color});
     labelObstacles.push({x:x-size-3,y:y-size-3,width:2*size+6,height:2*size+6});
     mark.addEventListener('pointerenter',event=>{clearHover();showHoverDetails(description);});
     mark.addEventListener('pointermove',event=>showHoverDetails(description));mark.addEventListener('pointerleave',clearHover);
@@ -703,7 +709,7 @@ function renderChart(){
   }
   // Label only the visible profiles, not their faint benchmark samples. Prefer
   // a nearby offset along the line and avoid covering another label or marker.
-  const labels=node('g',{class:'line-labels'},plot),placed=[];
+  const labels=node('g',{class:'line-labels'},medianPlot),placed=[];
   const overlap=(a,b)=>Math.max(0,Math.min(a.x+a.width,b.x+b.width)-Math.max(a.x,b.x))*Math.max(0,Math.min(a.y+a.height,b.y+b.height)-Math.max(a.y,b.y));
   for(const item of lineLabels){
     // A means-focused range can crop benchmark pairs. Keep their labels with
@@ -760,9 +766,9 @@ function renderTable(){
     sortHeader('comparison','slope','Slope'),sortHeader('comparison','length','Length'),
     sortHeader('comparison','areaFast','2σ area','Fastest'),
     sortHeader('comparison','areaSmall','2σ area','Fewest LOC')].join('')+'</tr>';
-  const slope=value=>value==null?'—':Number.isFinite(value)?value.toFixed(2):value<0?'−∞':'∞';
-  const area=value=>value==null?'—':value===0?'0.00':value>=.01?value.toFixed(2):value.toPrecision(2);
-  $('#mean-table tbody').innerHTML=entries.map(entry=>`<tr><td><button data-table-language="${entry.language.key}" class="table-language"><span class="color-key" style="${colorKeyStyle(entry.language.key)}"></span>${esc(shortName(entry.language.key))}${partialEntry(entry)?` <small class="coverage-badge" title="${esc(`${coverageLabel(entry)} selected benchmarks; missing ${missingNames(entry)}`)}">${coverageLabel(entry)}</small>`:''}</button></td><td class="ratio">${ratio(entry.metrics.loc)}</td><td class="ratio">${ratio(entry.metrics.fastest)}</td><td class="ratio" title="${entry.metrics.slope==null?'Same endpoint: no line slope':'Change in log₂ time divided by change in log₂ LOC'}">${slope(entry.metrics.slope)}</td><td class="ratio" title="Euclidean distance between endpoints in log₂ coordinates">${entry.metrics.length.toFixed(2)}</td><td class="ratio" data-area-profile="fast" title="Fastest-profile 2σ covariance ellipse area in squared doublings">${area(entry.metrics.areaFast)}</td><td class="ratio" data-area-profile="small" title="Fewest-LOC-profile 2σ covariance ellipse area in squared doublings">${area(entry.metrics.areaSmall)}</td></tr>`).join('');
+  const slope=value=>value==null?'—':Number.isFinite(value)?summaryNumber(value):value<0?'−∞':'∞';
+  const area=value=>value==null?'—':summaryNumber(value);
+  $('#mean-table tbody').innerHTML=entries.map(entry=>`<tr><td><button data-table-language="${entry.language.key}" class="table-language"><span class="color-key" style="${colorKeyStyle(entry.language.key)}"></span>${esc(shortName(entry.language.key))}${partialEntry(entry)?` <small class="coverage-badge" title="${esc(`${coverageLabel(entry)} selected benchmarks; missing ${missingNames(entry)}`)}">${coverageLabel(entry)}</small>`:''}</button></td><td class="ratio">${ratio(entry.metrics.loc)}</td><td class="ratio">${ratio(entry.metrics.fastest)}</td><td class="ratio" title="${entry.metrics.slope==null?'Same endpoint: no line slope':'Change in log₂ time divided by change in log₂ LOC'}">${slope(entry.metrics.slope)}</td><td class="ratio" title="Euclidean distance between endpoints in log₂ coordinates">${summaryNumber(entry.metrics.length)}</td><td class="ratio" data-area-profile="fast" title="Fastest-profile 2σ covariance ellipse area in squared doublings">${area(entry.metrics.areaFast)}</td><td class="ratio" data-area-profile="small" title="Fewest-LOC-profile 2σ covariance ellipse area in squared doublings">${area(entry.metrics.areaSmall)}</td></tr>`).join('');
 }
 function selectedProgram(){
   if(state.detail.program)return catalogProgram(state.detail.program);
@@ -818,7 +824,7 @@ function reset(){
   state.disabled.clear();state.ellipses=new Set(['mech']);state.view='summary';state.focus='nbody';state.languageFocus=null;
   state.collapsedFamilies.clear();
   state.traits=emptyTraitFilters();
-  Object.assign(state,{fast:true,small:true,samples:true,focusMeans:true,global:false,trail:true});fullReleaseWindow();update();
+  Object.assign(state,{fast:true,small:true,sampleMode:'dim',medianMode:'highlight',densityMode:'off',focusMeans:true,global:false,trail:true});fullReleaseWindow();update();
 }
 function registerTools(){
   if(!document.modelContext?.registerTool)return;
@@ -840,7 +846,7 @@ function registerTools(){
   addEventListener('pagehide',()=>controller.abort(),{once:true});
 }
 async function start(){
-  data=await fetch(new URL('./data.json',import.meta.url)).then(response=>{if(!response.ok)throw new Error('Could not load measured benchmark data.');return response.json();});
+  data=await fetch(new URL('./data.json',import.meta.url),{cache:'no-cache'}).then(response=>{if(!response.ok)throw new Error('Could not load measured benchmark data.');return response.json();});
   // The qualified inventory keeps source navigation complete without changing
   // the canonical comparison pool or its immutable normalization baselines.
   const inventory=data.program_inventory??{};
@@ -895,7 +901,9 @@ async function start(){
     const p=rows.find(p=>p.key===focus.program)??rows[0];if(p)openPoint({language:p.language,benchmark:p.benchmark,program:p.key});
   };
   $('#focused-benchmark').onchange=event=>{state.focus=event.target.value;update();};
-  for(const [id,key] of [['fast-profile','fast'],['small-profile','small'],['show-samples','samples'],['focus-means','focusMeans'],['show-global','global'],['show-median-trail','trail']])$('#'+id).onchange=event=>{if(event.target.disabled)return;state[key]=event.target.checked;update();};
+  for(const [id,key] of [['fast-profile','fast'],['small-profile','small'],['show-global','global'],['show-median-trail','trail']])$('#'+id).onchange=event=>{if(event.target.disabled)return;state[key]=event.target.checked;update();};
+  $('#chart-axes').onchange=event=>{if(!['means','samples'].includes(event.target.value))return;state.focusMeans=event.target.value==='means';update();};
+  for(const [id,key] of [['show-samples','sampleMode'],['show-medians','medianMode'],['show-density','densityMode']])$('#'+id).onchange=event=>{layerPresentation(event.target.value);state[key]=event.target.value;update();};
   document.addEventListener('click',event=>{
     const decade=event.target.closest('[data-release-decade]');if(decade&&!decade.disabled){
       const window=decadeWindow(Number(decade.dataset.releaseDecade),yearBounds());
@@ -950,8 +958,12 @@ async function start(){
   });
   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&$('#inspector').open)closeInspector();});
   new ResizeObserver(()=>requestAnimationFrame(renderChart)).observe($('#chart-wrap'));
-  window.benchmarkExplorer={getSelection:()=>({benchmarks:[...state.benchmarks],languages:[...effectiveLanguages()],selectedLanguages:[...state.languages],traits:Object.fromEntries(traitDimensions.map(({key})=>[key,[...state.traits[key]]])),releaseYearStart:state.releaseYearStart,releaseYear:state.releaseYear,shownReleaseYear:shownReleaseYear(),playbackYear:state.playbackYear,ellipses:[...state.ellipses],disabled:[...state.disabled],view:state.view,languageFocus:state.languageFocus?{keys:[...state.languageFocus.keys],program:state.languageFocus.program,comparison:state.languageFocus.comparison}:null,samples:state.samples,focusMeans:state.focusMeans,global:state.global,trail:state.trail,playing:state.playing}),
+  let rankingWidth=-1;
+  new ResizeObserver(entries=>{const width=entries[0].contentRect.width;if(width!==rankingWidth){rankingWidth=width;requestAnimationFrame(renderMedianRankings);}}).observe($('#median-ranking-cards'));
+  window.benchmarkExplorer={getSelection:()=>({benchmarks:[...state.benchmarks],languages:[...effectiveLanguages()],selectedLanguages:[...state.languages],traits:Object.fromEntries(traitDimensions.map(({key})=>[key,[...state.traits[key]]])),releaseYearStart:state.releaseYearStart,releaseYear:state.releaseYear,shownReleaseYear:shownReleaseYear(),playbackYear:state.playbackYear,ellipses:[...state.ellipses],disabled:[...state.disabled],view:state.view,languageFocus:state.languageFocus?{keys:[...state.languageFocus.keys],program:state.languageFocus.program,comparison:state.languageFocus.comparison}:null,samples:samplesVisible(),sampleMode:state.sampleMode,medianMode:state.medianMode,densityMode:state.densityMode,focusMeans:state.focusMeans,global:state.global,trail:state.trail,playing:state.playing}),
     getMedianHistory:currentHistory,
+    getDensity:currentDensityField,
+    setLayerModes:({samples=state.sampleMode,medians=state.medianMode,density=state.densityMode}={})=>{for(const mode of [samples,medians,density])layerPresentation(mode);Object.assign(state,{sampleMode:samples,medianMode:medians,densityMode:density});update();},
     getMedianRankings:()=>medianRankings(currentEntries()),
     getGlobalStatistics:()=>inLanguageView()?currentEntries().filter(e=>focusKeys().has(e.language.key)).map(entry=>({language:entry.language.key,statistics:languageMedianStatistics(entry)})):globalStatistics(currentEntries()),
     getDomains:()=>({...currentDomain}),

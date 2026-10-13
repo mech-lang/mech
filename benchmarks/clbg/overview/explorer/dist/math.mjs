@@ -4,6 +4,33 @@ export function median(values){
   const sorted=values.slice().sort((a,b)=>a-b),middle=Math.floor(sorted.length/2);
   return sorted.length%2?sorted[middle]:(sorted[middle-1]+sorted[middle])/2;
 }
+export function layerPresentation(mode){
+  if(!['off','dim','highlight'].includes(mode))throw new Error('Unknown chart layer mode.');
+  return {visible:mode!=='off',opacity:mode==='off'?0:mode==='dim'?.15:1};
+}
+export function summaryNumber(value,{signed=false}={}){
+  if(!Number.isFinite(value))throw new Error('Nonfinite chart summary.');
+  const rounded=Number(value.toFixed(1));
+  return signed?`${rounded<0?'−':rounded>0?'+':''}${Math.abs(rounded).toFixed(1)}`:(rounded||0).toFixed(1);
+}
+export function rankingDotLayout(rows,{extent,width,gap=14}={}){
+  if(!Number.isFinite(extent)||extent<=0||!Number.isFinite(width)||width<=0||!Number.isFinite(gap)||gap<=0)throw new Error('Invalid ranking layout.');
+  const lanes=[],points=[];
+  for(const row of rows.slice().sort((a,b)=>a.sigma_distance-b.sigma_distance||a.entry.language.key.localeCompare(b.entry.language.key))){
+    const x=(row.sigma_distance+extent)/(2*extent)*width;
+    let lane=lanes.findIndex(last=>x-last>=gap);
+    if(lane<0){lane=lanes.length;lanes.push(x);}else lanes[lane]=x;
+    points.push({row,x,lane});
+  }
+  return {points,lanes:lanes.length};
+}
+export function chartLayerState({samples='dim',medians='highlight',density='off',fast=true,small=true,global=false,sampleCount=0,entryCount=0}={}){
+  const sampleLayer=layerPresentation(samples),medianLayer=layerPresentation(medians),densityLayer=layerPresentation(density),profiles=fast||small;
+  const showSamples=sampleLayer.visible&&sampleCount>0,showMedians=medianLayer.visible&&profiles;
+  const showGlobal=global&&showMedians,showDensity=densityLayer.visible&&sampleCount>0;
+  return {sampleLayer,medianLayer,densityLayer,showSamples,showMedians,showGlobal,showDensity,
+    empty:entryCount===0||!(showSamples||showMedians||showGlobal||showDensity)};
+}
 export function languageFamilies(languages){
   const families=new Map();
   for(const language of languages){
@@ -66,17 +93,16 @@ export function recordedSamplePoints(entries,{samples=true,disabled=new Set(),pr
   }
   return points;
 }
-export function comparisonDensityPoints(entries,{fast=true,small=true}={}){
-  const points=[];
-  for(const entry of entries){
-    const positions=[];
-    for(const kind of ['fast','small'])if((kind==='fast'?fast:small)&&entry[kind]&&
-      [entry[kind].x,entry[kind].y].every(value=>Number.isFinite(value)&&value>0)){
-      const position=positions.find(point=>same(point,entry[kind]));
-      if(position)position.profiles.push(kind);
-      else positions.push({x:entry[kind].x,y:entry[kind].y,profiles:[kind]});
-    }
-    for(const position of positions)points.push({...position,weight:1/positions.length,language:entry.language.key});
+export function sampleDensityPoints(samples){
+  const points=[],seen=new Set();
+  for(const sample of samples){
+    if(!sample.program?.key||!Number.isInteger(sample.run)||sample.run<=0||
+      ![sample.x,sample.y].every(value=>Number.isFinite(value)&&value>0))continue;
+    const identity=JSON.stringify([sample.program.key,sample.run]);
+    if(seen.has(identity))continue;
+    seen.add(identity);
+    // Equal elapsed values remain distinct recorded observations, never merged.
+    points.push({x:sample.x,y:sample.y,weight:1,language:sample.entry.language.key,program:sample.program.key,run:sample.run});
   }
   return points;
 }
@@ -95,8 +121,8 @@ export function densityGrid(points,domain,{columns=48,rows=36,bandwidthCells=1.2
     const value=inputs.reduce((sum,point)=>sum+point.weight*Math.exp(-.5*(((lx-point.lx)/bandwidth_x)**2+((ly-point.ly)/bandwidth_y)**2)),0)*scale;
     cells.push({row,column,value});peak=Math.max(peak,value);
   }
-  return {columns,rows,cells,peak,bandwidth_x,bandwidth_y,profile_positions:inputs.length,
-    variants:new Set(inputs.map(point=>point.language)).size,total_variant_weight:inputs.reduce((sum,point)=>sum+point.weight,0)};
+  return {columns,rows,cells,peak,bandwidth_x,bandwidth_y,runs:inputs.length,programs:new Set(inputs.map(point=>point.program)).size,
+    variants:new Set(inputs.map(point=>point.language)).size,total_sample_weight:inputs.reduce((sum,point)=>sum+point.weight,0)};
 }
 export function medianHistory(data,selection,{from=-Infinity,to=Infinity}={}){
   const languages=data.languages.filter(l=>selection.languages.has(l.key));
@@ -211,14 +237,14 @@ export function chartDomain(data,{benchmarks,view='summary',focus='nbody',focusM
   for(const cohort of cohorts.values()){
     const reference=comparison(data,{benchmarks:new Set(cohort.map(b=>b.key)),languages:new Set(languages.map(l=>l.key)),disabled:new Set()});
     for(const entry of reference.entries){
-      if(view==='benchmark'||!focusMeans)for(const input of entry.inputs)for(const program of input.programs){
+      if(!focusMeans)for(const input of entry.inputs)for(const program of input.programs){
         if(!Number.isFinite(program.x)||program.x<=0)continue;
         include({x:program.x,y:Number.isFinite(program.y)&&program.y>0?program.y:1});
         for(const elapsed of program.samples??[])if(Number.isFinite(elapsed)&&elapsed>0&&Number.isFinite(input.benchmark.baseline_seconds)&&input.benchmark.baseline_seconds>0)
           include({x:program.x,y:elapsed/input.benchmark.baseline_seconds});
       }
       for(const kind of ['fast','small']){
-        if(view!=='benchmark'&&focusMeans)include(entry[kind]);
+        if(focusMeans)include(entry[kind]);
         else{
           includeAll(entry.inputs.map(input=>input[kind]));
           if(view!=='benchmark'&&entry.spread2[kind])includeAll(entry.spread2[kind].boundary);
@@ -226,7 +252,7 @@ export function chartDomain(data,{benchmarks,view='summary',focus='nbody',focusM
       }
     }
   }
-  if(view==='benchmark'||!focusMeans){
+  if(!focusMeans){
     // Fit the global overlay and every cumulative release-year contour even
     // when they are hidden. Using the admitted cohort keeps year, language,
     // profile and overlay toggles from changing this range. Means-focused

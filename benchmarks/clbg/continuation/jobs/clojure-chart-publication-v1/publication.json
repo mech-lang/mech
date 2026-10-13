@@ -1,0 +1,16 @@
+{
+  "status": "published-and-public-browser-verified",
+  "at": "2026-10-13T21:12:29.350414+00:00",
+  "url": "https://mech-lang.org/benchmarks/",
+  "website_commit": "8ab71934cf26f84145ff66b538fd7236be751b91",
+  "pipeline": "https://gitlab.com/mech-lang/web/website/-/pipelines/2944288319",
+  "dataset_sha256": "b088279074e85ec149466f876bdce49d4d497f7784a0d48be58e023e5b2c6a13",
+  "families": 43,
+  "execution_variants": 49,
+  "programs": 778,
+  "Clojure_inventory_sources": 20,
+  "Clojure_recorded_samples": 60,
+  "Clojure_workloads": 10,
+  "browser_cache_observation": "First navigation reused previous data; explicit reload after deployment loaded and verified all20 programs/60 runs. Next UI release adds fetch revalidation.",
+  "benchmark_runs": 0
+}

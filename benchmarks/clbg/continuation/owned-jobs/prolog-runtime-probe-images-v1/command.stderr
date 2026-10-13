@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-probe-v1/discover_runtime.py", line 162, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-probe-v1/discover_runtime.py", line 159, in main
+    if error is not None:raise error
+                         ^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-probe-v1/discover_runtime.py", line 118, in main
+    probe=service.owned_command(guard,harness,command,environment,output/'runtime',common.fileno(),120,'feature-probe')
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/private-v1/guarded_prepare.py", line 112, in owned_command
+    assert process.returncode == 0, ('Owned command failed', name, process.returncode)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('Owned command failed', 'feature-probe', 1)

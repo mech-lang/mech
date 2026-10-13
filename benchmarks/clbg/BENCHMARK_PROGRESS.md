@@ -1,6 +1,6 @@
-Benchmark progress as of **2026-10-13 21:05 UTC** (17:05 New York).
+Benchmark progress as of **2026-10-13 21:31 UTC** (17:31 New York).
 
-The previous remotely verified checkpoint is `1befbcd5367b7122ea26da364d4a9b6324f07bb3`
+The previous remotely verified checkpoint is `6ea914a526dd58557f5d810bdcb5f0c75784c5fd`
 on `codex/clbg-native-benchmarks`. The language overview and complete Crystal
 inventory are published. C3's exact source counts, runtime metadata and current
 chart candidate have qualified and are now published through GitLab Pages
@@ -16,10 +16,10 @@ actual request, process identity and exit.
 | C3 | 90/90 | Published through GitLab Pages. Source counts, runtime metadata and current dataset qualified; all 20 forms / 60 candidate samples passed browser inspection. |
 | Nim | 90/90 | Independent full-suite reconciliation and complete receipt/pin review passed. Exact source-owner diagnostics still need resolution before LOC admission. |
 | Gleam | 90/90 | Independent full-suite reconciliation and complete receipt/pin review passed. Qualified Gleam and authored Erlang evidence still needs whole-bundle source admission. |
-| Clojure | 90/90 | Full-suite, LOC, JVM metadata and current dataset admission passed. Root verified 5,276 candidate pins; 20 forms / 60 candidate samples are retained, with 18 selected endpoints. Data commit is deployed; browser cache refresh verification remains with the next UI update. |
+| Clojure | 90/90 | Published. Full-suite, LOC, JVM metadata and current dataset admission passed. Root verified 5,276 candidate pins; 20 forms / 60 candidate samples are retained, with 18 selected endpoints. Public browser inspection confirmed all 20 forms and 60 runs. |
 | V | 90/90 | Full workload samples collected, including eight missing tree slots recovered additively. Independent all-ten reconciliation passed. Report-only; excluded from dataset, charts and Site. |
 | Pony | 0/90 | Both tree observations and four Pi/map traces are retained. The existing-evidence capture exited normally; original authored main IR was overwritten by builtin output. Separate bitcode/ownership recovery remains. |
-| Prolog | 0/90 | Archive repair, private app extraction and ARM64 slicing completed. Correct runtime home and version 10.0.2 verified. Feature probe produced JSON but exited 1; its output also collided with the command receipt filename. A probe-only repair isolates the imported compiler initializer and uses distinct output paths; it is source-ready, unexecuted. |
+| Prolog | 0/90 | Archive repair, private app extraction and ARM64 slicing completed. Runtime home and version 10.0.2 verified. The probe filename collision is fixed, but native exit 1 persists after isolating the imported initializer. Complete raw results and the separate failed owned receipt are retained; image closure and runtime admission remain pending. |
 | Julia AOT | 0 qualified | Kernel-image binding repaired. Both bounded debugger calibration cells timed out; no native AOT helper executed. No permission cause is established. An official safe-trim/stripped-IR route is documented for the next additive attempt. |
 | Rebol | 0/90 | Faithful source bundle and six runtime intake fixtures retained; actual SDK/runtime/build/work/LOC/full qualification remains. |
 | Elixir / Kotlin | 0/90 each | Reviewed source bundles are frozen and pushed. Actual toolchain and complete qualification remain. |
@@ -56,14 +56,14 @@ been integrated into the published Site. Successful historical samples and
 original failures remain immutable; additive repairs reuse successful evidence
 instead of relabeling it as a fresh run.
 
-## Chart controls and statistical views — published
+## Chart controls and statistical views — first publication
 
 The inclusive two-handle release-year window, eight decade presets, Speed/LOC
 rankings and full-chart density map are live at https://mech-lang.org/benchmarks/.
 Ranking bands show signed distance from the current coordinate median in units
 of the sample standard deviation of log2 values, extending beyond 3σ when needed.
-Density uses equally weighted language variants over a fixed 48×36 grid; the
-legend explains its smoothing and relative color scale.
+This first density version used equally weighted language variants over a fixed
+48×36 grid. It is superseded by the actual-run density layer described below.
 
 All 2,364 recorded runs remain visible with both profile controls off. Hiding
 Samples preserves the profile medians. Equal-year slider handles remain
@@ -98,16 +98,60 @@ programs, regex and its counted helper are inspectable. Rankings show 49 variant
 and the ordinary chart retains 2,418 samples. Website commit
 `8ab71934cf26f84145ff66b538fd7236be751b91` is pushed and Pages pipeline
 `2944288319` passed. The deployed data matches by SHA-256. The normal browser
-still reused its earlier cached data; revalidation and public browser confirmation
-are pending with the next UI change. No benchmark or successful fixture was rerun.
+initially reused earlier cached data; a subsequent reload confirmed all 20 forms
+and 60 runs on the public site. The next UI change also adds data revalidation.
+The site now has 43 language families and 49 execution variants.
+No benchmark or successful fixture was rerun.
 
-The user clarified that Samples, Medians and Density should be independent
-composable layers on one chart. A new source candidate is implementing an
-Off / Dim / Highlight control for each, removing the separate density tab.
-The first published density map used profile mean positions; the requested
-replacement uses actual recorded runs with equal weight per run. Density must
-remain unchanged when sample dots or medians are hidden. Language, benchmark
-and source selections determine its data. This correction is not yet published.
+The composable layer update is now published in website commit
+`224d1b1505037c7c92e67038a82082cc763bef0b`; GitLab Pages pipeline
+`2944356909` passed. Samples, Medians and Density each have independent
+Off / Dim / Highlight controls. The density layer counts actual recorded runs
+with unit weight per program/run, retaining repeated identical observations.
+It stays unchanged when dots, medians, profiles or global summaries are hidden.
+Language, benchmark and source selections determine its data.
+
+The restored Axes control is always available in the toolbar: Medians gives
+the compact summary range; All samples zooms out to all recorded runs.
+Visibility changes neither hide this control nor alter the selected range.
+Density fills the chosen domain. Rankings now consists of two compact 1D
+charts, Speed and LOC, with median centers, signed σ bands, one-decimal
+summaries, collision-separated language dots and fixed external readouts.
+Clicking or pressing Enter on a dot opens its language overview; Back restores
+the chosen layers and framing. No floating ranking tooltip is created.
+
+Three syntax checks and all three focused assertion scripts passed. Local
+browser checks covered all eight layer combinations, Dim opacity, invariant
+density colors/population, all-layer-Off framing, source/Back navigation,
+keyboard dots, decade filtering, benchmark/Mech views and 390px layout.
+All 2,418 runs fall within All samples; density has 1,728 cells from 778
+programs and 49 variants. Both ranking charts retain 49 dots, with no
+overlap or page overflow at phone width. Screenshot capture timed out;
+rendered DOM geometry was inspected instead.
+
+The public page and all five changed UI assets match the reviewed bytes.
+The data SHA remains b088 above. Live browser checks confirmed the restored
+Axes control, density-only framing, both rankings, 20 Clojure programs and
+60 Clojure runs with no console errors. Six deployed assets were verified,
+including unchanged data.json. Dist is synchronized. Evidence is saved in
+`continuation/jobs/layer-controls-publication-v1/`. No benchmark was rerun.
+
+The isolated Prolog runtime probe ran once at 21:12 UTC. Its output and owned
+receipt now have distinct filenames, so the actual exit 1 is preserved directly.
+All primitive results were written, but removing the imported compiler initializer
+did not fix termination. Root verified all 13,213 referenced pins after the job
+closed. No image-closure command, version rerun, fixture rerun or benchmark ran.
+Evidence is in `continuation/jobs/prolog-runtime-probe-closed-review-v1/`.
+
+
+A source review now identifies a plausible Prolog shutdown route: halt(0) can
+enter the catch recovery, which calls halt(1) while printing an empty unwind
+message. This is not yet an observation of the failed process. Two reviewed
+marker-and-halt-only controls are prepared in
+`prolog-comparison/20261013/revisions/runtime-halt-diagnostic-v1/`; they have
+not run. The combined metadata integration v2 source now binds the qualified
+Clojure baseline, but its successful legacy133 dependency remains outstanding
+and no integration job has run.
 
 ## GitLab Pages publication — 2026-10-13
 

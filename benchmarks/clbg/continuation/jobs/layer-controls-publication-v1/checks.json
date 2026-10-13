@@ -1,0 +1,109 @@
+{
+  "at": "2026-10-13T21:23:54.978562+00:00",
+  "source_pins": {
+    "REVIEW.md": {
+      "sha256": "404f638fdea944bc0f71bb62676c7a53ccbf2df40fc05989ff0ae325754b9994",
+      "bytes": 6126
+    },
+    "app.mjs": {
+      "sha256": "56f6bf8123e74c018dc48e23787111156e781750336342eeba4f9ce673e57050",
+      "bytes": 91716
+    },
+    "index.html": {
+      "sha256": "9908373b46b7bd9c41c59244c53e29e03c2f1f62b533fe36cb861cdc8f03150a",
+      "bytes": 27661
+    },
+    "math.mjs": {
+      "sha256": "a983782e607151c34268d5594829f312bea8fc83a30e0b49ba4efdb1349e5d7c",
+      "bytes": 16910
+    },
+    "mech-palette.css": {
+      "sha256": "999768eb3675a7e724faf4a0e9e42a09bba13ed6fdd72b115d8034836ea7f85a",
+      "bytes": 8359
+    },
+    "rankings.mjs": {
+      "sha256": "55e713b88b717fadbe156debaeb8b11f97ccb19e405886e1b5fea8884c558d93",
+      "bytes": 5533
+    },
+    "style.css": {
+      "sha256": "e641a1dae8c2493ce275e2c2770769a61db9e2df65b08ff8ffec2f952a417ef2",
+      "bytes": 31419
+    },
+    "test_layer_controls.mjs": {
+      "sha256": "29e26e03259bede649e02fe03f33d25c6dcc172453d42d41dee5262a4c3bce15",
+      "bytes": 5195
+    },
+    "test_median_rankings.mjs": {
+      "sha256": "f50cb40afe6ede2b3895b753a06494fe6b284fc48fddd65ca7f9d60b1aa1ee56",
+      "bytes": 6690
+    },
+    "test_year_window.mjs": {
+      "sha256": "f85f48bbd68b39e7ec63ff988d63263681ed661716ca0df05e6524ecceeb3768",
+      "bytes": 3798
+    },
+    "traits.mjs": {
+      "sha256": "9e2a7ab78c92605d5a43c81537036f81d565d57f500ba1009803ca3e1a230762",
+      "bytes": 2791
+    }
+  },
+  "checks": [
+    {
+      "argv": [
+        "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "--check",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/layer-controls-v1/app.mjs"
+      ],
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "--check",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/layer-controls-v1/math.mjs"
+      ],
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "--check",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/layer-controls-v1/rankings.mjs"
+      ],
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/layer-controls-v1/test_layer_controls.mjs"
+      ],
+      "exit": 0,
+      "stdout": "Independent layer modes, actual-run density, framing and ranking presentation assertions passed.\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/layer-controls-v1/test_median_rankings.mjs"
+      ],
+      "exit": 0,
+      "stdout": "Median rankings, recorded samples and density assertions passed.\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/layer-controls-v1/test_year_window.mjs"
+      ],
+      "exit": 0,
+      "stdout": "Inclusive window, eight decade presets, uncrossed handles, bounded history and unchanged baselines passed.\n",
+      "stderr": ""
+    }
+  ],
+  "data_sha256": "b088279074e85ec149466f876bdce49d4d497f7784a0d48be58e023e5b2c6a13"
+}

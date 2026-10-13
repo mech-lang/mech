@@ -1,0 +1,53 @@
+{
+  "at": "2026-10-13T21:29:35.385424+00:00",
+  "assets": [
+    {
+      "file": "index.html",
+      "url": "https://mech-lang.org/benchmarks/",
+      "bytes": 27661,
+      "sha256": "9908373b46b7bd9c41c59244c53e29e03c2f1f62b533fe36cb861cdc8f03150a",
+      "expected_sha256": "9908373b46b7bd9c41c59244c53e29e03c2f1f62b533fe36cb861cdc8f03150a",
+      "matches": true
+    },
+    {
+      "file": "app.mjs",
+      "url": "https://mech-lang.org/benchmarks/app.mjs?v=20261013-layers",
+      "bytes": 91716,
+      "sha256": "56f6bf8123e74c018dc48e23787111156e781750336342eeba4f9ce673e57050",
+      "expected_sha256": "56f6bf8123e74c018dc48e23787111156e781750336342eeba4f9ce673e57050",
+      "matches": true
+    },
+    {
+      "file": "math.mjs",
+      "url": "https://mech-lang.org/benchmarks/math.mjs?v=20261013-layers",
+      "bytes": 16910,
+      "sha256": "a983782e607151c34268d5594829f312bea8fc83a30e0b49ba4efdb1349e5d7c",
+      "expected_sha256": "a983782e607151c34268d5594829f312bea8fc83a30e0b49ba4efdb1349e5d7c",
+      "matches": true
+    },
+    {
+      "file": "style.css",
+      "url": "https://mech-lang.org/benchmarks/style.css?v=20261013-layers",
+      "bytes": 31419,
+      "sha256": "e641a1dae8c2493ce275e2c2770769a61db9e2df65b08ff8ffec2f952a417ef2",
+      "expected_sha256": "e641a1dae8c2493ce275e2c2770769a61db9e2df65b08ff8ffec2f952a417ef2",
+      "matches": true
+    },
+    {
+      "file": "rankings.mjs",
+      "url": "https://mech-lang.org/benchmarks/rankings.mjs?v=20261013-layers",
+      "bytes": 5533,
+      "sha256": "55e713b88b717fadbe156debaeb8b11f97ccb19e405886e1b5fea8884c558d93",
+      "expected_sha256": "55e713b88b717fadbe156debaeb8b11f97ccb19e405886e1b5fea8884c558d93",
+      "matches": true
+    },
+    {
+      "file": "data.json",
+      "url": "https://mech-lang.org/benchmarks/data.json",
+      "bytes": 21645186,
+      "sha256": "b088279074e85ec149466f876bdce49d4d497f7784a0d48be58e023e5b2c6a13",
+      "expected_sha256": "b088279074e85ec149466f876bdce49d4d497f7784a0d48be58e023e5b2c6a13",
+      "matches": true
+    }
+  ]
+}

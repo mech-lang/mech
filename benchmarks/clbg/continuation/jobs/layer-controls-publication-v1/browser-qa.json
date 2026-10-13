@@ -1,0 +1,89 @@
+{
+  "status": "passed",
+  "source_review": {
+    "root": "app/math/index/style diffs, final rankings module, layer assertions, adapted ranking assertions and REVIEW read",
+    "independent": "APL reviewed other ten files; C3 and root reviewed APL rankings module"
+  },
+  "browser": {
+    "url": "http://127.0.0.1:58302/benchmarks/",
+    "variants": 49,
+    "actual_runs": 2418,
+    "actual_programs": 778,
+    "eight_on_off_combinations": "passed; independent marks, heat and unchanged axes",
+    "density_cells": 1728,
+    "density_color_arrays_equal_in_all_four_density_on_combinations": true,
+    "profiles_off_and_global_on_density_unchanged": true,
+    "all_samples_outside_domain": 0,
+    "all_samples_domain": {
+      "xMin": -0.15,
+      "xMax": 7.036637346111604,
+      "yMin": -0.18,
+      "yMax": 14.870042696401296
+    },
+    "medians_domain": {
+      "xMin": -0.15,
+      "xMax": 5.0015340594975894,
+      "yMin": -0.18,
+      "yMax": 8.46134735637159
+    },
+    "axes_enabled_with_all_layers_off": true,
+    "axes_enabled_in_summary_benchmark_mech_language_rankings": true,
+    "dim_opacity": {
+      "samples": 0.15,
+      "medians": 0.15,
+      "density": 0.15
+    },
+    "medians_off_hides_global_trails_and_labels": true,
+    "rankings": {
+      "charts": 2,
+      "dots_each": 49,
+      "extent": 3,
+      "speed_median": 4.798480434519914,
+      "loc_median": 3.787196739271157,
+      "ticks": [
+        "\u22123\u03c3",
+        "\u22122\u03c3",
+        "\u22121\u03c3",
+        "Median",
+        "+1\u03c3",
+        "+2\u03c3",
+        "+3\u03c3"
+      ],
+      "floating_tooltip_elements": 0,
+      "readout_gap": 10,
+      "keyboard_clojure_text": "Clojure20.8\u00d7 best \u00b7 +1.2\u03c3",
+      "enter_opens_language": true,
+      "back_restores_axes_and_layers": true
+    },
+    "clojure": {
+      "programs": 20,
+      "runs": 60,
+      "benchmarks": 10
+    },
+    "decade_2010": {
+      "variants": 11,
+      "window": "2010\u20132019"
+    },
+    "mobile": {
+      "viewport_width": 390,
+      "document_width": 390,
+      "card_width": 340,
+      "min_dot_distance": 14,
+      "readout_gap": 10
+    },
+    "benchmark_density": {
+      "runs": 256,
+      "programs": 74,
+      "variants": 46
+    },
+    "mech_density": {
+      "runs": 145,
+      "programs": 43,
+      "variants": 3
+    },
+    "program_inspector_opened": true,
+    "console_errors": [],
+    "screenshot": "Unavailable: Page.captureScreenshot timed out. Layout checked using rendered DOM geometry."
+  },
+  "at": "2026-10-13T21:27:03.748271+00:00"
+}

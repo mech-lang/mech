@@ -1,0 +1,34 @@
+{
+  "started_at": "2026-10-13T21:12:35.424108+00:00",
+  "worker_identity": {
+    "pid": 11599,
+    "listing": "11599     1 Tue Oct 13 17:12:35 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/prolog-runtime-probe-images-v1 --lease-fd 3 --go-fd 4"
+  },
+  "inherited_private_lease": true,
+  "detached_session": true,
+  "common_mutex_owned_by_target_command": true,
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-probe-v1/discover_runtime.py",
+    "--proposal-sha256",
+    "5b9186bb51e748fe69b16dcd35a632dd9ed8556abdbc30cbab45159a36a1bf88",
+    "--runtime-proposal-sha256",
+    "c72f7ab0d41b195acafff131e5f2cd7c61577a9fa14898af15e4c543b8daa322",
+    "--worker-sha256",
+    "010143a7028edeb04e427f976b3adc9f5851f9db8a8a302c30a53cc570775c72",
+    "--failed-report-sha256",
+    "3acb7a2c6dc10618e9eead402575bdc0b60015c6dc1feadca926f871289ed69c",
+    "--failed-terminal-sha256",
+    "9d99b5a07bc771979b4b0ed52e7e76d73918e9a5c41126c00664a3e96f01c64e",
+    "--layout-review-sha256",
+    "da4b6493af38e5af06cbd080346577292eb4113e51632bfd15394cf509fc3f4d",
+    "--layout-terminal-sha256",
+    "02439e159cc1d5665ee5ededc7e241130ca72cec308f63484e715120b5ecda95"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "qualification_granted": false
+}
