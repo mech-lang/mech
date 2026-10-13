@@ -1,0 +1,33 @@
+{
+  "status": "root-reviewed-actual-directory4-and-exact-bootstrap-command",
+  "actual_fixture_review_sha256": "e0de9febb4d99b005a33e1e405f87a375a79a14384107acb95bb3acec180bd44",
+  "actual_fixture_terminal_sha256": "d4273be3af3161410f39a9125bba453beb25cd7461f5df691bc5652d254ccd3f",
+  "verified_review_pins": 50,
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-directory-v1/bootstrap_runtime_directory_v1.py",
+    "--bootstrap",
+    "--proposal-sha256",
+    "5b9186bb51e748fe69b16dcd35a632dd9ed8556abdbc30cbab45159a36a1bf88",
+    "--runtime-proposal-sha256",
+    "c72f7ab0d41b195acafff131e5f2cd7c61577a9fa14898af15e4c543b8daa322",
+    "--worker-sha256",
+    "a7f97dc59580154db6d790498778f3ab883047f368e03733b9fa65b6b7add783",
+    "--extractor-sha256",
+    "3d0c6778454b26cdfaca3cd945927183795b820a1c1904e9e6f4ee4dce11ee5e",
+    "--fixture-receipt",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-directory-v1/jobs/fixtures-v1/fixture-receipt.json",
+    "--fixture-sha256",
+    "6bd2f38bef28c017c45395e05a307cb1005d03e4540ca92b3832754bc6977ad3",
+    "--fixture-terminal-sha256",
+    "d4273be3af3161410f39a9125bba453beb25cd7461f5df691bc5652d254ccd3f"
+  ],
+  "new_job": "prolog-private-runtime-directory-v1",
+  "runtime_configuration_admitted": false,
+  "benchmark_runs": 0,
+  "common_mutex_held": true
+}

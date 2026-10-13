@@ -1,0 +1,30 @@
+{
+  "command": [
+    "/Library/Developer/CommandLineTools/usr/bin/lldb",
+    "--no-lldbinit",
+    "--batch",
+    "-o",
+    "script import hashlib, importlib.util, sys; sys.dont_write_bytecode = True; _p = '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/revisions/attach-calibration-v1/observe_calibration.py'; _b = open(_p, \"rb\").read(); assert hashlib.sha256(_b).hexdigest() == '26a9372f081a3a1710fcb08a4b16fa807ea2e97f8e8f13b750f228f6f22f9834'; assert \"observe_calibration\" not in sys.modules; _s = importlib.util.spec_from_file_location(\"observe_calibration\", _p); _m = importlib.util.module_from_spec(_s); sys.modules[\"observe_calibration\"] = _m; exec(compile(_b, _p, \"exec\"), _m.__dict__); assert _m.__file__ == _p; _m.observe(lldb.debugger, '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/generic-attach-calibration-v2/default-target-default-listener/request.json')"
+  ],
+  "started_at": "2026-10-13T19:53:07.348134+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 45,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 93730,
+  "identity": {
+    "pid": 93730,
+    "pgid": 93730,
+    "identity_basis": "exact unreaped Popen plus kernel process group",
+    "command": [
+      "/Library/Developer/CommandLineTools/usr/bin/lldb",
+      "--no-lldbinit",
+      "--batch",
+      "-o",
+      "script import hashlib, importlib.util, sys; sys.dont_write_bytecode = True; _p = '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/revisions/attach-calibration-v1/observe_calibration.py'; _b = open(_p, \"rb\").read(); assert hashlib.sha256(_b).hexdigest() == '26a9372f081a3a1710fcb08a4b16fa807ea2e97f8e8f13b750f228f6f22f9834'; assert \"observe_calibration\" not in sys.modules; _s = importlib.util.spec_from_file_location(\"observe_calibration\", _p); _m = importlib.util.module_from_spec(_s); sys.modules[\"observe_calibration\"] = _m; exec(compile(_b, _p, \"exec\"), _m.__dict__); assert _m.__file__ == _p; _m.observe(lldb.debugger, '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/generic-attach-calibration-v2/default-target-default-listener/request.json')"
+    ]
+  },
+  "error": "Command '['/Library/Developer/CommandLineTools/usr/bin/lldb', '--no-lldbinit', '--batch', '-o', 'script import hashlib, importlib.util, sys; sys.dont_write_bytecode = True; _p = \\'/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/revisions/attach-calibration-v1/observe_calibration.py\\'; _b = open(_p, \"rb\").read(); assert hashlib.sha256(_b).hexdigest() == \\'26a9372f081a3a1710fcb08a4b16fa807ea2e97f8e8f13b750f228f6f22f9834\\'; assert \"observe_calibration\" not in sys.modules; _s = importlib.util.spec_from_file_location(\"observe_calibration\", _p); _m = importlib.util.module_from_spec(_s); sys.modules[\"observe_calibration\"] = _m; exec(compile(_b, _p, \"exec\"), _m.__dict__); assert _m.__file__ == _p; _m.observe(lldb.debugger, \\'/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/generic-attach-calibration-v2/default-target-default-listener/request.json\\')']' timed out after 45 seconds",
+  "error_type": "TimeoutExpired",
+  "final_exit_status": -9
+}

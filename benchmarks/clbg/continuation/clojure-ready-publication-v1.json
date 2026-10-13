@@ -1,0 +1,22 @@
+{
+  "status": "reviewed-completed-native-language-subset",
+  "ready_languages": ["clojure"],
+  "future_requested_languages": ["elixir", "kotlin"],
+  "unresolved": [],
+  "languages": {
+    "clojure": {
+      "suite": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/reconciliation/full-v1-suite-v2.json",
+        "sha256": "c7664909b757e9fff1d736af0b9ba72bdcc47634e264b1b789e986639121a8f4"
+      },
+      "canonical_loc": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/source-counts/qualified-grammar-v3-overlay-restored-v2/qualified-loc-overlay.json",
+        "sha256": "e5ac3aa1b8d7f054b17cf7f2ef5426f30027d89dad875225d975ba7e5e48902d"
+      },
+      "metadata": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/publication-clojure-metadata-v1/qualified/actual-metadata-v1/metadata.json",
+        "sha256": "8bf96ed71bd799b80fb6f062ff7b5b76c92d6e992e3e40ef307811f3c2c1b9ff"
+      }
+    }
+  }
+}

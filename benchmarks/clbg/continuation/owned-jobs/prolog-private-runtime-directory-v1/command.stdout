@@ -1,0 +1,2 @@
+WAIT common mutex: private SWI10.0.2 runtime bootstrap candidate
+REUSE exact saved official DMG/source archives under common mutex

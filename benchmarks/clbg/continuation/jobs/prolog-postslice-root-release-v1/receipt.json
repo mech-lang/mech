@@ -1,0 +1,33 @@
+{
+  "status": "root-and-peer-accepted-postslice-source-frozen-and-exact-native-discovery-released",
+  "source_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-postslice-v1/discover_runtime.py": "54dbac39a7fbeab8f24e7a78c385f2fe0442652844b0c0af8b3a4f3c01a9a387",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-postslice-v1/REVIEW.md": "388a683913010f7b03ba0d7ad00624de3088a3bb158cdbdd35c893f2b6b60908"
+  },
+  "layout_verified_pins": 13179,
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-postslice-v1/discover_runtime.py",
+    "--proposal-sha256",
+    "5b9186bb51e748fe69b16dcd35a632dd9ed8556abdbc30cbab45159a36a1bf88",
+    "--runtime-proposal-sha256",
+    "c72f7ab0d41b195acafff131e5f2cd7c61577a9fa14898af15e4c543b8daa322",
+    "--worker-sha256",
+    "54dbac39a7fbeab8f24e7a78c385f2fe0442652844b0c0af8b3a4f3c01a9a387",
+    "--failed-report-sha256",
+    "3acb7a2c6dc10618e9eead402575bdc0b60015c6dc1feadca926f871289ed69c",
+    "--failed-terminal-sha256",
+    "9d99b5a07bc771979b4b0ed52e7e76d73918e9a5c41126c00664a3e96f01c64e",
+    "--layout-review-sha256",
+    "da4b6493af38e5af06cbd080346577292eb4113e51632bfd15394cf509fc3f4d",
+    "--layout-terminal-sha256",
+    "02439e159cc1d5665ee5ededc7e241130ca72cec308f63484e715120b5ecda95"
+  ],
+  "benchmark_runs": 0,
+  "common_mutex_held": true,
+  "successful_archive_extract_mount_copy_slice_steps_reexecuted": false
+}

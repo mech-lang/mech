@@ -1,0 +1,20 @@
+{
+  "status": "command-failed",
+  "started_at": "2026-10-13T19:46:46.869103+00:00",
+  "worker_identity": {
+    "pid": 92088,
+    "listing": "92088     1 Tue Oct 13 15:46:46 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/prolog-private-runtime-directory-v1 --lease-fd 3 --go-fd 4"
+  },
+  "actual_command_started": true,
+  "exit_code": 1,
+  "qualification_granted": false,
+  "automatic_retry": false,
+  "command_pid": 92092,
+  "command_identity": {
+    "pid": 92092,
+    "listing": "92092 92088 Tue Oct 13 15:46:46 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -I -S -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-directory-v1/bootstrap_runtime_directory_v1.py --bootstrap --proposal-sha256 5b9186bb51e748fe69b16dcd35a632dd9ed8556abdbc30cbab45159a36a1bf88 --runtime-proposal-sha256 c72f7ab0d41b195acafff131e5f2cd7c61577a9fa14898af15e4c543b8daa322 --worker-sha256 a7f97dc59580154db6d790498778f3ab883047f368e03733b9fa65b6b7add783 --extractor-sha256 3d0c6778454b26cdfaca3cd945927183795b820a1c1904e9e6f4ee4dce11ee5e --fixture-receipt /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-directory-v1/jobs/fixtures-v1/fixture-receipt.json --fixture-sha256 6bd2f38bef28c017c45395e05a307cb1005d03e4540ca92b3832754bc6977ad3 --fixture-terminal-sha256 d4273be3af3161410f39a9125bba453beb25cd7461f5df691bc5652d254ccd3f"
+  },
+  "command_identity_observation_missing": false,
+  "finished_at": "2026-10-13T19:47:00.811342+00:00",
+  "stop_signals": []
+}

@@ -1,0 +1,8 @@
+{
+  "status": "closed-version-passed-probe-result-retained-owned-receipt-collision",
+  "body_error": null,
+  "integrity_errors": [],
+  "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/prolog-probe-collision-review-v2/review.json",
+  "review_sha256": "ee049861eb70c41a6040abc3cc5943ededdca46ba5b1e189812c2b7ce1f9b20b",
+  "actual_native_commands": 0
+}

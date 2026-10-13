@@ -1,0 +1,23 @@
+{
+  "status": "passed-local-Clojure-browser-QA",
+  "at": "2026-10-13T21:00:58.577652+00:00",
+  "candidate_sha256": "b088279074e85ec149466f876bdce49d4d497f7784a0d48be58e023e5b2c6a13",
+  "language_benchmarks": 10,
+  "language_sources": 20,
+  "language_runs": 60,
+  "total_chart_runs": 2418,
+  "ranked_variants": 49,
+  "speed_median": 4.798480434519914,
+  "loc_median": 3.787196739271157,
+  "density_cells": 1728,
+  "density_positions": 97,
+  "opened_programs": {
+    "nbody:clojure-nbody-optimized": 3862,
+    "revcomp:clojure-revcomp-optimized": 1446,
+    "regexredux:clojure-regexredux-optimized": 1325
+  },
+  "timing_rows_per_inspected_source": 3,
+  "regex_support_source_chars": 996,
+  "console_errors": [],
+  "benchmark_runs": 0
+}

@@ -1,6 +1,6 @@
-Benchmark progress as of **2026-10-13 19:37 UTC** (15:37 New York).
+Benchmark progress as of **2026-10-13 21:05 UTC** (17:05 New York).
 
-The previous remotely verified checkpoint is `57bd9d43a5afaf498e465205c287b75dd9d208b5`
+The previous remotely verified checkpoint is `1befbcd5367b7122ea26da364d4a9b6324f07bb3`
 on `codex/clbg-native-benchmarks`. The language overview and complete Crystal
 inventory are published. C3's exact source counts, runtime metadata and current
 chart candidate have qualified and are now published through GitLab Pages
@@ -16,11 +16,11 @@ actual request, process identity and exit.
 | C3 | 90/90 | Published through GitLab Pages. Source counts, runtime metadata and current dataset qualified; all 20 forms / 60 candidate samples passed browser inspection. |
 | Nim | 90/90 | Independent full-suite reconciliation and complete receipt/pin review passed. Exact source-owner diagnostics still need resolution before LOC admission. |
 | Gleam | 90/90 | Independent full-suite reconciliation and complete receipt/pin review passed. Qualified Gleam and authored Erlang evidence still needs whole-bundle source admission. |
-| Clojure | 90/90 | Independent full-suite reconciliation and complete receipt/pin review passed. Qualified whole-source LOC overlay is retained; runtime metadata/admission remains. |
+| Clojure | 90/90 | Full-suite, LOC, JVM metadata and current dataset admission passed. Root verified 5,276 candidate pins; 20 forms / 60 candidate samples are retained, with 18 selected endpoints. Data commit is deployed; browser cache refresh verification remains with the next UI update. |
 | V | 90/90 | Full workload samples collected, including eight missing tree slots recovered additively. Independent all-ten reconciliation passed. Report-only; excluded from dataset, charts and Site. |
-| Pony | 0/90 | Launcher repair reached the target and completed both tree observations. Diagnostic IR extraction failed because the compiler overwrote its authored main IR with builtin output. Both tree observations and all 16 emitted files are retained; additive diagnostic recovery remains. |
-| Prolog | 0/90 | Original runtime fixtures and failed bootstrap retained. Archive failure was 40 equivalent repeated directory entries. The narrow extractor repair passed four fresh fixtures; native private bootstrap remains held for actual-argument review. |
-| Julia AOT | 0 qualified | Native canary and n-body libraries built. Generic calibration failed before LLDB on comparing the real kernel framework image with Python's distinct launcher path. No debugger-permission cause is established; kernel-image binding needs repair. |
+| Pony | 0/90 | Both tree observations and four Pi/map traces are retained. The existing-evidence capture exited normally; original authored main IR was overwritten by builtin output. Separate bitcode/ownership recovery remains. |
+| Prolog | 0/90 | Archive repair, private app extraction and ARM64 slicing completed. Correct runtime home and version 10.0.2 verified. Feature probe produced JSON but exited 1; its output also collided with the command receipt filename. A probe-only repair isolates the imported compiler initializer and uses distinct output paths; it is source-ready, unexecuted. |
+| Julia AOT | 0 qualified | Kernel-image binding repaired. Both bounded debugger calibration cells timed out; no native AOT helper executed. No permission cause is established. An official safe-trim/stripped-IR route is documented for the next additive attempt. |
 | Rebol | 0/90 | Faithful source bundle and six runtime intake fixtures retained; actual SDK/runtime/build/work/LOC/full qualification remains. |
 | Elixir / Kotlin | 0/90 each | Reviewed source bundles are frozen and pushed. Actual toolchain and complete qualification remain. |
 
@@ -55,6 +55,59 @@ The platform frontend candidate passed its checks, but its filters have not yet
 been integrated into the published Site. Successful historical samples and
 original failures remain immutable; additive repairs reuse successful evidence
 instead of relabeling it as a fresh run.
+
+## Chart controls and statistical views — published
+
+The inclusive two-handle release-year window, eight decade presets, Speed/LOC
+rankings and full-chart density map are live at https://mech-lang.org/benchmarks/.
+Ranking bands show signed distance from the current coordinate median in units
+of the sample standard deviation of log2 values, extending beyond 3σ when needed.
+Density uses equally weighted language variants over a fixed 48×36 grid; the
+legend explains its smoothing and relative color scale.
+
+All 2,364 recorded runs remain visible with both profile controls off. Hiding
+Samples preserves the profile medians. Equal-year slider handles remain
+independently reachable, and source navigation restores the selected year window.
+Focused Node assertions, syntax checks, local browser checks and phone-width
+layout checks passed. The public browser confirmed the new views, all 2,364 runs,
+48 ranked variants and all 1,728 density cells, with no console errors.
+
+Website commit `1aa753d45d819de0436c8dcf321118f5f7a7db1e` is pushed to `main`;
+GitLab Pages pipeline `2944267125` passed. All 29 deployed assets match, with the
+changed modules checked at the exact versioned URLs requested by the page.
+Earlier rollout/cache mismatches are retained in the publication evidence.
+Actual receipts are in `continuation/jobs/chart-views-publication-v1/`.
+No benchmark was rerun. The published timing dataset remains
+`4fe402c21360fbbbe9d650c15d1fd4c62422c17cfad8cafd24721fe7f0bd2947`.
+
+Legacy platform metadata qualification for 133 existing rows failed on a literal
+historical `chart_key` alias. Review also found that identical binary bytes could
+have different authored source identities; the additive repair matches the full
+source bundle as well. The failed attempt is preserved and contributes no
+platform annotations.
+
+## Clojure admission and composable chart layers — 2026-10-13 21:05 UTC
+
+The Clojure candidate exited normally and independently passed physical evidence
+and preservation checks. It adds all 20 source forms and 60 candidate samples;
+the existing full study also contains 30 matched Mech samples. Prior records,
+timings and baselines are unchanged. Candidate SHA is
+`b088279074e85ec149466f876bdce49d4d497f7784a0d48be58e023e5b2c6a13`.
+Local browser checks passed: all 20 forms, 60 language runs, both inventory-only
+programs, regex and its counted helper are inspectable. Rankings show 49 variants
+and the ordinary chart retains 2,418 samples. Website commit
+`8ab71934cf26f84145ff66b538fd7236be751b91` is pushed and Pages pipeline
+`2944288319` passed. The deployed data matches by SHA-256. The normal browser
+still reused its earlier cached data; revalidation and public browser confirmation
+are pending with the next UI change. No benchmark or successful fixture was rerun.
+
+The user clarified that Samples, Medians and Density should be independent
+composable layers on one chart. A new source candidate is implementing an
+Off / Dim / Highlight control for each, removing the separate density tab.
+The first published density map used profile mean positions; the requested
+replacement uses actual recorded runs with equal weight per run. Density must
+remain unchanged when sample dots or medians are hidden. Language, benchmark
+and source selections determine its data. This correction is not yet published.
 
 ## GitLab Pages publication — 2026-10-13
 

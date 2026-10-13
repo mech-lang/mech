@@ -1,0 +1,10 @@
+{
+  "url": "https://mech-lang.org/benchmarks/",
+  "website_commit": "11cacf9ca1baa800736355759d4b6bd0ca815e68",
+  "browser_verified": true,
+  "common_mutex_session": 21570,
+  "before": {"samples_checked": true, "fast_profile": true, "small_profile": true, "sample_marks": 932, "empty_shown": false},
+  "both_profiles_unchecked": {"samples_checked": true, "sample_marks": 0, "recorded_runs": 0, "empty_shown": true, "empty_text": "Enable Fastest or Fewest LOC to show a profile."},
+  "restored": {"samples_checked": true, "sample_marks": 932, "empty_shown": false},
+  "benchmark_runs": 0
+}

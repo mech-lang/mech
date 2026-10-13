@@ -1,0 +1,25 @@
+{
+  "status": "nbody-library-built-awaiting-state-native-coverage-and-runtime-qualification",
+  "exclusive_common_timing_mutex_held": true,
+  "common_timing_mutex": "/tmp/mech-clbg-timing.lock",
+  "actual_benchmark_runs": 0,
+  "actual_workload_executions": 0,
+  "runtime_aot_proven": false,
+  "chart_admission": false,
+  "automatic_retry": false,
+  "started_at": "2026-10-13T05:05:46.701819+00:00",
+  "library_bundle": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/nbody-library-pilot-v1/bundle",
+  "direct_executable": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/nbody-library-pilot-v1/nbody-aot",
+  "final_image_bitcode_candidate": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/nbody-library-pilot-v1/final-image-candidate.bc",
+  "matched_jit_driver": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/nbody-library-pilot-v1/matched_jit_driver.jl",
+  "packagecompiler_version": "2.4.3",
+  "julia_version": "julia version 1.13.1",
+  "pins_unchanged_at_end": true,
+  "bootstrap": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/packagecompiler-bootstrap-v2/report.json",
+    "sha256": "0756b1108e0cbba480285c7e2ac0a4edfa61a78056bbe4bec0b429909365386c"
+  },
+  "original_source_sha256": "2def3e7e9910b46cd522b81041e04bbcede2481f69684b683bea605bef598a54",
+  "compact_optimized_share_original_source": true,
+  "completed_at": "2026-10-13T05:11:10.439811+00:00"
+}

@@ -1,0 +1,2974 @@
+{
+  "mode": "preselected-target-custom-listener",
+  "modules": [
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/generic-attach-calibration-v1/build/generic-helper",
+      "uuid": "FAEF0C73-2096-3B67-9302-4702A71A6EAE",
+      "triple": "arm64-apple-macosx14.4.0"
+    },
+    {
+      "path": "/usr/lib/dyld",
+      "uuid": "0975AFBA-C46B-364C-BD84-A75DAA9E455A",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libSystem.B.dylib",
+      "uuid": "EF46521E-50DB-3B5D-A1F5-5294C83D9B25",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libcache.dylib",
+      "uuid": "C8B9304A-229B-3775-B353-2333D154987B",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libcommonCrypto.dylib",
+      "uuid": "87FEBA92-8FE5-32C3-8317-F6F86489CCFB",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libcompiler_rt.dylib",
+      "uuid": "E54BAD88-9E9A-3A4D-8E4A-6146B120C1EC",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libcopyfile.dylib",
+      "uuid": "317DAF5E-A6BB-3DFF-BCA1-8053DE7A8A2C",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libcorecrypto.dylib",
+      "uuid": "A925150E-A21F-3273-A38D-EB304C5D2D18",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libdispatch.dylib",
+      "uuid": "A4B349E8-DD6F-3B71-84D9-34F3B4ACD849",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libdyld.dylib",
+      "uuid": "3A7FDAA5-69EC-3846-AA49-DE7BDEE00285",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libkeymgr.dylib",
+      "uuid": "FBDDA038-D728-3E69-815A-333D6B00BBDF",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libmacho.dylib",
+      "uuid": "D1DA6556-F3D8-3A33-96FF-0B8876A1F0B6",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libquarantine.dylib",
+      "uuid": "18BE2FA3-66CE-3EBF-9E13-8478DF73E146",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libremovefile.dylib",
+      "uuid": "2F92CF32-4C5F-3D57-AEBC-9655B810A23C",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libsystem_asl.dylib",
+      "uuid": "867E699E-8CC6-3792-AC6E-35C5769FADBA",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libsystem_blocks.dylib",
+      "uuid": "B64F976B-5966-3643-9B57-0EB17D149482",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libsystem_c.dylib",
+      "uuid": "FB5569A9-CB26-36C2-AA05-E99243692B60",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libsystem_collections.dylib",
+      "uuid": "90FA7AF0-2D12-3FC1-A87A-C4EDE396FDC5",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libsystem_configuration.dylib",
+      "uuid": "11F5CF47-6E93-3FF7-8E5E-E98F69742465",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libsystem_containermanager.dylib",
+      "uuid": "FA1FC4AB-E5A0-391C-8951-41EFEE847E0D",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libsystem_coreservices.dylib",
+      "uuid": "0646DDBF-346D-3273-9C9B-968121293B8A",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libsystem_darwin.dylib",
+      "uuid": "C25292BB-AA30-37D2-8001-E7276ADBAF1E",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libsystem_darwindirectory.dylib",
+      "uuid": "B6309151-0733-31ED-8150-92CE2BB7FEA5",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libsystem_dnssd.dylib",
+      "uuid": "5DF6DD6A-358E-3170-97D7-EB2107F4DB89",
+      "triple": "arm64e-apple-macosx15.0.0"
+    },
+    {
+      "path": "/usr/lib/system/libsystem_eligibility.dylib",
+      "uuid": "65295E08-697D-334C-8A97-B6FE0D9797A0",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libsystem_featureflags.dylib",
+      "uuid": "6AD11065-D06A-3212-97FC-4EEC4AC48F51",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libsystem_info.dylib",
+      "uuid": "363CFE03-0003-3DA6-BE41-820B917B7955",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libsystem_m.dylib",
+      "uuid": "42E15F5C-02B8-3B56-9889-5B59CADD45EB",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libsystem_malloc.dylib",
+      "uuid": "F68E01CC-EC92-3F25-BAC8-956A3DE42627",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libsystem_networkextension.dylib",
+      "uuid": "C2085EB4-0A94-3D87-94ED-D5555D3FA837",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libsystem_notify.dylib",
+      "uuid": "DF1ED23D-F338-306D-BD06-A7F9B4534B23",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libsystem_sandbox.dylib",
+      "uuid": "FD4A58D2-D1AB-3936-86EE-CCB6852E0761",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libsystem_sanitizers.dylib",
+      "uuid": "D81DCFCF-61F5-3C56-ACA1-42C900E5364D",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libsystem_secinit.dylib",
+      "uuid": "755B9674-5B57-39CE-B247-4183C3ED6613",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libsystem_kernel.dylib",
+      "uuid": "548C45C8-9733-3F0D-8EF4-C06DF1DF2AD0",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libsystem_platform.dylib",
+      "uuid": "4DBAF982-1576-3FFC-86BE-03A9D2C96BE5",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libsystem_pthread.dylib",
+      "uuid": "527C4BA0-91A5-378B-B3E2-D38269CA5A66",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libsystem_symptoms.dylib",
+      "uuid": "8D869291-11B3-3D2A-BFDF-F1C1688E19F1",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libsystem_trace.dylib",
+      "uuid": "16F2ABF3-27FC-3B12-AE3C-F039C083AE7B",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libsystem_trial.dylib",
+      "uuid": "820D601F-6489-32A9-9405-ECD7378C3570",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libunwind.dylib",
+      "uuid": "33789B37-0F3B-389C-BF0A-80FB03A2FB31",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libxpc.dylib",
+      "uuid": "4DB07AE5-6544-3D18-B44B-DCACA4D02FB8",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libobjc.A.dylib",
+      "uuid": "1E0A4B36-0701-3482-AA51-000F0ECC7506",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/XPCSupport.framework/Versions/A/XPCSupport",
+      "uuid": "5A468C28-9467-3FA7-8532-F3D054B1374E",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+      "uuid": "649000A2-3EB4-3CF5-970A-D3CB37B5780C",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswiftCore.dylib",
+      "uuid": "D07A076A-D1D5-315C-8A31-90E34A236AFB",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libc++abi.dylib",
+      "uuid": "51C9FB66-83AA-3C40-A806-99BC96BAFD7F",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libRosetta.dylib",
+      "uuid": "4B2D840F-AD4B-3A47-9749-3CB480DF3717",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libc++.1.dylib",
+      "uuid": "BEBE1F75-49D4-32E9-9978-FF8D0E799801",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation",
+      "uuid": "6A518869-0A98-34CB-8A15-CC28F898255E",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/Security.framework/Versions/A/Security",
+      "uuid": "6F4EA801-3DEF-3377-981B-325FF7A96F8A",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/CoreServices.framework/Versions/A/CoreServices",
+      "uuid": "35C03508-1A8E-3679-804B-896C7A2A84AD",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/BackgroundTaskManagement.framework/Versions/A/BackgroundTaskManagement",
+      "uuid": "3A7D20BE-0DDB-3897-AD6D-235D9F556B21",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CoreServicesInternal.framework/Versions/A/CoreServicesInternal",
+      "uuid": "6C2C6B2D-F4E0-3F08-B2F9-D44899378C1F",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libRosetta.dylib",
+      "uuid": "4B2D840F-AD4B-3A47-9749-3CB480DF3717",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libfakelink.dylib",
+      "uuid": "9829269A-D61D-3790-B438-8B8B0681D04F",
+      "triple": "arm64e-apple-macosx11.0.0"
+    },
+    {
+      "path": "/usr/lib/libicucore.A.dylib",
+      "uuid": "04507439-76E2-350F-939C-A8E08BC4A101",
+      "triple": "arm64e-apple-macosx15.0.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/SoftLinking.framework/Versions/A/SoftLinking",
+      "uuid": "B3D0F7F3-63B8-3198-98D6-6E741E39182F",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswiftObjectiveC.dylib",
+      "uuid": "F2D3B7C5-7888-37F7-A61E-0B6996579943",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libswiftPrespecialized.dylib",
+      "uuid": "B8448642-0AEE-34D6-BE70-82B4BE0048B1",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/SystemConfiguration.framework/Versions/A/SystemConfiguration",
+      "uuid": "6CCC9983-05A8-3D7A-A687-8CBA0CC7BBF5",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libz.1.dylib",
+      "uuid": "70EF165D-0399-324D-A1CB-41154D1F8FFC",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CoreAutoLayout.framework/Versions/A/CoreAutoLayout",
+      "uuid": "9B534DA2-3530-396A-B811-F31F7E736560",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libcmark-gfm.dylib",
+      "uuid": "C5698C88-850E-3326-B6F7-AA4CE7CAC4DC",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libcompression.dylib",
+      "uuid": "3C22490C-C58D-3F78-A422-548617D46301",
+      "triple": "arm64e-apple-macosx11.0.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/CFNetwork.framework/Versions/A/CFNetwork",
+      "uuid": "444DD8EF-E7EB-389B-958C-F45C56C3C4DF",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/DiskArbitration.framework/Versions/A/DiskArbitration",
+      "uuid": "353F2FA3-D29B-3B2F-92F3-0A8024DDC78C",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libarchive.2.dylib",
+      "uuid": "92133FBF-972D-3F67-BEF9-A19F04B0E8E7",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libDiagnosticMessagesClient.dylib",
+      "uuid": "149A09DF-D7BC-31D2-B7ED-0016B4A361FE",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libxml2.2.dylib",
+      "uuid": "61CA1522-F5DA-347E-A3F3-67E9BC9AC71C",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/liblangid.dylib",
+      "uuid": "FEEA3376-7C14-34CE-AA32-15831C1EB771",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/IOKit.framework/Versions/A/IOKit",
+      "uuid": "8138342A-F920-342D-82B9-A2AAFC1E8A6A",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/Combine.framework/Versions/A/Combine",
+      "uuid": "C81F6237-6777-38A7-9A68-34FD7267DB1E",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CollectionsInternal.framework/Versions/A/CollectionsInternal",
+      "uuid": "86ABCC97-4929-32B4-A867-03329762F521",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/ReflectionInternal.framework/Versions/A/ReflectionInternal",
+      "uuid": "1EA74FC1-5F14-33AC-BB08-F7AE8E12FCE4",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/RuntimeInternal.framework/Versions/A/RuntimeInternal",
+      "uuid": "D35C316F-C9A6-364E-BA0C-6836DD910BDF",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswiftCoreFoundation.dylib",
+      "uuid": "DE3FD5A6-0B3F-339B-9D83-D2DCD20A9726",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswiftDarwin.dylib",
+      "uuid": "3A594006-B21E-3EFC-A222-8A07183BAB46",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswiftDispatch.dylib",
+      "uuid": "87D8C1BA-CD81-39AD-9237-8365A338C30A",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswiftIOKit.dylib",
+      "uuid": "EFEE22D3-ABCE-3D65-B57B-14390598FB38",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswiftSystem.dylib",
+      "uuid": "80D35127-7E22-3CD3-BF35-5138EF771D88",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswiftXPC.dylib",
+      "uuid": "FBAED0DC-D8D5-3A76-93B1-7B3957A17E96",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswift_Builtin_float.dylib",
+      "uuid": "019284BA-7649-3F24-9B66-13ACEDE663C0",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswift_Concurrency.dylib",
+      "uuid": "2CD4D4D2-15A3-3057-B506-6E79BD1D6428",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswift_DarwinFoundation1.dylib",
+      "uuid": "FF5FB677-347F-3D38-936E-9FAE8D1034D2",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswift_StringProcessing.dylib",
+      "uuid": "AFDD60A4-0391-3ADC-8358-9BA4A7D9B153",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswiftos.dylib",
+      "uuid": "46E467D5-29BE-352E-9CBF-FC33EB4454F7",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AppleKeyStore.framework/Versions/A/AppleKeyStore",
+      "uuid": "E3847F1C-562D-372D-9764-841F5FB0C939",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libCoreEntitlements.dylib",
+      "uuid": "C85F4919-0370-31C9-A960-1D65E768EF30",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/MessageSecurity.framework/Versions/A/MessageSecurity",
+      "uuid": "B3FEA100-3601-3CE8-9229-220E8524721D",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/ProtocolBuffer.framework/Versions/A/ProtocolBuffer",
+      "uuid": "1A438E1B-8C0A-328E-89FB-557DDB7C94BF",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CloudServices.framework/Versions/A/CloudServices",
+      "uuid": "DDB7EED8-6FD4-3437-8396-927C7A9BF149",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/SymptomDiagnosticReporter.framework/Versions/A/SymptomDiagnosticReporter",
+      "uuid": "572E0FD9-E01E-3F1E-8116-E42A323CD378",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CrashReporterSupport.framework/Versions/A/CrashReporterSupport",
+      "uuid": "A32DE56F-5DDA-3243-A516-F197C2EFE3E2",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CoreAnalytics.framework/Versions/A/CoreAnalytics",
+      "uuid": "BBBC227E-DF6D-3555-AEA5-3B4743F7A4CD",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libMobileGestalt.dylib",
+      "uuid": "1C81E29D-F809-39AA-8DB7-82B95B9AEE83",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AppleFSCompression.framework/Versions/A/AppleFSCompression",
+      "uuid": "55F5694B-F7BA-36E4-BC9E-AF021A45EA02",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libbsm.0.dylib",
+      "uuid": "55533CD0-F687-3CB4-BDFE-7D65AF84EE4B",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libcoretls.dylib",
+      "uuid": "0887208D-B8FA-3119-925C-250E7B9FD446",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libcoretls_cfhelpers.dylib",
+      "uuid": "517FC6F5-120A-3346-998A-5A5E8FFA390C",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libpam.2.dylib",
+      "uuid": "91B7A4B9-CF60-3AB8-9789-9F3E606B08CF",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libsqlite3.dylib",
+      "uuid": "23B0986A-4D55-312E-BC6B-4E13468E23AA",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libxar.1.dylib",
+      "uuid": "68AF44C5-C33F-39D7-BE26-F21F05E31565",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/FSEvents",
+      "uuid": "0F758EA0-96FF-3264-AA8E-96F4DA1B0754",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/CarbonCore.framework/Versions/A/CarbonCore",
+      "uuid": "3DC8712F-F078-3869-956A-FC486DF85671",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Metadata",
+      "uuid": "3ED67AE8-767B-3CD4-A9C4-13F8592B22C0",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/OSServices.framework/Versions/A/OSServices",
+      "uuid": "CED46048-3D28-3802-83EF-23FDD1FE6CE2",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/SearchKit.framework/Versions/A/SearchKit",
+      "uuid": "C8B905D6-C980-3839-B8DA-E33EE26C4E83",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/AE.framework/Versions/A/AE",
+      "uuid": "F4B609C0-770E-3720-BA57-6C7BCFABC313",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/LaunchServices",
+      "uuid": "46F0A865-E5E3-334B-9761-7693EA7E1902",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/DictionaryServices.framework/Versions/A/DictionaryServices",
+      "uuid": "ECAF6D9C-7474-3C43-843C-0F216FC80901",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/SharedFileList.framework/Versions/A/SharedFileList",
+      "uuid": "4D53A369-8746-3AD3-8C01-C7770803358B",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libTLE.dylib",
+      "uuid": "F8D44ED9-2009-38D3-9333-0A7D7EA2CD15",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/GenerationalStorage.framework/Versions/A/GenerationalStorage",
+      "uuid": "FE177E68-018F-362D-A518-C031FCA3BFC8",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CacheDelete.framework/Versions/A/CacheDelete",
+      "uuid": "3E08AAFB-7076-38E6-8AA2-C46A30699C4A",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/QuickLookThumbnailing.framework/Versions/A/QuickLookThumbnailing",
+      "uuid": "5ABEB0E5-4DB2-36E3-A9C0-AB83E6ADF0E2",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/FileProvider.framework/Versions/A/FileProvider",
+      "uuid": "5B1C92F6-E3FF-33ED-AF26-7FDBAC75D99B",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/DiskImages.framework/Versions/A/DiskImages",
+      "uuid": "CD432E38-B0C9-3C2B-8B84-B19AE86E386B",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/NetFS.framework/Versions/A/NetFS",
+      "uuid": "5083B5E9-C0C0-3789-B0A9-57383F2C7537",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/DesktopServicesPriv.framework/Versions/A/DesktopServicesPriv",
+      "uuid": "12464EA1-B5AB-3144-9C6D-AB09914CCC84",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/Network.framework/Versions/A/Network",
+      "uuid": "728B77F1-3C0A-3BE4-A52D-E8B89B4D8B0A",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AppleSystemInfo.framework/Versions/A/AppleSystemInfo",
+      "uuid": "233FAF0B-16D8-3EA1-B3D1-827B91A7DCAF",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/liblzma.5.dylib",
+      "uuid": "079F574E-ABF3-370F-BD70-371E298483B3",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libapple_nghttp2.dylib",
+      "uuid": "32A62D3B-398A-3587-9525-1953DF5AD048",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/Accounts.framework/Versions/A/Accounts",
+      "uuid": "9F1E0D42-F319-3921-B046-D06B6129E5E1",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AOSKit.framework/Versions/A/AOSKit",
+      "uuid": "5A954761-68FC-37CD-8170-3AD759E59C18",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AppSSOCore.framework/Versions/A/AppSSOCore",
+      "uuid": "8E700328-3479-33F2-A393-965721437152",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AppSupport.framework/Versions/A/AppSupport",
+      "uuid": "A7540DC8-C1C0-35CE-858B-987A8B09143E",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/AVFoundation.framework/Versions/A/AVFoundation",
+      "uuid": "3535D302-1286-3DBE-BB03-4F4B6C18D54D",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/BackgroundSystemTasks.framework/Versions/A/BackgroundSystemTasks",
+      "uuid": "2E03317B-3A29-3816-B49A-8BB895CA48C8",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/CoreGraphics.framework/Versions/A/CoreGraphics",
+      "uuid": "E6C67BA5-E385-3414-9A02-2B3B8A51C3B7",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/DuetActivityScheduler.framework/Versions/A/DuetActivityScheduler",
+      "uuid": "CB0B5E52-AE57-3A61-8057-933F0340F4D9",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/FTServices.framework/Versions/A/FTServices",
+      "uuid": "5E4C71C3-6369-3EFB-8B10-53EB7C9971ED",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/GSS.framework/Versions/A/GSS",
+      "uuid": "A2E56A0F-E964-37CA-A3D4-9A0D66800B1C",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/InternationalSupport.framework/Versions/A/InternationalSupport",
+      "uuid": "CA7FCB8C-CFF8-3082-B397-AF4FF2E30650",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libMemoryResourceException.dylib",
+      "uuid": "8BA51BA6-94B2-305E-A603-F87C6BF4B618",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/NetworkScore.framework/Versions/A/NetworkScore",
+      "uuid": "67B0B876-922C-35DF-8552-51604B9DA53A",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/NetworkServiceProxy.framework/Versions/A/NetworkServiceProxy",
+      "uuid": "EE9D378E-EC69-3579-A6BE-AB346361ECFD",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/RunningBoardServices.framework/Versions/A/RunningBoardServices",
+      "uuid": "80CD3CA6-6F2E-340F-8F8E-90B0090D64E7",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/StreamingExtractor.framework/Versions/A/StreamingExtractor",
+      "uuid": "B6C710AF-7602-387F-B001-4F9DEED8DD34",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/StreamingZip.framework/Versions/A/StreamingZip",
+      "uuid": "ACBDBCB3-FD70-300D-931C-AA21FE571DCF",
+      "triple": "arm64e-apple-macosx11.0.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/SymptomReporter.framework/Versions/A/SymptomReporter",
+      "uuid": "81FC2FC6-36F1-32FC-824E-334DE2656C80",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libenergytrace.dylib",
+      "uuid": "10B3F912-49C4-3E4E-8137-BB51F0282CC6",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libnetworkextension.dylib",
+      "uuid": "D063431E-BAD3-391F-A5DB-6907AF801D04",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libbz2.1.0.dylib",
+      "uuid": "48C3EA7B-3391-31A3-94BD-0CBADE06E7AF",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libiconv.2.dylib",
+      "uuid": "CFA46448-594D-3CDB-B136-104EFF00478B",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/system/libkxld.dylib",
+      "uuid": "C4676A07-7849-312D-B53F-1F514B4EE9D0",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswiftObservation.dylib",
+      "uuid": "7B3D3D4E-ED82-390D-8749-E65E7AB76714",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswift_DarwinFoundation2.dylib",
+      "uuid": "0D258098-DDB6-369D-8EA1-729DE18DB24E",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswift_DarwinFoundation3.dylib",
+      "uuid": "5AAFA283-AE31-3F3A-B00F-710E591E7311",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswift_RegexParser.dylib",
+      "uuid": "42414FD8-7E4D-3A37-9B38-F7B88868B6B5",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/APFS.framework/Versions/A/APFS",
+      "uuid": "F9FE3D2A-482E-35ED-B791-3908CD83D4D2",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/SwiftASN1Internal.framework/Versions/A/SwiftASN1Internal",
+      "uuid": "69FF4121-7B8A-3FC9-ABB5-80DEC65D63B4",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libheimdal-asn1.dylib",
+      "uuid": "A862B593-BBA5-30F3-AE9B-EFF0754560B0",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/OctagonTrust.framework/Versions/A/OctagonTrust",
+      "uuid": "56925768-B17C-3D10-83FA-D3AC969C5897",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AppleIDAuthSupport.framework/Versions/A/AppleIDAuthSupport",
+      "uuid": "930905C3-E46C-3F16-804C-4CA51A2F2891",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/OSAnalytics.framework/Versions/A/OSAnalytics",
+      "uuid": "A09F848D-13DC-359B-9542-4B41EE57B954",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AppleSauce.framework/Versions/A/AppleSauce",
+      "uuid": "BC843E1C-8EE7-3043-B5A3-00C7178912DE",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/IOMobileFramebuffer.framework/Versions/A/IOMobileFramebuffer",
+      "uuid": "4A399B15-C6CC-374F-BDD2-5BA09F6FE9A0",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libCheckFix.dylib",
+      "uuid": "6D672011-AE33-3F7D-AFDE-C40FF3197742",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/TCC.framework/Versions/A/TCC",
+      "uuid": "D8E90A7F-41EF-36A6-AD5E-29447F5B96EA",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CoreNLP.framework/Versions/A/CoreNLP",
+      "uuid": "3FD6EC32-4C52-3EF2-B364-DA1911F31BED",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/MetadataUtilities.framework/Versions/A/MetadataUtilities",
+      "uuid": "CA6739D6-1873-3CAC-825E-614B3D140AF5",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/OpenDirectory.framework/Versions/A/Frameworks/CFOpenDirectory.framework/Versions/A/CFOpenDirectory",
+      "uuid": "BB786AC1-877F-338E-9E3A-5B4904FCE056",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/InstalledContentLibrary.framework/Versions/A/InstalledContentLibrary",
+      "uuid": "866CB419-812B-393C-A68F-FA8D62AAC4DF",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AppServerSupport.framework/Versions/A/AppServerSupport",
+      "uuid": "A0FD3681-D3BE-350F-9FFF-609A4721EFD9",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CoreServicesStore.framework/Versions/A/CoreServicesStore",
+      "uuid": "C141F5CD-9D11-3951-8BB2-535E5219E0DE",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libapp_launch_measurement.dylib",
+      "uuid": "8F3457FF-23FD-367C-8474-F1D8E749D806",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libxslt.1.dylib",
+      "uuid": "0400FB2C-2415-3634-A5E3-1F2C9073D217",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/Lexicon.framework/Versions/A/Lexicon",
+      "uuid": "75197C29-6E5D-3D1F-AFF6-846092B43F7F",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/UserManagement.framework/Versions/A/UserManagement",
+      "uuid": "FD43B317-F2B9-38EE-ADC3-8754268230DB",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/IconFoundation.framework/Versions/A/IconFoundation",
+      "uuid": "2A6706FA-E7A5-35D4-B82A-D42AEF1C016B",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/IconServices.framework/Versions/A/IconServices",
+      "uuid": "835BA4FA-7752-3D2B-912C-7DA821A9F985",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/ImageIO.framework/Versions/A/ImageIO",
+      "uuid": "B15B7ABF-05AF-39AC-8FA9-71C505245BE3",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/UniformTypeIdentifiers.framework/Versions/A/UniformTypeIdentifiers",
+      "uuid": "7545D7DB-7288-3AD8-90D4-9A6E4E9803C3",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/CoreTransferable.framework/Versions/A/CoreTransferable",
+      "uuid": "16B1C974-18D1-3405-BD9F-C9163B078DDE",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/ExtensionFoundation.framework/Versions/A/ExtensionFoundation",
+      "uuid": "F92F116B-551B-31CF-9B0E-D6DC58A7D59D",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/IOSurface.framework/Versions/A/IOSurface",
+      "uuid": "2E6E3A7C-E998-3CE6-AC1E-4D60BFE7E130",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswiftAccelerate.dylib",
+      "uuid": "82782AC3-7C68-3E3D-9C88-CE0BA9A9F3FF",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswiftMetal.dylib",
+      "uuid": "13A566A5-7357-3B43-9C64-D88E54439F6B",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswiftOSLog.dylib",
+      "uuid": "93288C51-85AF-3E41-AD90-43DFC5720AE7",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswiftQuartzCore.dylib",
+      "uuid": "46994DD2-BA12-3C33-8633-8E2F5494E3F1",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswiftUniformTypeIdentifiers.dylib",
+      "uuid": "21C9587C-0151-3363-865C-E0368B2C2942",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswiftsimd.dylib",
+      "uuid": "45EFBD2A-1080-3E31-BAA5-1047FDBAC8E3",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CoreSymbolication.framework/Versions/A/CoreSymbolication",
+      "uuid": "92614201-1180-33F5-BDFA-56B37E1F0202",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libsandbox.1.dylib",
+      "uuid": "7E3A1F81-9A0B-3EF4-9BB3-E2236F9CEBAC",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/DiscRecording.framework/Versions/A/DiscRecording",
+      "uuid": "69A7F361-847D-33BF-A4F2-2E0E4363AC76",
+      "triple": "arm64e-apple-macosx11.0.0"
+    },
+    {
+      "path": "/usr/lib/libcurl.4.dylib",
+      "uuid": "C1573877-739B-3E12-97EC-4AC2027FCBC0",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/MediaKit.framework/Versions/A/MediaKit",
+      "uuid": "64BE14FA-0534-31F4-934A-2E720F4B3FFD",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/NetAuth.framework/Versions/A/NetAuth",
+      "uuid": "17DCA7B8-8B84-3107-A09D-C255561A1CD7",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/ApplicationServices.framework/Versions/A/ApplicationServices",
+      "uuid": "CF9531BE-77C3-3B4E-897A-8919B4C47D86",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/Sharing.framework/Versions/A/Sharing",
+      "uuid": "C5AAE663-F7C5-3B01-A1CE-4CD8A86D4E9E",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/CoreText.framework/Versions/A/CoreText",
+      "uuid": "28D39E6C-B3CF-380F-8A64-8952261ABC2E",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CoreWiFi.framework/Versions/A/CoreWiFi",
+      "uuid": "67779CE3-D626-37AA-B082-B0EDB25F6FC5",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/LoggingSupport.framework/Versions/A/LoggingSupport",
+      "uuid": "8005548E-06E8-37D0-BF53-2E4A954354CC",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/MobileAsset.framework/Versions/A/MobileAsset",
+      "uuid": "D25F6BAA-FF25-375F-9777-DB722FB62881",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/PowerLog.framework/Versions/A/PowerLog",
+      "uuid": "59E5771D-EFEE-31BF-AAA5-DCBC9B665B44",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/Rapport.framework/Versions/A/Rapport",
+      "uuid": "355E2A37-E640-393E-8093-AF7501EAA61F",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/SwiftData.framework/Versions/A/SwiftData",
+      "uuid": "6B776AE5-2CA4-3DA0-A0D3-8998782981E5",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/Symptoms.framework/Versions/A/Frameworks/SymptomAnalytics.framework/Versions/A/SymptomAnalytics",
+      "uuid": "3C8B737D-7173-31FB-8D30-55D216F0F63F",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libboringssl.dylib",
+      "uuid": "EB30E467-82CE-3C95-971D-7BCBD5FBC585",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libcupolicy.dylib",
+      "uuid": "96B2CDF4-42B3-3C58-BEB5-9995BB3FC4F2",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libdns_services.dylib",
+      "uuid": "4CA9385B-0B06-35E4-AAE7-58EE08CEC773",
+      "triple": "arm64e-apple-macosx15.0.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/NetworkExtension.framework/Versions/A/NetworkExtension",
+      "uuid": "6A60134C-5DFF-3211-B643-5E92B788717B",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libnwswifttls.dylib",
+      "uuid": "7F98234E-856B-3C12-9828-C6F690D4FFB2",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libpcap.A.dylib",
+      "uuid": "598606A4-A1ED-3309-BE03-0E997B86259C",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libquic.dylib",
+      "uuid": "68D83AAE-E369-3ACF-A9E2-D185DA9F268D",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libusrtcp.dylib",
+      "uuid": "F0F0D3A8-09D3-32A9-A8A2-AD3A12E5602E",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AtomicsInternal.framework/Versions/A/AtomicsInternal",
+      "uuid": "64E24BF0-922F-3E25-8EE0-EA867F2137D1",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/InternalSwiftProtobuf.framework/Versions/A/InternalSwiftProtobuf",
+      "uuid": "223FFBE2-C038-328D-B879-C1F720F5E4F8",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswiftDistributed.dylib",
+      "uuid": "E1092791-4380-3DC4-B2F2-E7C6A39D39B8",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswiftSynchronization.dylib",
+      "uuid": "0D3147B9-E7C9-3DF3-8D8C-41B470BD90E8",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/CoreData.framework/Versions/A/CoreData",
+      "uuid": "889B8708-0AFC-3877-890E-B0A4C5AD9342",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/ApplePushService.framework/Versions/A/ApplePushService",
+      "uuid": "AF181588-2E00-307E-BDFD-F7DBDDBEB3A9",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/FindMyDevice.framework/Versions/A/FindMyDevice",
+      "uuid": "8EE11D9B-324B-3D92-95A3-F3073F15AA93",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AuthKit.framework/Versions/A/AuthKit",
+      "uuid": "2F72F64B-00D1-340D-9011-C1941BE5EECC",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CorePhoneNumbers.framework/Versions/A/CorePhoneNumbers",
+      "uuid": "713A78AD-A21F-3752-91B0-BDCF17183912",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/AVFAudio.framework/Versions/A/AVFAudio",
+      "uuid": "89D2629D-0C94-37E2-AD9A-41F7A7A086EB",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AVFCore.framework/Versions/A/AVFCore",
+      "uuid": "7A9C0F13-EFF2-3745-9416-CF3425E19749",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AVFCapture.framework/Versions/A/AVFCapture",
+      "uuid": "B136C50F-B6FC-3380-90C6-A104148027A0",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/AVRouting.framework/Versions/A/AVRouting",
+      "uuid": "D83A1570-559F-3452-AE12-EE5479C861FB",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/SkyLight.framework/Versions/A/SkyLight",
+      "uuid": "E7D21A4B-D787-3703-9CF3-7A6AD756224B",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/FontServices.framework/libFontParser.dylib",
+      "uuid": "C28C4236-55BE-3907-9BB5-060551C7DB29",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/Accelerate.framework/Versions/A/Accelerate",
+      "uuid": "48836136-E410-39F0-9A92-EC2C1A641C3D",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AggregateDictionary.framework/Versions/A/AggregateDictionary",
+      "uuid": "69CD4D77-38D0-3AF8-8595-767BDAA799D3",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CoreDuetContext.framework/Versions/A/CoreDuetContext",
+      "uuid": "7394C59B-F5F3-3983-ABA0-6A5792273AF7",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/BiomeLibrary.framework/Versions/A/BiomeLibrary",
+      "uuid": "A2EB6599-EDEF-3132-9404-8AB6395B9625",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CoreDuet.framework/Versions/A/CoreDuet",
+      "uuid": "A0F5BB1B-121B-384A-BC71-E91FEE18DCBD",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/BiomeStreams.framework/Versions/A/BiomeStreams",
+      "uuid": "BB1F93D1-5381-393C-A9DB-86814AAC5149",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/BiomeFoundation.framework/Versions/A/BiomeFoundation",
+      "uuid": "71891421-DB18-323D-A674-92EA72E1DC54",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/BiomePubSub.framework/Versions/A/BiomePubSub",
+      "uuid": "E2B61C31-79D9-3AC6-A7A0-B3C7CE056132",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/Bom.framework/Versions/A/Bom",
+      "uuid": "201945B6-D48E-3B0B-9DF9-27FE0C6EF57A",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libtidy.A.dylib",
+      "uuid": "53E4DA3B-070A-35F7-8A73-F6C895B791AA",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/Marco.framework/Versions/A/Marco",
+      "uuid": "02ED8EF9-E21D-3007-892A-1A2E68F53D84",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/IMFoundation.framework/Versions/A/IMFoundation",
+      "uuid": "FD34E4B5-0EC9-301A-94AF-F7BA2163B60A",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/IDSFoundation.framework/Versions/A/IDSFoundation",
+      "uuid": "8430AF1A-B49C-3270-8C9C-25EB27E4142D",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/FTAWD.framework/Versions/A/FTAWD",
+      "uuid": "7EE1BF4F-A565-3987-9375-BC74DF87C73B",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/VideoToolbox.framework/Versions/A/VideoToolbox",
+      "uuid": "6824E1D3-3754-3786-9682-337FC51B6F7E",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CommonUtilities.framework/Versions/A/CommonUtilities",
+      "uuid": "FD42E7DF-00F6-3559-BA2F-877A1DCA9A98",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/OpenDirectory.framework/Versions/A/OpenDirectory",
+      "uuid": "11E6A774-0E57-334F-8A00-979A2D3EED6C",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/Heimdal.framework/Versions/A/Heimdal",
+      "uuid": "0D421CCA-2268-3AB9-9DCD-20C2051B4E97",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libresolv.9.dylib",
+      "uuid": "710986F6-7F55-3269-87FC-79D91BE8A213",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CommonAuth.framework/Versions/A/CommonAuth",
+      "uuid": "4A642FAD-F1B4-3A10-AC6A-66B431AE18B4",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/IOAccelMemoryInfo.framework/Versions/A/IOAccelMemoryInfo",
+      "uuid": "3A74104F-B5C0-3420-B140-817ADB54B0E5",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/Symbolication.framework/Versions/A/Symbolication",
+      "uuid": "DB4D18FE-C5A9-3E6C-8016-0B6F9DB2F919",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/DebugSymbols.framework/Versions/A/DebugSymbols",
+      "uuid": "1C26F039-CC65-3DFC-BC85-A9A9D3BA83CB",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/ServiceManagement.framework/Versions/A/ServiceManagement",
+      "uuid": "7D931DE9-72F2-34A5-B7F4-03A2A08A7761",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CryptoKitPrivate.framework/Versions/A/CryptoKitPrivate",
+      "uuid": "DA4E5C3B-0116-36A9-9625-B44DBE4F4651",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CoreUtils.framework/Versions/A/CoreUtils",
+      "uuid": "FD851242-F836-3472-A31E-29886B1DD805",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/BaseBoard.framework/Versions/A/BaseBoard",
+      "uuid": "9717B7CD-BB81-3981-983E-6966D7A2F1F1",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libAppleArchive.dylib",
+      "uuid": "BC925927-D287-3DB3-9439-5C7D3F816382",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libcharset.1.dylib",
+      "uuid": "0673192D-5966-307F-B6D1-80F6524E8256",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libutil.dylib",
+      "uuid": "38D1DD36-A646-3F45-8DC1-CC80B86B7108",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/SecurityFoundation.framework/Versions/A/SecurityFoundation",
+      "uuid": "605AFD54-7A3C-3FB0-8EA4-7B356F5EAE84",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/KeychainCircle.framework/Versions/A/KeychainCircle",
+      "uuid": "056764F3-86D9-37D3-B60D-7BEBCCE6147C",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/DeviceRecovery.framework/Versions/A/DeviceRecovery",
+      "uuid": "3AE14059-852E-3DAE-9E3A-8385887E839D",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libmecab.dylib",
+      "uuid": "C06DD1E3-30D0-332B-BDF6-D9E187CC597B",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libCRFSuite.dylib",
+      "uuid": "EE8AFEE4-F825-3209-9959-1BC8A538198D",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libgermantok.dylib",
+      "uuid": "796E7EE6-239A-3B27-9DCB-2305CF085966",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libThaiTokenizer.dylib",
+      "uuid": "086775B9-564C-39CE-9147-0592D4692CD4",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AppleMobileFileIntegrity.framework/Versions/A/AppleMobileFileIntegrity",
+      "uuid": "C70B2C18-4409-389A-B627-4C7D069E902D",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libmis.dylib",
+      "uuid": "F695014E-8228-37B1-BEDF-4D14CC1D7574",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/MobileSystemServices.framework/Versions/A/MobileSystemServices",
+      "uuid": "425B4059-A3B4-3D88-B2EE-84450BE32108",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/LinguisticData.framework/Versions/A/LinguisticData",
+      "uuid": "92C5BA21-4866-3BD3-B65F-07673A926A08",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/MobileKeyBag.framework/Versions/A/MobileKeyBag",
+      "uuid": "D915B8A2-F471-3773-8815-EEAFF74A5F47",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/IconRendering.framework/Versions/A/IconRendering",
+      "uuid": "C5AA4902-EA8E-392D-B92A-833BBCB51637",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/SFSymbols.framework/Versions/A/SFSymbols",
+      "uuid": "8E8BF2F2-3685-3060-A3A7-F8C47427D847",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CoreUI.framework/Versions/A/CoreUI",
+      "uuid": "91700ADD-69E0-32DD-8697-3CB573CF3B33",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/CoreImage.framework/Versions/A/CoreImage",
+      "uuid": "9D810303-07D0-312D-A412-1C7910C7A2C6",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/QuartzCore.framework/Versions/A/QuartzCore",
+      "uuid": "0BC5D4E0-0414-3F32-8AED-629119615D8F",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/DeveloperToolsSupport.framework/Versions/A/DeveloperToolsSupport",
+      "uuid": "A8B8A3F6-12AE-3A20-9653-A234CC162370",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/RenderBox.framework/Versions/A/RenderBox",
+      "uuid": "484E401C-4267-37E2-8197-D42056B7C3C0",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AssistantServices.framework/Versions/A/AssistantServices",
+      "uuid": "FF922D49-799D-398F-8D3F-BF793B3CC72E",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/Metal.framework/Versions/A/Metal",
+      "uuid": "B0389CE7-F549-3405-B40A-36912A60F1CA",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AppleJPEG.framework/Versions/A/AppleJPEG",
+      "uuid": "4C85A3D0-F7C1-385F-9E3B-80C15B34BECF",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libexpat.1.dylib",
+      "uuid": "4D62FA9D-D86A-3DD0-98F2-C6D0718849E8",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/ColorSync.framework/Versions/A/ColorSync",
+      "uuid": "A0EE06D1-F12A-39FB-893F-442BC964BCDF",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/ImageIO.framework/Versions/A/Resources/libPng.dylib",
+      "uuid": "E189CF59-6944-3D50-9537-378546688877",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/ImageIO.framework/Versions/A/Resources/libTIFF.dylib",
+      "uuid": "F51D8AB0-0CF6-318E-859A-AA12DFEBF033",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/ImageIO.framework/Versions/A/Resources/libGIF.dylib",
+      "uuid": "207BC4E9-105D-3DC1-A40A-72BE64579DA4",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/ImageIO.framework/Versions/A/Resources/libJP2.dylib",
+      "uuid": "A0F82561-D3A7-3A25-8E03-45D89E6ACF00",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libate.dylib",
+      "uuid": "FF3C31BD-688F-3AF3-8553-AEBBCD5903DA",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/ImageIO.framework/Versions/A/Resources/libJPEG.dylib",
+      "uuid": "A9F8C207-C230-32CE-8D1C-F6ECA9814DFE",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/ImageIO.framework/Versions/A/Resources/libRadiance.dylib",
+      "uuid": "F77571A8-9CF5-31A5-BC92-D5F3B0138713",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/IOSurfaceAccelerator.framework/Versions/A/IOSurfaceAccelerator",
+      "uuid": "5E95B349-412E-3B5F-8190-6AF2CFFA5969",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/UIFoundation.framework/Versions/A/UIFoundation",
+      "uuid": "8F97D659-4AF8-343E-93D2-4E6861F93D4E",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/BoardServices.framework/Versions/A/BoardServices",
+      "uuid": "99C8CA86-3862-33A9-B996-A54FA1C9F394",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/FeatureFlags.framework/Versions/A/FeatureFlags",
+      "uuid": "F1AE74FA-6583-3083-91F9-FD1D50B65559",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/PlugInKit.framework/Versions/A/PlugInKit",
+      "uuid": "6AA3D2E4-2709-3050-9B8A-91A7B8FC00FC",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AssertionServices.framework/Versions/A/AssertionServices",
+      "uuid": "45DF616E-589C-3A51-B52E-B8F8A21BB97F",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/CoreVideo.framework/Versions/A/CoreVideo",
+      "uuid": "3A2DCC01-A913-32CC-9FDF-3F8BB6EB1E46",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/OSLog.framework/Versions/A/OSLog",
+      "uuid": "2EB6BAEF-A189-34D6-8693-B70E58E3BE5E",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libMatch.1.dylib",
+      "uuid": "1EED9B35-8A57-3DE3-8FAD-64C85507A803",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/AudioToolbox.framework/Versions/A/AudioToolbox",
+      "uuid": "077E3983-7E8A-3260-9118-425CDFFF216A",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libcrypto.46.dylib",
+      "uuid": "6DDA91C5-BF5E-3E4A-8E68-600F2FE13001",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libssl.48.dylib",
+      "uuid": "F441E002-0874-334D-991C-2307CE55B662",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/LDAP.framework/Versions/A/LDAP",
+      "uuid": "FBE79709-5EE9-3D69-AF58-A61929459D05",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/Kerberos.framework/Versions/A/Kerberos",
+      "uuid": "21F0D0D8-946C-38DB-A6BC-CB08D2123431",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/login.framework/Versions/A/Frameworks/loginsupport.framework/Versions/A/loginsupport",
+      "uuid": "193666E3-A94A-38AB-A1B9-69CE8394D7C1",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/ATS.framework/Versions/A/ATS",
+      "uuid": "B977651A-4D8B-360E-B614-57C64C705392",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/HIServices.framework/Versions/A/HIServices",
+      "uuid": "92EB48F7-1411-3740-A32D-945D8AE71A4A",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/PrintCore.framework/Versions/A/PrintCore",
+      "uuid": "82244936-E95D-38DC-A438-C89753E3195A",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/QD.framework/Versions/A/QD",
+      "uuid": "B5D14120-F72E-3BE0-AAA8-47A5DEDEFC56",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/ColorSyncLegacy.framework/Versions/A/ColorSyncLegacy",
+      "uuid": "88B7A14E-79D2-307B-B8A5-D4976BA37838",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/SpeechSynthesis.framework/Versions/A/SpeechSynthesis",
+      "uuid": "941F6A98-9EA5-3B89-8305-4DF74453350D",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/Apple80211.framework/Versions/A/Apple80211",
+      "uuid": "B5BD1434-6935-3389-A0EA-CFA2389E4FBC",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/CoreWLAN.framework/Versions/A/CoreWLAN",
+      "uuid": "1A3C8C1B-6F57-3151-9783-800521804123",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/CoreBluetooth.framework/Versions/A/CoreBluetooth",
+      "uuid": "55A87FCA-E6C1-35A4-8F4A-7A8456C5A7C5",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/IOBluetooth.framework/Versions/A/IOBluetooth",
+      "uuid": "B37A1A94-5CDA-314C-9B68-23F2E615F500",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswiftCompression.dylib",
+      "uuid": "EE5BF08C-8D02-3256-8214-C84A75B6A4CA",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswiftCoreAudio.dylib",
+      "uuid": "4A09A7B8-5E0E-3833-9FF3-45D13C0F0D9C",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswiftCoreImage.dylib",
+      "uuid": "EFBBAB1C-E2B1-3F80-BC7C-C33D727E4B18",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswiftCoreLocation.dylib",
+      "uuid": "C5921032-0877-347B-98F9-04B18F48FCA0",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/FontServices.framework/Versions/A/FontServices",
+      "uuid": "BDF4801A-6F9D-328A-9060-2632D9947BB8",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/OTSVG.framework/Versions/A/OTSVG",
+      "uuid": "F4E74EE5-4A21-3E45-8FEE-71E882C1F7B1",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/ATS.framework/Versions/A/Resources/libFontRegistry.dylib",
+      "uuid": "7338C8F6-1DE0-317D-83EF-8CDBCAC72ADF",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libmrc.dylib",
+      "uuid": "C6A872D6-BE5D-39F5-BC31-DC2A9D53AE2B",
+      "triple": "arm64e-apple-macosx15.0.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/IPConfiguration.framework/Versions/A/IPConfiguration",
+      "uuid": "A6C45663-1943-35BA-B0D5-6C8FCB2F5BE7",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/Netrb.framework/Versions/A/Netrb",
+      "uuid": "99E89FAC-7BD4-3E5C-8A6C-36DFA20C97C7",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/IO80211.framework/Versions/A/IO80211",
+      "uuid": "0F968A66-080F-3EB2-8E2D-4EBA45D2DFF2",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/FrontBoardServices.framework/Versions/A/FrontBoardServices",
+      "uuid": "93E02826-373B-3F7E-9595-010F3B14A536",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/WiFiPeerToPeer.framework/Versions/A/WiFiPeerToPeer",
+      "uuid": "00D1E151-B878-32DA-8BD1-6D2A85CBF2E8",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/SoftwareUpdateCoreSupport.framework/Versions/A/SoftwareUpdateCoreSupport",
+      "uuid": "84B85D0F-4E2B-3B58-A7EB-7FE7B4AEB1D9",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/SoftwareUpdateCoreConnect.framework/Versions/A/SoftwareUpdateCoreConnect",
+      "uuid": "FE5976B6-F734-3A70-96E9-BE0F45C8981D",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/CryptoKit.framework/Versions/A/CryptoKit",
+      "uuid": "966FDBE0-180E-3929-B972-687BD14CB106",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libTelephonyUtilDynamic.dylib",
+      "uuid": "C0243462-6862-3EBA-BC81-479573D2A6B9",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CaptiveNetwork.framework/Versions/A/CaptiveNetwork",
+      "uuid": "04B0BBE7-2D52-37C9-990D-FF6E6D98C33F",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/EAP8021X.framework/Versions/A/EAP8021X",
+      "uuid": "5E3844C3-D66B-36DB-83CD-A33480CB53CF",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/DeviceIdentity.framework/Versions/A/DeviceIdentity",
+      "uuid": "F8FCD636-9400-39A5-9BE1-ED7A1F9CB617",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/FMCoreLite.framework/Versions/A/FMCoreLite",
+      "uuid": "135339C3-0781-30BA-BBB5-70F3106F397F",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/LocalAuthentication.framework/Versions/A/LocalAuthentication",
+      "uuid": "DDE85B57-6B47-3EB2-A1C2-555EF655F550",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/MultiverseSupport.framework/Versions/A/MultiverseSupport",
+      "uuid": "44B28F70-7E36-3E50-BED0-9F693C625D35",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/RemoteServiceDiscovery.framework/Versions/A/RemoteServiceDiscovery",
+      "uuid": "566D0E42-C34C-34F9-A1DA-489D7D4396E0",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/DiskManagement.framework/Versions/A/DiskManagement",
+      "uuid": "C9246CAB-95D9-3B92-883A-AE68421DA610",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AAAFoundation.framework/Versions/A/AAAFoundation",
+      "uuid": "E924D576-073B-3C18-9C5B-FD6B4B9AD200",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/URLFormatting.framework/Versions/A/URLFormatting",
+      "uuid": "AF12683A-4681-3A38-8A7B-7DBAF7232C12",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/IsolatedCoreAudioClient.framework/Versions/A/IsolatedCoreAudioClient",
+      "uuid": "2AF953D3-2A29-3C7C-8405-5854CD210EF6",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libAudioStatistics.dylib",
+      "uuid": "EF4B26DB-5240-30DD-A475-F0E810DF4316",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/caulk.framework/Versions/A/caulk",
+      "uuid": "D4644B08-911D-30AF-82E7-C404878ABF47",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AudioToolboxCore.framework/Versions/A/AudioToolboxCore",
+      "uuid": "77C29777-290D-35CF-A710-6445DCDF6DD9",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/CoreMIDI.framework/Versions/A/CoreMIDI",
+      "uuid": "1567BDB7-D5E4-3CC9-968D-2C21982906D2",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AudioSession.framework/Versions/A/AudioSession",
+      "uuid": "04499FE3-36DB-3ED6-84E4-A284606C5FDC",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/MediaExperience.framework/Versions/A/MediaExperience",
+      "uuid": "20E67CAA-84CF-379A-98E4-B84267BF9982",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/CoreAudio.framework/Versions/A/CoreAudio",
+      "uuid": "F37B241B-2A83-3F86-BD94-329A18BA4715",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswiftCoreMIDI.dylib",
+      "uuid": "54181F2D-52AA-3A29-9784-59C34D31A89B",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswiftCoreMedia.dylib",
+      "uuid": "D82146F8-4C18-389A-BEF6-8ABCF67A242F",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/CoreMedia.framework/Versions/A/CoreMedia",
+      "uuid": "2BC467B0-551F-3A1F-AB7A-8BE5728A1745",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/MediaToolbox.framework/Versions/A/MediaToolbox",
+      "uuid": "6BE834AF-CD24-3240-AA7A-CAF7699FC15C",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CMPhoto.framework/Versions/A/CMPhoto",
+      "uuid": "F2307EA2-4FF3-383E-B650-F22B38F75A63",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CMImaging.framework/Versions/A/CMImaging",
+      "uuid": "53B09B36-47A8-37B7-84AD-3491EC5C7919",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/Quagga.framework/Versions/A/Quagga",
+      "uuid": "BACD0AF2-5D65-32E4-AB5C-C2D2CA516E58",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CMCapture.framework/Versions/A/CMCapture",
+      "uuid": "E4C3B40E-D6B0-334F-811C-77520851730D",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/CoreMediaIO.framework/Versions/A/CoreMediaIO",
+      "uuid": "4FFD97EF-9B0E-3FF4-A80B-538E6020BF16",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/BackBoardServices.framework/Versions/A/BackBoardServices",
+      "uuid": "E0335F35-9FE5-34F5-94C0-FF5788B40933",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/BackBoardHIDEventFoundation.framework/Versions/A/BackBoardHIDEventFoundation",
+      "uuid": "DCC04677-CD6E-3245-AED5-1A9155ED6A98",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/CoreDisplay.framework/Versions/A/CoreDisplay",
+      "uuid": "BFBAC36D-9693-302C-8DC6-7F4F8C4079A4",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/MetalPerformanceShaders.framework/Versions/A/MetalPerformanceShaders",
+      "uuid": "4AB83B90-B197-3B44-AD20-F56BFB0866AB",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/ProDisplayLibrary.framework/Versions/A/ProDisplayLibrary",
+      "uuid": "F46AE5D1-1029-30FA-ABC5-319CF744869D",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/IOAccelerator.framework/Versions/A/IOAccelerator",
+      "uuid": "03264B4A-208E-3218-A62F-D182E5C3AD66",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/WatchdogClient.framework/Versions/A/WatchdogClient",
+      "uuid": "C84736AE-6A52-3E94-A35A-8EB1460A85BD",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/MultitouchSupport.framework/Versions/A/MultitouchSupport",
+      "uuid": "3534AE07-9386-3A86-98A8-70E4014F6DFE",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libhvf.dylib",
+      "uuid": "B15A388E-A82B-31C2-9C61-7225A2183253",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/ParsingInternal.framework/Versions/A/ParsingInternal",
+      "uuid": "A13B1100-077D-3FA1-ADAF-FE3325FD692E",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vImage.framework/Versions/A/vImage",
+      "uuid": "2766F1FF-C4A7-3CCD-AA55-3777D55AA15A",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/vecLib",
+      "uuid": "AF40517A-B13E-331B-89D0-75CC5FD345FE",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/ProactiveSupport.framework/Versions/A/ProactiveSupport",
+      "uuid": "E5732C71-8465-3071-8AE1-E93BC2551490",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/CoreLocation.framework/Versions/A/CoreLocation",
+      "uuid": "BD7E9971-3A50-3690-AAC9-93CB3BD42469",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/Intents.framework/Versions/A/Intents",
+      "uuid": "5997720A-C6F0-3F64-9602-103722F6D175",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/_LocationEssentials.framework/Versions/A/_LocationEssentials",
+      "uuid": "BC420870-F29C-3361-A833-AD0088E25C24",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/BiomeStorage.framework/Versions/A/BiomeStorage",
+      "uuid": "39BAD266-7D2F-3A96-AB7D-3BD98B25E58B",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/IntelligencePlatformLibrary.framework/Versions/A/IntelligencePlatformLibrary",
+      "uuid": "6A763279-3A2F-309E-9208-B59AC1F4ECA1",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/CoreTelephony.framework/Versions/A/CoreTelephony",
+      "uuid": "9C4AB804-1C29-3271-97E3-A4F1B81D8D95",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/CloudKit.framework/Versions/A/CloudKit",
+      "uuid": "92B0CDA5-5EC5-35A5-BE7C-FBA3F922A6AF",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CoreDuetDaemonProtocol.framework/Versions/A/CoreDuetDaemonProtocol",
+      "uuid": "65C0D837-115C-33B3-88D8-8B8D651C3C80",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/PoirotSchematizer.framework/Versions/A/PoirotSchematizer",
+      "uuid": "D8741362-F6C6-38C1-BDDE-0FF17BF3C5E1",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/BiomeSync.framework/Versions/A/BiomeSync",
+      "uuid": "2C27A851-C16C-320A-8266-660E15716601",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/BiomeDSL.framework/Versions/A/BiomeDSL",
+      "uuid": "761C8560-762F-3AFB-9EDD-81529B5A5287",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/PoirotUDFs.framework/Versions/A/PoirotUDFs",
+      "uuid": "83AEE415-57A5-3751-BB4B-F1D77FF7D266",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CoreTime.framework/Versions/A/CoreTime",
+      "uuid": "2F0E47DC-15D0-3465-91FA-41A62D68631D",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libParallelCompression.dylib",
+      "uuid": "2587B0D9-7810-37EE-B46C-4D33E52317E3",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/Engram.framework/Versions/A/Engram",
+      "uuid": "1A8824B7-1E4E-39C9-B8D3-6DCD4705E6D0",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/ArgumentParserInternal.framework/Versions/A/ArgumentParserInternal",
+      "uuid": "E7FBE094-7FD0-312B-8194-4B590E980B94",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswiftRegexBuilder.dylib",
+      "uuid": "8A902D72-E0E9-3FC6-AFE7-E558CEA06DF5",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/VideoToolboxParavirtualizationSupport.framework/Versions/A/VideoToolboxParavirtualizationSupport",
+      "uuid": "F2501570-CBC1-39F9-9169-373AC9DA8B75",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AppleVA.framework/Versions/A/AppleVA",
+      "uuid": "2155E154-0404-3E61-9726-C690F122CA88",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/MallocStackLogging.framework/Versions/A/MallocStackLogging",
+      "uuid": "6581553F-FAFC-3FE7-B4AA-6CB978924B06",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CryptoKitCBridging.framework/Versions/A/CryptoKitCBridging",
+      "uuid": "A2A13370-C096-3DE5-BB33-B2BB0849CB60",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/CryptoTokenKit.framework/Versions/A/CryptoTokenKit",
+      "uuid": "8F5660D8-0697-31C9-943F-3D93D2172A19",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CoreUtilsExtras.framework/Versions/A/CoreUtilsExtras",
+      "uuid": "4C897986-FC71-3748-B66D-89C4F3553763",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/ConfigProfileHelper.framework/Versions/A/ConfigProfileHelper",
+      "uuid": "61B12B59-7161-3AE5-B428-F29FB270B0C7",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CoreSVG.framework/Versions/A/CoreSVG",
+      "uuid": "3A308497-A5AF-310D-908E-5EF7018EDFFC",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/TextureIO.framework/Versions/A/TextureIO",
+      "uuid": "C3BDFC26-46B7-3FDE-BB32-D3FFF1B61148",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/GraphVisualizer.framework/Versions/A/GraphVisualizer",
+      "uuid": "7C299975-1DF3-3824-AA6A-66970343694A",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/FramePacing.framework/Versions/A/FramePacing",
+      "uuid": "5653D27F-1C30-38FB-A1C3-EE3A6178DB04",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/ASEProcessing.framework/Versions/A/ASEProcessing",
+      "uuid": "AC5AD6E2-DC7D-3679-89D8-6BDEFE7FD1C8",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/PhotosensitivityProcessing.framework/Versions/A/PhotosensitivityProcessing",
+      "uuid": "B7EC2601-E8E1-391B-B598-26260E3D7E4F",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/OpenGL.framework/Versions/A/OpenGL",
+      "uuid": "A3A3742A-694C-34DE-BF09-6583D7683DDF",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/SAObjects.framework/Versions/A/SAObjects",
+      "uuid": "E4707C6E-CA2A-38DE-8B48-032EFF1D62BC",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/MediaRemote.framework/Versions/A/MediaRemote",
+      "uuid": "1BEEEA15-A39C-3276-B170-7C83B432635F",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/UserNotifications.framework/Versions/A/UserNotifications",
+      "uuid": "4A0C8374-53B9-35DB-941F-090272B36CB6",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/SiriInstrumentation.framework/Versions/A/SiriInstrumentation",
+      "uuid": "665393FD-B50B-3444-B276-9651FAC4306F",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/SiriAnalytics.framework/Versions/A/SiriAnalytics",
+      "uuid": "5D9832B1-9ADC-3E53-AE0A-B3788CC20BE1",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/SiriTTSService.framework/Versions/A/SiriTTSService",
+      "uuid": "7F117845-3B18-3914-9645-1DA0CD391295",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/SiriCrossDeviceArbitration.framework/Versions/A/SiriCrossDeviceArbitration",
+      "uuid": "E87ECB4C-3E94-3D65-B751-773855AA9301",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/FeedbackLogger.framework/Versions/A/FeedbackLogger",
+      "uuid": "EB731A8E-29F9-3921-B49D-22AD2AD907E8",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/FaceTimeNameUtility.framework/Versions/A/FaceTimeNameUtility",
+      "uuid": "FD190074-A626-3214-9E4E-9A2CD65FC79C",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/SiriCrossDeviceArbitrationFeedback.framework/Versions/A/SiriCrossDeviceArbitrationFeedback",
+      "uuid": "33472427-A2B2-34E4-B809-8D8D362FB1FF",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/GenerativeModels.framework/Versions/A/GenerativeModels",
+      "uuid": "3AE30152-06AA-316B-83D8-F4205ECF0D48",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/GPUCompiler.framework/Versions/32023/Libraries/libllvm-flatbuffers.dylib",
+      "uuid": "8FFB6195-8B39-3064-B4B9-618BCFDC2C49",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libCoreFSCache.dylib",
+      "uuid": "EC02AB79-061A-39B7-9A22-6ADB252A1DD8",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/GPUCompiler.framework/Versions/32023/Libraries/libGPUCompilerUtils.dylib",
+      "uuid": "89898AAA-6651-3BAB-921C-098F84F7AD82",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libAudioToolboxUtility.dylib",
+      "uuid": "5D7823BD-B871-3671-BFA3-C16A22A6407F",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/TrustEvaluationAgent.framework/Versions/A/TrustEvaluationAgent",
+      "uuid": "137AF5D5-E577-3F03-85B6-65F1537C539A",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libsasl2.2.dylib",
+      "uuid": "1C940462-2125-390D-8FA3-DBC5D9794581",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/Kerberos.framework/Versions/A/Libraries/libHeimdalProxy.dylib",
+      "uuid": "15C9F50B-A167-31DD-9AB1-05A9BBBC71FB",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libcups.2.dylib",
+      "uuid": "BCA8F782-13BA-3206-8B41-9BC1FFED0D31",
+      "triple": "arm64e-apple-macosx11.0.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/ATSUI.framework/Versions/A/ATSUI",
+      "uuid": "583761F3-34CC-3A29-80A6-2AD8B4435FED",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AXCoreUtilities.framework/Versions/A/AXCoreUtilities",
+      "uuid": "C17F33EA-DD7E-32A3-A324-243B90DF147A",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libIOReport.dylib",
+      "uuid": "7A1D24AC-D33E-3F06-80AA-5E1487827D14",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/AudioUnit.framework/Versions/A/AudioUnit",
+      "uuid": "6E930E48-B78B-329A-BFDB-7F680FDFC2C6",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/FontServices.framework/libXTFontStaticRegistryData.dylib",
+      "uuid": "52F1A9F6-469E-3DEE-8F93-21A57AAAB07B",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/MSUDataAccessor.framework/Versions/A/MSUDataAccessor",
+      "uuid": "9C753E6B-B29A-306F-B235-83AA6D6C80ED",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libbootpolicy.dylib",
+      "uuid": "5902A9F7-14F3-3AA4-ADA2-CD7B20B149BE",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/RemoteXPC.framework/Versions/A/RemoteXPC",
+      "uuid": "23DEACA2-1C7F-3445-9022-A1DDEC4267CD",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/LocalAuthenticationCore.framework/Versions/A/LocalAuthenticationCore",
+      "uuid": "ADFF67E1-6E62-348D-B3FD-1E357C269869",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/LocalAuthenticationCredentialServices.framework/Versions/A/LocalAuthenticationCredentialServices",
+      "uuid": "9ED6A3FB-29F0-3D63-860A-032CBF71A3D2",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/LocalAuthentication.framework/Support/SharedUtils.framework/Versions/A/SharedUtils",
+      "uuid": "37851CDC-6D56-3F1C-96E1-B6A476E4A264",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libFDR.dylib",
+      "uuid": "57AA2508-BB0C-3613-8F5C-618FEF5C80D5",
+      "triple": "arm64e-apple-macosx11.0.0"
+    },
+    {
+      "path": "/usr/lib/libcsfde.dylib",
+      "uuid": "A58DA844-9164-376A-9C4F-6582D2AC249F",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libCoreStorage.dylib",
+      "uuid": "7830327A-9649-36B8-8504-5AF121DFF86A",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/Tightbeam.framework/Versions/A/Tightbeam",
+      "uuid": "1F0AD708-07AA-3F08-99C6-93EDB64B9133",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CoreAudioOrchestration.framework/Versions/A/CoreAudioOrchestration",
+      "uuid": "43E884FB-F167-3347-BF55-889C5F4D4C87",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libperfcheck.dylib",
+      "uuid": "7035ADB8-EED6-3BA6-914A-CE89F65A9DB8",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AudioAnalytics.framework/Versions/A/AudioAnalytics",
+      "uuid": "65BF08B8-3B98-39B3-A4CC-25AD8AAAEDC3",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AudioSession.framework/libSessionUtility.dylib",
+      "uuid": "A8988251-0CDD-3151-9FDE-F494D957D9F9",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AudioAccessoryServices.framework/Versions/A/AudioAccessoryServices",
+      "uuid": "7EB41CA4-4B22-3954-AB5C-2E97AC3F57CF",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/perfdata.framework/Versions/A/perfdata",
+      "uuid": "66392C5F-CF6D-3A59-B77C-38E63063F732",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AudioDSPGraph.framework/Versions/A/AudioDSPGraph",
+      "uuid": "C6A3BD85-D682-3867-81CB-E7A2A2486C6D",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/SystemPolicy.framework/Versions/A/SystemPolicy",
+      "uuid": "F85264C3-E183-301F-8966-F389245E2988",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CMCaptureCore.framework/Versions/A/CMCaptureCore",
+      "uuid": "66192FA1-9676-381B-A471-4C59D19AC9D5",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libspindump.dylib",
+      "uuid": "31D68BC6-364A-3656-AF07-B6B41CF8244E",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CoreAVCHD.framework/Versions/A/CoreAVCHD",
+      "uuid": "9FCE2A90-DADF-3300-A962-79C58210D37D",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/MediaAccessibility.framework/Versions/A/MediaAccessibility",
+      "uuid": "1F024D71-7993-3CD0-944B-EE7EAA9FBAB9",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/Mangrove.framework/Versions/A/Mangrove",
+      "uuid": "7444FCD6-8F52-348B-B5C7-BAA1FC00CA25",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CoreAUC.framework/Versions/A/CoreAUC",
+      "uuid": "668298B9-2530-3F95-95E2-C49F64248894",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AppleJPEGXL.framework/Versions/A/AppleJPEGXL",
+      "uuid": "2AE0A506-86C1-321D-8320-13D2A66F3DCB",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CMCaptureDevice.framework/Versions/A/CMCaptureDevice",
+      "uuid": "EB6AB0EB-46AE-3EEF-AFA8-4711FE804D00",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/Espresso.framework/Versions/A/Espresso",
+      "uuid": "F5256644-4C62-3F5A-A0CE-488D1D7A4A2C",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CoreBrightness.framework/Versions/A/CoreBrightness",
+      "uuid": "D566E8B4-1322-3B49-9808-C85936BE2946",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CinematicFraming.framework/Versions/A/CinematicFraming",
+      "uuid": "21086803-C825-34FD-A857-C6822991786A",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/GraphicsServices.framework/Versions/A/GraphicsServices",
+      "uuid": "8216C5D6-0ED9-3639-B0DB-B015B9C4BDF8",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/GPUWrangler.framework/Versions/A/GPUWrangler",
+      "uuid": "C60A5D3E-1EE0-3059-9CF0-8CA55C0E24AA",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/IOPresentment.framework/Versions/A/IOPresentment",
+      "uuid": "9AC5E929-FD0E-3C90-9DC0-06E2D8DE2900",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/DSExternalDisplay.framework/Versions/A/DSExternalDisplay",
+      "uuid": "EA10817C-D117-3DC2-80DC-6398B994191E",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/MetalPerformanceShaders.framework/Versions/A/Frameworks/MPSCore.framework/Versions/A/MPSCore",
+      "uuid": "9526D2F7-57A4-3AB2-9BCE-A7F76D38C0C1",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/MetalPerformanceShaders.framework/Versions/A/Frameworks/MPSImage.framework/Versions/A/MPSImage",
+      "uuid": "5342FD3D-5EFE-398D-BAFA-8D85CB737746",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/MetalPerformanceShaders.framework/Versions/A/Frameworks/MPSNeuralNetwork.framework/Versions/A/MPSNeuralNetwork",
+      "uuid": "AE6CA09B-FD03-31D7-85BB-4F70C4895729",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/MetalPerformanceShaders.framework/Versions/A/Frameworks/MPSMatrix.framework/Versions/A/MPSMatrix",
+      "uuid": "D206A24D-B438-3DBF-8D1B-E8790E7F5970",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/MetalPerformanceShaders.framework/Versions/A/Frameworks/MPSRayIntersector.framework/Versions/A/MPSRayIntersector",
+      "uuid": "15B4E4BF-BCEC-3E4D-80E8-6049A4B857CA",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/MetalPerformanceShaders.framework/Versions/A/Frameworks/MPSNDArray.framework/Versions/A/MPSNDArray",
+      "uuid": "2B1A2A36-F3B6-3B4E-BDC8-45175E603214",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/MetalPerformanceShaders.framework/Versions/A/Frameworks/MPSFunctions.framework/Versions/A/MPSFunctions",
+      "uuid": "D4695533-FDAF-30D4-8433-0FD960504E37",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/MetalPerformanceShaders.framework/Versions/A/Frameworks/MPSBenchmarkLoop.framework/Versions/A/MPSBenchmarkLoop",
+      "uuid": "12BED104-8967-3336-85FC-B88EE8BF43C7",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/HIDDisplay.framework/Versions/A/HIDDisplay",
+      "uuid": "542F683D-458D-3FB2-8FD0-95AC26535DB3",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libvMisc.dylib",
+      "uuid": "A0423F34-7B6A-364B-88E2-E2B58D168B7C",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vImage.framework/Versions/A/Libraries/libCGInterfaces.dylib",
+      "uuid": "F3B4ABC7-A281-3D0D-94CC-C173FA84EC49",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AccelerateGPU.framework/Versions/A/AccelerateGPU",
+      "uuid": "CA38F6BC-BF2F-38EA-81F3-2E54921A26C3",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libvDSP.dylib",
+      "uuid": "5D447B04-A594-3D92-ABDB-A08F05D5E52A",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib",
+      "uuid": "FC47CDF9-194F-377F-AA25-56C0AF218513",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libLAPACK.dylib",
+      "uuid": "1BA23BAA-8A2F-3B8C-AB27-C2F410227F99",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libLinearAlgebra.dylib",
+      "uuid": "993E3136-3396-38C9-9D27-34222057FC2C",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libSparseBLAS.dylib",
+      "uuid": "E76D81A5-AC28-365C-A9C8-D8B391638FEF",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libQuadrature.dylib",
+      "uuid": "42DE4728-AB04-3C55-A69E-2DBC53BBA71C",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBNNS.dylib",
+      "uuid": "5F07B2F0-4C60-3A01-9A36-7E56078FC569",
+      "triple": "arm64e-apple-macosx13.0.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libSparse.dylib",
+      "uuid": "01521E31-5A13-3AAB-A5DF-C1E73E6A7816",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/InternationalTextSearch.framework/Versions/A/InternationalTextSearch",
+      "uuid": "36B3F891-9C32-307B-925E-6105CE1AA00B",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/GeoServices.framework/Versions/A/GeoServices",
+      "uuid": "59D4C14E-5EC4-3C5B-A858-F184588BAE6B",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/LocationSupport.framework/Versions/A/LocationSupport",
+      "uuid": "CE3607EF-BC1A-3024-99BB-CE8FA63A882F",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/IntentsFoundation.framework/Versions/A/IntentsFoundation",
+      "uuid": "DADF2199-6604-338F-AA48-3130B8262DD3",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CascadeSets.framework/Versions/A/CascadeSets",
+      "uuid": "590A8EA7-E979-3A44-B890-F778F59EA284",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/SharedWithYouCore.framework/Versions/A/SharedWithYouCore",
+      "uuid": "06B907C1-536F-3788-B249-48929C3FD434",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CloudTelemetry.framework/Versions/A/CloudTelemetry",
+      "uuid": "7C778838-ADB6-37B1-ADA8-01A00BC9DB90",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AppleAccount.framework/Versions/A/AppleAccount",
+      "uuid": "CFC6ADB3-48FD-396F-A1A5-1E9753B96C90",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/C2.framework/Versions/A/C2",
+      "uuid": "13D3466C-F1B0-3551-8972-973FDC2644C7",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CloudCoreInternal.framework/Versions/A/CloudCoreInternal",
+      "uuid": "65E98776-C22B-3A07-AA20-A4B31AFB0A37",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/ProtectedCloudStorage.framework/Versions/A/ProtectedCloudStorage",
+      "uuid": "0D9B57F2-04E4-3917-9000-2FC10951218B",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CloudAsset.framework/Versions/A/CloudAsset",
+      "uuid": "F00EC38B-2C21-3C93-8089-F171E326C0AB",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/PushKit.framework/Versions/A/PushKit",
+      "uuid": "62081EDA-E148-3838-9985-514FE1F6A1D3",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswiftAVFoundation.dylib",
+      "uuid": "6244A4F3-B5B2-3B8C-8C7D-EA6502E2C17F",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/PoirotSQLite.framework/Versions/A/PoirotSQLite",
+      "uuid": "968F5BF7-ADAB-3C43-9FF2-F6431D981C29",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGLU.dylib",
+      "uuid": "9152E6D0-B40C-30EA-B15A-64F32231AFA2",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGFXShared.dylib",
+      "uuid": "2D1A814D-EC16-330B-851B-D15C750C73CA",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGL.dylib",
+      "uuid": "A88BAC56-7443-3B57-97D6-925D861BD472",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libAccessibility.dylib",
+      "uuid": "52B7026A-40B0-3EC9-913B-F74FA3BDA246",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/MediaServices.framework/Versions/A/MediaServices",
+      "uuid": "23DC8468-F845-3B8C-8664-89BD10709277",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/IDS.framework/Versions/A/IDS",
+      "uuid": "6731017F-AA14-30D6-A903-E4291F9DEF1D",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/Dendrite.framework/Versions/A/Dendrite",
+      "uuid": "A872FA26-692A-3118-9E12-9BAD6B84AEE1",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libtailspin.dylib",
+      "uuid": "9B996CEA-FC99-39B5-8D44-A99610A548A7",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/Osprey.framework/Versions/A/Osprey",
+      "uuid": "5FE6DAF0-9D8B-3206-B925-74A17E077A27",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/SiriTTS.framework/Versions/A/SiriTTS",
+      "uuid": "5D1EF1E4-3EAF-3E4B-BAFD-CADF3E6A8BB9",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/NaturalLanguage.framework/Versions/A/NaturalLanguage",
+      "uuid": "185321B0-C700-3F3F-9CC8-2553118B5621",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/SiriPowerInstrumentation.framework/Versions/A/SiriPowerInstrumentation",
+      "uuid": "ED709A65-4331-3401-86ED-63280FA9FDEF",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/Trial.framework/Versions/A/Trial",
+      "uuid": "D61B7A5F-D228-3204-A7A7-DA2448A4CBFF",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/TrialProto.framework/Versions/A/TrialProto",
+      "uuid": "4FFF6D8B-B0D4-3D81-B64E-D76EEEC3DD39",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/UnifiedAssetFramework.framework/Versions/A/UnifiedAssetFramework",
+      "uuid": "A1F99F5D-F3E4-3E60-87D7-089707B4507B",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswiftNaturalLanguage.dylib",
+      "uuid": "77B4C01D-3D4D-3CC9-9D6F-B34863AFA518",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/GenerativeModelsFoundation.framework/Versions/A/GenerativeModelsFoundation",
+      "uuid": "F17D2EFF-CEAB-318F-BE06-6F48C4D580A0",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/TokenGeneration.framework/Versions/A/TokenGeneration",
+      "uuid": "8D2BCF2F-2BB4-3FCD-B9FA-161F91D5A748",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/GenerativeFunctions.framework/Versions/A/GenerativeFunctions",
+      "uuid": "2C208244-0641-3B2E-8D81-9018456860FD",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/GenerativeFunctionsFoundation.framework/Versions/A/GenerativeFunctionsFoundation",
+      "uuid": "5016240F-54B1-3419-92C0-E9D6373CF194",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/ModelCatalog.framework/Versions/A/ModelCatalog",
+      "uuid": "3DA2B849-D9CD-3078-9FBB-017A67785C70",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/SensitiveContentAnalysisML.framework/Versions/A/SensitiveContentAnalysisML",
+      "uuid": "2B07EB9D-D1F4-3847-ADD7-D1EE520D285E",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/GenerativeFunctionsInstrumentation.framework/Versions/A/GenerativeFunctionsInstrumentation",
+      "uuid": "F9CC2613-7BE1-325F-BBEC-AE5AFBCB1516",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/PromptKit.framework/Versions/A/PromptKit",
+      "uuid": "D195BCE5-1523-3B75-9A16-B1B4D3AC82DE",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/ProactiveDaemonSupport.framework/Versions/A/ProactiveDaemonSupport",
+      "uuid": "C09D9F8F-27DD-3F03-9140-77D8D62ED9C9",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CoreEmoji.framework/Versions/A/CoreEmoji",
+      "uuid": "CA807B29-B629-3E1C-9936-448AF88BA020",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/ModelManagerServices.framework/Versions/A/ModelManagerServices",
+      "uuid": "BAC767DF-6A38-39A2-8FE4-500485D39FCB",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/TokenGenerationCore.framework/Versions/A/TokenGenerationCore",
+      "uuid": "97E35FB2-C5DD-3020-827A-E3CFC92B58EB",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libedit.3.dylib",
+      "uuid": "26ECD5B6-BD5D-3557-88D0-9862093728C1",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AttributeGraph.framework/Versions/A/AttributeGraph",
+      "uuid": "EB74BB02-0761-39E9-978A-769A7615092C",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libAXSafeCategoryBundle.dylib",
+      "uuid": "0184148A-EE61-3018-8F05-E70FF1F3AC2C",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libpartition2_dynamic.dylib",
+      "uuid": "865200BF-B577-3FCF-8898-558F4B0E7143",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libamsupport.dylib",
+      "uuid": "C5854436-2151-380D-A3EA-C2FD25268B11",
+      "triple": "arm64e-apple-macosx11.0.0"
+    },
+    {
+      "path": "/usr/lib/libReverseProxyDevice.dylib",
+      "uuid": "E1C0E91E-F96E-3987-A80C-500BDA4DC655",
+      "triple": "arm64e-apple-macosx11.0.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AppleDeviceQuerySupport.framework/Versions/A/AppleDeviceQuerySupport",
+      "uuid": "0E352BC5-B316-3124-A0E8-056AC885B099",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/EFILogin.framework/Versions/A/EFILogin",
+      "uuid": "2188DAD1-3BA0-380F-AEBC-AA927B2F66CB",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AFKUser.framework/Versions/A/AFKUser",
+      "uuid": "43295A24-4DDC-3AB8-BC02-001CD49CFB1A",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/HID.framework/Versions/A/HID",
+      "uuid": "50C97D27-5198-3368-BFFD-D06370EB73D5",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libSMC.dylib",
+      "uuid": "69D48E2A-0315-39F5-90BC-F65913E48537",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/ANECompiler.framework/Versions/A/ANECompiler",
+      "uuid": "32F015F5-9931-3DD3-B8BB-AF5A3D99B722",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AppleNeuralEngine.framework/Versions/A/AppleNeuralEngine",
+      "uuid": "B432B50F-9769-3083-AB9A-4C9F6153707C",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/MIL.framework/Versions/A/MIL",
+      "uuid": "A445EB2F-2F81-306B-B169-792341F2EAD6",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/MetalPerformanceShadersGraph.framework/Versions/A/MetalPerformanceShadersGraph",
+      "uuid": "F7F8DD36-3EEB-308D-84AD-EC492AB87249",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/ANEServices.framework/Versions/A/ANEServices",
+      "uuid": "27AFCBD7-02A1-39B8-A887-731854B992F1",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CPMS.framework/Versions/A/CPMS",
+      "uuid": "63AEE596-50DC-39DD-9960-BBFB04D1E4E3",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/SystemStatus.framework/Versions/A/SystemStatus",
+      "uuid": "6B68938A-A363-3A79-A040-397682FE5BD5",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/CoreMotion.framework/Versions/A/CoreMotion",
+      "uuid": "07A9A56F-D016-39DC-8E65-3AA82A8D8DD7",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/MetalTools.framework/Versions/A/MetalTools",
+      "uuid": "4B0BCBB4-2271-376E-B5C3-CC18D418FC11",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/kperf.framework/Versions/A/kperf",
+      "uuid": "23C65E77-697F-3196-8A94-8F13A599C013",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/GPURawCounter.framework/Versions/A/GPURawCounter",
+      "uuid": "899BE499-798C-37A9-9FD7-8C7604356202",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/GeoServicesCore.framework/Versions/A/GeoServicesCore",
+      "uuid": "CFB7B7EE-71BE-334C-AF39-F643D91C57A9",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/PhoneNumbers.framework/Versions/A/PhoneNumbers",
+      "uuid": "F14B5334-3E56-3B44-8F43-3E12C3730530",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/LocationLogEncryption.framework/Versions/A/LocationLogEncryption",
+      "uuid": "F194DEF9-4370-3DD3-B882-929A615B33B0",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CloudTelemetryTools.framework/Versions/A/CloudTelemetryTools",
+      "uuid": "3785DFC4-4F6D-3E51-82C2-6588ED274808",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AAAFoundationSwift.framework/Versions/A/AAAFoundationSwift",
+      "uuid": "9502F773-09D9-3EE6-BF4A-DA6C12B6BF7D",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AppleIDSSOAuthentication.framework/Versions/A/AppleIDSSOAuthentication",
+      "uuid": "CE657FCC-E1B3-38F8-90FC-636E53067621",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/RTCReporting.framework/Versions/A/RTCReporting",
+      "uuid": "9B365F19-255B-3569-9CA0-CFBBDE116AE8",
+      "triple": "arm64e-apple-macosx14.0.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGLImage.dylib",
+      "uuid": "95B40142-38AF-3A7A-A82A-BD65EF7D0E8A",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/PersistentConnection.framework/Versions/A/PersistentConnection",
+      "uuid": "7F98F70D-636B-3870-8466-F11F3FC2CE05",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/SonicFoundation.framework/Versions/A/SonicFoundation",
+      "uuid": "90415BD0-88BE-35BC-BF0B-109A6477B649",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/TailspinSymbolication.framework/Versions/A/TailspinSymbolication",
+      "uuid": "9176DFB7-5CF7-3DB8-8363-8DF26C035366",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/Darwinup.framework/Versions/A/Darwinup",
+      "uuid": "6B1F6588-4781-3FC8-A1EB-41C7A0B8E8B6",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/SignpostSupport.framework/Versions/A/SignpostSupport",
+      "uuid": "FB7630D7-7850-3DD6-9A5B-AA1CA847F287",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/FeatureFlagsSupport.framework/Versions/A/FeatureFlagsSupport",
+      "uuid": "CC31A79A-DE42-3BA8-A1C1-94AC56EC8C1D",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/ktrace.framework/Versions/A/ktrace",
+      "uuid": "F44BFC86-D08B-3419-8F22-F802D8AEBD0F",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/SampleAnalysis.framework/Versions/A/SampleAnalysis",
+      "uuid": "53427D1C-1C4D-385F-9313-D9FFDD03F4B9",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/kperfdata.framework/Versions/A/kperfdata",
+      "uuid": "8EC86849-C413-3FAE-957A-1B9D4906845A",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libdscsym.dylib",
+      "uuid": "76773BCF-FB33-3CD2-A4FF-DA2ED5550852",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/CoreML.framework/Versions/A/CoreML",
+      "uuid": "D55736B5-DD2A-36F4-A8FC-8994B62F6FA6",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/LanguageModeling.framework/Versions/A/LanguageModeling",
+      "uuid": "F6FD3478-4155-3806-8483-C3BBC63B9C21",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/Montreal.framework/Versions/A/Montreal",
+      "uuid": "BEFBEB1E-3415-3177-BDEB-C18643420C6E",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AppleFlatBuffers.framework/Versions/A/AppleFlatBuffers",
+      "uuid": "4F7D5CF0-072B-3342-841E-F2F385875E45",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/AppleIntelligenceReporting.framework/Versions/A/AppleIntelligenceReporting",
+      "uuid": "B786CCF7-45B4-364D-B42C-857E92EFB200",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/Vision.framework/Versions/A/Vision",
+      "uuid": "6052A608-E82E-3381-93D3-E15CAD128D63",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/swift/libswiftMLCompute.dylib",
+      "uuid": "FBFBC7A2-247C-3D24-B831-D94BA0A9C23D",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/SentencePieceInternal.framework/Versions/A/SentencePieceInternal",
+      "uuid": "62998AF9-8475-335B-918E-8F45C84E0920",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libncurses.5.4.dylib",
+      "uuid": "2BF7C8E0-2A86-3884-9461-36C4527E7173",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/ODIE.framework/Versions/A/ODIE",
+      "uuid": "B2A4F039-A69A-3BE9-8C26-56F9BEEE5939",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/TimeSync.framework/Versions/A/TimeSync",
+      "uuid": "E1D1DBAC-6976-3365-A784-561F5643909E",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/DistributedSensing.framework/Versions/A/DistributedSensing",
+      "uuid": "0E8B461D-3C26-32B1-8A2A-55850D3D9998",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/MobileBluetooth.framework/Versions/A/MobileBluetooth",
+      "uuid": "0D30A2F0-03A8-3038-AEA2-F0F2E1AA1ACF",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libCVMSPluginSupport.dylib",
+      "uuid": "F55050F1-F7F9-3333-BAFF-6B9896EB535B",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/BulkSymbolication.framework/Versions/A/BulkSymbolication",
+      "uuid": "C90908B3-C1FA-35D3-9779-FB675D0A083A",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/MLCompute.framework/Versions/A/MLCompute",
+      "uuid": "8A3AD936-FE79-377A-9D8C-643B0CBF7129",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/MLAssetIO.framework/Versions/A/MLAssetIO",
+      "uuid": "80E38F45-A666-3094-AC3A-B3241385B160",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/usr/lib/libcmph.dylib",
+      "uuid": "CDF80228-F825-336A-B17F-AD368B99E319",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CoreSceneUnderstanding.framework/Versions/A/CoreSceneUnderstanding",
+      "uuid": "436FE847-E30E-3D47-AEFC-1789CD5C8655",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/VisionCore.framework/Versions/A/VisionCore",
+      "uuid": "3A031CD7-49E6-3B28-BDC4-F1937D6F5879",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/DataDetectorsCore.framework/Versions/A/DataDetectorsCore",
+      "uuid": "1FAE393C-468E-339F-83FE-866462635DF2",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/Vision.framework/libfaceCore.dylib",
+      "uuid": "203BB4B8-87B0-3757-82D6-4B0E117B49A3",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/Futhark.framework/Versions/A/Futhark",
+      "uuid": "541EE414-C65B-3C91-A15F-BE575486F6C4",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/InertiaCam.framework/Versions/A/InertiaCam",
+      "uuid": "ACB309CE-FBD4-30D2-8E28-6DAF2A4D908A",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/TextRecognition.framework/Versions/A/TextRecognition",
+      "uuid": "A0D68C1F-51A8-33B9-8F51-0B4DC8C5B4DE",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/DataDetection.framework/Versions/A/DataDetection",
+      "uuid": "00D9452A-CCA5-3C08-BCB4-A6ED5B8AE091",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/ODIE.framework/Versions/A/Frameworks/libODIECompiler.dylib",
+      "uuid": "EB6B33E0-6F76-375C-8209-CD25C9B297C0",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/IOKitten.framework/Versions/A/IOKitten",
+      "uuid": "59A3B1EC-A880-3BE7-9F84-006B2A6A5901",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libCoreVMClient.dylib",
+      "uuid": "1F11C5D4-A10D-337F-8E1C-EBB480D1FBF0",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/TextInput.framework/Versions/A/TextInput",
+      "uuid": "AB020AFF-6FDF-3C64-A584-ED8F0C59BD8E",
+      "triple": "arm64e-apple-macosx26.2.0"
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/CVNLP.framework/Versions/A/CVNLP",
+      "uuid": "AC4515AA-A8D3-3E5F-83F2-3D6BFF12F142",
+      "triple": "arm64e-apple-macosx26.2.0"
+    }
+  ],
+  "breakpoints": [
+    {
+      "name": "main",
+      "id": 1,
+      "locations": 46
+    },
+    {
+      "name": "calibration_probe",
+      "id": 2,
+      "locations": 1
+    }
+  ],
+  "listener_is_valid": true,
+  "debugger_listener_selected": false,
+  "expected_preexec_kernel_identity": {
+    "role": "pre-exec-kernel-query",
+    "nonce": "",
+    "observer_pid": 93792,
+    "pid": 93791,
+    "ppid": 93721,
+    "pgid": 93791,
+    "birth_seconds": 1791921232,
+    "birth_microseconds": 629400,
+    "bsd_status": 4,
+    "bsd_info_bytes": 136,
+    "bsd_info_size": 136,
+    "proc_pidpath_return": 124,
+    "executable_path": "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python"
+  }
+}

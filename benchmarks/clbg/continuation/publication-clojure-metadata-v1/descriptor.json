@@ -1,0 +1,60 @@
+{
+  "status": "source-reviewed-descriptor-awaiting-guarded-actual-evidence-qualification",
+  "language": "clojure",
+  "label": "Clojure",
+  "execution": "JIT",
+  "backend_label": "Clojure 1.12.6 bytecode / Temurin 25.0.4.1+1 HotSpot JIT, native macOS ARM64",
+  "memory_label": "JVM G1 garbage collection",
+  "actual_compiler_version_verified": false,
+  "actual_native_architecture_verified": false,
+  "actual_memory_policy_verified": false,
+  "release_year": 2007,
+  "release_year_basis": "Public appearance documented by the official governance history",
+  "release_source": "https://clojure.org/news/2012/02/17/clojure-governance",
+  "release_note": "The displayed 2007 year uses the official history's late-2007 public presentation to LispNYC. It describes public introduction, rather than assigning a date to version 1.0 or the measured compiler release.",
+  "typing": "Dynamic",
+  "language_style": "Predominantly functional Lisp hosted on the JVM",
+  "color": "#db5855",
+  "color_source": "GitHub Linguist",
+  "color_provenance": "https://github.com/github-linguist/linguist/blob/538da05f034fa5c83bd81df128d144e208898da3/lib/linguist/languages.yml",
+  "runtime_support_by_benchmark": {
+    "regexredux": "Generic Java Pattern/Matcher performs nonoverlapping matching and replacement. Clojure application code performs nine searches and five ordered substitutions, with byte-preserving ISO-8859-1 input and a capped generic pool for the optimized searches.",
+    "revcomp": "Clojure/JVM buffers and IO; authored complete FASTA parsing and uppercase/lowercase IUPAC reverse-complement loops, with an explicitly fresh mutable byte buffer in the optimized form.",
+    "pidigits": "Generic growable Java BigInteger storage/arithmetic. Both extraction divisions, simultaneous recurrence updates and digit/output decisions are Clojure application work.",
+    "spectralnorm": "Clojure numeric arrays and capped generic worker pool; authored triangular coefficients and all forty dense matrix-vector products, with dependent phases joined.",
+    "mandelbrot": "Clojure numeric operations, buffers and capped generic workers; authored complete escape recurrence and PBM bytes/tails, with disjoint rows in the optimized form.",
+    "fasta": "Clojure/JVM buffers and IO; authored ALU-cycle emission, every seed-42 LCG update, cumulative probability selection and prescribed record formatting.",
+    "knucleotide": "Compact uses transient persistent HashMap storage; optimized uses growing Java HashMap storage. Clojure application code visits every window and builds all seven full histograms, with private worker ownership and joins.",
+    "binarytrees": "Fresh two-slot JVM object arrays are allocated for every interior and leaf node. Clojure constructs and checks real child graphs and retains the long-lived root through temporary-tree work and worker joins.",
+    "nbody": "Clojure numeric arrays and JVM operations; authored canonical initialization, momentum offset, all ten pairwise forces per step, position updates and both energies.",
+    "fannkuchredux": "Clojure arrays/numeric operations and capped generic workers; authored permutation carries, actual prefix flips, parity checksum and maximum, with exact disjoint factorial-ranked intervals."
+  },
+  "timing_boundary": "Three complete sequential fresh JVM processes per exact compiled source in rotated rounds with fresh unchanged Mech AOT controls. Includes JVM startup, HotSpot compilation during the process, canonical input, all computation, complete stdout and teardown. Compilation to class files, qualification and validation hashes are outside timing. One common mutex serializes native/compiler/QA work with AC power, Low Power Mode off, at most eight compute workers and fixed time/RSS limits.",
+  "source_provenance": "Twenty locally authored Clojure compact/optimized adaptations retain prescribed CLBG algorithms and independent reference provenance. Every compiler-bound main plus authored generic support.clj is included in canonical LOC; Clojure/JVM vendor classes and JARs are separately pinned. Successful original four-profile/24-case and fresh sixteen-profile/132-case ancestry, admitted source/bytecode work review, and all ninety original full-process records remain unchanged.",
+  "primary_sources": [
+    "https://clojure.org/news/2012/02/17/clojure-governance",
+    "https://clojure.org/reference/compilation",
+    "https://clojure.org/about/rationale",
+    "https://github.com/github-linguist/linguist/blob/538da05f034fa5c83bd81df128d144e208898da3/lib/linguist/languages.yml"
+  ],
+  "primary_source_review": "Read the official late-2007 public-presentation history, JVM bytecode/AOT compilation reference, functional/dynamic rationale and exact pinned Linguist color. Runtime policy is bound separately to actual saved JVM properties, version, collector, architecture, dependency, build and full-process records.",
+  "measured_backend_template": {
+    "key": "jvm-jit",
+    "execution": "jit",
+    "label": "Clojure 1.12.6 bytecode / Temurin 25.0.4.1+1 HotSpot JIT, native macOS ARM64",
+    "verified": false,
+    "runtime_receipt": {
+      "verified": false,
+      "report": null,
+      "report_sha256": null,
+      "field": "/backend",
+      "value": "JVM bytecode then HotSpot JIT",
+      "value_encoding": "literal-saved-string"
+    }
+  },
+  "memory_strategies": [],
+  "qualified_memory_strategies_expected": ["gc"],
+  "pins": {},
+  "chart_admission": false,
+  "site_changed": false
+}

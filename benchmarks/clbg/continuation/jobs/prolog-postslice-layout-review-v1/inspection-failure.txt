@@ -1,0 +1,8 @@
+Metadata-only inspection stopped at 2026-10-13 after original report/pin verification on:
+KeyError: bounded_local_service
+The attach/detach/slice receipts belong to the original reviewed C3 owned_command
+service, whose successful contract records exit_status/final_exit_status and
+absence of cleanup errors, without Pony's later bounded_local_service fields.
+No subprocess/native/fixture command was started. Original failure/output/source
+and the unsuccessful inspector remain preserved. Fresh v2 inspector applies
+that actual original service contract and uses a new output directory.

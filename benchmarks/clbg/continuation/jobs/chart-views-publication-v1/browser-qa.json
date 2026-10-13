@@ -1,0 +1,113 @@
+{
+  "status": "passed-local-browser-QA",
+  "url": "http://127.0.0.1:58302/benchmarks/",
+  "final_stage": "stage-2.json",
+  "common_session_pid": 1841,
+  "dataset_sha256": "4fe402c21360fbbbe9d650c15d1fd4c62422c17cfad8cafd24721fe7f0bd2947",
+  "source_review": "root and independent APL review accepted final nine-file packet",
+  "recorded_samples": {
+    "default": 2364,
+    "both_profiles_off": 2364,
+    "global_on": 2364,
+    "global_on_opacity": 0.65,
+    "samples_off": 0,
+    "benchmark_profiles_off": 65,
+    "C3_language_profiles_and_global_off": 60
+  },
+  "profile_medians": {
+    "default": 932,
+    "samples_off": 932,
+    "profiles_off": 0,
+    "C3_language_samples_off": 20
+  },
+  "rankings": {
+    "variants_per_metric": 48,
+    "speed_median": 4.649861454699312,
+    "speed_log_sample_sd": 1.8346983578245737,
+    "loc_median": 3.7671945505183446,
+    "loc_log_sample_sd": 0.6386087523267548,
+    "bands": [
+      "Within 1σ",
+      "1–2σ",
+      "2–3σ"
+    ],
+    "year_2010s_variants": 11,
+    "language_overview_return_restored_2010_2019": true
+  },
+  "years": {
+    "default": [
+      1957,
+      2026
+    ],
+    "decades": [
+      1950,
+      1960,
+      1970,
+      1980,
+      1990,
+      2000,
+      2010,
+      2020
+    ],
+    "single_year": [
+      2019,
+      2019
+    ],
+    "single_year_hit_targets": [
+      "release-year-start",
+      "release-year-end"
+    ],
+    "thumb_vertical_offset_px": 20,
+    "keyboard_expansion": [
+      2018,
+      2020
+    ],
+    "playback_kept_handles": [
+      1957,
+      2026
+    ],
+    "paused_cutoff": 1966
+  },
+  "density": {
+    "cells": 1728,
+    "distinct_colors": 273,
+    "variants": 48,
+    "profile_positions": 95,
+    "complete_plot_coverage": true,
+    "pointer_events": "none",
+    "runs": 2364,
+    "filtered_2010s_variants": 11,
+    "filtered_runs": 580,
+    "filter_domain_unchanged": true,
+    "empty_cells": 1728,
+    "empty_peak": 0,
+    "empty_runs": 0,
+    "domain": {
+      "xMin": -0.15,
+      "xMax": 7.036637346111604,
+      "yMin": -0.18,
+      "yMax": 14.870042696401296
+    }
+  },
+  "source_inspection": {
+    "C3_rows": 20,
+    "C3_runs": 60,
+    "regex_code_characters": 4000,
+    "regex_timing_rows": 3,
+    "static_hover_outside_svg": true
+  },
+  "responsive": {
+    "viewport": 390,
+    "density_page_width": 390,
+    "density_chart_width": 356,
+    "ranking_page_width": 390,
+    "ranking_card_bounds": [
+      25,
+      365
+    ],
+    "viewport_reset": true
+  },
+  "browser_console_errors": [],
+  "screenshot": "Browser capture unavailable; DOM geometry, hit targets, rendered attributes, controls and content verified.",
+  "benchmark_runs": 0
+}

@@ -1,0 +1,7 @@
+{
+  "pid": 8052,
+  "started_at": "2026-10-13T20:58:11.513811+00:00",
+  "inode": 79859134,
+  "status": "holding-common-mutex-for-Clojure-chart-publication",
+  "benchmark_runs": 0
+}

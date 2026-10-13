@@ -1,0 +1,11 @@
+{
+  "pid": 93791,
+  "only_this_parent_owned_child": true,
+  "cleanup_errors": [],
+  "temporary_not_waitable_observed": false,
+  "cleanup_signal_sent": true,
+  "reaped": true,
+  "final_wait_status": 9,
+  "no_remaining_parent_owned_native": true,
+  "remaining_native_group_members": []
+}

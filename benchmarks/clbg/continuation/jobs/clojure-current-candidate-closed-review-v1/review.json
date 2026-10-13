@@ -1,0 +1,17 @@
+{
+  "status": "passed-closed-Clojure-candidate-review",
+  "at": "2026-10-13T20:57:40.403066+00:00",
+  "verified_pins": 5276,
+  "terminal_sha256": "01edefc859d80c556dfd879986323992aa806c542630b24761eab51fdcc2e6b2",
+  "outcome_sha256": "4f915b966b2818ccc0260d7592de9a168b248f609702d47bd314d594d072a5cc",
+  "candidate_sha256": "b088279074e85ec149466f876bdce49d4d497f7784a0d48be58e023e5b2c6a13",
+  "previous_baseline_sha256": "4fe402c21360fbbbe9d650c15d1fd4c62422c17cfad8cafd24721fe7f0bd2947",
+  "inventory_sources": 20,
+  "candidate_samples": 60,
+  "clojure_endpoints": 18,
+  "original_full_processes": 90,
+  "prior_records_preserved": true,
+  "benchmark_runs": 0,
+  "fixture_reexecutions": 0,
+  "published": false
+}

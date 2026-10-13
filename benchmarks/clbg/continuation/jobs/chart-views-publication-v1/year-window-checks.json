@@ -1,0 +1,46 @@
+{
+  "at": "2026-10-13T20:27:37.683345+00:00",
+  "checks": [
+    {
+      "args": [
+        "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/year-window-v1/test_year_window.mjs"
+      ],
+      "returncode": 0,
+      "stdout": "Inclusive window, eight decade presets, uncrossed handles, bounded history and unchanged baselines passed.\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "--check",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/year-window-v1/app.mjs"
+      ],
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "--check",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/year-window-v1/math.mjs"
+      ],
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ],
+  "common_mutex_held": true,
+  "benchmark_runs": 0,
+  "source_pins": {
+    "math.mjs": "ad630befb9df87741db68dfadd89d096d0938f1a1f9970b399198f10d012676c",
+    "index.html": "280e119d041c37c5eb3e8ae0cb53c30b7d893362f4d4d7f9525a37dc649bec12",
+    "mech-palette.css": "999768eb3675a7e724faf4a0e9e42a09bba13ed6fdd72b115d8034836ea7f85a",
+    "style.css": "73a32db3da4f73b7ffbc2c71803bcbb6cb742ff7414b4f78316d6367016024d0",
+    "app.mjs": "ea7f123f9f8d65d44736cf9f36f980927f731b4954282aade4ea6336334cffda",
+    "REVIEW.md": "207816e360efd6ff13ad9ddc7d4d56639640e869ae9c8244a9224b3f8b60141d",
+    "traits.mjs": "9e2a7ab78c92605d5a43c81537036f81d565d57f500ba1009803ca3e1a230762",
+    "test_year_window.mjs": "f85f48bbd68b39e7ec63ff988d63263681ed661716ca0df05e6524ecceeb3768"
+  }
+}

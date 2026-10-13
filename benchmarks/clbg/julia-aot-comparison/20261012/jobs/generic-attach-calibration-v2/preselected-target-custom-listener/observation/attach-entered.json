@@ -1,0 +1,6 @@
+{
+  "pid": 93791,
+  "monotonic": 4.850476666,
+  "api": "SBTarget.AttachToProcessWithID",
+  "mode": "preselected-target-custom-listener"
+}

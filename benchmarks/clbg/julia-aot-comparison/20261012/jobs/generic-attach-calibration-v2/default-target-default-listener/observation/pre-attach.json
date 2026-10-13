@@ -1,0 +1,22 @@
+{
+  "mode": "default-target-default-listener",
+  "modules": [],
+  "breakpoints": [],
+  "listener_is_valid": false,
+  "debugger_listener_selected": true,
+  "expected_preexec_kernel_identity": {
+    "role": "pre-exec-kernel-query",
+    "nonce": "",
+    "observer_pid": 93727,
+    "pid": 93726,
+    "ppid": 93721,
+    "pgid": 93726,
+    "birth_seconds": 1791921187,
+    "birth_microseconds": 241225,
+    "bsd_status": 4,
+    "bsd_info_bytes": 136,
+    "bsd_info_size": 136,
+    "proc_pidpath_return": 124,
+    "executable_path": "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python"
+  }
+}

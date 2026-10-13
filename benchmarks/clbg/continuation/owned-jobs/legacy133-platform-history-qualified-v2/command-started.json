@@ -1,0 +1,26 @@
+{
+  "started_at": "2026-10-13T19:58:37.977905+00:00",
+  "command_pid": 94740,
+  "command_identity": {
+    "pid": 94740,
+    "listing": "94740 94734 Tue Oct 13 15:58:37 2026     /opt/homebrew/opt/python@3.14/bin/python3.14 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-entry-repair-v2/replay.py --stage qualify --revision history-entry-repaired-v2 --fixture-receipt /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/existing-native-platform-proposal-v1/jobs/fixtures-entry-repaired-v2/fixture-receipt.json --fixture-sha256 5d7c59f1f47796d0a103f7620a7cc47487b946c5384a62c86df7596a3e357271 --fixture-terminal-sha256 1b6ba50635abae06ec8ea83f2b4adbc08dd1b1daaa0b7c213eb86487248d13e9"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/legacy-platform-entry-repair-v2/replay.py",
+    "--stage",
+    "qualify",
+    "--revision",
+    "history-entry-repaired-v2",
+    "--fixture-receipt",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/existing-native-platform-proposal-v1/jobs/fixtures-entry-repaired-v2/fixture-receipt.json",
+    "--fixture-sha256",
+    "5d7c59f1f47796d0a103f7620a7cc47487b946c5384a62c86df7596a3e357271",
+    "--fixture-terminal-sha256",
+    "1b6ba50635abae06ec8ea83f2b4adbc08dd1b1daaa0b7c213eb86487248d13e9"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech"
+}

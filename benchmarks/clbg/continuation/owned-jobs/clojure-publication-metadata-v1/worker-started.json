@@ -1,0 +1,28 @@
+{
+  "started_at": "2026-10-13T20:16:42.798568+00:00",
+  "worker_identity": {
+    "pid": 97904,
+    "listing": "97904     1 Tue Oct 13 16:16:42 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/clojure-publication-metadata-v1 --lease-fd 3 --go-fd 4"
+  },
+  "inherited_private_lease": true,
+  "detached_session": true,
+  "common_mutex_owned_by_target_command": true,
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/publication-clojure-metadata-v1/qualify_descriptor.py",
+    "--revision",
+    "actual-metadata-v1",
+    "--qualifier-sha256",
+    "d148b0e178b25e06485888cdf46293f141a4991a2dc8780aaa40fdb58289c83e",
+    "--descriptor-sha256",
+    "9d8f4ec52a3e9bebc4a89257a4d1fbb1a6cca56dee267c7c5ed128145885267a",
+    "--review-sha256",
+    "6a1903eee578db29cabd946e00a6ff92bd9679447353b7493da9b23f6afe4ab5"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "qualification_granted": false
+}

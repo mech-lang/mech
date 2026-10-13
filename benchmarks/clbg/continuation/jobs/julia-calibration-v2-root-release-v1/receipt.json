@@ -1,0 +1,31 @@
+{
+  "status": "root-and-independent-peer-accepted-Julia-image-repair-frozen",
+  "source_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/revisions/attach-calibration-v2/calibrate.py": "8a013fe4dde2d3e855a89652279c70ceb214da3aae4499467be1897ef8c66295",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/revisions/attach-calibration-v2/REVIEW.md": "bc8af8b44aeefc1cc43b1bfcf34de813e89cc2c5e76ac9f35e0062cd3178549b"
+  },
+  "original_report_sha256": "fee1179ad232604662767f13da95b92d4c0231d412e86eba02a4c959b699d20d",
+  "original_verified_pins": 253,
+  "old_durable_exit_code": 1,
+  "old_failed_report_preserved": true,
+  "existing_helper_build_reused": true,
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/revisions/attach-calibration-v2/calibrate.py",
+    "--revision",
+    "generic-attach-calibration-v2",
+    "--environment-report",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/report.json",
+    "--environment-report-sha256",
+    "aa4d725c15347daecf75be5f8110c125f6e1759ed9e2d8d1cd868ae833470e94",
+    "--original-report-sha256",
+    "fee1179ad232604662767f13da95b92d4c0231d412e86eba02a4c959b699d20d",
+    "--worker-sha256",
+    "8a013fe4dde2d3e855a89652279c70ceb214da3aae4499467be1897ef8c66295"
+  ],
+  "common_mutex_held": true,
+  "actual_benchmark_runs": 0,
+  "permission_changes": 0
+}

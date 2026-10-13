@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-directory-v1/bootstrap_runtime_directory_v1.py", line 597, in <module>
+    main()
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-directory-v1/bootstrap_runtime_directory_v1.py", line 591, in main
+    raise error
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-directory-v1/bootstrap_runtime_directory_v1.py", line 502, in main
+    assert home.is_dir(), 'Actual bundle home differs; retain and review this layout'
+           ^^^^^^^^^^^^^
+AssertionError: Actual bundle home differs; retain and review this layout

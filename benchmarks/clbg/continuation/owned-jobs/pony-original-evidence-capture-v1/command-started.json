@@ -1,0 +1,28 @@
+{
+  "started_at": "2026-10-13T20:11:17.256153+00:00",
+  "command_pid": 97024,
+  "command_identity": {
+    "pid": 97024,
+    "listing": "97024 97019 Tue Oct 13 16:11:17 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -I -S -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/scored-allocation-recovery-v1/capture_existing_v1.py --revision original-six-traces-v1 --source-sha256 e299c68566068a96fffb0ca366efe411ba09f98dcf7d2b9316cb77946664cfe7 --review-sha256 64de34bc1b12238d0d00bb1b06202698fe3294b1a7f9f5bfc79dc14493e2866f --failed-report-sha256 b1336e55e14b5db6cf1b7bd6241c550da99d2e086ad07e2cb027c9a89bb1fd83 --manifest-sha256 febd942e8c5de659b3dce114d0e7d5224598386059b207c72f82c97603aa37cb"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/scored-allocation-recovery-v1/capture_existing_v1.py",
+    "--revision",
+    "original-six-traces-v1",
+    "--source-sha256",
+    "e299c68566068a96fffb0ca366efe411ba09f98dcf7d2b9316cb77946664cfe7",
+    "--review-sha256",
+    "64de34bc1b12238d0d00bb1b06202698fe3294b1a7f9f5bfc79dc14493e2866f",
+    "--failed-report-sha256",
+    "b1336e55e14b5db6cf1b7bd6241c550da99d2e086ad07e2cb027c9a89bb1fd83",
+    "--manifest-sha256",
+    "febd942e8c5de659b3dce114d0e7d5224598386059b207c72f82c97603aa37cb"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech"
+}

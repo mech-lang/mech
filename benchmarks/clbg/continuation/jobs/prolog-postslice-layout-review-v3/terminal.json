@@ -1,0 +1,9 @@
+{
+  "status": "closed-postslice-layout-and-pin-inspection-passed",
+  "body_error": null,
+  "integrity_errors": [],
+  "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/prolog-postslice-layout-review-v3/review.json",
+  "review_sha256": "da4b6493af38e5af06cbd080346577292eb4113e51632bfd15394cf509fc3f4d",
+  "common_mutex_inode": 79859134,
+  "actual_native_commands": 0
+}

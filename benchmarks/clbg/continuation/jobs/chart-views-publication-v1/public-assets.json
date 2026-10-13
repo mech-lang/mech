@@ -1,0 +1,185 @@
+{
+  "at": "2026-10-13T20:56:01.920615+00:00",
+  "commit": "1aa753d45d819de0436c8dcf321118f5f7a7db1e",
+  "status": "passed",
+  "assets": [
+    {
+      "asset": "app.mjs",
+      "bytes": 92296,
+      "sha256": "85597b59e268fb915c97484c3790e3d5da7c86d8bd69c8fd06988fccfb20b6d9",
+      "matches": true,
+      "url": "https://mech-lang.org/benchmarks/app.mjs?v=20261013-views"
+    },
+    {
+      "asset": "benchmarks-game-license.txt",
+      "bytes": 1709,
+      "sha256": "f0a9586b1c73f72bec3e9c743d4ccb9f3035bfa6b98921f79dd74259670a4dea",
+      "matches": true
+    },
+    {
+      "asset": "codegen-after-machine-call.txt",
+      "bytes": 149553,
+      "sha256": "c0a097b8f88f97a7501bc0c44c02d23bf9f44bc62470a0ac64e8c603cac0309f",
+      "matches": true
+    },
+    {
+      "asset": "codegen-before-machine-call.txt",
+      "bytes": 147763,
+      "sha256": "351fe50e65104876d823fd14f067f62a713a0b1ac82313f356544b2f68dd5a90",
+      "matches": true
+    },
+    {
+      "asset": "codegen-inspection.json",
+      "bytes": 2916,
+      "sha256": "4a5213985576691e1e42275a9e5bbfe76d8e20c333ccb6212bf23bbb28639724",
+      "matches": true
+    },
+    {
+      "asset": "codegen-package-control-after-reference-machine-call.txt",
+      "bytes": 149604,
+      "sha256": "4f15f1b8a7fe83dcf58a53563bde4013f4c77a18b9e7447bf344bbfc3d88f6cf",
+      "matches": true
+    },
+    {
+      "asset": "codegen-package-control-control-machine-call.txt",
+      "bytes": 149614,
+      "sha256": "1f6d6de012f274406b701374c928c9537e34000d2b8131f93490bd3424e229a7",
+      "matches": true
+    },
+    {
+      "asset": "confirm_fannkuch.py",
+      "bytes": 3729,
+      "sha256": "998fa2b466a2f38e07e48d5bfca20c243c0de26c3e20cddb5a6fc9951afa23f6",
+      "matches": true
+    },
+    {
+      "asset": "d-loc-audit.md",
+      "bytes": 5253,
+      "sha256": "cb48839094610456f9c174d3deb8a6c45c8b672a62d4e46c13128c19eaa279e5",
+      "matches": true
+    },
+    {
+      "asset": "d-mech-comparison.csv",
+      "bytes": 2259,
+      "sha256": "16fff89d809bd09de3f27d2cd837501a01cd9cfc43164b6df689de17650c08cb",
+      "matches": true
+    },
+    {
+      "asset": "d-mech-comparison.md",
+      "bytes": 1702,
+      "sha256": "5b38a2651ec50687c97ca158a46d9178fa187fa18220fd8a3e1003d1ff71fd1b",
+      "matches": true
+    },
+    {
+      "asset": "data.json",
+      "bytes": 17008067,
+      "sha256": "4fe402c21360fbbbe9d650c15d1fd4c62422c17cfad8cafd24721fe7f0bd2947",
+      "matches": true
+    },
+    {
+      "asset": "fannkuch-confirmation.json",
+      "bytes": 10809,
+      "sha256": "60fbd507d2f6ff0cf3b20317bdf1cd9e2198674fac5582613c0e12e99fee7ed2",
+      "matches": true
+    },
+    {
+      "asset": "index.html",
+      "bytes": 29263,
+      "sha256": "8841c623fc9f56778d2638c4fe86a3cdaee1da9052c3f8a31f5a947b70c767a0",
+      "matches": true
+    },
+    {
+      "asset": "interpreter-integration-audit.md",
+      "bytes": 5481,
+      "sha256": "00715f340bdc91f8739bbdb8c7ae1d7b1022d9aa6bd3d5ff44dd5b58f3aebbc4",
+      "matches": true
+    },
+    {
+      "asset": "interpreter-integration-mech.csv",
+      "bytes": 2744,
+      "sha256": "bfe884e32ee6c2840594115a51920e79440bd5fdf4051051f4f84f8bf8e21462",
+      "matches": true
+    },
+    {
+      "asset": "math.mjs",
+      "bytes": 15169,
+      "sha256": "f4d1e6e434bf0dd196af6b7a530d17a506feb8ac59f40a2a33c11d369b66d53f",
+      "matches": true,
+      "url": "https://mech-lang.org/benchmarks/math.mjs?v=20261013-views"
+    },
+    {
+      "asset": "mech-palette.css",
+      "bytes": 8359,
+      "sha256": "999768eb3675a7e724faf4a0e9e42a09bba13ed6fdd72b115d8034836ea7f85a",
+      "matches": true
+    },
+    {
+      "asset": "nbody-compiler-audit.md",
+      "bytes": 6151,
+      "sha256": "1e823bc0da23dddfeb49947b055a6e63aa625b8ea5960ab4783f3b2c9eaf10c1",
+      "matches": true
+    },
+    {
+      "asset": "nbody-compiler-mech.csv",
+      "bytes": 622,
+      "sha256": "05cd1088b7fd4c4db50ecc456d5b95227f60b1aca1d375ada23572f71ec260c7",
+      "matches": true
+    },
+    {
+      "asset": "package-control.json",
+      "bytes": 79033,
+      "sha256": "243806fac49799124944eaf609b005d1ef414c32dea90562c1ce0937834cd8dd",
+      "matches": true
+    },
+    {
+      "asset": "package_identity_control.py",
+      "bytes": 13249,
+      "sha256": "0e320bfa52cd7ee0c3adc66f59b0ca5c985dd91c8a39aea8934dd0e0f8bbbc42",
+      "matches": true
+    },
+    {
+      "asset": "programming-language-benchmarks-license.txt",
+      "bytes": 1067,
+      "sha256": "6adf6a58cbf7a5649462b8585959c037eaba94d394e176fb7a62acb52a326f84",
+      "matches": true
+    },
+    {
+      "asset": "remaining-languages-mech.csv",
+      "bytes": 25942,
+      "sha256": "1dfd3e10148fb98ef5ac095e8fbf42f1c48c9d023ea712462d08b30e3e8358de",
+      "matches": true
+    },
+    {
+      "asset": "remaining-languages-mech.md",
+      "bytes": 14778,
+      "sha256": "be4b0252e53d93000807573ae98d782c9e54d5a151857b6e68daa31534ebb577",
+      "matches": true
+    },
+    {
+      "asset": "style.css",
+      "bytes": 31666,
+      "sha256": "d9db76ca66a956b5882c6a4569d5d501939b6f8746118be96ed1bc1f4e17107b",
+      "matches": true,
+      "url": "https://mech-lang.org/benchmarks/style.css?v=20261013-views"
+    },
+    {
+      "asset": "traits.mjs",
+      "bytes": 2791,
+      "sha256": "9e2a7ab78c92605d5a43c81537036f81d565d57f500ba1009803ca3e1a230762",
+      "matches": true
+    },
+    {
+      "asset": "zig-odin-roc-elm-mech.csv",
+      "bytes": 9798,
+      "sha256": "bb5107ec22b1a4d80f548649187123a4d16a9bb3a73e96fd38e82c60e0b01b2f",
+      "matches": true
+    },
+    {
+      "asset": "zig-odin-roc-elm-mech.md",
+      "bytes": 6105,
+      "sha256": "5c2348df5c79da363065ef6a3e4968d748e22a50a03b134d1ab3c2416f567ee8",
+      "matches": true
+    }
+  ],
+  "note": "All29 assets match. App/style/math verified at the exact versioned URLs requested by the page. Earlier observations preserve transient and unversioned-cache mismatches."
+}

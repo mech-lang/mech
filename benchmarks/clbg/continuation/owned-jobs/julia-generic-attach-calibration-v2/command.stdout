@@ -1,0 +1,2 @@
+WAIT common mutex: two generic owned attach calibration cells
+{"status": "generic-calibration-saved-awaiting-interpretation", "report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/generic-attach-calibration-v2/report.json", "report_sha256": "9631de549b728661b823e303197ab479a84fc43f49834028796206559634a096"}

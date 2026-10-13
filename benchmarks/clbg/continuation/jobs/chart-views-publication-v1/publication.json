@@ -1,0 +1,28 @@
+{
+  "status": "published-and-live-browser-verified",
+  "url": "https://mech-lang.org/benchmarks/",
+  "website_commit": "1aa753d45d819de0436c8dcf321118f5f7a7db1e",
+  "pipeline": "https://gitlab.com/mech-lang/web/website/-/pipelines/2944267125",
+  "pipeline_status": "success",
+  "published_assets": 29,
+  "all_published_assets_match": true,
+  "dataset_sha256": "4fe402c21360fbbbe9d650c15d1fd4c62422c17cfad8cafd24721fe7f0bd2947",
+  "live_browser": {
+    "decades": 8,
+    "year_window": [
+      1957,
+      2026
+    ],
+    "samples_with_profiles_off": 2364,
+    "ranking_speed_median": 4.6498614546993124,
+    "ranking_loc_median": 3.7671945505183446,
+    "density_cells": 1728,
+    "density_variants": 48,
+    "density_positions": 95,
+    "density_runs": 2364,
+    "console_errors": []
+  },
+  "local_browser_evidence": "browser-qa.json",
+  "benchmark_runs": 0,
+  "at": "2026-10-13T20:56:01.921332+00:00"
+}

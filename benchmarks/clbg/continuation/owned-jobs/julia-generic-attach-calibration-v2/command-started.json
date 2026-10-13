@@ -1,0 +1,26 @@
+{
+  "started_at": "2026-10-13T19:53:05.724524+00:00",
+  "command_pid": 93721,
+  "command_identity": {
+    "pid": 93721,
+    "listing": "93721 93717 Tue Oct 13 15:53:05 2026     /opt/homebrew/opt/python@3.14/bin/python3.14 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/revisions/attach-calibration-v2/calibrate.py --revision generic-attach-calibration-v2 --environment-report /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/report.json --environment-report-sha256 aa4d725c15347daecf75be5f8110c125f6e1759ed9e2d8d1cd868ae833470e94 --original-report-sha256 fee1179ad232604662767f13da95b92d4c0231d412e86eba02a4c959b699d20d --worker-sha256 8a013fe4dde2d3e855a89652279c70ceb214da3aae4499467be1897ef8c66295"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/revisions/attach-calibration-v2/calibrate.py",
+    "--revision",
+    "generic-attach-calibration-v2",
+    "--environment-report",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/attach-environment-v1/report.json",
+    "--environment-report-sha256",
+    "aa4d725c15347daecf75be5f8110c125f6e1759ed9e2d8d1cd868ae833470e94",
+    "--original-report-sha256",
+    "fee1179ad232604662767f13da95b92d4c0231d412e86eba02a4c959b699d20d",
+    "--worker-sha256",
+    "8a013fe4dde2d3e855a89652279c70ceb214da3aae4499467be1897ef8c66295"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech"
+}

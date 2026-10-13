@@ -1,0 +1,5 @@
+Metadata-only inspector verified the closed original report/pins then failed on
+an unnecessarily exact guessed version stdout string. The actual successful
+version command and recorded bytes remain unchanged; no native command ran.
+Fresh v2 records actual version stdout and retains the source validator's
+required 10.0.2 identity plus separate native architecture/runtime flag gates.

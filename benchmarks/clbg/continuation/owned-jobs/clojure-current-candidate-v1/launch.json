@@ -1,0 +1,29 @@
+{
+  "status": "durable-job-launched",
+  "launched_at": "2026-10-13T20:56:53.845943+00:00",
+  "job": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/clojure-current-candidate-v1",
+  "worker_identity": {
+    "pid": 7524,
+    "listing": "7524  7523 Tue Oct 13 16:56:53 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/clojure-current-candidate-v1 --lease-fd 3 --go-fd 4"
+  },
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/qualify_clojure_current_candidate_v1.py",
+    "--worker-sha256",
+    "48e3f61117396d1aef02257273cb6b1e43dd4b3ec23acfbb5702592e7a8afdc7",
+    "--packet-sha256",
+    "050d460200926dc7c01c9b721c8f6f34d71c340d8388bfa736f71346eb82e509",
+    "--metadata-sha256",
+    "8bf96ed71bd799b80fb6f062ff7b5b76c92d6e992e3e40ef307811f3c2c1b9ff",
+    "--review-sha256",
+    "48b112d3f3641c9ed543577229e52f109ca2cd190661c6b0bc88f82f16540873"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "detached_session": true,
+  "automatic_retry": false,
+  "qualification_granted": false
+}

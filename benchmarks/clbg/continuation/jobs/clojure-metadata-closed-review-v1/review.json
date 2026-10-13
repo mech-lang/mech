@@ -1,0 +1,13 @@
+{
+  "status": "passed-closed-Clojure-metadata-artifact-pin-review",
+  "at": "2026-10-13T20:28:05.622305+00:00",
+  "closed_lease": true,
+  "common_mutex_held": true,
+  "verified_pin_count": 5210,
+  "metadata_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/publication-clojure-metadata-v1/qualified/actual-metadata-v1/metadata.json",
+  "metadata_sha256": "8bf96ed71bd799b80fb6f062ff7b5b76c92d6e992e3e40ef307811f3c2c1b9ff",
+  "outcome_sha256": "770e27225303bd416f6d0d5fd98a45fab01e185274cc52b8b23e39a97e58db52",
+  "terminal_sha256": "ccb781426b82f4f1a729fed369a7940f17b3088f9cb14dddd3dc6143e210bdd2",
+  "chart_admission": false,
+  "benchmark_runs": 0
+}

@@ -1,0 +1,28 @@
+{
+  "status": "root-and-independent-peer-accepted-Clojure-metadata-source-frozen",
+  "source_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/publication-clojure-metadata-v1/qualify_descriptor.py": "d148b0e178b25e06485888cdf46293f141a4991a2dc8780aaa40fdb58289c83e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/publication-clojure-metadata-v1/descriptor.json": "9d8f4ec52a3e9bebc4a89257a4d1fbb1a6cca56dee267c7c5ed128145885267a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/publication-clojure-metadata-v1/REVIEW.md": "6a1903eee578db29cabd946e00a6ff92bd9679447353b7493da9b23f6afe4ab5"
+  },
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/publication-clojure-metadata-v1/qualify_descriptor.py",
+    "--revision",
+    "actual-metadata-v1",
+    "--qualifier-sha256",
+    "d148b0e178b25e06485888cdf46293f141a4991a2dc8780aaa40fdb58289c83e",
+    "--descriptor-sha256",
+    "9d8f4ec52a3e9bebc4a89257a4d1fbb1a6cca56dee267c7c5ed128145885267a",
+    "--review-sha256",
+    "6a1903eee578db29cabd946e00a6ff92bd9679447353b7493da9b23f6afe4ab5"
+  ],
+  "common_mutex_held": true,
+  "native_processes": 0,
+  "fixture_reexecutions": 0,
+  "benchmark_runs": 0
+}

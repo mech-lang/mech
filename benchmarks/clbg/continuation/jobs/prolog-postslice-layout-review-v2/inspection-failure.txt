@@ -1,0 +1,7 @@
+Metadata-only inspection verified original source/result pins, exact detach,
+unique boot.prc/library root and existing ARM64 slice, then stopped when trying
+to parse publisher Contents/Info.plist with plistlib:
+xml.parsers.expat.ExpatError: syntax error: line 2, column 23
+No native or fixture process was started. Original files and this unsuccessful
+inspector remain preserved. Fresh v3 records the exact publisher metadata bytes
+without claiming that this file conforms to plistlib's accepted XML grammar.

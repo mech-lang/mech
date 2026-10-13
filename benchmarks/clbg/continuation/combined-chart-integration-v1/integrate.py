@@ -1,0 +1,229 @@
+"""Additive Crystal20/legacy133 metadata integration; no native calls/live writes."""
+import argparse
+from copy import deepcopy
+import fcntl
+import hashlib
+import importlib.util
+import json
+import os
+from pathlib import Path
+import re
+import sys
+import traceback
+
+HERE = Path(__file__).resolve().parent
+CLBG = HERE.parents[1]
+LOCK = Path('/tmp/mech-clbg-timing.lock')
+FMT = CLBG/'loc-normalization/20261013/formatted-loc-v1'
+HISTORY = CLBG/'continuation/existing-native-platform-proposal-v1'
+CURRENT = CLBG/'continuation/jobs/c3-current-candidate-v1/candidate-data.json'
+CURRENT_SHA = '4fe402c21360fbbbe9d650c15d1fd4c62422c17cfad8cafd24721fe7f0bd2947'
+FMT_BASE = CLBG/'continuation/jobs/current-chart-session-v2/candidate-data.json'
+FMT_BASE_SHA = '27b1c792b253d3d465ca6f853e7f85c9d089cb87e3b161a634feb7b5c1f69c8e'
+OLD = CLBG/'continuation/jobs/platform-metadata-qualification-v2/snapshot/4-data.json'
+OLD_SHA = '65bfa4d833f61fff69b16eb3c917e4fcd1eb21d5788bbbeed7e09e9f2382d32f'
+FQ = FMT/'jobs/crystal20-format-v1/qualification.json'
+FQ_SHA = 'cda8ac6271fee4ae3f37340cc80b17ba3aa98b6582d5c980270923a0abbb382a'
+FT = FQ.parent/'terminal.json'
+FT_SHA = '0434c52404fa85f863aa0c2167c32981182b166a68dd8e9c1b00a96156237b49'
+MODULES = {'loader': (FMT/'load_evidence.py', 'c473d48ee8065983305617c4622a7e21cd31c461889794f5b4b55449b9202a47'),
+           'overlay': (FMT/'overlay.py', 'ddc49cb21ad03dda6dee697ce1511617239364b0d5f2c23b9a5f9e637d14d084'),
+           'endpoints': (FMT/'endpoints.py', '96724c3ff701fabf7ea262520cacd8951b15948500cfe934efb21a1a129474bf'),
+           'adapter': (HISTORY/'adapter.py', '90b6052eaa14f960a6fb2510364335cf87f43d4d62998a015223db42ae516342')}
+FORMAT_FIELDS = {'formatted_loc', 'formatted_loc_status', 'formatted_loc_complete', 'formatted_loc_evidence', 'formatted_x'}
+METADATA = {'measured_backend', 'prior_runtime_metadata', 'runtime_policy', 'execution_mode'}
+
+
+def sha(path):
+    with Path(path).open('rb') as stream: return hashlib.file_digest(stream, 'sha256').hexdigest()
+
+
+def read(path, digest, pins):
+    path = Path(path).resolve(strict=True); actual = sha(path)
+    assert actual == digest and (str(path) not in pins or pins[str(path)] == actual), ('Changed pinned input', str(path))
+    pins[str(path)] = actual; return json.loads(path.read_bytes())
+
+
+def verify(pins):
+    for path, digest in pins.items(): assert sha(path) == digest, ('Changed input/output pin', path)
+
+
+def absorb(pins, values):
+    for path, digest in values.items():
+        assert type(path) is str and Path(path).is_absolute() and '..' not in Path(path).parts and (path not in pins or pins[path] == digest)
+        assert sha(path) == digest; pins[path] = digest
+
+
+def save(path, value):
+    with path.open('x') as stream: json.dump(value, stream, indent=2); stream.write('\n')
+
+
+def fresh(name, path, digest, pins):
+    assert name not in sys.modules and sha(path) == digest
+    pins[str(path)] = digest; source = path.read_bytes(); assert hashlib.sha256(source).hexdigest() == digest
+    spec = importlib.util.spec_from_file_location(name, path); module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module; exec(compile(source, str(path), 'exec'), module.__dict__)
+    assert sys.modules[name] is module and Path(module.__file__).resolve() == path; return module
+
+
+def closed_history(plan, pins, lease, adapter):
+    section = plan['history']; owner = Path(section['owner']).resolve(strict=True)
+    assert owner.parent == CLBG/'continuation/owned-jobs' and lease.name == str(owner/'owner.lock')
+    held, named = os.fstat(lease.fileno()), Path(lease.name).stat(); assert (held.st_dev, held.st_ino) == (named.st_dev, named.st_ino)
+    fcntl.flock(lease, fcntl.LOCK_SH | fcntl.LOCK_NB)
+    expected_names = {'request.json', 'launch.json', 'worker-started.json', 'command-started.json', 'terminal.json'}
+    assert set(section['owner_pins']) == expected_names
+    values = {name: read(owner/name, digest, pins) for name, digest in section['owner_pins'].items()}
+    request, launch, worker, start, done = (values[name] for name in ('request.json', 'launch.json', 'worker-started.json', 'command-started.json', 'terminal.json'))
+    assert request['command'] == launch['command'] == worker['command'] == start['command'] == section['command']
+    assert request['cwd'] == launch['cwd'] == worker['cwd'] == start['cwd'] == str(CLBG.parents[1])
+    assert request['common_mutex_owned_by_target_command'] is worker['common_mutex_owned_by_target_command'] is True
+    assert worker['worker_identity'] == done['worker_identity'] and launch['worker_identity']['pid'] == worker['worker_identity']['pid']
+    assert start['command_identity'] == done['command_identity'] and start['command_pid'] == done['command_pid']
+    assert start['command_identity_observation_missing'] is done['command_identity_observation_missing'] is False
+    assert worker['inherited_private_lease'] is worker['detached_session'] is True
+    assert done['status'] == 'command-exited-zero-awaiting-report-review' and type(done['exit_code']) is int and done['exit_code'] == 0
+    assert done['actual_command_started'] is True and done['stop_signals'] == [] and done['automatic_retry'] is done['qualification_granted'] is False
+    qpath, rpath, tpath = (Path(section[name]['path']).resolve(strict=True) for name in ('qualification', 'receipt', 'terminal'))
+    assert qpath.name == 'qualified-history.json' and rpath == qpath.parent/'qualification-receipt.json' and tpath == qpath.parent/'terminal.json'
+    assert qpath.parent.parent == HISTORY/'jobs'
+    q, receipt, terminal = (read(section[name]['path'], section[name]['sha256'], pins) for name in ('qualification', 'receipt', 'terminal'))
+    assert terminal['status'] == 'completed-history-qualification' and terminal['body_error'] is terminal['integrity_error'] is None
+    assert terminal['available_bytes_not_fully_pinned'] is False and terminal['exclusive_common_mutex_held'] is True and terminal['common_timing_mutex'] == str(LOCK)
+    assert terminal['pins'][str(qpath)] == section['qualification']['sha256'] and terminal['pins'][str(rpath)] == section['receipt']['sha256']
+    assert all(terminal['pins'][path] == digest for path, digest in q['pins'].items())
+    absorb(pins, terminal['pins']); absorb(pins, q['pins'])
+    assert q['status'] == receipt['status'] and q['status'] in adapter.STATUS
+    assert q['profile_count'] == receipt['profile_count'] == 133 and q['baseline'] == dict(path=str(OLD), sha256=OLD_SHA)
+    assert receipt['qualified_history'] == str(qpath) and receipt['qualified_history_sha256'] == section['qualification']['sha256']
+    assert q['actual_common_mutex_held'] is receipt['actual_common_mutex_held'] is receipt['pins_unchanged_at_end'] is True
+    assert all(type(value[name]) is int and value[name] == 0 for value in (terminal, receipt)
+               for name in ('actual_native_processes', 'runtime_version_reruns', 'benchmark_replays'))
+    assert terminal['chart_admission'] is receipt['chart_admission'] is receipt['dataset_mutated'] is receipt['sources_mutated'] is receipt['timings_mutated'] is False
+    fixture = q['fixture']; argv = section['command']
+    assert argv == ['/opt/homebrew/opt/python@3.14/bin/python3.14', '-B', '-u', str(CLBG/'continuation/legacy-platform-history-repair-v3/replay.py'),
+                    '--stage', 'qualify', '--revision', qpath.parent.name, '--fixture-receipt', fixture['path'],
+                    '--fixture-sha256', fixture['sha256'], '--fixture-terminal-sha256', fixture['terminal_sha256']]
+    for backend in q['annotations'].values():
+        runtime = backend['evidence']['runtime_receipt']
+        if runtime['verified']:
+            assert adapter.relative(runtime['report']) and q['provenance'][runtime['report']] == runtime['report_sha256']
+            document = read(CLBG/runtime['report'], runtime['report_sha256'], pins)
+            value = document
+            for token in runtime['field'].split('/')[1:]:
+                token = token.replace('~1', '/').replace('~0', '~'); value = value[int(token)] if type(value) is list else value[token]
+            assert (value if runtime['value_encoding'] == 'literal-saved-string' else json.dumps(value, sort_keys=True)) == runtime['value']
+    return q
+
+
+def preserve(old, data, overlay, changes):
+    full = overlay.catalog(old); added = FORMAT_FIELDS | METADATA
+    assert set(data['program_inventory']) == set(old['program_inventory']) and set(old['programs']) <= set(data['programs']) <= set(full)
+    assert overlay.exact_value(data['files'], old['files']) and len(old['benchmarks']) == len(data['benchmarks'])
+    for pool in ('programs', 'program_inventory'):
+        for key, row in data[pool].items():
+            prior = old[pool].get(key, full[key])
+            assert overlay.exact_value({k:v for k,v in row.items() if k not in added}, {k:v for k,v in prior.items() if k not in added})
+            assert all(overlay.exact_value(row.get(field), changes[key][field]) for field in METADATA) if key in changes else all(
+                (field in row) == (field in prior) and (field not in row or overlay.exact_value(row[field], prior[field])) for field in METADATA)
+            if row['language'] != 'crystal':
+                assert row['formatted_loc_status'] == 'pending' and row['formatted_loc'] is row['formatted_x'] is None and row['formatted_loc_complete'] is False and row['formatted_loc_evidence'] == {}
+    for before, after in zip(old['benchmarks'], data['benchmarks']):
+        assert overlay.exact_value({k:v for k,v in before.items() if k != 'groups'}, {k:v for k,v in after.items() if k not in ('groups', 'baseline_formatted_loc')})
+        assert len(before['groups']) == len(after['groups'])
+        for a, b in zip(before['groups'], after['groups']):
+            assert overlay.exact_value({k:v for k,v in a.items() if k != 'programs'}, {k:v for k,v in b.items() if k not in ('programs', 'formatted_fast', 'formatted_small')})
+            assert [key for key in b['programs'] if key in a['programs']] == a['programs']
+    assert overlay.exact_value(old['languages'], [{k:v for k,v in row.items() if not k.startswith('formatted_')} for row in data['languages']])
+    special = {'programs', 'program_inventory', 'files', 'benchmarks', 'languages', 'provenance', 'formatted_reference_summary'}
+    assert overlay.exact_value({k:v for k,v in old.items() if k not in special}, {k:v for k,v in data.items() if k not in special})
+    assert all(data['provenance'][path] == digest for path, digest in old['provenance'].items())
+    assert not any(row['language'].casefold() in ('v', 'red') for row in overlay.catalog(data).values())
+
+
+def main():
+    parser = argparse.ArgumentParser(); parser.add_argument('--plan', type=Path, required=True)
+    parser.add_argument('--plan-sha256', required=True); parser.add_argument('--self-sha256', required=True); args = parser.parse_args()
+    with LOCK.open('a+') as common:
+        fcntl.flock(common, fcntl.LOCK_EX); held, named = os.fstat(common.fileno()), LOCK.stat()
+        assert (held.st_dev, held.st_ino) == (named.st_dev, named.st_ino) and held.st_ino == 79859134
+        pins = {}; plan = read(args.plan, args.plan_sha256, pins)
+        assert plan['schema_version'] == 1 and re.fullmatch(r'[a-z0-9][a-z0-9-]{0,63}', plan['revision']) and sha(__file__) == args.self_sha256
+        absorb(pins, {str(Path(__file__).resolve()): args.self_sha256, str(HERE/'REVIEW.md'): plan['review_sha256']})
+        output = HERE/'jobs'/plan['revision']; output.parent.mkdir(exist_ok=True); output.mkdir()
+        body = None; completed = False; candidate = None
+        try:
+            sys.dont_write_bytecode = True
+            old = read(CURRENT, CURRENT_SHA, pins); base = read(FMT_BASE, FMT_BASE_SHA, pins); legacy = read(OLD, OLD_SHA, pins)
+            fixture = read(FMT/'jobs/fixtures23-v1/fixture-receipt.json', '7567ddfb5a03df5ed4813dd7d87bfd48b8f300ef0a5be66c90504d377fca81b5', pins)
+            fixture_terminal = read(FMT/'jobs/fixtures23-v1/terminal.json', '5b3da339f1f8e575d34742f119996b684b40e03e32365cad749e2a23a61b94bd', pins)
+            assert fixture['status'] == fixture_terminal['status'] == 'passed-formatted-loc-fixtures' and fixture['tests_run'] == 23
+            assert fixture_terminal['body_error'] is None and fixture_terminal['integrity_errors'] == [] and fixture_terminal['available_bytes_not_fully_pinned'] is False
+            assert all(len(fixture[name]) == len(set(fixture[name])) == 23 for name in ('expected_test_ids', 'actual_test_ids', 'discovered_test_ids'))
+            assert sorted(fixture['expected_test_ids']) == sorted(fixture['actual_test_ids']) == sorted(fixture['discovered_test_ids'])
+            assert all(fixture[name] == [] for name in ('failures', 'errors', 'skipped', 'expected_failures', 'unexpected_successes'))
+            assert fixture['inherited_common_mutex'] is fixture_terminal['inherited_common_mutex'] is True
+            assert fixture['chart_admission'] is fixture_terminal['chart_admission'] is False
+            assert all(type(document[field]) is int and document[field] == 0 for document in (fixture, fixture_terminal)
+                       for field in ('actual_native_subjects', 'actual_formatter_processes'))
+            absorb(pins, fixture_terminal['pins'])
+            python = Path('/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12')
+            assert Path(sys.executable).resolve() == python.resolve() and sys.version_info[:2] == (3, 12) and sha(python) == fixture_terminal['pins'][str(python)]
+            assert all(fixture_terminal['pins'][str(path)] == digest for path, digest in MODULES.values() if path.parent == FMT)
+            modules = {name: fresh(name, *spec, pins) for name, spec in MODULES.items()}
+            loader, overlay, endpoints, adapter = (modules[name] for name in ('loader', 'overlay', 'endpoints', 'adapter'))
+            with Path(plan['history']['owner']).joinpath('owner.lock').open('r') as lease:
+                history = closed_history(plan, pins, lease, adapter)
+                formatted = loader.load(FQ, FQ_SHA, FT, FT_SHA, common.fileno()); absorb(pins, formatted['pins'])
+                review = read(CLBG/'continuation/jobs/formatted-crystal20-actual-review-v1/receipt.json', plan['crystal_review_sha256'], pins)
+                assert review['status'] == 'actual-Crystal20-formatter-receipts-reviewed-awaiting-root-admission'
+                assert review['qualification'] == dict(path=str(FQ), sha256=FQ_SHA) and review['terminal'] == dict(path=str(FT), sha256=FT_SHA)
+                assert review['profiles'] == review['qualified_profiles'] == review['formatted_file_receipts'] == 20
+                assert review['all_original_source_pins_preserved'] is review['baseline_unchanged'] is review['pure_stage_accepted'] is True
+                assert review['actual_application_processes'] == review['fixture_reexecutions'] == 0
+                assert len(formatted['profile_keys']) == 20 and set(formatted['profile_keys']) == {k for k,v in overlay.catalog(old).items() if v['language'] == 'crystal'}
+                candidate = deepcopy(old); fmt_result = overlay.apply(candidate, dict(data=base, path=str(FMT_BASE), sha256=FMT_BASE_SHA), formatted)
+                assert fmt_result['updated_programs'] == fmt_result['qualified_programs'] == 20
+                changes, provenance = adapter.stage(candidate, legacy, history); shadow = deepcopy(candidate)
+                for key in changes:
+                    if key in shadow['program_inventory']: shadow['programs'][key] = deepcopy(shadow['program_inventory'][key])
+                second, second_provenance = adapter.stage(shadow, legacy, history)
+                assert overlay.exact_value(changes, second) and overlay.exact_value(provenance, second_provenance)
+                for pool in ('programs', 'program_inventory'):
+                    for key in changes.keys() & candidate[pool].keys(): candidate[pool][key].update(deepcopy(changes[key]))
+                candidate['provenance'] = provenance; endpoints.finalize_endpoints(candidate); final_catalog = overlay.catalog(candidate)
+                for key in old['programs']: candidate['programs'].setdefault(key, deepcopy(final_catalog[key]))
+                for before, after in zip(old['benchmarks'], candidate['benchmarks']):
+                    for a, b in zip(before['groups'], after['groups']): b['programs'] = list(dict.fromkeys([*a['programs'], *b['programs']]))
+                # Canonical selectors/coordinates are proved below, so retain
+                # original summary rounding/audit and every archived source.
+                for field in ('reference_summary', 'files', 'interpreter_integration_audit'):
+                    if field in old: candidate[field] = deepcopy(old[field])
+                preserve(old, candidate, overlay, changes); absorb(pins, formatted['provenance']); verify(pins)
+                path = output/'candidate-data.json'; save(path, candidate); pins[str(path)] = sha(path)
+                save(output/'receipt.json', dict(status='qualified-combined-metadata-candidate', candidate=dict(path=str(path), sha256=pins[str(path)]),
+                    input=dict(path=str(CURRENT), sha256=CURRENT_SHA), formatted=fmt_result, legacy_programs=len(changes),
+                    sources_timings_coordinates_baselines_preserved=True, actual_native_processes=0, fixture_reexecutions=0,
+                    dataset_mutated=False, live_files_written=False, chart_admission=False, common_mutex_held=True, pins=pins))
+                completed = True
+        except BaseException as error:
+            body = dict(error=str(error) or type(error).__name__, error_type=type(error).__name__)
+            with (output/'error.log').open('x') as stream: stream.write(traceback.format_exc())
+            raise
+        finally:
+            failures, actual = [], {}
+            for path, digest in pins.items():
+                try:
+                    actual[path] = sha(path); assert actual[path] == digest
+                except BaseException as error: failures.append(dict(path=path, error=str(error) or type(error).__name__))
+            for path in output.iterdir():
+                if path.is_file():
+                    try: actual[str(path)] = sha(path)
+                    except BaseException as error: failures.append(dict(path=str(path), error=str(error) or type(error).__name__))
+            save(output/'terminal.json', dict(status='failed-integrity' if failures else 'completed' if completed else 'failed-stop',
+                body_error=body, integrity_errors=failures, available_bytes_not_fully_pinned=bool(failures), pins=actual,
+                common_mutex_held=True, actual_native_processes=0, fixture_reexecutions=0, chart_admission=False))
+            if failures: raise RuntimeError('Integration input/output integrity failed; retained candidate is not admitted')
+
+
+if __name__ == '__main__': main()
