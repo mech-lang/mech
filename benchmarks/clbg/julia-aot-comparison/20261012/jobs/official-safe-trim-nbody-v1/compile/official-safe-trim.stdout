@@ -1,0 +1,39 @@
+Verifier error #1: unresolved call from statement Main.ClbgNbodyPilot.showerror(Main.ClbgNbodyPilot.stderr::IO, $(Expr(:the_exception))::Any)::Any
+Stacktrace:
+ [1] clbg_entry(argc::Int32, argv::Ptr{Ptr{Int8}})
+   @ Main.ClbgNbodyPilot ~/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-safe-trim-nbody-v1/ClbgNbodyPilot/src/entry.jl:16
+
+Verifier error #2: unresolved call from statement Main.ClbgNbodyPilot.println(Main.ClbgNbodyPilot.stderr::IO)::Any
+Stacktrace:
+ [1] clbg_entry(argc::Int32, argv::Ptr{Ptr{Int8}})
+   @ Main.ClbgNbodyPilot ~/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-safe-trim-nbody-v1/ClbgNbodyPilot/src/entry.jl:17
+
+Verifier error #3: unresolved call from statement Base.print(Base.stdout::IO, x::String, "\n")::Nothing
+Stacktrace:
+ [1] println(x::String)
+   @ Base coreio.jl:5
+ [2] run_original_driver()
+   @ Main.ClbgNbodyPilot ~/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-safe-trim-nbody-v1/ClbgNbodyPilot/src/workload.jl:118
+ [3] clbg_entry(argc::Int32, argv::Ptr{Ptr{Int8}})
+   @ Main.ClbgNbodyPilot ~/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-safe-trim-nbody-v1/ClbgNbodyPilot/src/entry.jl:13
+
+Verifier error #4: unresolved call from statement Main.ClbgNbodyPilot.showerror(Main.ClbgNbodyPilot.stderr::IO, $(Expr(:the_exception))::Any)::Any
+Stacktrace:
+ [1] clbg_entry(argc::Int32, argv::Ptr{Ptr{Int8}})
+   @ Main.ClbgNbodyPilot ~/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-safe-trim-nbody-v1/ClbgNbodyPilot/src/entry.jl:16
+
+Verifier error #5: unresolved call from statement Main.ClbgNbodyPilot.println(Main.ClbgNbodyPilot.stderr::IO)::Any
+Stacktrace:
+ [1] clbg_entry(argc::Int32, argv::Ptr{Ptr{Int8}})
+   @ Main.ClbgNbodyPilot ~/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-safe-trim-nbody-v1/ClbgNbodyPilot/src/entry.jl:17
+
+Verifier error #6: unresolved call from statement Base.print(Base.stdout::IO, x::String, "\n")::Nothing
+Stacktrace:
+ [1] println(x::String)
+   @ Base coreio.jl:5
+ [2] run_original_driver()
+   @ Main.ClbgNbodyPilot ~/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-safe-trim-nbody-v1/ClbgNbodyPilot/src/workload.jl:118
+ [3] clbg_entry(argc::Int32, argv::Ptr{Ptr{Int8}})
+   @ Main.ClbgNbodyPilot ~/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-safe-trim-nbody-v1/ClbgNbodyPilot/src/entry.jl:13
+
+Trim verify finished with 6 errors, 0 warnings.

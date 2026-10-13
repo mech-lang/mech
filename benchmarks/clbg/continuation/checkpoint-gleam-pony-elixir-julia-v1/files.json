@@ -1,0 +1,744 @@
+{
+  "at": "2026-10-13T23:54:55.681893+00:00",
+  "prior_commit": "1c333a02252012f3c1972c0b1a5aa255ad3a9bff",
+  "files": [
+    {
+      "path": "benchmarks/clbg/BENCHMARK_PROGRESS.md",
+      "sha256": "197fd2643aec11cd8a0f1f86c7585b5a66dd6fddd6aa8609c7a02960367c52f9",
+      "bytes": 41119
+    },
+    {
+      "path": "benchmarks/clbg/continuation/GLEAM_CURRENT_CANDIDATE_V3_REVIEW.md",
+      "sha256": "86ede86c969496cc8d315a06b191b9358398199eb08530516c79a8db85ca27db",
+      "bytes": 6926
+    },
+    {
+      "path": "benchmarks/clbg/continuation/gleam_loc_record_adapter_v1.py",
+      "sha256": "8adfe2c8f3ddfc2f6db45bd0d3d5c592372015a4d56a3acccaaad55c9d4a127b",
+      "bytes": 8076
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/elixir-saved-toolchain-probes-closed-review-v1/receipt.json",
+      "sha256": "b18eb9dda83694122a6bb320990123a56e913c927c9b7e404f068bf0611e1450",
+      "bytes": 2612
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/elixir-saved-toolchain-probes-root-release-v1/receipt.json",
+      "sha256": "879eb4290d48f346b2390501a4cb9644d596eeedd608e82846f779e1cce8a78d",
+      "bytes": 1334
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/gleam-current-candidate-v3-closed-review-v1/receipt.json",
+      "sha256": "b15f1db2189ccba429146bc6ff5867c9c9efc03144dcdaccdf001b54b2da90a6",
+      "bytes": 1225
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/gleam-current-candidate-v3-root-release-v1/receipt.json",
+      "sha256": "3f49fed717cb4a77051e1921477a9c21faf1d294e69ec8081841f69fbb90708c",
+      "bytes": 2357
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/gleam-current-candidate-v3/candidate-data.json",
+      "sha256": "76ab76e215082279eff8f1b5c132b4d6c875da6a8be6b4288a2207afd9ba3f9d",
+      "bytes": 38946127
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/gleam-current-candidate-v3/input-data.json",
+      "sha256": "8b85d35f9ff8c267171c9d91f3467ba765bf019ac438c64ed2071898a7656378",
+      "bytes": 32552165
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/gleam-current-candidate-v3/outcome.json",
+      "sha256": "18b37de334530c5dbe7a74d9c0c1032647dfcb24362841e68ad6525c3a5d6311",
+      "bytes": 12003712
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/gleam-current-candidate-v3/reused-qualification.json",
+      "sha256": "5d32a51b57b899987dd6e9f2bab9f8e8be6b22a94984a38ed8ced8977b9adb6e",
+      "bytes": 4136
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/gleam-ui-syntax-v1/receipt.json",
+      "sha256": "2ca677b08dd5b4a0909d4e4b84cd713539b4944fd6248fc139f60276a7dd6825",
+      "bytes": 425
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/gleam-ui-syntax-v1/stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/gleam-ui-syntax-v1/stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/julia-safe-trim-build-closed-review-v1/receipt.json",
+      "sha256": "929d8dc37de11c1dd5887dad8399e10cde5a3b90cabd86b85ec8be17a39c9666",
+      "bytes": 1061
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/julia-static-io-safe-compile-closed-review-v1/receipt.json",
+      "sha256": "1be37bffac06a836065ce98fe5f65eab43458c5db2e6a0f3d7a7d18942ef84fa",
+      "bytes": 2851
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/julia-static-io-safe-trim-root-release-v1/receipt.json",
+      "sha256": "870d5a668c396c3f358798693bd2666c8f5ffbdd2bd0b77d79f6df78830af6c8",
+      "bytes": 2249
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/nim-formatted-chart-integration-root-release-v1/receipt.json",
+      "sha256": "27e2c1f98a5f59e40c651a3be8a35705f313cf18352cad6b6887763b8073798f",
+      "bytes": 1462
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/nim-formatted-integration-v1-closed-review/receipt.json",
+      "sha256": "8b5d82ede825b5e2835800c5ca7c46963c7f3109630e0ffbc04b5f5b6d3b06d4",
+      "bytes": 3487
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/pony-reviewed-work-metadata-closed-review-v1/receipt.json",
+      "sha256": "5e434ba59db0bbacaa8aae9bdbfbfbbc99f24ce74842c498724fe2b5de5898d6",
+      "bytes": 1106
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/pony-reviewed-work-metadata-root-release-v1/receipt.json",
+      "sha256": "4ae607a06b51d2776af24d1d4397bad014088d62baeb5c1926728cf5254b8ff5",
+      "bytes": 1536
+    },
+    {
+      "path": "benchmarks/clbg/continuation/nim-formatted-chart-integration-v1/REVIEW.md",
+      "sha256": "35f7aee42b8dd16a65cbb5f6f5f8d3393d910eb8b5a947adc80f55d61ed0b7d6",
+      "bytes": 6649
+    },
+    {
+      "path": "benchmarks/clbg/continuation/nim-formatted-chart-integration-v1/integrate.py",
+      "sha256": "db25e78012a030a7b176cddb09bbbf974dcff1ccf0d615a1df8c606e10e7728b",
+      "bytes": 24397
+    },
+    {
+      "path": "benchmarks/clbg/continuation/nim-formatted-chart-integration-v1/jobs/gleam-nim-native-formatted-v1/error.log",
+      "sha256": "ee07e6448d8f445ad33c2e854043cff534f47c759571f4d20bec825557956176",
+      "bytes": 1650
+    },
+    {
+      "path": "benchmarks/clbg/continuation/nim-formatted-chart-integration-v1/jobs/gleam-nim-native-formatted-v1/terminal.json",
+      "sha256": "aee7563e900617560e1884f137a6c573119e3d6eda5c6f2d6b316d7fcf18007f",
+      "bytes": 24013471
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/elixir-saved-toolchain-probes-v1/command-started.json",
+      "sha256": "9d3500d6eb9e648a70504f3dd84d5312568cf00eb18aa54440a2994aafd99ac9",
+      "bytes": 1269
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/elixir-saved-toolchain-probes-v1/command.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/elixir-saved-toolchain-probes-v1/command.stdout",
+      "sha256": "fe2aba6404cdd77ca226c90b1060c06b569d1afeef353ee087354324f0109da9",
+      "bytes": 60
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/elixir-saved-toolchain-probes-v1/launch.json",
+      "sha256": "d47c1ac1463782731cedd7db457fedba7c18432b9c55b8f5565e7c5482d5d341",
+      "bytes": 1331
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/elixir-saved-toolchain-probes-v1/request.json",
+      "sha256": "30979cec7fca773da90249085e4714442dc14be852f5e669e7a548f2a158e9e3",
+      "bytes": 789
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/elixir-saved-toolchain-probes-v1/terminal.json",
+      "sha256": "b5b06a47a8e7d2692771953e9d54c1d5a7c403cca342617e672011d8230c6562",
+      "bytes": 1407
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/elixir-saved-toolchain-probes-v1/worker-started.json",
+      "sha256": "8cc70d224a5c39a21b46d2e1b95f73d5fb17537a2e52e5d72f62cc90a1aedf03",
+      "bytes": 1293
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/elixir-saved-toolchain-probes-v1/worker.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/gleam-current-candidate-v3/command-started.json",
+      "sha256": "4ed4fc297fbeb187e75e26ea48656b89ef01ca8bd2003f75cf03260245d238e2",
+      "bytes": 2269
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/gleam-current-candidate-v3/command.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/gleam-current-candidate-v3/command.stdout",
+      "sha256": "94239530a157266ead43d1da6096ff6b42ef588e463f02810ac2a7227b2fc037",
+      "bytes": 502
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/gleam-current-candidate-v3/launch.json",
+      "sha256": "50284fae78f166ba254b05a1796da8b873dc8ecdd69e75cc2d31221a1970dd3c",
+      "bytes": 1854
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/gleam-current-candidate-v3/request.json",
+      "sha256": "1387e06aef15ccb5e5f5bad81682904e5139e809e0c845ab6c1cc9235b9f10c8",
+      "bytes": 1324
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/gleam-current-candidate-v3/terminal.json",
+      "sha256": "bdac370fbcfb72b174da5c91aa8dbb32daa420734e019abb8bdacb0a6103e36d",
+      "bytes": 1866
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/gleam-current-candidate-v3/worker-started.json",
+      "sha256": "c65f29731cce727f2375cee57dfae6c7f8cb445057b66d6d78c10a4af8f08a9c",
+      "bytes": 1822
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/gleam-current-candidate-v3/worker.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/gleam-nim-native-formatted-chart-v1/command-started.json",
+      "sha256": "b733ba8b3766a80da90299598f90b57d3d02da946984bdcf22d3410576deacae",
+      "bytes": 1371
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/gleam-nim-native-formatted-chart-v1/command.stderr",
+      "sha256": "07e4514bcfac1385d1d644bee7d7b37a5fb0c0459d52a50688f131480645ec14",
+      "bytes": 1886
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/gleam-nim-native-formatted-chart-v1/command.stdout",
+      "sha256": "ccd4e488b6e93b77672022e016fc1e42a2f5121a22337389234059772b820bc8",
+      "bytes": 76
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/gleam-nim-native-formatted-chart-v1/launch.json",
+      "sha256": "fad83a6f0dd6a8a529ba0b026a9043bca0681876d074c03679eb80b858e7662d",
+      "bytes": 1468
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/gleam-nim-native-formatted-chart-v1/request.json",
+      "sha256": "8f4d64feb338f2055f8f8ad527d98f200f15db2cbba8bf6bcd0e569c7721e9ec",
+      "bytes": 840
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/gleam-nim-native-formatted-chart-v1/terminal.json",
+      "sha256": "d5e6ea2fffe2018220897dcfc146973cc24a9d35bdb8e47beb27ee0cd0a102b6",
+      "bytes": 1433
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/gleam-nim-native-formatted-chart-v1/worker-started.json",
+      "sha256": "42d947902d576b092bf99c43af8ae37d59e8e5203df7765e74a3a060d6eb4247",
+      "bytes": 1347
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/gleam-nim-native-formatted-chart-v1/worker.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/julia-official-safe-trim-nbody-v1/command-started.json",
+      "sha256": "bee5d85ebeb83aac1ce5e44e136e0ccf07423ad0f740901e827470c43ba49ba7",
+      "bytes": 1633
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/julia-official-safe-trim-nbody-v1/command.stderr",
+      "sha256": "83d2237be4509dc26b6f208346276c74a1dd392c7cf81d00652b407d7b20d781",
+      "bytes": 1128
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/julia-official-safe-trim-nbody-v1/command.stdout",
+      "sha256": "430a37b4d3aeb1c2d6f5868b031851ab1d94086a6ffc6a6c94db5d927b14e1e9",
+      "bytes": 55
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/julia-official-safe-trim-nbody-v1/launch.json",
+      "sha256": "613d1e68d2ff6ec9df89361e639fb16c96fec75c35d97b8520d12e4731723fad",
+      "bytes": 1609
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/julia-official-safe-trim-nbody-v1/request.json",
+      "sha256": "8de59061775f2f3be7079c15ad9f20e2035ab616e7039815cc8a2d760585e2e2",
+      "bytes": 985
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/julia-official-safe-trim-nbody-v1/terminal.json",
+      "sha256": "63687cd23db5886735d4c2fb8b6238571e7c7544b87583773b5b1856c844fe7a",
+      "bytes": 1548
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/julia-official-safe-trim-nbody-v1/worker-started.json",
+      "sha256": "79e45ed4c03ca52fc693ebdcab4abf382d1241f8d96cd1a4722db66340b3adcb",
+      "bytes": 1490
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/julia-official-safe-trim-nbody-v1/worker.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/julia-official-static-io-safe-trim-nbody-v1/command-started.json",
+      "sha256": "ccdd402914d59de807106fb208c424abc6b9bbac03ad7781682f4c24bc4b8797",
+      "bytes": 1835
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/julia-official-static-io-safe-trim-nbody-v1/command.stderr",
+      "sha256": "7f70feff217ac5d2c2d5ed77c2364734314ce4102efeab7af747c8a1e4ed74f4",
+      "bytes": 1639
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/julia-official-static-io-safe-trim-nbody-v1/command.stdout",
+      "sha256": "6b8281764dabbd0de73ec56f4f50548457f2ee9ca049c27e33236dd3a027ba09",
+      "bytes": 66
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/julia-official-static-io-safe-trim-nbody-v1/launch.json",
+      "sha256": "1e1980f9e3b0d22554490d0a81ca4d0d3e5073be95ef7e8ec8bc35b72deba517",
+      "bytes": 1657
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/julia-official-static-io-safe-trim-nbody-v1/request.json",
+      "sha256": "a6430bf6c7cf741c05f5f36100c5dbfb900ab48c5ff1247d5ecfa545f2fc04a6",
+      "bytes": 1093
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/julia-official-static-io-safe-trim-nbody-v1/terminal.json",
+      "sha256": "a91abacb6c303d6eb5434732308e16a426364fe2648de3acba3af69e33b3ff16",
+      "bytes": 1652
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/julia-official-static-io-safe-trim-nbody-v1/worker-started.json",
+      "sha256": "a0ef9b44e6f2502d740703850c1b74b06ea1e6cdf6e8910179283ef8914882ca",
+      "bytes": 1608
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/julia-official-static-io-safe-trim-nbody-v1/worker.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/pony-reviewed-work-metadata-v1/command-started.json",
+      "sha256": "070b9cdc789a2ca5f64ecd5ade0151cc90442185f36895f4467d6842337d4073",
+      "bytes": 1369
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/pony-reviewed-work-metadata-v1/command.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/pony-reviewed-work-metadata-v1/command.stdout",
+      "sha256": "73685616bffdedb7c544b8aaba18e49b9cf9d0f6a6bdd6409b01718c4394c732",
+      "bytes": 69
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/pony-reviewed-work-metadata-v1/launch.json",
+      "sha256": "a8098d08ee315279a68cd139eb7b08f08fe59d3cae1262be3f23c4f56e1cdb3b",
+      "bytes": 1457
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/pony-reviewed-work-metadata-v1/request.json",
+      "sha256": "0fb3c3b1e6e2481cad23b4f449fef8708d76ea2af6d79a65248d30dcd08f57a7",
+      "bytes": 839
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/pony-reviewed-work-metadata-v1/terminal.json",
+      "sha256": "951548a6bc39540a27b7117b816e3338cc2521a517dcfbf364ac2719461fb18d",
+      "bytes": 1455
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/pony-reviewed-work-metadata-v1/worker-started.json",
+      "sha256": "b94a2aed11bfad6223c36a5a0e02095215eb09ead64a7b11dcb43a7270a2fecd",
+      "bytes": 1341
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/pony-reviewed-work-metadata-v1/worker.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "benchmarks/clbg/continuation/qualify_gleam_current_candidate_v3.py",
+      "sha256": "4b8329ba554aa491ba5e895ed8c525fa7e8a99ee5b2c67f74830aebd9d2d27a2",
+      "bytes": 37293
+    },
+    {
+      "path": "benchmarks/clbg/elixir-comparison/20261013/jobs/retained-otp-probes-v1/intake-result.json",
+      "sha256": "ad8aca223866b085ba3e823538298b948bd427748909bff1913d874d608519d0",
+      "bytes": 1507960
+    },
+    {
+      "path": "benchmarks/clbg/elixir-comparison/20261013/jobs/retained-otp-probes-v1/outcome.json",
+      "sha256": "82e224a49fafb9b798d061341594ef61bc9e8a26908e16005d7c2cea62f27c8d",
+      "bytes": 1502648
+    },
+    {
+      "path": "benchmarks/clbg/elixir-comparison/20261013/jobs/retained-otp-probes-v1/probe/runtime-configuration.active.json",
+      "sha256": "d6fa89d8baacd2dd82ed794770b42426890f695982971e26fa2e9dccefc1432a",
+      "bytes": 888
+    },
+    {
+      "path": "benchmarks/clbg/elixir-comparison/20261013/jobs/retained-otp-probes-v1/probe/runtime-configuration.json",
+      "sha256": "40cf1b73ea8a113f7cf07e3b6b792e1c2e3568837ddbfbd768b8dd417b8871dd",
+      "bytes": 987
+    },
+    {
+      "path": "benchmarks/clbg/elixir-comparison/20261013/jobs/retained-otp-probes-v1/probe/runtime-configuration.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "benchmarks/clbg/elixir-comparison/20261013/jobs/retained-otp-probes-v1/probe/runtime-configuration.stdout",
+      "sha256": "1fe203fc4a59998d972aafac94652897f57e7d35218fd523dbba7bb86e0f1f95",
+      "bytes": 5905
+    },
+    {
+      "path": "benchmarks/clbg/elixir-comparison/20261013/jobs/retained-otp-probes-v1/startup-contract.json",
+      "sha256": "6be60a0560bbc99a902d0a489e06d82fdbd520451cc2d114b20648067d0cf72e",
+      "bytes": 2650
+    },
+    {
+      "path": "benchmarks/clbg/elixir-comparison/20261013/jobs/retained-otp-probes-v1/version/compiler-runtime-version.active.json",
+      "sha256": "54e91d13346c406804df8b742effea21d9dac213cede92c237efbad85ba15da6",
+      "bytes": 634
+    },
+    {
+      "path": "benchmarks/clbg/elixir-comparison/20261013/jobs/retained-otp-probes-v1/version/compiler-runtime-version.json",
+      "sha256": "551f6b4d317a8834f9c2324edc2dd3f324ccf2cce3d2b925a176d66e6d266723",
+      "bytes": 733
+    },
+    {
+      "path": "benchmarks/clbg/elixir-comparison/20261013/jobs/retained-otp-probes-v1/version/compiler-runtime-version.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "benchmarks/clbg/elixir-comparison/20261013/jobs/retained-otp-probes-v1/version/compiler-runtime-version.stdout",
+      "sha256": "1943ee135b872146349f70a465d3a4a018f57e9218e71e4b459967f5e418272b",
+      "bytes": 143
+    },
+    {
+      "path": "benchmarks/clbg/elixir-comparison/20261013/revisions/saved-otp-probes-v1/REVIEW.md",
+      "sha256": "83579f701a10dcd6b6b64d46057a9749159575ce89181a657129d7a17ff3a569",
+      "bytes": 7231
+    },
+    {
+      "path": "benchmarks/clbg/elixir-comparison/20261013/revisions/saved-otp-probes-v1/resume.py",
+      "sha256": "7bc94b050805369e8fc74212476eaaaa588e6b404d4f55e9f996dc146522b275",
+      "bytes": 22173
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/.build/official-safe-trim-nbody-v1/ClbgNbodyPilot/Project.toml",
+      "sha256": "5e2372291b865156b56f65b56043bd6d6ff4810de680c711b3282304016d1ce7",
+      "bytes": 88
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/.build/official-safe-trim-nbody-v1/ClbgNbodyPilot/src/ClbgNbodyPilot.jl",
+      "sha256": "ef96fa9c8f678e53cbe31499b0da1901dca930589702f4d87625aa2ca5be0e83",
+      "bytes": 69
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/.build/official-safe-trim-nbody-v1/ClbgNbodyPilot/src/entry.jl",
+      "sha256": "50e9e3013689403fc626f377e32a214c2fb41b98e2fcec88afa446cf8c518086",
+      "bytes": 820
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/.build/official-safe-trim-nbody-v1/ClbgNbodyPilot/src/workload.jl",
+      "sha256": "bb09b6e1d4f0da3b7dfeedd2b474c45baabe94092e097455b5a2527c714af374",
+      "bytes": 5896
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/.build/official-safe-trim-nbody-v1/actual-build-options.toml",
+      "sha256": "5a2fe78350c389854bc7b41f3fab7683dc9bc881aea3cb5cd8c6893e5a6ca162",
+      "bytes": 1144
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/.build/official-safe-trim-nbody-v1/build_options.jl",
+      "sha256": "44d47002ac19bafde6b6748d4e4cec01219a4ec66539fe450cb3772527ccbfc4",
+      "bytes": 1975
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/.build/official-safe-trim-nbody-v1/direct_driver.c",
+      "sha256": "a84395a9fad71ffc86aef2f742ad78e8f6bf82857f4651e6c4dd720bb873065e",
+      "bytes": 1836
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/.build/official-safe-trim-nbody-v1/entry-abi.json",
+      "sha256": "894267e7b45236df8604d64c25961362e04b7dab6127247dc155ff4774c1befa",
+      "bytes": 823
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/.build/official-safe-trim-nbody-v1/matched_jit_driver.jl",
+      "sha256": "f0645698890c55806d22e5ec4bd038316fc9389d6c6933f3062150a161c43c1c",
+      "bytes": 153
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/ClbgNbodyPilot/Project.toml",
+      "sha256": "5e2372291b865156b56f65b56043bd6d6ff4810de680c711b3282304016d1ce7",
+      "bytes": 88
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/ClbgNbodyPilot/src/ClbgNbodyPilot.jl",
+      "sha256": "ef96fa9c8f678e53cbe31499b0da1901dca930589702f4d87625aa2ca5be0e83",
+      "bytes": 69
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/ClbgNbodyPilot/src/entry.jl",
+      "sha256": "0fa7af0ecc58d6fd3ea3cdf810f70fc4ca67274f1f703852fa573d15de9f143d",
+      "bytes": 800
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/ClbgNbodyPilot/src/workload.jl",
+      "sha256": "9403ae9c911c9f15e6139fed4f3173aae0a9a09bae35c341237bec641068a64b",
+      "bytes": 5922
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/actual-build-options.toml",
+      "sha256": "1093912c3d98ec83b114f783931d70bd9297cf5295938138dcca0e1489917f6f",
+      "bytes": 1184
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/build_options.jl",
+      "sha256": "14a7473570cb9b8e6d1b92a4b71d2138d906bffcc166d82982d909979b857ad2",
+      "bytes": 1977
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/direct_driver.c",
+      "sha256": "a84395a9fad71ffc86aef2f742ad78e8f6bf82857f4651e6c4dd720bb873065e",
+      "bytes": 1836
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/entry-abi.json",
+      "sha256": "894267e7b45236df8604d64c25961362e04b7dab6127247dc155ff4774c1befa",
+      "bytes": 823
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/matched_jit_driver.jl",
+      "sha256": "f0645698890c55806d22e5ec4bd038316fc9389d6c6933f3062150a161c43c1c",
+      "bytes": 153
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/jobs/official-safe-trim-nbody-v1/actual-error.log",
+      "sha256": "8dfbea512c25d7fead273dca27261a1258e3915bce791cb20c08da6ff8f1e278",
+      "bytes": 887
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/jobs/official-safe-trim-nbody-v1/compile/official-safe-trim.active.json",
+      "sha256": "418196b9c3c6ba0357c179c309273559d5ffec2394d236fb2da04ab0698d8506",
+      "bytes": 4066
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/jobs/official-safe-trim-nbody-v1/compile/official-safe-trim.json",
+      "sha256": "4945703547e5f9fc35290f9bc9da1cb176e6e297e7e3bd3f64707a36290a7ef3",
+      "bytes": 4263
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/jobs/official-safe-trim-nbody-v1/compile/official-safe-trim.stderr",
+      "sha256": "a81096a80900e487bb39fed26464a2e0d9d92f3a3783974274c01854d7893759",
+      "bytes": 2269
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/jobs/official-safe-trim-nbody-v1/compile/official-safe-trim.stdout",
+      "sha256": "03334229a9af01e75d21c31db5d241a0adfeb97e209b32b7c447dc06b595535d",
+      "bytes": 2726
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/jobs/official-safe-trim-nbody-v1/outcome.json",
+      "sha256": "42c319719f806306c73a89192dc1638f4810c28de9367eb794c14f998b5d5634",
+      "bytes": 2424108
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/jobs/official-safe-trim-nbody-v1/source-and-build-request.json",
+      "sha256": "3db3c91287a898a60f10cfde5a4331a78b980c654e7cd7c46eb1cbe2dacfbfb4",
+      "bytes": 8015
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/jobs/official-static-io-safe-trim-nbody-v1/actual-error.log",
+      "sha256": "41a2c8ca44b794583f425c8045aa20f3e05b80b0e71f62a3d2d46fc12b75fda1",
+      "bytes": 1394
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/jobs/official-static-io-safe-trim-nbody-v1/compile/official-safe-trim.active.json",
+      "sha256": "6e2bda72c1f1013766e1f8f51de6dfe77ee299698cb8091994c9d023adbeaceb",
+      "bytes": 4206
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/jobs/official-static-io-safe-trim-nbody-v1/compile/official-safe-trim.json",
+      "sha256": "af1f0626ad8e2e31b909f3a6b2da724892df39acc360bf9a1a800baa45d1cd61",
+      "bytes": 4305
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/jobs/official-static-io-safe-trim-nbody-v1/compile/official-safe-trim.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/jobs/official-static-io-safe-trim-nbody-v1/compile/official-safe-trim.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/jobs/official-static-io-safe-trim-nbody-v1/outcome.json",
+      "sha256": "c8df203a9830f6eafef84c4a00b80e52203c444d898b258f33d74e6b2e0ef822",
+      "bytes": 2430726
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/jobs/official-static-io-safe-trim-nbody-v1/source-and-build-request.json",
+      "sha256": "807b2dda5f8164ece344736368094269e7e5376335082e8aa4b5ab9dc6a80cdc",
+      "bytes": 8871
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/jobs/official-static-io-safe-trim-nbody-v1/static-io-source-adaptation.json",
+      "sha256": "4695accea9eee9b0932b2e7f2f24bce8097ee08cf5164390f7eca112b8e39e6f",
+      "bytes": 9733
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/revisions/static-io-safe-trim-v1/REVIEW.md",
+      "sha256": "f58389bf2f5378402f4c6ee4e77537c6f7f1cecfc64e01f9a032fe6085d18a2e",
+      "bytes": 7271
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/revisions/static-io-safe-trim-v1/build.py",
+      "sha256": "ff9e3b0c8a0b803d53f9e4a893815db3daed7c6f922cd5e4bce8e3544ccb3bcd",
+      "bytes": 23847
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/revisions/static-io-safe-trim-v1/build_options.jl",
+      "sha256": "14a7473570cb9b8e6d1b92a4b71d2138d906bffcc166d82982d909979b857ad2",
+      "bytes": 1977
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/revisions/static-io-safe-trim-v1/entry_static.jl",
+      "sha256": "0fa7af0ecc58d6fd3ea3cdf810f70fc4ca67274f1f703852fa573d15de9f143d",
+      "bytes": 800
+    },
+    {
+      "path": "benchmarks/clbg/loc-normalization/20261013/prolog-proposal-v3/REVIEW.md",
+      "sha256": "b3db0bda9529e02f0abb89c4099fd4bc03ea3dbe583faa3391655d053d21a987",
+      "bytes": 3417
+    },
+    {
+      "path": "benchmarks/clbg/loc-normalization/20261013/prolog-proposal-v3/foreign_prolog.py",
+      "sha256": "adf633c6856950578482d9134c3f8826b142883393d931b5576831ea6b8c92e3",
+      "bytes": 28519
+    },
+    {
+      "path": "benchmarks/clbg/loc-normalization/20261013/prolog-proposal-v3/run_fixtures.py",
+      "sha256": "f19d9fe845eadbbd49e1c4adbf2876649d00644a586e752e16c078e4eb5fa7ff",
+      "bytes": 19128
+    },
+    {
+      "path": "benchmarks/clbg/loc-normalization/20261013/prolog-proposal-v3/scan_source.pl",
+      "sha256": "2174ab0d120422c091dceccb28b9fc8948e2e8190ae326357e28026c9703e1ee",
+      "bytes": 5653
+    },
+    {
+      "path": "benchmarks/clbg/loc-normalization/20261013/prolog-proposal-v3/test_prolog.py",
+      "sha256": "019112e1850ae652dc245d9281f320a781647618e84a8533e3ac367ffb548424",
+      "bytes": 15797
+    },
+    {
+      "path": "benchmarks/clbg/overview/explorer/gleam-owner-audit-v1/app.mjs",
+      "sha256": "c259df2da4db4d6fa33c1e31c937b0a5d8f074329e07ffe39eb535956b397e7c",
+      "bytes": 96507
+    },
+    {
+      "path": "benchmarks/clbg/overview/explorer/gleam-owner-audit-v1/index.html",
+      "sha256": "ceecd95f0c2cd044eb6426046e235f6040abaaf758ac9f4e2b6352bae0bfc217",
+      "bytes": 29568
+    },
+    {
+      "path": "benchmarks/clbg/pony-comparison/20261012/revisions/semantic-receipt-seal-v1/REVIEW.md",
+      "sha256": "ed6632fadb81dd8a7315f6bad91b26b97a21507e85a588a082837cac58fef491",
+      "bytes": 3746
+    },
+    {
+      "path": "benchmarks/clbg/pony-comparison/20261012/revisions/semantic-receipt-seal-v1/seal.py",
+      "sha256": "ba6222adef32c934741a2feeb0c9a0b8fc5cbdcb5f96a4a3b309a73d3a6ed4e4",
+      "bytes": 19750
+    },
+    {
+      "path": "benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-reviewed-v1/allocation.json",
+      "sha256": "354f4eab47aef151f1f5cf29824c2b7b4f45f582b307b2373ca0ec316434d346",
+      "bytes": 22657
+    },
+    {
+      "path": "benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-reviewed-v1/outcome.json",
+      "sha256": "8423d1657469c56f6c0007e0bb15e6267e7a48c5503b32b785008bbf822b63f0",
+      "bytes": 1062
+    },
+    {
+      "path": "benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-reviewed-v1/report.json",
+      "sha256": "aa7786b7cd16565a5ef21cb0bb56e8e0b7ccf77ddf5e98cbcfd1710b6b6aa421",
+      "bytes": 2290499
+    },
+    {
+      "path": "benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-reviewed-v1/terminal.json",
+      "sha256": "c9efdff45838c300dacdf822c4e546e7bcd8cd738bd5f886a75b04c1e0e5a1b6",
+      "bytes": 4502790
+    },
+    {
+      "path": "benchmarks/clbg/prolog-comparison/20261013/revisions/prepared-work-loc-plan-v1/REVIEW.md",
+      "sha256": "31ff0108b327c857aef3e9a6248df79382d65c6ba35f23ddab90e8a04f4c5b3b",
+      "bytes": 13675
+    },
+    {
+      "path": "benchmarks/clbg/prolog-comparison/20261013/revisions/prepared-work-v2/REVIEW.md",
+      "sha256": "7629c9b036d9cb726394247e6e40a229a812122e281f26b1cce8c13771c8e837",
+      "bytes": 7620
+    },
+    {
+      "path": "benchmarks/clbg/prolog-comparison/20261013/revisions/prepared-work-v2/fixture_runner.py",
+      "sha256": "c6a4c4611dee781bf9ebfbc3a76db8d9ed678e76acd45b18b2d1f0edfb931c27",
+      "bytes": 6961
+    },
+    {
+      "path": "benchmarks/clbg/prolog-comparison/20261013/revisions/prepared-work-v2/instrument_sources.py",
+      "sha256": "2b39c52710034a66fc557f2f92ad5ef2fdec5322c1fe502ab189201fd19f51d3",
+      "bytes": 3412
+    },
+    {
+      "path": "benchmarks/clbg/prolog-comparison/20261013/revisions/prepared-work-v2/observer.pl",
+      "sha256": "b013882851c4d351c74b006cb83b22d55110782acf0bf7ae65949cdd1744f06b",
+      "bytes": 7701
+    },
+    {
+      "path": "benchmarks/clbg/prolog-comparison/20261013/revisions/prepared-work-v2/qualified_preparation.py",
+      "sha256": "eabc68c0c373e36dd583f92e0f583dc816045c6acb2ecab733c92ce80fbbb926",
+      "bytes": 12835
+    },
+    {
+      "path": "benchmarks/clbg/prolog-comparison/20261013/revisions/prepared-work-v2/run.py",
+      "sha256": "a00f202bce1018426bdb1fd3974b01c9bbe99432502d9789f69fade314c4257e",
+      "bytes": 22154
+    },
+    {
+      "path": "benchmarks/clbg/prolog-comparison/20261013/revisions/prepared-work-v2/test_work_proofs.py",
+      "sha256": "30ef027ba7cd9d8e60163860a3098c0767106d2aa03d70a1d07e89061da69b07",
+      "bytes": 7870
+    },
+    {
+      "path": "benchmarks/clbg/prolog-comparison/20261013/revisions/prepared-work-v2/work_proofs.py",
+      "sha256": "abb80fe09e32e7222642e5559f9436436555d98c348c73349f36cbb98bc78b3a",
+      "bytes": 8931
+    },
+    {
+      "path": "benchmarks/clbg/rebol-comparison/20261013/revisions/actual-source-sdk-plan-v1/REVIEW.md",
+      "sha256": "1d067b732d03e7c9fbb32c1543c05190f939b94f9f0ca5b7ed2acca1cd6aafe1",
+      "bytes": 6296
+    }
+  ],
+  "scope": "Gleam candidate, Pony work qualification, Elixir runtime probes, Julia successful safe compilation with retained reader failure; unreleased-in-execution Prolog source proposals; no new timing samples",
+  "prolog_packet_source_only_not_executed": true,
+  "common_mutex_held": true
+}

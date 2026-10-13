@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixir",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/retained-otp-intake-v1/probe.exs"
+  ],
+  "started_at": "2026-10-13T23:45:09.981478+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 90,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 52495,
+  "identity": {
+    "pid": 52495,
+    "process_listing": "Tue Oct 13 19:45:09 2026     /bin/sh /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixir /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/retained-otp-intake-v1/probe.exs"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-13T23:45:10.276256+00:00",
+  "final_exit_status": 0
+}

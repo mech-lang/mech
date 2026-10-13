@@ -1,0 +1,77 @@
+{
+  "status": "exact-declared-static-IO-only-source-derivation",
+  "previous_safe_trim_failure": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/official-safe-trim-nbody-v1/outcome.json",
+    "sha256": "42c319719f806306c73a89192dc1638f4810c28de9367eb794c14f998b5d5634"
+  },
+  "workload": {
+    "original_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/nbody-library-pilot-v1/ClbgNbodyPilot/src/workload.jl",
+    "original_sha256": "bb09b6e1d4f0da3b7dfeedd2b474c45baabe94092e097455b5a2527c714af374",
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/ClbgNbodyPilot/src/workload.jl",
+    "sha256": "9403ae9c911c9f15e6139fed4f3173aae0a9a09bae35c341237bec641068a64b",
+    "edits": [
+      {
+        "start": 4182,
+        "end": 4229,
+        "original": "println(Base.Ryu.writefixed(energy(bodies), 9))",
+        "replacement": "println(Core.stdout, Base.Ryu.writefixed(energy(bodies), 9))"
+      },
+      {
+        "start": 4274,
+        "end": 4321,
+        "original": "println(Base.Ryu.writefixed(energy(bodies), 9))",
+        "replacement": "println(Core.stdout, Base.Ryu.writefixed(energy(bodies), 9))"
+      }
+    ],
+    "untouched_original_spans": [
+      {
+        "start": 0,
+        "end": 4182,
+        "text": "# The Computer Language Benchmarks Game\n# https://salsa.debian.org/benchmarksgame-team/benchmarksgame/\n#\n# Contributed by Andrei Fomiga, Stefan Karpinski, Viral B. Shah, Jeff\n# Bezanson, smallnamespaces, Adam Beckmeyer, and Vincent Yu.\n#\n# This implementation was specifically written so that for-loops have\n# integer-literal ranges as their iterable. This makes the number of\n# loop iterations available as a compile-time constant, so llvm can\n# unroll them. To convince llvm to do so, this script should be run\n# with the evironment variable:\n# JULIA_LLVM_ARGS='-unroll-threshold=500'.\n\nusing Base.Cartesian\n\nconst SOLAR_MASS = 4 * pi * pi\nconst DAYS_PER_YEAR = 365.24\n# Precalculate the pairs of bodies that must be compared so that it\n# doesn't have to be done each loop.\nconst PAIRS = Tuple((i, j) for i=1:4 for j=i+1:5)\n\n# Use a struct instead of mutable struct since a struct can be stored\n# inline in an array avoiding the overhead of following a pointer\nstruct Body\n    x::NTuple{3,Float64}\n    v::NTuple{3,Float64}\n    m::Float64\nend\n\nfunction init_sun(bodies)\n    p = (0.0, 0.0, 0.0)\n    for b in bodies\n        p = p .- b.v .* b.m\n    end\n    Body((0.0, 0.0, 0.0), p ./ SOLAR_MASS, SOLAR_MASS)\nend\n\n# Advance all bodies in the system by one timestep of 0.01. This\n# function always uses a timestep of 0.01 and assumes that there are\n# exactly 5 bodies in the system.\n@inline function advance!(bodies)\n    # In a system with 5 bodies, there are 10 unique pairs of\n    # bodies. \u0394x holds the difference in position between these pairs\n    # of bodies.\n    \u0394x = @ntuple 10 k-> @inbounds bodies[PAIRS[k][1]].x .- bodies[PAIRS[k][2]].x\n    dsq = @ntuple 10 k-> sum(\u0394x[k] .* \u0394x[k])\n\n    # When called with @fastmath, 1 / sqrt(x::Float32) will use\n    # SSE single-precision rsqrt approximation followed by a single\n    # iteration of the Newton-Raphson method. This, followed by an\n    # additional double-precision Newton-Raphson iteration gives\n    # sufficient precision for this problem and is significantly\n    # faster than double-precision division and sqrt.\n    rd = @ntuple 10 k-> @fastmath Float64(1 / sqrt(Float32(dsq[k])))\n    # This is a Newton-Raphson iteration.\n    rd = @ntuple 10 k-> 1.5rd[k] - 0.5dsq[k] * rd[k] * (rd[k] * rd[k])\n\n    # Alternatively 0.01rd[k] / dsq[k] may be faster. This is what\n    # other fast implementations do, but on my machine the 2\n    # multiplications are faster than a single division.\n    mag = @ntuple 10 k-> 0.01rd[k] * (rd[k] * rd[k])\n\n    # Update the velocities of each body using the precalculated mag.\n    k = 1\n    @inbounds for i=1:4\n        bi = bodies[i]\n        # For body i, since velocity is the only part of the object\n        # changing on each iteration, it's more efficient to update\n        # outside the vector.\n        iv = bi.v\n        for j=i+1:5\n            iv = iv .- \u0394x[k] .* (mag[k] * bodies[j].m)\n            bodies[j] = Body(bodies[j].x,\n                             bodies[j].v .+ \u0394x[k] .* (mag[k] * bi.m),\n                             bodies[j].m)\n            k += 1\n        end\n        bodies[i] = Body(bi.x, iv, bi.m)\n    end\n\n    # Advance body positions using the updated velocities.\n    @inbounds for i=1:5\n        bi = bodies[i]\n        bodies[i] = Body(bi.x .+ bi.v .* 0.01, bi.v, bi.m)\n    end\nend\n\n# Total energy of the system\nfunction energy(bodies)\n    e = 0.0\n    # Kinetic energy of bodies\n    @inbounds for b in bodies\n        e += 0.5b.m * sum(b.v .* b.v)\n    end\n    \n    # Potential energy between body i and body j\n    @inbounds for (i, j) in PAIRS\n        \u0394x = bodies[i].x .- bodies[j].x\n        e -= bodies[i].m * bodies[j].m / \u221asum(\u0394x .* \u0394x)\n    end\n    e\nend\n\n# Mutate bodies array according to symplectic integrator in advance!\n# for n iterations.\nnbody!(bodies, n) = for i=1:n\n    advance!(bodies)\nend\n\n# Doing the allocation of the Vector{Body} as a global constant\n# instead of within the nbody! function speeds up inference\n# considerably. Inference takes less than 60% of the time it would\n# otherwise for an overall speedup of 2%-3%.\nglobal bodies::Vector{Body}\n\nfunction run_original_driver()\n    # Preserve both original energy prints around all runtime steps.\n    "
+      },
+      {
+        "start": 4229,
+        "end": 4274,
+        "text": "\n    nbody!(bodies, parse(Int, ARGS[1]))\n    "
+      },
+      {
+        "start": 4321,
+        "end": 5885,
+        "text": "\nend\n\nfunction initialize_runtime_state()\n    global bodies = [\n        # Jupiter\n        Body(( 4.84143144246472090e+0,                # x\n              -1.16032004402742839e+0,                # y\n              -1.03622044471123109e-1),               # z\n             ( 1.66007664274403694e-3DAYS_PER_YEAR,   # vx\n               7.69901118419740425e-3DAYS_PER_YEAR,   # vy\n              -6.90460016972063023e-5DAYS_PER_YEAR),  # vz\n               9.54791938424326609e-4SOLAR_MASS)      # mass\n        # Saturn\n        Body(( 8.34336671824457987e+0,\n               4.12479856412430479e+0,\n              -4.03523417114321381e-1),\n             (-2.76742510726862411e-3DAYS_PER_YEAR,\n               4.99852801234917238e-3DAYS_PER_YEAR,\n               2.30417297573763929e-5DAYS_PER_YEAR),\n               2.85885980666130812e-4SOLAR_MASS)\n        # Uranus\n        Body(( 1.28943695621391310e+1,\n              -1.51111514016986312e+1,\n              -2.23307578892655734e-1),\n             ( 2.96460137564761618e-3DAYS_PER_YEAR,\n               2.37847173959480950e-3DAYS_PER_YEAR,\n              -2.96589568540237556e-5DAYS_PER_YEAR),\n               4.36624404335156298e-5SOLAR_MASS)\n        # Neptune\n        Body(( 1.53796971148509165e+1,\n              -2.59193146099879641e+1,\n               1.79258772950371181e-1),\n             ( 2.68067772490389322e-3DAYS_PER_YEAR,\n               1.62824170038242295e-3DAYS_PER_YEAR,\n              -9.51592254519715870e-5DAYS_PER_YEAR),\n               5.15138902046611451e-5SOLAR_MASS)\n    ]\n    push!(bodies, init_sun(bodies))\nend\n"
+      }
+    ]
+  },
+  "entry": {
+    "original_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/nbody-library-pilot-v1/ClbgNbodyPilot/src/entry.jl",
+    "original_sha256": "50e9e3013689403fc626f377e32a214c2fb41b98e2fcec88afa446cf8c518086",
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/ClbgNbodyPilot/src/entry.jl",
+    "sha256": "0fa7af0ecc58d6fd3ea3cdf810f70fc4ca67274f1f703852fa573d15de9f143d",
+    "edits": [
+      {
+        "start": 704,
+        "end": 785,
+        "original": "    catch exception\n        showerror(stderr, exception)\n        println(stderr)\n",
+        "replacement": "    catch\n        println(Core.stderr, \"nbody entry failed\")\n"
+      }
+    ],
+    "untouched_original_spans": [
+      {
+        "start": 0,
+        "end": 704,
+        "text": "# Source-only proposal, included at build time inside each reviewed app module.\n# run_original_driver() must contain the explicitly derived original driver and\n# fresh runtime state construction. No original script is included at runtime.\n# Each actual compiled authored file/span is counted once: included template,\n# exact derived original bodies and C glue. Unused provenance copies are evidence.\nBase.@ccallable function clbg_entry(argc::Cint, argv::Ptr{Ptr{Cchar}})::Cint\n    try\n        empty!(ARGS)\n        for index in 1:Int(argc)\n            push!(ARGS, unsafe_string(unsafe_load(argv, index)))\n        end\n        initialize_runtime_state()\n        run_original_driver()\n        return Cint(0)\n"
+      },
+      {
+        "start": 785,
+        "end": 820,
+        "text": "        return Cint(1)\n    end\nend\n"
+      }
+    ]
+  },
+  "shared_fresh_module_used_by_matched_derived_JIT": true,
+  "energy_formatting_and_kernel_unchanged": true,
+  "positive_output_before_and_after_all_steps": true,
+  "error_message_changed_to_static_literal": true,
+  "actual_workload_executions": 0,
+  "source_LOC_admitted": false,
+  "chart_admission": false
+}

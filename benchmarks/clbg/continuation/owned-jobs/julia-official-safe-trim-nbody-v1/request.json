@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-13T23:34:06.775433+00:00",
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/revisions/safe-trim-build-v1/build.py",
+    "--revision",
+    "official-safe-trim-nbody-v1",
+    "--worker-sha256",
+    "489441d9f35a40c5016b3f58ee5c49a8eeff9980529bdca99f6b705bac0af3d5",
+    "--options-sha256",
+    "44d47002ac19bafde6b6748d4e4cec01219a4ec66539fe450cb3772527ccbfc4",
+    "--review-sha256",
+    "cfc3d0e142b534c4cfb3fcdee7a772ca6fa64ad550eeaf4f86cd68073482de93",
+    "--pilot-sha256",
+    "39d2d809b45780918c6aa11e6e3d7f9f41218fd940b12d29297244f734259e95"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "common_mutex_owned_by_target_command": true,
+  "qualification_granted": false,
+  "automatic_retry": false
+}

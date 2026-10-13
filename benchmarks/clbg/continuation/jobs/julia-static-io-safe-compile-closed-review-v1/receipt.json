@@ -1,0 +1,55 @@
+{
+  "status": "closed-successful-static-IO-safe-compile-stopped-at-options-text-parser",
+  "at": "2026-10-13T23:49:55.074203+00:00",
+  "verified_pins": 10072,
+  "outcome_sha256": "c8df203a9830f6eafef84c4a00b80e52203c444d898b258f33d74e6b2e0ef822",
+  "durable_terminal_sha256": "a91abacb6c303d6eb5434732308e16a426364fe2648de3acba3af69e33b3ff16",
+  "request_sha256": "a6430bf6c7cf741c05f5f36100c5dbfb900ab48c5ff1247d5ecfa545f2fc04a6",
+  "native_compile_receipt": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/official-static-io-safe-trim-nbody-v1/compile/official-safe-trim.json",
+    "sha256": "af1f0626ad8e2e31b909f3a6b2da724892df39acc360bf9a1a800baa45d1cd61"
+  },
+  "native_compile_exit": 0,
+  "native_compile_pid": 53013,
+  "worker_pid": 52972,
+  "command_pid": 52976,
+  "verifier_stdout_empty": true,
+  "verifier_stderr_empty": true,
+  "safe_trim_and_strip_ir_requested": true,
+  "artifacts": [
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/nbody-safe-o.a",
+      "sha256": "e25e9acec36b78baacc0e910df86503fc7de8918e4043b73c5328ac04b0d4654",
+      "bytes": 9444136,
+      "header_hex": "213c617263683e0a23312f3132202020"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/nbody-safe.bc",
+      "sha256": "fbf05e04d88c25deda0d0f1ebc9b78f167090d0b02739a97f8e6974c741d29bd",
+      "bytes": 9672560,
+      "header_hex": "213c617263683e0a23312f3132202020"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/entry-abi.json",
+      "sha256": "894267e7b45236df8604d64c25961362e04b7dab6127247dc155ff4774c1befa",
+      "bytes": 823,
+      "header_hex": "7b0a20202266756e6374696f6e73223a"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/actual-build-options.toml",
+      "sha256": "1093912c3d98ec83b114f783931d70bd9297cf5295938138dcca0e1489917f6f",
+      "bytes": 1184,
+      "header_hex": "446963747b537472696e672c20416e79"
+    }
+  ],
+  "source_adaptation_sha256": "4695accea9eee9b0932b2e7f2f24bce8097ee08cf5164390f7eca112b8e39e6f",
+  "options_observed_format": "Julia Dict{String, Any} display, not TOML",
+  "controller_error": "TOMLDecodeError at line1 column5 after native compile success",
+  "original_and_failure_bytes_preserved": true,
+  "actual_workload_executions": 0,
+  "benchmark_runs": 0,
+  "LLDB_attempts": 0,
+  "runtime_aot_proven": false,
+  "chart_admission": false,
+  "common_mutex_held": true
+}

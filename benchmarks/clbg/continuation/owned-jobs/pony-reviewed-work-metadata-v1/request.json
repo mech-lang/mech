@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-13T23:42:53.351232+00:00",
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/semantic-receipt-seal-v1/seal.py",
+    "--worker-sha256",
+    "ba6222adef32c934741a2feeb0c9a0b8fc5cbdcb5f96a4a3b309a73d3a6ed4e4",
+    "--review-sha256",
+    "ed6632fadb81dd8a7315f6bad91b26b97a21507e85a588a082837cac58fef491",
+    "--semantic-sha256",
+    "afa38d5056cafc28d3514fcd7ce5e7ceee7c22a567cfd521f729718f241054e4"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "common_mutex_owned_by_target_command": true,
+  "qualification_granted": false,
+  "automatic_retry": false
+}

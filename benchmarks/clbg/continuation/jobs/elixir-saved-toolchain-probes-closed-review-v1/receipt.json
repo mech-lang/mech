@@ -1,0 +1,55 @@
+{
+  "status": "closed-successful-Elixir-saved-intake-version-and-runtime-probes",
+  "at": "2026-10-13T23:47:06.310713+00:00",
+  "verified_pins": 7765,
+  "result_sha256": "ad8aca223866b085ba3e823538298b948bd427748909bff1913d874d608519d0",
+  "startup_contract_sha256": "6be60a0560bbc99a902d0a489e06d82fdbd520451cc2d114b20648067d0cf72e",
+  "outcome_sha256": "82e224a49fafb9b798d061341594ef61bc9e8a26908e16005d7c2cea62f27c8d",
+  "durable_terminal_sha256": "b5b06a47a8e7d2692771953e9d54c1d5a7c403cca342617e672011d8230c6562",
+  "request_sha256": "30979cec7fca773da90249085e4714442dc14be852f5e669e7a548f2a158e9e3",
+  "worker_pid": 52439,
+  "command_pid": 52452,
+  "native_commands": [
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/jobs/retained-otp-probes-v1/version/compiler-runtime-version.json",
+      "sha256": "551f6b4d317a8834f9c2324edc2dd3f324ccf2cce3d2b925a176d66e6d266723",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixir",
+        "--version"
+      ]
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/jobs/retained-otp-probes-v1/probe/runtime-configuration.json",
+      "sha256": "40cf1b73ea8a113f7cf07e3b6b792e1c2e3568837ddbfbd768b8dd417b8871dd",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixir",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/retained-otp-intake-v1/probe.exs"
+      ]
+    }
+  ],
+  "materialized_forms_reused": 20,
+  "original_ownership_fixtures_reused": 11,
+  "publisher_downloads": 0,
+  "dry_command_reexecutions": 0,
+  "fixture_reexecutions": 0,
+  "subject_compiler_commands": 0,
+  "benchmark_runs": 0,
+  "toolchain": {
+    "ELIXIR": "1.20.4",
+    "OTP": "29",
+    "ERTS": "17.1",
+    "ARCH": "aarch64-apple-darwin25.6.0",
+    "EMU_FLAVOR": "jit",
+    "SCHEDULERS": "8",
+    "SCHEDULERS_ONLINE": "8",
+    "DIRTY_CPU": "1",
+    "DIRTY_IO": "1",
+    "ASYNC_THREADS": "1"
+  },
+  "raw_stdio_qualified": false,
+  "source_work_qualified": false,
+  "canonical_loc": null,
+  "chart_admission": false,
+  "common_mutex_held": true,
+  "review_note": "Initial read-only root audit expected another service schema field (leader_reaped); corrected to actual unchanged C3-owned-service exit/final_exit and cleanup schema. No command repeated."
+}

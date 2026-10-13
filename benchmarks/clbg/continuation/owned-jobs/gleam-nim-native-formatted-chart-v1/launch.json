@@ -1,0 +1,27 @@
+{
+  "status": "durable-job-launched",
+  "launched_at": "2026-10-13T23:51:29.539490+00:00",
+  "job": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-nim-native-formatted-chart-v1",
+  "worker_identity": {
+    "pid": 53887,
+    "listing": "53887 53886 Tue Oct 13 19:51:29 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-nim-native-formatted-chart-v1 --lease-fd 3 --go-fd 4"
+  },
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/nim-formatted-chart-integration-v1/integrate.py",
+    "--worker-sha256",
+    "db25e78012a030a7b176cddb09bbbf974dcff1ccf0d615a1df8c606e10e7728b",
+    "--review-sha256",
+    "35f7aee42b8dd16a65cbb5f6f5f8d3393d910eb8b5a947adc80f55d61ed0b7d6",
+    "--formatter-review-sha256",
+    "f5797f675386522de8c66828d435c48ec919495145f483e0886be37a571bbfe6"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "detached_session": true,
+  "automatic_retry": false,
+  "qualification_granted": false
+}

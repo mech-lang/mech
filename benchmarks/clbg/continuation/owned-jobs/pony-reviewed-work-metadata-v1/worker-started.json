@@ -1,0 +1,26 @@
+{
+  "started_at": "2026-10-13T23:42:53.409825+00:00",
+  "worker_identity": {
+    "pid": 51895,
+    "listing": "51895     1 Tue Oct 13 19:42:53 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/pony-reviewed-work-metadata-v1 --lease-fd 3 --go-fd 4"
+  },
+  "inherited_private_lease": true,
+  "detached_session": true,
+  "common_mutex_owned_by_target_command": true,
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/semantic-receipt-seal-v1/seal.py",
+    "--worker-sha256",
+    "ba6222adef32c934741a2feeb0c9a0b8fc5cbdcb5f96a4a3b309a73d3a6ed4e4",
+    "--review-sha256",
+    "ed6632fadb81dd8a7315f6bad91b26b97a21507e85a588a082837cac58fef491",
+    "--semantic-sha256",
+    "afa38d5056cafc28d3514fcd7ce5e7ceee7c22a567cfd521f729718f241054e4"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "qualification_granted": false
+}

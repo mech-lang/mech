@@ -1,0 +1,36 @@
+{
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/packagecompiler-bootstrap-v2/restored-runtime/julia-1.13.1/bin/julia",
+    "--startup-file=no",
+    "--history-file=no",
+    "--threads=8,0",
+    "--project=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/ClbgNbodyPilot",
+    "-J",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/packagecompiler-bootstrap-v2/restored-runtime/julia-1.13.1/lib/julia/sys.dylib",
+    "-O3",
+    "-g2",
+    "--output-incremental=no",
+    "--experimental",
+    "--trim=safe",
+    "--strip-ir",
+    "--output-o=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/nbody-safe-o.a",
+    "--output-bc=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/nbody-safe.bc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/build_options.jl",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/packagecompiler-bootstrap-v2/restored-runtime/julia-1.13.1/share/julia/test/trimming/juliac-buildscript.jl",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/ClbgNbodyPilot/src/ClbgNbodyPilot.jl",
+    "--output-lib",
+    "true",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/entry-abi.json",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/actual-build-options.toml"
+  ],
+  "started_at": "2026-10-13T23:48:15.943190+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 1800,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 53013,
+  "identity": {
+    "pid": 53013,
+    "process_listing": "Tue Oct 13 19:48:15 2026     /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/packagecompiler-bootstrap-v2/restored-runtime/julia-1.13.1/bin/julia --startup-file=no --history-file=no --threads=8,0 --project=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/ClbgNbodyPilot -J /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/packagecompiler-bootstrap-v2/restored-runtime/julia-1.13.1/lib/julia/sys.dylib -O3 -g2 --output-incremental=no --experimental --trim=safe --strip-ir --output-o=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/nbody-safe-o.a --output-bc=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/nbody-safe.bc /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/build_options.jl /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/packagecompiler-bootstrap-v2/restored-runtime/julia-1.13.1/share/julia/test/trimming/juliac-buildscript.jl /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/ClbgNbodyPilot/src/ClbgNbodyPilot.jl --output-lib true /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/entry-abi.json /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/actual-build-options.toml"
+  }
+}

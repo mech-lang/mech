@@ -1,0 +1,94 @@
+{
+  "status": "actual-original-four-reused-for-Gleam-without-fixture-reexecution",
+  "original_fixture_receipt": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/native-ready-v1/fixture-receipt.json",
+    "sha256": "bce66a4cb1fc02cc827c6906f9ddc5be4b3abddb8851e2028415600972ec29b8"
+  },
+  "original_fixture_terminal": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/native-ready-v1/terminal-pin.json",
+    "sha256": "0b3a1cce3a5c2a41d27b88e2f3af8145d014c9ed3c1a2b5959c5c1613afeba59"
+  },
+  "original_fixture_methods_passed": 4,
+  "new_fixture_methods_executed": 0,
+  "unchanged_eight_source_files": [
+    "native_languages_ready_v1.py",
+    "test_native_languages_ready_v1.py",
+    "native_languages_data_v2.py",
+    "native_platform_metadata_v2.py",
+    "native_language_groups_v2.py",
+    "publication_endpoints_v1.py",
+    "test_native_languages_data_v1.py",
+    "native_languages_data_v1.py"
+  ],
+  "original_mutable_input": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/dist/data.json",
+    "original_sha256": "65bfa4d833f61fff69b16eb3c917e4fcd1eb21d5788bbbeed7e09e9f2382d32f",
+    "immutable_snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/current-chart-session-v2/input-data.json"
+  },
+  "published_baseline": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/combined-chart-integration-v3/jobs/current-nim-format-platform-v1/candidate-data.json",
+    "sha256": "8b85d35f9ff8c267171c9d91f3467ba765bf019ac438c64ed2071898a7656378",
+    "immutable_new_input": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/gleam-current-candidate-v3/input-data.json"
+  },
+  "live_baseline_observations": [
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/dist/data.json",
+      "observed_sha256": "8b85d35f9ff8c267171c9d91f3467ba765bf019ac438c64ed2071898a7656378",
+      "immutable_input": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/combined-chart-integration-v3/jobs/current-nim-format-platform-v1/candidate-data.json",
+      "frozen_source_pin": false
+    }
+  ],
+  "admission": {
+    "ready_languages": [
+      "gleam"
+    ],
+    "full_requested_languages": [
+      "c3",
+      "clojure",
+      "crystal",
+      "elixir",
+      "gleam",
+      "kotlin",
+      "nim",
+      "pony",
+      "prolog",
+      "rebol"
+    ],
+    "actual_full_native_processes": 90,
+    "source_count": 20,
+    "samples_per_source": 3,
+    "unchanged_existing_baselines": true,
+    "source_or_timing_mutations": 0,
+    "V_visualization_entries": 0,
+    "Red_visualization_entries": 0
+  },
+  "endpoint_admission": {
+    "ready_languages": [
+      "gleam"
+    ],
+    "retained_ready_programs": 17,
+    "unchanged_existing_baselines": true,
+    "source_or_timing_mutations": 0
+  },
+  "retained_Gleam_source_inventory": 20,
+  "exact_owner_projection": {
+    "status": "exact-original-owner-evidence-projected-without-source-count-rerun",
+    "source_profiles": 20,
+    "counted_compiler_inputs": 104,
+    "owner_receipt": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/source-counts/semantic-exact20-v2/source-meaning-resolution.json",
+      "sha256": "c4b65664696b26539d4ce1f32e7494c80c2e706786ffff482df18116aca72505"
+    },
+    "record_format": "source-bound-canonical-owner-audit-v1",
+    "original_qualified_overlay_mutated": false,
+    "original_ready_source_mutated": false,
+    "invented_line_expansions": 0,
+    "fixture_reexecutions": 0
+  },
+  "retained_failed_schema_outcome": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/gleam-current-candidate-v2/outcome.json",
+    "sha256": "8f64f4ad1df17adca809cc5cc5b15af3f17e8ed53141807657196f373831e4e4"
+  },
+  "old_programs_files_inventory_baselines_groups_and_summaries_unchanged": true,
+  "live_dataset_mutations": 0
+}

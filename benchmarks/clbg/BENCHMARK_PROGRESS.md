@@ -1,6 +1,6 @@
-Benchmark progress as of **2026-10-13 23:33 UTC** (19:33 New York).
+Benchmark progress as of **2026-10-13 23:53 UTC** (19:53 New York).
 
-The previous remotely verified checkpoint is `c799ab6a8263ca0a125a8185ed1dbe2885286f1d`
+The previous remotely verified checkpoint is `1c333a02252012f3c1972c0b1a5aa255ad3a9bff`
 on `codex/clbg-native-benchmarks`. The language overview and complete Crystal
 inventory are published. C3's exact source counts, runtime metadata and current
 chart candidate have qualified and are now published through GitLab Pages
@@ -15,14 +15,14 @@ actual request, process identity and exit.
 | Crystal | 90/90 | Published with 20 source forms and 60 candidate samples, plus 30 matched Mech samples in the complete study. |
 | C3 | 90/90 | Published through GitLab Pages. Source counts, runtime metadata and current dataset qualified; all 20 forms / 60 candidate samples passed browser inspection. |
 | Nim | 90/90 | Published through GitLab Pages with all 20 forms and 60 candidate samples. Exact LOC and runtime metadata passed. Native formatting now also passed for all 21 authored inputs, including GMP glue; its 20 complete formatted totals await the next dataset update. |
-| Gleam | 90/90 | Full-suite reconciliation and complete source admission passed: 20 bundles, 30 unique authored sources and 104 measured copies. Runtime publication metadata passed for all20 forms; current chart integration remains. |
+| Gleam | 90/90 | Current chart candidate passed: all 20 forms, 60 recorded samples and 104 counted compiler inputs retain source-bound LOC owners. Root verified 53,558 pins. Publication remains. |
 | Clojure | 90/90 | Published. Full-suite, LOC, JVM metadata and current dataset admission passed. Root verified 5,276 candidate pins; 20 forms / 60 candidate samples are retained, with 18 selected endpoints. Public browser inspection confirmed all 20 forms and 60 runs. |
 | V | 90/90 | Full workload samples collected, including eight missing tree slots recovered additively. Independent all-ten reconciliation passed. Report-only; excluded from dataset, charts and Site. |
-| Pony | 0/90 | Both tree observations and four Pi/map traces are retained. Separate compact and optimized entry/builtin IR and original scored ARM are recovered; the bundled runtime's macOS26 target was confirmed. Semantic review supports fresh tree objects, with temporary-root stack/register promotion explicitly recorded. Final work/LOC admission and full samples remain. |
+| Pony | 0/90 | Work qualification passed for all 20 reviewed forms and six retained traces. Root verified the scored-tree allocation evidence and 10,217 pins; temporary-root stack/register promotion is explicitly recorded. LOC admission and full samples remain. |
 | Prolog | 0/90 | SWI-Prolog 10.0.2 ARM64 runtime qualified. All 156 bounded correctness cases across 20 source forms passed. The first successful case and compiled artifacts were reused; 155 new cases and 19 additional forms completed. Work/LOC checks and full samples remain. |
-| Julia AOT | 0 qualified | Kernel-image binding repaired. Both bounded debugger calibration cells timed out; no native AOT helper executed. No permission cause is established. An official safe-trim/stripped-IR route is documented for the next additive attempt. |
+| Julia AOT | 0 qualified | The concrete Core I/O repair compiled successfully with safe trimming and IR stripping, producing object/bitcode archives and no verifier diagnostics. A subsequent options-reader format mismatch stopped metadata qualification. The successful compile is retained; link/runtime/fallback/output validation and timings remain. |
 | Rebol | 0/90 | Publisher runtime and all five native image/version/feature commands succeeded. A narrow parser correction reused those outputs, then obtained the full-commit source archive and 898 source files without another native command. SDK, extension, pipe I/O, work/LOC and full samples remain. |
-| Elixir | 0/90 | Official compiler archive and checksum verified; 20 main/helper/counted-runner bundles materialized. The shell dry-run succeeded, then the expected argv spelling check stopped. Actual version/configuration, compilation, work/LOC and full qualification remain. |
+| Elixir | 0/90 | Official compiler/archive and all 20 counted source bundles are retained. Both missing version/configuration probes passed: Elixir 1.20.4, OTP29/ERTS17.1, ARM64 JIT with eight schedulers. Root verified 7,765 pins. Subject compilation, stdio/work/LOC and full qualification remain. |
 | Kotlin | 0/90 | Reviewed source bundle is frozen and pushed. Actual toolchain and complete qualification remain. |
 
 These are snapshots of completed qualified sample records, not forecasts or
@@ -57,6 +57,73 @@ qualifies 120 platform and 97 execution annotations across 133 retained rows;
 13 rows remain explicitly unclassified. Filters are now integrated into the published Site. Unproved aggregate backends remain Unclassified. Successful historical samples and
 original failures remain immutable; additive repairs reuse successful evidence
 instead of relabeling it as a fresh run.
+
+## Julia safe compilation and Elixir runtime probes — 2026-10-13 23:50 UTC
+
+The Julia static-I/O revision compiled successfully at 23:48:18 UTC (native
+PID 53013), with safe trimming and IR stripping, empty diagnostic streams,
+a 9,444,136-byte object archive and a 9,672,560-byte bitcode archive. The
+controller then stopped because its TOML reader received Julia `Dict` display
+text. The wrapper called `Base.TOML.print`, which is ordinary Base printing;
+the TOML serializer is the separate nested Printer API. The emitted options
+and successful compiler artifacts are preserved for a metadata-only reader
+correction. Root verified 10,072 pins. No compiler rerun, workload, linker,
+debugger or benchmark is implied. Root receipt:
+`continuation/jobs/julia-static-io-safe-compile-closed-review-v1/receipt.json`.
+
+Elixir's two missing probes completed normally at 23:45:11 UTC (worker52439,
+target52452). Root verified 7,765 pins and both native exit0 receipts with empty
+stderr. Actual Elixir1.20.4/OTP29/ERTS17.1 reports ARM64 JIT, eight schedulers,
+one async thread, one dirty CPU and one dirty I/O scheduler. Publisher/source
+intake, all twenty bundles, the successful dry command and eleven ownership
+fixtures were reused. The first BEAM execution uses a fresh empty private
+HOME/configuration. No workload or compiler command ran. Result SHA:
+`ad8aca223866b085ba3e823538298b948bd427748909bff1913d874d608519d0`.
+
+The first Nim formatted-count integration stopped before writing a candidate:
+the old generic receipt loader tried to decode every pinned `.json` file as
+JSON, including toolchain fixture/source files. Native formatting remains
+qualified and is not repeated. The correction must keep every byte pinned
+while distinguishing actual receipt paths from arbitrary toolchain files.
+All published assets remain unchanged during this local validation.
+
+## Gleam candidate and Pony work qualification — 2026-10-13 23:44 UTC
+
+Gleam's additive schema bridge completed normally at 23:41:42 UTC (worker
+51512, target 51516). It projects the existing per-source owner evidence into
+the source inspector without inventing physical-line expansions or recounting
+source. All 104 source slices and all 20 complete bundles were independently
+checked. The candidate retains all 798 old program records and expands the
+complete inventory from 80 to 100. Its endpoint catalog contains 815 programs.
+All prior source, timing and coordinate values remain unchanged. Candidate
+SHA: `76ab76e215082279eff8f1b5c132b4d6c875da6a8be6b4288a2207afd9ba3f9d`.
+Root checked 53,558 pins; no native process, fixture or benchmark was repeated.
+The companion source-audit UI passed Node syntax checking. This is a local
+candidate pending Nim formatted-count integration and browser/publication QA.
+
+Pony's additive metadata seal completed normally (worker 51895, target 51899).
+It preserves the failed work report, reuses all six successful work traces,
+and binds the independent source/ARM/IR review of both original scored trees.
+The existing pure tree prerequisite passed. Root checked 10,217 pins. The
+compatible work report is `aa7786b7cd16565a5ef21cb0bb56e8e0b7ccf77ddf5e98cbcfd1710b6b6aa421`;
+the allocation receipt is `354f4eab47aef151f1f5cf29824c2b7b4f45f582b307b2373ca0ec316434d346`.
+Fresh object semantics and the retained long-lived tree are proved; compiler
+promotion of temporary roots to stack/register storage is disclosed. There is
+no universal heap-allocation claim or inferred minimum-OS compatibility.
+No new trace, compiler command, fixture or benchmark ran. LOC/full timing
+qualification remains separate.
+
+Julia's official safe-trim command exited 1 at 23:34:14 UTC. Root checked 10,038
+pins. The compiler rejected abstract `Base.stdout` printing and `showerror` /
+`println` on abstract `Base.stderr` in the entry wrapper. The secondary compiler
+error while reporting that rejection is also preserved. No link or workload
+ran. The next source proposal uses the official trimming example's concrete
+`Core.stdout` / `Core.stderr`, preserving the N-body kernel and two energy
+outputs; any altered failure text must be explicit. No AOT timing is qualified.
+
+Evidence: `continuation/jobs/gleam-current-candidate-v3-closed-review-v1/`,
+`continuation/jobs/pony-reviewed-work-metadata-closed-review-v1/`, and
+`continuation/jobs/julia-safe-trim-build-closed-review-v1/`.
 
 ## Native formatter and retained compiler evidence — 2026-10-13 23:31 UTC
 

@@ -1,0 +1,11 @@
+fatal: error thrown and no exception handler available.
+UndefVarError(var=:exit, world=0x0000000000002c84, scope=Base.Compiler)
+ijl_undefined_var_error at /Users/julia/.julia/scratchspaces/a66863c6-20e8-4ff4-8a62-49f30b1f605e/agent-cache/builder-honeycrisp-P2C257CXGN.1/019ebd63-635e-4155-b60a-9d2815900786/trusted/build/builder-honeycrisp-P2C257CXGN-1/julialang/julia-ci/src/rtutils.c:167
+compile_and_emit_native at ./../usr/share/julia/Compiler/src/precompile.jl:431
+jfptr_compile_and_emit_native_87418.1 at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/packagecompiler-bootstrap-v2/restored-runtime/julia-1.13.1/lib/julia/sys.dylib (unknown line)
+jl_apply at /Users/julia/.julia/scratchspaces/a66863c6-20e8-4ff4-8a62-49f30b1f605e/agent-cache/builder-honeycrisp-P2C257CXGN.1/019ebd63-635e-4155-b60a-9d2815900786/trusted/build/builder-honeycrisp-P2C257CXGN-1/julialang/julia-ci/src/julia.h:2318 [inlined]
+jl_create_native_impl at /Users/julia/.julia/scratchspaces/a66863c6-20e8-4ff4-8a62-49f30b1f605e/agent-cache/builder-honeycrisp-P2C257CXGN.1/019ebd63-635e-4155-b60a-9d2815900786/trusted/build/builder-honeycrisp-P2C257CXGN-1/julialang/julia-ci/src/aotcompile.cpp:734
+ijl_create_system_image at /Users/julia/.julia/scratchspaces/a66863c6-20e8-4ff4-8a62-49f30b1f605e/agent-cache/builder-honeycrisp-P2C257CXGN.1/019ebd63-635e-4155-b60a-9d2815900786/trusted/build/builder-honeycrisp-P2C257CXGN-1/julialang/julia-ci/src/staticdata.c:3414
+ijl_write_compiler_output at /Users/julia/.julia/scratchspaces/a66863c6-20e8-4ff4-8a62-49f30b1f605e/agent-cache/builder-honeycrisp-P2C257CXGN.1/019ebd63-635e-4155-b60a-9d2815900786/trusted/build/builder-honeycrisp-P2C257CXGN-1/julialang/julia-ci/src/precompile.c:140
+ijl_atexit_hook at /Users/julia/.julia/scratchspaces/a66863c6-20e8-4ff4-8a62-49f30b1f605e/agent-cache/builder-honeycrisp-P2C257CXGN.1/019ebd63-635e-4155-b60a-9d2815900786/trusted/build/builder-honeycrisp-P2C257CXGN-1/julialang/julia-ci/src/init.c:279
+jl_repl_entrypoint at /Users/julia/.julia/scratchspaces/a66863c6-20e8-4ff4-8a62-49f30b1f605e/agent-cache/builder-honeycrisp-P2C257CXGN.1/019ebd63-635e-4155-b60a-9d2815900786/trusted/build/builder-honeycrisp-P2C257CXGN-1/julialang/julia-ci/src/jlapi.c:1153

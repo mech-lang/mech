@@ -1,0 +1,61 @@
+{
+  "status": "closed-failed-Nim-formatted-integration-at-untyped-json-pin-loader",
+  "at": "2026-10-13T23:53:10.882067+00:00",
+  "verified_pins": 54112,
+  "body_terminal_sha256": "aee7563e900617560e1884f137a6c573119e3d6eda5c6f2d6b316d7fcf18007f",
+  "durable_terminal_sha256": "d5e6ea2fffe2018220897dcfc146973cc24a9d35bdb8e47beb27ee0cd0a102b6",
+  "request_sha256": "8f4d64feb338f2055f8f8ad527d98f200f15db2cbba8bf6bcd0e569c7721e9ec",
+  "worker_pid": 53887,
+  "command_pid": 53893,
+  "original_formatter_qualification_sha256": "4e6dd5fe9cc4eb33f8ff6205d8812f196220987406f3e01013f76c99af8ebaaf",
+  "unparseable_json_named_pins": [
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/tests/testdata/jsontest.json",
+      "sha256": "580fa042233efbc847c2cd5624fa728b422c526299f9e91101e6de97cffe8c24",
+      "error": "Expecting value: line 1 column 1 (char 0)"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v2/nim/nim-2.2.12/tests/testdata/jsonwithextradata.json",
+      "sha256": "83bb007ad26363626b81565322ab4ee1840c4753e9477c15b6bc340f4f75e557",
+      "error": "Extra data: line 6 column 1 (char 36)"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v3/nim/nim-2.2.12/tests/testdata/jsontest.json",
+      "sha256": "580fa042233efbc847c2cd5624fa728b422c526299f9e91101e6de97cffe8c24",
+      "error": "Expecting value: line 1 column 1 (char 0)"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v3/nim/nim-2.2.12/tests/testdata/jsonwithextradata.json",
+      "sha256": "83bb007ad26363626b81565322ab4ee1840c4753e9477c15b6bc340f4f75e557",
+      "error": "Extra data: line 6 column 1 (char 36)"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v4/nim/nim-2.2.12/tests/testdata/jsontest.json",
+      "sha256": "580fa042233efbc847c2cd5624fa728b422c526299f9e91101e6de97cffe8c24",
+      "error": "Expecting value: line 1 column 1 (char 0)"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v4/nim/nim-2.2.12/tests/testdata/jsonwithextradata.json",
+      "sha256": "83bb007ad26363626b81565322ab4ee1840c4753e9477c15b6bc340f4f75e557",
+      "error": "Extra data: line 6 column 1 (char 36)"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v5/nim/nim-2.2.12/tests/testdata/jsontest.json",
+      "sha256": "580fa042233efbc847c2cd5624fa728b422c526299f9e91101e6de97cffe8c24",
+      "error": "Expecting value: line 1 column 1 (char 0)"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v5/nim/nim-2.2.12/tests/testdata/jsonwithextradata.json",
+      "sha256": "83bb007ad26363626b81565322ab4ee1840c4753e9477c15b6bc340f4f75e557",
+      "error": "Extra data: line 6 column 1 (char 36)"
+    }
+  ],
+  "candidate_written": false,
+  "native_processes": 0,
+  "fixture_reexecutions": 0,
+  "formatter_reexecutions": 0,
+  "benchmark_runs": 0,
+  "live_dataset_mutations": 0,
+  "chart_admission": false,
+  "common_mutex_held": true
+}

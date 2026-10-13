@@ -1,0 +1,28 @@
+{
+  "status": "closed-qualified-Gleam-current-candidate-with-exact-owner-evidence",
+  "at": "2026-10-13T23:42:33.656678+00:00",
+  "verified_pins": 53558,
+  "candidate": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/gleam-current-candidate-v3/candidate-data.json",
+    "sha256": "76ab76e215082279eff8f1b5c132b4d6c875da6a8be6b4288a2207afd9ba3f9d"
+  },
+  "outcome_sha256": "18b37de334530c5dbe7a74d9c0c1032647dfcb24362841e68ad6525c3a5d6311",
+  "durable_terminal_sha256": "bdac370fbcfb72b174da5c91aa8dbb32daa420734e019abb8bdacb0a6103e36d",
+  "request_sha256": "1387e06aef15ccb5e5f5bad81682904e5139e809e0c845ab6c1cc9235b9f10c8",
+  "reuse_sha256": "5d32a51b57b899987dd6e9f2bab9f8e8be6b22a94984a38ed8ced8977b9adb6e",
+  "worker_pid": 51512,
+  "command_pid": 51516,
+  "programs": 815,
+  "inventory": 100,
+  "Gleam_source_profiles": 20,
+  "Gleam_counted_compiler_inputs": 104,
+  "Gleam_full_processes_reused": 90,
+  "Gleam_recorded_samples": 60,
+  "original_programs_sources_and_inventory_unchanged": true,
+  "source_owner_slices_verified": true,
+  "native_processes": 0,
+  "fixture_reexecutions": 0,
+  "benchmark_runs": 0,
+  "chart_admission": false,
+  "common_mutex_held": true
+}

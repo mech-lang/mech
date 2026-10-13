@@ -1,0 +1,42 @@
+{
+  "status": "reviewed-declared-IO-only-safe-build-release",
+  "at": "2026-10-13T23:48:09.568196+00:00",
+  "source_author": "current_c3_review",
+  "independent_source_reviewer": "root",
+  "root_full_worker_diff_entry_options_note_review": true,
+  "original_failure_closure_read": true,
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/revisions/static-io-safe-trim-v1/build.py": "ff9e3b0c8a0b803d53f9e4a893815db3daed7c6f922cd5e4bce8e3544ccb3bcd",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/revisions/static-io-safe-trim-v1/build_options.jl": "14a7473570cb9b8e6d1b92a4b71d2138d906bffcc166d82982d909979b857ad2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/revisions/static-io-safe-trim-v1/REVIEW.md": "f58389bf2f5378402f4c6ee4e77537c6f7f1cecfc64e01f9a032fe6085d18a2e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/revisions/static-io-safe-trim-v1/entry_static.jl": "0fa7af0ecc58d6fd3ea3cdf810f70fc4ca67274f1f703852fa573d15de9f143d"
+  },
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/revisions/static-io-safe-trim-v1/build.py",
+    "--revision",
+    "official-static-io-safe-trim-nbody-v1",
+    "--worker-sha256",
+    "ff9e3b0c8a0b803d53f9e4a893815db3daed7c6f922cd5e4bce8e3544ccb3bcd",
+    "--options-sha256",
+    "14a7473570cb9b8e6d1b92a4b71d2138d906bffcc166d82982d909979b857ad2",
+    "--review-sha256",
+    "f58389bf2f5378402f4c6ee4e77537c6f7f1cecfc64e01f9a032fe6085d18a2e",
+    "--pilot-sha256",
+    "39d2d809b45780918c6aa11e6e3d7f9f41218fd940b12d29297244f734259e95",
+    "--entry-sha256",
+    "0fa7af0ecc58d6fd3ea3cdf810f70fc4ca67274f1f703852fa573d15de9f143d"
+  ],
+  "new_native_commands": 1,
+  "maximum_compile_seconds": 1800,
+  "fixture_reexecutions": 0,
+  "workload_executions": 0,
+  "benchmark_runs": 0,
+  "chart_admission": false,
+  "runtime_aot_proven": false,
+  "common_mutex_held": true
+}

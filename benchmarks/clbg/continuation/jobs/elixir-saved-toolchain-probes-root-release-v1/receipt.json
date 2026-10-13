@@ -1,0 +1,30 @@
+{
+  "status": "reviewed-source-two-missing-toolchain-probes-release",
+  "at": "2026-10-13T23:45:06.189613+00:00",
+  "root_full_source_review": true,
+  "independent_APL_peer_accepted": true,
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/saved-otp-probes-v1/resume.py": "7bc94b050805369e8fc74212476eaaaa588e6b404d4f55e9f996dc146522b275",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/saved-otp-probes-v1/REVIEW.md": "83579f701a10dcd6b6b64d46057a9749159575ce89181a657129d7a17ff3a569"
+  },
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/saved-otp-probes-v1/resume.py",
+    "--revision",
+    "retained-otp-probes-v1",
+    "--worker-sha256",
+    "7bc94b050805369e8fc74212476eaaaa588e6b404d4f55e9f996dc146522b275",
+    "--review-sha256",
+    "83579f701a10dcd6b6b64d46057a9749159575ce89181a657129d7a17ff3a569"
+  ],
+  "new_native_commands": 2,
+  "fixture_reexecutions": 0,
+  "subject_compiler_commands": 0,
+  "benchmark_runs": 0,
+  "chart_admission": false,
+  "common_mutex_held": true
+}

@@ -1,0 +1,24 @@
+{
+  "at": "2026-10-13T23:36:27.604551+00:00",
+  "status": "closed-safe-trim-rejection-of-dynamic-output-error-wrapper",
+  "verified_pins": 10038,
+  "outcome_sha256": "42c319719f806306c73a89192dc1638f4810c28de9367eb794c14f998b5d5634",
+  "durable_terminal_sha256": "63687cd23db5886735d4c2fb8b6238571e7c7544b87583773b5b1856c844fe7a",
+  "native_compile_receipt": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/official-safe-trim-nbody-v1/compile/official-safe-trim.json",
+    "sha256": "4945703547e5f9fc35290f9bc9da1cb176e6e297e7e3bd3f64707a36290a7ef3"
+  },
+  "native_compile_exit": 1,
+  "trim_verifier_errors": 6,
+  "trim_verifier_warnings": 0,
+  "unresolved_calls": [
+    "showerror(stderr::IO, exception::Any)",
+    "println(stderr::IO)",
+    "print(stdout::IO, String, newline)"
+  ],
+  "compiler_error_reporting_bug": "UndefVarError Base.Compiler.exit after verifier rejection",
+  "actual_workload_executions": 0,
+  "benchmark_runs": 0,
+  "LLDB_attempts": 0,
+  "runtime_aot_proven": false
+}

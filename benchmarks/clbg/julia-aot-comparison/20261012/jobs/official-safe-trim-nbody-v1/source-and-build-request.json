@@ -1,0 +1,89 @@
+{
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/packagecompiler-bootstrap-v2/restored-runtime/julia-1.13.1/bin/julia",
+    "--startup-file=no",
+    "--history-file=no",
+    "--threads=8,0",
+    "--project=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-safe-trim-nbody-v1/ClbgNbodyPilot",
+    "-J",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/packagecompiler-bootstrap-v2/restored-runtime/julia-1.13.1/lib/julia/sys.dylib",
+    "-O3",
+    "-g2",
+    "--output-incremental=no",
+    "--experimental",
+    "--trim=safe",
+    "--strip-ir",
+    "--output-o=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-safe-trim-nbody-v1/nbody-safe-o.a",
+    "--output-bc=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-safe-trim-nbody-v1/nbody-safe.bc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-safe-trim-nbody-v1/build_options.jl",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/packagecompiler-bootstrap-v2/restored-runtime/julia-1.13.1/share/julia/test/trimming/juliac-buildscript.jl",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-safe-trim-nbody-v1/ClbgNbodyPilot/src/ClbgNbodyPilot.jl",
+    "--output-lib",
+    "true",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-safe-trim-nbody-v1/entry-abi.json",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-safe-trim-nbody-v1/actual-build-options.toml"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012",
+  "environment": {
+    "PATH": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/packagecompiler-bootstrap-v2/restored-runtime/julia-1.13.1/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin",
+    "HOME": "/Users/cim310",
+    "TMPDIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-safe-trim-nbody-v1/tmp/",
+    "LANG": "C",
+    "LC_ALL": "C",
+    "JULIA_DEPOT_PATH": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-safe-trim-nbody-v1/depot",
+    "JULIA_LOAD_PATH": "@:@stdlib",
+    "JULIA_PKG_PRECOMPILE_AUTO": "0",
+    "JULIA_NUM_PRECOMPILE_TASKS": "1",
+    "JULIA_IMAGE_THREADS": "8",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-julia-5.jl",
+  "original_sha256": "2def3e7e9910b46cd522b81041e04bbcede2481f69684b683bea605bef598a54",
+  "original_adaptation": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/nbody-library-pilot-v1/source-adaptation.json",
+    "sha256": "7edf4e1baf8533c4cf3a1e88aa86b880f3691229a27cb2b9b4c29cf33a3df0f4"
+  },
+  "exact_copied_sources": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/nbody-library-pilot-v1/ClbgNbodyPilot/src/ClbgNbodyPilot.jl": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-safe-trim-nbody-v1/ClbgNbodyPilot/src/ClbgNbodyPilot.jl",
+      "sha256": "ef96fa9c8f678e53cbe31499b0da1901dca930589702f4d87625aa2ca5be0e83"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/nbody-library-pilot-v1/ClbgNbodyPilot/src/workload.jl": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-safe-trim-nbody-v1/ClbgNbodyPilot/src/workload.jl",
+      "sha256": "bb09b6e1d4f0da3b7dfeedd2b474c45baabe94092e097455b5a2527c714af374"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/nbody-library-pilot-v1/ClbgNbodyPilot/src/entry.jl": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-safe-trim-nbody-v1/ClbgNbodyPilot/src/entry.jl",
+      "sha256": "50e9e3013689403fc626f377e32a214c2fb41b98e2fcec88afa446cf8c518086"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/nbody-library-pilot-v1/ClbgNbodyPilot/Project.toml": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-safe-trim-nbody-v1/ClbgNbodyPilot/Project.toml",
+      "sha256": "5e2372291b865156b56f65b56043bd6d6ff4810de680c711b3282304016d1ce7"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/nbody-library-pilot-v1/direct_driver.c": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-safe-trim-nbody-v1/direct_driver.c",
+      "sha256": "a84395a9fad71ffc86aef2f742ad78e8f6bf82857f4651e6c4dd720bb873065e"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/nbody-library-pilot-v1/matched_jit_driver.jl": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-safe-trim-nbody-v1/matched_jit_driver.jl",
+      "sha256": "f0645698890c55806d22e5ec4bd038316fc9389d6c6933f3062150a161c43c1c"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/revisions/safe-trim-build-v1/build_options.jl": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-safe-trim-nbody-v1/build_options.jl",
+      "sha256": "44d47002ac19bafde6b6748d4e4cec01219a4ec66539fe450cb3772527ccbfc4"
+    }
+  },
+  "shipped_builder_sources": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/packagecompiler-bootstrap-v2/restored-runtime/julia-1.13.1/share/julia/test/trimming/juliac-buildscript.jl": "392b91e0810f7d46b019afd7c481381b90156833cb1d27df0e05467d0fba64df",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/packagecompiler-bootstrap-v2/restored-runtime/julia-1.13.1/share/julia/test/trimming/juliac-trim-base.jl": "3dd7c0621df19510d7eab8b88b96f5ec32d9cd93d4aa4019ca908666478e4967",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/packagecompiler-bootstrap-v2/restored-runtime/julia-1.13.1/share/julia/test/trimming/juliac-trim-stdlib.jl": "3740d83feed070e9f00f5ffbecdbaea2e2dd6a1c71ce23fa33e9c47e15b0b440",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/packagecompiler-bootstrap-v2/restored-runtime/julia-1.13.1/share/julia/test/trimming/abi_export.jl": "4527857e6c7846eff54ffe8ac3406bb843c525c584c68323eeb9c92d7e038128",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/packagecompiler-bootstrap-v2/restored-runtime/julia-1.13.1/share/julia/test/trimming/Makefile": "26c1f1f1bec91e90c489f34ffb00cb59ce3e38d341c3c2b86b8eca8639eacb7a"
+  },
+  "workload_executions": 0,
+  "linker_executions": 0,
+  "LLDB_attempts": 0,
+  "chart_admission": false
+}

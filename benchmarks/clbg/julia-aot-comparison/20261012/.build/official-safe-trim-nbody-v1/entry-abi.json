@@ -1,0 +1,45 @@
+{
+  "functions": [
+    {
+      "symbol": "clbg_entry",
+      "name": "clbg_entry(argc::Int32, argv::Ptr{Ptr{Int8}})",
+      "arguments": [
+        { "name": "argc", "type_id": 1 },
+        { "name": "argv", "type_id": 2 }
+      ],
+      "returns": { "type_id": 1 }
+    }
+  ],
+  "types": [
+    {
+      "id": 1,
+      "kind": "primitive",
+      "name": "Int32",
+      "signed": true,
+      "bits": 32,
+      "size": 4,
+      "alignment": 4
+    },
+    {
+      "id": 2,
+      "kind": "pointer",
+      "name": "Ptr{Ptr{Int8}}",
+      "pointee_type_id": 3
+    },
+    {
+      "id": 3,
+      "kind": "pointer",
+      "name": "Ptr{Int8}",
+      "pointee_type_id": 4
+    },
+    {
+      "id": 4,
+      "kind": "primitive",
+      "name": "Int8",
+      "signed": true,
+      "bits": 8,
+      "size": 1,
+      "alignment": 1
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "status": "reviewed-Nim-formatted20-on-Gleam-current-candidate-release",
+  "at": "2026-10-13T23:51:29.467094+00:00",
+  "root_full_source_review": true,
+  "independent_C3_peer_accepted": true,
+  "actual_host_image_transition_reviewed": true,
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/nim-formatted-chart-integration-v1/integrate.py": "db25e78012a030a7b176cddb09bbbf974dcff1ccf0d615a1df8c606e10e7728b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/nim-formatted-chart-integration-v1/REVIEW.md": "35f7aee42b8dd16a65cbb5f6f5f8d3393d910eb8b5a947adc80f55d61ed0b7d6"
+  },
+  "formatter_review_sha256": "f5797f675386522de8c66828d435c48ec919495145f483e0886be37a571bbfe6",
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/nim-formatted-chart-integration-v1/integrate.py",
+    "--worker-sha256",
+    "db25e78012a030a7b176cddb09bbbf974dcff1ccf0d615a1df8c606e10e7728b",
+    "--review-sha256",
+    "35f7aee42b8dd16a65cbb5f6f5f8d3393d910eb8b5a947adc80f55d61ed0b7d6",
+    "--formatter-review-sha256",
+    "f5797f675386522de8c66828d435c48ec919495145f483e0886be37a571bbfe6"
+  ],
+  "native_processes": 0,
+  "fixture_reexecutions": 0,
+  "chart_admission": false,
+  "common_mutex_held": true
+}

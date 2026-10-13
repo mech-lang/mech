@@ -1,0 +1,37 @@
+{
+  "status": "durable-job-launched",
+  "launched_at": "2026-10-13T23:41:11.474979+00:00",
+  "job": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-current-candidate-v3",
+  "worker_identity": {
+    "pid": 51512,
+    "listing": "51512 51509 Tue Oct 13 19:41:11 2026     /opt/homebrew/opt/python@3.14/bin/python3.14 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-current-candidate-v3 --lease-fd 3 --go-fd 4"
+  },
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/qualify_gleam_current_candidate_v3.py",
+    "--worker-sha256",
+    "4b8329ba554aa491ba5e895ed8c525fa7e8a99ee5b2c67f74830aebd9d2d27a2",
+    "--packet-sha256",
+    "5cfcbdb90ce977089a225be4861edaf2b6aa6c52532ec23525970e7416bf25bd",
+    "--metadata-sha256",
+    "24c2fc111a79e9093fd2e92625bf552c1539d68ef0d53523b084eebf565b2625",
+    "--review-sha256",
+    "86ede86c969496cc8d315a06b191b9358398199eb08530516c79a8db85ca27db",
+    "--metadata-review-sha256",
+    "406ac95e0f93b99efc26d7bb62d0fe593568860c8d6cc3b8bfa39918ca1f9cdc",
+    "--baseline-review-sha256",
+    "bb369ef1b1dab6579e788c220c148082aba3a185c89468572e0056e2711d647f",
+    "--adapter-sha256",
+    "8adfe2c8f3ddfc2f6db45bd0d3d5c592372015a4d56a3acccaaad55c9d4a127b",
+    "--failure-review-sha256",
+    "82cdd22cb2cee1d2f399cac1b4c57a41d8d37972cf6a2d4536c266a4e3ca03cf"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "detached_session": true,
+  "automatic_retry": false,
+  "qualification_granted": false
+}

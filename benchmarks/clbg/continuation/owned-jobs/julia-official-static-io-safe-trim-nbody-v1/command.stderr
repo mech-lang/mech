@@ -1,0 +1,18 @@
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/revisions/static-io-safe-trim-v1/build.py", line 324, in <module>
+    if __name__ == '__main__':main()
+                              ^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/revisions/static-io-safe-trim-v1/build.py", line 300, in main
+    build(args,output,buildroot,pins,common.fileno())
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/revisions/static-io-safe-trim-v1/build.py", line 253, in build
+    actual = tomllib.loads(options.read_text())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/tomllib/_parser.py", line 110, in loads
+    pos = key_value_rule(src, pos, out, header, parse_float)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/tomllib/_parser.py", line 334, in key_value_rule
+    pos, key, value = parse_key_value_pair(src, pos, parse_float)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/tomllib/_parser.py", line 374, in parse_key_value_pair
+    raise suffixed_err(src, pos, "Expected '=' after a key in a key/value pair")
+tomllib.TOMLDecodeError: Expected '=' after a key in a key/value pair (at line 1, column 5)

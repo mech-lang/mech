@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/revisions/safe-trim-build-v1/build.py", line 231, in <module>
+    if __name__ == '__main__':main()
+                              ^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/revisions/safe-trim-build-v1/build.py", line 207, in main
+    build(args,output,buildroot,pins,common.fileno())
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/revisions/safe-trim-build-v1/build.py", line 161, in build
+    preparation.owned_command(guard,harness,command,environment,output/'compile',lock_fd,1800,'official-safe-trim')
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/private-v3/guarded_prepare.py", line 112, in owned_command
+    assert process.returncode == 0, ('Owned command failed', name, process.returncode)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('Owned command failed', 'official-safe-trim', 1)

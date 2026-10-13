@@ -1,0 +1,23 @@
+{
+  "status": "complete-reviewed-original-work-and-allocation-metadata",
+  "work_report": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-reviewed-v1/report.json",
+    "sha256": "aa7786b7cd16565a5ef21cb0bb56e8e0b7ccf77ddf5e98cbcfd1710b6b6aa421"
+  },
+  "allocation_receipt": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-reviewed-v1/allocation.json",
+    "sha256": "354f4eab47aef151f1f5cf29824c2b7b4f45f582b307b2373ca0ec316434d346"
+  },
+  "tree_prerequisite": {
+    "tree_work_revision": "work-v2",
+    "allocation_review_sha256": "354f4eab47aef151f1f5cf29824c2b7b4f45f582b307b2373ca0ec316434d346",
+    "unchanged_scored_binary_allocation_verified": true
+  },
+  "original_failures_preserved": true,
+  "source_work_profiles": 20,
+  "retained_trace_profiles": 6,
+  "native_commands": 0,
+  "fixture_reexecutions": 0,
+  "full_performance_runs": 0,
+  "chart_admission": false
+}

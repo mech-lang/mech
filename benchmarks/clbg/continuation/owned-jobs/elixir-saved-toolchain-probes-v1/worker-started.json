@@ -1,0 +1,26 @@
+{
+  "started_at": "2026-10-13T23:45:06.331141+00:00",
+  "worker_identity": {
+    "pid": 52439,
+    "listing": "52439     1 Tue Oct 13 19:45:06 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/elixir-saved-toolchain-probes-v1 --lease-fd 3 --go-fd 4"
+  },
+  "inherited_private_lease": true,
+  "detached_session": true,
+  "common_mutex_owned_by_target_command": true,
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/saved-otp-probes-v1/resume.py",
+    "--revision",
+    "retained-otp-probes-v1",
+    "--worker-sha256",
+    "7bc94b050805369e8fc74212476eaaaa588e6b404d4f55e9f996dc146522b275",
+    "--review-sha256",
+    "83579f701a10dcd6b6b64d46057a9749159575ce89181a657129d7a17ff3a569"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "qualification_granted": false
+}
