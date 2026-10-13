@@ -1,0 +1,20 @@
+{
+  "status": "command-exited-zero-awaiting-report-review",
+  "started_at": "2026-10-13T12:02:45.597336+00:00",
+  "worker_identity": {
+    "pid": 1433,
+    "listing": "1433     1 Tue Oct 13 08:02:45 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/followup-digests-v1 --lease-fd 3 --go-fd 4"
+  },
+  "actual_command_started": true,
+  "exit_code": 0,
+  "qualification_granted": false,
+  "automatic_retry": false,
+  "command_pid": 1437,
+  "command_identity": {
+    "pid": 1437,
+    "listing": "1437  1433 Tue Oct 13 08:02:45 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/capture_followup_digests_v1.py"
+  },
+  "command_identity_observation_missing": false,
+  "finished_at": "2026-10-13T12:04:04.322537+00:00",
+  "stop_signals": []
+}

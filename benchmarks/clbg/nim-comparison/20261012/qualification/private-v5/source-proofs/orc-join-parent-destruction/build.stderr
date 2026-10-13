@@ -1,0 +1,4 @@
+Hint: used config file '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v5/nim/nim-2.2.12/config/nim.cfg' [Conf]
+Hint: used config file '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v5/nim/nim-2.2.12/config/config.nims' [Conf]
+......................................................................
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/qualification/private-v5/source-snapshot/orc_join_parent_destruction.nim(25, 7) Error: identifier expected, but got 'keyword distinct'

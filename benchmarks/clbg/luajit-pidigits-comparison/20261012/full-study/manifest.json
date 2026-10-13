@@ -1,0 +1,864 @@
+{
+  "status": "prepared-awaiting-root-review",
+  "created_at": "2026-10-12T04:28:00.939258+00:00",
+  "sample_count": 3,
+  "samples": 3,
+  "size": 10000,
+  "profiles": [
+    {
+      "id": "luajit-listed-1",
+      "key": "pidigits:luajit-gmp-listed-1",
+      "benchmark": "pidigits",
+      "language": "luajit",
+      "role": "faithful listed source using general GMP compatibility library",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+      "source_sha256": "e2e0139198ef7b00dd616fdd82d756e079a96db64702c72c4f9bed0a2d9d1e82",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua",
+      "upstream_sha256": "17afbb71f557f5fa3fdc4d0274b8377d7717e467017d4d322897327d12a0c125",
+      "upstream_id": "pidigits-lua-1",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/pidigits-lua-1.html",
+      "command": [
+        "/tmp/mech-clbg-luajit/src/luajit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "{n}"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "LUA_CPATH": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/?.so;;"
+      },
+      "runtime": {
+        "path": "/tmp/mech-clbg-luajit/src/luajit",
+        "sha256": "ffe74a185b665faae02da56c194493c82d921afae03f3421b3d0a270886dd4c3",
+        "version": "LuaJIT 2.1.1788856981 -- Copyright (C) 2005-2026 Mike Pall. https://luajit.org/"
+      },
+      "loc": 62,
+      "physical_loc": 62,
+      "original_physical_loc": 45,
+      "loc_expansions": [
+        {
+          "line": 8,
+          "original": "local add, sub, mul, div = Lbn.add, Lbn.sub, Lbn.mul, Lbn.div",
+          "expanded": [
+            "local add = Lbn.add",
+            "local sub = Lbn.sub",
+            "local mul = Lbn.mul",
+            "local div = Lbn.div"
+          ],
+          "independent_source_lines": 4
+        },
+        {
+          "line": 9,
+          "original": "local set, get = Lbn.number, Lbn.tonumber",
+          "expanded": [
+            "local set = Lbn.number",
+            "local get = Lbn.tonumber"
+          ],
+          "independent_source_lines": 2
+        },
+        {
+          "line": 11,
+          "original": "local tmp1, tmp2, acc, den, num",
+          "expanded": [
+            "local tmp1",
+            "local tmp2",
+            "local acc",
+            "local den",
+            "local num"
+          ],
+          "independent_source_lines": 5
+        },
+        {
+          "line": 46,
+          "original": "        if num > acc then goto continue end",
+          "expanded": [
+            "        if num > acc then",
+            "          goto continue",
+            "        end"
+          ],
+          "independent_source_lines": 3
+        },
+        {
+          "line": 49,
+          "original": "        if d ~= extractDigit(4) then goto continue end",
+          "expanded": [
+            "        if d ~= extractDigit(4) then",
+            "          goto continue",
+            "        end"
+          ],
+          "independent_source_lines": 3
+        },
+        {
+          "line": 52,
+          "original": "        i = i + 1; if i % 10 == 0 then write(\"\\t:\", i, \"\\n\") end",
+          "expanded": [
+            "        i = i + 1",
+            "        if i % 10 == 0 then",
+            "          write(\"\\t:\", i, \"\\n\")",
+            "        end"
+          ],
+          "independent_source_lines": 4
+        },
+        {
+          "line": 56,
+          "original": "    if i % 10 ~= 0 then write(string.rep(\" \", 10 - n % 10), \"\\t:\", n, \"\\n\") end    ",
+          "expanded": [
+            "    if i % 10 ~= 0 then",
+            "      write(string.rep(\" \", 10 - n % 10), \"\\t:\", n, \"\\n\")",
+            "    end"
+          ],
+          "independent_source_lines": 3
+        }
+      ],
+      "loc_metric": "statement-normalized",
+      "loc_rule": "Nonblank/noncomment Lua application source lines. Independent bindings, multiple assignments, semicolon packing and inline if bodies are physically expanded; standalone Lua end lines use existing Lua counting treatment. General arbitrary-precision library binding excluded uniformly.",
+      "adaptations": [
+        "Formatting only: physically expand independent source statements and bindings, preserving their original evaluation order.",
+        "Supply ordinary GMP mpz arithmetic through a new private compatibility library; no host benchmark algorithm."
+      ],
+      "small_validation": {
+        "variant": 1,
+        "kind": "normalized",
+        "n": 30,
+        "command": [
+          "/tmp/mech-clbg-luajit/src/luajit",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+          "30"
+        ],
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "full_validation": {
+        "variant": 1,
+        "kind": "normalized",
+        "n": 10000,
+        "full_output_validation": true,
+        "command": [
+          "/tmp/mech-clbg-luajit/src/luajit",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+          "10000"
+        ],
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete published sequential LFT spigot; both actual exact endpoint divisions for every tested candidate. #6 changes to equivalent endpoint-numerator basis; #1 retains the permitted impossible-candidate guard. No digit cache or alternative pi algorithm.",
+        "division_check": {
+          "variant": 1,
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/results/divisions-1-n97.tsv",
+          "sha256": "82399b8f5b25db09095df0e3d0fb012c32cb2dddff214e3a458d4b8afd9aafd2",
+          "n": 97,
+          "actual_divisions": 444,
+          "tested_candidates": 222,
+          "accepted_digits": 97,
+          "both_exact_divisions_per_candidate": true,
+          "quotients_independently_verified": true
+        }
+      },
+      "maximum_workers": 1
+    },
+    {
+      "id": "luajit-listed-5",
+      "key": "pidigits:luajit-gmp-listed-5",
+      "benchmark": "pidigits",
+      "language": "luajit",
+      "role": "faithful listed source using general GMP compatibility library",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+      "source_sha256": "00734d693c0968a606b8aef2cfeffa15da58e7f4ac81731c19fb7f1dde7a0c36",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-5.lua",
+      "upstream_sha256": "c202b92ca5e8b0c9c6b2e38dec0fcb6f150b9641d2c8620b0de125b5fb983f15",
+      "upstream_id": "pidigits-lua-5",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/pidigits-lua-5.html",
+      "command": [
+        "/tmp/mech-clbg-luajit/src/luajit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "{n}"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "LUA_CPATH": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/?.so;;"
+      },
+      "runtime": {
+        "path": "/tmp/mech-clbg-luajit/src/luajit",
+        "sha256": "ffe74a185b665faae02da56c194493c82d921afae03f3421b3d0a270886dd4c3",
+        "version": "LuaJIT 2.1.1788856981 -- Copyright (C) 2005-2026 Mike Pall. https://luajit.org/"
+      },
+      "loc": 77,
+      "physical_loc": 77,
+      "original_physical_loc": 57,
+      "loc_expansions": [
+        {
+          "line": 6,
+          "original": "local g, aux = {}, {}",
+          "expanded": [
+            "local g = {}",
+            "local aux = {}"
+          ],
+          "independent_source_lines": 2
+        },
+        {
+          "line": 8,
+          "original": "local add, mul, div = g.mpz_add, g.mpz_mul_si, g.mpz_tdiv_q",
+          "expanded": [
+            "local add = g.mpz_add",
+            "local mul = g.mpz_mul_si",
+            "local div = g.mpz_tdiv_q"
+          ],
+          "independent_source_lines": 3
+        },
+        {
+          "line": 9,
+          "original": "local init, get = g.mpz_init_set_d, g.mpz_get_d",
+          "expanded": [
+            "local init = g.mpz_init_set_d",
+            "local get = g.mpz_get_d"
+          ],
+          "independent_source_lines": 2
+        },
+        {
+          "line": 11,
+          "original": "local q, r, s, t, u, v, w",
+          "expanded": [
+            "local q",
+            "local r",
+            "local s",
+            "local t",
+            "local u",
+            "local v",
+            "local w"
+          ],
+          "independent_source_lines": 7
+        },
+        {
+          "line": 54,
+          "original": "  q, r, s, t = init(1), init(0), init(0), init(1)",
+          "expanded": [
+            "  q = init(1)",
+            "  r = init(0)",
+            "  s = init(0)",
+            "  t = init(1)"
+          ],
+          "independent_source_lines": 4
+        },
+        {
+          "line": 55,
+          "original": "  u, v, w = init(0), init(0), init(0)",
+          "expanded": [
+            "  u = init(0)",
+            "  v = init(0)",
+            "  w = init(0)"
+          ],
+          "independent_source_lines": 3
+        },
+        {
+          "line": 61,
+          "original": "      i = i + 1; if i % 10 == 0 then write(\"\\t:\", i, \"\\n\") end",
+          "expanded": [
+            "      i = i + 1",
+            "      if i % 10 == 0 then",
+            "        write(\"\\t:\", i, \"\\n\")",
+            "      end"
+          ],
+          "independent_source_lines": 4
+        },
+        {
+          "line": 68,
+          "original": "  if i % 10 ~= 0 then write(string.rep(\" \", 10 - N % 10), \"\\t:\", N, \"\\n\") end",
+          "expanded": [
+            "  if i % 10 ~= 0 then",
+            "    write(string.rep(\" \", 10 - N % 10), \"\\t:\", N, \"\\n\")",
+            "  end"
+          ],
+          "independent_source_lines": 3
+        }
+      ],
+      "loc_metric": "statement-normalized",
+      "loc_rule": "Nonblank/noncomment Lua application source lines. Independent bindings, multiple assignments, semicolon packing and inline if bodies are physically expanded; standalone Lua end lines use existing Lua counting treatment. General arbitrary-precision library binding excluded uniformly.",
+      "adaptations": [
+        "Formatting only: physically expand independent source statements and bindings, preserving their original evaluation order.",
+        "Supply ordinary GMP mpz arithmetic through a new private compatibility library; no host benchmark algorithm."
+      ],
+      "small_validation": {
+        "variant": 5,
+        "kind": "normalized",
+        "n": 30,
+        "command": [
+          "/tmp/mech-clbg-luajit/src/luajit",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+          "30"
+        ],
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "full_validation": {
+        "variant": 5,
+        "kind": "normalized",
+        "n": 10000,
+        "full_output_validation": true,
+        "command": [
+          "/tmp/mech-clbg-luajit/src/luajit",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+          "10000"
+        ],
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete published sequential LFT spigot; both actual exact endpoint divisions for every tested candidate. #6 changes to equivalent endpoint-numerator basis; #1 retains the permitted impossible-candidate guard. No digit cache or alternative pi algorithm.",
+        "division_check": {
+          "variant": 5,
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/results/divisions-5-n97.tsv",
+          "sha256": "6c93ff1c9ce3565c472fe5dec5d55a8442ffa015f566729dea42412a8e2377a1",
+          "n": 97,
+          "actual_divisions": 832,
+          "tested_candidates": 416,
+          "accepted_digits": 97,
+          "both_exact_divisions_per_candidate": true,
+          "quotients_independently_verified": true
+        }
+      },
+      "maximum_workers": 1
+    },
+    {
+      "id": "luajit-listed-6",
+      "key": "pidigits:luajit-gmp-listed-6",
+      "benchmark": "pidigits",
+      "language": "luajit",
+      "role": "faithful listed source using general GMP compatibility library",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+      "source_sha256": "ce34fae5e45f842c8b414b18fa368e90809165fda0781b8a00da2bc29d50d930",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-6.lua",
+      "upstream_sha256": "3ea1f580839006463723faa69092df13c41fc76a25d62bccc5e35075edb0b692",
+      "upstream_id": "pidigits-lua-6",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/pidigits-lua-6.html",
+      "command": [
+        "/tmp/mech-clbg-luajit/src/luajit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "{n}"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "LUA_CPATH": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/?.so;;"
+      },
+      "runtime": {
+        "path": "/tmp/mech-clbg-luajit/src/luajit",
+        "sha256": "ffe74a185b665faae02da56c194493c82d921afae03f3421b3d0a270886dd4c3",
+        "version": "LuaJIT 2.1.1788856981 -- Copyright (C) 2005-2026 Mike Pall. https://luajit.org/"
+      },
+      "loc": 63,
+      "physical_loc": 63,
+      "original_physical_loc": 46,
+      "loc_expansions": [
+        {
+          "line": 7,
+          "original": "local g, aux = {}, {}",
+          "expanded": [
+            "local g = {}",
+            "local aux = {}"
+          ],
+          "independent_source_lines": 2
+        },
+        {
+          "line": 9,
+          "original": "local add, mul, div = g.mpz_add, g.mpz_mul_si, g.mpz_tdiv_q",
+          "expanded": [
+            "local add = g.mpz_add",
+            "local mul = g.mpz_mul_si",
+            "local div = g.mpz_tdiv_q"
+          ],
+          "independent_source_lines": 3
+        },
+        {
+          "line": 10,
+          "original": "local init, get = g.mpz_init_set_d, g.mpz_get_d",
+          "expanded": [
+            "local init = g.mpz_init_set_d",
+            "local get = g.mpz_get_d"
+          ],
+          "independent_source_lines": 2
+        },
+        {
+          "line": 12,
+          "original": "local u, v, w",
+          "expanded": [
+            "local u",
+            "local v",
+            "local w"
+          ],
+          "independent_source_lines": 3
+        },
+        {
+          "line": 34,
+          "original": "  if y == get(div(n2, d, v)) then return y end",
+          "expanded": [
+            "  if y == get(div(n2, d, v)) then",
+            "    return y",
+            "  end"
+          ],
+          "independent_source_lines": 3
+        },
+        {
+          "line": 41,
+          "original": "  local n1, n2, d = init(4), init(3), init(1)",
+          "expanded": [
+            "  local n1 = init(4)",
+            "  local n2 = init(3)",
+            "  local d = init(1)"
+          ],
+          "independent_source_lines": 3
+        },
+        {
+          "line": 42,
+          "original": "  u, v, w = init(0), init(0), init(0)",
+          "expanded": [
+            "  u = init(0)",
+            "  v = init(0)",
+            "  w = init(0)"
+          ],
+          "independent_source_lines": 3
+        },
+        {
+          "line": 48,
+          "original": "      i = i + 1; if i % 10 == 0 then write(\"\\t:\", i, \"\\n\") end",
+          "expanded": [
+            "      i = i + 1",
+            "      if i % 10 == 0 then",
+            "        write(\"\\t:\", i, \"\\n\")",
+            "      end"
+          ],
+          "independent_source_lines": 4
+        },
+        {
+          "line": 55,
+          "original": "  if i % 10 ~= 0 then write(string.rep(\" \", 10 - N % 10), \"\\t:\", N, \"\\n\") end",
+          "expanded": [
+            "  if i % 10 ~= 0 then",
+            "    write(string.rep(\" \", 10 - N % 10), \"\\t:\", N, \"\\n\")",
+            "  end"
+          ],
+          "independent_source_lines": 3
+        }
+      ],
+      "loc_metric": "statement-normalized",
+      "loc_rule": "Nonblank/noncomment Lua application source lines. Independent bindings, multiple assignments, semicolon packing and inline if bodies are physically expanded; standalone Lua end lines use existing Lua counting treatment. General arbitrary-precision library binding excluded uniformly.",
+      "adaptations": [
+        "Formatting only: physically expand independent source statements and bindings, preserving their original evaluation order.",
+        "Supply ordinary GMP mpz arithmetic through a new private compatibility library; no host benchmark algorithm."
+      ],
+      "small_validation": {
+        "variant": 6,
+        "kind": "normalized",
+        "n": 30,
+        "command": [
+          "/tmp/mech-clbg-luajit/src/luajit",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+          "30"
+        ],
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "full_validation": {
+        "variant": 6,
+        "kind": "normalized",
+        "n": 10000,
+        "full_output_validation": true,
+        "command": [
+          "/tmp/mech-clbg-luajit/src/luajit",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+          "10000"
+        ],
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete published sequential LFT spigot; both actual exact endpoint divisions for every tested candidate. #6 changes to equivalent endpoint-numerator basis; #1 retains the permitted impossible-candidate guard. No digit cache or alternative pi algorithm.",
+        "division_check": {
+          "variant": 6,
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/results/divisions-6-n97.tsv",
+          "sha256": "118f65ec13c0cbc12c6ebf4733b6638dbf30c72591cc23f5bc0e906613c33636",
+          "n": 97,
+          "actual_divisions": 832,
+          "tested_candidates": 416,
+          "accepted_digits": 97,
+          "both_exact_divisions_per_candidate": true,
+          "quotients_independently_verified": true
+        }
+      },
+      "maximum_workers": 1
+    },
+    {
+      "id": "luajit-listed-7",
+      "key": "pidigits:luajit-gmp-listed-7",
+      "benchmark": "pidigits",
+      "language": "luajit",
+      "role": "faithful listed source using general GMP compatibility library",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+      "source_sha256": "cca5f009f82162b0bdd50d839add97ef21859b5d8ddd047b3db9f286973c9c2c",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua",
+      "upstream_sha256": "e2e6c1d50d2c399d58cc231b02513f7e080cab776b486c7c61a084ffacd34b43",
+      "upstream_id": "pidigits-lua-7",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/pidigits-lua-7.html",
+      "command": [
+        "/tmp/mech-clbg-luajit/src/luajit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "{n}"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "LUA_CPATH": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/?.so;;"
+      },
+      "runtime": {
+        "path": "/tmp/mech-clbg-luajit/src/luajit",
+        "sha256": "ffe74a185b665faae02da56c194493c82d921afae03f3421b3d0a270886dd4c3",
+        "version": "LuaJIT 2.1.1788856981 -- Copyright (C) 2005-2026 Mike Pall. https://luajit.org/"
+      },
+      "loc": 57,
+      "physical_loc": 57,
+      "original_physical_loc": 42,
+      "loc_expansions": [
+        {
+          "line": 9,
+          "original": "local gmp, aux = {}, {}",
+          "expanded": [
+            "local gmp = {}",
+            "local aux = {}"
+          ],
+          "independent_source_lines": 2
+        },
+        {
+          "line": 11,
+          "original": "local add, mul, div = gmp.mpz_add, gmp.mpz_mul_ui, gmp.mpz_fdiv_q",
+          "expanded": [
+            "local add = gmp.mpz_add",
+            "local mul = gmp.mpz_mul_ui",
+            "local div = gmp.mpz_fdiv_q"
+          ],
+          "independent_source_lines": 3
+        },
+        {
+          "line": 12,
+          "original": "local addmul, submul = gmp.mpz_addmul_ui, gmp.mpz_submul_ui",
+          "expanded": [
+            "local addmul = gmp.mpz_addmul_ui",
+            "local submul = gmp.mpz_submul_ui"
+          ],
+          "independent_source_lines": 2
+        },
+        {
+          "line": 13,
+          "original": "local init, get, set = gmp.mpz_init_set_d, gmp.mpz_get_d, gmp.mpz_set",
+          "expanded": [
+            "local init = gmp.mpz_init_set_d",
+            "local get = gmp.mpz_get_d",
+            "local set = gmp.mpz_set"
+          ],
+          "independent_source_lines": 3
+        },
+        {
+          "line": 57,
+          "original": "  local m11, m12, m22, tmp = init(1), init(0), init(1), init(0)",
+          "expanded": [
+            "  local m11 = init(1)",
+            "  local m12 = init(0)",
+            "  local m22 = init(1)",
+            "  local tmp = init(0)"
+          ],
+          "independent_source_lines": 4
+        },
+        {
+          "line": 58,
+          "original": "  local k, i = 1, 0",
+          "expanded": [
+            "  local k = 1",
+            "  local i = 0"
+          ],
+          "independent_source_lines": 2
+        },
+        {
+          "line": 64,
+          "original": "      i = i + 1; if i % 10 == 0 then write(\"\\t:\", i, \"\\n\") end",
+          "expanded": [
+            "      i = i + 1",
+            "      if i % 10 == 0 then",
+            "        write(\"\\t:\", i, \"\\n\")",
+            "      end"
+          ],
+          "independent_source_lines": 4
+        },
+        {
+          "line": 70,
+          "original": "  if i % 10 ~= 0 then write(string.rep(\" \", 10 - N % 10), \"\\t:\", N, \"\\n\") end",
+          "expanded": [
+            "  if i % 10 ~= 0 then",
+            "    write(string.rep(\" \", 10 - N % 10), \"\\t:\", N, \"\\n\")",
+            "  end"
+          ],
+          "independent_source_lines": 3
+        }
+      ],
+      "loc_metric": "statement-normalized",
+      "loc_rule": "Nonblank/noncomment Lua application source lines. Independent bindings, multiple assignments, semicolon packing and inline if bodies are physically expanded; standalone Lua end lines use existing Lua counting treatment. General arbitrary-precision library binding excluded uniformly.",
+      "adaptations": [
+        "Formatting only: physically expand independent source statements and bindings, preserving their original evaluation order.",
+        "Supply ordinary GMP mpz arithmetic through a new private compatibility library; no host benchmark algorithm."
+      ],
+      "small_validation": {
+        "variant": 7,
+        "kind": "normalized",
+        "n": 30,
+        "command": [
+          "/tmp/mech-clbg-luajit/src/luajit",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+          "30"
+        ],
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "full_validation": {
+        "variant": 7,
+        "kind": "normalized",
+        "n": 10000,
+        "full_output_validation": true,
+        "command": [
+          "/tmp/mech-clbg-luajit/src/luajit",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+          "10000"
+        ],
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete published sequential LFT spigot; both actual exact endpoint divisions for every tested candidate. #6 changes to equivalent endpoint-numerator basis; #1 retains the permitted impossible-candidate guard. No digit cache or alternative pi algorithm.",
+        "division_check": {
+          "variant": 7,
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/results/divisions-7-n97.tsv",
+          "sha256": "19a4d866b8509939281cf526034681bee2e1f3100b55ebaabbace3b9cbf7f643",
+          "n": 97,
+          "actual_divisions": 832,
+          "tested_candidates": 416,
+          "accepted_digits": 97,
+          "both_exact_divisions_per_candidate": true,
+          "quotients_independently_verified": true
+        }
+      },
+      "maximum_workers": 1
+    },
+    {
+      "id": "mech-fast-control",
+      "key": "pidigits:lua-study:mech-fast-control",
+      "benchmark": "pidigits",
+      "language": "mech",
+      "role": "unchanged current Mech fast AOT endpoint, freshly measured control",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits-advance.mec",
+      "source_sha256": "7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-advance-signed-after",
+      "binary_sha256": "4bf41cc5207d91962cd380b094720c43ca3f7def96c6a0606d513e84fdef7dea",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-advance-signed-after",
+        "{n}"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "loc": 38,
+      "published_chart_key": "pidigits:mech-pi-final-advance-signed",
+      "maximum_workers": 1,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false
+      },
+      "full_validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      }
+    },
+    {
+      "id": "mech-small-control",
+      "key": "pidigits:lua-study:mech-small-control",
+      "benchmark": "pidigits",
+      "language": "mech",
+      "role": "unchanged current Mech small AOT endpoint, freshly measured control",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits.mec",
+      "source_sha256": "db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-compact-signed-after",
+      "binary_sha256": "53d91c7a51c126d660129311ee7c011ff6d30ce629adea543ca7136683fbb336",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-compact-signed-after",
+        "{n}"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "loc": 35,
+      "published_chart_key": "pidigits:mech-pi-final-compact-signed",
+      "maximum_workers": 1,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false
+      },
+      "full_validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      }
+    }
+  ],
+  "orders": [
+    {
+      "round": 1,
+      "profiles": [
+        "luajit-listed-1",
+        "luajit-listed-5",
+        "luajit-listed-6",
+        "luajit-listed-7",
+        "mech-fast-control",
+        "mech-small-control"
+      ]
+    },
+    {
+      "round": 2,
+      "profiles": [
+        "luajit-listed-5",
+        "luajit-listed-6",
+        "luajit-listed-7",
+        "mech-fast-control",
+        "mech-small-control",
+        "luajit-listed-1"
+      ]
+    },
+    {
+      "round": 3,
+      "profiles": [
+        "luajit-listed-6",
+        "luajit-listed-7",
+        "mech-fast-control",
+        "mech-small-control",
+        "luajit-listed-1",
+        "luajit-listed-5"
+      ]
+    }
+  ],
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/support/gmp-lua51.c": "0c878da03ae99651eeac31defa0419f5925e159e3d74251cfe2230a98a5518c1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/support/test-gmp.lua": "9c058739644e86d4b9a32f07473009da0ca7e215d547e810d914a5e467c8cb03",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/support/trace-divisions.lua": "291a60cb9fd5f1d4d13354d03d4c098fccb92d46a08e643a90920132fee04833",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/general-gmp.so": "42cfa9814e4811ea17cafba1f1a4ad1b928baa1b787fe6cb411b13631b0aa3c7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/c-gmp.so": "42cfa9814e4811ea17cafba1f1a4ad1b928baa1b787fe6cb411b13631b0aa3c7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/bn.so": "42cfa9814e4811ea17cafba1f1a4ad1b928baa1b787fe6cb411b13631b0aa3c7",
+    "/opt/homebrew/opt/gmp/lib/libgmp.10.dylib": "571ffb9eb5b5110cda32f62197c1f039e5627d66524ba47bb0774eca184532b9",
+    "/opt/homebrew/opt/gmp/include/gmp.h": "ba08e6d76e0945a858d6e3384eb1fbc1b8100799052cf4ab5c10befe6ee99ebc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/support/lua51_compat.h": "14cf219f8ea0d45d987cf303248e349b96596ef083fd483927ef87cfb5c5ba53",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/support/gmp.c": "ae50244bd96f7961201a40780c2dfeab4bb193fc0e2da2184c37753469ef4e6c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/full-study/manifest.json": "aaf6af5fad6bb4d2f9008e8f91be7037025e117f2cb9532dfb14ae928f6f55dd",
+    "/tmp/mech-clbg-luajit/src/lua.h": "ecab8480aaedb648b75258453ab82e71c4d0db234175f455af72962c8578f787",
+    "/tmp/mech-clbg-luajit/src/luaconf.h": "0368985c56235d9bf8082dee845289500ee91b281e3ae6d8c434ca5348d9a976",
+    "/tmp/mech-clbg-luajit/src/lauxlib.h": "7093ea70fb38341d10475814b90961cec22f9643c11e3ea4c2ddc2cd4b03164e",
+    "/tmp/mech-clbg-luajit/src/lualib.h": "10fd6bccc4ae40cc9094b10d8d8de5a8d3febb90668cde599c253bec04bf4546",
+    "/tmp/mech-clbg-luajit/src/luajit": "ffe74a185b665faae02da56c194493c82d921afae03f3421b3d0a270886dd4c3",
+    "/opt/homebrew/opt/llvm@22/bin/clang-22": "012b35304481c5d5db6b57f20e144fb78f198ca9db14aa0b8db72cd2e493e12d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/prepare.py": "a9ae900d02389011b3164476a9ac5e282244ab97d9848a93ccc06116606fadeb",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/prepare_sources.py": "7c711bc8c8d9d8adb28979f04af08fdd9d9da3d9346c7689b0feebe8530c599c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/full_study.py": "fbcec3b092a36386c17e9d3d08ee74ba922a475aaee4984fe50fe32e6cb3fb11",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/PLAN.md": "94120377456087d6c350e16cf3f62e83c7bed4fda038482d510321e92c2a15c6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/results/validation.json": "1c100af6778836148bdbac24510b607fbcae9af5df27beee3784744e3b7746b9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/results/historical-exclusions.json": "87ae3186496f8e5abc902819551e28a4de856ab3b5791c4a242421f69ffcc6b3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/inputs/output-full.txt": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/inputs/pidigits-output-small.txt": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/manifest.json": "a84994890791ad5f0f8a78d1b88389a107e46ff4529e65a90fa1d749a885933a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds.json": "ff920ac9b8ea783924792133bbdbc51fa98e7bc0110469e2d4f31b4ed694f406",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run.py": "5b2a038cfae4112e9e2eee79c3cd57ccc6a1521812828c47bf28986d6a8e139b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/prepare.py": "27fcf050ed21db40e747f2e8801ca6f227d82f1ea98f8592bba7b10a768109e5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/compact/run.py": "6926e288a7b9b59b030c9226227df967aa1d92b3e395789467706e2241d987ae",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/run.py": "e907f71b3fdf8fc6f65adc76aab6dfc424811875388c14f0eb2f31e14e9cffcf",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/all-20261009/run.py": "8b7f1b408fb5838dc6adc2404bcfa6146e48e770e602fbe78255454f3cacb8c7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/full_study.py": "7a48690bef2f36375c72619f8c74170735273804d089dafb55e6813189613fe5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua": "e2e0139198ef7b00dd616fdd82d756e079a96db64702c72c4f9bed0a2d9d1e82",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua": "17afbb71f557f5fa3fdc4d0274b8377d7717e467017d4d322897327d12a0c125",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua": "00734d693c0968a606b8aef2cfeffa15da58e7f4ac81731c19fb7f1dde7a0c36",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-5.lua": "c202b92ca5e8b0c9c6b2e38dec0fcb6f150b9641d2c8620b0de125b5fb983f15",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua": "ce34fae5e45f842c8b414b18fa368e90809165fda0781b8a00da2bc29d50d930",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-6.lua": "3ea1f580839006463723faa69092df13c41fc76a25d62bccc5e35075edb0b692",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua": "cca5f009f82162b0bdd50d839add97ef21859b5d8ddd047b3db9f286973c9c2c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua": "e2e6c1d50d2c399d58cc231b02513f7e080cab776b486c7c61a084ffacd34b43",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits-advance.mec": "7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-advance-signed-after": "4bf41cc5207d91962cd380b094720c43ca3f7def96c6a0606d513e84fdef7dea",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits.mec": "db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-compact-signed-after": "53d91c7a51c126d660129311ee7c011ff6d30ce629adea543ca7136683fbb336",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/results/divisions-1-n97.tsv": "82399b8f5b25db09095df0e3d0fb012c32cb2dddff214e3a458d4b8afd9aafd2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/results/divisions-5-n97.tsv": "6c93ff1c9ce3565c472fe5dec5d55a8442ffa015f566729dea42412a8e2377a1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/results/divisions-6-n97.tsv": "118f65ec13c0cbc12c6ebf4733b6638dbf30c72591cc23f5bc0e906613c33636",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/results/divisions-7-n97.tsv": "19a4d866b8509939281cf526034681bee2e1f3100b55ebaabbace3b9cbf7f643"
+  },
+  "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+  "required_power_profile": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "maximum_rss_mib": 2048,
+  "timeout_seconds": 300,
+  "environment_retry_limit": 3,
+  "maximum_compute_workers": 1,
+  "validation": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/results/validation.json",
+  "validation_sha256": "1c100af6778836148bdbac24510b607fbcae9af5df27beee3784744e3b7746b9",
+  "full_output_reference": {
+    "bytes": 16893,
+    "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c"
+  },
+  "library": {
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/support/gmp-lua51.c",
+    "source_sha256": "0c878da03ae99651eeac31defa0419f5925e159e3d74251cfe2230a98a5518c1",
+    "shared_implementation": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/support/gmp.c",
+    "shared_implementation_sha256": "ae50244bd96f7961201a40780c2dfeab4bb193fc0e2da2184c37753469ef4e6c",
+    "abi_compatibility_header": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/support/lua51_compat.h",
+    "abi_compatibility_sha256": "14cf219f8ea0d45d987cf303248e349b96596ef083fd483927ef87cfb5c5ba53",
+    "numeric_policy": "Lua 5.1 doubles; finite integral in-range scalar arguments; arbitrary constructors retain GMP set_d semantics; numeric results preserve ordinary GMP truncation and overflow to infinities.",
+    "build_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-bundle",
+      "-undefined",
+      "dynamic_lookup",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-I/tmp/mech-clbg-luajit/src",
+      "-I/opt/homebrew/opt/gmp/include",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/support/gmp-lua51.c",
+      "-L/opt/homebrew/opt/gmp/lib",
+      "-lgmp",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/general-gmp.so"
+    ],
+    "compiler_version": "Homebrew clang version 22.1.8",
+    "modules": {
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/general-gmp.so": "42cfa9814e4811ea17cafba1f1a4ad1b928baa1b787fe6cb411b13631b0aa3c7",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/c-gmp.so": "42cfa9814e4811ea17cafba1f1a4ad1b928baa1b787fe6cb411b13631b0aa3c7",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/bn.so": "42cfa9814e4811ea17cafba1f1a4ad1b928baa1b787fe6cb411b13631b0aa3c7",
+      "/opt/homebrew/opt/gmp/lib/libgmp.10.dylib": "571ffb9eb5b5110cda32f62197c1f039e5627d66524ba47bb0774eca184532b9"
+    },
+    "scope": "Ordinary standard arbitrary-precision arithmetic only; all spigot/extraction/control/output work remains Lua application source.",
+    "counted_in_application_loc": false
+  },
+  "timing_boundary": "Fresh LuaJIT/Mech process startup, full sequential N10000 spigot work, both true quotient extracts per tested candidate, complete stdout regular-file write, process shutdown and common supervisor notification included. Compilation, prequalification, validation and hashing excluded. No previous samples reused.",
+  "ownership": "Frozen common execute, separate sampler and native child retain inherited common mutex descriptor through complete process-group cleanup and result persistence. One owner lock; no duplicate launch or automatic resume.",
+  "retry_policy": "Only bounded environment-only retries allowed. Output, pins, timeout, resources, signals, cleanup and sampler errors are recorded and stop.",
+  "chart_policy": "No chart admission or scored full launch until root reviews this exact manifest. All six profiles require three actual unchanged canonical full records. Primary speed multiplier uses current fresh Mech fast38 control; fewest-LOC ratio uses current Mech35 source; the additional Mech35 speed control is explicit.",
+  "preparation_full_output_checks": 10,
+  "full_performance_runs": 0
+}

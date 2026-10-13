@@ -1,0 +1,963 @@
+[
+  {
+    "descriptor": {
+      "name": "jl_fptr_interpret_call",
+      "kind": "interpreter",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbols-v1/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-internal.1.13.1.dylib",
+      "original_image_sha256": "aaf25ba7ac705b5e0d564e6942da9d158bf59cf387fa9d5dca097a254764d816",
+      "original_file_symbol_value": "000000000003f1f8"
+    },
+    "breakpoint_id": 1,
+    "hit_count": 0,
+    "locations": [
+      {
+        "location_id": 1,
+        "resolved": false,
+        "file_address": 258552,
+        "loaded_address": 18446744073709551615,
+        "module": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/bundle/lib/julia/libjulia-internal.dylib",
+        "module_uuid": "A9EAD8CA-7573-3B14-8DD6-39BDC818E737",
+        "symbol": "jl_fptr_interpret_call",
+        "mangled_symbol": null
+      }
+    ]
+  },
+  {
+    "descriptor": {
+      "name": "jl_interpret_opaque_closure",
+      "kind": "interpreter",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbols-v1/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-internal.1.13.1.dylib",
+      "original_image_sha256": "aaf25ba7ac705b5e0d564e6942da9d158bf59cf387fa9d5dca097a254764d816",
+      "original_file_symbol_value": "000000000003fe10"
+    },
+    "breakpoint_id": 2,
+    "hit_count": 0,
+    "locations": [
+      {
+        "location_id": 1,
+        "resolved": false,
+        "file_address": 261648,
+        "loaded_address": 18446744073709551615,
+        "module": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/bundle/lib/julia/libjulia-internal.dylib",
+        "module_uuid": "A9EAD8CA-7573-3B14-8DD6-39BDC818E737",
+        "symbol": "jl_interpret_opaque_closure",
+        "mangled_symbol": null
+      }
+    ]
+  },
+  {
+    "descriptor": {
+      "name": "jl_interpret_toplevel_thunk",
+      "kind": "interpreter",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbols-v1/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-internal.1.13.1.dylib",
+      "original_image_sha256": "aaf25ba7ac705b5e0d564e6942da9d158bf59cf387fa9d5dca097a254764d816",
+      "original_file_symbol_value": "0000000000040054"
+    },
+    "breakpoint_id": 3,
+    "hit_count": 0,
+    "locations": [
+      {
+        "location_id": 1,
+        "resolved": false,
+        "file_address": 262228,
+        "loaded_address": 18446744073709551615,
+        "module": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/bundle/lib/julia/libjulia-internal.dylib",
+        "module_uuid": "A9EAD8CA-7573-3B14-8DD6-39BDC818E737",
+        "symbol": "jl_interpret_toplevel_thunk",
+        "mangled_symbol": null
+      }
+    ]
+  },
+  {
+    "descriptor": {
+      "name": "jl_interpret_toplevel_expr_in",
+      "kind": "interpreter",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbols-v1/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-internal.1.13.1.dylib",
+      "original_image_sha256": "aaf25ba7ac705b5e0d564e6942da9d158bf59cf387fa9d5dca097a254764d816",
+      "original_file_symbol_value": "000000000004018c"
+    },
+    "breakpoint_id": 4,
+    "hit_count": 0,
+    "locations": [
+      {
+        "location_id": 1,
+        "resolved": false,
+        "file_address": 262540,
+        "loaded_address": 18446744073709551615,
+        "module": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/bundle/lib/julia/libjulia-internal.dylib",
+        "module_uuid": "A9EAD8CA-7573-3B14-8DD6-39BDC818E737",
+        "symbol": "jl_interpret_toplevel_expr_in",
+        "mangled_symbol": null
+      }
+    ]
+  },
+  {
+    "descriptor": {
+      "name": "jl_emit_codeinst_to_jit",
+      "kind": "codegen-route-entry",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbol-routes-v2/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/libjulia.1.13.1.dylib",
+      "original_image_sha256": "459753693d70784e22bf5b7a88013b78116bbe8037af129aa49fe7be55e31289",
+      "original_file_symbol_value": "00000000000026d8"
+    },
+    "breakpoint_id": 5,
+    "hit_count": 0,
+    "locations": [
+      {
+        "location_id": 1,
+        "resolved": false,
+        "file_address": 9944,
+        "loaded_address": 18446744073709551615,
+        "module": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/bundle/lib/libjulia.1.13.dylib",
+        "module_uuid": "A5D4FBFE-D2A2-3A0A-A907-8C4A8D012B20",
+        "symbol": "jl_emit_codeinst_to_jit",
+        "mangled_symbol": null
+      }
+    ]
+  },
+  {
+    "descriptor": {
+      "name": "jl_generate_fptr_for_unspecialized",
+      "kind": "codegen-route-entry",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbol-routes-v2/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/libjulia.1.13.1.dylib",
+      "original_image_sha256": "459753693d70784e22bf5b7a88013b78116bbe8037af129aa49fe7be55e31289",
+      "original_file_symbol_value": "0000000000002798"
+    },
+    "breakpoint_id": 6,
+    "hit_count": 0,
+    "locations": [
+      {
+        "location_id": 1,
+        "resolved": false,
+        "file_address": 10136,
+        "loaded_address": 18446744073709551615,
+        "module": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/bundle/lib/libjulia.1.13.dylib",
+        "module_uuid": "A5D4FBFE-D2A2-3A0A-A907-8C4A8D012B20",
+        "symbol": "jl_generate_fptr_for_unspecialized",
+        "mangled_symbol": null
+      }
+    ]
+  },
+  {
+    "descriptor": {
+      "name": "jl_jit_abi_converter_impl",
+      "kind": "codegen-route-entry",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbol-routes-v2/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-codegen.1.13.1.dylib",
+      "original_image_sha256": "030b316273f4b3c0ecf285e866a0a9653f37471f57e3d51be7476154f6aa9781",
+      "original_file_symbol_value": "0000000000088a2c"
+    },
+    "breakpoint_id": 7,
+    "hit_count": 0,
+    "locations": []
+  },
+  {
+    "descriptor": {
+      "name": "_ZN9JuliaOJIT9addModuleEN4llvm3orc16ThreadSafeModuleE",
+      "kind": "engine-emission",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbols-v1/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-codegen.1.13.1.dylib",
+      "original_image_sha256": "030b316273f4b3c0ecf285e866a0a9653f37471f57e3d51be7476154f6aa9781",
+      "original_file_symbol_value": "0000000000089654"
+    },
+    "breakpoint_id": 8,
+    "hit_count": 0,
+    "locations": []
+  },
+  {
+    "descriptor": {
+      "name": "_ZN9JuliaOJIT9addModuleEN4llvm3orc16ThreadSafeModuleE.cold.1",
+      "kind": "engine-emission",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbols-v1/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-codegen.1.13.1.dylib",
+      "original_image_sha256": "030b316273f4b3c0ecf285e866a0a9653f37471f57e3d51be7476154f6aa9781",
+      "original_file_symbol_value": "000000000011f984"
+    },
+    "breakpoint_id": 9,
+    "hit_count": 0,
+    "locations": []
+  },
+  {
+    "descriptor": {
+      "name": "jl_compile_codeinst",
+      "kind": "codegen-route-entry",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbol-routes-v2/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/libjulia.1.13.1.dylib",
+      "original_image_sha256": "459753693d70784e22bf5b7a88013b78116bbe8037af129aa49fe7be55e31289",
+      "original_file_symbol_value": "00000000000027a4"
+    },
+    "breakpoint_id": 10,
+    "hit_count": 0,
+    "locations": [
+      {
+        "location_id": 1,
+        "resolved": false,
+        "file_address": 10148,
+        "loaded_address": 18446744073709551615,
+        "module": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/bundle/lib/libjulia.1.13.dylib",
+        "module_uuid": "A5D4FBFE-D2A2-3A0A-A907-8C4A8D012B20",
+        "symbol": "jl_compile_codeinst",
+        "mangled_symbol": null
+      }
+    ]
+  },
+  {
+    "descriptor": {
+      "name": "jl_compile_codeinst_fallback",
+      "kind": "codegen-route-entry",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbol-routes-v2/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-internal.1.13.1.dylib",
+      "original_image_sha256": "aaf25ba7ac705b5e0d564e6942da9d158bf59cf387fa9d5dca097a254764d816",
+      "original_file_symbol_value": "00000000000b4e2c"
+    },
+    "breakpoint_id": 11,
+    "hit_count": 0,
+    "locations": [
+      {
+        "location_id": 1,
+        "resolved": false,
+        "file_address": 740908,
+        "loaded_address": 18446744073709551615,
+        "module": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/bundle/lib/julia/libjulia-internal.dylib",
+        "module_uuid": "A9EAD8CA-7573-3B14-8DD6-39BDC818E737",
+        "symbol": "jl_compile_codeinst_fallback",
+        "mangled_symbol": null
+      }
+    ]
+  },
+  {
+    "descriptor": {
+      "name": "jl_compile_codeinst_impl",
+      "kind": "codegen-route-entry",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbol-routes-v2/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-codegen.1.13.1.dylib",
+      "original_image_sha256": "030b316273f4b3c0ecf285e866a0a9653f37471f57e3d51be7476154f6aa9781",
+      "original_file_symbol_value": "000000000008c0bc"
+    },
+    "breakpoint_id": 12,
+    "hit_count": 0,
+    "locations": []
+  },
+  {
+    "descriptor": {
+      "name": "jl_emit_codeinst_to_jit_fallback",
+      "kind": "codegen-route-entry",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbol-routes-v2/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-internal.1.13.1.dylib",
+      "original_image_sha256": "aaf25ba7ac705b5e0d564e6942da9d158bf59cf387fa9d5dca097a254764d816",
+      "original_file_symbol_value": "00000000000b4e34"
+    },
+    "breakpoint_id": 13,
+    "hit_count": 0,
+    "locations": [
+      {
+        "location_id": 1,
+        "resolved": false,
+        "file_address": 740916,
+        "loaded_address": 18446744073709551615,
+        "module": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/bundle/lib/julia/libjulia-internal.dylib",
+        "module_uuid": "A9EAD8CA-7573-3B14-8DD6-39BDC818E737",
+        "symbol": "jl_emit_codeinst_to_jit_fallback",
+        "mangled_symbol": null
+      }
+    ]
+  },
+  {
+    "descriptor": {
+      "name": "jl_emit_codeinst_to_jit_impl",
+      "kind": "codegen-route-entry",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbol-routes-v2/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-codegen.1.13.1.dylib",
+      "original_image_sha256": "030b316273f4b3c0ecf285e866a0a9653f37471f57e3d51be7476154f6aa9781",
+      "original_file_symbol_value": "0000000000089efc"
+    },
+    "breakpoint_id": 14,
+    "hit_count": 0,
+    "locations": []
+  },
+  {
+    "descriptor": {
+      "name": "jl_generate_fptr_for_unspecialized_fallback",
+      "kind": "codegen-route-entry",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbol-routes-v2/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-internal.1.13.1.dylib",
+      "original_image_sha256": "aaf25ba7ac705b5e0d564e6942da9d158bf59cf387fa9d5dca097a254764d816",
+      "original_file_symbol_value": "00000000000b4e18"
+    },
+    "breakpoint_id": 15,
+    "hit_count": 0,
+    "locations": [
+      {
+        "location_id": 1,
+        "resolved": false,
+        "file_address": 740888,
+        "loaded_address": 18446744073709551615,
+        "module": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/bundle/lib/julia/libjulia-internal.dylib",
+        "module_uuid": "A9EAD8CA-7573-3B14-8DD6-39BDC818E737",
+        "symbol": "jl_generate_fptr_for_unspecialized_fallback",
+        "mangled_symbol": null
+      }
+    ]
+  },
+  {
+    "descriptor": {
+      "name": "jl_generate_fptr_for_unspecialized_impl",
+      "kind": "codegen-route-entry",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbol-routes-v2/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-codegen.1.13.1.dylib",
+      "original_image_sha256": "030b316273f4b3c0ecf285e866a0a9653f37471f57e3d51be7476154f6aa9781",
+      "original_file_symbol_value": "000000000008df14"
+    },
+    "breakpoint_id": 16,
+    "hit_count": 0,
+    "locations": []
+  },
+  {
+    "descriptor": {
+      "name": "jl_init_codegen",
+      "kind": "codegen-initialization",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbol-routes-v2/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/libjulia.1.13.1.dylib",
+      "original_image_sha256": "459753693d70784e22bf5b7a88013b78116bbe8037af129aa49fe7be55e31289",
+      "original_file_symbol_value": "0000000000002774"
+    },
+    "breakpoint_id": 17,
+    "hit_count": 0,
+    "locations": [
+      {
+        "location_id": 1,
+        "resolved": false,
+        "file_address": 10100,
+        "loaded_address": 18446744073709551615,
+        "module": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/bundle/lib/libjulia.1.13.dylib",
+        "module_uuid": "A5D4FBFE-D2A2-3A0A-A907-8C4A8D012B20",
+        "symbol": "jl_init_codegen",
+        "mangled_symbol": null
+      }
+    ]
+  },
+  {
+    "descriptor": {
+      "name": "jl_init_codegen_fallback",
+      "kind": "codegen-initialization",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbol-routes-v2/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-internal.1.13.1.dylib",
+      "original_image_sha256": "aaf25ba7ac705b5e0d564e6942da9d158bf59cf387fa9d5dca097a254764d816",
+      "original_file_symbol_value": "00000000000b4e08"
+    },
+    "breakpoint_id": 18,
+    "hit_count": 0,
+    "locations": [
+      {
+        "location_id": 1,
+        "resolved": false,
+        "file_address": 740872,
+        "loaded_address": 18446744073709551615,
+        "module": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/bundle/lib/julia/libjulia-internal.dylib",
+        "module_uuid": "A9EAD8CA-7573-3B14-8DD6-39BDC818E737",
+        "symbol": "jl_init_codegen_fallback",
+        "mangled_symbol": null
+      }
+    ]
+  },
+  {
+    "descriptor": {
+      "name": "jl_init_codegen_impl",
+      "kind": "codegen-initialization",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbol-routes-v2/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-codegen.1.13.1.dylib",
+      "original_image_sha256": "030b316273f4b3c0ecf285e866a0a9653f37471f57e3d51be7476154f6aa9781",
+      "original_file_symbol_value": "0000000000023960"
+    },
+    "breakpoint_id": 19,
+    "hit_count": 0,
+    "locations": []
+  },
+  {
+    "descriptor": {
+      "name": "jl_jit_abi_converter",
+      "kind": "codegen-route-entry",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbol-routes-v2/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/libjulia.1.13.1.dylib",
+      "original_image_sha256": "459753693d70784e22bf5b7a88013b78116bbe8037af129aa49fe7be55e31289",
+      "original_file_symbol_value": "0000000000002858"
+    },
+    "breakpoint_id": 20,
+    "hit_count": 0,
+    "locations": [
+      {
+        "location_id": 1,
+        "resolved": false,
+        "file_address": 10328,
+        "loaded_address": 18446744073709551615,
+        "module": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/bundle/lib/libjulia.1.13.dylib",
+        "module_uuid": "A5D4FBFE-D2A2-3A0A-A907-8C4A8D012B20",
+        "symbol": "jl_jit_abi_converter",
+        "mangled_symbol": null
+      }
+    ]
+  },
+  {
+    "descriptor": {
+      "name": "jl_jit_abi_converter_fallback",
+      "kind": "codegen-route-entry",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbol-routes-v2/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-internal.1.13.1.dylib",
+      "original_image_sha256": "aaf25ba7ac705b5e0d564e6942da9d158bf59cf387fa9d5dca097a254764d816",
+      "original_file_symbol_value": "00000000000b76a8"
+    },
+    "breakpoint_id": 21,
+    "hit_count": 0,
+    "locations": [
+      {
+        "location_id": 1,
+        "resolved": false,
+        "file_address": 751272,
+        "loaded_address": 18446744073709551615,
+        "module": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/bundle/lib/julia/libjulia-internal.dylib",
+        "module_uuid": "A9EAD8CA-7573-3B14-8DD6-39BDC818E737",
+        "symbol": "jl_jit_abi_converter_fallback",
+        "mangled_symbol": null
+      }
+    ]
+  },
+  {
+    "descriptor": {
+      "kind": "boundary",
+      "name": "main",
+      "origin": "direct-compiled-C-ABI"
+    },
+    "breakpoint_id": 22,
+    "hit_count": 0,
+    "locations": [
+      {
+        "location_id": 1,
+        "resolved": false,
+        "file_address": 4294982848,
+        "loaded_address": 18446744073709551615,
+        "module": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/canary",
+        "module_uuid": "77E5016E-979F-3DB7-BA2C-9366B3007CCC",
+        "symbol": "main",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 2,
+        "resolved": false,
+        "file_address": 6473418464,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation",
+        "module_uuid": "6A518869-0A98-34CB-8A15-CC28F898255E",
+        "symbol": "-[NSBlockOperation main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 3,
+        "resolved": false,
+        "file_address": 6473455796,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation",
+        "module_uuid": "6A518869-0A98-34CB-8A15-CC28F898255E",
+        "symbol": "-[NSThread main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 4,
+        "resolved": false,
+        "file_address": 6473488740,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation",
+        "module_uuid": "6A518869-0A98-34CB-8A15-CC28F898255E",
+        "symbol": "-[NSInvocationOperation main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 5,
+        "resolved": false,
+        "file_address": 6473490268,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation",
+        "module_uuid": "6A518869-0A98-34CB-8A15-CC28F898255E",
+        "symbol": "-[NSOperation main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 6,
+        "resolved": false,
+        "file_address": 6481903772,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation",
+        "module_uuid": "6A518869-0A98-34CB-8A15-CC28F898255E",
+        "symbol": "__C.NSOperationQueue.DelayReadyOperation.main() -> ()",
+        "mangled_symbol": "$sSo16NSOperationQueueC10FoundationE19DelayReadyOperation33_0ECEE0A75E2DD5EDFED9A6FEB26D5D32LLC4mainyyF"
+      },
+      {
+        "location_id": 7,
+        "resolved": false,
+        "file_address": 6481904640,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation",
+        "module_uuid": "6A518869-0A98-34CB-8A15-CC28F898255E",
+        "symbol": "@objc __C.NSOperationQueue.DelayReadyOperation.main() -> ()",
+        "mangled_symbol": "$sSo16NSOperationQueueC10FoundationE19DelayReadyOperation33_0ECEE0A75E2DD5EDFED9A6FEB26D5D32LLC4mainyyFTo"
+      },
+      {
+        "location_id": 8,
+        "resolved": false,
+        "file_address": 6483933396,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation",
+        "module_uuid": "6A518869-0A98-34CB-8A15-CC28F898255E",
+        "symbol": "-[_NSBarrierOperation main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 9,
+        "resolved": false,
+        "file_address": 6510455292,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/Frameworks/Security.framework/Versions/A/Security",
+        "module_uuid": "6F4EA801-3DEF-3377-981B-325FF7A96F8A",
+        "symbol": "Security::OSXCode::main()",
+        "mangled_symbol": "_ZN8Security7OSXCode4mainEv"
+      },
+      {
+        "location_id": 10,
+        "resolved": false,
+        "file_address": 6515009728,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/CarbonCore.framework/Versions/A/CarbonCore",
+        "module_uuid": "3DC8712F-F078-3869-956A-FC486DF85671",
+        "symbol": "main",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 11,
+        "resolved": false,
+        "file_address": 6928243496,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/Frameworks/QuickLookThumbnailing.framework/Versions/A/QuickLookThumbnailing",
+        "module_uuid": "5ABEB0E5-4DB2-36E3-A9C0-AB83E6ADF0E2",
+        "symbol": "-[QLThumbnailRequestOperation main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 12,
+        "resolved": false,
+        "file_address": 6928295352,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/Frameworks/QuickLookThumbnailing.framework/Versions/A/QuickLookThumbnailing",
+        "module_uuid": "5ABEB0E5-4DB2-36E3-A9C0-AB83E6ADF0E2",
+        "symbol": "-[QLThumbnailStoreRetrievalOperation main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 13,
+        "resolved": false,
+        "file_address": 6868884204,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/Frameworks/FileProvider.framework/Versions/A/FileProvider",
+        "module_uuid": "5B1C92F6-E3FF-33ED-AF26-7FDBAC75D99B",
+        "symbol": "-[FPFetchAppLibraryIconsOperation main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 14,
+        "resolved": false,
+        "file_address": 6868885576,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/Frameworks/FileProvider.framework/Versions/A/FileProvider",
+        "module_uuid": "5B1C92F6-E3FF-33ED-AF26-7FDBAC75D99B",
+        "symbol": "-[FPFetchRegularItemThumbnailsOperation main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 15,
+        "resolved": false,
+        "file_address": 6868888136,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/Frameworks/FileProvider.framework/Versions/A/FileProvider",
+        "module_uuid": "5B1C92F6-E3FF-33ED-AF26-7FDBAC75D99B",
+        "symbol": "-[FPFetchThumbnailsOperation main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 16,
+        "resolved": false,
+        "file_address": 6869174620,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/Frameworks/FileProvider.framework/Versions/A/FileProvider",
+        "module_uuid": "5B1C92F6-E3FF-33ED-AF26-7FDBAC75D99B",
+        "symbol": "-[FPMoveOperation main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 17,
+        "resolved": false,
+        "file_address": 6869285440,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/Frameworks/FileProvider.framework/Versions/A/FileProvider",
+        "module_uuid": "5B1C92F6-E3FF-33ED-AF26-7FDBAC75D99B",
+        "symbol": "-[FPSpotlightDropIndexOperation main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 18,
+        "resolved": false,
+        "file_address": 6869292888,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/Frameworks/FileProvider.framework/Versions/A/FileProvider",
+        "module_uuid": "5B1C92F6-E3FF-33ED-AF26-7FDBAC75D99B",
+        "symbol": "-[FPSpotlightFetchClientStateOperation main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 19,
+        "resolved": false,
+        "file_address": 6869311744,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/Frameworks/FileProvider.framework/Versions/A/FileProvider",
+        "module_uuid": "5B1C92F6-E3FF-33ED-AF26-7FDBAC75D99B",
+        "symbol": "-[FPSpotlightFetchOneBatchFromWorkingSetOperation main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 20,
+        "resolved": false,
+        "file_address": 6869317316,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/Frameworks/FileProvider.framework/Versions/A/FileProvider",
+        "module_uuid": "5B1C92F6-E3FF-33ED-AF26-7FDBAC75D99B",
+        "symbol": "-[FPSpotlightIndexOneBatchOperation main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 21,
+        "resolved": false,
+        "file_address": 6869457152,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/Frameworks/FileProvider.framework/Versions/A/FileProvider",
+        "module_uuid": "5B1C92F6-E3FF-33ED-AF26-7FDBAC75D99B",
+        "symbol": "-[FPListRemoteVersionsOperation main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 22,
+        "resolved": false,
+        "file_address": 6869500144,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/Frameworks/FileProvider.framework/Versions/A/FileProvider",
+        "module_uuid": "5B1C92F6-E3FF-33ED-AF26-7FDBAC75D99B",
+        "symbol": "-[FPActionOperation main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 23,
+        "resolved": false,
+        "file_address": 6917800980,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/PrivateFrameworks/AppSupport.framework/Versions/A/AppSupport",
+        "module_uuid": "A7540DC8-C1C0-35CE-858B-987A8B09143E",
+        "symbol": "-[_CPPowerAssertionThread main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 24,
+        "resolved": false,
+        "file_address": 6917819512,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/PrivateFrameworks/AppSupport.framework/Versions/A/AppSupport",
+        "module_uuid": "A7540DC8-C1C0-35CE-858B-987A8B09143E",
+        "symbol": "-[CPDistributedMessagingAsyncOperation main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 25,
+        "resolved": false,
+        "file_address": 9233508324,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/Frameworks/ExtensionFoundation.framework/Versions/A/ExtensionFoundation",
+        "module_uuid": "F92F116B-551B-31CF-9B0E-D6DC58A7D59D",
+        "symbol": "-[EXFrameworkScanner main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 26,
+        "resolved": false,
+        "file_address": 9233571420,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/Frameworks/ExtensionFoundation.framework/Versions/A/ExtensionFoundation",
+        "module_uuid": "F92F116B-551B-31CF-9B0E-D6DC58A7D59D",
+        "symbol": "+[EXPKService main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 27,
+        "resolved": false,
+        "file_address": 6887367972,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/PrivateFrameworks/CoreSymbolication.framework/Versions/A/CoreSymbolication",
+        "module_uuid": "92614201-1180-33F5-BDFA-56B37E1F0202",
+        "symbol": "CSCppExceptionSafeThread::main()",
+        "mangled_symbol": "_ZN24CSCppExceptionSafeThread4mainEv"
+      },
+      {
+        "location_id": 28,
+        "resolved": false,
+        "file_address": 6909462972,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/PrivateFrameworks/CoreWiFi.framework/Versions/A/CoreWiFi",
+        "module_uuid": "67779CE3-D626-37AA-B082-B0EDB25F6FC5",
+        "symbol": "-[CWFAsyncBlockOperation main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 29,
+        "resolved": false,
+        "file_address": 6622472568,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/PrivateFrameworks/ApplePushService.framework/Versions/A/ApplePushService",
+        "module_uuid": "AF181588-2E00-307E-BDFD-F7DBDDBEB3A9",
+        "symbol": "+[APSLog main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 30,
+        "resolved": false,
+        "file_address": 6880055392,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/PrivateFrameworks/AVFCore.framework/Versions/A/AVFCore",
+        "module_uuid": "7A9C0F13-EFF2-3745-9416-CF3425E19749",
+        "symbol": "-[AVWaitForNotificationOrDeallocationOperation main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 31,
+        "resolved": false,
+        "file_address": 9207367064,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/Frameworks/AVRouting.framework/Versions/A/AVRouting",
+        "module_uuid": "D83A1570-559F-3452-AE12-EE5479C861FB",
+        "symbol": "-[AVRoutingWaitForNotificationOrDeallocationOperation main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 32,
+        "resolved": false,
+        "file_address": 6548731892,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/PrivateFrameworks/CoreDuet.framework/Versions/A/CoreDuet",
+        "module_uuid": "A0F5BB1B-121B-384A-BC71-E91FEE18DCBD",
+        "symbol": "-[_DKPerformSyncDownPeerOperation main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 33,
+        "resolved": false,
+        "file_address": 6548768072,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/PrivateFrameworks/CoreDuet.framework/Versions/A/CoreDuet",
+        "module_uuid": "A0F5BB1B-121B-384A-BC71-E91FEE18DCBD",
+        "symbol": "-[_DKPerformSyncDownOperation main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 34,
+        "resolved": false,
+        "file_address": 6548861004,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/PrivateFrameworks/CoreDuet.framework/Versions/A/CoreDuet",
+        "module_uuid": "A0F5BB1B-121B-384A-BC71-E91FEE18DCBD",
+        "symbol": "-[_DKPerformSyncUpChangeOperation main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 35,
+        "resolved": false,
+        "file_address": 6548950028,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/PrivateFrameworks/CoreDuet.framework/Versions/A/CoreDuet",
+        "module_uuid": "A0F5BB1B-121B-384A-BC71-E91FEE18DCBD",
+        "symbol": "-[_DKSyncBlockOperation main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 36,
+        "resolved": false,
+        "file_address": 6548952788,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/PrivateFrameworks/CoreDuet.framework/Versions/A/CoreDuet",
+        "module_uuid": "A0F5BB1B-121B-384A-BC71-E91FEE18DCBD",
+        "symbol": "-[_DKSyncBlockCompositeOperation main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 37,
+        "resolved": false,
+        "file_address": 6549033496,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/PrivateFrameworks/CoreDuet.framework/Versions/A/CoreDuet",
+        "module_uuid": "A0F5BB1B-121B-384A-BC71-E91FEE18DCBD",
+        "symbol": "-[_DKPerformSyncDownPeerDeletionsOperation main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 38,
+        "resolved": false,
+        "file_address": 6549311096,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/PrivateFrameworks/CoreDuet.framework/Versions/A/CoreDuet",
+        "module_uuid": "A0F5BB1B-121B-384A-BC71-E91FEE18DCBD",
+        "symbol": "-[_DKPerformSyncUpHistoryAdditionsOperation main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 39,
+        "resolved": false,
+        "file_address": 6549327056,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/PrivateFrameworks/CoreDuet.framework/Versions/A/CoreDuet",
+        "module_uuid": "A0F5BB1B-121B-384A-BC71-E91FEE18DCBD",
+        "symbol": "-[_DKPerformSyncUpHistoryDeletionsOperation main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 40,
+        "resolved": false,
+        "file_address": 6549378044,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/PrivateFrameworks/CoreDuet.framework/Versions/A/CoreDuet",
+        "module_uuid": "A0F5BB1B-121B-384A-BC71-E91FEE18DCBD",
+        "symbol": "-[_DKPerformSyncDownPeerAdditionsOperation main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 41,
+        "resolved": false,
+        "file_address": 6549422016,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/PrivateFrameworks/CoreDuet.framework/Versions/A/CoreDuet",
+        "module_uuid": "A0F5BB1B-121B-384A-BC71-E91FEE18DCBD",
+        "symbol": "-[_DKPerformSyncUpHistoryOperation main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 42,
+        "resolved": false,
+        "file_address": 6882480116,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/PrivateFrameworks/BoardServices.framework/Versions/A/BoardServices",
+        "module_uuid": "99C8CA86-3862-33A9-B996-A54FA1C9F394",
+        "symbol": "+[BSServiceQuality main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 43,
+        "resolved": false,
+        "file_address": 6978592364,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/PrivateFrameworks/MediaRemote.framework/Versions/A/MediaRemote",
+        "module_uuid": "1BEEEA15-A39C-3276-B170-7C83B432635F",
+        "symbol": "-[MROperation main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 44,
+        "resolved": false,
+        "file_address": 7061143012,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/PrivateFrameworks/MediaServices.framework/Versions/A/MediaServices",
+        "module_uuid": "23DC8468-F845-3B8C-8664-89BD10709277",
+        "symbol": "-[MSVArtworkServiceColorAnalysisOperation main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 45,
+        "resolved": false,
+        "file_address": 7061144588,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/PrivateFrameworks/MediaServices.framework/Versions/A/MediaServices",
+        "module_uuid": "23DC8468-F845-3B8C-8664-89BD10709277",
+        "symbol": "-[MSVArtworkServiceConversionOperation main]",
+        "mangled_symbol": null
+      },
+      {
+        "location_id": 46,
+        "resolved": false,
+        "file_address": 7061149688,
+        "loaded_address": 18446744073709551615,
+        "module": "/System/Library/PrivateFrameworks/MediaServices.framework/Versions/A/MediaServices",
+        "module_uuid": "23DC8468-F845-3B8C-8664-89BD10709277",
+        "symbol": "-[MSVArtworkServiceResizeOperation main]",
+        "mangled_symbol": null
+      }
+    ]
+  },
+  {
+    "descriptor": {
+      "kind": "boundary",
+      "name": "init_julia",
+      "origin": "direct-compiled-C-ABI"
+    },
+    "breakpoint_id": 23,
+    "hit_count": 0,
+    "locations": [
+      {
+        "location_id": 1,
+        "resolved": false,
+        "file_address": 12346180,
+        "loaded_address": 18446744073709551615,
+        "module": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/bundle/lib/libclbgaotcanary.dylib",
+        "module_uuid": "DB73BEF7-FB27-3581-8917-435BA489EC81",
+        "symbol": "init_julia",
+        "mangled_symbol": null
+      }
+    ]
+  },
+  {
+    "descriptor": {
+      "kind": "boundary",
+      "name": "clbg_entry",
+      "origin": "direct-compiled-C-ABI"
+    },
+    "breakpoint_id": 24,
+    "hit_count": 0,
+    "locations": [
+      {
+        "location_id": 1,
+        "resolved": false,
+        "file_address": 6152800,
+        "loaded_address": 18446744073709551615,
+        "module": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/bundle/lib/libclbgaotcanary.dylib",
+        "module_uuid": "DB73BEF7-FB27-3581-8917-435BA489EC81",
+        "symbol": "clbg_entry",
+        "mangled_symbol": null
+      }
+    ]
+  },
+  {
+    "descriptor": {
+      "kind": "boundary",
+      "name": "shutdown_julia",
+      "origin": "direct-compiled-C-ABI"
+    },
+    "breakpoint_id": 25,
+    "hit_count": 0,
+    "locations": [
+      {
+        "location_id": 1,
+        "resolved": false,
+        "file_address": 12346972,
+        "loaded_address": 18446744073709551615,
+        "module": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/bundle/lib/libclbgaotcanary.dylib",
+        "module_uuid": "DB73BEF7-FB27-3581-8917-435BA489EC81",
+        "symbol": "shutdown_julia",
+        "mangled_symbol": null
+      }
+    ]
+  }
+]

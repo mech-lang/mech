@@ -1,0 +1,22 @@
+{
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/jdk/jdk-25.0.4.1+1/Contents/Home/lib/server/libjvm.dylib",
+  "architectures": [
+    "arm64"
+  ],
+  "dependencies": [
+    {
+      "install_name": "@rpath/libjvm.dylib",
+      "lookup_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/jdk/jdk-25.0.4.1+1/Contents/Home/lib/server/libjvm.dylib",
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/jdk/jdk-25.0.4.1+1/Contents/Home/lib/server/libjvm.dylib",
+      "sha256": "c0c9cc842a9d33857be8262157d19ee9c1e15caf99a9bde784033b351b5dd117"
+    },
+    {
+      "install_name": "/usr/lib/libSystem.B.dylib",
+      "scope": "OS-image-not-hashed"
+    },
+    {
+      "install_name": "/usr/lib/libc++.1.dylib",
+      "scope": "OS-image-not-hashed"
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "key": "mandelbrot:v-mandelbrot-compact-input-v2",
+  "id": "v-mandelbrot-compact-input-v2",
+  "benchmark": "mandelbrot",
+  "language": "v",
+  "source_sha256": "dc31f0c17e0c0e30e6b194a7b704804d8fffef5a24229c29f064de1953fcf96c",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualification/production-builder-v3/mandelbrot/v-mandelbrot-compact-input-v2/program",
+    "8"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012",
+  "runtime_environment": {
+    "LC_ALL": "C",
+    "OMP_NUM_THREADS": "8",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1",
+    "RAYON_NUM_THREADS": "8"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"64398ecbae2f293996dfb7f09d344f0152d0473eae2ec97eb9d3fe8441a710fe\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualification/production-builder-v3/mandelbrot/v-mandelbrot-compact-input-v2/program\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"dc31f0c17e0c0e30e6b194a7b704804d8fffef5a24229c29f064de1953fcf96c\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/.build-sdk-v1/toolchain/v/v\": \"d3c86b7326e62990d1eb77247b68ea2914a834e5fe9444f981cfbc3863cb4ac1\"}}",
+  "started_at": "2026-10-12T23:07:17.239212+00:00",
+  "workload_n": 8,
+  "full_workload": false,
+  "timeout_seconds": 300,
+  "maximum_rss_mib": 8192,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.005351459,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 15,
+  "stdout_sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+  "validation": {
+    "bytes": 15,
+    "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+    "reference_match": true,
+    "bounded_independent_oracle": true,
+    "tolerance": null
+  },
+  "finished_at": "2026-10-12T23:07:17.415304+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true,
+  "round": 0,
+  "attempt": 7,
+  "sampler_wait_status": 0,
+  "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualification/production-builder-v3/mandelbrot/attempts/007-v-mandelbrot-compact-input-v2.json",
+  "supervised_native_group": {
+    "type": "native-group-started",
+    "pid": 76076,
+    "pgid": 76076,
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualification/production-builder-v3/mandelbrot/v-mandelbrot-compact-input-v2/program",
+      "8"
+    ],
+    "inherited_common_mutex": true
+  },
+  "supervisor_remaining_members": [],
+  "fatal_qualification_fields": [],
+  "qualified": true,
+  "retryable_environment_only": false
+}

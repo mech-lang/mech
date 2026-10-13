@@ -1,0 +1,71 @@
+{
+  "status": "read-only-terminal-record-review-awaiting-guarded-pins-and-LOC",
+  "review_identity": "matlab-regexp-correction-full9-peer-review-v1",
+  "manifest": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/studies/full-v1/regexredux/manifest.json",
+    "sha256": "8e35f8f769c5d751348245b9a614c0ada15c62265d721b3d89abe7bc203ee443"
+  },
+  "report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/studies/full-v1/regexredux/report.json",
+  "actual_terminal_status": "complete",
+  "actual_full_workload_n": 5000000,
+  "actual_full_attempts": 9,
+  "active": null,
+  "skipped_failed_profile_slots": [],
+  "record_review": "Read actual report/manifest and all nine original raw/supervisor metadata files; retained source identities, three rotated rounds, source-specific sample durations, successful exits, authoritative supervision, full workload, exact twenty passed gates and complete output hashes agree. No hashing/parser/native/normalization run was performed for this source-only review.",
+  "complete_output": {
+    "bytes": 298,
+    "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af"
+  },
+  "profiles": {
+    "matlab-case-compact": {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/sources/regexredux_compact.m",
+      "source_sha256": "d41b8687b3661174be4b7c58014f0cfaaf331f6a11024135cc5dc8a561bced99",
+      "attempts": [
+        1,
+        6,
+        8
+      ],
+      "samples_seconds": [
+        17.644398125,
+        14.853161459,
+        14.785282
+      ],
+      "median_seconds": 14.853161459
+    },
+    "matlab-case-optimized": {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/sources/regexredux_optimized.m",
+      "source_sha256": "0a59dbb911fd4e4aaa0aac8edd7380c8d5c834f4f0f3338337850b7ee3ee0846",
+      "attempts": [
+        2,
+        4,
+        9
+      ],
+      "samples_seconds": [
+        14.901873791,
+        14.965484375,
+        14.720709792
+      ],
+      "median_seconds": 14.901873791
+    },
+    "mech-aot-control": {
+      "source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d",
+      "binary_sha256": "026fa8c40c7d425282349c20a8cb155db271f2b7f4fdfefc1699408adcee0eef",
+      "attempts": [
+        3,
+        5,
+        7
+      ],
+      "samples_seconds": [
+        0.504140041,
+        0.502656125,
+        0.497510375
+      ],
+      "median_seconds": 0.502656125,
+      "binding": "Fresh unchanged control sampled in this corrected regex cohort. Archived control_for:r context is retained and is not this cohort identity."
+    }
+  },
+  "pin_audit_performed": false,
+  "canonical_LOC_admitted": false,
+  "chart_admission": false,
+  "original_cohort_mutated": false
+}

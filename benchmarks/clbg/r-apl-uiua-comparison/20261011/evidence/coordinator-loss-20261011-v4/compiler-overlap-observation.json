@@ -1,0 +1,33 @@
+{
+  "source": "Earlier ps tool output during coordinator-loss investigation; recorded before recovery event creation.",
+  "wall_clock_at_observation_not_recorded": true,
+  "simultaneous_process_observations": [
+    {
+      "pid": 25078,
+      "ppid": 1,
+      "executable": "apl",
+      "elapsed_observed": "18:08",
+      "cpu_percent": 70.2,
+      "state": "Rs"
+    },
+    {
+      "pid": 28534,
+      "ppid": 25536,
+      "executable": "cargo",
+      "elapsed_observed": "00:33",
+      "cpu_percent": 0.0,
+      "state": "S",
+      "observed_command_prefix": "cargo build --release --locked --manifest-path /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mech-driver/Cargo.toml --bin mech-clbg-mandelbrot-compiled"
+    },
+    {
+      "pid": 29115,
+      "ppid": 28534,
+      "executable": "rustc",
+      "elapsed_observed": "00:14",
+      "cpu_percent": 72.9,
+      "state": "R",
+      "observed_command_prefix": "rustc --crate-name cranelift_codegen --edition=2024"
+    }
+  ],
+  "never_chart_eligible": true
+}

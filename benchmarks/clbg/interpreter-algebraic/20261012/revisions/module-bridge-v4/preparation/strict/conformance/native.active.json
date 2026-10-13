@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/module-bridge-v4/.build/strict/target/release/mech-algebraic-conformance"
+  ],
+  "started_at": "2026-10-12T22:33:43.384736+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 120,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 65438,
+  "identity": {
+    "pid": 65438,
+    "process_listing": "Mon Oct 12 18:33:43 2026     /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/module-bridge-v4/.build/strict/target/release/mech-algebraic-conformance"
+  }
+}

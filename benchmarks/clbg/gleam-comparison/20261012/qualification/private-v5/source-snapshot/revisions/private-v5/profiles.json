@@ -1,0 +1,354 @@
+{
+  "language": "gleam",
+  "status": "source-candidate-awaiting-static-review",
+  "compiler_version": "1.19.0",
+  "backend": "Erlang abstract forms to BEAM; OTP native ARM64 JIT",
+  "stdlib_version": "1.0.5",
+  "runtime_version": "29.1.1",
+  "profiles": [
+    {
+      "id": "gleam-binarytrees-compact",
+      "benchmark": "binarytrees",
+      "variant": "compact",
+      "source": "sources/binarytrees/compact.gleam",
+      "compiled_source_bundle": [
+        "sources/binarytrees/compact.gleam",
+        "support/clbg_io.gleam",
+        "support/clbg_io_ffi.erl",
+        "support/clbg_runner.erl",
+        "support/clbg_reference.gleam"
+      ],
+      "maximum_compute_workers": 1,
+      "author": "Local Gleam adaptation of faithful benchmark algorithms; provenance in PROVENANCE.md",
+      "loc": null,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "gleam-binarytrees-optimized",
+      "benchmark": "binarytrees",
+      "variant": "optimized",
+      "source": "revisions/private-v2/sources/binarytrees/optimized.gleam",
+      "compiled_source_bundle": [
+        "revisions/private-v2/sources/binarytrees/optimized.gleam",
+        "support/clbg_io.gleam",
+        "support/clbg_io_ffi.erl",
+        "support/clbg_runner.erl",
+        "support/clbg_reference.gleam",
+        "support/clbg_process.gleam",
+        "support/clbg_process_ffi.erl"
+      ],
+      "maximum_compute_workers": 8,
+      "author": "Local Gleam adaptation of faithful benchmark algorithms; provenance in PROVENANCE.md",
+      "loc": null,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "gleam-fannkuchredux-compact",
+      "benchmark": "fannkuchredux",
+      "variant": "compact",
+      "source": "sources/fannkuchredux/compact.gleam",
+      "compiled_source_bundle": [
+        "sources/fannkuchredux/compact.gleam",
+        "support/clbg_io.gleam",
+        "support/clbg_io_ffi.erl",
+        "support/clbg_runner.erl",
+        "support/clbg_vector.gleam",
+        "support/clbg_vector_ffi.erl"
+      ],
+      "maximum_compute_workers": 1,
+      "author": "Local Gleam adaptation of faithful benchmark algorithms; provenance in PROVENANCE.md",
+      "loc": null,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "gleam-fannkuchredux-optimized",
+      "benchmark": "fannkuchredux",
+      "variant": "optimized",
+      "source": "revisions/private-v2/sources/fannkuchredux/optimized.gleam",
+      "compiled_source_bundle": [
+        "revisions/private-v2/sources/fannkuchredux/optimized.gleam",
+        "support/clbg_io.gleam",
+        "support/clbg_io_ffi.erl",
+        "support/clbg_runner.erl",
+        "support/clbg_vector.gleam",
+        "support/clbg_vector_ffi.erl",
+        "support/clbg_process.gleam",
+        "support/clbg_process_ffi.erl"
+      ],
+      "maximum_compute_workers": 8,
+      "author": "Local Gleam adaptation of faithful benchmark algorithms; provenance in PROVENANCE.md",
+      "loc": null,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "gleam-nbody-compact",
+      "benchmark": "nbody",
+      "variant": "compact",
+      "source": "sources/nbody/compact.gleam",
+      "compiled_source_bundle": [
+        "sources/nbody/compact.gleam",
+        "support/clbg_io.gleam",
+        "support/clbg_io_ffi.erl",
+        "support/clbg_runner.erl"
+      ],
+      "maximum_compute_workers": 1,
+      "author": "Local Gleam adaptation of faithful benchmark algorithms; provenance in PROVENANCE.md",
+      "loc": null,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "gleam-nbody-optimized",
+      "benchmark": "nbody",
+      "variant": "optimized",
+      "source": "sources/nbody/optimized.gleam",
+      "compiled_source_bundle": [
+        "sources/nbody/optimized.gleam",
+        "support/clbg_io.gleam",
+        "support/clbg_io_ffi.erl",
+        "support/clbg_runner.erl",
+        "support/clbg_vector.gleam",
+        "support/clbg_vector_ffi.erl"
+      ],
+      "maximum_compute_workers": 1,
+      "author": "Local Gleam adaptation of faithful benchmark algorithms; provenance in PROVENANCE.md",
+      "loc": null,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "gleam-spectralnorm-compact",
+      "benchmark": "spectralnorm",
+      "variant": "compact",
+      "source": "revisions/private-v2/sources/spectralnorm/compact.gleam",
+      "compiled_source_bundle": [
+        "revisions/private-v2/sources/spectralnorm/compact.gleam",
+        "support/clbg_io.gleam",
+        "support/clbg_io_ffi.erl",
+        "support/clbg_runner.erl"
+      ],
+      "maximum_compute_workers": 1,
+      "author": "Local Gleam adaptation of faithful benchmark algorithms; provenance in PROVENANCE.md",
+      "loc": null,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "gleam-spectralnorm-optimized",
+      "benchmark": "spectralnorm",
+      "variant": "optimized",
+      "source": "revisions/private-v2/sources/spectralnorm/optimized.gleam",
+      "compiled_source_bundle": [
+        "revisions/private-v2/sources/spectralnorm/optimized.gleam",
+        "support/clbg_io.gleam",
+        "support/clbg_io_ffi.erl",
+        "support/clbg_runner.erl",
+        "support/clbg_process.gleam",
+        "support/clbg_process_ffi.erl"
+      ],
+      "maximum_compute_workers": 8,
+      "author": "Local Gleam adaptation of faithful benchmark algorithms; provenance in PROVENANCE.md",
+      "loc": null,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "gleam-mandelbrot-compact",
+      "benchmark": "mandelbrot",
+      "variant": "compact",
+      "source": "sources/mandelbrot/compact.gleam",
+      "compiled_source_bundle": [
+        "sources/mandelbrot/compact.gleam",
+        "support/clbg_io.gleam",
+        "support/clbg_io_ffi.erl",
+        "support/clbg_runner.erl"
+      ],
+      "maximum_compute_workers": 1,
+      "author": "Local Gleam adaptation of faithful benchmark algorithms; provenance in PROVENANCE.md",
+      "loc": null,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "gleam-mandelbrot-optimized",
+      "benchmark": "mandelbrot",
+      "variant": "optimized",
+      "source": "revisions/private-v2/sources/mandelbrot/optimized.gleam",
+      "compiled_source_bundle": [
+        "revisions/private-v2/sources/mandelbrot/optimized.gleam",
+        "support/clbg_io.gleam",
+        "support/clbg_io_ffi.erl",
+        "support/clbg_runner.erl",
+        "support/clbg_process.gleam",
+        "support/clbg_process_ffi.erl"
+      ],
+      "maximum_compute_workers": 8,
+      "author": "Local Gleam adaptation of faithful benchmark algorithms; provenance in PROVENANCE.md",
+      "loc": null,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "gleam-pidigits-compact",
+      "benchmark": "pidigits",
+      "variant": "compact",
+      "source": "sources/pidigits/compact.gleam",
+      "compiled_source_bundle": [
+        "sources/pidigits/compact.gleam",
+        "support/clbg_io.gleam",
+        "support/clbg_io_ffi.erl",
+        "support/clbg_runner.erl"
+      ],
+      "maximum_compute_workers": 1,
+      "author": "Local Gleam adaptation of faithful benchmark algorithms; provenance in PROVENANCE.md",
+      "loc": null,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "gleam-pidigits-optimized",
+      "benchmark": "pidigits",
+      "variant": "optimized",
+      "source": "sources/pidigits/optimized.gleam",
+      "compiled_source_bundle": [
+        "sources/pidigits/optimized.gleam",
+        "support/clbg_io.gleam",
+        "support/clbg_io_ffi.erl",
+        "support/clbg_runner.erl"
+      ],
+      "maximum_compute_workers": 1,
+      "author": "Local Gleam adaptation of faithful benchmark algorithms; provenance in PROVENANCE.md",
+      "loc": null,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "gleam-fasta-compact",
+      "benchmark": "fasta",
+      "variant": "compact",
+      "source": "sources/fasta/compact.gleam",
+      "compiled_source_bundle": [
+        "sources/fasta/compact.gleam",
+        "support/clbg_io.gleam",
+        "support/clbg_io_ffi.erl",
+        "support/clbg_runner.erl"
+      ],
+      "maximum_compute_workers": 1,
+      "author": "Local Gleam adaptation of faithful benchmark algorithms; provenance in PROVENANCE.md",
+      "loc": null,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "gleam-fasta-optimized",
+      "benchmark": "fasta",
+      "variant": "optimized",
+      "source": "sources/fasta/optimized.gleam",
+      "compiled_source_bundle": [
+        "sources/fasta/optimized.gleam",
+        "support/clbg_io.gleam",
+        "support/clbg_io_ffi.erl",
+        "support/clbg_runner.erl"
+      ],
+      "maximum_compute_workers": 1,
+      "author": "Local Gleam adaptation of faithful benchmark algorithms; provenance in PROVENANCE.md",
+      "loc": null,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "gleam-revcomp-compact",
+      "benchmark": "revcomp",
+      "variant": "compact",
+      "source": "revisions/private-v5/sources/revcomp/compact.gleam",
+      "compiled_source_bundle": [
+        "revisions/private-v5/sources/revcomp/compact.gleam",
+        "support/clbg_io.gleam",
+        "support/clbg_io_ffi.erl",
+        "support/clbg_runner.erl"
+      ],
+      "maximum_compute_workers": 1,
+      "author": "Local Gleam adaptation of faithful benchmark algorithms; provenance in PROVENANCE.md",
+      "loc": null,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "gleam-revcomp-optimized",
+      "benchmark": "revcomp",
+      "variant": "optimized",
+      "source": "revisions/private-v5/sources/revcomp/optimized.gleam",
+      "compiled_source_bundle": [
+        "revisions/private-v5/sources/revcomp/optimized.gleam",
+        "support/clbg_io.gleam",
+        "support/clbg_io_ffi.erl",
+        "support/clbg_runner.erl"
+      ],
+      "maximum_compute_workers": 1,
+      "author": "Local Gleam adaptation of faithful benchmark algorithms; provenance in PROVENANCE.md",
+      "loc": null,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "gleam-knucleotide-compact",
+      "benchmark": "knucleotide",
+      "variant": "compact",
+      "source": "sources/knucleotide/compact.gleam",
+      "compiled_source_bundle": [
+        "sources/knucleotide/compact.gleam",
+        "support/clbg_io.gleam",
+        "support/clbg_io_ffi.erl",
+        "support/clbg_runner.erl"
+      ],
+      "maximum_compute_workers": 1,
+      "author": "Local Gleam adaptation of faithful benchmark algorithms; provenance in PROVENANCE.md",
+      "loc": null,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "gleam-knucleotide-optimized",
+      "benchmark": "knucleotide",
+      "variant": "optimized",
+      "source": "sources/knucleotide/optimized.gleam",
+      "compiled_source_bundle": [
+        "sources/knucleotide/optimized.gleam",
+        "support/clbg_io.gleam",
+        "support/clbg_io_ffi.erl",
+        "support/clbg_runner.erl",
+        "support/clbg_process.gleam",
+        "support/clbg_process_ffi.erl"
+      ],
+      "maximum_compute_workers": 8,
+      "author": "Local Gleam adaptation of faithful benchmark algorithms; provenance in PROVENANCE.md",
+      "loc": null,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "gleam-regexredux-compact",
+      "benchmark": "regexredux",
+      "variant": "compact",
+      "source": "sources/regexredux/compact.gleam",
+      "compiled_source_bundle": [
+        "sources/regexredux/compact.gleam",
+        "support/clbg_io.gleam",
+        "support/clbg_io_ffi.erl",
+        "support/clbg_runner.erl",
+        "support/clbg_regex.gleam",
+        "support/clbg_regex_ffi.erl"
+      ],
+      "maximum_compute_workers": 1,
+      "author": "Local Gleam adaptation of faithful benchmark algorithms; provenance in PROVENANCE.md",
+      "loc": null,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "gleam-regexredux-optimized",
+      "benchmark": "regexredux",
+      "variant": "optimized",
+      "source": "sources/regexredux/optimized.gleam",
+      "compiled_source_bundle": [
+        "sources/regexredux/optimized.gleam",
+        "support/clbg_io.gleam",
+        "support/clbg_io_ffi.erl",
+        "support/clbg_runner.erl",
+        "support/clbg_regex.gleam",
+        "support/clbg_regex_ffi.erl",
+        "support/clbg_process.gleam",
+        "support/clbg_process_ffi.erl"
+      ],
+      "maximum_compute_workers": 8,
+      "author": "Local Gleam adaptation of faithful benchmark algorithms; provenance in PROVENANCE.md",
+      "loc": null,
+      "eligible_for_chart": false
+    }
+  ]
+}

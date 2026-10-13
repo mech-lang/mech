@@ -1,0 +1,2 @@
+WAIT common mutex: restore exact338 qualified Pygments source bytes
+{"status": "exact-qualified-source-dependency-restored", "source_files": 338, "restored_files": 338, "receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/exact-pygments-restoration-v2/receipt.json"}

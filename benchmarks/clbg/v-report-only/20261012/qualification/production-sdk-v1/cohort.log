@@ -1,0 +1,10 @@
+WAIT prerequisites: bootstrap.json, oracle-fixtures.json, preparation-fixtures.json, cleanup-fixtures.json
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/prepare_cohort.py", line 198, in <module>
+    main()
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/prepare_cohort.py", line 178, in main
+    run(args.revision)
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/prepare_cohort.py", line 153, in run
+    assert returncode == 0 and result.get('status') == 'bounded-outputs-passed', (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('V preparation failed; no automatic retry', 'regexredux', PosixPath('/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualification/production-sdk-v1/regexredux.log'))

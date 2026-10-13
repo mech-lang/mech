@@ -1,0 +1,2 @@
+WAIT common mutex: V full-study manifest pidigits
+{"manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/studies/pidigits/full-study/manifest.json", "sha256": "dbc7ddfd0e868693669c66a5aa2086e62cd4a5c9ddc1eabf8b6a91e589503215", "profiles": ["v-pidigits-compact-input-v2", "v-pidigits-optimized-builder-v3", "mech-aot-control"], "full_processes": 9, "report_only": true}

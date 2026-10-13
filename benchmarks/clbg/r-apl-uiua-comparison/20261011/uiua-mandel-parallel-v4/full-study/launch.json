@@ -1,0 +1,9 @@
+{
+  "pid": 44509,
+  "identity": {
+    "pid": 44509,
+    "process_listing": "Sun Oct 11 19:35:27 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/full_study.py --run --manifest-sha256 d286d36a47de8eda58a8999c6d4c00c498308eda09ad8de89a7ea616b495d1a6"
+  },
+  "manifest_sha256": "d286d36a47de8eda58a8999c6d4c00c498308eda09ad8de89a7ea616b495d1a6",
+  "launched_at": "2026-10-11T23:35:27.421640+00:00"
+}

@@ -1,0 +1,58 @@
+{
+  "status": "verified-waiting-on-live-APL-timing",
+  "observed_at": "2026-10-12T21:13:25Z",
+  "native_preparation_started": false,
+  "archive_fixtures": {
+    "script": "test_archive_v6.py",
+    "status": "passed",
+    "tests_run": 6,
+    "receipt": "archive-v6-fixtures.json"
+  },
+  "seal": {
+    "pid": 27883,
+    "exec_session": 42278,
+    "proposal": "proposals/private-input-archive-filter-v6.json",
+    "status": "waiting-on-common-mutex",
+    "root_digest_review_required": true
+  },
+  "full_ledger_fixtures": {
+    "pid": 39463,
+    "exec_session": 15498,
+    "script": "studies/pipeline-v2/test_full_study.py",
+    "tests_expected": 7,
+    "status": "waiting-on-common-mutex",
+    "queued_revision_must_remain_unchanged": true
+  },
+  "prior_fixture_waiter": {
+    "pid": 32529,
+    "exec_session": 38055,
+    "status": "deliberately-interrupted-before-lock-acquisition-no-native-child",
+    "journal": "full-pipeline-v2-waiter-stop.json",
+    "prior_pipeline_preserved": "studies/pipeline"
+  },
+  "shared_mutex": "/tmp/mech-clbg-timing.lock",
+  "observed_live_timing_pid": 27230,
+  "observed_live_timing_cpu_percent": 100.0,
+  "observed_live_timing_elapsed": "58:30",
+  "next_preparation_command": [
+    "python3", "guarded_prepare_v6.py", "--run",
+    "--proposal-file", "proposals/private-input-archive-filter-v6.json",
+    "--proposal-sha256", "EXACT_ROOT_REVIEWED_DIGEST",
+    "--revision", "private-input-archive-filter-v6"
+  ],
+  "next_full_seal_command": [
+    "python3", "studies/pipeline-v2/seal_full_studies.py",
+    "--qualified-revision", "private-input-archive-filter-v6",
+    "--study-revision", "full-v1"
+  ],
+  "full_runner": "studies/pipeline-v2/full_study.py",
+  "work_review": "studies/pipeline-v2/REQUIRED_WORK_REVIEW.md",
+  "source_counts": "source-counts/replay_sources.py",
+  "LOC_receipt_required": "Passed immutable receipt including test_foreign_crystal; boundary-audit-17 failed receipt must not be used",
+  "failure_policy": "Only genuine source failures with exact twenty Boolean checks and fifteen literal-true ownership, environment, monitor, cleanup, command and pin gates permit independent other profiles to continue. Failed sources remain unscored. All integrity failures stop.",
+  "publication_metadata": "../../continuation/publication-language-metadata.json",
+  "reconciler_static_review": "continuation/reconcile_native_records_v1.py is compatible with Crystal pipeline-v2 complete records; this does not attest execution or pins",
+  "immutable_evidence_preserved": true,
+  "git_commits_created": 0,
+  "charts_or_publication_modified": false
+}

@@ -1,0 +1,59 @@
+WAIT LOCK 1 knucleotide-r-optimized
+RUN FULL 1 knucleotide-r-optimized timeout 14400
+SAMPLE FULL 1 knucleotide-r-optimized 34.055290s
+WAIT LOCK 1 mech-control-knucleotide-for-r
+RUN FULL 1 mech-control-knucleotide-for-r timeout 14400
+SAMPLE FULL 1 mech-control-knucleotide-for-r 0.517408s
+WAIT LOCK 1 knucleotide-r-compact
+RUN FULL 1 knucleotide-r-compact timeout 14400
+SAMPLE FULL 1 knucleotide-r-compact 156.927438s
+WAIT LOCK 1 knucleotide-uiua-native-group-optimized-v3
+RUN FULL 1 knucleotide-uiua-native-group-optimized-v3 timeout 14400
+SAMPLE FULL 1 knucleotide-uiua-native-group-optimized-v3 891.961673s
+WAIT LOCK 1 knucleotide-uiua-compact-v3
+RUN FULL 1 knucleotide-uiua-compact-v3 timeout 14400
+FULL FAILURE knucleotide-uiua-compact-v3 625.126071s Benchmark exited with status 1
+WAIT LOCK 1 mech-control-knucleotide-for-uiua-medium-v3
+RUN FULL 1 mech-control-knucleotide-for-uiua-medium-v3 timeout 14400
+SAMPLE FULL 1 mech-control-knucleotide-for-uiua-medium-v3 0.540453s
+WAIT LOCK 1 knucleotide-uiua-bounded-optimized-v3
+RUN FULL 1 knucleotide-uiua-bounded-optimized-v3 timeout 14400
+SAMPLE FULL 1 knucleotide-uiua-bounded-optimized-v3 920.456797s
+WAIT LOCK 2 mech-control-knucleotide-for-r
+RUN FULL 2 mech-control-knucleotide-for-r timeout 14400
+SAMPLE FULL 2 mech-control-knucleotide-for-r 0.518710s
+WAIT LOCK 2 knucleotide-r-optimized
+RUN FULL 2 knucleotide-r-optimized timeout 14400
+SAMPLE FULL 2 knucleotide-r-optimized 33.611058s
+WAIT LOCK 2 knucleotide-r-compact
+RUN FULL 2 knucleotide-r-compact timeout 14400
+SAMPLE FULL 2 knucleotide-r-compact 158.347077s
+WAIT LOCK 2 mech-control-knucleotide-for-uiua-medium-v3
+RUN FULL 2 mech-control-knucleotide-for-uiua-medium-v3 timeout 14400
+SAMPLE FULL 2 mech-control-knucleotide-for-uiua-medium-v3 0.513598s
+WAIT LOCK 2 knucleotide-uiua-native-group-optimized-v3
+RUN FULL 2 knucleotide-uiua-native-group-optimized-v3 timeout 14400
+SAMPLE FULL 2 knucleotide-uiua-native-group-optimized-v3 886.628464s
+WAIT LOCK 2 knucleotide-uiua-bounded-optimized-v3
+RUN FULL 2 knucleotide-uiua-bounded-optimized-v3 timeout 14400
+SAMPLE FULL 2 knucleotide-uiua-bounded-optimized-v3 933.631194s
+WAIT LOCK 3 mech-control-knucleotide-for-r
+RUN FULL 3 mech-control-knucleotide-for-r timeout 14400
+SAMPLE FULL 3 mech-control-knucleotide-for-r 0.515946s
+WAIT LOCK 3 knucleotide-r-compact
+RUN FULL 3 knucleotide-r-compact timeout 14400
+SAMPLE FULL 3 knucleotide-r-compact 157.274536s
+WAIT LOCK 3 knucleotide-r-optimized
+RUN FULL 3 knucleotide-r-optimized timeout 14400
+SAMPLE FULL 3 knucleotide-r-optimized 34.143208s
+WAIT LOCK 3 mech-control-knucleotide-for-uiua-medium-v3
+RUN FULL 3 mech-control-knucleotide-for-uiua-medium-v3 timeout 14400
+SAMPLE FULL 3 mech-control-knucleotide-for-uiua-medium-v3 0.528203s
+WAIT LOCK 3 knucleotide-uiua-bounded-optimized-v3
+RUN FULL 3 knucleotide-uiua-bounded-optimized-v3 timeout 14400
+SAMPLE FULL 3 knucleotide-uiua-bounded-optimized-v3 933.032745s
+WAIT LOCK 3 knucleotide-uiua-native-group-optimized-v3
+RUN FULL 3 knucleotide-uiua-native-group-optimized-v3 timeout 14400
+SAMPLE FULL 3 knucleotide-uiua-native-group-optimized-v3 884.986164s
+REPORT r partial
+REPORT uiua partial

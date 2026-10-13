@@ -1,0 +1,221 @@
+{
+  "sha": "dae1213e3b7576b40bf84a5c45a25748a74ef3c0",
+  "node_id": "C_kwDOFAjhxtoAKGRhZTEyMTNlM2I3NTc2YjQwYmY4NGE1YzQ1YTI1NzQ4YTc0ZWYzYzA",
+  "commit": {
+    "author": {
+      "name": "hanabi1224",
+      "email": "harlowmoo@gmail.com",
+      "date": "2023-11-26T01:03:09Z"
+    },
+    "committer": {
+      "name": "hanabi1224",
+      "email": "harlowmoo@gmail.com",
+      "date": "2023-11-26T01:03:09Z"
+    },
+    "message": "fix & fmt",
+    "tree": {
+      "sha": "7196dd1f05c05f4519de82d911f454dc622f8cc4",
+      "url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/git/trees/7196dd1f05c05f4519de82d911f454dc622f8cc4"
+    },
+    "url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/git/commits/dae1213e3b7576b40bf84a5c45a25748a74ef3c0",
+    "comment_count": 0,
+    "verification": {
+      "verified": true,
+      "reason": "valid",
+      "signature": "-----BEGIN SSH SIGNATURE-----\nU1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgrftauPyTz04wmevcMfEuVT69fv\nqTHpby00hOFWYZoUUAAAADZ2l0AAAAAAAAAAZzaGE1MTIAAABTAAAAC3NzaC1lZDI1NTE5\nAAAAQMtd+ocTuMRiiOLPbd14zArAWfX+8uU9+MfB1vepuVJ+vF4B5J2M1Fs9WykWtw46Ae\nPd9ho5xGmhA0MeZ/peTAc=\n-----END SSH SIGNATURE-----",
+      "payload": "tree 7196dd1f05c05f4519de82d911f454dc622f8cc4\nparent 4598c994456a389952a6aa9645b7d3e6f6f0b148\nauthor hanabi1224 <harlowmoo@gmail.com> 1700960589 +0800\ncommitter hanabi1224 <harlowmoo@gmail.com> 1700960589 +0800\n\nfix & fmt\n",
+      "verified_at": "2024-11-19T08:26:56Z"
+    }
+  },
+  "url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/commits/dae1213e3b7576b40bf84a5c45a25748a74ef3c0",
+  "html_url": "https://github.com/hanabi1224/vlang-big-integer/commit/dae1213e3b7576b40bf84a5c45a25748a74ef3c0",
+  "comments_url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/commits/dae1213e3b7576b40bf84a5c45a25748a74ef3c0/comments",
+  "author": {
+    "login": "hanabi1224",
+    "id": 6546635,
+    "node_id": "MDQ6VXNlcjY1NDY2MzU=",
+    "avatar_url": "https://avatars.githubusercontent.com/u/6546635?v=4",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/hanabi1224",
+    "html_url": "https://github.com/hanabi1224",
+    "followers_url": "https://api.github.com/users/hanabi1224/followers",
+    "following_url": "https://api.github.com/users/hanabi1224/following{/other_user}",
+    "gists_url": "https://api.github.com/users/hanabi1224/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/hanabi1224/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/hanabi1224/subscriptions",
+    "organizations_url": "https://api.github.com/users/hanabi1224/orgs",
+    "repos_url": "https://api.github.com/users/hanabi1224/repos",
+    "events_url": "https://api.github.com/users/hanabi1224/events{/privacy}",
+    "received_events_url": "https://api.github.com/users/hanabi1224/received_events",
+    "type": "User",
+    "user_view_type": "public",
+    "site_admin": false
+  },
+  "committer": {
+    "login": "hanabi1224",
+    "id": 6546635,
+    "node_id": "MDQ6VXNlcjY1NDY2MzU=",
+    "avatar_url": "https://avatars.githubusercontent.com/u/6546635?v=4",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/hanabi1224",
+    "html_url": "https://github.com/hanabi1224",
+    "followers_url": "https://api.github.com/users/hanabi1224/followers",
+    "following_url": "https://api.github.com/users/hanabi1224/following{/other_user}",
+    "gists_url": "https://api.github.com/users/hanabi1224/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/hanabi1224/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/hanabi1224/subscriptions",
+    "organizations_url": "https://api.github.com/users/hanabi1224/orgs",
+    "repos_url": "https://api.github.com/users/hanabi1224/repos",
+    "events_url": "https://api.github.com/users/hanabi1224/events{/privacy}",
+    "received_events_url": "https://api.github.com/users/hanabi1224/received_events",
+    "type": "User",
+    "user_view_type": "public",
+    "site_admin": false
+  },
+  "parents": [
+    {
+      "sha": "4598c994456a389952a6aa9645b7d3e6f6f0b148",
+      "url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/commits/4598c994456a389952a6aa9645b7d3e6f6f0b148",
+      "html_url": "https://github.com/hanabi1224/vlang-big-integer/commit/4598c994456a389952a6aa9645b7d3e6f6f0b148"
+    }
+  ],
+  "stats": {
+    "total": 104,
+    "additions": 50,
+    "deletions": 54
+  },
+  "files": [
+    {
+      "sha": "7ba3c38ae0905f07ef7f51eb17ede77113d285c4",
+      "filename": "big_int.v",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "changes": 2,
+      "blob_url": "https://github.com/hanabi1224/vlang-big-integer/blob/dae1213e3b7576b40bf84a5c45a25748a74ef3c0/big_int.v",
+      "raw_url": "https://github.com/hanabi1224/vlang-big-integer/raw/dae1213e3b7576b40bf84a5c45a25748a74ef3c0/big_int.v",
+      "contents_url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/contents/big_int.v?ref=dae1213e3b7576b40bf84a5c45a25748a74ef3c0",
+      "patch": "@@ -4,7 +4,7 @@ import math.bits\n \n pub enum BigIntegerSign {\n \tnegative = -1\n-\tzero = 0\n+\tzero     = 0\n \tpositive = 1\n }\n "
+    },
+    {
+      "sha": "5d80b28d13dd0c970282cac3f860360ebf6bc8e8",
+      "filename": "big_int_add_sub.v",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 7,
+      "changes": 12,
+      "blob_url": "https://github.com/hanabi1224/vlang-big-integer/blob/dae1213e3b7576b40bf84a5c45a25748a74ef3c0/big_int_add_sub.v",
+      "raw_url": "https://github.com/hanabi1224/vlang-big-integer/raw/dae1213e3b7576b40bf84a5c45a25748a74ef3c0/big_int_add_sub.v",
+      "contents_url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/contents/big_int_add_sub.v?ref=dae1213e3b7576b40bf84a5c45a25748a74ef3c0",
+      "patch": "@@ -1,9 +1,7 @@\n module biginteger\n \n-const (\n-\ttwo_pow_32         = 1 << 32\n-\ttwo_pow_32_minus_1 = (1 << 32) - 1\n-)\n+const two_pow_32 = 1 << 32\n+const two_pow_32_minus_1 = (1 << 32) - 1\n \n pub fn (big BigInteger) negative() BigInteger {\n \tif big.sign == .zero {\n@@ -136,7 +134,7 @@ pub fn substract(a BigInteger, b BigInteger) BigInteger {\n }\n \n // length of a is ganranteed to be smaller than b\n-[direct_array_access]\n+@[direct_array_access]\n fn add_a_b_length_asc(a []u32, b []u32) []u32 {\n \tmut i := 0\n \tmut num_tmp := u64(0)\n@@ -160,14 +158,14 @@ fn add_a_b_length_asc(a []u32, b []u32) []u32 {\n \treturn result\n }\n \n-[direct_array_access]\n+@[direct_array_access]\n fn sub_a_b_length_desc(a []u32, b []u32, reverse_sign bool) ([]u32, BigIntegerSign) {\n \tmut result := a.clone()\n \tsign := sub_mut_a_b_length_desc(mut result, b, reverse_sign)\n \treturn result, sign\n }\n \n-[direct_array_access]\n+@[direct_array_access]\n fn sub_mut_a_b_length_desc(mut a []u32, b []u32, reverse_sign bool) BigIntegerSign {\n \tmut i := 0\n \tmut borrow_next := false"
+    },
+    {
+      "sha": "af558eab8917d946c2f2d7b179e377affd3474fd",
+      "filename": "big_int_cmp.v",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "changes": 2,
+      "blob_url": "https://github.com/hanabi1224/vlang-big-integer/blob/dae1213e3b7576b40bf84a5c45a25748a74ef3c0/big_int_cmp.v",
+      "raw_url": "https://github.com/hanabi1224/vlang-big-integer/raw/dae1213e3b7576b40bf84a5c45a25748a74ef3c0/big_int_cmp.v",
+      "contents_url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/contents/big_int_cmp.v?ref=dae1213e3b7576b40bf84a5c45a25748a74ef3c0",
+      "patch": "@@ -36,7 +36,7 @@ pub fn cmp(a BigInteger, b BigInteger) int {\n \t}\n }\n \n-[direct_array_access]\n+@[direct_array_access]\n fn cmp_bits(a []u32, b []u32) int {\n \tif a.len < b.len {\n \t\treturn -1"
+    },
+    {
+      "sha": "e090e6583a76c23c9cd1c1f9b7a3772e02aaca17",
+      "filename": "big_int_constants.v",
+      "status": "modified",
+      "additions": 32,
+      "deletions": 34,
+      "changes": 66,
+      "blob_url": "https://github.com/hanabi1224/vlang-big-integer/blob/dae1213e3b7576b40bf84a5c45a25748a74ef3c0/big_int_constants.v",
+      "raw_url": "https://github.com/hanabi1224/vlang-big-integer/raw/dae1213e3b7576b40bf84a5c45a25748a74ef3c0/big_int_constants.v",
+      "contents_url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/contents/big_int_constants.v?ref=dae1213e3b7576b40bf84a5c45a25748a74ef3c0",
+      "patch": "@@ -1,36 +1,34 @@\n module biginteger\n \n-pub const (\n-\tzero = BigInteger{\n-\t\tsign: .zero\n-\t\tbits: [u32(0)]\n-\t}\n-\tone = BigInteger{\n-\t\tsign: .positive\n-\t\tbits: [u32(1)]\n-\t}\n-\tminus_one = BigInteger{\n-\t\tsign: .negative\n-\t\tbits: [u32(1)]\n-\t}\n-\ttwo = BigInteger{\n-\t\tsign: .positive\n-\t\tbits: [u32(2)]\n-\t}\n-\tfour = BigInteger{\n-\t\tsign: .positive\n-\t\tbits: [u32(4)]\n-\t}\n-\teight = BigInteger{\n-\t\tsign: .positive\n-\t\tbits: [u32(8)]\n-\t}\n-\tten = BigInteger{\n-\t\tsign: .positive\n-\t\tbits: [u32(10)]\n-\t}\n-\thex = BigInteger{\n-\t\tsign: .positive\n-\t\tbits: [u32(16)]\n-\t}\n-)\n+pub const zero = BigInteger{\n+\tsign: .zero\n+\tbits: [u32(0)]\n+}\n+pub const one = BigInteger{\n+\tsign: .positive\n+\tbits: [u32(1)]\n+}\n+pub const minus_one = BigInteger{\n+\tsign: .negative\n+\tbits: [u32(1)]\n+}\n+pub const two = BigInteger{\n+\tsign: .positive\n+\tbits: [u32(2)]\n+}\n+pub const four = BigInteger{\n+\tsign: .positive\n+\tbits: [u32(4)]\n+}\n+pub const eight = BigInteger{\n+\tsign: .positive\n+\tbits: [u32(8)]\n+}\n+pub const ten = BigInteger{\n+\tsign: .positive\n+\tbits: [u32(10)]\n+}\n+pub const hex = BigInteger{\n+\tsign: .positive\n+\tbits: [u32(16)]\n+}"
+    },
+    {
+      "sha": "a6ff9fba8cf4ca557083a39186773b3376717ed7",
+      "filename": "big_int_divmod.v",
+      "status": "modified",
+      "additions": 3,
+      "deletions": 3,
+      "changes": 6,
+      "blob_url": "https://github.com/hanabi1224/vlang-big-integer/blob/dae1213e3b7576b40bf84a5c45a25748a74ef3c0/big_int_divmod.v",
+      "raw_url": "https://github.com/hanabi1224/vlang-big-integer/raw/dae1213e3b7576b40bf84a5c45a25748a74ef3c0/big_int_divmod.v",
+      "contents_url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/contents/big_int_divmod.v?ref=dae1213e3b7576b40bf84a5c45a25748a74ef3c0",
+      "patch": "@@ -21,10 +21,10 @@ pub fn div_mod(a BigInteger, b BigInteger) ?(BigInteger, BigInteger) {\n \n \tif a.sign != b.sign {\n \t\tif a.sign == .negative {\n-\t\t\tquotient, remainder := div_mod(a.negative(), b) ?\n+\t\t\tquotient, remainder := div_mod(a.negative(), b)?\n \t\t\treturn quotient.negative(), remainder.negative()\n \t\t} else {\n-\t\t\tquotient, remainder := div_mod(a, b.negative()) ?\n+\t\t\tquotient, remainder := div_mod(a, b.negative())?\n \t\t\treturn quotient.negative(), remainder\n \t\t}\n \t}\n@@ -56,7 +56,7 @@ fn div_mod_inner(a_pos BigInteger, b_pos BigInteger) (BigInteger, BigInteger) {\n \t}\n }\n \n-[inline]\n+@[inline]\n fn div_mod_inner_core(a_pos BigInteger, b_pos BigInteger) (BigInteger, BigInteger) {\n \tmut quotient := zero\n \tleading_zeros_b := b_pos.leading_zeros()"
+    },
+    {
+      "sha": "bd99bc7485fe53feb2cac29e618c15f6e612e01e",
+      "filename": "big_int_multiply.v",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "changes": 2,
+      "blob_url": "https://github.com/hanabi1224/vlang-big-integer/blob/dae1213e3b7576b40bf84a5c45a25748a74ef3c0/big_int_multiply.v",
+      "raw_url": "https://github.com/hanabi1224/vlang-big-integer/raw/dae1213e3b7576b40bf84a5c45a25748a74ef3c0/big_int_multiply.v",
+      "contents_url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/contents/big_int_multiply.v?ref=dae1213e3b7576b40bf84a5c45a25748a74ef3c0",
+      "patch": "@@ -27,7 +27,7 @@ pub fn (a BigInteger) * (b BigInteger) BigInteger {\n \t}\n }\n \n-[direct_array_access]\n+@[direct_array_access]\n fn multiply_unsafe(mut bits []u32, a []u32, b []u32) {\n \ta_len := a.len\n \tb_len := b.len"
+    },
+    {
+      "sha": "6b1213b8f683cf117190e52635f9796da342f995",
+      "filename": "big_int_num_to.v",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "changes": 2,
+      "blob_url": "https://github.com/hanabi1224/vlang-big-integer/blob/dae1213e3b7576b40bf84a5c45a25748a74ef3c0/big_int_num_to.v",
+      "raw_url": "https://github.com/hanabi1224/vlang-big-integer/raw/dae1213e3b7576b40bf84a5c45a25748a74ef3c0/big_int_num_to.v",
+      "contents_url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/contents/big_int_num_to.v?ref=dae1213e3b7576b40bf84a5c45a25748a74ef3c0",
+      "patch": "@@ -17,7 +17,7 @@ pub fn (big BigInteger) u64() u64 {\n \treturn get_u64(big.bits)\n }\n \n-[direct_array_access]\n+@[direct_array_access]\n fn get_u64(array []u32) u64 {\n \tif array.len == 0 {\n \t\treturn 0"
+    },
+    {
+      "sha": "e14fefa28ab3dcced8a93627fca306478d39254c",
+      "filename": "big_int_shift.v",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2,
+      "changes": 4,
+      "blob_url": "https://github.com/hanabi1224/vlang-big-integer/blob/dae1213e3b7576b40bf84a5c45a25748a74ef3c0/big_int_shift.v",
+      "raw_url": "https://github.com/hanabi1224/vlang-big-integer/raw/dae1213e3b7576b40bf84a5c45a25748a74ef3c0/big_int_shift.v",
+      "contents_url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/contents/big_int_shift.v?ref=dae1213e3b7576b40bf84a5c45a25748a74ef3c0",
+      "patch": "@@ -42,7 +42,7 @@ fn (mut big BigInteger) lshift_inner_in_place(d u64) {\n \t}\n }\n \n-[direct_array_access]\n+@[direct_array_access]\n fn lshift_unsafe(mut result_bits []u32, q u64, r u64) u32 {\n \tmut tmp_next := u32(0)\n \tfor i := q; i < result_bits.len; i++ {\n@@ -96,7 +96,7 @@ pub fn (big BigInteger) rshift(d u64) BigInteger {\n \t}\n }\n \n-[direct_array_access]\n+@[direct_array_access]\n fn rshift_unsafe(mut result_bits []u32, q u64, r u64) {\n \tmut tmp_next := u32(0)\n \tfor i := result_bits.len - 1; i >= 0; i-- {"
+    },
+    {
+      "sha": "cae44d454003595b7ff0c7db3b07082a7d02648c",
+      "filename": "big_int_str_from.v",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "changes": 2,
+      "blob_url": "https://github.com/hanabi1224/vlang-big-integer/blob/dae1213e3b7576b40bf84a5c45a25748a74ef3c0/big_int_str_from.v",
+      "raw_url": "https://github.com/hanabi1224/vlang-big-integer/raw/dae1213e3b7576b40bf84a5c45a25748a74ef3c0/big_int_str_from.v",
+      "contents_url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/contents/big_int_str_from.v?ref=dae1213e3b7576b40bf84a5c45a25748a74ef3c0",
+      "patch": "@@ -17,7 +17,7 @@ pub fn from_str(str string) !BigInteger {\n \t\t} else if char_code == char_code_underscore || char_code == char_code_comma {\n \t\t\t// do nothing\n \t\t} else {\n-\t\t\treturn error('Error parsing number: $str')\n+\t\t\treturn error('Error parsing number: ${str}')\n \t\t}\n \t}\n "
+    },
+    {
+      "sha": "0e0be111565ad7928e5b7cd4874d01ea0f6e16ab",
+      "filename": "big_int_str_to.v",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "changes": 2,
+      "blob_url": "https://github.com/hanabi1224/vlang-big-integer/blob/dae1213e3b7576b40bf84a5c45a25748a74ef3c0/big_int_str_to.v",
+      "raw_url": "https://github.com/hanabi1224/vlang-big-integer/raw/dae1213e3b7576b40bf84a5c45a25748a74ef3c0/big_int_str_to.v",
+      "contents_url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/contents/big_int_str_to.v?ref=dae1213e3b7576b40bf84a5c45a25748a74ef3c0",
+      "patch": "@@ -44,7 +44,7 @@ pub fn (big BigInteger) str() string {\n \t\tif mod == 0 && remainder == 0 && bits.len == 1 {\n \t\t\tbreak\n \t\t} else {\n-\t\t\ttxt = '$mod$txt'\n+\t\t\ttxt = '${mod}${txt}'\n \t\t\tbits[0] = remainder\n \t\t}\n \t}"
+    },
+    {
+      "sha": "b6bd893103673f742e2c9ca10405f2e4b10a37ad",
+      "filename": "examples/pidigits.v",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2,
+      "changes": 4,
+      "blob_url": "https://github.com/hanabi1224/vlang-big-integer/blob/dae1213e3b7576b40bf84a5c45a25748a74ef3c0/examples%2Fpidigits.v",
+      "raw_url": "https://github.com/hanabi1224/vlang-big-integer/raw/dae1213e3b7576b40bf84a5c45a25748a74ef3c0/examples%2Fpidigits.v",
+      "contents_url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/contents/examples%2Fpidigits.v?ref=dae1213e3b7576b40bf84a5c45a25748a74ef3c0",
+      "patch": "@@ -41,7 +41,7 @@ fn main() {\n \t\t\tdigits_printed++\n \t\t\tdigits_printed_mod_ten := digits_printed % 10\n \t\t\tif digits_printed_mod_ten == 0 {\n-\t\t\t\tsb.write_string('\\t:$digits_printed')\n+\t\t\t\tsb.write_string('\\t:${digits_printed}')\n \t\t\t\tprintln(sb.str())\n \t\t\t\tsb.go_back_to(0)\n \t\t\t}\n@@ -51,7 +51,7 @@ fn main() {\n \t\t\t\t\tfor _ in 0 .. (10 - digits_printed_mod_ten) {\n \t\t\t\t\t\tsb.write_byte(` `)\n \t\t\t\t\t}\n-\t\t\t\t\tsb.write_string('\\t:$digits_printed')\n+\t\t\t\t\tsb.write_string('\\t:${digits_printed}')\n \t\t\t\t\tprintln(sb.str())\n \t\t\t\t}\n \t\t\t\treturn"
+    }
+  ]
+}

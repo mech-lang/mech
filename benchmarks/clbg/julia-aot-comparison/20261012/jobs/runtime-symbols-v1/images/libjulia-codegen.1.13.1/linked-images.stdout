@@ -1,0 +1,11 @@
+/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-codegen.1.13.1.dylib:
+	@rpath/libjulia-codegen.dylib (compatibility version 1.13.0, current version 1.13.1)
+	@rpath/libunwind.1.dylib (compatibility version 1.0.0, current version 1.0.0)
+	@rpath/libLLVM.dylib (compatibility version 1.0.0, current version 20.1.8)
+	@rpath/libz.1.dylib (compatibility version 1.0.0, current version 1.3.1)
+	@rpath/libzstd.1.dylib (compatibility version 1.0.0, current version 1.0.0)
+	/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation (compatibility version 150.0.0, current version 5027.0.69)
+	@rpath/libjulia.1.13.dylib (compatibility version 1.13.0, current version 1.13.1)
+	@rpath/libjulia-internal.dylib (compatibility version 1.13.0, current version 1.13.1)
+	/usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 2200.27.0)
+	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1359.0.0)

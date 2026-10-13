@@ -1,0 +1,72 @@
+{
+  "key": "mandelbrot:canonical-source-modes:row16-resident",
+  "id": "row16-resident",
+  "benchmark": "mandelbrot",
+  "language": "mech-resident",
+  "source_sha256": "baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec",
+    "resident",
+    "65",
+    "--fp-contract-loop"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "runtime_environment": {
+    "RAYON_NUM_THREADS": "8",
+    "JULIA_NUM_THREADS": "8",
+    "OMP_NUM_THREADS": "8",
+    "OMP_DYNAMIC": "FALSE",
+    "CHPL_RT_NUM_THREADS_PER_LOCALE": "8",
+    "GOMAXPROCS": "8",
+    "OPENBLAS_NUM_THREADS": "1",
+    "PYTHONHASHSEED": "0",
+    "MECH_TIMINGS": "1"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"9e8d1360d80a6570327329b6eef2cee905b6972bd3f7909e51185f3913694dbc\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes\", \"{source}\", \"resident\", \"{n}\", \"--fp-contract-loop\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"CHPL_RT_NUM_THREADS_PER_LOCALE\": \"8\", \"GOMAXPROCS\": \"8\", \"JULIA_NUM_THREADS\": \"8\", \"MECH_TIMINGS\": \"1\", \"OMP_DYNAMIC\": \"FALSE\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"PYTHONHASHSEED\": \"0\", \"RAYON_NUM_THREADS\": \"8\"}, \"source_sha256\": \"baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde\", \"support\": {}}",
+  "started_at": "2026-10-12T03:25:54.267896+00:00",
+  "workload_n": 65,
+  "full_workload": true,
+  "timeout_seconds": 90,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.000470208,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "TIMING {\"prepare_seconds\":0.272362667,\"kernel_seconds\":0.000470208}\n",
+  "stdout_bytes": 594,
+  "stdout_sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c",
+  "validation": {
+    "bytes": 594,
+    "sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c",
+    "reference_match": true
+  },
+  "finished_at": "2026-10-12T03:25:54.746302+00:00",
+  "valid_environment": true,
+  "canonical_full_workload": false,
+  "never_chart_eligible": true,
+  "wall_seconds": 0.278945833,
+  "timing": {
+    "wall_seconds": 0.278945833,
+    "prepare_seconds": 0.272362667,
+    "kernel_seconds": 0.000470208,
+    "reported_seconds": 0.000470208
+  },
+  "prepare_seconds": 0.272362667,
+  "kernel_seconds": 0.000470208,
+  "valid_source_timing": true,
+  "pins_unchanged_at_end": true
+}

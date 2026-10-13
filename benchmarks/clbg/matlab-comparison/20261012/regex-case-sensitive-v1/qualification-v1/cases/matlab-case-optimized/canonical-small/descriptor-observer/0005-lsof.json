@@ -1,0 +1,21 @@
+{
+  "command": [
+    "/usr/sbin/lsof",
+    "-n",
+    "-P",
+    "-a",
+    "-g",
+    "85464",
+    "-d",
+    "64",
+    "-Fpcfn"
+  ],
+  "pid": 85536,
+  "native_group": 85464,
+  "descriptor": 64,
+  "inherited_common_mutex": true,
+  "timeout_seconds": 5,
+  "preparation_only": true,
+  "exit_status": 0,
+  "remaining_group_members": []
+}

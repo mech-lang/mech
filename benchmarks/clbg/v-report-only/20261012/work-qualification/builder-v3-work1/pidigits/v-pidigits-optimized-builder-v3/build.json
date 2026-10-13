@@ -1,0 +1,22 @@
+{
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/.build-sdk-v1/toolchain/v/v",
+    "-prod",
+    "-cc",
+    "/opt/homebrew/opt/llvm@22/bin/clang-22",
+    "-cflags",
+    "-O3 -march=native -ffp-contract=off",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/work-qualification/builder-v3-work1/pidigits/v-pidigits-optimized-builder-v3/work-trace",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/work-qualification/builder-v3-work1/pidigits/v-pidigits-optimized-builder-v3/work-trace.v"
+  ],
+  "started_at": "2026-10-12T21:22:08.150090+00:00",
+  "inherited_common_mutex": true,
+  "pid": 44395,
+  "identity": {
+    "pid": 44395,
+    "process_listing": "Mon Oct 12 17:22:08 2026     /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/.build-sdk-v1/toolchain/v/v -prod -cc /opt/homebrew/opt/llvm@22/bin/clang-22 -cflags -O3 -march=native -ffp-contract=off -o /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/work-qualification/builder-v3-work1/pidigits/v-pidigits-optimized-builder-v3/work-trace /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/work-qualification/builder-v3-work1/pidigits/v-pidigits-optimized-builder-v3/work-trace.v"
+  },
+  "returncode": 0,
+  "finished_at": "2026-10-12T21:22:09.701169+00:00"
+}

@@ -1,0 +1,57 @@
+Waiting for common mutex before preparation, hashing or runtime/reference probes.
+
+Restarting only the mutex-waiting validator after final source-audit metadata correction.
+Waiting for common mutex before preparation, hashing or runtime/reference probes.
+Locked isolated Uiua parallel preparation/validation.
+whole 16 LOC 183bc351c4428b3c1ff4c23e5d1a19eb6ba6658181142e9267f4b59f92f22569
+active 19 LOC 64d19645de504bde141ce03f369bb1b6aae22ba864d6cfc75e73bbe1b9a4cb31
+whole 1 OUTPUT PASS
+whole 2 OUTPUT PASS
+whole 7 OUTPUT PASS
+whole 8 OUTPUT PASS
+whole 9 OUTPUT PASS
+whole 13 OUTPUT PASS
+whole 31 OUTPUT PASS
+whole 63 OUTPUT PASS
+whole 64 OUTPUT PASS
+whole 65 OUTPUT PASS
+whole 129 OUTPUT PASS
+whole 200 OUTPUT PASS
+whole 257 OUTPUT PASS
+whole 9 RETURNED TRACE PASS
+whole 13 RETURNED TRACE PASS
+whole 65 RETURNED TRACE PASS
+whole 1 NATIVE WORKER GATE PASS 1
+whole 2 NATIVE WORKER GATE PASS 2
+whole 7 NATIVE WORKER GATE PASS 7
+whole 8 NATIVE WORKER GATE PASS 8
+whole 9 NATIVE WORKER GATE PASS 8
+whole 13 NATIVE WORKER GATE PASS 8
+whole 65 NATIVE WORKER GATE PASS 8
+active 1 OUTPUT PASS
+active 2 OUTPUT PASS
+active 7 OUTPUT PASS
+active 8 OUTPUT PASS
+active 9 OUTPUT PASS
+active 13 OUTPUT PASS
+active 31 OUTPUT PASS
+active 63 OUTPUT PASS
+active 64 OUTPUT PASS
+active 65 OUTPUT PASS
+active 129 OUTPUT PASS
+active 200 OUTPUT PASS
+active 257 OUTPUT PASS
+active 9 RETURNED TRACE PASS
+active 13 RETURNED TRACE PASS
+active 65 RETURNED TRACE PASS
+active 1 NATIVE WORKER GATE PASS 1
+active 2 NATIVE WORKER GATE PASS 2
+active 7 NATIVE WORKER GATE PASS 7
+active 8 NATIVE WORKER GATE PASS 8
+active 9 NATIVE WORKER GATE PASS 8
+active 13 NATIVE WORKER GATE PASS 8
+active 65 NATIVE WORKER GATE PASS 8
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/manifest.json prepared e53419a9421a6a09bdfc74e7821e3b09a1af76652ffe92170d63083ed53cd272
+mandelbrot:mandelbrot-uiua-parallel-whole-v4 16 LOC 183bc351c4428b3c1ff4c23e5d1a19eb6ba6658181142e9267f4b59f92f22569
+mandelbrot:mandelbrot-uiua-parallel-active-v4 19 LOC 64d19645de504bde141ce03f369bb1b6aae22ba864d6cfc75e73bbe1b9a4cb31
+PASS 26 outputs 4 retained-base controls 6 returned all-state traces 14 native worker gates

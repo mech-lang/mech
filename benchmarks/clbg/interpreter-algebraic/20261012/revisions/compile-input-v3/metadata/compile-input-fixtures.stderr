@@ -1,0 +1,10 @@
+test_binary_and_text_literal_paths_are_complete (__main__.CompileInputs.test_binary_and_text_literal_paths_are_complete) ... ok
+test_missing_escaping_and_unreviewed_forms_fail_before_build (__main__.CompileInputs.test_missing_escaping_and_unreviewed_forms_fail_before_build) ... ok
+test_package_relative_concat_keeps_the_exact_input (__main__.CompileInputs.test_package_relative_concat_keeps_the_exact_input) ... ok
+test_previous_ownership_codegen_and_conformance_functions_are_unchanged (__main__.CompileInputs.test_previous_ownership_codegen_and_conformance_functions_are_unchanged) ... ok
+test_snapshot_copies_binary_bytes_and_rejects_changed_pins (__main__.CompileInputs.test_snapshot_copies_binary_bytes_and_rejects_changed_pins) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.014s
+
+OK

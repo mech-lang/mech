@@ -1,0 +1,211 @@
+{
+  "status": "passed",
+  "started_at": "2026-10-12T13:44:42.686063+00:00",
+  "common_mutex": "/tmp/mech-clbg-timing.lock",
+  "source_or_report_mutations": false,
+  "data_admission": false,
+  "git_or_publication": false,
+  "existing_fixture_proof": {
+    "cases": 27,
+    "rereun": false,
+    "receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/isolated-study-import-fixtures.json",
+    "sha256": "e149a7537e2c191ef072a69ff489666138e7867422e8fe8e71814b5c627c16dc"
+  },
+  "fann": {
+    "status": "complete-independent-reconciliation-passed",
+    "manifest_sha256": "d8b6ad100671b3fef5ae46d90dcb36b044733b25ea8d65e3ba7a4589e5b62513",
+    "report_sha256": "f5ab40f30c8add188c4e7a0ac87dc7fd18475ff28c5bba8838dc08b10ff71a6c",
+    "input_pins_verified": 1245,
+    "actual_records": 9,
+    "selected": {
+      "fast": "fannkuchredux:parallel-study:uiua-fast",
+      "small": "fannkuchredux:parallel-study:uiua-compact"
+    },
+    "control": {
+      "seconds": 1.722168959,
+      "loc": 59,
+      "samples": [
+        1.691438125,
+        1.722168959,
+        1.757403458
+      ]
+    },
+    "profiles": {
+      "uiua-compact": {
+        "loc": 20,
+        "samples": [
+          1584.94555775,
+          1668.209413125,
+          1678.341654125
+        ],
+        "median_seconds": 1668.209413125,
+        "sample_stdev_seconds": 51.24835401857525,
+        "time_x_mech": 968.6676817666414,
+        "loc_x_mech": 0.3389830508474576
+      },
+      "uiua-fast": {
+        "loc": 21,
+        "samples": [
+          565.956252083,
+          558.226675875,
+          555.8544285
+        ],
+        "median_seconds": 558.226675875,
+        "sample_stdev_seconds": 5.28237234686474,
+        "time_x_mech": 324.1416429890489,
+        "loc_x_mech": 0.3559322033898305
+      },
+      "mech59-aot-control": {
+        "loc": 59,
+        "samples": [
+          1.691438125,
+          1.722168959,
+          1.757403458
+        ],
+        "median_seconds": 1.722168959,
+        "sample_stdev_seconds": 0.03300827986005294,
+        "time_x_mech": 1.0,
+        "loc_x_mech": 1.0
+      }
+    },
+    "consumer_dry_import": true,
+    "chart_or_file_write": false
+  },
+  "modes": {
+    "status": "complete",
+    "actual_qualified_records": 18,
+    "expected_records": 18,
+    "profile_counts": {
+      "scalar11-jit": 3,
+      "scalar11-resident": 3,
+      "row16-jit": 3,
+      "row16-resident": 3,
+      "scalar11-aot-control": 3,
+      "row16-aot-control": 3
+    },
+    "samples_seconds": {
+      "scalar11-jit": [
+        2.581435042,
+        2.307178833,
+        2.323236417
+      ],
+      "scalar11-resident": [
+        44.751780292,
+        43.918998625,
+        40.551018667
+      ],
+      "row16-jit": [
+        0.717965542,
+        0.74175025,
+        0.719230083
+      ],
+      "row16-resident": [
+        11.662957667,
+        11.222798792,
+        12.157588333
+      ],
+      "scalar11-aot-control": [
+        2.239451834,
+        2.15604575,
+        2.175910083
+      ],
+      "row16-aot-control": [
+        0.448068917,
+        0.460222709,
+        0.460178167
+      ]
+    },
+    "discarded_attempts": [],
+    "completed_validator_used": true,
+    "data_admission": false,
+    "manifest_sha256": "fbffba7b5674e889ac9e5088bbb2e2d8499df41f5d9b4c677be38d831091680f",
+    "report_sha256": "eb8ae307941dcd96fbe135bc5064c1706a2293ae6891337af6e72ceea3a6ae21",
+    "input_pins_verified": 1642,
+    "complete_stats": {
+      "scalar11-jit": {
+        "loc": 11,
+        "median_seconds": 2.323236417,
+        "sample_stdev_seconds": 0.1539160182972407
+      },
+      "scalar11-resident": {
+        "loc": 11,
+        "median_seconds": 43.918998625,
+        "sample_stdev_seconds": 2.2242306734559407
+      },
+      "row16-jit": {
+        "loc": 16,
+        "median_seconds": 0.719230083,
+        "sample_stdev_seconds": 0.013382011061457593
+      },
+      "row16-resident": {
+        "loc": 16,
+        "median_seconds": 11.662957667,
+        "sample_stdev_seconds": 0.4676592094235318
+      },
+      "scalar11-aot-control": {
+        "loc": 11,
+        "median_seconds": 2.175910083,
+        "sample_stdev_seconds": 0.043567420346508
+      },
+      "row16-aot-control": {
+        "loc": 16,
+        "median_seconds": 0.460178167,
+        "sample_stdev_seconds": 0.007004172322403367
+      }
+    }
+  },
+  "lua": {
+    "status": "running",
+    "actual_qualified_records": 15,
+    "expected_records": 18,
+    "profile_counts": {
+      "lua-listed-1": 2,
+      "lua-listed-5": 2,
+      "lua-listed-6": 3,
+      "lua-listed-7": 3,
+      "mech-fast-control": 3,
+      "mech-small-control": 2
+    },
+    "samples_seconds": {
+      "lua-listed-1": [
+        0.460448542,
+        0.461362625
+      ],
+      "lua-listed-5": [
+        0.569992625,
+        0.56942625
+      ],
+      "lua-listed-6": [
+        0.351953125,
+        0.343833083,
+        0.343615875
+      ],
+      "lua-listed-7": [
+        0.919005125,
+        0.687723416,
+        0.887403125
+      ],
+      "mech-fast-control": [
+        0.305278,
+        0.304468375,
+        0.3043995
+      ],
+      "mech-small-control": [
+        0.396308542,
+        0.408467125
+      ]
+    },
+    "discarded_attempts": [],
+    "completed_validator_used": false,
+    "data_admission": false,
+    "manifest_sha256": "aaf6af5fad6bb4d2f9008e8f91be7037025e117f2cb9532dfb14ae928f6f55dd",
+    "report_sha256": "a591afbaa37cb0d7a0254ed80f5da52f679863cc59db572f5627dd49d3455ca7",
+    "input_pins_verified": 46
+  },
+  "luajit_comparison_receipt": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/new-results-review-20261012/luajit-launch-comparison.json",
+    "sha256": "9d437d62d57c4811aacfa4211e8601a479a4ff78c2ea8eeb55e8d9eb07395917"
+  },
+  "finished_at": "2026-10-12T13:44:43.421568+00:00",
+  "review_script_sha256": "fc54dc6d82203f77d6bf17dfae2cf03a01d7cb3f75c9a3fc4c38ea71c47b6d7f"
+}

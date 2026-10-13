@@ -1,0 +1,130 @@
+{
+  "status": "stopped",
+  "attempts": [
+    {
+      "id": "pony-pidigits-compact",
+      "benchmark": "pidigits",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v3/source-snapshot/sources/pidigits/compact/main.pony",
+      "source_sha256": "a1bc3b479c995d5ecca520268a7f18ac545622b0dd1a2573045ddcbd9cb7c75b",
+      "trace_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v2/source-snapshot/sources/pidigits/compact/main.pony",
+      "trace_source_sha256": "703f17e2f64a815e763ef0c8d90f7e7bef87e46e5dc1ba842324762bb10cb08f",
+      "binary_sha256": "02df45237a58e577cd19bd2e9a6e0aa00aa1dda2544097c9981064a55ca72e80",
+      "input_n": 97,
+      "stdin": null,
+      "complete_output_match": true,
+      "trace": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v2/executions/pony-pidigits-compact-trace/trace-native.stderr",
+      "trace_sha256": "6fee0cd27e6bfecb4f2b9539b25d80a144fdec487a920d282d319fea36dea3c0",
+      "proof": {
+        "complete_work_trace": true,
+        "observed_compute_threads": [
+          6121992192
+        ],
+        "compute_thread_cap": 8,
+        "records": 416,
+        "preparation_only": true,
+        "score_eligible": false,
+        "candidate_states": 416,
+        "distinct_numerator_divisions": 832,
+        "digits": 97,
+        "actual_record_mutation_rejections": [
+          "missing-work-record",
+          "too-many-scheduler-identities"
+        ]
+      },
+      "observations": {
+        "power_at_start": {
+          "source": "AC Power",
+          "low_power_mode": 0
+        },
+        "power_at_end": {
+          "source": "AC Power",
+          "low_power_mode": 0
+        },
+        "competing_compilers": [],
+        "power_changes": [],
+        "monitor_errors": [],
+        "resource_monitor_errors": [],
+        "resource_violation": null,
+        "peak_process_group_rss_kib": 0,
+        "native": {
+          "pid": 26237,
+          "pgid": 26237,
+          "command": [
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v2/bin/pony-pidigits-compact-trace/pony-pidigits-compact-trace",
+            "97",
+            "--ponymaxthreads",
+            "8"
+          ],
+          "inherited_common_mutex": true,
+          "observer_registered_after_owned_active_journal": true
+        }
+      },
+      "qualified": true
+    },
+    {
+      "id": "pony-pidigits-optimized",
+      "benchmark": "pidigits",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v3/source-snapshot/sources/pidigits/optimized/main.pony",
+      "source_sha256": "3018bd1f17589c13f0d4204f7de6653df1f3de8b5a27d062608493eccef9975d",
+      "trace_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v2/source-snapshot/sources/pidigits/optimized/main.pony",
+      "trace_source_sha256": "9e3edb11fa2d9f1bbffca6e4c14047cc31e792a9b91b1ad7503aa403e64b6c02",
+      "binary_sha256": "d5667a83a5cc36c401b4adf771b1a8b4007780e0b247d97fb74e279d615d566c",
+      "input_n": 97,
+      "stdin": null,
+      "complete_output_match": true,
+      "trace": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v2/executions/pony-pidigits-optimized-trace/trace-native.stderr",
+      "trace_sha256": "86c204e9e0304f1be4e351fe12c377b197accff7e89821fc2938feac54448b2d",
+      "proof": {
+        "complete_work_trace": true,
+        "observed_compute_threads": [
+          6167605248
+        ],
+        "compute_thread_cap": 8,
+        "records": 416,
+        "preparation_only": true,
+        "score_eligible": false,
+        "candidate_states": 416,
+        "distinct_numerator_divisions": 832,
+        "digits": 97,
+        "actual_record_mutation_rejections": [
+          "missing-work-record",
+          "too-many-scheduler-identities"
+        ]
+      },
+      "observations": {
+        "power_at_start": {
+          "source": "AC Power",
+          "low_power_mode": 0
+        },
+        "power_at_end": {
+          "source": "AC Power",
+          "low_power_mode": 0
+        },
+        "competing_compilers": [],
+        "power_changes": [],
+        "monitor_errors": [],
+        "resource_monitor_errors": [],
+        "resource_violation": null,
+        "peak_process_group_rss_kib": 0,
+        "native": {
+          "pid": 26270,
+          "pgid": 26270,
+          "command": [
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v2/bin/pony-pidigits-optimized-trace/pony-pidigits-optimized-trace",
+            "97",
+            "--ponymaxthreads",
+            "8"
+          ],
+          "inherited_common_mutex": true,
+          "observer_registered_after_owned_active_journal": true
+        }
+      },
+      "qualified": true
+    }
+  ],
+  "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v2/manifest.json",
+  "manifest_sha256": "19df80734fd7d294d9c6e36ad356bb37cf1acd0d93dd3a755f2eec4bbb33d26d",
+  "full_performance_runs": 0,
+  "error": "('Owned command failed', 'trace-build', 255)",
+  "error_type": "AssertionError"
+}

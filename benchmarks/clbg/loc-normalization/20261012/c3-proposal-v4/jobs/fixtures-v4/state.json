@@ -1,0 +1,12 @@
+{
+  "status": "passed-awaiting-source-review",
+  "updated_at": "2026-10-13T01:51:48.335964+00:00",
+  "pid": 17975,
+  "pgid": 17975,
+  "automatic_retry": false,
+  "source_counting_started": false,
+  "chart_admitted": false,
+  "tests_run": 19,
+  "failures": 0,
+  "errors": 0
+}

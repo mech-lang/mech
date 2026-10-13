@@ -1,0 +1,7 @@
+{
+  "status": "actual-native-report-reviewed-awaiting-LOC-stage",
+  "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v8/report.json",
+  "sha256": "4da05f6dd351609923f5f1ca227d3db2b33a354925614b74f9c5dae39839d159",
+  "exclusive_common_mutex_held": true,
+  "chart_admission": false
+}

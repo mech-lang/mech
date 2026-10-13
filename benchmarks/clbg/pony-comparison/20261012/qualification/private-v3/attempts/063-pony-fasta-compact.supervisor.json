@@ -1,0 +1,96 @@
+{
+  "key": "fasta:pony-fasta-compact",
+  "id": "pony-fasta-compact",
+  "benchmark": "fasta",
+  "language": "pony",
+  "source_sha256": "b9b0e5b715edb64a2ce8c54638d9e2d17202b51c18c4c48bb6131474fdfe527e",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v3/bin/pony-fasta-compact/pony-fasta-compact",
+    "60",
+    "--ponymaxthreads",
+    "8"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012",
+  "runtime_environment": {
+    "LC_ALL": "C",
+    "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"b313aa3dd29c1004ae16ca6230466fba2fee8cc9d59197a7930b1071f5d49478\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v3/bin/pony-fasta-compact/pony-fasta-compact\", \"{n}\", \"--ponymaxthreads\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"b9b0e5b715edb64a2ce8c54638d9e2d17202b51c18c4c48bb6131474fdfe527e\", \"support\": {}}",
+  "started_at": "2026-10-12T17:22:50.175390+00:00",
+  "workload_n": 60,
+  "full_workload": false,
+  "timeout_seconds": 120,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.086833417,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 687,
+  "stdout_sha256": "d4f1059c3c47b7de5d11ab3d78778ab3141c15555a91bfd6a56f2b9b10fe272b",
+  "validation": {
+    "reference_match": true,
+    "bytes": 687,
+    "sha256": "d4f1059c3c47b7de5d11ab3d78778ab3141c15555a91bfd6a56f2b9b10fe272b"
+  },
+  "finished_at": "2026-10-12T17:22:50.464914+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true,
+  "round": 0,
+  "attempt": 63,
+  "sampler_wait_status": 0,
+  "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v3/attempts/063-pony-fasta-compact.json",
+  "supervised_native_group": {
+    "type": "native-group-started",
+    "pid": 93736,
+    "pgid": 93736,
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v3/bin/pony-fasta-compact/pony-fasta-compact",
+      "60",
+      "--ponymaxthreads",
+      "8"
+    ],
+    "inherited_common_mutex": true
+  },
+  "supervisor_remaining_members": [],
+  "qualification_checks": {
+    "sampler_exited_normally": true,
+    "authoritative_native_group_received": true,
+    "native_inherited_common_mutex": true,
+    "native_exited_normally": true,
+    "no_execution_error": true,
+    "no_wrapper_integrity_error": true,
+    "no_resource_violation": true,
+    "no_resource_monitor_errors": true,
+    "no_compiler_power_monitor_errors": true,
+    "no_monitor_finish_error": true,
+    "no_execute_cleanup_error": true,
+    "no_remaining_execute_group": true,
+    "no_supervisor_cleanup": true,
+    "no_supervisor_remaining_group": true,
+    "valid_environment": true,
+    "actual_full_workload": true,
+    "exact_command_and_group": true,
+    "complete_output_reference_match": true,
+    "complete_output_bytes_and_hash": true,
+    "pins_unchanged": true
+  },
+  "qualified": true,
+  "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v3/attempts/063-pony-fasta-compact.supervisor.json"
+}

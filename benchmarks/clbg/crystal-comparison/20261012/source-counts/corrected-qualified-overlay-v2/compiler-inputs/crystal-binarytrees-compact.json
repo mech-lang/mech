@@ -1,0 +1,47 @@
+{
+  "status": "qualified-exact-authored-compiler-inputs",
+  "profile": "crystal-binarytrees-compact",
+  "source_sha256": "b220cf0277dbe40aff0e4e348b5a1830054dbc18d0bff1f8abaf47eb447f1dc3",
+  "binary_sha256": "8d9f7a748dc20018a679df8cd0605da1eae87c9d9ac386b543639d59cbc9e3c0",
+  "files": [
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/source-snapshot/sources/binarytrees/compact.cr",
+      "sha256": "b220cf0277dbe40aff0e4e348b5a1830054dbc18d0bff1f8abaf47eb447f1dc3"
+    }
+  ],
+  "actual_build_receipt": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/builds/crystal-binarytrees-compact/build.json",
+    "sha256": "a0ef18889c94eabb6e80bfa11beec276c0a500ca441fb7a78758113a95ef1f63"
+  },
+  "actual_build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/bin/crystal",
+    "build",
+    "--release",
+    "--no-debug",
+    "--no-color",
+    "--error-trace",
+    "--mcpu",
+    "native",
+    "--threads",
+    "1",
+    "--link-flags",
+    "-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk -mmacosx-version-min=14.4 -L /opt/homebrew/Cellar/gmp/6.3.0/lib -L /opt/homebrew/Cellar/pcre2/10.49/lib -L /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-binarytrees-compact",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/source-snapshot/sources/binarytrees/compact.cr"
+  ],
+  "qualified_preparation": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-input-archive-filter-v6/report.json",
+    "sha256": "1b1f4ae9b39a9ee17e66204095f7532718f299f318e6cde3d9def2c1cd761372"
+  },
+  "source_role_review": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/source-counts/repaired-replay-semantic-review-v2.json",
+    "sha256": "3087d38fe95ab7d9cc1340291d361448367b8995f43da744124a5af8362303f0",
+    "review_identity": "crystal-repaired-replay-source-review-v2:crystal-binarytrees-compact",
+    "disposition": "Node creation/check methods, recursive branch and each depth/iteration callback retain written owners; tuple/data delimiters and method parameters introduce no generated statements."
+  },
+  "counted_source_alias": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/sources/binarytrees/compact.cr",
+  "alias_bytes_equal": true,
+  "vendor_inputs": "Pinned Crystal standard library/compiler/native dependencies; no local authored helper is compiled",
+  "source_inventory_is_derived_from_actual_compiler_receipt": true
+}

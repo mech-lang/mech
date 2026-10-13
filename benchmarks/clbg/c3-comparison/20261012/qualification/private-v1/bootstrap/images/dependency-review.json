@@ -1,0 +1,24 @@
+{
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/c3c",
+  "architectures": [
+    "arm64"
+  ],
+  "dependencies": [
+    {
+      "install_name": "/usr/lib/libcurl.4.dylib",
+      "scope": "OS-image-not-hashed"
+    },
+    {
+      "install_name": "/usr/lib/libxar.1.dylib",
+      "scope": "OS-image-not-hashed"
+    },
+    {
+      "install_name": "/usr/lib/libSystem.B.dylib",
+      "scope": "OS-image-not-hashed"
+    },
+    {
+      "install_name": "/usr/lib/libc++.1.dylib",
+      "scope": "OS-image-not-hashed"
+    }
+  ]
+}

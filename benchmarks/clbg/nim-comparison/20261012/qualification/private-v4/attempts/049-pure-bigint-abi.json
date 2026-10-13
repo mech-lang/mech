@@ -1,0 +1,48 @@
+{
+  "key": "pidigits:pure-bigint-abi",
+  "id": "pure-bigint-abi",
+  "benchmark": "pidigits",
+  "language": "nim",
+  "source_sha256": "0b201954322ca985d3654ab320e2248b24a551ae71016711a61bc2684eca1f41",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v4/bin/pure-bigint-abi",
+    "0"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012",
+  "runtime_environment": {
+    "LC_ALL": "C",
+    "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre/8.45/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"257f5866b5232c5bc4772df35448f6b2eddf572c7bb22dc88259596d4a280978\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v4/bin/pure-bigint-abi\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre/8.45/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\"}, \"source_sha256\": \"0b201954322ca985d3654ab320e2248b24a551ae71016711a61bc2684eca1f41\", \"support\": {}}",
+  "started_at": "2026-10-12T19:36:31.840654+00:00",
+  "workload_n": 0,
+  "full_workload": false,
+  "timeout_seconds": 120,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.213158833,
+  "exit_status": 1,
+  "remaining_group_members": [],
+  "error": "Benchmark exited with status 1",
+  "error_type": "RuntimeError",
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "fatal.nim(62)            sysFatal\nError: unhandled exception: pure_bigint_abi.nim(7, 1) `initBigInt(-17) div b == initBigInt(-3)`  [AssertionDefect]\n",
+  "stdout_bytes": 0,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_prefix": "",
+  "finished_at": "2026-10-12T19:36:32.276004+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true
+}

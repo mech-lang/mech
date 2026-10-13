@@ -1,0 +1,22 @@
+{
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/revisions/private-v1/fixture_runner.py",
+    "--receipt",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/proposal-seals/private-v1/gleam-bundle-inventory.json"
+  ],
+  "started_at": "2026-10-12T22:54:11.054348+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 72613,
+  "identity": {
+    "pid": 72613,
+    "process_listing": "Mon Oct 12 18:54:11 2026     /opt/homebrew/opt/python@3.14/bin/python3.14 -B /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/revisions/private-v1/fixture_runner.py --receipt /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/proposal-seals/private-v1/gleam-bundle-inventory.json"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-12T22:54:11.151984+00:00",
+  "final_exit_status": 0
+}

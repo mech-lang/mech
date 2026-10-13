@@ -1,0 +1,1354 @@
+{
+  "status": "complete",
+  "created_at": "2026-10-12T13:44:52.802527+00:00",
+  "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/full-study/manifest.json",
+  "manifest_sha256": "8d07430a48e9613460f1d927a92c4ae88ba65e1e48a5e846bdd4c83ddebeeb5a",
+  "supervisor": {
+    "pid": 50995,
+    "process_listing": "Mon Oct 12 09:44:51 2026     /tmp/mech-nbody-plot-runtime/bin/python3 -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/full_study.py --run --manifest-sha256 8d07430a48e9613460f1d927a92c4ae88ba65e1e48a5e846bdd4c83ddebeeb5a"
+  },
+  "orders": [
+    {
+      "round": 1,
+      "profiles": [
+        "luajit-listed-1",
+        "luajit-listed-5",
+        "luajit-listed-6",
+        "luajit-listed-7",
+        "mech-fast-control",
+        "mech-small-control"
+      ]
+    },
+    {
+      "round": 2,
+      "profiles": [
+        "luajit-listed-5",
+        "luajit-listed-6",
+        "luajit-listed-7",
+        "mech-fast-control",
+        "mech-small-control",
+        "luajit-listed-1"
+      ]
+    },
+    {
+      "round": 3,
+      "profiles": [
+        "luajit-listed-6",
+        "luajit-listed-7",
+        "mech-fast-control",
+        "mech-small-control",
+        "luajit-listed-1",
+        "luajit-listed-5"
+      ]
+    }
+  ],
+  "attempts": [
+    {
+      "key": "pidigits:luajit-gmp-listed-1",
+      "id": "luajit-listed-1",
+      "benchmark": "pidigits",
+      "language": "luajit",
+      "source_sha256": "e2e0139198ef7b00dd616fdd82d756e079a96db64702c72c4f9bed0a2d9d1e82",
+      "command": [
+        "/tmp/mech-clbg-luajit/src/luajit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "10000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "LUA_CPATH": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/?.so;;"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/tmp/mech-clbg-luajit/src/luajit\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"LUA_CPATH\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/?.so;;\"}, \"source_sha256\": \"e2e0139198ef7b00dd616fdd82d756e079a96db64702c72c4f9bed0a2d9d1e82\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/results/divisions-1-n97.tsv\": \"82399b8f5b25db09095df0e3d0fb012c32cb2dddff214e3a458d4b8afd9aafd2\", \"/tmp/mech-clbg-luajit/src/luajit\": \"ffe74a185b665faae02da56c194493c82d921afae03f3421b3d0a270886dd4c3\"}}",
+      "started_at": "2026-10-12T13:44:53.768978+00:00",
+      "workload_n": 10000,
+      "full_workload": true,
+      "timeout_seconds": 300,
+      "maximum_rss_mib": 2048,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.480465875,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 16893,
+      "stdout_sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+      "validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T13:44:54.441506+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 1,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/full-study/attempts/001-luajit-listed-1.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 51049,
+        "pgid": 51049,
+        "command": [
+          "/tmp/mech-clbg-luajit/src/luajit",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+          "10000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "fatal_qualification_fields": [],
+      "qualified": true,
+      "retryable_environment_only": false,
+      "environment_attempt": 1
+    },
+    {
+      "key": "pidigits:luajit-gmp-listed-5",
+      "id": "luajit-listed-5",
+      "benchmark": "pidigits",
+      "language": "luajit",
+      "source_sha256": "00734d693c0968a606b8aef2cfeffa15da58e7f4ac81731c19fb7f1dde7a0c36",
+      "command": [
+        "/tmp/mech-clbg-luajit/src/luajit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "10000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "LUA_CPATH": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/?.so;;"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/tmp/mech-clbg-luajit/src/luajit\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"LUA_CPATH\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/?.so;;\"}, \"source_sha256\": \"00734d693c0968a606b8aef2cfeffa15da58e7f4ac81731c19fb7f1dde7a0c36\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/results/divisions-5-n97.tsv\": \"6c93ff1c9ce3565c472fe5dec5d55a8442ffa015f566729dea42412a8e2377a1\", \"/tmp/mech-clbg-luajit/src/luajit\": \"ffe74a185b665faae02da56c194493c82d921afae03f3421b3d0a270886dd4c3\"}}",
+      "started_at": "2026-10-12T13:44:54.581749+00:00",
+      "workload_n": 10000,
+      "full_workload": true,
+      "timeout_seconds": 300,
+      "maximum_rss_mib": 2048,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.549153083,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 16893,
+      "stdout_sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+      "validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T13:44:55.327100+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 2,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/full-study/attempts/002-luajit-listed-5.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 51069,
+        "pgid": 51069,
+        "command": [
+          "/tmp/mech-clbg-luajit/src/luajit",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+          "10000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "fatal_qualification_fields": [],
+      "qualified": true,
+      "retryable_environment_only": false,
+      "environment_attempt": 1
+    },
+    {
+      "key": "pidigits:luajit-gmp-listed-6",
+      "id": "luajit-listed-6",
+      "benchmark": "pidigits",
+      "language": "luajit",
+      "source_sha256": "ce34fae5e45f842c8b414b18fa368e90809165fda0781b8a00da2bc29d50d930",
+      "command": [
+        "/tmp/mech-clbg-luajit/src/luajit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "10000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "LUA_CPATH": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/?.so;;"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/tmp/mech-clbg-luajit/src/luajit\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"LUA_CPATH\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/?.so;;\"}, \"source_sha256\": \"ce34fae5e45f842c8b414b18fa368e90809165fda0781b8a00da2bc29d50d930\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/results/divisions-6-n97.tsv\": \"118f65ec13c0cbc12c6ebf4733b6638dbf30c72591cc23f5bc0e906613c33636\", \"/tmp/mech-clbg-luajit/src/luajit\": \"ffe74a185b665faae02da56c194493c82d921afae03f3421b3d0a270886dd4c3\"}}",
+      "started_at": "2026-10-12T13:44:55.467466+00:00",
+      "workload_n": 10000,
+      "full_workload": true,
+      "timeout_seconds": 300,
+      "maximum_rss_mib": 2048,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.334136666,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 16893,
+      "stdout_sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+      "validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T13:44:55.998926+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 3,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/full-study/attempts/003-luajit-listed-6.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 51089,
+        "pgid": 51089,
+        "command": [
+          "/tmp/mech-clbg-luajit/src/luajit",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+          "10000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "fatal_qualification_fields": [],
+      "qualified": true,
+      "retryable_environment_only": false,
+      "environment_attempt": 1
+    },
+    {
+      "key": "pidigits:luajit-gmp-listed-7",
+      "id": "luajit-listed-7",
+      "benchmark": "pidigits",
+      "language": "luajit",
+      "source_sha256": "cca5f009f82162b0bdd50d839add97ef21859b5d8ddd047b3db9f286973c9c2c",
+      "command": [
+        "/tmp/mech-clbg-luajit/src/luajit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "10000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "LUA_CPATH": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/?.so;;"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/tmp/mech-clbg-luajit/src/luajit\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"LUA_CPATH\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/?.so;;\"}, \"source_sha256\": \"cca5f009f82162b0bdd50d839add97ef21859b5d8ddd047b3db9f286973c9c2c\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/results/divisions-7-n97.tsv\": \"19a4d866b8509939281cf526034681bee2e1f3100b55ebaabbace3b9cbf7f643\", \"/tmp/mech-clbg-luajit/src/luajit\": \"ffe74a185b665faae02da56c194493c82d921afae03f3421b3d0a270886dd4c3\"}}",
+      "started_at": "2026-10-12T13:44:56.140243+00:00",
+      "workload_n": 10000,
+      "full_workload": true,
+      "timeout_seconds": 300,
+      "maximum_rss_mib": 2048,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.678734333,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 16893,
+      "stdout_sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+      "validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T13:44:57.015500+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 4,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/full-study/attempts/004-luajit-listed-7.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 51109,
+        "pgid": 51109,
+        "command": [
+          "/tmp/mech-clbg-luajit/src/luajit",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+          "10000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "fatal_qualification_fields": [],
+      "qualified": true,
+      "retryable_environment_only": false,
+      "environment_attempt": 1
+    },
+    {
+      "key": "pidigits:lua-study:mech-fast-control",
+      "id": "mech-fast-control",
+      "benchmark": "pidigits",
+      "language": "mech",
+      "source_sha256": "7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-advance-signed-after",
+        "10000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"4bf41cc5207d91962cd380b094720c43ca3f7def96c6a0606d513e84fdef7dea\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-advance-signed-after\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e\", \"support\": {}}",
+      "started_at": "2026-10-12T13:44:57.155689+00:00",
+      "workload_n": 10000,
+      "full_workload": true,
+      "timeout_seconds": 300,
+      "maximum_rss_mib": 2048,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.306683917,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 16893,
+      "stdout_sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+      "validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T13:44:57.656776+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 5,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/full-study/attempts/005-mech-fast-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 51129,
+        "pgid": 51129,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-advance-signed-after",
+          "10000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "fatal_qualification_fields": [],
+      "qualified": true,
+      "retryable_environment_only": false,
+      "environment_attempt": 1
+    },
+    {
+      "key": "pidigits:lua-study:mech-small-control",
+      "id": "mech-small-control",
+      "benchmark": "pidigits",
+      "language": "mech",
+      "source_sha256": "db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-compact-signed-after",
+        "10000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"53d91c7a51c126d660129311ee7c011ff6d30ce629adea543ca7136683fbb336\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-compact-signed-after\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1\", \"support\": {}}",
+      "started_at": "2026-10-12T13:44:57.802844+00:00",
+      "workload_n": 10000,
+      "full_workload": true,
+      "timeout_seconds": 300,
+      "maximum_rss_mib": 2048,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.398637958,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 16893,
+      "stdout_sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+      "validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T13:44:58.395892+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 6,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/full-study/attempts/006-mech-small-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 51149,
+        "pgid": 51149,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-compact-signed-after",
+          "10000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "fatal_qualification_fields": [],
+      "qualified": true,
+      "retryable_environment_only": false,
+      "environment_attempt": 1
+    },
+    {
+      "key": "pidigits:luajit-gmp-listed-5",
+      "id": "luajit-listed-5",
+      "benchmark": "pidigits",
+      "language": "luajit",
+      "source_sha256": "00734d693c0968a606b8aef2cfeffa15da58e7f4ac81731c19fb7f1dde7a0c36",
+      "command": [
+        "/tmp/mech-clbg-luajit/src/luajit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "10000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "LUA_CPATH": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/?.so;;"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/tmp/mech-clbg-luajit/src/luajit\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"LUA_CPATH\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/?.so;;\"}, \"source_sha256\": \"00734d693c0968a606b8aef2cfeffa15da58e7f4ac81731c19fb7f1dde7a0c36\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/results/divisions-5-n97.tsv\": \"6c93ff1c9ce3565c472fe5dec5d55a8442ffa015f566729dea42412a8e2377a1\", \"/tmp/mech-clbg-luajit/src/luajit\": \"ffe74a185b665faae02da56c194493c82d921afae03f3421b3d0a270886dd4c3\"}}",
+      "started_at": "2026-10-12T13:44:58.536139+00:00",
+      "workload_n": 10000,
+      "full_workload": true,
+      "timeout_seconds": 300,
+      "maximum_rss_mib": 2048,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.543415125,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 16893,
+      "stdout_sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+      "validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T13:44:59.274376+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 7,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/full-study/attempts/007-luajit-listed-5.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 51169,
+        "pgid": 51169,
+        "command": [
+          "/tmp/mech-clbg-luajit/src/luajit",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+          "10000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "fatal_qualification_fields": [],
+      "qualified": true,
+      "retryable_environment_only": false,
+      "environment_attempt": 1
+    },
+    {
+      "key": "pidigits:luajit-gmp-listed-6",
+      "id": "luajit-listed-6",
+      "benchmark": "pidigits",
+      "language": "luajit",
+      "source_sha256": "ce34fae5e45f842c8b414b18fa368e90809165fda0781b8a00da2bc29d50d930",
+      "command": [
+        "/tmp/mech-clbg-luajit/src/luajit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "10000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "LUA_CPATH": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/?.so;;"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/tmp/mech-clbg-luajit/src/luajit\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"LUA_CPATH\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/?.so;;\"}, \"source_sha256\": \"ce34fae5e45f842c8b414b18fa368e90809165fda0781b8a00da2bc29d50d930\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/results/divisions-6-n97.tsv\": \"118f65ec13c0cbc12c6ebf4733b6638dbf30c72591cc23f5bc0e906613c33636\", \"/tmp/mech-clbg-luajit/src/luajit\": \"ffe74a185b665faae02da56c194493c82d921afae03f3421b3d0a270886dd4c3\"}}",
+      "started_at": "2026-10-12T13:44:59.413718+00:00",
+      "workload_n": 10000,
+      "full_workload": true,
+      "timeout_seconds": 300,
+      "maximum_rss_mib": 2048,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.329260708,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 16893,
+      "stdout_sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+      "validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T13:44:59.935196+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 8,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/full-study/attempts/008-luajit-listed-6.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 51189,
+        "pgid": 51189,
+        "command": [
+          "/tmp/mech-clbg-luajit/src/luajit",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+          "10000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "fatal_qualification_fields": [],
+      "qualified": true,
+      "retryable_environment_only": false,
+      "environment_attempt": 1
+    },
+    {
+      "key": "pidigits:luajit-gmp-listed-7",
+      "id": "luajit-listed-7",
+      "benchmark": "pidigits",
+      "language": "luajit",
+      "source_sha256": "cca5f009f82162b0bdd50d839add97ef21859b5d8ddd047b3db9f286973c9c2c",
+      "command": [
+        "/tmp/mech-clbg-luajit/src/luajit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "10000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "LUA_CPATH": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/?.so;;"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/tmp/mech-clbg-luajit/src/luajit\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"LUA_CPATH\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/?.so;;\"}, \"source_sha256\": \"cca5f009f82162b0bdd50d839add97ef21859b5d8ddd047b3db9f286973c9c2c\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/results/divisions-7-n97.tsv\": \"19a4d866b8509939281cf526034681bee2e1f3100b55ebaabbace3b9cbf7f643\", \"/tmp/mech-clbg-luajit/src/luajit\": \"ffe74a185b665faae02da56c194493c82d921afae03f3421b3d0a270886dd4c3\"}}",
+      "started_at": "2026-10-12T13:45:00.075236+00:00",
+      "workload_n": 10000,
+      "full_workload": true,
+      "timeout_seconds": 300,
+      "maximum_rss_mib": 2048,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.67763725,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 16893,
+      "stdout_sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+      "validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T13:45:00.949054+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 9,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/full-study/attempts/009-luajit-listed-7.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 51209,
+        "pgid": 51209,
+        "command": [
+          "/tmp/mech-clbg-luajit/src/luajit",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+          "10000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "fatal_qualification_fields": [],
+      "qualified": true,
+      "retryable_environment_only": false,
+      "environment_attempt": 1
+    },
+    {
+      "key": "pidigits:lua-study:mech-fast-control",
+      "id": "mech-fast-control",
+      "benchmark": "pidigits",
+      "language": "mech",
+      "source_sha256": "7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-advance-signed-after",
+        "10000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"4bf41cc5207d91962cd380b094720c43ca3f7def96c6a0606d513e84fdef7dea\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-advance-signed-after\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e\", \"support\": {}}",
+      "started_at": "2026-10-12T13:45:01.091745+00:00",
+      "workload_n": 10000,
+      "full_workload": true,
+      "timeout_seconds": 300,
+      "maximum_rss_mib": 2048,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.307536334,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 16893,
+      "stdout_sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+      "validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T13:45:01.597944+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 10,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/full-study/attempts/010-mech-fast-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 51229,
+        "pgid": 51229,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-advance-signed-after",
+          "10000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "fatal_qualification_fields": [],
+      "qualified": true,
+      "retryable_environment_only": false,
+      "environment_attempt": 1
+    },
+    {
+      "key": "pidigits:lua-study:mech-small-control",
+      "id": "mech-small-control",
+      "benchmark": "pidigits",
+      "language": "mech",
+      "source_sha256": "db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-compact-signed-after",
+        "10000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"53d91c7a51c126d660129311ee7c011ff6d30ce629adea543ca7136683fbb336\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-compact-signed-after\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1\", \"support\": {}}",
+      "started_at": "2026-10-12T13:45:01.746037+00:00",
+      "workload_n": 10000,
+      "full_workload": true,
+      "timeout_seconds": 300,
+      "maximum_rss_mib": 2048,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.396829042,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 16893,
+      "stdout_sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+      "validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T13:45:02.342617+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 11,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/full-study/attempts/011-mech-small-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 51249,
+        "pgid": 51249,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-compact-signed-after",
+          "10000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "fatal_qualification_fields": [],
+      "qualified": true,
+      "retryable_environment_only": false,
+      "environment_attempt": 1
+    },
+    {
+      "key": "pidigits:luajit-gmp-listed-1",
+      "id": "luajit-listed-1",
+      "benchmark": "pidigits",
+      "language": "luajit",
+      "source_sha256": "e2e0139198ef7b00dd616fdd82d756e079a96db64702c72c4f9bed0a2d9d1e82",
+      "command": [
+        "/tmp/mech-clbg-luajit/src/luajit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "10000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "LUA_CPATH": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/?.so;;"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/tmp/mech-clbg-luajit/src/luajit\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"LUA_CPATH\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/?.so;;\"}, \"source_sha256\": \"e2e0139198ef7b00dd616fdd82d756e079a96db64702c72c4f9bed0a2d9d1e82\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/results/divisions-1-n97.tsv\": \"82399b8f5b25db09095df0e3d0fb012c32cb2dddff214e3a458d4b8afd9aafd2\", \"/tmp/mech-clbg-luajit/src/luajit\": \"ffe74a185b665faae02da56c194493c82d921afae03f3421b3d0a270886dd4c3\"}}",
+      "started_at": "2026-10-12T13:45:02.488619+00:00",
+      "workload_n": 10000,
+      "full_workload": true,
+      "timeout_seconds": 300,
+      "maximum_rss_mib": 2048,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.468903375,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 16893,
+      "stdout_sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+      "validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T13:45:03.160856+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 12,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/full-study/attempts/012-luajit-listed-1.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 51269,
+        "pgid": 51269,
+        "command": [
+          "/tmp/mech-clbg-luajit/src/luajit",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+          "10000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "fatal_qualification_fields": [],
+      "qualified": true,
+      "retryable_environment_only": false,
+      "environment_attempt": 1
+    },
+    {
+      "key": "pidigits:luajit-gmp-listed-6",
+      "id": "luajit-listed-6",
+      "benchmark": "pidigits",
+      "language": "luajit",
+      "source_sha256": "ce34fae5e45f842c8b414b18fa368e90809165fda0781b8a00da2bc29d50d930",
+      "command": [
+        "/tmp/mech-clbg-luajit/src/luajit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "10000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "LUA_CPATH": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/?.so;;"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/tmp/mech-clbg-luajit/src/luajit\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"LUA_CPATH\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/?.so;;\"}, \"source_sha256\": \"ce34fae5e45f842c8b414b18fa368e90809165fda0781b8a00da2bc29d50d930\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/results/divisions-6-n97.tsv\": \"118f65ec13c0cbc12c6ebf4733b6638dbf30c72591cc23f5bc0e906613c33636\", \"/tmp/mech-clbg-luajit/src/luajit\": \"ffe74a185b665faae02da56c194493c82d921afae03f3421b3d0a270886dd4c3\"}}",
+      "started_at": "2026-10-12T13:45:03.302331+00:00",
+      "workload_n": 10000,
+      "full_workload": true,
+      "timeout_seconds": 300,
+      "maximum_rss_mib": 2048,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.325246042,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 16893,
+      "stdout_sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+      "validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T13:45:03.826579+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 13,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/full-study/attempts/013-luajit-listed-6.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 51290,
+        "pgid": 51290,
+        "command": [
+          "/tmp/mech-clbg-luajit/src/luajit",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+          "10000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "fatal_qualification_fields": [],
+      "qualified": true,
+      "retryable_environment_only": false,
+      "environment_attempt": 1
+    },
+    {
+      "key": "pidigits:luajit-gmp-listed-7",
+      "id": "luajit-listed-7",
+      "benchmark": "pidigits",
+      "language": "luajit",
+      "source_sha256": "cca5f009f82162b0bdd50d839add97ef21859b5d8ddd047b3db9f286973c9c2c",
+      "command": [
+        "/tmp/mech-clbg-luajit/src/luajit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "10000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "LUA_CPATH": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/?.so;;"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/tmp/mech-clbg-luajit/src/luajit\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"LUA_CPATH\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/?.so;;\"}, \"source_sha256\": \"cca5f009f82162b0bdd50d839add97ef21859b5d8ddd047b3db9f286973c9c2c\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/results/divisions-7-n97.tsv\": \"19a4d866b8509939281cf526034681bee2e1f3100b55ebaabbace3b9cbf7f643\", \"/tmp/mech-clbg-luajit/src/luajit\": \"ffe74a185b665faae02da56c194493c82d921afae03f3421b3d0a270886dd4c3\"}}",
+      "started_at": "2026-10-12T13:45:03.966292+00:00",
+      "workload_n": 10000,
+      "full_workload": true,
+      "timeout_seconds": 300,
+      "maximum_rss_mib": 2048,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.678790708,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 16893,
+      "stdout_sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+      "validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T13:45:04.846904+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 14,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/full-study/attempts/014-luajit-listed-7.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 51310,
+        "pgid": 51310,
+        "command": [
+          "/tmp/mech-clbg-luajit/src/luajit",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+          "10000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "fatal_qualification_fields": [],
+      "qualified": true,
+      "retryable_environment_only": false,
+      "environment_attempt": 1
+    },
+    {
+      "key": "pidigits:lua-study:mech-fast-control",
+      "id": "mech-fast-control",
+      "benchmark": "pidigits",
+      "language": "mech",
+      "source_sha256": "7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-advance-signed-after",
+        "10000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"4bf41cc5207d91962cd380b094720c43ca3f7def96c6a0606d513e84fdef7dea\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-advance-signed-after\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e\", \"support\": {}}",
+      "started_at": "2026-10-12T13:45:04.990263+00:00",
+      "workload_n": 10000,
+      "full_workload": true,
+      "timeout_seconds": 300,
+      "maximum_rss_mib": 2048,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.306547708,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 16893,
+      "stdout_sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+      "validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T13:45:05.496080+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 15,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/full-study/attempts/015-mech-fast-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 51358,
+        "pgid": 51358,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-advance-signed-after",
+          "10000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "fatal_qualification_fields": [],
+      "qualified": true,
+      "retryable_environment_only": false,
+      "environment_attempt": 1
+    },
+    {
+      "key": "pidigits:lua-study:mech-small-control",
+      "id": "mech-small-control",
+      "benchmark": "pidigits",
+      "language": "mech",
+      "source_sha256": "db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-compact-signed-after",
+        "10000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"53d91c7a51c126d660129311ee7c011ff6d30ce629adea543ca7136683fbb336\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-compact-signed-after\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1\", \"support\": {}}",
+      "started_at": "2026-10-12T13:45:05.639797+00:00",
+      "workload_n": 10000,
+      "full_workload": true,
+      "timeout_seconds": 300,
+      "maximum_rss_mib": 2048,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.397511458,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 16893,
+      "stdout_sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+      "validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T13:45:06.228696+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 16,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/full-study/attempts/016-mech-small-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 51378,
+        "pgid": 51378,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-compact-signed-after",
+          "10000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "fatal_qualification_fields": [],
+      "qualified": true,
+      "retryable_environment_only": false,
+      "environment_attempt": 1
+    },
+    {
+      "key": "pidigits:luajit-gmp-listed-1",
+      "id": "luajit-listed-1",
+      "benchmark": "pidigits",
+      "language": "luajit",
+      "source_sha256": "e2e0139198ef7b00dd616fdd82d756e079a96db64702c72c4f9bed0a2d9d1e82",
+      "command": [
+        "/tmp/mech-clbg-luajit/src/luajit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "10000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "LUA_CPATH": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/?.so;;"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/tmp/mech-clbg-luajit/src/luajit\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"LUA_CPATH\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/?.so;;\"}, \"source_sha256\": \"e2e0139198ef7b00dd616fdd82d756e079a96db64702c72c4f9bed0a2d9d1e82\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/results/divisions-1-n97.tsv\": \"82399b8f5b25db09095df0e3d0fb012c32cb2dddff214e3a458d4b8afd9aafd2\", \"/tmp/mech-clbg-luajit/src/luajit\": \"ffe74a185b665faae02da56c194493c82d921afae03f3421b3d0a270886dd4c3\"}}",
+      "started_at": "2026-10-12T13:45:06.370773+00:00",
+      "workload_n": 10000,
+      "full_workload": true,
+      "timeout_seconds": 300,
+      "maximum_rss_mib": 2048,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.465363583,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 16893,
+      "stdout_sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+      "validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T13:45:07.020352+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 17,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/full-study/attempts/017-luajit-listed-1.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 51398,
+        "pgid": 51398,
+        "command": [
+          "/tmp/mech-clbg-luajit/src/luajit",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+          "10000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "fatal_qualification_fields": [],
+      "qualified": true,
+      "retryable_environment_only": false,
+      "environment_attempt": 1
+    },
+    {
+      "key": "pidigits:luajit-gmp-listed-5",
+      "id": "luajit-listed-5",
+      "benchmark": "pidigits",
+      "language": "luajit",
+      "source_sha256": "00734d693c0968a606b8aef2cfeffa15da58e7f4ac81731c19fb7f1dde7a0c36",
+      "command": [
+        "/tmp/mech-clbg-luajit/src/luajit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "10000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "LUA_CPATH": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/?.so;;"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/tmp/mech-clbg-luajit/src/luajit\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"LUA_CPATH\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/?.so;;\"}, \"source_sha256\": \"00734d693c0968a606b8aef2cfeffa15da58e7f4ac81731c19fb7f1dde7a0c36\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/results/divisions-5-n97.tsv\": \"6c93ff1c9ce3565c472fe5dec5d55a8442ffa015f566729dea42412a8e2377a1\", \"/tmp/mech-clbg-luajit/src/luajit\": \"ffe74a185b665faae02da56c194493c82d921afae03f3421b3d0a270886dd4c3\"}}",
+      "started_at": "2026-10-12T13:45:07.159029+00:00",
+      "workload_n": 10000,
+      "full_workload": true,
+      "timeout_seconds": 300,
+      "maximum_rss_mib": 2048,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.543174792,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 16893,
+      "stdout_sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+      "validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T13:45:07.894394+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 18,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/full-study/attempts/018-luajit-listed-5.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 51418,
+        "pgid": 51418,
+        "command": [
+          "/tmp/mech-clbg-luajit/src/luajit",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+          "10000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "fatal_qualification_fields": [],
+      "qualified": true,
+      "retryable_environment_only": false,
+      "environment_attempt": 1
+    }
+  ],
+  "active": null,
+  "profiles": {
+    "luajit-listed-1": {
+      "loc": 62,
+      "role": "faithful listed source using general GMP compatibility library",
+      "samples_seconds": [
+        0.480465875,
+        0.468903375,
+        0.465363583
+      ],
+      "median_seconds": 0.468903375,
+      "sample_stdev_seconds": 0.007898320046129285
+    },
+    "luajit-listed-5": {
+      "loc": 77,
+      "role": "faithful listed source using general GMP compatibility library",
+      "samples_seconds": [
+        0.549153083,
+        0.543415125,
+        0.543174792
+      ],
+      "median_seconds": 0.543415125,
+      "sample_stdev_seconds": 0.0033843237936436225
+    },
+    "luajit-listed-6": {
+      "loc": 63,
+      "role": "faithful listed source using general GMP compatibility library",
+      "samples_seconds": [
+        0.334136666,
+        0.329260708,
+        0.325246042
+      ],
+      "median_seconds": 0.329260708,
+      "sample_stdev_seconds": 0.004452259812325578
+    },
+    "luajit-listed-7": {
+      "loc": 57,
+      "role": "faithful listed source using general GMP compatibility library",
+      "samples_seconds": [
+        0.678734333,
+        0.67763725,
+        0.678790708
+      ],
+      "median_seconds": 0.678734333,
+      "sample_stdev_seconds": 0.0006502864250054212
+    },
+    "mech-fast-control": {
+      "loc": 38,
+      "role": "unchanged current Mech fast AOT endpoint, freshly measured control",
+      "samples_seconds": [
+        0.306683917,
+        0.307536334,
+        0.306547708
+      ],
+      "median_seconds": 0.306683917,
+      "sample_stdev_seconds": 0.0005358092013403931
+    },
+    "mech-small-control": {
+      "loc": 35,
+      "role": "unchanged current Mech small AOT endpoint, freshly measured control",
+      "samples_seconds": [
+        0.398637958,
+        0.396829042,
+        0.397511458
+      ],
+      "median_seconds": 0.397511458,
+      "sample_stdev_seconds": 0.0009134979421717376
+    }
+  },
+  "finished_at": "2026-10-12T13:45:07.968862+00:00",
+  "pins_unchanged_at_end": true
+}

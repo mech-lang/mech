@@ -1,0 +1,65 @@
+Building builtin -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/release/0.74.0-95ad180/packages/builtin
+Building /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v1/source-snapshot/sources/regexredux/compact -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v1/source-snapshot/sources/regexredux/compact
+Building collections -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/release/0.74.0-95ad180/packages/collections
+Building pony_test -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/release/0.74.0-95ad180/packages/pony_test
+Building random -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/release/0.74.0-95ad180/packages/random
+Building time -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/release/0.74.0-95ad180/packages/time
+Building collections/persistent -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/release/0.74.0-95ad180/packages/collections/persistent
+Building itertools -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/release/0.74.0-95ad180/packages/itertools
+Building files -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/release/0.74.0-95ad180/packages/files
+Building buffered -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/release/0.74.0-95ad180/packages/buffered
+Building term -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/release/0.74.0-95ad180/packages/term
+Building promises -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/release/0.74.0-95ad180/packages/promises
+Building strings -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/release/0.74.0-95ad180/packages/strings
+Building constrained_types -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/release/0.74.0-95ad180/packages/constrained_types
+Building signals -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/release/0.74.0-95ad180/packages/signals
+Building capsicum -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/release/0.74.0-95ad180/packages/capsicum
+Building format -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/release/0.74.0-95ad180/packages/format
+Building regex -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/regex/regex-589eb008db250aab17d4c073a41c5562ac5b8dc7/regex
+Generating
+ Reachability
+ Selector painting
+ Data prototypes
+ Data types
+ Function prototypes
+ Functions
+ Descriptors
+Verifying compact
+Verifying compact.builtin
+Verifying compact.collections
+Verifying compact.pony_test
+Verifying compact.random
+Verifying compact.time
+Verifying compact.persistent
+Verifying compact.itertools
+Verifying compact.files
+Verifying compact.buffered
+Verifying compact.term
+Verifying compact.promises
+Verifying compact.strings
+Verifying compact.constrained_types
+Verifying compact.signals
+Verifying compact.capsicum
+Verifying compact.format
+Verifying compact.regex
+Merging runtime
+Emitting 18 per-package modules
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/bin/pony-regexredux-compact/pony-regexredux-compact.main.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/bin/pony-regexredux-compact/pony-regexredux-compact.builtin.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/bin/pony-regexredux-compact/pony-regexredux-compact.collections.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/bin/pony-regexredux-compact/pony-regexredux-compact.pony_test.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/bin/pony-regexredux-compact/pony-regexredux-compact.random.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/bin/pony-regexredux-compact/pony-regexredux-compact.time.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/bin/pony-regexredux-compact/pony-regexredux-compact.persistent.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/bin/pony-regexredux-compact/pony-regexredux-compact.itertools.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/bin/pony-regexredux-compact/pony-regexredux-compact.files.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/bin/pony-regexredux-compact/pony-regexredux-compact.buffered.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/bin/pony-regexredux-compact/pony-regexredux-compact.term.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/bin/pony-regexredux-compact/pony-regexredux-compact.promises.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/bin/pony-regexredux-compact/pony-regexredux-compact.strings.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/bin/pony-regexredux-compact/pony-regexredux-compact.constrained_types.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/bin/pony-regexredux-compact/pony-regexredux-compact.signals.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/bin/pony-regexredux-compact/pony-regexredux-compact.capsicum.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/bin/pony-regexredux-compact/pony-regexredux-compact.format.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/bin/pony-regexredux-compact/pony-regexredux-compact.regex.bc
+Linking /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/bin/pony-regexredux-compact/pony-regexredux-compact

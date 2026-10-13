@@ -1,0 +1,29 @@
+{
+  "command": [
+    "/opt/homebrew/Cellar/llvm@22/22.1.8/bin/clang-22",
+    "-O3",
+    "-arch",
+    "arm64",
+    "-isysroot",
+    "/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/direct_driver.c",
+    "-L/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/bundle/lib",
+    "-lclbgaotcanary",
+    "-Wl,-rpath,/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/bundle/lib",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/canary"
+  ],
+  "started_at": "2026-10-13T02:32:03.904954+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 120,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 33558,
+  "identity": {
+    "pid": 33558,
+    "process_listing": "Mon Oct 12 22:32:03 2026     /opt/homebrew/Cellar/llvm@22/22.1.8/bin/clang-22 -O3 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/direct_driver.c -L/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/bundle/lib -lclbgaotcanary -Wl,-rpath,/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/bundle/lib -o /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/canary"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-13T02:32:04.095059+00:00",
+  "final_exit_status": 0
+}

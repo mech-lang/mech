@@ -1,0 +1,152 @@
+{
+  "source_url": "https://api.github.com/repos/ponylang/ponyc/commits/4d7087e672a3c056bbe2e01a54df3dcaa1b1bba5",
+  "response": {
+    "sha": "4d7087e672a3c056bbe2e01a54df3dcaa1b1bba5",
+    "node_id": "MDY6Q29tbWl0NjY2NzA4NDo0ZDcwODdlNjcyYTNjMDU2YmJlMmUwMWE1NGRmM2RjYWExYjFiYmE1",
+    "commit": {
+      "author": {
+        "name": "sylvanc",
+        "email": "sylvan@mk9sys.com",
+        "date": "2015-04-28T13:14:07Z"
+      },
+      "committer": {
+        "name": "sylvanc",
+        "email": "sylvan@mk9sys.com",
+        "date": "2015-04-28T13:14:07Z"
+      },
+      "message": "remove packages that will not be included in 0.1.0",
+      "tree": {
+        "sha": "5b0a2fa6e82ce36498799ace420194b333e0db78",
+        "url": "https://api.github.com/repos/ponylang/ponyc/git/trees/5b0a2fa6e82ce36498799ace420194b333e0db78"
+      },
+      "url": "https://api.github.com/repos/ponylang/ponyc/git/commits/4d7087e672a3c056bbe2e01a54df3dcaa1b1bba5",
+      "comment_count": 0,
+      "verification": {
+        "verified": false,
+        "reason": "unsigned",
+        "signature": null,
+        "payload": null,
+        "verified_at": null
+      }
+    },
+    "url": "https://api.github.com/repos/ponylang/ponyc/commits/4d7087e672a3c056bbe2e01a54df3dcaa1b1bba5",
+    "html_url": "https://github.com/ponylang/ponyc/commit/4d7087e672a3c056bbe2e01a54df3dcaa1b1bba5",
+    "comments_url": "https://api.github.com/repos/ponylang/ponyc/commits/4d7087e672a3c056bbe2e01a54df3dcaa1b1bba5/comments",
+    "author": {
+      "login": "sylvanc",
+      "id": 2785007,
+      "node_id": "MDQ6VXNlcjI3ODUwMDc=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2785007?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/sylvanc",
+      "html_url": "https://github.com/sylvanc",
+      "followers_url": "https://api.github.com/users/sylvanc/followers",
+      "following_url": "https://api.github.com/users/sylvanc/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sylvanc/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/sylvanc/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sylvanc/subscriptions",
+      "organizations_url": "https://api.github.com/users/sylvanc/orgs",
+      "repos_url": "https://api.github.com/users/sylvanc/repos",
+      "events_url": "https://api.github.com/users/sylvanc/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/sylvanc/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "committer": {
+      "login": "sylvanc",
+      "id": 2785007,
+      "node_id": "MDQ6VXNlcjI3ODUwMDc=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2785007?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/sylvanc",
+      "html_url": "https://github.com/sylvanc",
+      "followers_url": "https://api.github.com/users/sylvanc/followers",
+      "following_url": "https://api.github.com/users/sylvanc/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sylvanc/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/sylvanc/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sylvanc/subscriptions",
+      "organizations_url": "https://api.github.com/users/sylvanc/orgs",
+      "repos_url": "https://api.github.com/users/sylvanc/repos",
+      "events_url": "https://api.github.com/users/sylvanc/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/sylvanc/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "parents": [
+      {
+        "sha": "5f802286070898bcb7fa29e28aa40181de6fe698",
+        "url": "https://api.github.com/repos/ponylang/ponyc/commits/5f802286070898bcb7fa29e28aa40181de6fe698",
+        "html_url": "https://github.com/ponylang/ponyc/commit/5f802286070898bcb7fa29e28aa40181de6fe698"
+      }
+    ],
+    "stats": {
+      "total": 364,
+      "additions": 0,
+      "deletions": 364
+    },
+    "files": [
+      {
+        "sha": "cdc471a7fcf2f472fa2a8e2411d4597d443b2bab",
+        "filename": "packages/sort/insertion.pony",
+        "status": "removed",
+        "additions": 0,
+        "deletions": 1,
+        "changes": 1,
+        "blob_url": "https://github.com/ponylang/ponyc/blob/5f802286070898bcb7fa29e28aa40181de6fe698/packages%2Fsort%2Finsertion.pony",
+        "raw_url": "https://github.com/ponylang/ponyc/raw/5f802286070898bcb7fa29e28aa40181de6fe698/packages%2Fsort%2Finsertion.pony",
+        "contents_url": "https://api.github.com/repos/ponylang/ponyc/contents/packages%2Fsort%2Finsertion.pony?ref=5f802286070898bcb7fa29e28aa40181de6fe698",
+        "patch": "@@ -1 +0,0 @@\n-primitive InsertionSortFunction[A, C: OrderFunction[A] val]"
+      },
+      {
+        "sha": "8488d0edb84ad9a7d9e25c60c61ea2cfa08889d2",
+        "filename": "packages/sort/orderfun.pony",
+        "status": "removed",
+        "additions": 0,
+        "deletions": 94,
+        "changes": 94,
+        "blob_url": "https://github.com/ponylang/ponyc/blob/5f802286070898bcb7fa29e28aa40181de6fe698/packages%2Fsort%2Forderfun.pony",
+        "raw_url": "https://github.com/ponylang/ponyc/raw/5f802286070898bcb7fa29e28aa40181de6fe698/packages%2Fsort%2Forderfun.pony",
+        "contents_url": "https://api.github.com/repos/ponylang/ponyc/contents/packages%2Fsort%2Forderfun.pony?ref=5f802286070898bcb7fa29e28aa40181de6fe698",
+        "patch": "@@ -1,94 +0,0 @@\n-interface Sizeable\n-  fun size(): U64\n-\n-interface Indexable[A]\n-  fun apply(i: U64): this->A ?\n-  fun ref update(i: U64, value: A): (A^ | None) ?\n-\n-interface Sortable[A] is Sizeable, Indexable[A]\n-\n-trait OrderFunction[A] val\n-  \"\"\"\n-  A pluggable ordering function.\n-  \"\"\"\n-  new val create()\n-\n-  fun compare(x: this->A!, y: this->A!): I32\n-\n-primitive OrderIdLt[A] is OrderFunction[A]\n-  \"\"\"\n-  Orders elements by identity, lowest first.\n-  \"\"\"\n-  fun compare(x: this->A!, y: this->A!): I32 =>\n-    if &x < &y then\n-      -1\n-    elseif &x == &y then\n-      0\n-    else\n-      1\n-    end\n-\n-primitive OrderIdGt[A] is OrderFunction[A]\n-  \"\"\"\n-  Orders elements by identity, highest first.\n-  \"\"\"\n-  fun compare(x: this->A!, y: this->A!): I32 =>\n-    if &x > &y then\n-      -1\n-    elseif &x == &y then\n-      0\n-    else\n-      1\n-    end\n-\n-primitive OrderLt[A: Ordered[A] box] is OrderFunction[A]\n-  \"\"\"\n-  Orders elements by structural equality, least first.\n-  \"\"\"\n-  fun compare(x: this->A!, y: this->A!): I32 =>\n-    if x < y then\n-      -1\n-    elseif x == y then\n-      0\n-    else\n-      1\n-    end\n-\n-primitive OrderGt[A: Ordered[A] box] is OrderFunction[A]\n-  \"\"\"\n-  Orders elements by structural equality, greatest first.\n-  \"\"\"\n-  fun compare(x: this->A!, y: this->A!): I32 =>\n-    if x > y then\n-      -1\n-    elseif x == y then\n-      0\n-    else\n-      1\n-    end\n-\n-primitive OrderSizeLt[A: Sizeable box] is OrderFunction[A]\n-  \"\"\"\n-  Orders elements by size, smallest first.\n-  \"\"\"\n-  fun compare(x: this->A!, y: this->A!): I32 =>\n-    if x.size() < y.size() then\n-      -1\n-    elseif x.size() == y.size() then\n-      0\n-    else\n-      1\n-    end\n-\n-primitive OrderSizeGt[A: Sizeable box] is OrderFunction[A]\n-  \"\"\"\n-  Orders elements by size, greatest first.\n-  \"\"\"\n-  fun compare(x: this->A!, y: this->A!): I32 =>\n-    if x.size() > y.size() then\n-      -1\n-    elseif x.size() == y.size() then\n-      0\n-    else\n-      1\n-    end"
+      },
+      {
+        "sha": "7b6cc182d48fab00591312b0845765a2a3ec46be",
+        "filename": "packages/sort/qsort.pony",
+        "status": "removed",
+        "additions": 0,
+        "deletions": 9,
+        "changes": 9,
+        "blob_url": "https://github.com/ponylang/ponyc/blob/5f802286070898bcb7fa29e28aa40181de6fe698/packages%2Fsort%2Fqsort.pony",
+        "raw_url": "https://github.com/ponylang/ponyc/raw/5f802286070898bcb7fa29e28aa40181de6fe698/packages%2Fsort%2Fqsort.pony",
+        "contents_url": "https://api.github.com/repos/ponylang/ponyc/contents/packages%2Fsort%2Fqsort.pony?ref=5f802286070898bcb7fa29e28aa40181de6fe698",
+        "patch": "@@ -1,9 +0,0 @@\n-type QsortId[A] is QsortFunction[A, OrderIdLt[A]]\n-\n-type QsortIdReverse[A] is QsortFunction[A, OrderIdGt[A]]\n-\n-type Qsort[A: Ordered[A] box] is QsortFunction[A, OrderLt[A]]\n-\n-type QsortReverse[A: Ordered[A] box] is QsortFunction[A, OrderGt[A]]\n-\n-primitive QsortFunction[A, O: OrderFunction[A] val]"
+      },
+      {
+        "sha": "9c45d20fd0ebd62e0a2893896c48098dd1fea3c0",
+        "filename": "packages/text/rope.pony",
+        "status": "removed",
+        "additions": 0,
+        "deletions": 239,
+        "changes": 239,
+        "blob_url": "https://github.com/ponylang/ponyc/blob/5f802286070898bcb7fa29e28aa40181de6fe698/packages%2Ftext%2Frope.pony",
+        "raw_url": "https://github.com/ponylang/ponyc/raw/5f802286070898bcb7fa29e28aa40181de6fe698/packages%2Ftext%2Frope.pony",
+        "contents_url": "https://api.github.com/repos/ponylang/ponyc/contents/packages%2Ftext%2Frope.pony?ref=5f802286070898bcb7fa29e28aa40181de6fe698",
+        "patch": "@@ -1,239 +0,0 @@\n-//use \"math\"\n-\n-type _LeafNode is (String, U64)\n-type _ConcatNode is (Rope, Rope)\n-type _RopeNode is (_LeafNode | _ConcatNode)\n-\n-class Rope val is Stringable, Ordered[Rope]\n-  var _size: U64\n-  var _depth: U64\n-  var _linebreaks: U64\n-  var node: _RopeNode\n-\n-  new create(from: String = \"\", blocksize: U64 = 32) =>\n-    if from.size() < blocksize then\n-      _depth = 1\n-      _size = from.size()\n-      _linebreaks = from.count(\"\\n\")\n-      node = (from, blocksize)\n-    else\n-      let offset = (from.size()/2).i64()\n-      let left = recover Rope(from.substring(0, offset - 1), blocksize) end\n-      let right = recover Rope(from.substring(offset, -1), blocksize) end\n-\n-      _size = left._size + right._size\n-      _depth = left._depth.max(right._depth) + 1\n-      _linebreaks = left._linebreaks + right._linebreaks\n-      node = (consume left, consume right)\n-    end\n-\n-  fun val size(): U64 => _size\n-  fun val depth(): U64 => _depth\n-  fun val linecount(): U64 => _linebreaks\n-\n-  /*fun apply(index: U64): U8 ? =>\n-    \"\"\"\n-    Returns the byte at the given index. Raise an error if the index is out of\n-    bounds.\n-    \"\"\"*/\n-\n-  fun val count(s: String): U64 =>\n-    \"\"\"\n-    Counts the non-overlapping occurrences of s in the Rope.\n-    \"\"\"\n-    0\n-\n-  fun val find(s: String, nth: U64): I64 ? =>\n-    \"\"\"\n-    Returns the index of the nth occurrence of s in this Rope. Raise an error\n-    if there is no n-th occurrence or if this Rope is empty.\n-    \"\"\"\n-    match (node, nth)\n-    | ((var left: Rope, var right: Rope), var n: U64) =>\n-      let left_included =\n-        if s == \"\\n\" then\n-          left._linebreaks\n-        else\n-          left.count(s)\n-        end\n-\n-      if n <= left_included then\n-        left.find(s, n)\n-      else\n-        left._size.i64() + right.find(s, n - left_included)\n-      end\n-    | ((var leaf: String, _), var n: U64) =>\n-      leaf.find(\"\\n\" where nth = n)\n-    else\n-      error //TODO exhaustive match\n-    end\n-\n-  fun val concat(that: Rope): Rope =>\n-    \"\"\"\n-    Concatenates this Rope with that Rope.\n-    \"\"\"\n-    match (this.node, that.node)\n-    | ((\"\", _), _) => that\n-    | (_, (\"\", _)) => this\n-    else\n-      let rope = recover Rope end\n-      rope._size = this._size + that._size\n-      rope._depth = this._depth.max(that._depth)\n-      rope._linebreaks = this._linebreaks + that._linebreaks\n-      rope.node = (this, that)\n-      rope\n-    end\n-\n-  /*fun contains(that: Rope): Bool =>\n-    \"\"\"\n-    Returns true if this Rope contains that Rope, false otherwise.\n-    \"\"\"*/\n-\n-  fun val subrope(start: I64, offset: I64): Rope =>\n-    \"\"\"\n-    Returns a Rope that contains all bytes of this Rope[start, start+offset].\n-    Returns an empty Rope if the requested range is out of bounds.\n-    \"\"\"\n-    let recurse = object\n-      fun tag apply(start: I64, offset: I64, node: _RopeNode): Rope =>\n-        match node\n-        | (var l: Rope, var r: Rope) =>\n-          let spans_left = (start <= 0) and (offset >= l.size().i64())\n-          let spans_right = (start <= l.size().i64()) and\n-            ((start + offset) >= (l.size() + r.size()).i64())\n-\n-          let left =\n-            if spans_left then\n-              l\n-            else\n-              l.subrope(start, offset)\n-            end\n-\n-          let right =\n-            if spans_right then\n-              r\n-            else\n-              r.subrope(start - l.size().i64(), offset - left.size().i64())\n-            end\n-\n-          left.concat(right)\n-        | (var leaf: String, var size: U64) =>\n-          recover Rope(leaf.substring(start, offset), size) end\n-        else\n-          //TODO: exhaustive match\n-          recover Rope end\n-        end\n-    end\n-\n-    if (offset <= 0) or (start >= _size.i64()) then\n-      recover Rope end\n-    else\n-      recurse(start, offset, node)\n-    end\n-\n-  fun val readlines(start: U64, n: U64 = 1): Rope ? =>\n-    \"\"\"\n-    Returns a Rope that holds up to n many lines starting from the line\n-    number denoted by start.\n-    \"\"\"\n-    let marker = find(\"\\n\", start)\n-    let cursor = find(\"\\n\", start + n)\n-    let length = (marker.i64() - cursor.i64()).abs()\n-\n-    subrope(marker.min(cursor).i64(), length)\n-\n-  fun val position(cursor: U64): (U64, U64) /*?*/ =>\n-    \"\"\"\n-    Returns the line and column position based on an absolute cursor position\n-    within a Rope. Raise an error if the cursor position is out of bounds.\n-    \"\"\"\n-    (0, 0)\n-\n-  /*fun balance(): Rope =>\n-    \"\"\"\n-    Returns an optimal Rope, i.e. its underlying tree data structure is a tree\n-    with the minimal external path length for a given text instance.\n-    \"\"\"*/\n-\n-  fun string(fmt: FormatDefault = FormatDefault,\n-    prefix: PrefixDefault = PrefixDefault, prec: U64 = -1, width: U64 = 0,\n-    align: Align = AlignLeft, fill: U32 = ' '): String iso^\n-  =>\n-    \"\"\"\n-    Converts a Rope to a String.\n-    \"\"\"\n-    let len = _size\n-    let str = recover String(len) end\n-\n-    let traverse = object\n-      fun tag apply(result: String iso, rope: Rope box): String iso^ =>\n-        match rope.node\n-        | (var leaf: String, _) =>\n-          result.append(leaf)\n-          consume result\n-        | (var left: Rope, var right: Rope) =>\n-          var result' = apply(consume result, left)\n-          apply(consume result', right)\n-        else\n-          consume result\n-        end\n-    end\n-\n-    traverse(consume str, this)\n-\n-  //Put this in once Fibonacci compiles (literal inference with generics)\n-  //fun balanced(): Bool =>\n-  //  \"\"\"\n-  //  Returns true if the given Rope is balanced, false otherwise.\n-  //  \"\"\"\n-  //  Fibonacci(_depth + 2) <= _size\n-\n-  fun eq(that: Rope): Bool =>\n-    \"\"\"\n-    Returns true if this Rope is structurally equivalent to that Rope,\n-    false otherwise.\n-    \"\"\"\n-    false\n-\n-  fun lt(that: Rope): Bool =>\n-    \"\"\"\n-    Returns true if all strings in this Rope are less than all strings in that\n-    Rope, false otherwise.\n-    \"\"\"\n-    false\n-\n-  /*fun nodes(): RopeNodeIterator =>\n-    RopeNodeIterator(this)\n-\n-  fun leaves(): RopeLeafIterator =>\n-    RopeLeafIterator(this)\n-\n-  fun chars(): RopeCharIterator =>\n-    RopeCharIterator(this) */\n-\n-  fun val lines(steps: U64 = 1): RopeLineIterator =>\n-    RopeLineIterator(this, steps)\n-\n-/*class RopeNodeIterator is Iterator[Rope]\n-\n-class RopeLeafIterator is Iterator[String]\n-\n-class RopeCharIterator is Iterator[U8] */\n-\n-class RopeLineIterator is Iterator[String]\n-  let _rope: Rope\n-  let _steps: U64\n-  var _index: U64\n-\n-  new create(rope: Rope, steps: U64) =>\n-    _rope = rope\n-    _steps = steps\n-    _index = 0\n-\n-  fun ref has_next(): Bool =>\n-    _index < _rope.size()\n-\n-  fun ref next(): String ? =>\n-    let line = _rope.readlines(_index, _steps)\n-    _index = _index + _steps\n-    line.string()"
+      },
+      {
+        "sha": "678b0258b54198bcc08fb6dc51272d4188052905",
+        "filename": "test/pony/text/main.pony",
+        "status": "removed",
+        "additions": 0,
+        "deletions": 21,
+        "changes": 21,
+        "blob_url": "https://github.com/ponylang/ponyc/blob/5f802286070898bcb7fa29e28aa40181de6fe698/test%2Fpony%2Ftext%2Fmain.pony",
+        "raw_url": "https://github.com/ponylang/ponyc/raw/5f802286070898bcb7fa29e28aa40181de6fe698/test%2Fpony%2Ftext%2Fmain.pony",
+        "contents_url": "https://api.github.com/repos/ponylang/ponyc/contents/test%2Fpony%2Ftext%2Fmain.pony?ref=5f802286070898bcb7fa29e28aa40181de6fe698",
+        "patch": "@@ -1,21 +0,0 @@\n-use \"files\"\n-use \"text\"\n-\n-actor Main\n-  new create(env: Env) =>\n-    try\n-      with file = File.open(env.args(1)) do\n-        var rope: Rope = recover Rope() end\n-\n-        for line in file.lines() do\n-          rope = rope.concat(recover Rope(line) end)\n-        end\n-\n-        env.out.print(\"Rope:\")\n-        env.out.print(\"  Depth: \" + rope.depth().string())\n-        env.out.print(\"  Size: \" + rope.size().string())\n-        env.out.print(\"  Linecount: \" + rope.linecount().string())\n-\n-        env.out.print(rope.string())\n-      end\n-    end"
+      }
+    ]
+  }
+}

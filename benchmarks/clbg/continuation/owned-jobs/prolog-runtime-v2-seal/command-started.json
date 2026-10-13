@@ -1,0 +1,19 @@
+{
+  "started_at": "2026-10-13T12:03:39.288490+00:00",
+  "command_pid": 1672,
+  "command_identity": {
+    "pid": 1672,
+    "listing": "1672  1666 Tue Oct 13 08:03:39 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u revisions/runtime-v2/bootstrap_runtime_v2.py --seal --proposal-sha256 5b9186bb51e748fe69b16dcd35a632dd9ed8556abdbc30cbab45159a36a1bf88"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+    "-B",
+    "-u",
+    "revisions/runtime-v2/bootstrap_runtime_v2.py",
+    "--seal",
+    "--proposal-sha256",
+    "5b9186bb51e748fe69b16dcd35a632dd9ed8556abdbc30cbab45159a36a1bf88"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013"
+}

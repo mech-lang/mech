@@ -1,0 +1,9 @@
+{
+  "status": "complete-awaiting-source-review",
+  "updated_at": "2026-10-12T21:21:34.888540+00:00",
+  "pid": 28623,
+  "tests_run": 672,
+  "measured_candidates": 543,
+  "output": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-18/candidate-audit.json",
+  "chart_admitted": false
+}

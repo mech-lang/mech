@@ -1,0 +1,35 @@
+{
+  "observed_at": "2026-10-11T22:18:35.268263+00:00",
+  "event": "BenchmarkCoordinatorLost",
+  "coordinators_no_longer_present": [
+    25041,
+    27278
+  ],
+  "orphan_pid": 25078,
+  "orphan_ppid": 1,
+  "stale_active": {
+    "key": "mandelbrot:mandelbrot-apl-compact",
+    "sample": 1,
+    "started_at": "2026-10-11T21:58:35.045310+00:00",
+    "timeout_seconds": 14400,
+    "planning_safety_factor": null,
+    "planning_probe_n": null
+  },
+  "trial_continues_uninterrupted": true,
+  "never_chart_eligible": true,
+  "qualification_lost_reasons": [
+    "Benchmark coordinator and wall-clock, compiler, power and RSS monitors no longer present.",
+    "Lock released with benchmark process still active.",
+    "Compiler process overlapped orphan after coordinator loss.",
+    "Original temporary output files are unlinked and cannot be validated through surviving coordinator handles."
+  ],
+  "seconds": null,
+  "exit_status": null,
+  "output_validation": null,
+  "next_action": "Wait for exact orphan process identity to exit before starting replacement or remaining full trials. Resume only through unchanged frozen harness with shared timing mutex.",
+  "event_id": "r-apl-uiua-20261011-apl-mandelbrot-coordinator-loss-25078",
+  "attempt_number": null,
+  "attempt_ordinal_unassigned": true,
+  "attempt_ordinal_policy": "Frozen run.py assigns attempt_number only after execute returns. This process lost its coordinator before return and has no assigned attempt ordinal; no ordinal reservation or synthetic attempt row is made.",
+  "compiler_overlap_evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/coordinator-loss-20261011-v4/compiler-overlap-observation.json"
+}

@@ -1,0 +1,20 @@
+{
+  "started_at": "2026-10-13T12:09:19.783478+00:00",
+  "command_pid": 3630,
+  "command_identity": {
+    "pid": 3630,
+    "listing": "3630  3622 Tue Oct 13 08:09:19 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u revisions/work-full-v4/launch_all.py --revision full-v4 --index-sha256 d5eff42c8f88733af92a8e597b3e02c2b3e8212b24b827b17a494cfabd54497b"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+    "-B",
+    "-u",
+    "revisions/work-full-v4/launch_all.py",
+    "--revision",
+    "full-v4",
+    "--index-sha256",
+    "d5eff42c8f88733af92a8e597b3e02c2b3e8212b24b827b17a494cfabd54497b"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012"
+}

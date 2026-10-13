@@ -1,0 +1,12 @@
+Advice: Split this into multiple lines (heuristic: 68/60) 😠
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/results/validation-20261012T031941578610Z/fast-pilot-one-worker.ua:6:1
+6 | Rotate      ← ↯⊃(⋅△)(⊏⊃(♭+⊃(⋅(×N⇡⧻))(+⊙(¤⇡N) ×⊃(¤<⊃⊢(⋅(⇡N)))(-⊃(⋅(¤⇡N))(◿⊃⊢(⊞+⊃(↘1)(⋅(⇡N)))))))(⋅♭))
+    ────────────────────────────────────────────────────────────────────────────────────────────────────
+Advice: Split this into multiple lines (heuristic: 68/60) 😠
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/results/validation-20261012T031941578610Z/fast-pilot-one-worker.ua:19:1
+19 | Work         ← F ⊃(+⊃(F.Index Block.State)(⧻Block.Indices)|F.End Block.State|+⊃(F.Checksum Block.State)(/+×⊃(˜ⁿ¯1Block.Indices)Block.Counts)|↥⊃(F.Maximum Block.State)(/↥Block.Counts)) Candidate
+     ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Style: Split this into multiple lines (heuristic: 58/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/results/validation-20261012T031941578610Z/fast-pilot-one-worker.ua:20:1
+20 | Result       ← ≡°□ wait ≡spawn(□ ⍢(Work|<⊃F.End F.Index) F ⊃(⊢|⊣|⋅0|⋅0)) ⍉⊟ ⊃(↙↧1Total)(↘1) ⌊÷↧1Total ×Total⇡+1↧1Total
+     ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────

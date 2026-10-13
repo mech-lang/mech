@@ -1,0 +1,21 @@
+{
+  "pid": 45394,
+  "pgid": 45394,
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/guarded_prepare_v6.py",
+    "--run",
+    "--proposal-file",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/proposals/private-v6.json",
+    "--proposal-sha256",
+    "ecf8bf803cfae8860309447db518174fc4d991f10bfc5d38cc77c8fb8e246cde",
+    "--revision",
+    "private-v6"
+  ],
+  "launched_at": "2026-10-12T21:25:41.247126+00:00",
+  "root_reviewed_proposal_sha256": "ecf8bf803cfae8860309447db518174fc4d991f10bfc5d38cc77c8fb8e246cde",
+  "common_timing_mutex": "/tmp/mech-clbg-timing.lock",
+  "automatic_retry": false
+}

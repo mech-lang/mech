@@ -1,0 +1,22 @@
+{
+  "pid": 15623,
+  "identity": {
+    "pid": 15623,
+    "process_listing": "Mon Oct 12 21:37:43 2026     /tmp/mech-nbody-plot-runtime/bin/python3 -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/full_study.py --run --benchmark knucleotide --manifest-sha256 495a6fb5623f550323426fa2070ba5e2b0d025c56655e54b8567a0e40830284e"
+  },
+  "benchmark": "knucleotide",
+  "command": [
+    "/tmp/mech-nbody-plot-runtime/bin/python3",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/full_study.py",
+    "--run",
+    "--benchmark",
+    "knucleotide",
+    "--manifest-sha256",
+    "495a6fb5623f550323426fa2070ba5e2b0d025c56655e54b8567a0e40830284e"
+  ],
+  "manifest_sha256": "495a6fb5623f550323426fa2070ba5e2b0d025c56655e54b8567a0e40830284e",
+  "launched_at": "2026-10-13T01:37:43.036254+00:00",
+  "report_only": true,
+  "never_chart_eligible": true
+}

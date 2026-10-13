@@ -1,0 +1,71 @@
+{
+  "key": "fasta:v-fasta-optimized-input-v2",
+  "id": "v-fasta-optimized-input-v2",
+  "benchmark": "fasta",
+  "language": "v",
+  "source_sha256": "bd0422be6166adb33dc99ed3c117362b2d5fafc3ae323bcde7204dd0e8437202",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualification/production-builder-v3/fasta/v-fasta-optimized-input-v2/program",
+    "25000000"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012",
+  "runtime_environment": {
+    "LC_ALL": "C",
+    "OMP_NUM_THREADS": "8",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1",
+    "RAYON_NUM_THREADS": "8"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"738073a7db11bdc8e5441e0ed010ad84945dbe4ad8c1e1f7784e05c8fe16b8c4\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualification/production-builder-v3/fasta/v-fasta-optimized-input-v2/program\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"bd0422be6166adb33dc99ed3c117362b2d5fafc3ae323bcde7204dd0e8437202\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/.build-sdk-v1/toolchain/v/v\": \"d3c86b7326e62990d1eb77247b68ea2914a834e5fe9444f981cfbc3863cb4ac1\"}}",
+  "started_at": "2026-10-13T01:40:08.428670+00:00",
+  "workload_n": 25000000,
+  "full_workload": true,
+  "timeout_seconds": 14400,
+  "maximum_rss_mib": 8192,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 2.439022834,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 2656,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 254166745,
+  "stdout_sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+  "validation": {
+    "bytes": 254166745,
+    "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+    "reference_match": true
+  },
+  "finished_at": "2026-10-13T01:40:11.274074+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true,
+  "round": 3,
+  "attempt": 9,
+  "sampler_wait_status": 0,
+  "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/studies/fasta/full-study/attempts/009-v-fasta-optimized-input-v2.json",
+  "supervised_native_group": {
+    "type": "native-group-started",
+    "pid": 16381,
+    "pgid": 16381,
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualification/production-builder-v3/fasta/v-fasta-optimized-input-v2/program",
+      "25000000"
+    ],
+    "inherited_common_mutex": true
+  },
+  "supervisor_remaining_members": [],
+  "fatal_qualification_fields": [],
+  "qualified": true,
+  "retryable_environment_only": false
+}

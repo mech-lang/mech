@@ -1,0 +1,26 @@
+{
+  "command": [
+    "/Users/cim310/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/cargo",
+    "build",
+    "--release",
+    "--offline",
+    "--locked",
+    "--manifest-path",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/module-bridge-v4/.build/strict/workspace/benchmarks/clbg/interpreter-integration/20261011/driver/Cargo.toml",
+    "--bin",
+    "mech-interpreter-integrated"
+  ],
+  "started_at": "2026-10-12T22:27:57.213954+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 1800,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 64042,
+  "identity": {
+    "pid": 64042,
+    "process_listing": "Mon Oct 12 18:27:57 2026     /Users/cim310/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/cargo build --release --offline --locked --manifest-path /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/module-bridge-v4/.build/strict/workspace/benchmarks/clbg/interpreter-integration/20261011/driver/Cargo.toml --bin mech-interpreter-integrated"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-12T22:32:47.009617+00:00",
+  "final_exit_status": 0
+}

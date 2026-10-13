@@ -1,0 +1,9 @@
+error: Invalid bit array segment
+   ┌─ /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-revcomp-compact/src/benchmark.gleam:47:31
+   │
+47 │     True -> io.write(<<header:bytes, 10>>)
+   │                               ^^^^^ This option is only allowed in BitArray patterns
+
+Hint: This option has no effect in BitArray values.
+See: https://tour.gleam.run/data-types/bit-arrays/
+

@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/usr/bin/lipo",
+    "-archs",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/bin/pony-revcomp-optimized/pony-revcomp-optimized"
+  ],
+  "started_at": "2026-10-12T16:09:01.183175+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 74441,
+  "identity": {
+    "pid": 74441,
+    "process_listing": "Mon Oct 12 12:09:01 2026     /Library/Developer/CommandLineTools/usr/bin/lipo -archs /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/bin/pony-revcomp-optimized/pony-revcomp-optimized"
+  }
+}

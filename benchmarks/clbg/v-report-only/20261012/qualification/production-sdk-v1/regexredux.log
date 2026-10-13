@@ -1,0 +1,15 @@
+WAIT LOCK: V preparation production-sdk-v1 regexredux
+BUILD v-regexredux-compact
+BUILD v-regexredux-optimized
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/prepare.py", line 290, in <module>
+    main()
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/prepare.py", line 286, in main
+    prepare(args)
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/prepare.py", line 255, in prepare
+    checks = [probe(module, harness, row, 'canonical-small', manifest, report, lock.fileno())]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/prepare.py", line 161, in probe
+    assert attempt['qualified'], ('V bounded probe failed; retained evidence', row['id'], case)
+           ~~~~~~~^^^^^^^^^^^^^
+AssertionError: ('V bounded probe failed; retained evidence', 'v-regexredux-compact', 'canonical-small')

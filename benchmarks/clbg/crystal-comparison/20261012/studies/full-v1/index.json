@@ -1,0 +1,51 @@
+{
+  "status": "sealed-awaiting-root-review",
+  "qualified_preparation": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-input-archive-filter-v6/report.json",
+  "qualified_preparation_sha256": "1b1f4ae9b39a9ee17e66204095f7532718f299f318e6cde3d9def2c1cd761372",
+  "samples": 3,
+  "benchmarks": {
+    "regexredux": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/regexredux/manifest.json",
+      "sha256": "33b8650a8cefd5ed407dd76e63e503384fa6cdcc5270e2cf5a8a9f261552651c"
+    },
+    "revcomp": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/revcomp/manifest.json",
+      "sha256": "6c33b52b066a9a87953677ae36248d16253d4604e493f304e78151a24c3ca8e3"
+    },
+    "pidigits": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/pidigits/manifest.json",
+      "sha256": "82868ec6ce0ef141ca12dce4783bf34cc353b994a7249d883c95ef77ec755efc"
+    },
+    "spectralnorm": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/spectralnorm/manifest.json",
+      "sha256": "ab46d0ad38d965749616511c1f9cf89a0a9ef4fb8ee0894fef3e281c88569e8f"
+    },
+    "mandelbrot": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/mandelbrot/manifest.json",
+      "sha256": "52ed220cfa7fa4b97bfccec89771708bfbc72ee772cfc03724e1c3d60054179d"
+    },
+    "fasta": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/fasta/manifest.json",
+      "sha256": "c6e72d29ab3daf90d25eb016d616c94059a3332604c5747d052322459b0ddc09"
+    },
+    "knucleotide": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/knucleotide/manifest.json",
+      "sha256": "c98c61c4487b3419fcf528554c8dfd7a0c0145c6fb0e9230350f831a80cd4a9b"
+    },
+    "binarytrees": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/binarytrees/manifest.json",
+      "sha256": "7ed4a9a4f221fc67c7c2c4038741a1462209d799762a42dedad5e12f911cfc7c"
+    },
+    "nbody": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/nbody/manifest.json",
+      "sha256": "77c13b6b161e6574a1374301721114de81c613b90622b6edd32a2a48efd71d37"
+    },
+    "fannkuchredux": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/fannkuchredux/manifest.json",
+      "sha256": "e341e658c66e4dce897b435197fb4283e560b6dffb974df465a92afb7af3dfe5"
+    }
+  },
+  "full_processes": 90,
+  "chart_admission": false,
+  "no_automatic_retry": true
+}

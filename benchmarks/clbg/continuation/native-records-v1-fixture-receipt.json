@@ -1,0 +1,16 @@
+{
+  "status": "passed",
+  "tests_run": 7,
+  "failures": 0,
+  "errors": 0,
+  "exclusive_common_timing_mutex_held": true,
+  "source_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/test_reconcile_native_records_v1.py": "85c314a050a044d1416d0631552e19cc59403291833dd4e9b25479a4aa68f0f6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/reconcile_native_records_v1.py": "fd3938a576bdb57b3fe418f896783365fca2160d85f37c861810bc727bb3c565"
+  },
+  "actual_native_processes": 0,
+  "synthetic_fixture_records_never_admitted": true,
+  "source_pool_admission": false,
+  "chart_admission": false,
+  "completed_at": "2026-10-12T21:21:56.682493+00:00"
+}

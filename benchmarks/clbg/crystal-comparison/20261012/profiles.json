@@ -1,0 +1,941 @@
+{
+  "status": "source-drafts-unbuilt-unqualified",
+  "version": "1.21.1",
+  "compiler_source_commit": "73ea5c2b1bc3b3ac0ba400aa9da77af96f63d6ef",
+  "profiles": [
+    {
+      "id": "crystal-nbody-compact",
+      "benchmark": "nbody",
+      "variant": "compact",
+      "source": "sources/nbody/compact.cr",
+      "status": "authored-unbuilt-unqualified",
+      "source_sha256": null,
+      "loc": null,
+      "canonical_loc_status": "pending common normalization audit",
+      "upstream_provenance": {
+        "repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+        "path": "bench/algorithm/nbody/1.cr",
+        "kind": "locally-adapted-published-algorithm; original remains immutable"
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "required_work_review": "pending bounded native qualification and independent traces",
+        "required_work": {
+          "bodies": 5,
+          "pairs_per_step": 10,
+          "position_updates_per_step": 5,
+          "before_after_energy": true,
+          "exact_sqrt_division": true
+        }
+      },
+      "required_work": {
+        "bodies": 5,
+        "pairs_per_step": 10,
+        "position_updates_per_step": 5,
+        "before_after_energy": true,
+        "exact_sqrt_division": true
+      },
+      "maximum_workers": 1,
+      "technique": "Ordinary body coordinate arrays, stack displacement, exact sqrt/division and complete pair/position loops.",
+      "compiler_flags": [
+        "--release",
+        "--no-debug",
+        "--mcpu",
+        "native"
+      ],
+      "timing_samples": [],
+      "chart_eligible": false
+    },
+    {
+      "id": "crystal-nbody-optimized",
+      "benchmark": "nbody",
+      "variant": "optimized",
+      "source": "sources/nbody/optimized.cr",
+      "status": "authored-unbuilt-unqualified",
+      "source_sha256": null,
+      "loc": null,
+      "canonical_loc_status": "pending common normalization audit",
+      "upstream_provenance": {
+        "repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+        "path": "bench/algorithm/nbody/1.cr",
+        "kind": "locally-adapted-published-algorithm; original remains immutable"
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "required_work_review": "pending bounded native qualification and independent traces",
+        "required_work": {
+          "bodies": 5,
+          "pairs_per_step": 10,
+          "position_updates_per_step": 5,
+          "before_after_energy": true,
+          "exact_sqrt_division": true
+        }
+      },
+      "required_work": {
+        "bodies": 5,
+        "pairs_per_step": 10,
+        "position_updates_per_step": 5,
+        "before_after_energy": true,
+        "exact_sqrt_division": true
+      },
+      "maximum_workers": 1,
+      "technique": "Published scalar cached body fields and triangular pair loops, exact sqrt/division.",
+      "compiler_flags": [
+        "--release",
+        "--no-debug",
+        "--mcpu",
+        "native"
+      ],
+      "timing_samples": [],
+      "chart_eligible": false
+    },
+    {
+      "id": "crystal-mandelbrot-compact",
+      "benchmark": "mandelbrot",
+      "variant": "compact",
+      "source": "sources/mandelbrot/compact.cr",
+      "status": "authored-unbuilt-unqualified",
+      "source_sha256": null,
+      "loc": null,
+      "canonical_loc_status": "pending common normalization audit",
+      "upstream_provenance": {
+        "repository": "https://github.com/kostya/crystal-benchmarks-game",
+        "commit": "aaf7bd44118889605943df3200b7c9b0c6af6510",
+        "path": "mandelbrot/mandelbrot.cr",
+        "kind": "locally-adapted-published-algorithm; original remains immutable"
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "required_work_review": "pending bounded native qualification and independent traces",
+        "required_work": {
+          "maximum_actual_recurrences": 50,
+          "original_dimensions": true,
+          "full_binary_pbm": true,
+          "zero_tail_bits": true
+        }
+      },
+      "required_work": {
+        "maximum_actual_recurrences": 50,
+        "original_dimensions": true,
+        "full_binary_pbm": true,
+        "zero_tail_bits": true
+      },
+      "maximum_workers": 1,
+      "technique": "Scalar escape recurrence and exact-width complete PBM with zero tail bits.",
+      "compiler_flags": [
+        "--release",
+        "--no-debug",
+        "--mcpu",
+        "native"
+      ],
+      "timing_samples": [],
+      "chart_eligible": false
+    },
+    {
+      "id": "crystal-mandelbrot-optimized",
+      "benchmark": "mandelbrot",
+      "variant": "optimized",
+      "source": "sources/mandelbrot/optimized.cr",
+      "status": "authored-unbuilt-unqualified",
+      "source_sha256": null,
+      "loc": null,
+      "canonical_loc_status": "pending common normalization audit",
+      "upstream_provenance": {
+        "repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+        "path": "bench/algorithm/mandelbrot/2.cr",
+        "kind": "locally-adapted-published-algorithm; original remains immutable"
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "required_work_review": "pending bounded native qualification and independent traces",
+        "required_work": {
+          "maximum_actual_recurrences": 50,
+          "original_dimensions": true,
+          "full_binary_pbm": true,
+          "zero_tail_bits": true
+        }
+      },
+      "required_work": {
+        "maximum_actual_recurrences": 50,
+        "original_dimensions": true,
+        "full_binary_pbm": true,
+        "zero_tail_bits": true
+      },
+      "maximum_workers": 8,
+      "technique": "Eight standard row fibers, fixed eight-lane arrays/five-step escape blocks, exact dimensions and full PBM.",
+      "compiler_flags": [
+        "--release",
+        "--no-debug",
+        "--mcpu",
+        "native"
+      ],
+      "timing_samples": [],
+      "chart_eligible": false
+    },
+    {
+      "id": "crystal-spectralnorm-compact",
+      "benchmark": "spectralnorm",
+      "variant": "compact",
+      "source": "sources/spectralnorm/compact.cr",
+      "status": "authored-unbuilt-unqualified",
+      "source_sha256": null,
+      "loc": null,
+      "canonical_loc_status": "pending common normalization audit",
+      "upstream_provenance": {
+        "repository": "https://github.com/kostya/crystal-benchmarks-game",
+        "commit": "aaf7bd44118889605943df3200b7c9b0c6af6510",
+        "path": "spectralnorm/spectralnorm.cr",
+        "kind": "locally-adapted-published-algorithm; original remains immutable"
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "required_work_review": "pending bounded native qualification and independent traces",
+        "required_work": {
+          "power_iterations": 10,
+          "fresh_implicit_products": 40,
+          "matrix_cache": false
+        }
+      },
+      "required_work": {
+        "power_iterations": 10,
+        "fresh_implicit_products": 40,
+        "matrix_cache": false
+      },
+      "maximum_workers": 1,
+      "technique": "Forty fresh implicit coefficient products and nine-decimal output.",
+      "compiler_flags": [
+        "--release",
+        "--no-debug",
+        "--mcpu",
+        "native"
+      ],
+      "timing_samples": [],
+      "chart_eligible": false
+    },
+    {
+      "id": "crystal-spectralnorm-optimized",
+      "benchmark": "spectralnorm",
+      "variant": "optimized",
+      "source": "sources/spectralnorm/optimized.cr",
+      "status": "authored-unbuilt-unqualified",
+      "source_sha256": null,
+      "loc": null,
+      "canonical_loc_status": "pending common normalization audit",
+      "upstream_provenance": {
+        "repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+        "path": "bench/algorithm/spectral-norm/1.cr",
+        "kind": "locally-adapted-published-algorithm; original remains immutable"
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "required_work_review": "pending bounded native qualification and independent traces",
+        "required_work": {
+          "power_iterations": 10,
+          "fresh_implicit_products": 40,
+          "matrix_cache": false
+        }
+      },
+      "required_work": {
+        "power_iterations": 10,
+        "fresh_implicit_products": 40,
+        "matrix_cache": false
+      },
+      "maximum_workers": 8,
+      "technique": "Eight disjoint row fibers, exact denominator recurrence, four accumulation chains and scalar tails; no coefficient cache.",
+      "compiler_flags": [
+        "--release",
+        "--no-debug",
+        "--mcpu",
+        "native"
+      ],
+      "timing_samples": [],
+      "chart_eligible": false
+    },
+    {
+      "id": "crystal-binarytrees-compact",
+      "benchmark": "binarytrees",
+      "variant": "compact",
+      "source": "sources/binarytrees/compact.cr",
+      "status": "authored-unbuilt-unqualified",
+      "source_sha256": null,
+      "loc": null,
+      "canonical_loc_status": "pending common normalization audit",
+      "upstream_provenance": {
+        "repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+        "path": "bench/algorithm/binarytrees/1.cr",
+        "kind": "locally-adapted-published-algorithm; original remains immutable"
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "required_work_review": "pending bounded native qualification and independent traces",
+        "required_work": {
+          "distinct_internal_and_leaf_nodes": true,
+          "long_lived_root_retained": true,
+          "scoped_stretch": true,
+          "checksum_formula": false
+        }
+      },
+      "required_work": {
+        "distinct_internal_and_leaf_nodes": true,
+        "long_lived_root_retained": true,
+        "scoped_stretch": true,
+        "checksum_formula": false
+      },
+      "maximum_workers": 1,
+      "technique": "Separate class Node allocation including every leaf; scoped stretch root and retained long-lived root.",
+      "compiler_flags": [
+        "--release",
+        "--no-debug",
+        "--mcpu",
+        "native"
+      ],
+      "timing_samples": [],
+      "chart_eligible": false
+    },
+    {
+      "id": "crystal-binarytrees-optimized",
+      "benchmark": "binarytrees",
+      "variant": "optimized",
+      "source": "sources/binarytrees/optimized.cr",
+      "status": "authored-unbuilt-unqualified",
+      "source_sha256": null,
+      "loc": null,
+      "canonical_loc_status": "pending common normalization audit",
+      "upstream_provenance": {
+        "repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+        "path": "bench/algorithm/binarytrees/1.cr",
+        "kind": "locally-adapted-published-algorithm; original remains immutable"
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "required_work_review": "pending bounded native qualification and independent traces",
+        "required_work": {
+          "distinct_internal_and_leaf_nodes": true,
+          "long_lived_root_retained": true,
+          "scoped_stretch": true,
+          "checksum_formula": false
+        }
+      },
+      "required_work": {
+        "distinct_internal_and_leaf_nodes": true,
+        "long_lived_root_retained": true,
+        "scoped_stretch": true,
+        "checksum_formula": false
+      },
+      "maximum_workers": 8,
+      "technique": "Same distinct nodes/traversals in bounded batches of at most eight depth fibers; retained real long-lived root.",
+      "compiler_flags": [
+        "--release",
+        "--no-debug",
+        "--mcpu",
+        "native"
+      ],
+      "timing_samples": [],
+      "chart_eligible": false
+    },
+    {
+      "id": "crystal-fannkuchredux-compact",
+      "benchmark": "fannkuchredux",
+      "variant": "compact",
+      "source": "sources/fannkuchredux/compact.cr",
+      "status": "authored-unbuilt-unqualified",
+      "source_sha256": null,
+      "loc": null,
+      "canonical_loc_status": "pending common normalization audit",
+      "upstream_provenance": {
+        "repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+        "path": "bench/algorithm/fannkuch-redux/1.cr",
+        "kind": "locally-adapted-published-algorithm; original remains immutable"
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "required_work_review": "pending bounded native qualification and independent traces",
+        "required_work": {
+          "all_factorial_ranks": true,
+          "global_rank_parity": true,
+          "actual_prefix_flips": true,
+          "permutation_cache": false
+        }
+      },
+      "required_work": {
+        "all_factorial_ranks": true,
+        "global_rank_parity": true,
+        "actual_prefix_flips": true,
+        "permutation_cache": false
+      },
+      "maximum_workers": 1,
+      "technique": "Published fixed-array sequential permutation rotations and actual prefix flips/global parity.",
+      "compiler_flags": [
+        "--release",
+        "--no-debug",
+        "--mcpu",
+        "native"
+      ],
+      "timing_samples": [],
+      "chart_eligible": false
+    },
+    {
+      "id": "crystal-fannkuchredux-optimized",
+      "benchmark": "fannkuchredux",
+      "variant": "optimized",
+      "source": "sources/fannkuchredux/optimized.cr",
+      "status": "authored-unbuilt-unqualified",
+      "source_sha256": null,
+      "loc": null,
+      "canonical_loc_status": "pending common normalization audit",
+      "upstream_provenance": {
+        "repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+        "path": "bench/algorithm/fannkuch-redux/1.cr",
+        "kind": "locally-adapted-published-algorithm; original remains immutable"
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "required_work_review": "pending bounded native qualification and independent traces",
+        "required_work": {
+          "all_factorial_ranks": true,
+          "global_rank_parity": true,
+          "actual_prefix_flips": true,
+          "permutation_cache": false
+        }
+      },
+      "required_work": {
+        "all_factorial_ranks": true,
+        "global_rank_parity": true,
+        "actual_prefix_flips": true,
+        "permutation_cache": false
+      },
+      "maximum_workers": 8,
+      "technique": "Eight standard fibers over complete factoradic rank intervals; real flips/global parity and overflow-safe boundaries.",
+      "compiler_flags": [
+        "--release",
+        "--no-debug",
+        "--mcpu",
+        "native"
+      ],
+      "timing_samples": [],
+      "chart_eligible": false
+    },
+    {
+      "id": "crystal-fasta-compact",
+      "benchmark": "fasta",
+      "variant": "compact",
+      "source": "sources/fasta/compact.cr",
+      "status": "authored-unbuilt-unqualified",
+      "source_sha256": null,
+      "loc": null,
+      "canonical_loc_status": "pending common normalization audit",
+      "upstream_provenance": {
+        "repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+        "path": "bench/algorithm/fasta/1.cr",
+        "kind": "locally-adapted-published-algorithm; original remains immutable"
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "required_work_review": "pending bounded native qualification and independent traces",
+        "required_work": {
+          "record_lengths": [
+            "2*n",
+            "3*n",
+            "5*n"
+          ],
+          "binary64_division_per_draw": true,
+          "ordered_unscaled_cdfs": true,
+          "actual_carried_lcg_state": true,
+          "line_width": 60,
+          "generated_letter_cache": false
+        }
+      },
+      "required_work": {
+        "record_lengths": [
+          "2*n",
+          "3*n",
+          "5*n"
+        ],
+        "binary64_division_per_draw": true,
+        "ordered_unscaled_cdfs": true,
+        "actual_carried_lcg_state": true,
+        "line_width": 60,
+        "generated_letter_cache": false
+      },
+      "maximum_workers": 1,
+      "technique": "Published ordered floating CDF scan and carried actual sequential binary64 RNG draws.",
+      "compiler_flags": [
+        "--release",
+        "--no-debug",
+        "--mcpu",
+        "native"
+      ],
+      "timing_samples": [],
+      "chart_eligible": false
+    },
+    {
+      "id": "crystal-fasta-optimized",
+      "benchmark": "fasta",
+      "variant": "optimized",
+      "source": "sources/fasta/optimized.cr",
+      "status": "authored-unbuilt-unqualified",
+      "source_sha256": null,
+      "loc": null,
+      "canonical_loc_status": "pending common normalization audit",
+      "upstream_provenance": {
+        "repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+        "path": "bench/algorithm/fasta/2.cr",
+        "kind": "locally-adapted-published-algorithm; original remains immutable"
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "required_work_review": "pending bounded native qualification and independent traces",
+        "required_work": {
+          "record_lengths": [
+            "2*n",
+            "3*n",
+            "5*n"
+          ],
+          "binary64_division_per_draw": true,
+          "ordered_unscaled_cdfs": true,
+          "actual_carried_lcg_state": true,
+          "line_width": 60,
+          "generated_letter_cache": false
+        }
+      },
+      "required_work": {
+        "record_lengths": [
+          "2*n",
+          "3*n",
+          "5*n"
+        ],
+        "binary64_division_per_draw": true,
+        "ordered_unscaled_cdfs": true,
+        "actual_carried_lcg_state": true,
+        "line_width": 60,
+        "generated_letter_cache": false
+      },
+      "maximum_workers": 1,
+      "technique": "Published array CDF binary search with bounded buffered writes; direct binary64 division for every actual draw and carried seed.",
+      "compiler_flags": [
+        "--release",
+        "--no-debug",
+        "--mcpu",
+        "native"
+      ],
+      "timing_samples": [],
+      "chart_eligible": false
+    },
+    {
+      "id": "crystal-revcomp-compact",
+      "benchmark": "revcomp",
+      "variant": "compact",
+      "source": "sources/revcomp/compact.cr",
+      "status": "authored-unbuilt-unqualified",
+      "source_sha256": null,
+      "loc": null,
+      "canonical_loc_status": "pending common normalization audit",
+      "upstream_provenance": {
+        "repository": "https://github.com/kostya/crystal-benchmarks-game",
+        "commit": "aaf7bd44118889605943df3200b7c9b0c6af6510",
+        "path": "revcomp/revcomp.cr",
+        "kind": "locally-adapted-published-algorithm; original remains immutable"
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "required_work_review": "pending bounded native qualification and independent traces",
+        "required_work": {
+          "all_records": true,
+          "complete_iupac": true,
+          "comments_cr_lf_eof": true,
+          "line_width": 60
+        }
+      },
+      "required_work": {
+        "all_records": true,
+        "complete_iupac": true,
+        "comments_cr_lf_eof": true,
+        "line_width": 60
+      },
+      "maximum_workers": 1,
+      "technique": "General String reversal/IUPAC translation, all records including empty headers, comment/CRLF/EOF repair and 60-column output.",
+      "compiler_flags": [
+        "--release",
+        "--no-debug",
+        "--mcpu",
+        "native"
+      ],
+      "timing_samples": [],
+      "chart_eligible": false
+    },
+    {
+      "id": "crystal-revcomp-optimized",
+      "benchmark": "revcomp",
+      "variant": "optimized",
+      "source": "sources/revcomp/optimized.cr",
+      "status": "authored-unbuilt-unqualified",
+      "source_sha256": null,
+      "loc": null,
+      "canonical_loc_status": "pending common normalization audit",
+      "upstream_provenance": {
+        "repository": "https://github.com/kostya/crystal-benchmarks-game",
+        "commit": "aaf7bd44118889605943df3200b7c9b0c6af6510",
+        "path": "revcomp/revcomp.cr",
+        "kind": "locally-adapted-published-algorithm; original remains immutable"
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "required_work_review": "pending bounded native qualification and independent traces",
+        "required_work": {
+          "all_records": true,
+          "complete_iupac": true,
+          "comments_cr_lf_eof": true,
+          "line_width": 60
+        }
+      },
+      "required_work": {
+        "all_records": true,
+        "complete_iupac": true,
+        "comments_cr_lf_eof": true,
+        "line_width": 60
+      },
+      "maximum_workers": 1,
+      "technique": "Byte parser, standard complement table, in-place reversal/translation and bounded writes; all record/comment/EOF semantics.",
+      "compiler_flags": [
+        "--release",
+        "--no-debug",
+        "--mcpu",
+        "native"
+      ],
+      "timing_samples": [],
+      "chart_eligible": false
+    },
+    {
+      "id": "crystal-knucleotide-compact",
+      "benchmark": "knucleotide",
+      "variant": "compact",
+      "source": "sources/knucleotide/compact.cr",
+      "status": "authored-unbuilt-unqualified",
+      "source_sha256": null,
+      "loc": null,
+      "canonical_loc_status": "pending common normalization audit",
+      "upstream_provenance": {
+        "repository": "https://github.com/kostya/crystal-benchmarks-game",
+        "commit": "aaf7bd44118889605943df3200b7c9b0c6af6510",
+        "path": "knucleotide/knucleotide.cr",
+        "kind": "locally-adapted-published-algorithm; original remains immutable"
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "required_work_review": "pending bounded native qualification and independent traces",
+        "required_work": {
+          "growable_maps": 7,
+          "widths": [
+            1,
+            2,
+            3,
+            4,
+            6,
+            12,
+            18
+          ],
+          "all_overlapping_windows": true,
+          "first_two_are_maps": true,
+          "three_record_only": true,
+          "comments_cr_lf_eof": true
+        }
+      },
+      "required_work": {
+        "growable_maps": 7,
+        "widths": [
+          1,
+          2,
+          3,
+          4,
+          6,
+          12,
+          18
+        ],
+        "all_overlapping_windows": true,
+        "first_two_are_maps": true,
+        "three_record_only": true,
+        "comments_cr_lf_eof": true
+      },
+      "maximum_workers": 1,
+      "technique": "Seven full growable string-key maps, all windows including 1/2; exact target parser and deterministic frequencies.",
+      "compiler_flags": [
+        "--release",
+        "--no-debug",
+        "--mcpu",
+        "native"
+      ],
+      "timing_samples": [],
+      "chart_eligible": false
+    },
+    {
+      "id": "crystal-knucleotide-optimized",
+      "benchmark": "knucleotide",
+      "variant": "optimized",
+      "source": "sources/knucleotide/optimized.cr",
+      "status": "authored-unbuilt-unqualified",
+      "source_sha256": null,
+      "loc": null,
+      "canonical_loc_status": "pending common normalization audit",
+      "upstream_provenance": {
+        "repository": "https://github.com/kostya/crystal-benchmarks-game",
+        "commit": "aaf7bd44118889605943df3200b7c9b0c6af6510",
+        "path": "knucleotide/knucleotide.cr",
+        "kind": "locally-adapted-published-algorithm; original remains immutable"
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "required_work_review": "pending bounded native qualification and independent traces",
+        "required_work": {
+          "growable_maps": 7,
+          "widths": [
+            1,
+            2,
+            3,
+            4,
+            6,
+            12,
+            18
+          ],
+          "all_overlapping_windows": true,
+          "first_two_are_maps": true,
+          "three_record_only": true,
+          "comments_cr_lf_eof": true
+        }
+      },
+      "required_work": {
+        "growable_maps": 7,
+        "widths": [
+          1,
+          2,
+          3,
+          4,
+          6,
+          12,
+          18
+        ],
+        "all_overlapping_windows": true,
+        "first_two_are_maps": true,
+        "three_record_only": true,
+        "comments_cr_lf_eof": true
+      },
+      "maximum_workers": 7,
+      "technique": "Seven ordinary growable rolling packed-key maps in capped standard fibers, all retained through parent output.",
+      "compiler_flags": [
+        "--release",
+        "--no-debug",
+        "--mcpu",
+        "native"
+      ],
+      "timing_samples": [],
+      "chart_eligible": false
+    },
+    {
+      "id": "crystal-regexredux-compact",
+      "benchmark": "regexredux",
+      "variant": "compact",
+      "source": "sources/regexredux/compact.cr",
+      "status": "authored-unbuilt-unqualified",
+      "source_sha256": null,
+      "loc": null,
+      "canonical_loc_status": "pending common normalization audit",
+      "upstream_provenance": {
+        "repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+        "path": "bench/algorithm/regex-redux/1.cr",
+        "kind": "locally-adapted-published-algorithm; original remains immutable"
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "required_work_review": "pending bounded native qualification and independent traces",
+        "required_work": {
+          "nonoverlapping_patterns": 9,
+          "sequential_ordered_replacement_passes": 5,
+          "complete_stdin": true
+        }
+      },
+      "required_work": {
+        "nonoverlapping_patterns": 9,
+        "sequential_ordered_replacement_passes": 5,
+        "complete_stdin": true
+      },
+      "maximum_workers": 1,
+      "technique": "Standard PCRE2 nonoverlapping matching and five ordered replacements, complete stdin/output.",
+      "compiler_flags": [
+        "--release",
+        "--no-debug",
+        "--mcpu",
+        "native"
+      ],
+      "timing_samples": [],
+      "chart_eligible": false
+    },
+    {
+      "id": "crystal-regexredux-optimized",
+      "benchmark": "regexredux",
+      "variant": "optimized",
+      "source": "sources/regexredux/optimized.cr",
+      "status": "authored-unbuilt-unqualified",
+      "source_sha256": null,
+      "loc": null,
+      "canonical_loc_status": "pending common normalization audit",
+      "upstream_provenance": {
+        "repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+        "path": "bench/algorithm/regex-redux/1.cr",
+        "kind": "locally-adapted-published-algorithm; original remains immutable"
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "required_work_review": "pending bounded native qualification and independent traces",
+        "required_work": {
+          "nonoverlapping_patterns": 9,
+          "sequential_ordered_replacement_passes": 5,
+          "complete_stdin": true
+        }
+      },
+      "required_work": {
+        "nonoverlapping_patterns": 9,
+        "sequential_ordered_replacement_passes": 5,
+        "complete_stdin": true
+      },
+      "maximum_workers": 8,
+      "technique": "Eight independent standard PCRE2 count fibers/private regex state, ninth after completion; five replacements remain sequential.",
+      "compiler_flags": [
+        "--release",
+        "--no-debug",
+        "--mcpu",
+        "native"
+      ],
+      "timing_samples": [],
+      "chart_eligible": false
+    },
+    {
+      "id": "crystal-pidigits-compact",
+      "benchmark": "pidigits",
+      "variant": "compact",
+      "source": "sources/pidigits/compact.cr",
+      "status": "authored-unbuilt-unqualified",
+      "source_sha256": null,
+      "loc": null,
+      "canonical_loc_status": "pending common normalization audit",
+      "upstream_provenance": {
+        "repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+        "path": "bench/algorithm/pidigits/1.cr",
+        "kind": "locally-adapted-published-algorithm; original remains immutable"
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "required_work_review": "pending bounded native qualification and independent traces",
+        "required_work": {
+          "two_actual_arbitrary_precision_divisions_per_candidate": true,
+          "distinct_endpoint_numerators": true,
+          "complete_digit_rows_tail_count": true,
+          "zero_digit_empty": true
+        }
+      },
+      "required_work": {
+        "two_actual_arbitrary_precision_divisions_per_candidate": true,
+        "distinct_endpoint_numerators": true,
+        "complete_digit_rows_tail_count": true,
+        "zero_digit_empty": true
+      },
+      "maximum_workers": 1,
+      "technique": "Standard GMP BigInt q/r/t LFT, two real endpoint divisions every tested candidate, complete row/tail/count output.",
+      "compiler_flags": [
+        "--release",
+        "--no-debug",
+        "--mcpu",
+        "native"
+      ],
+      "timing_samples": [],
+      "chart_eligible": false
+    },
+    {
+      "id": "crystal-pidigits-optimized",
+      "benchmark": "pidigits",
+      "variant": "optimized",
+      "source": "sources/pidigits/optimized.cr",
+      "status": "authored-unbuilt-unqualified",
+      "source_sha256": null,
+      "loc": null,
+      "canonical_loc_status": "pending common normalization audit",
+      "upstream_provenance": {
+        "repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+        "path": "bench/algorithm/pidigits/1.cr",
+        "kind": "locally-adapted-published-algorithm; original remains immutable"
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "required_work_review": "pending bounded native qualification and independent traces",
+        "required_work": {
+          "two_actual_arbitrary_precision_divisions_per_candidate": true,
+          "distinct_endpoint_numerators": true,
+          "complete_digit_rows_tail_count": true,
+          "zero_digit_empty": true
+        }
+      },
+      "required_work": {
+        "two_actual_arbitrary_precision_divisions_per_candidate": true,
+        "distinct_endpoint_numerators": true,
+        "complete_digit_rows_tail_count": true,
+        "zero_digit_empty": true
+      },
+      "maximum_workers": 1,
+      "technique": "Pure Crystal cached endpoint-numerator basis with standard scalar GMP multipliers; both actual BigInt divisions and full output.",
+      "compiler_flags": [
+        "--release",
+        "--no-debug",
+        "--mcpu",
+        "native"
+      ],
+      "timing_samples": [],
+      "chart_eligible": false
+    }
+  ],
+  "complete_workloads": [
+    "binarytrees",
+    "fannkuchredux",
+    "fasta",
+    "knucleotide",
+    "mandelbrot",
+    "nbody",
+    "pidigits",
+    "regexredux",
+    "revcomp",
+    "spectralnorm"
+  ],
+  "builds": 0,
+  "probes": 0
+}

@@ -1,0 +1,30 @@
+test_gleam_and_clojure_keep_exact_actual_record_contract (test_reconcile_native_records_v2.ExpandedRecords.test_gleam_and_clojure_keep_exact_actual_record_contract) ... ok
+test_new_vm_languages_cannot_overwrite_saved_sampler_or_output_evidence (test_reconcile_native_records_v2.ExpandedRecords.test_new_vm_languages_cannot_overwrite_saved_sampler_or_output_evidence) ... ok
+test_new_vm_languages_cannot_use_bounded_or_changed_command_records (test_reconcile_native_records_v2.ExpandedRecords.test_new_vm_languages_cannot_use_bounded_or_changed_command_records) ... ok
+test_v_cannot_be_reclassified_as_a_publication_language (test_reconcile_native_records_v2.ExpandedRecords.test_v_cannot_be_reclassified_as_a_publication_language) ... ok
+test_altered_median_output_or_unresolved_parser_evidence_is_rejected (test_native_languages_data_v1.NativeAdmission.test_altered_median_output_or_unresolved_parser_evidence_is_rejected) ... ok
+test_changed_binary_or_omitted_authored_helper_cannot_use_old_count (test_native_languages_data_v1.NativeAdmission.test_changed_binary_or_omitted_authored_helper_cannot_use_old_count) ... ok
+test_complete_shape_preserves_all_source_counts_and_inputs (test_native_languages_data_v1.NativeAdmission.test_complete_shape_preserves_all_source_counts_and_inputs) ... ok
+test_different_id_cannot_overwrite_an_existing_candidate_key (test_native_languages_data_v1.NativeAdmission.test_different_id_cannot_overwrite_an_existing_candidate_key) ... ok
+test_missing_compiler_inventory_cannot_hide_a_helper_from_reused_rows (test_native_languages_data_v1.NativeAdmission.test_missing_compiler_inventory_cannot_hide_a_helper_from_reused_rows) ... ok
+test_planned_backend_or_missing_library_provenance_cannot_be_published (test_native_languages_data_v1.NativeAdmission.test_planned_backend_or_missing_library_provenance_cannot_be_published) ... ok
+test_v_and_partial_suite_are_rejected (test_native_languages_data_v1.NativeAdmission.test_v_and_partial_suite_are_rejected) ... ok
+test_complete_import_preserves_existing_records_metadata_and_map_identities (test_native_languages_data_v1.NativePublicationTransaction.test_complete_import_preserves_existing_records_metadata_and_map_identities) ... ok
+test_cross_cohort_identity_collision_leaves_entire_input_unchanged (test_native_languages_data_v1.NativePublicationTransaction.test_cross_cohort_identity_collision_leaves_entire_input_unchanged) ... ok
+test_late_changed_report_leaves_entire_input_unchanged (test_native_languages_data_v1.NativePublicationTransaction.test_late_changed_report_leaves_entire_input_unchanged) ... ok
+test_late_source_read_failure_leaves_entire_input_unchanged (test_native_languages_data_v1.NativePublicationTransaction.test_late_source_read_failure_leaves_entire_input_unchanged) ... FAIL
+test_unrelated_descriptor_is_rejected_before_any_import (test_native_languages_data_v1.NativePublicationTransaction.test_unrelated_descriptor_is_rejected_before_any_import) ... ok
+
+======================================================================
+FAIL: test_late_source_read_failure_leaves_entire_input_unchanged (test_native_languages_data_v1.NativePublicationTransaction.test_late_source_read_failure_leaves_entire_input_unchanged)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/test_native_languages_data_v1.py", line 278, in test_late_source_read_failure_leaves_entire_input_unchanged
+    with patch.object(Path,'read_text',guarded_read),self.assertRaisesRegex(OSError,'synthetic late'):
+                                                     ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: OSError not raised
+
+----------------------------------------------------------------------
+Ran 16 tests in 0.585s
+
+FAILED (failures=1)

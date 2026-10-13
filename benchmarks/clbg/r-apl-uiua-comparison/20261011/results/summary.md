@@ -14,6 +14,10 @@ r | fasta | fastest | 5.510563s | 9.88× | 49 | 1.14×
 r | fasta | smallest | 75.532979s | 135.41× | 24 | 0.75×
 r | knucleotide | fastest | 34.055290s | 65.82× | 42 | 2.47×
 r | knucleotide | smallest | 157.274536s | 303.97× | 27 | 1.59×
+r | binarytrees | fastest | 73.900382s | 185.07× | 20 | 0.77×
+r | binarytrees | smallest | 224.050623s | 561.10× | 15 | 0.58×
+r | nbody | fastest | 207.511276s | 198.61× | 19 | 0.76×
+r | nbody | smallest | 207.511276s | 198.61× | 19 | 0.95×
 apl | regexredux | fastest | 14.449671s | 29.03× | 33 | 1.38×
 apl | regexredux | smallest | 14.449671s | 29.03× | 33 | 1.38×
 apl | revcomp | fastest | 24.307758s | 162.06× | 71 | 10.14×
@@ -36,9 +40,13 @@ uiua | fasta | fastest | 15.129727s | 27.25× | 34 | 0.79×
 uiua | fasta | smallest | 206.173406s | 371.32× | 22 | 0.69×
 uiua | knucleotide | fastest | 886.628464s | 1678.58× | 29 | 1.71×
 uiua | knucleotide | smallest | 933.032745s | 1766.43× | 27 | 1.59×
+uiua | binarytrees | fastest | 2627.882693s | 6502.55× | 15 | 0.58×
+uiua | binarytrees | smallest | 2627.882693s | 6502.55× | 15 | 0.58×
+uiua | nbody | fastest | 472.771878s | 452.55× | 21 | 0.84×
+uiua | nbody | smallest | 472.771878s | 452.55× | 21 | 1.05×
 
-r: 7/10 benchmarks admitted; 6 candidate roles pending; 0 failed roles archived.
+r: 9/10 benchmarks admitted; 2 candidate roles pending; 0 failed roles archived.
 
 apl: 4/10 benchmarks admitted; 13 candidate roles pending; 4 failed roles archived.
 
-uiua: 7/10 benchmarks admitted; 6 candidate roles pending; 1 failed roles archived.
+uiua: 9/10 benchmarks admitted; 2 candidate roles pending; 1 failed roles archived.

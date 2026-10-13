@@ -1,0 +1,20 @@
+{
+  "terminal_status": "passed",
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-frontend-v2/fixture-receipt.json": "13323527247495cbea051eb75fc66713652abb6572a3105ace5bdc742d8ce4b9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-frontend-v2/assertions/frontend.json": "f84733159f09e5b481207b7278667f41705c75c3ddea025e91e645694a651c9e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-frontend-v2/assertions/frontend.active.json": "1b274ad0765daf17940d8fa571accd6182e8b02955436c1de93d91065a258f90",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-frontend-v2/assertions/frontend.stdout": "5539056a63f344cc4d766ae6b212cac72a2a7ddb1e2944a0b9506e48069fd1f0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-frontend-v2/assertions/frontend.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-frontend-v2/node-version/version.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-frontend-v2/node-version/version.json": "f1860d68d9ac9c52d40cdcaada390931d00c2956c5f5d969b25e3ad8ec4338c9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-frontend-v2/node-version/version.stdout": "b7677d3ec37ee1897ba07dc2cfe8292fe421c9ac93396cca5bbece486d1a2a41",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-frontend-v2/node-version/version.active.json": "86f9ddd2b4e45ab2ef1701c1ebbfc10202b2e056d7e22b145d7bbeaaadb655f4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-frontend-v2/snapshot/overview/explorer/dist/math.mjs": "61f960791a4c035f859f638ecfc8e31d57b64e56389ff35b68ff53334efe42a2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-frontend-v2/snapshot/continuation/platform-filter-proposal-v2/test_platform.mjs": "a619bc00ca735d34914a1f804f9c48feb2e8a9d8fc950005510a8ddc1d5ca90c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-frontend-v2/snapshot/continuation/platform-filter-proposal-v2/traits.mjs": "7157a70080450af9585565f02a17a0aa529ae2c29f545d08bf91acd234fc9182",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-frontend-v2/snapshot/continuation/platform-filter-proposal-v2/platform.mjs": "45743c01175067f0e35abbbd33f242c4050dfb1a78a173a1c819c101f194866f"
+  },
+  "exclusive_common_timing_mutex_held": true,
+  "automatic_retry": false
+}

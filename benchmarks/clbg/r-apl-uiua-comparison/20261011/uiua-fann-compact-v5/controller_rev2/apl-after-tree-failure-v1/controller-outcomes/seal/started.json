@@ -1,0 +1,8 @@
+{
+  "operation": "seal",
+  "actual_argv": [
+    "benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/apl-after-tree-failure-v1/controller.py",
+    "--seal"
+  ],
+  "full_runs_started": false
+}

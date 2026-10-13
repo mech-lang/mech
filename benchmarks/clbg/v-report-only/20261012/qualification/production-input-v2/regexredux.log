@@ -1,0 +1,16 @@
+WAIT LOCK: V preparation production-input-v2 regexredux
+BUILD v-regexredux-compact-input-v2
+BUILD v-regexredux-optimized-input-v2
+PROBE v-regexredux-compact-input-v2 case-and-all-replacements
+PROBE v-regexredux-compact-input-v2 multiple-records
+PROBE v-regexredux-compact-input-v2 unterminated-header
+PROBE v-regexredux-compact-input-v2 replacement-boundaries
+PROBE v-regexredux-compact-input-v2 empty-input
+PROBE v-regexredux-compact-input-v2 complete-multirecord-beyond-buffer
+PROBE v-regexredux-optimized-input-v2 case-and-all-replacements
+PROBE v-regexredux-optimized-input-v2 multiple-records
+PROBE v-regexredux-optimized-input-v2 unterminated-header
+PROBE v-regexredux-optimized-input-v2 replacement-boundaries
+PROBE v-regexredux-optimized-input-v2 empty-input
+PROBE v-regexredux-optimized-input-v2 complete-multirecord-beyond-buffer
+PASS BOUNDED OUTPUTS regexredux 14

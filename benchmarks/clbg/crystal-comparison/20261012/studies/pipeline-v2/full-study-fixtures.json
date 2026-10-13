@@ -1,0 +1,15 @@
+{
+  "status": "passed",
+  "tests_run": 7,
+  "failures": 0,
+  "errors": 0,
+  "native_probes": 0,
+  "actual_signals_sent": 0,
+  "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/pipeline-v2/test_full_study.py": "a9c87e1428e058acc75fb9b721afd12b0d65a86cd842f9dbf1e12862aa802b26",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/pipeline-v2/full_study.py": "d502055be13fda6cc9a0cd7352ca416d7b4628c8258aee1d02fca47fbeaa9410",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/pipeline-v2/seal_full_studies.py": "5cc24d37b1b03e81ebb193d0f7622dab0e78035ec184584377da43166f5c08e0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/pipeline-v2/full-study-fixtures.log": "3932dfb638c87cfeec5837bae6199cbdd9c2164a1d15f9ddd8101bdd72feb4a7"
+  }
+}

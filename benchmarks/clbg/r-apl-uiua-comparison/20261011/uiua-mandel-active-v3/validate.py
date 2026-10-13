@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import struct
 import subprocess
+import sys
 
 HERE = Path(__file__).resolve().parent
 SUITE = HERE.parent
@@ -26,6 +27,12 @@ PACK_CASES = (1, 2, 3, 7, 8, 9, 15, 16, 17, 31, 33, 65, 129, 8001)
 def sha(path):
     with Path(path).open('rb') as stream:
         return hashlib.file_digest(stream, 'sha256').hexdigest()
+
+
+def save(path, value):
+    temporary = path.with_suffix(path.suffix+'.tmp')
+    temporary.write_text(json.dumps(value, indent=2, ensure_ascii=False)+'\n')
+    temporary.replace(path)
 
 
 def f64bytes(values):
@@ -199,16 +206,23 @@ def main():
                   validator=str(Path(__file__).resolve()), validator_sha256=sha(__file__),
                   cases=[], baseline_cases=[], instrumentation=[], prune_cases=[], scatter_cases=[], primitive_cases=[])
     report_path = RESULTS / 'validation.json'
-    try:
-        print('Waiting for common mutex; every runtime/reference probe requires acquisition.', flush=True)
-        with LOCK.open('a') as lock:
-            fcntl.flock(lock, fcntl.LOCK_EX)
-            print('Locked bounded active-pixel validation.', flush=True)
+    print('Waiting for common mutex; every runtime/reference probe requires acquisition.', flush=True)
+    with LOCK.open('a') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        print('Locked bounded active-pixel validation.', flush=True)
+        try:
             expected = {n: reference(n) for n in CASES}
             for n in CASES:
                 command, done = execute(SOURCE, n)
                 row = persist(SOURCE, n, command, done, 'output-'+str(n))
                 report['cases'].append(row)
+                if done.returncode != 0:
+                    report['diagnostic_cases'] = []
+                    for name, replacement in (('bits', '&p json Bits'), ('state', '&p json')):
+                        diagnostic = RESULTS / ('diagnostic-'+name+'.ua')
+                        diagnostic.write_text(SOURCE.read_text().replace('&fwa "/dev/stdout" Pack Bits', replacement))
+                        dcommand, ddone = execute(diagnostic, n)
+                        report['diagnostic_cases'].append(persist(diagnostic, n, dcommand, ddone, 'diagnostic-'+name))
                 assert done.returncode == 0 and done.stdout == expected[n][0], (n, done.stderr.decode())
                 row.update(reference_match=True, pixels=n*n, maximum_pixel_iterations=50,
                            expected_sha256=hashlib.sha256(expected[n][0]).hexdigest(),
@@ -274,19 +288,21 @@ def main():
                            bytes_packed=(n+7)//8, tail_padding=(-n) % 8, reference_match=True, benchmark_pixel_recurrences=0)
             for path, digest in pins.items():
                 assert sha(path) == digest, path
-        report.update(status='passed', finished_at=datetime.now(timezone.utc).isoformat(), passed=len(report['cases']),
-                      baseline_checks_passed=len(report['baseline_cases']), work_checks_passed=len(report['instrumentation']),
-                      prune_checks_passed=len(report['prune_cases']), scatter_checks_passed=len(report['scatter_cases']),
-                      primitive_checks_passed=len(report['primitive_cases']), full_performance_runs=0)
-        report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False)+'\n')
-        print('PASS', report['passed'], 'outputs', report['baseline_checks_passed'], 'baseline controls',
-              report['work_checks_passed'], 'all-state traces', report['prune_checks_passed'], 'select',
-              report['scatter_checks_passed'], 'scatter', report['primitive_checks_passed'], 'packing', flush=True)
-    except BaseException as error:
-        report.update(status='failed', failed_at=datetime.now(timezone.utc).isoformat(),
-                      error=repr(error), full_performance_runs=0)
-        report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False)+'\n')
-        raise
+            report.update(status='passed', finished_at=datetime.now(timezone.utc).isoformat(), passed=len(report['cases']),
+                          baseline_checks_passed=len(report['baseline_cases']), work_checks_passed=len(report['instrumentation']),
+                          prune_checks_passed=len(report['prune_cases']), scatter_checks_passed=len(report['scatter_cases']),
+                          primitive_checks_passed=len(report['primitive_cases']), full_performance_runs=0)
+            save(report_path, report)
+            subprocess.run([sys.executable, str(HERE / 'prepare_manifest.py')], check=True)
+            print('PASS', report['passed'], 'outputs', report['baseline_checks_passed'], 'baseline controls',
+                  report['work_checks_passed'], 'all-state traces', report['prune_checks_passed'], 'select',
+                  report['scatter_checks_passed'], 'scatter', report['primitive_checks_passed'], 'packing', flush=True)
+        except BaseException as error:
+            report.update(status='failed', failed_at=datetime.now(timezone.utc).isoformat(),
+                          error=repr(error), full_performance_runs=0)
+            save(report_path, report)
+            subprocess.run([sys.executable, str(HERE / 'prepare_manifest.py')], check=True)
+            raise
 
 
 if __name__ == '__main__':

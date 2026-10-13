@@ -1,0 +1,53 @@
+{
+  "key": "fasta:nim-fasta-compact",
+  "id": "nim-fasta-compact",
+  "benchmark": "fasta",
+  "language": "nim",
+  "source_sha256": "9cdf085f8ed7e9fbff81544f952fa8a2b97c95a4f8e1a59cf0206c89393f5693",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v3/bin/nim-fasta-compact",
+    "574"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012",
+  "runtime_environment": {
+    "LC_ALL": "C",
+    "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre/8.45/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"c0e851777c721aa64474a88a52272bf41b7b1a90e649434b667ec8ac4c6ee8d9\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v3/bin/nim-fasta-compact\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre/8.45/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"9cdf085f8ed7e9fbff81544f952fa8a2b97c95a4f8e1a59cf0206c89393f5693\", \"support\": {}}",
+  "started_at": "2026-10-12T17:46:13.544043+00:00",
+  "workload_n": 574,
+  "full_workload": false,
+  "timeout_seconds": 120,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.015535542,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 5914,
+  "stdout_sha256": "708ec5a72487245c30630213306bf706585836d0b5db926500ff408b15ef5bc8",
+  "validation": {
+    "reference_match": true,
+    "bytes": 5914,
+    "sha256": "708ec5a72487245c30630213306bf706585836d0b5db926500ff408b15ef5bc8"
+  },
+  "finished_at": "2026-10-12T17:46:13.757873+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true
+}

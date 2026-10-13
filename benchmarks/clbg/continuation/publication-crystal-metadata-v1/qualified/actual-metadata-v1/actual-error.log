@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/publication-crystal-metadata-v1/qualify_descriptor.py", line 183, in main
+    qualify(args,output,pins); outcome['status']='metadata-qualified-awaiting-root-whole-six-review'
+    ~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/publication-crystal-metadata-v1/qualify_descriptor.py", line 130, in qualify
+    receipt(images/'architecture.json',['/usr/bin/lipo','-archs',row['binary']],pins)
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/publication-crystal-metadata-v1/qualify_descriptor.py", line 50, in receipt
+    assert str(path) in pins and sha(path) == pins[str(path)]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

@@ -1,0 +1,235 @@
+[
+  {
+    "path": "upstream/hanabi/bench/algorithm/binarytrees/1.cr",
+    "url": "https://raw.githubusercontent.com/hanabi1224/Programming-Language-Benchmarks/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/binarytrees/1.cr",
+    "bytes": 1114,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/hanabi/bench/algorithm/fannkuch-redux/1.cr",
+    "url": "https://raw.githubusercontent.com/hanabi1224/Programming-Language-Benchmarks/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/fannkuch-redux/1.cr",
+    "bytes": 1139,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/hanabi/bench/algorithm/fasta/1.cr",
+    "url": "https://raw.githubusercontent.com/hanabi1224/Programming-Language-Benchmarks/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/fasta/1.cr",
+    "bytes": 2003,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/hanabi/bench/algorithm/fasta/2.cr",
+    "url": "https://raw.githubusercontent.com/hanabi1224/Programming-Language-Benchmarks/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/fasta/2.cr",
+    "bytes": 2280,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/hanabi/bench/algorithm/mandelbrot/1.cr",
+    "url": "https://raw.githubusercontent.com/hanabi1224/Programming-Language-Benchmarks/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/mandelbrot/1.cr",
+    "bytes": 1911,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/hanabi/bench/algorithm/mandelbrot/2.cr",
+    "url": "https://raw.githubusercontent.com/hanabi1224/Programming-Language-Benchmarks/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/mandelbrot/2.cr",
+    "bytes": 1741,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/hanabi/bench/algorithm/nbody/1.cr",
+    "url": "https://raw.githubusercontent.com/hanabi1224/Programming-Language-Benchmarks/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/nbody/1.cr",
+    "bytes": 3468,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/hanabi/bench/algorithm/nbody/2.cr",
+    "url": "https://raw.githubusercontent.com/hanabi1224/Programming-Language-Benchmarks/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/nbody/2.cr",
+    "bytes": 3689,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/hanabi/bench/algorithm/pidigits/1.cr",
+    "url": "https://raw.githubusercontent.com/hanabi1224/Programming-Language-Benchmarks/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/pidigits/1.cr",
+    "bytes": 1821,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/hanabi/bench/algorithm/regex-redux/1.cr",
+    "url": "https://raw.githubusercontent.com/hanabi1224/Programming-Language-Benchmarks/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/regex-redux/1.cr",
+    "bytes": 896,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/hanabi/bench/algorithm/spectral-norm/1.cr",
+    "url": "https://raw.githubusercontent.com/hanabi1224/Programming-Language-Benchmarks/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/spectral-norm/1.cr",
+    "bytes": 1347,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/kostya/binarytrees/binarytrees.cr",
+    "url": "https://raw.githubusercontent.com/kostya/crystal-benchmarks-game/aaf7bd44118889605943df3200b7c9b0c6af6510/binarytrees/binarytrees.cr",
+    "bytes": 1357,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/kostya/fannkuchredux/fannkuchredux.cr",
+    "url": "https://raw.githubusercontent.com/kostya/crystal-benchmarks-game/aaf7bd44118889605943df3200b7c9b0c6af6510/fannkuchredux/fannkuchredux.cr",
+    "bytes": 1080,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/kostya/fasta/fasta.cr",
+    "url": "https://raw.githubusercontent.com/kostya/crystal-benchmarks-game/aaf7bd44118889605943df3200b7c9b0c6af6510/fasta/fasta.cr",
+    "bytes": 2221,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/kostya/knucleotide/knucleotide.cr",
+    "url": "https://raw.githubusercontent.com/kostya/crystal-benchmarks-game/aaf7bd44118889605943df3200b7c9b0c6af6510/knucleotide/knucleotide.cr",
+    "bytes": 782,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/kostya/mandelbrot/mandelbrot.cr",
+    "url": "https://raw.githubusercontent.com/kostya/crystal-benchmarks-game/aaf7bd44118889605943df3200b7c9b0c6af6510/mandelbrot/mandelbrot.cr",
+    "bytes": 731,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/kostya/nbody/nbody.cr",
+    "url": "https://raw.githubusercontent.com/kostya/crystal-benchmarks-game/aaf7bd44118889605943df3200b7c9b0c6af6510/nbody/nbody.cr",
+    "bytes": 3081,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/kostya/pidigits/pidigits.cr",
+    "url": "https://raw.githubusercontent.com/kostya/crystal-benchmarks-game/aaf7bd44118889605943df3200b7c9b0c6af6510/pidigits/pidigits.cr",
+    "bytes": 506,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/kostya/regexdna/regexdna.cr",
+    "url": "https://raw.githubusercontent.com/kostya/crystal-benchmarks-game/aaf7bd44118889605943df3200b7c9b0c6af6510/regexdna/regexdna.cr",
+    "bytes": 799,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/kostya/revcomp/revcomp.cr",
+    "url": "https://raw.githubusercontent.com/kostya/crystal-benchmarks-game/aaf7bd44118889605943df3200b7c9b0c6af6510/revcomp/revcomp.cr",
+    "bytes": 415,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/kostya/spectralnorm/spectralnorm.cr",
+    "url": "https://raw.githubusercontent.com/kostya/crystal-benchmarks-game/aaf7bd44118889605943df3200b7c9b0c6af6510/spectralnorm/spectralnorm.cr",
+    "bytes": 838,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/kostya/LICENSE",
+    "url": "https://raw.githubusercontent.com/kostya/crystal-benchmarks-game/aaf7bd44118889605943df3200b7c9b0c6af6510/LICENSE",
+    "bytes": 1079,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/kostya/README.md",
+    "url": "https://raw.githubusercontent.com/kostya/crystal-benchmarks-game/aaf7bd44118889605943df3200b7c9b0c6af6510/README.md",
+    "bytes": 3700,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/crystal/src/big/big_int.cr",
+    "url": "https://raw.githubusercontent.com/crystal-lang/crystal/73ea5c2b1bc3b3ac0ba400aa9da77af96f63d6ef/src/big/big_int.cr",
+    "bytes": 27819,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/crystal/src/big/lib_gmp.cr",
+    "url": "https://raw.githubusercontent.com/crystal-lang/crystal/73ea5c2b1bc3b3ac0ba400aa9da77af96f63d6ef/src/big/lib_gmp.cr",
+    "bytes": 11051,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/crystal/src/gc/boehm.cr",
+    "url": "https://raw.githubusercontent.com/crystal-lang/crystal/73ea5c2b1bc3b3ac0ba400aa9da77af96f63d6ef/src/gc/boehm.cr",
+    "bytes": 17020,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/crystal/src/gc.cr",
+    "url": "https://raw.githubusercontent.com/crystal-lang/crystal/73ea5c2b1bc3b3ac0ba400aa9da77af96f63d6ef/src/gc.cr",
+    "bytes": 4580,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/crystal/src/fiber/execution_context/parallel.cr",
+    "url": "https://raw.githubusercontent.com/crystal-lang/crystal/73ea5c2b1bc3b3ac0ba400aa9da77af96f63d6ef/src/fiber/execution_context/parallel.cr",
+    "bytes": 13968,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/crystal/src/fiber/execution_context.cr",
+    "url": "https://raw.githubusercontent.com/crystal-lang/crystal/73ea5c2b1bc3b3ac0ba400aa9da77af96f63d6ef/src/fiber/execution_context.cr",
+    "bytes": 9719,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/crystal/src/regex.cr",
+    "url": "https://raw.githubusercontent.com/crystal-lang/crystal/73ea5c2b1bc3b3ac0ba400aa9da77af96f63d6ef/src/regex.cr",
+    "bytes": 30256,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/crystal/src/io.cr",
+    "url": "https://raw.githubusercontent.com/crystal-lang/crystal/73ea5c2b1bc3b3ac0ba400aa9da77af96f63d6ef/src/io.cr",
+    "bytes": 32836,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/crystal/src/static_array.cr",
+    "url": "https://raw.githubusercontent.com/crystal-lang/crystal/73ea5c2b1bc3b3ac0ba400aa9da77af96f63d6ef/src/static_array.cr",
+    "bytes": 12409,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/crystal/src/thread.cr",
+    "url": "https://raw.githubusercontent.com/crystal-lang/crystal/73ea5c2b1bc3b3ac0ba400aa9da77af96f63d6ef/src/thread.cr",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "path": "upstream/crystal/src/channel.cr",
+    "url": "https://raw.githubusercontent.com/crystal-lang/crystal/73ea5c2b1bc3b3ac0ba400aa9da77af96f63d6ef/src/channel.cr",
+    "bytes": 12358,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/crystal/src/compiler/crystal/command.cr",
+    "url": "https://raw.githubusercontent.com/crystal-lang/crystal/73ea5c2b1bc3b3ac0ba400aa9da77af96f63d6ef/src/compiler/crystal/command.cr",
+    "bytes": 29112,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/crystal/src/crystal/system/thread.cr",
+    "url": "https://raw.githubusercontent.com/crystal-lang/crystal/73ea5c2b1bc3b3ac0ba400aa9da77af96f63d6ef/src/crystal/system/thread.cr",
+    "bytes": 6630,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/crystal/src/regex/pcre2.cr",
+    "url": "https://raw.githubusercontent.com/crystal-lang/crystal/73ea5c2b1bc3b3ac0ba400aa9da77af96f63d6ef/src/regex/pcre2.cr",
+    "bytes": 11352,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/crystal/src/big.cr",
+    "url": "https://raw.githubusercontent.com/crystal-lang/crystal/73ea5c2b1bc3b3ac0ba400aa9da77af96f63d6ef/src/big.cr",
+    "bytes": 304,
+    "status": "saved-primary-source-unhashed-unqualified"
+  },
+  {
+    "path": "upstream/crystal/src/prelude.cr",
+    "url": "https://raw.githubusercontent.com/crystal-lang/crystal/73ea5c2b1bc3b3ac0ba400aa9da77af96f63d6ef/src/prelude.cr",
+    "bytes": 1773,
+    "status": "saved-primary-source-unhashed-unqualified"
+  }
+]

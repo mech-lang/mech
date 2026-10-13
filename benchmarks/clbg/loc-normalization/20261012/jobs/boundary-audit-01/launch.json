@@ -1,0 +1,22 @@
+{
+  "queued_at": "2026-10-12T13:06:45.618413+00:00",
+  "root": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg",
+  "current_data": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/dist/data.json",
+  "mutex": "/tmp/mech-clbg-timing.lock",
+  "frozen_code_sources": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/audit.py",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/normalizer.py",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/lexical.py",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/canonical.py",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pools.py",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/comparisons.py",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/test_normalizer.py",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/legacy_loc_data.py",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/test_legacy_loc_data.py"
+  ],
+  "tests_before_audit": true,
+  "stop_on_fixture_failure": true,
+  "automatic_retry": false,
+  "benchmark_processes_started": 0,
+  "chart_admitted": false
+}

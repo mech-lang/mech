@@ -1,0 +1,18 @@
+{
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/source-counts/compiler-input-v1/compiler-input-proposals.json": "008340b7e28051a6b042c15de713c6e35462cb8a2f108ed5114ed9342d52fb92",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/source-counts/compiler-input-v1/terminal-receipt.json": "1e4193a924371095afd38349272b7a77a9615f0e335a5586ec80a206c4e86ad4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/source-counts/compiler-input-v1/fixture-receipt.json": "b99a6abfc8880d0647a0a0d737e16f9881fc7fa56d17d23c22ac1dcb5b8d38d0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/source-counts/compiler-input-v1/fixtures.log": "345e50fd9bdc93f8b57cbb1cd69c32d29bf255a157fd2d6bb8f670cacec50bcf",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/source-counts/compiler-input-v1/packet/qualify_loc.py": "eff08cb97f0cafc3ae40eb06b8b4eb23923a32b0f0a0f8f961ed6abb51b82f46",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/source-counts/compiler-input-v1/packet/input_inventory.py": "6b998e0e9506a186a59fb0a578e0e774fb966a4d894bcd65f3cd0db8b138cd22",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/source-counts/compiler-input-v1/packet/test_loc_inputs.py": "dd029f7b1f912421a338222af5470a72c728195d9843ece68df0d7993d77ab5a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/source-counts/compiler-input-v1/packet/overlay_candidate.py": "d200064f2b4f05360a4d063c1c517adb681fa0e2c5236ea4981aadf62b620cd7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/source-counts/compiler-input-v1/packet/PLAN.md": "e873f89d81f68dfc52b6e9b5ab05cbf9935a021e15dbc3aeb17347a268258f52",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/source-counts/compiler-input-v1/packet/REVIEW.md": "6420e032ae5f05c65b20d14d559fd538b960a97669b9895c6f8a3ba160b4e06b"
+  },
+  "actual_common_mutex_held": true,
+  "terminal_status": "completed-source-evidence-awaiting-root-review",
+  "chart_admission": false,
+  "automatic_retry": false
+}

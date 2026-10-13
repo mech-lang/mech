@@ -1,0 +1,22 @@
+{
+  "pid": 43896,
+  "identity": {
+    "pid": 43896,
+    "process_listing": "Mon Oct 12 17:20:51 2026     /tmp/mech-nbody-plot-runtime/bin/python3 -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/full_study.py --run --benchmark revcomp --manifest-sha256 1d8e74257bac07f674e017c12b83ee9a3d62cb7f14fc51abd585d91790ac347d"
+  },
+  "benchmark": "revcomp",
+  "command": [
+    "/tmp/mech-nbody-plot-runtime/bin/python3",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/full_study.py",
+    "--run",
+    "--benchmark",
+    "revcomp",
+    "--manifest-sha256",
+    "1d8e74257bac07f674e017c12b83ee9a3d62cb7f14fc51abd585d91790ac347d"
+  ],
+  "manifest_sha256": "1d8e74257bac07f674e017c12b83ee9a3d62cb7f14fc51abd585d91790ac347d",
+  "launched_at": "2026-10-12T21:20:51.392091+00:00",
+  "report_only": true,
+  "never_chart_eligible": true
+}

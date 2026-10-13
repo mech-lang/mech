@@ -1,0 +1,62 @@
+{
+  "status": "passed",
+  "started_at": "2026-10-13T00:47:06.724822+00:00",
+  "required_fixture_ids": [
+    "test_publication_endpoints_v1.PublicationEndpoints.test_added_forms_choose_actual_fast_and_small_and_preserve_observations",
+    "test_publication_endpoints_v1.PublicationEndpoints.test_source_only_small_remains_without_invented_time_or_complete_suite",
+    "test_publication_endpoints_v1.PublicationEndpoints.test_one_source_can_own_both_endpoints_and_stable_ties_remain_stable",
+    "test_publication_endpoints_v1.PublicationEndpoints.test_late_invalid_group_is_transactional"
+  ],
+  "discovered_fixture_ids": [
+    "test_publication_endpoints_v1.PublicationEndpoints.test_added_forms_choose_actual_fast_and_small_and_preserve_observations",
+    "test_publication_endpoints_v1.PublicationEndpoints.test_late_invalid_group_is_transactional",
+    "test_publication_endpoints_v1.PublicationEndpoints.test_one_source_can_own_both_endpoints_and_stable_ties_remain_stable",
+    "test_publication_endpoints_v1.PublicationEndpoints.test_source_only_small_remains_without_invented_time_or_complete_suite"
+  ],
+  "actual_started_fixture_ids": [
+    "test_publication_endpoints_v1.PublicationEndpoints.test_added_forms_choose_actual_fast_and_small_and_preserve_observations",
+    "test_publication_endpoints_v1.PublicationEndpoints.test_late_invalid_group_is_transactional",
+    "test_publication_endpoints_v1.PublicationEndpoints.test_one_source_can_own_both_endpoints_and_stable_ties_remain_stable",
+    "test_publication_endpoints_v1.PublicationEndpoints.test_source_only_small_remains_without_invented_time_or_complete_suite"
+  ],
+  "tests_run": 4,
+  "expected_fixture_count": 4,
+  "actual_native_processes": 0,
+  "chart_admission": false,
+  "source_pool_admission": false,
+  "exclusive_common_timing_mutex_held": true,
+  "automatic_retry": false,
+  "prerequisite": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/publication-fixtures-v2/fixture-receipt.json",
+  "failures": [],
+  "errors": [],
+  "skips": [],
+  "expected_failures": [],
+  "unexpected_successes": [],
+  "raw_log": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/publication-endpoints-v1/fixtures.log",
+    "sha256": "6335309ec65e8f0d8783fc3732f52335f0a0f24520e0646e90edc21ba9281b2c"
+  },
+  "source_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/qualify_publication_fixtures_v2.py": "e2755a75e6822831d76462366160e0218648d0525b78c7aab3edcc41c0ff1e05",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/reconcile_native_records_v1.py": "fd3938a576bdb57b3fe418f896783365fca2160d85f37c861810bc727bb3c565",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/test_reconcile_native_records_v1.py": "85c314a050a044d1416d0631552e19cc59403291833dd4e9b25479a4aa68f0f6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/reconcile_native_records_v2.py": "1eae958cc236900e2fd4a021d2b2f6c5c486aacd74c1b79a5322941c64d6238f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/test_reconcile_native_records_v2.py": "3940c80c5ea5cdf5ae7db79ab45812ccadaa89df7ba13d3618127630a3cf6fdb",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/native_languages_data_v1.py": "27779d09a6cfea98d0377c58d4cdd459fc7f59aac46efdb8f61144070a871dc7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/test_native_languages_data_v2.py": "b7a13b127807525e564e2cd26a0276fd506cdacd9c7f0339e0e625bb7016aa95",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/test_native_languages_data_v1.py": "16993eed9127bc3e428e19f98edc67a625eb480cc7eaa2f787a995f6e1f4068f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/qualify_publication_fixtures_v1.py": "8e85f41babda54d60e9426d2c9cdbd494cf4b9d22ca037676bcd6fe72e90e32f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/publication-fixtures-v1/fixture-receipt.json": "af29ff364108dcfa75ccd0ac15d352f16b334b8f8b844bb31756f4e0d77ba840",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/publication-fixtures-v1/fixtures.log": "1742c0a8bc81a95ad1d9b9343b718c994ef105e6ec3d7cfd868bb3cf933593ff",
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/bin/python3.14": "e401ac7a95cda75dee34a0cfe1e4faf0a6df1a501cf67887f177fb78cd4eb60a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/publication-fixtures-v2/fixture-receipt.json": "6794a8ddc0286fc65e9666a87893ed1ed6cfe2182f63fa29d1375d90e2db4dd6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/qualify_publication_endpoints_v1.py": "c87f7020417c39819eb21e48be59123fe667c94cf6676daed6a1df91aaae77de",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/publication_endpoints_v1.py": "5f794e66d41440e2dfd4e6afd1584e35cdbe641f16ec9ea7c202be208d9a2941",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/publication-endpoints-v1/snapshot/publication_endpoints_v1.py": "5f794e66d41440e2dfd4e6afd1584e35cdbe641f16ec9ea7c202be208d9a2941",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/test_publication_endpoints_v1.py": "35218b24d1270f6b3f5c0f960393191486a1ce5c32454aebbb000ca351ce0acf",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/publication-endpoints-v1/snapshot/test_publication_endpoints_v1.py": "35218b24d1270f6b3f5c0f960393191486a1ce5c32454aebbb000ca351ce0acf",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/publication-endpoints-v1/fixtures.log": "6335309ec65e8f0d8783fc3732f52335f0a0f24520e0646e90edc21ba9281b2c"
+  },
+  "pins_unchanged_at_end": true,
+  "completed_at": "2026-10-13T00:47:06.741031+00:00"
+}

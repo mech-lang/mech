@@ -1,0 +1,71 @@
+Waiting for common mutex for mocked fixtures then controller plan sealing.
+test_active_never_signals (revision2_preparation_fixtures.Safety.test_active_never_signals) ... ok
+test_identity_change_is_fatal (revision2_preparation_fixtures.Safety.test_identity_change_is_fatal) ... ok
+test_incomplete_nbody_never_signals (revision2_preparation_fixtures.Safety.test_incomplete_nbody_never_signals) ... ok
+test_native_child_never_signals (revision2_preparation_fixtures.Safety.test_native_child_never_signals) ... ok
+test_nbody_monitor_failure_is_rejected (revision2_preparation_fixtures.Safety.test_nbody_monitor_failure_is_rejected) ... ok
+test_old_uiua_fann_attempt_is_retained_at_boundary (revision2_preparation_fixtures.Safety.test_old_uiua_fann_attempt_is_retained_at_boundary) ... ok
+test_revision_preserves_all_legacy_fann_lineage (revision2_preparation_fixtures.Safety.test_revision_preserves_all_legacy_fann_lineage) ... ok
+test_settles_final_save_then_rereads_fresh_bytes (revision2_preparation_fixtures.Safety.test_settles_final_save_then_rereads_fresh_bytes) ... ok
+test_success_targets_recorded_python_pid_only (revision2_preparation_fixtures.Safety.test_success_targets_recorded_python_pid_only) ... {
+  "status": "maintenance-complete-new-owner-awaiting-review",
+  "finished_at": "2026-10-12T13:44:43.532038+00:00",
+  "plan_sha256": "778ee1846096f8f39816f68ec6d84a99aa2134b14b01a9fbbcb5e1bf759850ad",
+  "boundary": {
+    "observed_at": "2026-10-12T13:44:43.531572+00:00",
+    "last_stage_log_line": "WAIT LOCK 1 old-fann",
+    "stage_descendants": [],
+    "report_sha256": {
+      "r": "a6e54189fa978c477e5243a5d3a65496645d6ec5a41e0eb067531288c9ef87c4",
+      "uiua": "2de828ab4bf042dc5375190c1b13b43af0ecef3b3ae418adcb52f671d18535e1",
+      "apl": "c9f28d9fe60599994bcb2541e7ae031fdef3fdb0859c06e11e1447ebb38b6093"
+    }
+  },
+  "stage_exit_status": 130,
+  "signal": "SIGINT to waiting Python stage owner only",
+  "native_processes_signalled": false,
+  "benchmarks_launched": false,
+  "revision_directory": "mock additive revision"
+}
+ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.020s
+
+OK
+
+{
+  "plan": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/plan2.json",
+  "sha256": "b29989867eb1e899f31025ef7259e9593a0e9e31a07da7d9c8a101fc765a994d",
+  "controller": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/controller.py",
+  "controller_sha256": "12a6467da5251eded5faa0faa760809634ca9af6f8ba3111293eb5c6857eb0be"
+}
+Fixture receipt SHA 3a422ab64e1c89d572de7c1495cf08dc5b247d68a0f9a223e3e006342d129b52
+{
+  "status": "durable-watch-authorized",
+  "launched_at": "2026-10-12T13:44:44.118690+00:00",
+  "pid": 50921,
+  "watcher_identity": {
+    "pid": 50921,
+    "listing": "Mon Oct 12 09:44:44 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/guarded_launcher.py --watch-child --launcher-sha256 754c3350441897314bb8c389fd28b27ab31e0e3a3c225bc1c39b871256c5f239 --plan-sha256 b29989867eb1e899f31025ef7259e9593a0e9e31a07da7d9c8a101fc765a994d --inherited-lock-fd 3 --handoff-go-fd 4"
+  },
+  "launcher_sha256": "754c3350441897314bb8c389fd28b27ab31e0e3a3c225bc1c39b871256c5f239",
+  "controller_sha256": "12a6467da5251eded5faa0faa760809634ca9af6f8ba3111293eb5c6857eb0be",
+  "plan": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/plan2.json",
+  "plan_sha256": "b29989867eb1e899f31025ef7259e9593a0e9e31a07da7d9c8a101fc765a994d",
+  "fixture_sha256": "3a422ab64e1c89d572de7c1495cf08dc5b247d68a0f9a223e3e006342d129b52",
+  "verified_pins": 1253,
+  "common_mutex_handoff": "same held open description inherited; parent closes after persisted launch",
+  "observed_boundary": {
+    "observed_at": "2026-10-12T13:44:43.996623+00:00",
+    "last_stage_log_line": "WAIT LOCK 2 fannkuchredux-r-array-batched",
+    "stage_descendants": [],
+    "report_sha256": {
+      "r": "44a20749c5ee485392af2c220ef074d3846323e04c613243a73d3c6f9da49b0a",
+      "uiua": "da5ccf102e90dc2755388414390f6401402b2f67edb177ba74a377f2c5cae709",
+      "apl": "9ef8f3776ce6c7ddf65a29cec7378e782188862a271aea2826df486cac0f98f7"
+    }
+  },
+  "log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/watcher.log",
+  "native_processes_signalled": false
+}

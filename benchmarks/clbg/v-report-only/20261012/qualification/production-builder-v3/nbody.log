@@ -1,0 +1,12 @@
+WAIT LOCK: V preparation production-builder-v3 nbody
+BUILD v-nbody-optimized-input-v2
+BUILD v-nbody-compact-input-v2
+PROBE v-nbody-optimized-input-v2 size-0
+PROBE v-nbody-optimized-input-v2 size-1
+PROBE v-nbody-optimized-input-v2 size-2
+PROBE v-nbody-optimized-input-v2 size-10000
+PROBE v-nbody-compact-input-v2 size-0
+PROBE v-nbody-compact-input-v2 size-1
+PROBE v-nbody-compact-input-v2 size-2
+PROBE v-nbody-compact-input-v2 size-10000
+PASS BOUNDED OUTPUTS nbody 10

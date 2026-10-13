@@ -1,0 +1,149 @@
+{
+  "pid": 31810,
+  "started_at": "2026-10-11T22:25:31.873382+00:00",
+  "source_audits": {
+    "r": "d76be20504617addb9efd5915bf7074877e727e3a49ccbd36585b4be5c763af3",
+    "uiua": "82b15648d0c49c6393a0eec1efb441f1ee11237ceae4a8f41ca854c0b7ee0860",
+    "apl": "9b26c06182bb97b4d3e26d70d9edd6e5ec78e57f1b59a77a91874869c9e83936"
+  },
+  "report_ownership": [
+    "r",
+    "uiua",
+    "apl"
+  ],
+  "orphan_identity": null,
+  "abandoned_orphan_identity": {
+    "pid": 25078,
+    "ppid": 1,
+    "pgid": 25078,
+    "etime_observed_for_cleanup_only": "24:36",
+    "cpu_percent": 100.0,
+    "state": "Rs",
+    "command": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl --silent --noCIN --noCONT --noColor --noSV --cc 1 -f /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/mandelbrot.compact.apl -- 16000",
+    "lstart": "Sun Oct 11 17:58:35 2026"
+  },
+  "status": "stage-error",
+  "stages": [
+    {
+      "name": "knucleotide-r-uiua",
+      "arguments": [
+        "--languages",
+        "r,uiua",
+        "--benchmarks",
+        "knucleotide",
+        "--samples",
+        "3"
+      ],
+      "started_at": "2026-10-11T22:25:31.960665+00:00",
+      "log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/coordinator-v4/knucleotide-r-uiua.log",
+      "pid": 31820,
+      "exit_status": 0,
+      "finished_at": "2026-10-12T00:33:45.500406+00:00"
+    },
+    {
+      "name": "long-r-uiua",
+      "arguments": [
+        "--languages",
+        "r,uiua",
+        "--benchmarks",
+        "binarytrees,nbody,fannkuchredux",
+        "--pilot",
+        "--samples",
+        "3"
+      ],
+      "started_at": "2026-10-12T00:33:45.542800+00:00",
+      "log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/coordinator-v4/long-r-uiua.log",
+      "pid": 54174,
+      "exit_status": -2,
+      "finished_at": "2026-10-12T13:44:44.570249+00:00"
+    }
+  ],
+  "coverage": {
+    "r": {
+      "report_status": "partial",
+      "qualified_benchmarks": [
+        "nbody",
+        "mandelbrot",
+        "spectralnorm",
+        "binarytrees",
+        "fasta",
+        "knucleotide",
+        "revcomp",
+        "regexredux",
+        "pidigits"
+      ],
+      "qualified_count": 9,
+      "selected_sources_or_controls_pending": [
+        "fannkuchredux:fannkuchredux-r-array-compact",
+        "fannkuchredux:fannkuchredux-r-array-batched",
+        "fannkuchredux:mech-control-for-r"
+      ],
+      "actual_full_failures": [],
+      "active": null
+    },
+    "uiua": {
+      "report_status": "partial",
+      "qualified_benchmarks": [
+        "binarytrees",
+        "fasta",
+        "revcomp",
+        "regexredux",
+        "pidigits",
+        "spectralnorm",
+        "knucleotide",
+        "mandelbrot",
+        "nbody"
+      ],
+      "qualified_count": 9,
+      "selected_sources_or_controls_pending": [
+        "fannkuchredux:fannkuchredux-uiua-native-indices-compact-v2",
+        "fannkuchredux:fannkuchredux-uiua-native-flat-gather-optimized-v2",
+        "fannkuchredux:mech-control-for-uiua-medium-v3"
+      ],
+      "actual_full_failures": [
+        "knucleotide:knucleotide-uiua-compact-v3"
+      ],
+      "active": null
+    },
+    "apl": {
+      "report_status": "partial",
+      "qualified_benchmarks": [
+        "spectralnorm",
+        "revcomp",
+        "regexredux",
+        "pidigits"
+      ],
+      "qualified_count": 4,
+      "selected_sources_or_controls_pending": [
+        "mandelbrot:mandelbrot-apl-compact",
+        "mandelbrot:mandelbrot-apl-active-v2-compact",
+        "mandelbrot:mandelbrot-apl-active-v2-optimized",
+        "mandelbrot:mech-control-for-apl-medium-v3",
+        "fannkuchredux:fannkuchredux-apl-compact",
+        "fannkuchredux:fannkuchredux-apl-optimized",
+        "fannkuchredux:mech-control-for-apl",
+        "fasta:fasta-apl-compact",
+        "fasta:fasta-apl-affine-hoisted-optimized-v3",
+        "fasta:mech-control-for-apl-medium-v3",
+        "binarytrees:binarytrees-apl-compact",
+        "binarytrees:binarytrees-apl-optimized",
+        "binarytrees:mech-control-for-apl",
+        "knucleotide:knucleotide-apl-v2-compact",
+        "knucleotide:knucleotide-apl-v2-optimized",
+        "knucleotide:mech-control-for-apl",
+        "nbody:nbody-apl-compact-canonical-v2",
+        "nbody:nbody-apl-optimized-canonical-v2",
+        "nbody:mech-control-for-apl-medium-v3"
+      ],
+      "actual_full_failures": [
+        "revcomp:revcomp-apl-compact",
+        "revcomp:revcomp-apl-optimized",
+        "regexredux:regexredux-apl-compact",
+        "regexredux:regexredux-apl-optimized"
+      ],
+      "active": null
+    }
+  },
+  "protocol": "Unchanged frozen run.py; three real full samples and fresh controls; shared mutex; planning only for scheduling.",
+  "orphan_exit_observed_at": "2026-10-11T22:25:31.932358+00:00"
+}

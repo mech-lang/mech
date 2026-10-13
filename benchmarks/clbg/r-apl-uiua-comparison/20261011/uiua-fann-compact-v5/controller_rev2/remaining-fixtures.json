@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "cases": 8,
+  "failures": 0,
+  "errors": 0,
+  "runner_sha256": "55581d56609803243b3be264e6a2e37229be06789c22788bbf8cdb6ff6828544",
+  "fixture_source_sha256": "942eb2ecedb4d636de368f8dc00f73f996981f7cb5abd139b051254210b03866",
+  "log_sha256": "71b21d0372df5fe81d57f98ed603ed08bcaf1e81872e353928cce686cec3b1cc",
+  "actual_signals_sent": 0,
+  "native_probes": 0,
+  "shared_mutex": "/tmp/mech-clbg-timing.lock",
+  "mocked_attempts_and_harness": true
+}

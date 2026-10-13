@@ -1,0 +1,60 @@
+{
+  "status": "complete-static-source-and-saved-bytecode-review-awaiting-additive-compact-K-disassembly",
+  "language": "clojure",
+  "review_identity": "Crystal source/actual bytecode reviewer, exact private-v2 Clojure20+support, 2026-10-13",
+  "actual_work_report": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/report.json",
+    "sha256": "e193dfcebfada205469caef3f2b80c8cdffa59ff0cbb955d7e6ff240fe29c371"
+  },
+  "qualified_preparation_sha256": "69bf7cdb025759e6d10cb8c1ae1c189839e253ced9aca50e4f9cc1e838d36d79",
+  "source_inventory_review": "All20 authored mains and whole clbg.support were read. Both private-v2 Nbody corrected aliases are selected; eighteen other main sources and complete helper are unchanged. Original/fresh actual compiled package, inventory, compile receipt, JAR/runtime/classpath/artifact identities remain independently qualified. Source roots are absent from measured classpaths. Application workload code is authored Clojure; standard BigInteger, JVM regex, I/O, array and map primitives are the expressly allowed libraries.",
+  "complete_static_source_review_by_benchmark": {
+    "binarytrees": "Both creators unconditionally allocate fresh object-array2 before positive-depth test and independently recurse into both children; leaves are dynamic nodes. Checker recursively reads both actual child slots. Stretch, retained root, every depth/iteration tree and final retained check are present. Optimized partitions each depth's full iterations across bounded workers, joins all jobs before totals/retained read. No constant/shared leaves or closed-form checker.",
+    "fannkuchredux": "Compact enumerates all permutations, independent prefix rotations/count carry, actual copy/reversal flip loop, signed checksum and maximum. Optimized constructs factoradic interval start permutations, enumerates every assigned rank with actual permutations/flip work, and joins bounded disjoint intervals before checksum/max. No checksum/maximum formula substitution.",
+    "nbody": "Both corrected sources retain all pairwise force contributions, both bodies' velocity updates, position updates for each step, initial momentum correction and independent initial/final energy summations. Primitive-array storage and numeric work remain in Clojure. Narrow parenthesis repairs close the authored potential loop; frozen malformed originals and compile failure remain excluded.",
+    "spectralnorm": "Both forms evaluate every matrix element formula inside complete row/column products for A and transpose, perform ten paired AtAv iterations and independent u/v dot products. Optimized partitions disjoint output rows with bounded joined workers. Typed array reads are actual Clojure/core accesses and array outputs; no external numeric kernel.",
+    "mandelbrot": "Both forms compute every pixel's complex recurrence up to50 iterations or escape, preserve width/height header and all row bytes including final partial-byte padding. Optimized rows are bounded/joined worker products, then emitted in original order. All floating recurrence and pixel/bit decisions remain authored Clojure.",
+    "pidigits": "Both forms compute independent numerator3/numerator4, divide each by actual denominator, compare actual quotients, retain both accepted and rejected recurrence paths and complete ten-column output/newline padding. Immutable standard BigInteger arithmetic is called by authored Clojure recurrence; no specialized external Pi kernel or alternative single extraction division.",
+    "fasta": "Both forms retain exact ALU repeated emission, actual LCG state and random sequence progression, both probability tables/cumulative selection and complete60-column tails. Optimized uses primitive data/string buffering while preserving RNG sequence across both generated records. All selection/generator work remains authored Clojure.",
+    "revcomp": "Both forms process all FASTA records, retain headers, normalize line input, apply full IUPAC complement and reverse complete sequence then emit60-column tails. Header/empty/comment/preheader handling is independently qualified. No record or interior sequence shortcut.",
+    "knucleotide": "Both select complete THIRD record, normalize case and build all seven widths1,2,3,4,6,12,18. Compact fresh transient maps count every substring window before persistent return; optimized fresh HashMaps roll complete packed keys through all positions and update every eligible window. Seven complete maps remain retained for two frequency tables/five queries; optimized tasks privately own maps and return complete maps only after joined futures. No five-query-only implementation or fixed capacity substitution.",
+    "regexredux": "Both use case-sensitive standard JVM patterns, complete original/cleaned length counts, all nine independent pattern counts and all five ordered substitutions with final length. Compact/optimized changes data buffering/control organization; neither switches to case-insensitive semantics or bypasses complete outputs. Workload orchestration remains authored Clojure with standard JVM regex primitive explicitly allowed."
+  },
+  "shared_helper_review": "Complete authored clbg.support is scored/counted. Input, argument, printf/flush and bounded jobs helper remain pinned. jobs uses at most min8/count workers, evaluates every job through Callable, awaits Future.get in vector order, and executes shutdown/awaitTermination in finally before returning results. Runtime/standard library sources are pinned vendor inputs, not authored LOC.",
+  "actual_saved_bytecode_review": {
+    "binarytrees-both": {
+      "creator": "make_tree.invokeStatic offsets0/3 load constant2 and call RT.object_array before depth load7/Numbers.isPos8/ifeq11. Both child recursion invokes occur35/67, each depth decremented independently, and RT.aset stores returned children40/72. Static initializer binds const6 specifically to the original namespace's make-tree Var; result returned from node slot82.",
+      "checker": "check_tree.invokeStatic reads child0 through RT.aget8 and tests nil; nonleaf path recursively invokes original check-tree Var on child0 at46 and child1 at76, sums1+both actual results via Numbers.add51/81. Static initializer binds original namespace and check-tree name.",
+      "vendor_allocation": "Pinned clojure.lang.RT.object_array(Object) Number path obtains intValue, performs actual anewarray java/lang/Object at14 and returns17. Creator's constant is Long2. Literal shared leaf/source-copy substitutes are absent.",
+      "observer": "Actual run_scored disassemblies invoke original scored make_tree/check_tree classes directly. Optimized interval invokes original make_tree42/check_tree60 with tree_root observer between, iterates until actual end and calls end_interval on normal/exception paths. Original scored class tree is a pinned compiler/runtime dependency, not copied source.",
+      "native_correlation": "Actual native JSONL/proofs cover fresh full object graphs at n0/7/9, every temporary interval iteration, identity/leaf/node reconciliation, retained root before/after churn and actual worker interval/thread/start/end/join order. Observer receives returned original nodes and reads their real object-array slots; no separate observed creator/checker exists."
+    },
+    "pidigits-compact": {
+      "original": "Actual _main performs BigInteger.divide111 and129, stores quotient slots12/13, loads both and calls BigInteger.equals144 before ifeq147 selecting recurrence/output. Numerators and denominator originate actual current recurrence operands.",
+      "observer": "Actual run_scored performs divide108/123, records actual operands/quotients via pi_step156, then loads both and equals170 before ifeq173. Instrumentation does not replace either quotient or recurrence.",
+      "native_correlation": "Actual97-digit work proof reconciles every recorded numerator3/numerator4/denominator/quotient3/quotient4 with accepted and rejected recurrence, and zero-digit work requires no extraction."
+    },
+    "pidigits-optimized": {
+      "original": "Actual _main performs BigInteger.divide163 and181, stores quotient slots13/14, loads both and equals196 before ifeq199. Both independent arithmetic numerators and shared current denominator feed these calls.",
+      "observer": "Actual run_scored performs divide160/175, records actual operands/quotients via pi_step210, then loads both and equals224 before ifeq227. Both extraction divisions remain before the branch.",
+      "native_correlation": "Actual97-digit and zero-digit proofs preserve same full recurrence/input/output/command/runtime identities as compact under independent exact source bindings."
+    },
+    "knucleotide-optimized": {
+      "original": "Actual histogram invokes new java/util/HashMap0/constructor4 before rolling loop29; compares each position to String.length35, forms complete key using current char/code/shift/mask, eligibility at75..84, getOrDefault108/inc114/put120. Index increments132 and goto29 cover all positions. Actual created map slot2 is returned151..154 after loop. Width is actual argument and exact authored seven-width vector drives all seven tasks.",
+      "observer": "Outer histogram_raw allocates actual HashMap0/constructor4 and passes that same map through map_start9; map_write calls its pinned generated callback. Additional nested callback disassembly will corroborate actual put effect, while already passed native complete map/window/growth/ownership proofs reconcile the actual produced same-map content.",
+      "native_correlation": "Actual complete seven map inventories, every window/update, backing-table growth observations, private worker/thread map ownership, joins and parent-read chronology passed."
+    },
+    "knucleotide-compact": {
+      "saved_outer": "Actual original histogram computes windows=max0(length-width+1), constructs actual generated histogram$fn__159 at20 with width/sequence/windows, invokes it39 and calls persistent!44 on its returned transient map. Observer outer similarly invokes histogram_raw$fn__250 before persistent!44.",
+      "remaining_actual_evidence": "The actual nested classes contain the allocation/transient and window-update loop. Additional original fn__159, observer fn__250, optimized observer fn__252 and pinned PersistentHashMap/TransientHashMap disassemblies are queued once by root13610; no original/observer source or class is rebuilt/mutated.",
+      "native_correlation": "Actual complete seven transient map inventories, every window/update, backing structure growth, map ownership and parent-read chronology already passed. The nested scored bytecode gate remains pending solely the actual additional disassembly review."
+    }
+  },
+  "common_mutex_review": "Read-only saved bytecode/session26442 ran under the common mutex and verified actual report and all selected evidence/stdout pins. Actual native bounded FD proof matches original JVM PID/command/held duplicate descriptor/inode/lsof bytes. Observers use separate namespaces, class inputs and fresh output/environment fingerprints; actual original scored tree classes remain pinned and invoked.",
+  "unresolved": [
+    "Await root13610 actual terminal receipt and inspect compact K generated loop plus vendor transient storage and observed write callback disassemblies before final bytecode admission."
+  ],
+  "canonical_LOC_admitted": false,
+  "chart_admission": false,
+  "original_native_report_mutated": false
+}

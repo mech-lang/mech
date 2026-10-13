@@ -1,0 +1,41 @@
+{
+  "status": "passed",
+  "actual_common_mutex_held": true,
+  "inherited_common_mutex": true,
+  "suite": "proof-reuse",
+  "expected_ids": [
+    "test_proof_reuse_v7.ExactProofReuse.test_all_seven_exact_profiles_and_44_cases",
+    "test_proof_reuse_v7.ExactProofReuse.test_false_missing_nonliteral_qualification_rejected",
+    "test_proof_reuse_v7.ExactProofReuse.test_native_command_mismatch_rejected",
+    "test_proof_reuse_v7.ExactProofReuse.test_duplicate_or_missing_case_rejected",
+    "test_proof_reuse_v7.ExactProofReuse.test_failed_source_attempt_not_reused",
+    "test_proof_reuse_v7.ExactProofReuse.test_environment_or_memory_failure_not_reused"
+  ],
+  "discovered_ids": [
+    "test_proof_reuse_v7.ExactProofReuse.test_all_seven_exact_profiles_and_44_cases",
+    "test_proof_reuse_v7.ExactProofReuse.test_duplicate_or_missing_case_rejected",
+    "test_proof_reuse_v7.ExactProofReuse.test_environment_or_memory_failure_not_reused",
+    "test_proof_reuse_v7.ExactProofReuse.test_failed_source_attempt_not_reused",
+    "test_proof_reuse_v7.ExactProofReuse.test_false_missing_nonliteral_qualification_rejected",
+    "test_proof_reuse_v7.ExactProofReuse.test_native_command_mismatch_rejected"
+  ],
+  "started_ids": [
+    "test_proof_reuse_v7.ExactProofReuse.test_all_seven_exact_profiles_and_44_cases",
+    "test_proof_reuse_v7.ExactProofReuse.test_duplicate_or_missing_case_rejected",
+    "test_proof_reuse_v7.ExactProofReuse.test_environment_or_memory_failure_not_reused",
+    "test_proof_reuse_v7.ExactProofReuse.test_failed_source_attempt_not_reused",
+    "test_proof_reuse_v7.ExactProofReuse.test_false_missing_nonliteral_qualification_rejected",
+    "test_proof_reuse_v7.ExactProofReuse.test_native_command_mismatch_rejected"
+  ],
+  "expected_count": 6,
+  "tests_run": 6,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "expected_failures": 0,
+  "unexpected_successes": 0,
+  "raw_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/proposal-seals/private-v7/fixtures/proof-reuse/proof-reuse.log",
+  "raw_log_sha256": "0390026d961f21d87622adcd8481e1312eeafdbf7ee5820c1106ce081156f463",
+  "native_probes": 0,
+  "chart_admission": false
+}

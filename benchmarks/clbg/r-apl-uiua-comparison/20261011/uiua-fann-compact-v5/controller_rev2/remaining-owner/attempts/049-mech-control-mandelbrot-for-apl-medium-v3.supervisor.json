@@ -1,0 +1,88 @@
+{
+  "key": "mandelbrot:mech-control-for-apl-medium-v3",
+  "id": "mech-control-mandelbrot-for-apl-medium-v3",
+  "benchmark": "mandelbrot",
+  "language": "mech",
+  "source_sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-after",
+    "16000",
+    "8"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "runtime_environment": {},
+  "execution_fingerprint": "{\"binary_sha256\": \"7ed5c8aad032b92c36c92fb6b0f7183e3fdbedc9ea5b7762d10c0a2c6490cddd\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-after\", \"{n}\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90\", \"support\": {\"mandelbrot/mandelbrot-compact-program.mec\": \"75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169\", \"mandelbrot/mandelbrot-program.mec\": \"c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90\"}}",
+  "started_at": "2026-10-12T15:56:35.226836+00:00",
+  "workload_n": 16000,
+  "full_workload": true,
+  "timeout_seconds": 14400,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.474527625,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 32000015,
+  "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+  "validation": {
+    "bytes": 32000015,
+    "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+    "reference_match": true
+  },
+  "finished_at": "2026-10-12T15:56:35.926558+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true,
+  "round": 2,
+  "attempt": 49,
+  "sampler_wait_status": 0,
+  "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining-owner/attempts/049-mech-control-mandelbrot-for-apl-medium-v3.json",
+  "supervised_native_group": {
+    "type": "native-group-started",
+    "pid": 72254,
+    "pgid": 72254,
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-after",
+      "16000",
+      "8"
+    ],
+    "inherited_common_mutex": true
+  },
+  "supervisor_remaining_members": [],
+  "qualification_checks": {
+    "sampler_exited_normally": true,
+    "authoritative_native_group_received": true,
+    "native_inherited_common_mutex": true,
+    "native_exited_normally": true,
+    "no_execution_error": true,
+    "no_wrapper_integrity_error": true,
+    "no_resource_violation": true,
+    "no_resource_monitor_errors": true,
+    "no_compiler_power_monitor_errors": true,
+    "no_monitor_finish_error": true,
+    "no_execute_cleanup_error": true,
+    "no_remaining_execute_group": true,
+    "no_supervisor_cleanup": true,
+    "no_supervisor_remaining_group": true,
+    "valid_environment": true,
+    "actual_full_workload": true,
+    "exact_command_and_group": true,
+    "complete_output_reference_match": true,
+    "complete_output_bytes_and_hash": true,
+    "pins_unchanged": true
+  },
+  "qualified": true,
+  "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining-owner/attempts/049-mech-control-mandelbrot-for-apl-medium-v3.supervisor.json"
+}

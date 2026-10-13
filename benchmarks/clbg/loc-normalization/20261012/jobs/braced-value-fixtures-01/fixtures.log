@@ -1,0 +1,187 @@
+test_anonymous_grammar_does_not_capture_ordinary_array_data (test_normalizer.NormalizationFixtures.test_anonymous_grammar_does_not_capture_ordinary_array_data) ... ok
+test_bom_before_comment_is_encoding_metadata (test_normalizer.NormalizationFixtures.test_bom_before_comment_is_encoding_metadata) ... ok
+test_c_compound_literals_are_data (test_normalizer.NormalizationFixtures.test_c_compound_literals_are_data) ... ok
+test_c_for_header_semicolons_are_structural (test_normalizer.NormalizationFixtures.test_c_for_header_semicolons_are_structural) ... ok
+test_c_multiple_declaration_bindings (test_normalizer.NormalizationFixtures.test_c_multiple_declaration_bindings) ... ok
+test_c_nested_assignment_is_executable (test_normalizer.NormalizationFixtures.test_c_nested_assignment_is_executable) ... ok
+test_c_signed_and_unsigned_shorthand_declarators (test_normalizer.NormalizationFixtures.test_c_signed_and_unsigned_shorthand_declarators) ... ok
+test_callback_real_following_composition_is_reviewed (test_normalizer.NormalizationFixtures.test_callback_real_following_composition_is_reviewed) ... ok
+test_callback_structural_suffix_can_wrap_without_new_statement (test_normalizer.NormalizationFixtures.test_callback_structural_suffix_can_wrap_without_new_statement) ... ok
+test_chapel_multiline_task_intent_is_one_loop_header (test_normalizer.NormalizationFixtures.test_chapel_multiline_task_intent_is_one_loop_header) ... ok
+test_chapel_named_constructor_and_call_arguments_are_structural (test_normalizer.NormalizationFixtures.test_chapel_named_constructor_and_call_arguments_are_structural) ... ok
+test_chapel_proc_do_defaults_are_structural_and_body_separate (test_normalizer.NormalizationFixtures.test_chapel_proc_do_defaults_are_structural_and_body_separate) ... ok
+test_chapel_repeat_condition_is_a_written_header (test_normalizer.NormalizationFixtures.test_chapel_repeat_condition_is_a_written_header) ... ok
+test_comments_and_strings_do_not_add_units (test_normalizer.NormalizationFixtures.test_comments_and_strings_do_not_add_units) ... ok
+test_compiler_vector_and_wide_integer_declarators (test_normalizer.NormalizationFixtures.test_compiler_vector_and_wide_integer_declarators) ... ok
+test_cpp_capture_without_parameter_parentheses_is_executable (test_normalizer.NormalizationFixtures.test_cpp_capture_without_parameter_parentheses_is_executable) ... ok
+test_cpp_complex_capture_is_gated_without_erasing_known_body (test_normalizer.NormalizationFixtures.test_cpp_complex_capture_is_gated_without_erasing_known_body) ... ok
+test_cpp_lambda_mutable_noexcept_and_named_return_type (test_normalizer.NormalizationFixtures.test_cpp_lambda_mutable_noexcept_and_named_return_type) ... ok
+test_declarator_cleanup_with_newline_and_spaces (test_normalizer.NormalizationFixtures.test_declarator_cleanup_with_newline_and_spaces) ... ok
+test_existing_closing_lines_are_retained (test_normalizer.NormalizationFixtures.test_existing_closing_lines_are_retained) ... ok
+test_explicit_callback_body_resets_outer_argument_scope (test_normalizer.NormalizationFixtures.test_explicit_callback_body_resets_outer_argument_scope) ... ok
+test_function_and_combined_branches (test_normalizer.NormalizationFixtures.test_function_and_combined_branches) ... ok
+test_go_bare_block_does_not_consume_prior_multiple_binding (test_normalizer.NormalizationFixtures.test_go_bare_block_does_not_consume_prior_multiple_binding) ... ok
+test_go_bare_struct_and_interface_braces_are_type_data (test_normalizer.NormalizationFixtures.test_go_bare_struct_and_interface_braces_are_type_data) ... ok
+test_go_completed_type_declaration_can_precede_separate_bare_block (test_normalizer.NormalizationFixtures.test_go_completed_type_declaration_can_precede_separate_bare_block) ... ok
+test_go_empty_anonymous_return_type_precedes_executable_function_body (test_normalizer.NormalizationFixtures.test_go_empty_anonymous_return_type_precedes_executable_function_body) ... ok
+test_go_if_init_semicolon_belongs_to_control_header (test_normalizer.NormalizationFixtures.test_go_if_init_semicolon_belongs_to_control_header) ... ok
+test_go_multi_return_and_independent_initializers (test_normalizer.NormalizationFixtures.test_go_multi_return_and_independent_initializers) ... ok
+test_inline_and_expanded_control_spellings_agree (test_normalizer.NormalizationFixtures.test_inline_and_expanded_control_spellings_agree) ... ok
+test_java_implements_class_body_is_a_declaration_scope (test_normalizer.NormalizationFixtures.test_java_implements_class_body_is_a_declaration_scope) ... ok
+test_java_static_initializer_header_is_format_independent (test_normalizer.NormalizationFixtures.test_java_static_initializer_header_is_format_independent) ... ok
+test_java_throws_signature_body_is_executable (test_normalizer.NormalizationFixtures.test_java_throws_signature_body_is_executable) ... ok
+test_js_declarations_and_object_destructuring (test_normalizer.NormalizationFixtures.test_js_declarations_and_object_destructuring) ... ok
+test_js_destructured_parameters_remain_data (test_normalizer.NormalizationFixtures.test_js_destructured_parameters_remain_data) ... ok
+test_julia_comment_like_literal_and_adjoint (test_normalizer.NormalizationFixtures.test_julia_comment_like_literal_and_adjoint) ... ok
+test_julia_expression_blocks_keep_ends_tracked_and_reviewed (test_normalizer.NormalizationFixtures.test_julia_expression_blocks_keep_ends_tracked_and_reviewed) ... ok
+test_julia_keyword_arguments_are_structural (test_normalizer.NormalizationFixtures.test_julia_keyword_arguments_are_structural) ... ok
+test_julia_loop_macro_symbol_option_is_one_header (test_normalizer.NormalizationFixtures.test_julia_loop_macro_symbol_option_is_one_header) ... ok
+test_julia_matrix_rows_are_structural (test_normalizer.NormalizationFixtures.test_julia_matrix_rows_are_structural) ... ok
+test_julia_nested_comments (test_normalizer.NormalizationFixtures.test_julia_nested_comments) ... ok
+test_julia_raw_regex_escapes_are_literal_text (test_normalizer.NormalizationFixtures.test_julia_raw_regex_escapes_are_literal_text) ... ok
+test_julia_typed_keyword_functions_have_explicit_body_boundary (test_normalizer.NormalizationFixtures.test_julia_typed_keyword_functions_have_explicit_body_boundary) ... ok
+test_known_julia_comment_and_chains (test_normalizer.NormalizationFixtures.test_known_julia_comment_and_chains) ... ok
+test_known_legacy_lua_source (test_normalizer.NormalizationFixtures.test_known_legacy_lua_source) ... ok
+test_known_r_nbody_physical_and_canonical_agree (test_normalizer.NormalizationFixtures.test_known_r_nbody_physical_and_canonical_agree) ... ok
+test_lexical_comment_only_eof_has_no_virtual_source_line (test_normalizer.NormalizationFixtures.test_lexical_comment_only_eof_has_no_virtual_source_line) ... ok
+test_lexical_eof_comment_retains_existing_crlf_offsets (test_normalizer.NormalizationFixtures.test_lexical_eof_comment_retains_existing_crlf_offsets) ... ok
+test_lexical_eof_line_comments_match_newline_terminated_comments (test_normalizer.NormalizationFixtures.test_lexical_eof_line_comments_match_newline_terminated_comments) ... ok
+test_lua_complex_producers_and_mismatched_rhs_remain_gated (test_normalizer.NormalizationFixtures.test_lua_complex_producers_and_mismatched_rhs_remain_gated) ... ok
+test_lua_explicit_binding_arity_and_go_comma_ok_are_preserved (test_normalizer.NormalizationFixtures.test_lua_explicit_binding_arity_and_go_comma_ok_are_preserved) ... ok
+test_lua_multiple_independent_locals (test_normalizer.NormalizationFixtures.test_lua_multiple_independent_locals) ... ok
+test_lua_only_proven_unparenthesized_producers_are_tuple_bindings (test_normalizer.NormalizationFixtures.test_lua_only_proven_unparenthesized_producers_are_tuple_bindings) ... ok
+test_lua_parentheses_suppress_multiple_returns (test_normalizer.NormalizationFixtures.test_lua_parentheses_suppress_multiple_returns) ... ok
+test_lua_single_producer_is_destructuring (test_normalizer.NormalizationFixtures.test_lua_single_producer_is_destructuring) ... ok
+test_lua_single_values_bind_implicit_nil_targets_independently (test_normalizer.NormalizationFixtures.test_lua_single_values_bind_implicit_nil_targets_independently) ... ok
+test_mask_preserves_offsets_and_crlf (test_normalizer.NormalizationFixtures.test_mask_preserves_offsets_and_crlf) ... ok
+test_mech_expression_and_explicit_block_functions (test_normalizer.NormalizationFixtures.test_mech_expression_and_explicit_block_functions) ... ok
+test_mixed_statements_and_chained_bindings (test_normalizer.NormalizationFixtures.test_mixed_statements_and_chained_bindings) ... ok
+test_named_c_aggregate_pointer_declarators_are_independent (test_normalizer.NormalizationFixtures.test_named_c_aggregate_pointer_declarators_are_independent) ... ok
+test_named_chapel_function_is_not_a_lambda (test_normalizer.NormalizationFixtures.test_named_chapel_function_is_not_a_lambda) ... ok
+test_named_go_struct_fields_are_independent_declarations (test_normalizer.NormalizationFixtures.test_named_go_struct_fields_are_independent_declarations) ... ok
+test_openmp_pragma_following_scope_is_executable (test_normalizer.NormalizationFixtures.test_openmp_pragma_following_scope_is_executable) ... ok
+test_ordinary_bare_blocks_have_no_fabricated_header (test_normalizer.NormalizationFixtures.test_ordinary_bare_blocks_have_no_fabricated_header) ... ok
+test_other_calls_and_container_fields_are_not_declarations (test_normalizer.NormalizationFixtures.test_other_calls_and_container_fields_are_not_declarations) ... ok
+test_perl_actual_regex_forms_stay_literal (test_normalizer.NormalizationFixtures.test_perl_actual_regex_forms_stay_literal) ... ok
+test_perl_adjacent_sigil_subscripts_are_data (test_normalizer.NormalizationFixtures.test_perl_adjacent_sigil_subscripts_are_data) ... ok
+test_perl_assigned_tuple_producer_stays_one_binding (test_normalizer.NormalizationFixtures.test_perl_assigned_tuple_producer_stays_one_binding) ... ok
+test_perl_dereference_braces_stay_data_after_control_words (test_normalizer.NormalizationFixtures.test_perl_dereference_braces_stay_data_after_control_words) ... ok
+test_perl_modern_postdereference_has_specific_operator_evidence (test_normalizer.NormalizationFixtures.test_perl_modern_postdereference_has_specific_operator_evidence) ... ok
+test_perl_numeric_division_is_not_masked_as_regex (test_normalizer.NormalizationFixtures.test_perl_numeric_division_is_not_masked_as_regex) ... ok
+test_perl_real_control_and_subroutine_blocks_remain_executable (test_normalizer.NormalizationFixtures.test_perl_real_control_and_subroutine_blocks_remain_executable) ... ok
+test_perl_uninitialized_declaration_names_are_independent (test_normalizer.NormalizationFixtures.test_perl_uninitialized_declaration_names_are_independent) ... ok
+test_php_anonymous_class_body_is_a_declaration_scope (test_normalizer.NormalizationFixtures.test_php_anonymous_class_body_is_a_declaration_scope) ... ok
+test_php_mixed_chained_and_uninitialized_declarators (test_normalizer.NormalizationFixtures.test_php_mixed_chained_and_uninitialized_declarators) ... ok
+test_php_property_and_static_names_are_independent (test_normalizer.NormalizationFixtures.test_php_property_and_static_names_are_independent) ... ok
+test_php_seven_chained_bindings_are_seven_units (test_normalizer.NormalizationFixtures.test_php_seven_chained_bindings_are_seven_units) ... ok
+test_python_chains_and_tuple_destructuring (test_normalizer.NormalizationFixtures.test_python_chains_and_tuple_destructuring) ... ok
+test_python_keyword_arguments_are_structural (test_normalizer.NormalizationFixtures.test_python_keyword_arguments_are_structural) ... ok
+test_python_soft_keywords_and_explicit_header_continuation (test_normalizer.NormalizationFixtures.test_python_soft_keywords_and_explicit_header_continuation) ... ok
+test_r_bindings_and_named_arguments (test_normalizer.NormalizationFixtures.test_r_bindings_and_named_arguments) ... ok
+test_ruby_assignment_if_tracks_stack_but_keeps_expression_review (test_normalizer.NormalizationFixtures.test_ruby_assignment_if_tracks_stack_but_keeps_expression_review) ... ok
+test_ruby_hash_literals_are_data_but_explicit_callbacks_are_blocks (test_normalizer.NormalizationFixtures.test_ruby_hash_literals_are_data_but_explicit_callbacks_are_blocks) ... ok
+test_ruby_nested_callback_header_excludes_outer_parameters (test_normalizer.NormalizationFixtures.test_ruby_nested_callback_header_excludes_outer_parameters) ... ok
+test_ruby_result_method_keeps_preceding_keyword_close (test_normalizer.NormalizationFixtures.test_ruby_result_method_keeps_preceding_keyword_close) ... ok
+test_rust_array_semicolon_is_structural (test_normalizer.NormalizationFixtures.test_rust_array_semicolon_is_structural) ... ok
+test_rust_complex_parameter_patterns_remain_gated (test_normalizer.NormalizationFixtures.test_rust_complex_parameter_patterns_remain_gated) ... ok
+test_rust_destructuring_is_one_binding (test_normalizer.NormalizationFixtures.test_rust_destructuring_is_one_binding) ... ok
+test_rust_expression_closures_do_not_gate_enclosing_iterator_body (test_normalizer.NormalizationFixtures.test_rust_expression_closures_do_not_gate_enclosing_iterator_body) ... ok
+test_rust_generic_struct_body_and_c_anonymous_union (test_normalizer.NormalizationFixtures.test_rust_generic_struct_body_and_c_anonymous_union) ... ok
+test_rust_meaningful_attribute_and_function_are_separate_units (test_normalizer.NormalizationFixtures.test_rust_meaningful_attribute_and_function_are_separate_units) ... ok
+test_rust_multiline_for_iterator_has_executable_body (test_normalizer.NormalizationFixtures.test_rust_multiline_for_iterator_has_executable_body) ... ok
+test_rust_multiline_named_function_signature_is_one_header (test_normalizer.NormalizationFixtures.test_rust_multiline_named_function_signature_is_one_header) ... ok
+test_rust_named_signature_proof_rejects_constructor_and_macro (test_normalizer.NormalizationFixtures.test_rust_named_signature_proof_rejects_constructor_and_macro) ... ok
+test_rust_parameter_closure_body_is_executable (test_normalizer.NormalizationFixtures.test_rust_parameter_closure_body_is_executable) ... FAIL
+test_semantic_compiler_pragma_retained (test_normalizer.NormalizationFixtures.test_semantic_compiler_pragma_retained) ... ok
+test_simple_statement_modifiers_have_header_body_without_invented_close (test_normalizer.NormalizationFixtures.test_simple_statement_modifiers_have_header_body_without_invented_close) ... ok
+test_typed_rust_and_go_bodies_remain_executable (test_normalizer.NormalizationFixtures.test_typed_rust_and_go_bodies_remain_executable) ... ok
+test_unknown_lowercase_type_does_not_guess_multiplication (test_normalizer.NormalizationFixtures.test_unknown_lowercase_type_does_not_guess_multiplication) ... ok
+test_chains_and_uninitialized_declarators_add (test_foreign_braced.ForeignBracedProposalFixtures.test_chains_and_uninitialized_declarators_add) ... ok
+test_complex_and_unknown_syntax_is_pending (test_foreign_braced.ForeignBracedProposalFixtures.test_complex_and_unknown_syntax_is_pending) ... ok
+test_csharp_comments_char_and_verbatim_keep_offsets (test_foreign_braced.ForeignBracedProposalFixtures.test_csharp_comments_char_and_verbatim_keep_offsets) ... ok
+test_csharp_uninitialized_fields_packed_expanded (test_foreign_braced.ForeignBracedProposalFixtures.test_csharp_uninitialized_fields_packed_expanded) ... ok
+test_dart_arrow_returns_map_not_executable_block (test_foreign_braced.ForeignBracedProposalFixtures.test_dart_arrow_returns_map_not_executable_block) ... ok
+test_dart_named_default_parameter_braces_are_formal_data (test_foreign_braced.ForeignBracedProposalFixtures.test_dart_named_default_parameter_braces_are_formal_data) ... ok
+test_dart_nested_comments_raw_and_triple_strings (test_foreign_braced.ForeignBracedProposalFixtures.test_dart_nested_comments_raw_and_triple_strings) ... ok
+test_dart_uninitialized_seven_fields (test_foreign_braced.ForeignBracedProposalFixtures.test_dart_uninitialized_seven_fields) ... ok
+test_data_wrapping_is_retained (test_foreign_braced.ForeignBracedProposalFixtures.test_data_wrapping_is_retained) ... ok
+test_explicit_csharp_block_callback (test_foreign_braced.ForeignBracedProposalFixtures.test_explicit_csharp_block_callback) ... ok
+test_explicit_dart_block_callback (test_foreign_braced.ForeignBracedProposalFixtures.test_explicit_dart_block_callback) ... ok
+test_expression_lambdas_are_expression_forms (test_foreign_braced.ForeignBracedProposalFixtures.test_expression_lambdas_are_expression_forms) ... ok
+test_for_header_parameters_do_not_become_bindings (test_foreign_braced.ForeignBracedProposalFixtures.test_for_header_parameters_do_not_become_bindings) ... ok
+test_formal_defaults_in_prototypes_are_not_body_assignments (test_foreign_braced.ForeignBracedProposalFixtures.test_formal_defaults_in_prototypes_are_not_body_assignments) ... FAIL
+test_generic_declared_type_commas_are_structural (test_foreign_braced.ForeignBracedProposalFixtures.test_generic_declared_type_commas_are_structural) ... ok
+test_inline_unbraced_controls (test_foreign_braced.ForeignBracedProposalFixtures.test_inline_unbraced_controls) ... ok
+test_interpolation_is_not_silently_hidden (test_foreign_braced.ForeignBracedProposalFixtures.test_interpolation_is_not_silently_hidden) ... ok
+test_named_args_tuple_destructuring_and_values (test_foreign_braced.ForeignBracedProposalFixtures.test_named_args_tuple_destructuring_and_values) ... ok
+test_no_extra_own_line_executable_open (test_foreign_braced.ForeignBracedProposalFixtures.test_no_extra_own_line_executable_open) ... ok
+test_object_initializers_are_data (test_foreign_braced.ForeignBracedProposalFixtures.test_object_initializers_are_data) ... ok
+test_unsupported_grammar_not_aliased (test_foreign_braced.ForeignBracedProposalFixtures.test_unsupported_grammar_not_aliased) ... ok
+test_control_headers_protect_iteration_work (test_zig_odin.ZigOdinFixtures.test_control_headers_protect_iteration_work) ... ok
+test_data_constructors_do_not_create_executable_close (test_zig_odin.ZigOdinFixtures.test_data_constructors_do_not_create_executable_close) ... ok
+test_meaningful_odin_annotation_is_separate (test_zig_odin.ZigOdinFixtures.test_meaningful_odin_annotation_is_separate) ... ok
+test_named_function_headers_and_bodies (test_zig_odin.ZigOdinFixtures.test_named_function_headers_and_bodies) ... ok
+test_odin_multiple_binding_vs_multiple_return (test_zig_odin.ZigOdinFixtures.test_odin_multiple_binding_vs_multiple_return) ... ok
+test_odin_programming_literal_mask_and_nested_comments (test_zig_odin.ZigOdinFixtures.test_odin_programming_literal_mask_and_nested_comments) ... ok
+test_odin_switch_arm_headers_and_bodies (test_zig_odin.ZigOdinFixtures.test_odin_switch_arm_headers_and_bodies) ... ok
+test_packed_branches (test_zig_odin.ZigOdinFixtures.test_packed_branches) ... ok
+test_type_fields_vs_formals (test_zig_odin.ZigOdinFixtures.test_type_fields_vs_formals) ... ok
+test_value_switch_is_gated_not_arrow_assignment (test_zig_odin.ZigOdinFixtures.test_value_switch_is_gated_not_arrow_assignment) ... ok
+test_guards_macros_and_literal_wrapping_stay_gated (test_value_forms.ValueFormFixtures.test_guards_macros_and_literal_wrapping_stay_gated) ... ok
+test_julia_and_r_argument_value_conditionals (test_value_forms.ValueFormFixtures.test_julia_and_r_argument_value_conditionals) ... ok
+test_julia_binding_value_if_packed_and_expanded (test_value_forms.ValueFormFixtures.test_julia_binding_value_if_packed_and_expanded) ... ok
+test_julia_expression_only_function_tail (test_value_forms.ValueFormFixtures.test_julia_expression_only_function_tail) ... ok
+test_julia_imperative_and_distributed_loops_are_not_values (test_value_forms.ValueFormFixtures.test_julia_imperative_and_distributed_loops_are_not_values) ... ok
+test_nested_imperative_callbacks_are_not_hidden (test_value_forms.ValueFormFixtures.test_nested_imperative_callbacks_are_not_hidden) ... ok
+test_opaque_owns_all_covered_rows_without_owning_outer_binding (test_value_forms.ValueFormFixtures.test_opaque_owns_all_covered_rows_without_owning_outer_binding) ... ok
+test_outer_julia_arguments_do_not_hide_branch_bindings (test_value_forms.ValueFormFixtures.test_outer_julia_arguments_do_not_hide_branch_bindings) ... ok
+test_r_binding_value_if_packed_and_expanded (test_value_forms.ValueFormFixtures.test_r_binding_value_if_packed_and_expanded) ... ok
+test_r_expression_function_conditionals (test_value_forms.ValueFormFixtures.test_r_expression_function_conditionals) ... ok
+test_r_imperative_branches_and_statement_controls_remain (test_value_forms.ValueFormFixtures.test_r_imperative_branches_and_statement_controls_remain) ... ok
+test_recorded_original_value_forms_are_generic_fixtures (test_value_forms.ValueFormFixtures.test_recorded_original_value_forms_are_generic_fixtures) ... ok
+test_rust_binding_value_if_packed_and_expanded (test_value_forms.ValueFormFixtures.test_rust_binding_value_if_packed_and_expanded) ... ok
+test_rust_function_tail_value_if (test_value_forms.ValueFormFixtures.test_rust_function_tail_value_if) ... ok
+test_rust_imperative_result_blocks_remain_expanded (test_value_forms.ValueFormFixtures.test_rust_imperative_result_blocks_remain_expanded) ... ok
+test_rust_match_patterns_are_structural (test_value_forms.ValueFormFixtures.test_rust_match_patterns_are_structural) ... ok
+test_rust_return_and_argument_value_if (test_value_forms.ValueFormFixtures.test_rust_return_and_argument_value_if) ... ok
+test_unproven_statement_position_is_not_automatically_opaque (test_value_forms.ValueFormFixtures.test_unproven_statement_position_is_not_automatically_opaque) ... ok
+
+======================================================================
+FAIL: test_rust_parameter_closure_body_is_executable (test_normalizer.NormalizationFixtures.test_rust_parameter_closure_body_is_executable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/braced-value-fixtures-01/snapshot/test_normalizer.py", line 452, in test_rust_parameter_closure_body_is_executable
+    row = self.count(source, 'rust', 5)
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/braced-value-fixtures-01/snapshot/test_normalizer.py", line 13, in count
+    self.assertEqual(row["normalized_loc"], expected, row)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 4 != 5 : {'rule_version': 'canonical-source-units-20261012-approved-rule-v2', 'physical_loc': 1, 'normalized_loc': 4, 'expansions': [{'line': 1, 'extra_lines': 3, 'units': 4, 'original': 'run(|x,y|{a=1;b=2;});', 'events': [{'start_column': 11, 'end_column': 15, 'units': 1, 'assignments': [{'column': 12, 'operator': '='}], 'declaration_bindings': 0, 'reason': 'independent-statement-and-chained-bindings'}, {'start_column': 15, 'end_column': 19, 'units': 1, 'assignments': [{'column': 16, 'operator': '='}], 'declaration_bindings': 0, 'reason': 'independent-statement-and-chained-bindings'}], 'canonical_events': [{'kind': 'header', 'start': 0, 'end': 9, 'units': 1, 'scope': 'braced'}, {'kind': 'open', 'start': 9, 'end': 10, 'units': 0, 'scope': 'braced'}, {'kind': 'close', 'start': 18, 'end': 19, 'units': 1, 'scope': 'braced'}, {'kind': 'structural-suffix', 'start': 19, 'end': 21, 'units': 0, 'scope': 'callback-argument-data'}], 'reason': 'Canonical header/open/close units and independent body bindings; retain literal wrapping.'}], 'diagnostics': [], 'canonical_events': [{'kind': 'header', 'start': 0, 'end': 9, 'units': 1, 'scope': 'braced'}, {'kind': 'open', 'start': 9, 'end': 10, 'units': 0, 'scope': 'braced'}, {'kind': 'close', 'start': 18, 'end': 19, 'units': 1, 'scope': 'braced'}, {'kind': 'structural-suffix', 'start': 19, 'end': 21, 'units': 0, 'scope': 'callback-argument-data'}], 'lexical_adjustments': [], 'review_status': 'candidate-parser-pass'}
+
+======================================================================
+FAIL: test_formal_defaults_in_prototypes_are_not_body_assignments (test_foreign_braced.ForeignBracedProposalFixtures.test_formal_defaults_in_prototypes_are_not_body_assignments)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/braced-value-fixtures-01/snapshot/test_foreign_braced.py", line 80, in test_formal_defaults_in_prototypes_are_not_body_assignments
+    self.assert_units('abstract class C { public abstract int F(int x=1,int y=2); }','csharp',3)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/braced-value-fixtures-01/snapshot/test_foreign_braced.py", line 15, in assert_units
+    self.assertEqual(metric['diagnostics'],[],metric['diagnostics'])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [{'kind': 'foreign-complex-declaration-rev[136 chars] 19}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'kind': 'foreign-complex-declaration-review', 'message': 'Possible packed declaration has an unresolved type/initializer/continuation form.', 'offset': 18, 'line': 1, 'column': 19}
+
++ []
+- [{'column': 19,
+-   'kind': 'foreign-complex-declaration-review',
+-   'line': 1,
+-   'message': 'Possible packed declaration has an unresolved '
+-              'type/initializer/continuation form.',
+-   'offset': 18}] : [{'kind': 'foreign-complex-declaration-review', 'message': 'Possible packed declaration has an unresolved type/initializer/continuation form.', 'offset': 18, 'line': 1, 'column': 19}]
+
+----------------------------------------------------------------------
+Ran 147 tests in 0.172s
+
+FAILED (failures=2)

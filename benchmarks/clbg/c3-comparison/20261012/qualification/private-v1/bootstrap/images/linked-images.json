@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/usr/bin/otool",
+    "-L",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/c3c"
+  ],
+  "started_at": "2026-10-12T23:36:48.452377+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 84549,
+  "identity": {
+    "pid": 84549,
+    "process_listing": "Mon Oct 12 19:36:48 2026     /usr/bin/otool -L /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/c3c"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-12T23:36:48.469383+00:00",
+  "final_exit_status": 0
+}

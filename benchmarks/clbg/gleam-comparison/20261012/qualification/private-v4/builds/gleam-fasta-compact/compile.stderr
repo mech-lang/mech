@@ -1,0 +1,8 @@
+warning: Unused variable
+   ┌─ /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-fasta-compact/src/benchmark.gleam:18:14
+   │
+18 │     [#(base, bound)] -> base
+   │              ^^^^^ This variable is never used
+
+Hint: You can ignore it with an underscore: `_bound`.
+

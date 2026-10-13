@@ -1,0 +1,12 @@
+WAIT LOCK: V preparation production-builder-v3 binarytrees
+BUILD v-binarytrees-compact-input-v2
+BUILD v-binarytrees-optimized-input-v2
+PROBE v-binarytrees-compact-input-v2 size-0
+PROBE v-binarytrees-compact-input-v2 size-4
+PROBE v-binarytrees-compact-input-v2 size-7
+PROBE v-binarytrees-compact-input-v2 size-9
+PROBE v-binarytrees-optimized-input-v2 size-0
+PROBE v-binarytrees-optimized-input-v2 size-4
+PROBE v-binarytrees-optimized-input-v2 size-7
+PROBE v-binarytrees-optimized-input-v2 size-9
+PASS BOUNDED OUTPUTS binarytrees 10

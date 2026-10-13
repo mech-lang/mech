@@ -1,0 +1,20 @@
+WAIT LOCK: V preparation production-builder-v3 fannkuchredux
+BUILD v-fannkuchredux-compact-input-v2
+BUILD v-fannkuchredux-optimized-input-v2
+PROBE v-fannkuchredux-compact-input-v2 size-1
+PROBE v-fannkuchredux-compact-input-v2 size-2
+PROBE v-fannkuchredux-compact-input-v2 size-3
+PROBE v-fannkuchredux-compact-input-v2 size-4
+PROBE v-fannkuchredux-compact-input-v2 size-5
+PROBE v-fannkuchredux-compact-input-v2 size-6
+PROBE v-fannkuchredux-compact-input-v2 size-7
+PROBE v-fannkuchredux-compact-input-v2 size-8
+PROBE v-fannkuchredux-optimized-input-v2 size-1
+PROBE v-fannkuchredux-optimized-input-v2 size-2
+PROBE v-fannkuchredux-optimized-input-v2 size-3
+PROBE v-fannkuchredux-optimized-input-v2 size-4
+PROBE v-fannkuchredux-optimized-input-v2 size-5
+PROBE v-fannkuchredux-optimized-input-v2 size-6
+PROBE v-fannkuchredux-optimized-input-v2 size-7
+PROBE v-fannkuchredux-optimized-input-v2 size-8
+PASS BOUNDED OUTPUTS fannkuchredux 18

@@ -1,0 +1,72 @@
+{
+  "status": "authored-awaiting-root-static-review-unsealed",
+  "benchmark": "regexredux",
+  "revision": "regex-case-sensitive-v1",
+  "source_change": "Replace the variant-count regexpi call with regexp in two additive MATLAB applications; preserve all nine patterns, five ordered substitutions, input/output and compact/optimized storage choices.",
+  "original_cohort": "benchmarks/clbg/matlab-comparison/20261010",
+  "original_sources": [
+    "benchmarks/clbg/matlab-comparison/20261010/sources/regexredux_compact.m",
+    "benchmarks/clbg/matlab-comparison/20261010/sources/regexredux_optimized.m"
+  ],
+  "candidate_sources": [
+    "benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/sources/regexredux_compact.m",
+    "benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/sources/regexredux_optimized.m"
+  ],
+  "primary_semantic_sources": [
+    "https://www.mathworks.com/help/matlab/ref/regexp.html",
+    "https://www.mathworks.com/help/matlab/ref/regexpi.html",
+    "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/regexredux.html"
+  ],
+  "count_semantics": "Case-sensitive, all non-overlapping matches, one pattern at a time; existing case-sensitive regexprep operations remain ordered.",
+  "native_runtime": "/Applications/MATLAB_R2026b.app/bin/matlab",
+  "runtime_receipt_to_recheck": "benchmarks/clbg/matlab-comparison/20261010/results/builds.json",
+  "input_routing": "benchmarks/clbg/matlab-comparison/20261010/matlab-stdin.sh",
+  "runtime_flags": ["-licmode", "onlinelicensing", "-nodisplay", "-sd", "EXACT_NEW_SOURCE_DIRECTORY", "-batch", "EXACT_SOURCE_STEM()"],
+  "runtime_environment": "Preserve and verify the measured original MATLAB_JAVA setting and exact JVM/module pins from the original build receipt; do not silently select another JVM.",
+  "frozen_sampler": "benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining_owner.py",
+  "frozen_sampler_sha256": "55581d56609803243b3be264e6a2e37229be06789c22788bbf8cdb6ff6828544",
+  "common_timing_mutex": "/tmp/mech-clbg-timing.lock",
+  "bounded_cases": ["empty-input", "first-pattern-case", "all-nine-case", "ordered-substitutions", "canonical-small"],
+  "independent_oracle": "benchmarks/clbg/v-report-only/20261012/references.py::regexredux (case-sensitive byte regexes), after verifying its passed frozen fixture evidence under the common mutex",
+  "predicted_counterexample": {
+    "fixture": "fixtures/first-pattern-case.fasta",
+    "original_first_pattern_count": 2,
+    "corrected_and_Mech_first_pattern_count": 1,
+    "three_lengths": [23, 16, 16],
+    "executed": false
+  },
+  "bounded_native_plan": "Both corrected MATLAB forms and unchanged current Mech control must pass complete stdout for all five cases under the frozen sampler. Also observe both preserved original forms on the first-pattern counterexample as separate unscored discrepancy evidence; this does not alter old records.",
+  "full_native_plan": {
+    "candidate_forms": ["compact", "optimized"],
+    "fresh_matched_control": "regexredux control from benchmarks/clbg/r-apl-uiua-comparison/20261011/source-audit-r.json",
+    "canonical_workload_n": 5000000,
+    "canonical_stdin": "benchmarks/clbg/regexredux/.build/input5000000.txt",
+    "canonical_stdout": "benchmarks/clbg/regexredux/inputs/output-full.txt",
+    "samples_per_profile": 3,
+    "rotated_profile_rounds": [["compact", "optimized", "control"], ["optimized", "control", "compact"], ["control", "compact", "optimized"]],
+    "actual_native_processes": 9,
+    "maximum_compute_workers": 8,
+    "maximum_rss_mib": 10240,
+    "timeout_seconds": 14400,
+    "required_power_profile": {"source": "AC Power", "low_power_mode": 0},
+    "timing_boundary": "Fresh process startup, licensing/runtime initialization and first-use JIT, redirected input, all counts and substitutions, complete stdout and process-group shutdown; source sealing, bounded qualification, hashing and validation excluded."
+  },
+  "required_next_gates": [
+    "Root static review before any new hashing, native fixture or queued test",
+    "Exclusive common mutex while sealing exact source, runtime, wrapper, helper, oracle and policy pins",
+    "Root review of exact sealed proposal digest before bounded MATLAB or Mech execution",
+    "Reserve an inherited mutex descriptor distinct from fd3 before calling the frozen sampler; the stream launcher overwrites fd3 with stdin. Verify actual native group retention of that distinct common-lock descriptor during MATLAB qualification rather than inferring it from pass_fds alone",
+    "Complete literal-true twenty-gate ownership/output/environment checks plus exact source/command/fingerprint and inherited common mutex for every bounded native case",
+    "Root review of corrected semantic receipts and exact sealed full manifest before full execution",
+    "Three actual fresh full samples per corrected form plus fresh unchanged Mech control; independently reconcile saved raw/supervisor evidence",
+    "Separate qualified canonical LOC overlay for the exact new sources before replacement chart admission"
+  ],
+  "canonical_LOC": null,
+  "source_hashes": null,
+  "native_tests_executed": 0,
+  "full_measurements_executed": 0,
+  "old_source_or_measurement_mutated": false,
+  "chart_or_site_modified": false,
+  "no_automatic_retry": true,
+  "chart_admission": false
+}

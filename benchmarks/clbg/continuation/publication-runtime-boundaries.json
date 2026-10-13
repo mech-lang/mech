@@ -1,0 +1,46 @@
+{
+  "status": "static-source-evidence-awaiting-exact-publication-pin-review",
+  "purpose": "Describe which work the measured Mech compiler emits and which general libraries perform. This is metadata preparation; it admits no sample or chart endpoint.",
+  "entries": {
+    "mech-regexredux-native-sequence": {
+      "label": "Mech AOT with Rust regex 1.13.1",
+      "mech_compiles": "The source pipeline, calls and dependencies for input cleanup, nine counts, five ordered replacements, formatting and output.",
+      "general_library_performs": "Rust regex::bytes builds patterns at runtime and performs matching. Mech's runtime counts its nonoverlapping matches and applies literal replacement bytes.",
+      "mech_emits_regex_engine": false,
+      "engine_patterns_built_at_runtime": true,
+      "pattern_compilation_in_fresh_process_timing": true,
+      "comparison_scope": "Complete program and chosen general regex library; this result does not isolate Mech-generated matching performance or establish general numeric performance against V or C.",
+      "library_scope": "Arbitrary caller-supplied byte patterns, subjects and literal replacements. No host regex-redux benchmark executor or recognized DNA workload.",
+      "source_evidence": [
+        {"path": "benchmarks/clbg/regexredux/regexredux.mec", "line": 1},
+        {"path": "src/stdlib/src/native_sequence.rs", "line": 121},
+        {"path": "hosts/gpu/src/sequence/compiler.rs", "line": 116},
+        {"path": "hosts/gpu/src/sequence/compiler.rs", "line": 616},
+        {"path": "hosts/gpu/src/sequence/runtime.rs", "line": 1301},
+        {"path": "hosts/gpu/src/sequence/runtime.rs", "line": 1324},
+        {"path": "hosts/gpu/src/sequence/runtime.rs", "line": 1334},
+        {"path": "hosts/gpu/Cargo.toml", "line": 55}
+      ],
+      "retained_build_dependency_evidence": [
+        "benchmarks/clbg/regexredux/experiments/baseline/project/Cargo.lock",
+        "benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after.project/Cargo.lock",
+        "benchmarks/clbg/execution-modes/20261010/builds/regexredux-mech-regex-final-reuse-signed/Cargo.lock"
+      ]
+    },
+    "mech-implicit-matrix-native-sequence": {
+      "label": "Mech-emitted matrix arithmetic",
+      "mech_compiles": "The source coefficient function, row/column loops and multiply/divide/add operations into native numeric kernels.",
+      "runtime_performs": "Storage allocation, checked shape boundaries and partition scheduling; it calls the emitted native kernel.",
+      "external_matrix_multiply_engine": false,
+      "source_evidence": [
+        {"path": "src/engine/src/native_sequence/matrix.rs", "line": 307},
+        {"path": "hosts/gpu/src/sequence/numeric.rs", "line": 511},
+        {"path": "hosts/gpu/src/sequence/numeric.rs", "line": 827},
+        {"path": "hosts/gpu/src/sequence/runtime.rs", "line": 959},
+        {"path": "hosts/gpu/src/sequence/runtime.rs", "line": 972}
+      ],
+      "scope": "The measured implicit-matrix native-sequence path. This does not assert that every general Mech matrix or interpreter path uses the same lowering."
+    }
+  },
+  "publication_rule": "Reconcile these labels against the exact preserved source/compiler/runtime pins of each admitted measured profile before adding them to its source inspector. Preserve earlier measurements. V remains report-only and absent from visualization data."
+}

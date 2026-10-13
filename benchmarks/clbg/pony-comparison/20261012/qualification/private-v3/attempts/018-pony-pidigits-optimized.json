@@ -1,0 +1,55 @@
+{
+  "key": "pidigits:pony-pidigits-optimized",
+  "id": "pony-pidigits-optimized",
+  "benchmark": "pidigits",
+  "language": "pony",
+  "source_sha256": "3018bd1f17589c13f0d4204f7de6653df1f3de8b5a27d062608493eccef9975d",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v3/bin/pony-pidigits-optimized/pony-pidigits-optimized",
+    "97",
+    "--ponymaxthreads",
+    "8"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012",
+  "runtime_environment": {
+    "LC_ALL": "C",
+    "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"497519ab41727159d577855373c6b3eb39247316b33f2bedcc679b970f536366\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v3/bin/pony-pidigits-optimized/pony-pidigits-optimized\", \"{n}\", \"--ponymaxthreads\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"3018bd1f17589c13f0d4204f7de6653df1f3de8b5a27d062608493eccef9975d\", \"support\": {}}",
+  "started_at": "2026-10-12T17:18:34.267422+00:00",
+  "workload_n": 97,
+  "full_workload": false,
+  "timeout_seconds": 120,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.090417292,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 150,
+  "stdout_sha256": "91fdb144a6af8be158456a5f9fa2ae1e45348d8621d5b679000fe04fc54e4230",
+  "validation": {
+    "reference_match": true,
+    "bytes": 150,
+    "sha256": "91fdb144a6af8be158456a5f9fa2ae1e45348d8621d5b679000fe04fc54e4230"
+  },
+  "finished_at": "2026-10-12T17:18:34.565779+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true
+}

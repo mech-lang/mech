@@ -1,0 +1,51 @@
+{
+  "key": "knucleotide:actual-seven-map-compact",
+  "id": "actual-seven-map-compact",
+  "benchmark": "knucleotide",
+  "language": "nim",
+  "source_sha256": "35dadd03c47b34c5f3d09f9ef3ee1a82884f188a8df1b48b64d7fcd0c64c8692",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v7/bin/actual-seven-map-compact",
+    "1000"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012",
+  "runtime_environment": {
+    "LC_ALL": "C",
+    "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre/8.45/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+    "MECH_NIM_WORK_TRACE": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/qualification/private-v7/source-proofs/actual-seven-map-compact/tail-comments-crlf/actual-maps.trace"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"efdc4b01388331812984697e227c9e066ec49604ad0d712ab078c2be89a59242\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v7/bin/actual-seven-map-compact\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre/8.45/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"MECH_NIM_WORK_TRACE\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/qualification/private-v7/source-proofs/actual-seven-map-compact/tail-comments-crlf/actual-maps.trace\"}, \"source_sha256\": \"35dadd03c47b34c5f3d09f9ef3ee1a82884f188a8df1b48b64d7fcd0c64c8692\", \"support\": {}}",
+  "started_at": "2026-10-13T01:28:57.746983+00:00",
+  "workload_n": 1000,
+  "full_workload": false,
+  "timeout_seconds": 120,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.096564667,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 180,
+  "stdout_sha256": "440e19750a6674f9e29bd927eb0ae295da65d8c9110964959d0638a52e27a16c",
+  "validation": {
+    "reference_match": true,
+    "bytes": 180,
+    "sha256": "440e19750a6674f9e29bd927eb0ae295da65d8c9110964959d0638a52e27a16c"
+  },
+  "finished_at": "2026-10-13T01:28:58.058463+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true
+}

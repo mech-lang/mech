@@ -1,0 +1,40 @@
+{
+  "binary": "/opt/homebrew/Cellar/erlang/29.1.1_2/lib/erlang/erts-17.1/bin/beam.smp",
+  "architectures": [
+    "arm64"
+  ],
+  "dependencies": [
+    {
+      "install_name": "/usr/lib/libutil.dylib",
+      "scope": "OS-image-not-hashed"
+    },
+    {
+      "install_name": "/usr/lib/libSystem.B.dylib",
+      "scope": "OS-image-not-hashed"
+    },
+    {
+      "install_name": "/usr/lib/libdtrace.dylib",
+      "scope": "OS-image-not-hashed"
+    },
+    {
+      "install_name": "/usr/lib/libncurses.5.4.dylib",
+      "scope": "OS-image-not-hashed"
+    },
+    {
+      "install_name": "/usr/lib/libz.1.dylib",
+      "scope": "OS-image-not-hashed"
+    },
+    {
+      "install_name": "/System/Library/Frameworks/Carbon.framework/Versions/A/Carbon",
+      "scope": "OS-image-not-hashed"
+    },
+    {
+      "install_name": "/System/Library/Frameworks/Cocoa.framework/Versions/A/Cocoa",
+      "scope": "OS-image-not-hashed"
+    },
+    {
+      "install_name": "/usr/lib/libc++.1.dylib",
+      "scope": "OS-image-not-hashed"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+test_group_reconciliation_error_is_unqualified_and_preserves_cleanup_receipt (test_native_fd_observer.ObserverChecks.test_group_reconciliation_error_is_unqualified_and_preserves_cleanup_receipt) ... ok
+test_restores_exact_original_execute_and_popen_after_observed_native (test_native_fd_observer.ObserverChecks.test_restores_exact_original_execute_and_popen_after_observed_native) ... ok
+test_timeout_retains_actual_raw_bytes_and_cleans_only_known_owned_groups (test_native_fd_observer.ObserverChecks.test_timeout_retains_actual_raw_bytes_and_cleans_only_known_owned_groups) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.004s
+
+OK

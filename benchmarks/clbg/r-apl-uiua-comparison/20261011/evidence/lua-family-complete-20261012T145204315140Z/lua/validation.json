@@ -1,0 +1,3303 @@
+{
+  "status": "passed",
+  "created_at": "2026-10-12T03:50:36.554712+00:00",
+  "scored_samples": 0,
+  "application_output_checks": 248,
+  "mech_output_checks": 18,
+  "generic_primitive_tests": true,
+  "output_validations": [
+    {
+      "variant": 1,
+      "kind": "original",
+      "n": 0,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua",
+        "0"
+      ],
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "normalized",
+      "n": 0,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "0"
+      ],
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "original",
+      "n": 1,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua",
+        "1"
+      ],
+      "bytes": 14,
+      "sha256": "596c1871af06291c3271a166e1060607abffd68b8dce42308a009847de2c9f40",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "normalized",
+      "n": 1,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "1"
+      ],
+      "bytes": 14,
+      "sha256": "596c1871af06291c3271a166e1060607abffd68b8dce42308a009847de2c9f40",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "original",
+      "n": 2,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua",
+        "2"
+      ],
+      "bytes": 14,
+      "sha256": "00c77bc7b9d74521f7fcf4a7b8688483fe3a2495fd7d315266c24511b0aaf0b0",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "normalized",
+      "n": 2,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "2"
+      ],
+      "bytes": 14,
+      "sha256": "00c77bc7b9d74521f7fcf4a7b8688483fe3a2495fd7d315266c24511b0aaf0b0",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "original",
+      "n": 3,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua",
+        "3"
+      ],
+      "bytes": 14,
+      "sha256": "41491c34d62130b6458d0622bb6e2299714cd6504f7fe53251a51b2bf957c942",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "normalized",
+      "n": 3,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "3"
+      ],
+      "bytes": 14,
+      "sha256": "41491c34d62130b6458d0622bb6e2299714cd6504f7fe53251a51b2bf957c942",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "original",
+      "n": 4,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua",
+        "4"
+      ],
+      "bytes": 14,
+      "sha256": "ea31569acc108078448b430149f4cf4f08ff9a9ff584b5b3252170d4921993b7",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "normalized",
+      "n": 4,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "4"
+      ],
+      "bytes": 14,
+      "sha256": "ea31569acc108078448b430149f4cf4f08ff9a9ff584b5b3252170d4921993b7",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "original",
+      "n": 5,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua",
+        "5"
+      ],
+      "bytes": 14,
+      "sha256": "9c86bc51e8aba89e6913b3ee375bebb341b9d5ef3e6ca8cac95a324a4bab6744",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "normalized",
+      "n": 5,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "5"
+      ],
+      "bytes": 14,
+      "sha256": "9c86bc51e8aba89e6913b3ee375bebb341b9d5ef3e6ca8cac95a324a4bab6744",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "original",
+      "n": 6,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua",
+        "6"
+      ],
+      "bytes": 14,
+      "sha256": "59c408a381ec3552093568ccc8d3048590441eb39130c9142547ab5973ccd874",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "normalized",
+      "n": 6,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "6"
+      ],
+      "bytes": 14,
+      "sha256": "59c408a381ec3552093568ccc8d3048590441eb39130c9142547ab5973ccd874",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "original",
+      "n": 7,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua",
+        "7"
+      ],
+      "bytes": 14,
+      "sha256": "eacf65217ec9737d0ae37802fb96306479f3dfaf061bb04e1b1e44ff126953bc",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "normalized",
+      "n": 7,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "7"
+      ],
+      "bytes": 14,
+      "sha256": "eacf65217ec9737d0ae37802fb96306479f3dfaf061bb04e1b1e44ff126953bc",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "original",
+      "n": 8,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua",
+        "8"
+      ],
+      "bytes": 14,
+      "sha256": "515c86ca16e65d4cd9dc353bf4dde15f150d87ecc5c8cc33bfa556ea2c824675",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "normalized",
+      "n": 8,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "8"
+      ],
+      "bytes": 14,
+      "sha256": "515c86ca16e65d4cd9dc353bf4dde15f150d87ecc5c8cc33bfa556ea2c824675",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "original",
+      "n": 9,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua",
+        "9"
+      ],
+      "bytes": 14,
+      "sha256": "3e53fc2b63dd136ac6da30bd2e75569a8c0ebbe57ee829ce3ef14abc97cd5d95",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "normalized",
+      "n": 9,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "9"
+      ],
+      "bytes": 14,
+      "sha256": "3e53fc2b63dd136ac6da30bd2e75569a8c0ebbe57ee829ce3ef14abc97cd5d95",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "original",
+      "n": 10,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua",
+        "10"
+      ],
+      "bytes": 15,
+      "sha256": "7ea0f183877af01484fe7164276fe2c7cf22e64b513401f44078c86cea239773",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "normalized",
+      "n": 10,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "10"
+      ],
+      "bytes": 15,
+      "sha256": "7ea0f183877af01484fe7164276fe2c7cf22e64b513401f44078c86cea239773",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "original",
+      "n": 11,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua",
+        "11"
+      ],
+      "bytes": 30,
+      "sha256": "3f56cea8613552803edb2a1c3e3fd88c5e38792cbdd6bba5079468c77d83dea0",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "normalized",
+      "n": 11,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "11"
+      ],
+      "bytes": 30,
+      "sha256": "3f56cea8613552803edb2a1c3e3fd88c5e38792cbdd6bba5079468c77d83dea0",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "original",
+      "n": 12,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua",
+        "12"
+      ],
+      "bytes": 30,
+      "sha256": "03a503ae02dc497694a0e29317fa6d9cab1c7ebe74f05f515999acb15fcf13c7",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "normalized",
+      "n": 12,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "12"
+      ],
+      "bytes": 30,
+      "sha256": "03a503ae02dc497694a0e29317fa6d9cab1c7ebe74f05f515999acb15fcf13c7",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "original",
+      "n": 13,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua",
+        "13"
+      ],
+      "bytes": 30,
+      "sha256": "e5b7f7776c0da654c4a9d8b3ea3bf424342c34ffb1335f8f7e20e73f13471b82",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "normalized",
+      "n": 13,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "13"
+      ],
+      "bytes": 30,
+      "sha256": "e5b7f7776c0da654c4a9d8b3ea3bf424342c34ffb1335f8f7e20e73f13471b82",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "original",
+      "n": 14,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua",
+        "14"
+      ],
+      "bytes": 30,
+      "sha256": "b3876fc90f61b660c544464d00b4e299fc689279a1358c6b423dc5269c6d1ad8",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "normalized",
+      "n": 14,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "14"
+      ],
+      "bytes": 30,
+      "sha256": "b3876fc90f61b660c544464d00b4e299fc689279a1358c6b423dc5269c6d1ad8",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "original",
+      "n": 15,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua",
+        "15"
+      ],
+      "bytes": 30,
+      "sha256": "3e545a2e84d1cbe4e6ba573012fe4a59d6f919694a0ac370b8c66b9192e6a5fd",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "normalized",
+      "n": 15,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "15"
+      ],
+      "bytes": 30,
+      "sha256": "3e545a2e84d1cbe4e6ba573012fe4a59d6f919694a0ac370b8c66b9192e6a5fd",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "original",
+      "n": 16,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua",
+        "16"
+      ],
+      "bytes": 30,
+      "sha256": "29f8b83e4a95583e741d3225170c5180d3291e612bb59c3e753b74c6a9f4489f",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "normalized",
+      "n": 16,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "16"
+      ],
+      "bytes": 30,
+      "sha256": "29f8b83e4a95583e741d3225170c5180d3291e612bb59c3e753b74c6a9f4489f",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "original",
+      "n": 17,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua",
+        "17"
+      ],
+      "bytes": 30,
+      "sha256": "dbeb7876aef9e4786249074f944fd193e63052de04bdb81ccaeeed3213f66066",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "normalized",
+      "n": 17,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "17"
+      ],
+      "bytes": 30,
+      "sha256": "dbeb7876aef9e4786249074f944fd193e63052de04bdb81ccaeeed3213f66066",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "original",
+      "n": 18,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua",
+        "18"
+      ],
+      "bytes": 30,
+      "sha256": "70b3ab8538ff93ef514c636728458d79c91134aaa4b9fc0f35b0d021681f7402",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "normalized",
+      "n": 18,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "18"
+      ],
+      "bytes": 30,
+      "sha256": "70b3ab8538ff93ef514c636728458d79c91134aaa4b9fc0f35b0d021681f7402",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "original",
+      "n": 19,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua",
+        "19"
+      ],
+      "bytes": 30,
+      "sha256": "574aafd21591db3643a3f1342bc894ba0cbbc9ada8a7c8d92c5da345e449f0fe",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "normalized",
+      "n": 19,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "19"
+      ],
+      "bytes": 30,
+      "sha256": "574aafd21591db3643a3f1342bc894ba0cbbc9ada8a7c8d92c5da345e449f0fe",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "original",
+      "n": 20,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua",
+        "20"
+      ],
+      "bytes": 30,
+      "sha256": "322d3599b68a2c0d0e5b43db55ced9f209234ff065b1a138e136b25f6d9590fb",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "normalized",
+      "n": 20,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "20"
+      ],
+      "bytes": 30,
+      "sha256": "322d3599b68a2c0d0e5b43db55ced9f209234ff065b1a138e136b25f6d9590fb",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "original",
+      "n": 21,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua",
+        "21"
+      ],
+      "bytes": 45,
+      "sha256": "a2f931b149a95b5b4b9786b3265674d55d48fbf7d7e5cb859c78ae999e5c4012",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "normalized",
+      "n": 21,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "21"
+      ],
+      "bytes": 45,
+      "sha256": "a2f931b149a95b5b4b9786b3265674d55d48fbf7d7e5cb859c78ae999e5c4012",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "original",
+      "n": 27,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua",
+        "27"
+      ],
+      "bytes": 45,
+      "sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "normalized",
+      "n": 27,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "27"
+      ],
+      "bytes": 45,
+      "sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "original",
+      "n": 30,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua",
+        "30"
+      ],
+      "bytes": 45,
+      "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "normalized",
+      "n": 30,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "30"
+      ],
+      "bytes": 45,
+      "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "original",
+      "n": 97,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua",
+        "97"
+      ],
+      "bytes": 150,
+      "sha256": "91fdb144a6af8be158456a5f9fa2ae1e45348d8621d5b679000fe04fc54e4230",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "normalized",
+      "n": 97,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "97"
+      ],
+      "bytes": 150,
+      "sha256": "91fdb144a6af8be158456a5f9fa2ae1e45348d8621d5b679000fe04fc54e4230",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "original",
+      "n": 100,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua",
+        "100"
+      ],
+      "bytes": 151,
+      "sha256": "c58ccf8f972ea587a5fc489e902b5b04f8d2512f969228136a604b8acfa66111",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "normalized",
+      "n": 100,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "100"
+      ],
+      "bytes": 151,
+      "sha256": "c58ccf8f972ea587a5fc489e902b5b04f8d2512f969228136a604b8acfa66111",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "original",
+      "n": 1000,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua",
+        "1000"
+      ],
+      "bytes": 1592,
+      "sha256": "fffa76efea29ad89ff0bfe661f469218fffa154a1ed8774a7a75dd5e488c6ea1",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "normalized",
+      "n": 1000,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "1000"
+      ],
+      "bytes": 1592,
+      "sha256": "fffa76efea29ad89ff0bfe661f469218fffa154a1ed8774a7a75dd5e488c6ea1",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "original",
+      "n": -1,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua",
+        "-1"
+      ],
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "normalized",
+      "n": -1,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "-1"
+      ],
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "original",
+      "n": 27,
+      "cli_case": "omitted",
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua"
+      ],
+      "bytes": 45,
+      "sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "original",
+      "n": 27,
+      "cli_case": "invalid-default",
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua",
+        "invalid"
+      ],
+      "bytes": 45,
+      "sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "original",
+      "n": 10000,
+      "full_output_validation": true,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua",
+        "10000"
+      ],
+      "bytes": 16893,
+      "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "normalized",
+      "n": 27,
+      "cli_case": "omitted",
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua"
+      ],
+      "bytes": 45,
+      "sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "normalized",
+      "n": 27,
+      "cli_case": "invalid-default",
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "invalid"
+      ],
+      "bytes": 45,
+      "sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "reference_match": true
+    },
+    {
+      "variant": 1,
+      "kind": "normalized",
+      "n": 10000,
+      "full_output_validation": true,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+        "10000"
+      ],
+      "bytes": 16893,
+      "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "original",
+      "n": 0,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-5.lua",
+        "0"
+      ],
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "normalized",
+      "n": 0,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "0"
+      ],
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "original",
+      "n": 1,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-5.lua",
+        "1"
+      ],
+      "bytes": 14,
+      "sha256": "596c1871af06291c3271a166e1060607abffd68b8dce42308a009847de2c9f40",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "normalized",
+      "n": 1,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "1"
+      ],
+      "bytes": 14,
+      "sha256": "596c1871af06291c3271a166e1060607abffd68b8dce42308a009847de2c9f40",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "original",
+      "n": 2,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-5.lua",
+        "2"
+      ],
+      "bytes": 14,
+      "sha256": "00c77bc7b9d74521f7fcf4a7b8688483fe3a2495fd7d315266c24511b0aaf0b0",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "normalized",
+      "n": 2,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "2"
+      ],
+      "bytes": 14,
+      "sha256": "00c77bc7b9d74521f7fcf4a7b8688483fe3a2495fd7d315266c24511b0aaf0b0",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "original",
+      "n": 3,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-5.lua",
+        "3"
+      ],
+      "bytes": 14,
+      "sha256": "41491c34d62130b6458d0622bb6e2299714cd6504f7fe53251a51b2bf957c942",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "normalized",
+      "n": 3,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "3"
+      ],
+      "bytes": 14,
+      "sha256": "41491c34d62130b6458d0622bb6e2299714cd6504f7fe53251a51b2bf957c942",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "original",
+      "n": 4,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-5.lua",
+        "4"
+      ],
+      "bytes": 14,
+      "sha256": "ea31569acc108078448b430149f4cf4f08ff9a9ff584b5b3252170d4921993b7",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "normalized",
+      "n": 4,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "4"
+      ],
+      "bytes": 14,
+      "sha256": "ea31569acc108078448b430149f4cf4f08ff9a9ff584b5b3252170d4921993b7",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "original",
+      "n": 5,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-5.lua",
+        "5"
+      ],
+      "bytes": 14,
+      "sha256": "9c86bc51e8aba89e6913b3ee375bebb341b9d5ef3e6ca8cac95a324a4bab6744",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "normalized",
+      "n": 5,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "5"
+      ],
+      "bytes": 14,
+      "sha256": "9c86bc51e8aba89e6913b3ee375bebb341b9d5ef3e6ca8cac95a324a4bab6744",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "original",
+      "n": 6,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-5.lua",
+        "6"
+      ],
+      "bytes": 14,
+      "sha256": "59c408a381ec3552093568ccc8d3048590441eb39130c9142547ab5973ccd874",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "normalized",
+      "n": 6,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "6"
+      ],
+      "bytes": 14,
+      "sha256": "59c408a381ec3552093568ccc8d3048590441eb39130c9142547ab5973ccd874",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "original",
+      "n": 7,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-5.lua",
+        "7"
+      ],
+      "bytes": 14,
+      "sha256": "eacf65217ec9737d0ae37802fb96306479f3dfaf061bb04e1b1e44ff126953bc",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "normalized",
+      "n": 7,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "7"
+      ],
+      "bytes": 14,
+      "sha256": "eacf65217ec9737d0ae37802fb96306479f3dfaf061bb04e1b1e44ff126953bc",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "original",
+      "n": 8,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-5.lua",
+        "8"
+      ],
+      "bytes": 14,
+      "sha256": "515c86ca16e65d4cd9dc353bf4dde15f150d87ecc5c8cc33bfa556ea2c824675",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "normalized",
+      "n": 8,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "8"
+      ],
+      "bytes": 14,
+      "sha256": "515c86ca16e65d4cd9dc353bf4dde15f150d87ecc5c8cc33bfa556ea2c824675",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "original",
+      "n": 9,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-5.lua",
+        "9"
+      ],
+      "bytes": 14,
+      "sha256": "3e53fc2b63dd136ac6da30bd2e75569a8c0ebbe57ee829ce3ef14abc97cd5d95",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "normalized",
+      "n": 9,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "9"
+      ],
+      "bytes": 14,
+      "sha256": "3e53fc2b63dd136ac6da30bd2e75569a8c0ebbe57ee829ce3ef14abc97cd5d95",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "original",
+      "n": 10,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-5.lua",
+        "10"
+      ],
+      "bytes": 15,
+      "sha256": "7ea0f183877af01484fe7164276fe2c7cf22e64b513401f44078c86cea239773",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "normalized",
+      "n": 10,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "10"
+      ],
+      "bytes": 15,
+      "sha256": "7ea0f183877af01484fe7164276fe2c7cf22e64b513401f44078c86cea239773",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "original",
+      "n": 11,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-5.lua",
+        "11"
+      ],
+      "bytes": 30,
+      "sha256": "3f56cea8613552803edb2a1c3e3fd88c5e38792cbdd6bba5079468c77d83dea0",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "normalized",
+      "n": 11,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "11"
+      ],
+      "bytes": 30,
+      "sha256": "3f56cea8613552803edb2a1c3e3fd88c5e38792cbdd6bba5079468c77d83dea0",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "original",
+      "n": 12,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-5.lua",
+        "12"
+      ],
+      "bytes": 30,
+      "sha256": "03a503ae02dc497694a0e29317fa6d9cab1c7ebe74f05f515999acb15fcf13c7",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "normalized",
+      "n": 12,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "12"
+      ],
+      "bytes": 30,
+      "sha256": "03a503ae02dc497694a0e29317fa6d9cab1c7ebe74f05f515999acb15fcf13c7",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "original",
+      "n": 13,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-5.lua",
+        "13"
+      ],
+      "bytes": 30,
+      "sha256": "e5b7f7776c0da654c4a9d8b3ea3bf424342c34ffb1335f8f7e20e73f13471b82",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "normalized",
+      "n": 13,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "13"
+      ],
+      "bytes": 30,
+      "sha256": "e5b7f7776c0da654c4a9d8b3ea3bf424342c34ffb1335f8f7e20e73f13471b82",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "original",
+      "n": 14,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-5.lua",
+        "14"
+      ],
+      "bytes": 30,
+      "sha256": "b3876fc90f61b660c544464d00b4e299fc689279a1358c6b423dc5269c6d1ad8",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "normalized",
+      "n": 14,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "14"
+      ],
+      "bytes": 30,
+      "sha256": "b3876fc90f61b660c544464d00b4e299fc689279a1358c6b423dc5269c6d1ad8",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "original",
+      "n": 15,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-5.lua",
+        "15"
+      ],
+      "bytes": 30,
+      "sha256": "3e545a2e84d1cbe4e6ba573012fe4a59d6f919694a0ac370b8c66b9192e6a5fd",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "normalized",
+      "n": 15,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "15"
+      ],
+      "bytes": 30,
+      "sha256": "3e545a2e84d1cbe4e6ba573012fe4a59d6f919694a0ac370b8c66b9192e6a5fd",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "original",
+      "n": 16,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-5.lua",
+        "16"
+      ],
+      "bytes": 30,
+      "sha256": "29f8b83e4a95583e741d3225170c5180d3291e612bb59c3e753b74c6a9f4489f",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "normalized",
+      "n": 16,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "16"
+      ],
+      "bytes": 30,
+      "sha256": "29f8b83e4a95583e741d3225170c5180d3291e612bb59c3e753b74c6a9f4489f",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "original",
+      "n": 17,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-5.lua",
+        "17"
+      ],
+      "bytes": 30,
+      "sha256": "dbeb7876aef9e4786249074f944fd193e63052de04bdb81ccaeeed3213f66066",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "normalized",
+      "n": 17,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "17"
+      ],
+      "bytes": 30,
+      "sha256": "dbeb7876aef9e4786249074f944fd193e63052de04bdb81ccaeeed3213f66066",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "original",
+      "n": 18,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-5.lua",
+        "18"
+      ],
+      "bytes": 30,
+      "sha256": "70b3ab8538ff93ef514c636728458d79c91134aaa4b9fc0f35b0d021681f7402",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "normalized",
+      "n": 18,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "18"
+      ],
+      "bytes": 30,
+      "sha256": "70b3ab8538ff93ef514c636728458d79c91134aaa4b9fc0f35b0d021681f7402",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "original",
+      "n": 19,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-5.lua",
+        "19"
+      ],
+      "bytes": 30,
+      "sha256": "574aafd21591db3643a3f1342bc894ba0cbbc9ada8a7c8d92c5da345e449f0fe",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "normalized",
+      "n": 19,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "19"
+      ],
+      "bytes": 30,
+      "sha256": "574aafd21591db3643a3f1342bc894ba0cbbc9ada8a7c8d92c5da345e449f0fe",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "original",
+      "n": 20,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-5.lua",
+        "20"
+      ],
+      "bytes": 30,
+      "sha256": "322d3599b68a2c0d0e5b43db55ced9f209234ff065b1a138e136b25f6d9590fb",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "normalized",
+      "n": 20,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "20"
+      ],
+      "bytes": 30,
+      "sha256": "322d3599b68a2c0d0e5b43db55ced9f209234ff065b1a138e136b25f6d9590fb",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "original",
+      "n": 21,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-5.lua",
+        "21"
+      ],
+      "bytes": 45,
+      "sha256": "a2f931b149a95b5b4b9786b3265674d55d48fbf7d7e5cb859c78ae999e5c4012",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "normalized",
+      "n": 21,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "21"
+      ],
+      "bytes": 45,
+      "sha256": "a2f931b149a95b5b4b9786b3265674d55d48fbf7d7e5cb859c78ae999e5c4012",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "original",
+      "n": 27,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-5.lua",
+        "27"
+      ],
+      "bytes": 45,
+      "sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "normalized",
+      "n": 27,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "27"
+      ],
+      "bytes": 45,
+      "sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "original",
+      "n": 30,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-5.lua",
+        "30"
+      ],
+      "bytes": 45,
+      "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "normalized",
+      "n": 30,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "30"
+      ],
+      "bytes": 45,
+      "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "original",
+      "n": 97,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-5.lua",
+        "97"
+      ],
+      "bytes": 150,
+      "sha256": "91fdb144a6af8be158456a5f9fa2ae1e45348d8621d5b679000fe04fc54e4230",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "normalized",
+      "n": 97,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "97"
+      ],
+      "bytes": 150,
+      "sha256": "91fdb144a6af8be158456a5f9fa2ae1e45348d8621d5b679000fe04fc54e4230",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "original",
+      "n": 100,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-5.lua",
+        "100"
+      ],
+      "bytes": 151,
+      "sha256": "c58ccf8f972ea587a5fc489e902b5b04f8d2512f969228136a604b8acfa66111",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "normalized",
+      "n": 100,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "100"
+      ],
+      "bytes": 151,
+      "sha256": "c58ccf8f972ea587a5fc489e902b5b04f8d2512f969228136a604b8acfa66111",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "original",
+      "n": 1000,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-5.lua",
+        "1000"
+      ],
+      "bytes": 1592,
+      "sha256": "fffa76efea29ad89ff0bfe661f469218fffa154a1ed8774a7a75dd5e488c6ea1",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "normalized",
+      "n": 1000,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "1000"
+      ],
+      "bytes": 1592,
+      "sha256": "fffa76efea29ad89ff0bfe661f469218fffa154a1ed8774a7a75dd5e488c6ea1",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "original",
+      "n": -1,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-5.lua",
+        "-1"
+      ],
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "normalized",
+      "n": -1,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "-1"
+      ],
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "original",
+      "n": 27,
+      "cli_case": "omitted",
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-5.lua"
+      ],
+      "bytes": 45,
+      "sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "original",
+      "n": 27,
+      "cli_case": "invalid-default",
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-5.lua",
+        "invalid"
+      ],
+      "bytes": 45,
+      "sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "original",
+      "n": 10000,
+      "full_output_validation": true,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-5.lua",
+        "10000"
+      ],
+      "bytes": 16893,
+      "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "normalized",
+      "n": 27,
+      "cli_case": "omitted",
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua"
+      ],
+      "bytes": 45,
+      "sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "normalized",
+      "n": 27,
+      "cli_case": "invalid-default",
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "invalid"
+      ],
+      "bytes": 45,
+      "sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "reference_match": true
+    },
+    {
+      "variant": 5,
+      "kind": "normalized",
+      "n": 10000,
+      "full_output_validation": true,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+        "10000"
+      ],
+      "bytes": 16893,
+      "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "original",
+      "n": 0,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-6.lua",
+        "0"
+      ],
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "normalized",
+      "n": 0,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "0"
+      ],
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "original",
+      "n": 1,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-6.lua",
+        "1"
+      ],
+      "bytes": 14,
+      "sha256": "596c1871af06291c3271a166e1060607abffd68b8dce42308a009847de2c9f40",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "normalized",
+      "n": 1,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "1"
+      ],
+      "bytes": 14,
+      "sha256": "596c1871af06291c3271a166e1060607abffd68b8dce42308a009847de2c9f40",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "original",
+      "n": 2,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-6.lua",
+        "2"
+      ],
+      "bytes": 14,
+      "sha256": "00c77bc7b9d74521f7fcf4a7b8688483fe3a2495fd7d315266c24511b0aaf0b0",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "normalized",
+      "n": 2,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "2"
+      ],
+      "bytes": 14,
+      "sha256": "00c77bc7b9d74521f7fcf4a7b8688483fe3a2495fd7d315266c24511b0aaf0b0",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "original",
+      "n": 3,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-6.lua",
+        "3"
+      ],
+      "bytes": 14,
+      "sha256": "41491c34d62130b6458d0622bb6e2299714cd6504f7fe53251a51b2bf957c942",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "normalized",
+      "n": 3,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "3"
+      ],
+      "bytes": 14,
+      "sha256": "41491c34d62130b6458d0622bb6e2299714cd6504f7fe53251a51b2bf957c942",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "original",
+      "n": 4,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-6.lua",
+        "4"
+      ],
+      "bytes": 14,
+      "sha256": "ea31569acc108078448b430149f4cf4f08ff9a9ff584b5b3252170d4921993b7",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "normalized",
+      "n": 4,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "4"
+      ],
+      "bytes": 14,
+      "sha256": "ea31569acc108078448b430149f4cf4f08ff9a9ff584b5b3252170d4921993b7",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "original",
+      "n": 5,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-6.lua",
+        "5"
+      ],
+      "bytes": 14,
+      "sha256": "9c86bc51e8aba89e6913b3ee375bebb341b9d5ef3e6ca8cac95a324a4bab6744",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "normalized",
+      "n": 5,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "5"
+      ],
+      "bytes": 14,
+      "sha256": "9c86bc51e8aba89e6913b3ee375bebb341b9d5ef3e6ca8cac95a324a4bab6744",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "original",
+      "n": 6,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-6.lua",
+        "6"
+      ],
+      "bytes": 14,
+      "sha256": "59c408a381ec3552093568ccc8d3048590441eb39130c9142547ab5973ccd874",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "normalized",
+      "n": 6,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "6"
+      ],
+      "bytes": 14,
+      "sha256": "59c408a381ec3552093568ccc8d3048590441eb39130c9142547ab5973ccd874",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "original",
+      "n": 7,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-6.lua",
+        "7"
+      ],
+      "bytes": 14,
+      "sha256": "eacf65217ec9737d0ae37802fb96306479f3dfaf061bb04e1b1e44ff126953bc",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "normalized",
+      "n": 7,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "7"
+      ],
+      "bytes": 14,
+      "sha256": "eacf65217ec9737d0ae37802fb96306479f3dfaf061bb04e1b1e44ff126953bc",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "original",
+      "n": 8,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-6.lua",
+        "8"
+      ],
+      "bytes": 14,
+      "sha256": "515c86ca16e65d4cd9dc353bf4dde15f150d87ecc5c8cc33bfa556ea2c824675",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "normalized",
+      "n": 8,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "8"
+      ],
+      "bytes": 14,
+      "sha256": "515c86ca16e65d4cd9dc353bf4dde15f150d87ecc5c8cc33bfa556ea2c824675",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "original",
+      "n": 9,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-6.lua",
+        "9"
+      ],
+      "bytes": 14,
+      "sha256": "3e53fc2b63dd136ac6da30bd2e75569a8c0ebbe57ee829ce3ef14abc97cd5d95",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "normalized",
+      "n": 9,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "9"
+      ],
+      "bytes": 14,
+      "sha256": "3e53fc2b63dd136ac6da30bd2e75569a8c0ebbe57ee829ce3ef14abc97cd5d95",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "original",
+      "n": 10,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-6.lua",
+        "10"
+      ],
+      "bytes": 15,
+      "sha256": "7ea0f183877af01484fe7164276fe2c7cf22e64b513401f44078c86cea239773",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "normalized",
+      "n": 10,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "10"
+      ],
+      "bytes": 15,
+      "sha256": "7ea0f183877af01484fe7164276fe2c7cf22e64b513401f44078c86cea239773",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "original",
+      "n": 11,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-6.lua",
+        "11"
+      ],
+      "bytes": 30,
+      "sha256": "3f56cea8613552803edb2a1c3e3fd88c5e38792cbdd6bba5079468c77d83dea0",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "normalized",
+      "n": 11,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "11"
+      ],
+      "bytes": 30,
+      "sha256": "3f56cea8613552803edb2a1c3e3fd88c5e38792cbdd6bba5079468c77d83dea0",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "original",
+      "n": 12,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-6.lua",
+        "12"
+      ],
+      "bytes": 30,
+      "sha256": "03a503ae02dc497694a0e29317fa6d9cab1c7ebe74f05f515999acb15fcf13c7",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "normalized",
+      "n": 12,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "12"
+      ],
+      "bytes": 30,
+      "sha256": "03a503ae02dc497694a0e29317fa6d9cab1c7ebe74f05f515999acb15fcf13c7",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "original",
+      "n": 13,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-6.lua",
+        "13"
+      ],
+      "bytes": 30,
+      "sha256": "e5b7f7776c0da654c4a9d8b3ea3bf424342c34ffb1335f8f7e20e73f13471b82",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "normalized",
+      "n": 13,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "13"
+      ],
+      "bytes": 30,
+      "sha256": "e5b7f7776c0da654c4a9d8b3ea3bf424342c34ffb1335f8f7e20e73f13471b82",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "original",
+      "n": 14,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-6.lua",
+        "14"
+      ],
+      "bytes": 30,
+      "sha256": "b3876fc90f61b660c544464d00b4e299fc689279a1358c6b423dc5269c6d1ad8",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "normalized",
+      "n": 14,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "14"
+      ],
+      "bytes": 30,
+      "sha256": "b3876fc90f61b660c544464d00b4e299fc689279a1358c6b423dc5269c6d1ad8",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "original",
+      "n": 15,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-6.lua",
+        "15"
+      ],
+      "bytes": 30,
+      "sha256": "3e545a2e84d1cbe4e6ba573012fe4a59d6f919694a0ac370b8c66b9192e6a5fd",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "normalized",
+      "n": 15,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "15"
+      ],
+      "bytes": 30,
+      "sha256": "3e545a2e84d1cbe4e6ba573012fe4a59d6f919694a0ac370b8c66b9192e6a5fd",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "original",
+      "n": 16,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-6.lua",
+        "16"
+      ],
+      "bytes": 30,
+      "sha256": "29f8b83e4a95583e741d3225170c5180d3291e612bb59c3e753b74c6a9f4489f",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "normalized",
+      "n": 16,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "16"
+      ],
+      "bytes": 30,
+      "sha256": "29f8b83e4a95583e741d3225170c5180d3291e612bb59c3e753b74c6a9f4489f",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "original",
+      "n": 17,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-6.lua",
+        "17"
+      ],
+      "bytes": 30,
+      "sha256": "dbeb7876aef9e4786249074f944fd193e63052de04bdb81ccaeeed3213f66066",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "normalized",
+      "n": 17,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "17"
+      ],
+      "bytes": 30,
+      "sha256": "dbeb7876aef9e4786249074f944fd193e63052de04bdb81ccaeeed3213f66066",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "original",
+      "n": 18,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-6.lua",
+        "18"
+      ],
+      "bytes": 30,
+      "sha256": "70b3ab8538ff93ef514c636728458d79c91134aaa4b9fc0f35b0d021681f7402",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "normalized",
+      "n": 18,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "18"
+      ],
+      "bytes": 30,
+      "sha256": "70b3ab8538ff93ef514c636728458d79c91134aaa4b9fc0f35b0d021681f7402",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "original",
+      "n": 19,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-6.lua",
+        "19"
+      ],
+      "bytes": 30,
+      "sha256": "574aafd21591db3643a3f1342bc894ba0cbbc9ada8a7c8d92c5da345e449f0fe",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "normalized",
+      "n": 19,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "19"
+      ],
+      "bytes": 30,
+      "sha256": "574aafd21591db3643a3f1342bc894ba0cbbc9ada8a7c8d92c5da345e449f0fe",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "original",
+      "n": 20,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-6.lua",
+        "20"
+      ],
+      "bytes": 30,
+      "sha256": "322d3599b68a2c0d0e5b43db55ced9f209234ff065b1a138e136b25f6d9590fb",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "normalized",
+      "n": 20,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "20"
+      ],
+      "bytes": 30,
+      "sha256": "322d3599b68a2c0d0e5b43db55ced9f209234ff065b1a138e136b25f6d9590fb",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "original",
+      "n": 21,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-6.lua",
+        "21"
+      ],
+      "bytes": 45,
+      "sha256": "a2f931b149a95b5b4b9786b3265674d55d48fbf7d7e5cb859c78ae999e5c4012",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "normalized",
+      "n": 21,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "21"
+      ],
+      "bytes": 45,
+      "sha256": "a2f931b149a95b5b4b9786b3265674d55d48fbf7d7e5cb859c78ae999e5c4012",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "original",
+      "n": 27,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-6.lua",
+        "27"
+      ],
+      "bytes": 45,
+      "sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "normalized",
+      "n": 27,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "27"
+      ],
+      "bytes": 45,
+      "sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "original",
+      "n": 30,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-6.lua",
+        "30"
+      ],
+      "bytes": 45,
+      "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "normalized",
+      "n": 30,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "30"
+      ],
+      "bytes": 45,
+      "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "original",
+      "n": 97,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-6.lua",
+        "97"
+      ],
+      "bytes": 150,
+      "sha256": "91fdb144a6af8be158456a5f9fa2ae1e45348d8621d5b679000fe04fc54e4230",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "normalized",
+      "n": 97,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "97"
+      ],
+      "bytes": 150,
+      "sha256": "91fdb144a6af8be158456a5f9fa2ae1e45348d8621d5b679000fe04fc54e4230",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "original",
+      "n": 100,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-6.lua",
+        "100"
+      ],
+      "bytes": 151,
+      "sha256": "c58ccf8f972ea587a5fc489e902b5b04f8d2512f969228136a604b8acfa66111",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "normalized",
+      "n": 100,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "100"
+      ],
+      "bytes": 151,
+      "sha256": "c58ccf8f972ea587a5fc489e902b5b04f8d2512f969228136a604b8acfa66111",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "original",
+      "n": 1000,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-6.lua",
+        "1000"
+      ],
+      "bytes": 1592,
+      "sha256": "fffa76efea29ad89ff0bfe661f469218fffa154a1ed8774a7a75dd5e488c6ea1",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "normalized",
+      "n": 1000,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "1000"
+      ],
+      "bytes": 1592,
+      "sha256": "fffa76efea29ad89ff0bfe661f469218fffa154a1ed8774a7a75dd5e488c6ea1",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "original",
+      "n": -1,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-6.lua",
+        "-1"
+      ],
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "normalized",
+      "n": -1,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "-1"
+      ],
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "original",
+      "n": 27,
+      "cli_case": "omitted",
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-6.lua"
+      ],
+      "bytes": 45,
+      "sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "original",
+      "n": 27,
+      "cli_case": "invalid-default",
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-6.lua",
+        "invalid"
+      ],
+      "bytes": 45,
+      "sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "original",
+      "n": 10000,
+      "full_output_validation": true,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-6.lua",
+        "10000"
+      ],
+      "bytes": 16893,
+      "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "normalized",
+      "n": 27,
+      "cli_case": "omitted",
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua"
+      ],
+      "bytes": 45,
+      "sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "normalized",
+      "n": 27,
+      "cli_case": "invalid-default",
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "invalid"
+      ],
+      "bytes": 45,
+      "sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "reference_match": true
+    },
+    {
+      "variant": 6,
+      "kind": "normalized",
+      "n": 10000,
+      "full_output_validation": true,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+        "10000"
+      ],
+      "bytes": 16893,
+      "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "original",
+      "n": 0,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua",
+        "0"
+      ],
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "normalized",
+      "n": 0,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "0"
+      ],
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "original",
+      "n": 1,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua",
+        "1"
+      ],
+      "bytes": 14,
+      "sha256": "596c1871af06291c3271a166e1060607abffd68b8dce42308a009847de2c9f40",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "normalized",
+      "n": 1,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "1"
+      ],
+      "bytes": 14,
+      "sha256": "596c1871af06291c3271a166e1060607abffd68b8dce42308a009847de2c9f40",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "original",
+      "n": 2,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua",
+        "2"
+      ],
+      "bytes": 14,
+      "sha256": "00c77bc7b9d74521f7fcf4a7b8688483fe3a2495fd7d315266c24511b0aaf0b0",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "normalized",
+      "n": 2,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "2"
+      ],
+      "bytes": 14,
+      "sha256": "00c77bc7b9d74521f7fcf4a7b8688483fe3a2495fd7d315266c24511b0aaf0b0",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "original",
+      "n": 3,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua",
+        "3"
+      ],
+      "bytes": 14,
+      "sha256": "41491c34d62130b6458d0622bb6e2299714cd6504f7fe53251a51b2bf957c942",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "normalized",
+      "n": 3,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "3"
+      ],
+      "bytes": 14,
+      "sha256": "41491c34d62130b6458d0622bb6e2299714cd6504f7fe53251a51b2bf957c942",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "original",
+      "n": 4,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua",
+        "4"
+      ],
+      "bytes": 14,
+      "sha256": "ea31569acc108078448b430149f4cf4f08ff9a9ff584b5b3252170d4921993b7",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "normalized",
+      "n": 4,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "4"
+      ],
+      "bytes": 14,
+      "sha256": "ea31569acc108078448b430149f4cf4f08ff9a9ff584b5b3252170d4921993b7",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "original",
+      "n": 5,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua",
+        "5"
+      ],
+      "bytes": 14,
+      "sha256": "9c86bc51e8aba89e6913b3ee375bebb341b9d5ef3e6ca8cac95a324a4bab6744",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "normalized",
+      "n": 5,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "5"
+      ],
+      "bytes": 14,
+      "sha256": "9c86bc51e8aba89e6913b3ee375bebb341b9d5ef3e6ca8cac95a324a4bab6744",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "original",
+      "n": 6,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua",
+        "6"
+      ],
+      "bytes": 14,
+      "sha256": "59c408a381ec3552093568ccc8d3048590441eb39130c9142547ab5973ccd874",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "normalized",
+      "n": 6,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "6"
+      ],
+      "bytes": 14,
+      "sha256": "59c408a381ec3552093568ccc8d3048590441eb39130c9142547ab5973ccd874",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "original",
+      "n": 7,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua",
+        "7"
+      ],
+      "bytes": 14,
+      "sha256": "eacf65217ec9737d0ae37802fb96306479f3dfaf061bb04e1b1e44ff126953bc",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "normalized",
+      "n": 7,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "7"
+      ],
+      "bytes": 14,
+      "sha256": "eacf65217ec9737d0ae37802fb96306479f3dfaf061bb04e1b1e44ff126953bc",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "original",
+      "n": 8,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua",
+        "8"
+      ],
+      "bytes": 14,
+      "sha256": "515c86ca16e65d4cd9dc353bf4dde15f150d87ecc5c8cc33bfa556ea2c824675",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "normalized",
+      "n": 8,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "8"
+      ],
+      "bytes": 14,
+      "sha256": "515c86ca16e65d4cd9dc353bf4dde15f150d87ecc5c8cc33bfa556ea2c824675",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "original",
+      "n": 9,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua",
+        "9"
+      ],
+      "bytes": 14,
+      "sha256": "3e53fc2b63dd136ac6da30bd2e75569a8c0ebbe57ee829ce3ef14abc97cd5d95",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "normalized",
+      "n": 9,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "9"
+      ],
+      "bytes": 14,
+      "sha256": "3e53fc2b63dd136ac6da30bd2e75569a8c0ebbe57ee829ce3ef14abc97cd5d95",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "original",
+      "n": 10,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua",
+        "10"
+      ],
+      "bytes": 15,
+      "sha256": "7ea0f183877af01484fe7164276fe2c7cf22e64b513401f44078c86cea239773",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "normalized",
+      "n": 10,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "10"
+      ],
+      "bytes": 15,
+      "sha256": "7ea0f183877af01484fe7164276fe2c7cf22e64b513401f44078c86cea239773",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "original",
+      "n": 11,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua",
+        "11"
+      ],
+      "bytes": 30,
+      "sha256": "3f56cea8613552803edb2a1c3e3fd88c5e38792cbdd6bba5079468c77d83dea0",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "normalized",
+      "n": 11,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "11"
+      ],
+      "bytes": 30,
+      "sha256": "3f56cea8613552803edb2a1c3e3fd88c5e38792cbdd6bba5079468c77d83dea0",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "original",
+      "n": 12,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua",
+        "12"
+      ],
+      "bytes": 30,
+      "sha256": "03a503ae02dc497694a0e29317fa6d9cab1c7ebe74f05f515999acb15fcf13c7",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "normalized",
+      "n": 12,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "12"
+      ],
+      "bytes": 30,
+      "sha256": "03a503ae02dc497694a0e29317fa6d9cab1c7ebe74f05f515999acb15fcf13c7",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "original",
+      "n": 13,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua",
+        "13"
+      ],
+      "bytes": 30,
+      "sha256": "e5b7f7776c0da654c4a9d8b3ea3bf424342c34ffb1335f8f7e20e73f13471b82",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "normalized",
+      "n": 13,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "13"
+      ],
+      "bytes": 30,
+      "sha256": "e5b7f7776c0da654c4a9d8b3ea3bf424342c34ffb1335f8f7e20e73f13471b82",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "original",
+      "n": 14,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua",
+        "14"
+      ],
+      "bytes": 30,
+      "sha256": "b3876fc90f61b660c544464d00b4e299fc689279a1358c6b423dc5269c6d1ad8",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "normalized",
+      "n": 14,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "14"
+      ],
+      "bytes": 30,
+      "sha256": "b3876fc90f61b660c544464d00b4e299fc689279a1358c6b423dc5269c6d1ad8",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "original",
+      "n": 15,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua",
+        "15"
+      ],
+      "bytes": 30,
+      "sha256": "3e545a2e84d1cbe4e6ba573012fe4a59d6f919694a0ac370b8c66b9192e6a5fd",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "normalized",
+      "n": 15,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "15"
+      ],
+      "bytes": 30,
+      "sha256": "3e545a2e84d1cbe4e6ba573012fe4a59d6f919694a0ac370b8c66b9192e6a5fd",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "original",
+      "n": 16,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua",
+        "16"
+      ],
+      "bytes": 30,
+      "sha256": "29f8b83e4a95583e741d3225170c5180d3291e612bb59c3e753b74c6a9f4489f",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "normalized",
+      "n": 16,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "16"
+      ],
+      "bytes": 30,
+      "sha256": "29f8b83e4a95583e741d3225170c5180d3291e612bb59c3e753b74c6a9f4489f",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "original",
+      "n": 17,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua",
+        "17"
+      ],
+      "bytes": 30,
+      "sha256": "dbeb7876aef9e4786249074f944fd193e63052de04bdb81ccaeeed3213f66066",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "normalized",
+      "n": 17,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "17"
+      ],
+      "bytes": 30,
+      "sha256": "dbeb7876aef9e4786249074f944fd193e63052de04bdb81ccaeeed3213f66066",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "original",
+      "n": 18,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua",
+        "18"
+      ],
+      "bytes": 30,
+      "sha256": "70b3ab8538ff93ef514c636728458d79c91134aaa4b9fc0f35b0d021681f7402",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "normalized",
+      "n": 18,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "18"
+      ],
+      "bytes": 30,
+      "sha256": "70b3ab8538ff93ef514c636728458d79c91134aaa4b9fc0f35b0d021681f7402",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "original",
+      "n": 19,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua",
+        "19"
+      ],
+      "bytes": 30,
+      "sha256": "574aafd21591db3643a3f1342bc894ba0cbbc9ada8a7c8d92c5da345e449f0fe",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "normalized",
+      "n": 19,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "19"
+      ],
+      "bytes": 30,
+      "sha256": "574aafd21591db3643a3f1342bc894ba0cbbc9ada8a7c8d92c5da345e449f0fe",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "original",
+      "n": 20,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua",
+        "20"
+      ],
+      "bytes": 30,
+      "sha256": "322d3599b68a2c0d0e5b43db55ced9f209234ff065b1a138e136b25f6d9590fb",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "normalized",
+      "n": 20,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "20"
+      ],
+      "bytes": 30,
+      "sha256": "322d3599b68a2c0d0e5b43db55ced9f209234ff065b1a138e136b25f6d9590fb",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "original",
+      "n": 21,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua",
+        "21"
+      ],
+      "bytes": 45,
+      "sha256": "a2f931b149a95b5b4b9786b3265674d55d48fbf7d7e5cb859c78ae999e5c4012",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "normalized",
+      "n": 21,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "21"
+      ],
+      "bytes": 45,
+      "sha256": "a2f931b149a95b5b4b9786b3265674d55d48fbf7d7e5cb859c78ae999e5c4012",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "original",
+      "n": 27,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua",
+        "27"
+      ],
+      "bytes": 45,
+      "sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "normalized",
+      "n": 27,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "27"
+      ],
+      "bytes": 45,
+      "sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "original",
+      "n": 30,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua",
+        "30"
+      ],
+      "bytes": 45,
+      "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "normalized",
+      "n": 30,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "30"
+      ],
+      "bytes": 45,
+      "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "original",
+      "n": 97,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua",
+        "97"
+      ],
+      "bytes": 150,
+      "sha256": "91fdb144a6af8be158456a5f9fa2ae1e45348d8621d5b679000fe04fc54e4230",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "normalized",
+      "n": 97,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "97"
+      ],
+      "bytes": 150,
+      "sha256": "91fdb144a6af8be158456a5f9fa2ae1e45348d8621d5b679000fe04fc54e4230",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "original",
+      "n": 100,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua",
+        "100"
+      ],
+      "bytes": 151,
+      "sha256": "c58ccf8f972ea587a5fc489e902b5b04f8d2512f969228136a604b8acfa66111",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "normalized",
+      "n": 100,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "100"
+      ],
+      "bytes": 151,
+      "sha256": "c58ccf8f972ea587a5fc489e902b5b04f8d2512f969228136a604b8acfa66111",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "original",
+      "n": 1000,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua",
+        "1000"
+      ],
+      "bytes": 1592,
+      "sha256": "fffa76efea29ad89ff0bfe661f469218fffa154a1ed8774a7a75dd5e488c6ea1",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "normalized",
+      "n": 1000,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "1000"
+      ],
+      "bytes": 1592,
+      "sha256": "fffa76efea29ad89ff0bfe661f469218fffa154a1ed8774a7a75dd5e488c6ea1",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "original",
+      "n": -1,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua",
+        "-1"
+      ],
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "normalized",
+      "n": -1,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "-1"
+      ],
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "original",
+      "n": 27,
+      "cli_case": "omitted",
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua"
+      ],
+      "bytes": 45,
+      "sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "original",
+      "n": 27,
+      "cli_case": "invalid-default",
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua",
+        "invalid"
+      ],
+      "bytes": 45,
+      "sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "original",
+      "n": 10000,
+      "full_output_validation": true,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua",
+        "10000"
+      ],
+      "bytes": 16893,
+      "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "normalized",
+      "n": 27,
+      "cli_case": "omitted",
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua"
+      ],
+      "bytes": 45,
+      "sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "normalized",
+      "n": 27,
+      "cli_case": "invalid-default",
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "invalid"
+      ],
+      "bytes": 45,
+      "sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "reference_match": true
+    },
+    {
+      "variant": 7,
+      "kind": "normalized",
+      "n": 10000,
+      "full_output_validation": true,
+      "command": [
+        "/opt/homebrew/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+        "10000"
+      ],
+      "bytes": 16893,
+      "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+      "reference_match": true
+    }
+  ],
+  "division_checks": [
+    {
+      "variant": 1,
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/results/divisions-1-n97.tsv",
+      "sha256": "82399b8f5b25db09095df0e3d0fb012c32cb2dddff214e3a458d4b8afd9aafd2",
+      "n": 97,
+      "actual_divisions": 444,
+      "tested_candidates": 222,
+      "accepted_digits": 97,
+      "both_exact_divisions_per_candidate": true,
+      "quotients_independently_verified": true
+    },
+    {
+      "variant": 5,
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/results/divisions-5-n97.tsv",
+      "sha256": "6c93ff1c9ce3565c472fe5dec5d55a8442ffa015f566729dea42412a8e2377a1",
+      "n": 97,
+      "actual_divisions": 832,
+      "tested_candidates": 416,
+      "accepted_digits": 97,
+      "both_exact_divisions_per_candidate": true,
+      "quotients_independently_verified": true
+    },
+    {
+      "variant": 6,
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/results/divisions-6-n97.tsv",
+      "sha256": "118f65ec13c0cbc12c6ebf4733b6638dbf30c72591cc23f5bc0e906613c33636",
+      "n": 97,
+      "actual_divisions": 832,
+      "tested_candidates": 416,
+      "accepted_digits": 97,
+      "both_exact_divisions_per_candidate": true,
+      "quotients_independently_verified": true
+    },
+    {
+      "variant": 7,
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/results/divisions-7-n97.tsv",
+      "sha256": "19a4d866b8509939281cf526034681bee2e1f3100b55ebaabbace3b9cbf7f643",
+      "n": 97,
+      "actual_divisions": 832,
+      "tested_candidates": 416,
+      "accepted_digits": 97,
+      "both_exact_divisions_per_candidate": true,
+      "quotients_independently_verified": true
+    }
+  ],
+  "preserved_historical_files": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/lua/bn.so": "d9d03aaf87ceabc9bd9593740cbded02bf579d5181a3d78c8156ba7d89009db4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/luajit/bn.so": "1959b24ccee00169771ecc62e3861b7a529cf29aad8f2f7da0daec24589f27fa",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/lua-library-pins.json": "f82eac9a50d88fd7d6939f64ffe29a90334e39f89f0d078b8c854a1ab60b67b4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/results/apple-m3-ac-normal-20261009.json": "8cb4fe825e100a7d2db9bbb92f1526de024b1c0c0eb62fca86d5e2c5387e073e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/manifest.json": "a84994890791ad5f0f8a78d1b88389a107e46ff4529e65a90fa1d749a885933a"
+  }
+}

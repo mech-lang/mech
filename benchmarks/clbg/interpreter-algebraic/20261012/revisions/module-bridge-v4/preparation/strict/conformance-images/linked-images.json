@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/usr/bin/otool",
+    "-L",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/module-bridge-v4/.build/strict/target/release/mech-algebraic-conformance"
+  ],
+  "started_at": "2026-10-12T22:33:38.880223+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 65419,
+  "identity": {
+    "pid": 65419,
+    "process_listing": "Mon Oct 12 18:33:38 2026     /Library/Developer/CommandLineTools/usr/bin/otool -L /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/module-bridge-v4/.build/strict/target/release/mech-algebraic-conformance"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-12T22:33:38.907211+00:00",
+  "final_exit_status": 0
+}

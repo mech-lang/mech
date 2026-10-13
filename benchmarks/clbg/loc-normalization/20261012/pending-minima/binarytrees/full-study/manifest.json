@@ -1,0 +1,524 @@
+{
+  "status": "prepared-awaiting-root-review",
+  "benchmark": "binarytrees",
+  "created_at": "2026-10-12T16:47:29.818972+00:00",
+  "samples": 3,
+  "size": 21,
+  "profiles": [
+    {
+      "id": "binarytrees-ruby-2",
+      "key": "binarytrees:binarytrees-ruby-2",
+      "benchmark": "binarytrees",
+      "language": "ruby",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/binarytrees/qualification-v1/binarytrees-ruby-2.rb",
+      "source_sha256": "d75c541ff893ccfb5b5fa399010bc60c7f14f51d1077a0f983502ffe60f05f6c",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/compact/upstream/binarytrees-ruby-2.rb",
+      "command": [
+        "/opt/homebrew/Cellar/ruby/4.0.7/bin/ruby",
+        "--yjit",
+        "-W0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/binarytrees/qualification-v1/binarytrees-ruby-2.rb",
+        "{n}"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "8",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "8"
+      },
+      "maximum_workers": 1,
+      "loc": null,
+      "proposed_canonical_loc": 30,
+      "loc_status": "pending final pool/source review",
+      "role": "New listed compact candidate after canonical LOC reselection",
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Distinct newly allocated two-child arrays at every node including leaves; recursive checks, prescribed tree counts and retained long-lived root."
+      },
+      "publication_status": "pending qualification, all three full samples and count review",
+      "runtime": {
+        "path": "/opt/homebrew/Cellar/ruby/4.0.7/bin/ruby",
+        "sha256": "0abc5dafa91bf31774888e70580d9b7d2739006beecf37795d3a2c3d383b974f",
+        "version": "ruby 4.0.7 (2026-09-15 revision 229531a6cf) +PRISM [arm64-darwin25]"
+      },
+      "small_validation": {
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_match": true
+      },
+      "adversarial_validation": [
+        {
+          "key": "binarytrees:binarytrees-ruby-2",
+          "id": "binarytrees-ruby-2",
+          "benchmark": "binarytrees",
+          "language": "ruby",
+          "source_sha256": "d75c541ff893ccfb5b5fa399010bc60c7f14f51d1077a0f983502ffe60f05f6c",
+          "command": [
+            "/opt/homebrew/Cellar/ruby/4.0.7/bin/ruby",
+            "--yjit",
+            "-W0",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/binarytrees/qualification-v1/binarytrees-ruby-2.rb",
+            "0"
+          ],
+          "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg",
+          "runtime_environment": {
+            "LC_ALL": "C",
+            "OMP_NUM_THREADS": "8",
+            "OPENBLAS_NUM_THREADS": "1",
+            "VECLIB_MAXIMUM_THREADS": "1",
+            "RAYON_NUM_THREADS": "8"
+          },
+          "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/opt/homebrew/Cellar/ruby/4.0.7/bin/ruby\", \"--yjit\", \"-W0\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"d75c541ff893ccfb5b5fa399010bc60c7f14f51d1077a0f983502ffe60f05f6c\", \"support\": {\"/opt/homebrew/Cellar/ruby/4.0.7/bin/ruby\": \"0abc5dafa91bf31774888e70580d9b7d2739006beecf37795d3a2c3d383b974f\"}}",
+          "started_at": "2026-10-12T16:47:28.539279+00:00",
+          "workload_n": 0,
+          "full_workload": false,
+          "timeout_seconds": 300,
+          "maximum_rss_mib": 8192,
+          "power_at_start": {
+            "source": "AC Power",
+            "low_power_mode": 0
+          },
+          "seconds": 0.040476625,
+          "exit_status": 0,
+          "remaining_group_members": [],
+          "competing_compilers": [],
+          "power_changes": [],
+          "power_at_end": {
+            "source": "AC Power",
+            "low_power_mode": 0
+          },
+          "monitor_errors": [],
+          "peak_process_group_rss_kib": 0,
+          "resource_violation": null,
+          "resource_monitor_errors": [],
+          "stderr": "",
+          "stdout_bytes": 143,
+          "stdout_sha256": "1e93372ab23c98137fc156de0f57f67fb53ced95d810e56cf784bd18f6c439fd",
+          "validation": {
+            "bytes": 143,
+            "sha256": "1e93372ab23c98137fc156de0f57f67fb53ced95d810e56cf784bd18f6c439fd",
+            "reference_match": true,
+            "bounded_independent_oracle": true,
+            "tolerance": null
+          },
+          "finished_at": "2026-10-12T16:47:28.789215+00:00",
+          "valid_environment": true,
+          "pins_unchanged_at_end": true,
+          "round": 0,
+          "attempt": 2,
+          "sampler_wait_status": 0,
+          "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/binarytrees/qualification-v1/attempts/002-binarytrees-ruby-2.json",
+          "supervised_native_group": {
+            "type": "native-group-started",
+            "pid": 82679,
+            "pgid": 82679,
+            "command": [
+              "/opt/homebrew/Cellar/ruby/4.0.7/bin/ruby",
+              "--yjit",
+              "-W0",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/binarytrees/qualification-v1/binarytrees-ruby-2.rb",
+              "0"
+            ],
+            "inherited_common_mutex": true
+          },
+          "supervisor_remaining_members": [],
+          "fatal_qualification_fields": [],
+          "qualified": true,
+          "retryable_environment_only": false,
+          "case": "size-0",
+          "preparation_only": true,
+          "never_chart_eligible": true,
+          "full_performance_run": false,
+          "input_file": null
+        },
+        {
+          "key": "binarytrees:binarytrees-ruby-2",
+          "id": "binarytrees-ruby-2",
+          "benchmark": "binarytrees",
+          "language": "ruby",
+          "source_sha256": "d75c541ff893ccfb5b5fa399010bc60c7f14f51d1077a0f983502ffe60f05f6c",
+          "command": [
+            "/opt/homebrew/Cellar/ruby/4.0.7/bin/ruby",
+            "--yjit",
+            "-W0",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/binarytrees/qualification-v1/binarytrees-ruby-2.rb",
+            "4"
+          ],
+          "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg",
+          "runtime_environment": {
+            "LC_ALL": "C",
+            "OMP_NUM_THREADS": "8",
+            "OPENBLAS_NUM_THREADS": "1",
+            "VECLIB_MAXIMUM_THREADS": "1",
+            "RAYON_NUM_THREADS": "8"
+          },
+          "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/opt/homebrew/Cellar/ruby/4.0.7/bin/ruby\", \"--yjit\", \"-W0\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"d75c541ff893ccfb5b5fa399010bc60c7f14f51d1077a0f983502ffe60f05f6c\", \"support\": {\"/opt/homebrew/Cellar/ruby/4.0.7/bin/ruby\": \"0abc5dafa91bf31774888e70580d9b7d2739006beecf37795d3a2c3d383b974f\"}}",
+          "started_at": "2026-10-12T16:47:28.866658+00:00",
+          "workload_n": 4,
+          "full_workload": false,
+          "timeout_seconds": 300,
+          "maximum_rss_mib": 8192,
+          "power_at_start": {
+            "source": "AC Power",
+            "low_power_mode": 0
+          },
+          "seconds": 0.038074375,
+          "exit_status": 0,
+          "remaining_group_members": [],
+          "competing_compilers": [],
+          "power_changes": [],
+          "power_at_end": {
+            "source": "AC Power",
+            "low_power_mode": 0
+          },
+          "monitor_errors": [],
+          "peak_process_group_rss_kib": 0,
+          "resource_violation": null,
+          "resource_monitor_errors": [],
+          "stderr": "",
+          "stdout_bytes": 143,
+          "stdout_sha256": "1e93372ab23c98137fc156de0f57f67fb53ced95d810e56cf784bd18f6c439fd",
+          "validation": {
+            "bytes": 143,
+            "sha256": "1e93372ab23c98137fc156de0f57f67fb53ced95d810e56cf784bd18f6c439fd",
+            "reference_match": true,
+            "bounded_independent_oracle": true,
+            "tolerance": null
+          },
+          "finished_at": "2026-10-12T16:47:29.099640+00:00",
+          "valid_environment": true,
+          "pins_unchanged_at_end": true,
+          "round": 0,
+          "attempt": 3,
+          "sampler_wait_status": 0,
+          "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/binarytrees/qualification-v1/attempts/003-binarytrees-ruby-2.json",
+          "supervised_native_group": {
+            "type": "native-group-started",
+            "pid": 82696,
+            "pgid": 82696,
+            "command": [
+              "/opt/homebrew/Cellar/ruby/4.0.7/bin/ruby",
+              "--yjit",
+              "-W0",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/binarytrees/qualification-v1/binarytrees-ruby-2.rb",
+              "4"
+            ],
+            "inherited_common_mutex": true
+          },
+          "supervisor_remaining_members": [],
+          "fatal_qualification_fields": [],
+          "qualified": true,
+          "retryable_environment_only": false,
+          "case": "size-4",
+          "preparation_only": true,
+          "never_chart_eligible": true,
+          "full_performance_run": false,
+          "input_file": null
+        },
+        {
+          "key": "binarytrees:binarytrees-ruby-2",
+          "id": "binarytrees-ruby-2",
+          "benchmark": "binarytrees",
+          "language": "ruby",
+          "source_sha256": "d75c541ff893ccfb5b5fa399010bc60c7f14f51d1077a0f983502ffe60f05f6c",
+          "command": [
+            "/opt/homebrew/Cellar/ruby/4.0.7/bin/ruby",
+            "--yjit",
+            "-W0",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/binarytrees/qualification-v1/binarytrees-ruby-2.rb",
+            "7"
+          ],
+          "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg",
+          "runtime_environment": {
+            "LC_ALL": "C",
+            "OMP_NUM_THREADS": "8",
+            "OPENBLAS_NUM_THREADS": "1",
+            "VECLIB_MAXIMUM_THREADS": "1",
+            "RAYON_NUM_THREADS": "8"
+          },
+          "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/opt/homebrew/Cellar/ruby/4.0.7/bin/ruby\", \"--yjit\", \"-W0\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"d75c541ff893ccfb5b5fa399010bc60c7f14f51d1077a0f983502ffe60f05f6c\", \"support\": {\"/opt/homebrew/Cellar/ruby/4.0.7/bin/ruby\": \"0abc5dafa91bf31774888e70580d9b7d2739006beecf37795d3a2c3d383b974f\"}}",
+          "started_at": "2026-10-12T16:47:29.179801+00:00",
+          "workload_n": 7,
+          "full_workload": false,
+          "timeout_seconds": 300,
+          "maximum_rss_mib": 8192,
+          "power_at_start": {
+            "source": "AC Power",
+            "low_power_mode": 0
+          },
+          "seconds": 0.040841875,
+          "exit_status": 0,
+          "remaining_group_members": [],
+          "competing_compilers": [],
+          "power_changes": [],
+          "power_at_end": {
+            "source": "AC Power",
+            "low_power_mode": 0
+          },
+          "monitor_errors": [],
+          "peak_process_group_rss_kib": 0,
+          "resource_violation": null,
+          "resource_monitor_errors": [],
+          "stderr": "",
+          "stdout_bytes": 144,
+          "stdout_sha256": "3d9a43f3106a474d5f2891d8f02d74ae4bb12795becba68713091f2450c78dda",
+          "validation": {
+            "bytes": 144,
+            "sha256": "3d9a43f3106a474d5f2891d8f02d74ae4bb12795becba68713091f2450c78dda",
+            "reference_match": true,
+            "bounded_independent_oracle": true,
+            "tolerance": null
+          },
+          "finished_at": "2026-10-12T16:47:29.428786+00:00",
+          "valid_environment": true,
+          "pins_unchanged_at_end": true,
+          "round": 0,
+          "attempt": 4,
+          "sampler_wait_status": 0,
+          "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/binarytrees/qualification-v1/attempts/004-binarytrees-ruby-2.json",
+          "supervised_native_group": {
+            "type": "native-group-started",
+            "pid": 82713,
+            "pgid": 82713,
+            "command": [
+              "/opt/homebrew/Cellar/ruby/4.0.7/bin/ruby",
+              "--yjit",
+              "-W0",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/binarytrees/qualification-v1/binarytrees-ruby-2.rb",
+              "7"
+            ],
+            "inherited_common_mutex": true
+          },
+          "supervisor_remaining_members": [],
+          "fatal_qualification_fields": [],
+          "qualified": true,
+          "retryable_environment_only": false,
+          "case": "size-7",
+          "preparation_only": true,
+          "never_chart_eligible": true,
+          "full_performance_run": false,
+          "input_file": null
+        },
+        {
+          "key": "binarytrees:binarytrees-ruby-2",
+          "id": "binarytrees-ruby-2",
+          "benchmark": "binarytrees",
+          "language": "ruby",
+          "source_sha256": "d75c541ff893ccfb5b5fa399010bc60c7f14f51d1077a0f983502ffe60f05f6c",
+          "command": [
+            "/opt/homebrew/Cellar/ruby/4.0.7/bin/ruby",
+            "--yjit",
+            "-W0",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/binarytrees/qualification-v1/binarytrees-ruby-2.rb",
+            "9"
+          ],
+          "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg",
+          "runtime_environment": {
+            "LC_ALL": "C",
+            "OMP_NUM_THREADS": "8",
+            "OPENBLAS_NUM_THREADS": "1",
+            "VECLIB_MAXIMUM_THREADS": "1",
+            "RAYON_NUM_THREADS": "8"
+          },
+          "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/opt/homebrew/Cellar/ruby/4.0.7/bin/ruby\", \"--yjit\", \"-W0\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"d75c541ff893ccfb5b5fa399010bc60c7f14f51d1077a0f983502ffe60f05f6c\", \"support\": {\"/opt/homebrew/Cellar/ruby/4.0.7/bin/ruby\": \"0abc5dafa91bf31774888e70580d9b7d2739006beecf37795d3a2c3d383b974f\"}}",
+          "started_at": "2026-10-12T16:47:29.506811+00:00",
+          "workload_n": 9,
+          "full_workload": false,
+          "timeout_seconds": 300,
+          "maximum_rss_mib": 8192,
+          "power_at_start": {
+            "source": "AC Power",
+            "low_power_mode": 0
+          },
+          "seconds": 0.041324375,
+          "exit_status": 0,
+          "remaining_group_members": [],
+          "competing_compilers": [],
+          "power_changes": [],
+          "power_at_end": {
+            "source": "AC Power",
+            "low_power_mode": 0
+          },
+          "monitor_errors": [],
+          "peak_process_group_rss_kib": 0,
+          "resource_violation": null,
+          "resource_monitor_errors": [],
+          "stderr": "",
+          "stdout_bytes": 185,
+          "stdout_sha256": "fc6ca49b3987467168c413810504d644350f21504f5a51ed658e9f879832ddaf",
+          "validation": {
+            "bytes": 185,
+            "sha256": "fc6ca49b3987467168c413810504d644350f21504f5a51ed658e9f879832ddaf",
+            "reference_match": true,
+            "bounded_independent_oracle": true,
+            "tolerance": null
+          },
+          "finished_at": "2026-10-12T16:47:29.741944+00:00",
+          "valid_environment": true,
+          "pins_unchanged_at_end": true,
+          "round": 0,
+          "attempt": 5,
+          "sampler_wait_status": 0,
+          "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/binarytrees/qualification-v1/attempts/005-binarytrees-ruby-2.json",
+          "supervised_native_group": {
+            "type": "native-group-started",
+            "pid": 82730,
+            "pgid": 82730,
+            "command": [
+              "/opt/homebrew/Cellar/ruby/4.0.7/bin/ruby",
+              "--yjit",
+              "-W0",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/binarytrees/qualification-v1/binarytrees-ruby-2.rb",
+              "9"
+            ],
+            "inherited_common_mutex": true
+          },
+          "supervisor_remaining_members": [],
+          "fatal_qualification_fields": [],
+          "qualified": true,
+          "retryable_environment_only": false,
+          "case": "size-9",
+          "preparation_only": true,
+          "never_chart_eligible": true,
+          "full_performance_run": false,
+          "input_file": null
+        }
+      ],
+      "required_work_review": {
+        "status": "passed",
+        "method": "Root source review plus canonical and independent bounded outputs",
+        "source_sha256": "d75c541ff893ccfb5b5fa399010bc60c7f14f51d1077a0f983502ffe60f05f6c",
+        "contract": "Distinct newly allocated two-child arrays at every node including leaves; recursive checks, prescribed tree counts and retained long-lived root."
+      }
+    },
+    {
+      "id": "mech-aot-control",
+      "key": "binarytrees:loc-minimum-study:mech-control",
+      "benchmark": "binarytrees",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/binarytrees-parallel.mec",
+      "source_sha256": "61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/binarytrees/mech-binarytrees-parallel-after",
+      "binary_sha256": "b8f1e30861f6003c10fcbd2b3e58c355d6158068621523fc870bfc292677deb0",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/binarytrees/mech-binarytrees-parallel-after",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "loc": null,
+      "published_chart_key": "binarytrees:mech-binarytrees-parallel",
+      "previous_seconds": 0.394411208,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed-library-pool",
+        "reason": "Full bottom-up construction and traversal of distinct ordinary nodes, including equally allocated leaves. Uses the general core library memory pool through memory/with-arena and memory/with-frame. This allocation strategy must be disclosed; it is not a default-GC comparison.",
+        "allocation_policy": "General core library pool; distinct 16-byte node slots; per-tree frame release.",
+        "full_work": {
+          "maximum_depth": 21,
+          "nodes_constructed_and_walked": 613766494
+        },
+        "evidence": [
+          {
+            "path": "binarytrees/binarytrees-parallel.mec",
+            "sha256": "61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f"
+          },
+          {
+            "path": "../../hosts/gpu/src/control/runtime.rs",
+            "sha256": "50d009170e52995741c36499b8495e3f86b10a4cb2631c5743d0dc654852cf9b"
+          },
+          {
+            "path": "../../src/core/src/memory_runtime/allocation.rs",
+            "sha256": "03ee3168f16162eceb19eade748e8581d07542677b7cb2d502aea691ea8a1e5c"
+          },
+          {
+            "path": "binarytrees/results/conformance.json",
+            "sha256": "51e08678c94b9ebedc0bab0d7c3c91f2fcb017f24201f763e8743dab5ef0316c"
+          },
+          {
+            "path": "binarytrees/results/records-conformance.json",
+            "sha256": "5f67bd19fa6734b401ea00f8d2a577bcfda6108510c45c513da6b5b04ca5ce51"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/binarytrees.html",
+        "native_benchmark_kernel": false
+      },
+      "control_for": "r",
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "role": "Fresh current Mech AOT fastest-source control",
+      "maximum_workers": 8,
+      "producer_loc": 26,
+      "loc_status": "pending canonical count overlay"
+    }
+  ],
+  "orders": [
+    {
+      "round": 1,
+      "profiles": [
+        "binarytrees-ruby-2",
+        "mech-aot-control"
+      ]
+    },
+    {
+      "round": 2,
+      "profiles": [
+        "mech-aot-control",
+        "binarytrees-ruby-2"
+      ]
+    },
+    {
+      "round": 3,
+      "profiles": [
+        "binarytrees-ruby-2",
+        "mech-aot-control"
+      ]
+    }
+  ],
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/test_references.py": "b0df8d06db76af743cfd345e30cef4fb9d8700d451ee69b6bd620aed40198fa0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/references.py": "962e34002982a48d172762a9d43c81976ee09d7b9371d14eb7be7dc8f85d69eb",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/full_study.py": "578a49d343fae3d6d67317594c6d820eb604556e8de5904b3d725706b15cc7c4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/full_study.py": "7a48690bef2f36375c72619f8c74170735273804d089dafb55e6813189613fe5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run.py": "5b2a038cfae4112e9e2eee79c3cd57ccc6a1521812828c47bf28986d6a8e139b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/test_prepare.py": "cdbf617d9d77b37c17639c85b6bf3db012fd888335bf4735a3c81b29c8a54851",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/prepare.py": "edf9b67813968d35dbb208ce6935aa83b66066cb91a722e5fd1145261d97951a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/test_cleanup.py": "fc4f7c76831ed674ed84005d0952b1a6c76ec945760bec365b106e56277ea64f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/prepare_cohort.py": "d4c26a05012f608f94c3c15c8db3173a2fd7fcbfa1667f4bab1c2f25d8a9a1d2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/test_minimum_launch.py": "6f4aa94de9c1e0bf4a65a5bd153c5ec03931474f03f1d66fa710625239678f64",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending_minima_study.py": "01e4c5adf928b021319c318c721f385a1d5c2b483163740013acd6024cd48610",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/compact/upstream/binarytrees-ruby-2.rb": "d75c541ff893ccfb5b5fa399010bc60c7f14f51d1077a0f983502ffe60f05f6c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/binarytrees/qualification-v1/binarytrees-ruby-2.rb": "d75c541ff893ccfb5b5fa399010bc60c7f14f51d1077a0f983502ffe60f05f6c",
+    "/opt/homebrew/Cellar/ruby/4.0.7/bin/ruby": "0abc5dafa91bf31774888e70580d9b7d2739006beecf37795d3a2c3d383b974f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/compact/manifest.json": "2181a2060b8660084bec003054e22740a21f64cbe6317e60eaffdfeff1106b35",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/prepare.py": "27fcf050ed21db40e747f2e8801ca6f227d82f1ea98f8592bba7b10a768109e5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/compact/run.py": "6926e288a7b9b59b030c9226227df967aa1d92b3e395789467706e2241d987ae",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/run.py": "e907f71b3fdf8fc6f65adc76aab6dfc424811875388c14f0eb2f31e14e9cffcf",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/all-20261009/run.py": "8b7f1b408fb5838dc6adc2404bcfa6146e48e770e602fbe78255454f3cacb8c7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/oracle-fixtures.json": "e80cf4279af209cb28cb14fb43b242a4d1cec8429274636d38ed15f34e700efe",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/preparation-fixtures.json": "f06283e1642585198a4a2a27b49388a8b3aa789fe1c209d90d525ed6ae993c6f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/cleanup-fixtures.json": "505100c316b7fe1cd9d25882e72f7c96bbd0576dc46857d4a16a19d3acc9e9ff",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/minimum-launch-fixtures.json": "6b64b428aeffbf9be92af228726c939adf012e6240c1de6f26e7494a361d1745",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/source-audit-r.json": "d76be20504617addb9efd5915bf7074877e727e3a49ccbd36585b4be5c763af3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/binarytrees-parallel.mec": "61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/binarytrees/mech-binarytrees-parallel-after": "b8f1e30861f6003c10fcbd2b3e58c355d6158068621523fc870bfc292677deb0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/binarytrees/qualification-v1/probes.json": "92e27dc4ed1483ebcdb1dfb29c3d977291ecc5a2a0f447d64c623dfaf91a457a"
+  },
+  "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+  "required_power_profile": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "maximum_rss_mib": 8192,
+  "timeout_seconds": 14400,
+  "maximum_compute_workers": 8,
+  "environment_retry_limit": 3,
+  "qualification": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/binarytrees/qualification-v1/probes.json",
+  "chart_admitted": false,
+  "loc_status": "pending final canonical audit",
+  "timing_boundary": "Fresh process startup, all prescribed work, full output, and shutdown; preparation excluded.",
+  "retry_policy": "Only bounded environment-only retries; output/work/resource/pin/ownership failures stop and retain evidence."
+}

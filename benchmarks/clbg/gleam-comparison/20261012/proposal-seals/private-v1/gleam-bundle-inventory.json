@@ -1,0 +1,25 @@
+{
+  "status": "passed",
+  "expected_test_ids": [
+    "test_guarded_prepare.CandidatePreparation.test_preheader_input_is_declared_and_reference_ignores_preamble",
+    "test_guarded_prepare.CandidatePreparation.test_complete_authored_inventory_and_explicit_beam_command",
+    "test_guarded_prepare.CandidatePreparation.test_missing_form_foreign_source_and_ffi_module_collision_are_rejected",
+    "test_guarded_prepare.CandidatePreparation.test_hex_inner_checksum_and_exact_outer_inventory_are_required",
+    "test_guarded_prepare.CandidatePreparation.test_archive_traversal_and_links_cannot_become_compiler_inputs"
+  ],
+  "tests_run": 5,
+  "discovered_tests": 5,
+  "actual_test_ids": [
+    "test_guarded_prepare.CandidatePreparation.test_archive_traversal_and_links_cannot_become_compiler_inputs",
+    "test_guarded_prepare.CandidatePreparation.test_complete_authored_inventory_and_explicit_beam_command",
+    "test_guarded_prepare.CandidatePreparation.test_hex_inner_checksum_and_exact_outer_inventory_are_required",
+    "test_guarded_prepare.CandidatePreparation.test_missing_form_foreign_source_and_ffi_module_collision_are_rejected",
+    "test_guarded_prepare.CandidatePreparation.test_preheader_input_is_declared_and_reference_ignores_preamble"
+  ],
+  "successful": true,
+  "skipped": [],
+  "errors": [],
+  "failures": [],
+  "expected_failures": [],
+  "unexpected_successes": []
+}

@@ -1,0 +1,18 @@
+{
+  "status": "passed",
+  "tests_run": 8,
+  "failures": 0,
+  "errors": 0,
+  "created_at": "2026-10-12T15:23:03.893173+00:00",
+  "report_only": true,
+  "never_chart_eligible": true,
+  "full_performance_runs": 0,
+  "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/test_dna_oracles.py": "5f61fd1b478ac4b99b7ed87871db9e3be31a61beb32007adeccd3f8f1eb17d0e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/dna_oracles.py": "3f7b4573f17fecd3420afbc825d296caa9e8b84c18be57414eb9b38a1d6971fa",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/references.py": "962e34002982a48d172762a9d43c81976ee09d7b9371d14eb7be7dc8f85d69eb",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/full_study.py": "578a49d343fae3d6d67317594c6d820eb604556e8de5904b3d725706b15cc7c4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/full_study.py": "7a48690bef2f36375c72619f8c74170735273804d089dafb55e6813189613fe5"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "actual_common_mutex_held": true,
+  "terminal_worker_status": "passed-awaiting-root-source-review",
+  "saved_receipt_status": "passed-awaiting-root-source-review",
+  "terminal_artifact_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-proposal-v1/jobs/fixtures-v1/fixture-receipt.json": "0cf338571f2c0eb2f9ab44aca9bbd989c2bc0193211bb8c29305871d1177c3c8",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-proposal-v1/jobs/fixtures-v1/fixtures.log": "fa6ea46071514a07743ecbd7ec2366037ec5182ec40725c74fc5ce6adcd45cbb"
+  },
+  "receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-proposal-v1/jobs/fixtures-v1/fixture-receipt.json",
+  "receipt_sha256": "0cf338571f2c0eb2f9ab44aca9bbd989c2bc0193211bb8c29305871d1177c3c8",
+  "chart_admission": false,
+  "automatic_retry": false
+}

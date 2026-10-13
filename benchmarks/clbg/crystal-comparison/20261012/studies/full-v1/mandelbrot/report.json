@@ -1,0 +1,1598 @@
+{
+  "status": "complete",
+  "started_at": "2026-10-12T23:36:40.536281+00:00",
+  "benchmark": "mandelbrot",
+  "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/mandelbrot/manifest.json",
+  "manifest_sha256": "52ed220cfa7fa4b97bfccec89771708bfbc72ee772cfc03724e1c3d60054179d",
+  "sample_count": 3,
+  "profiles": {
+    "crystal-mandelbrot-compact": {
+      "id": "crystal-mandelbrot-compact",
+      "benchmark": "mandelbrot",
+      "variant": "compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/source-snapshot/sources/mandelbrot/compact.cr",
+      "status": "authored-unbuilt-unqualified",
+      "source_sha256": "ed4fb0e6a53fe8db69431935011d8de7677430ff0091c7a56e2a40e36cdd3e1c",
+      "loc": null,
+      "canonical_loc_status": "pending common normalization audit",
+      "upstream_provenance": {
+        "repository": "https://github.com/kostya/crystal-benchmarks-game",
+        "commit": "aaf7bd44118889605943df3200b7c9b0c6af6510",
+        "path": "mandelbrot/mandelbrot.cr",
+        "kind": "locally-adapted-published-algorithm; original remains immutable"
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "required_work_review": "pending bounded native qualification and independent traces",
+        "required_work": {
+          "maximum_actual_recurrences": 50,
+          "original_dimensions": true,
+          "full_binary_pbm": true,
+          "zero_tail_bits": true
+        }
+      },
+      "required_work": {
+        "maximum_actual_recurrences": 50,
+        "original_dimensions": true,
+        "full_binary_pbm": true,
+        "zero_tail_bits": true
+      },
+      "maximum_workers": 1,
+      "technique": "Scalar escape recurrence and exact-width complete PBM with zero tail bits.",
+      "compiler_flags": [
+        "--release",
+        "--no-debug",
+        "--mcpu",
+        "native"
+      ],
+      "timing_samples": [],
+      "chart_eligible": false,
+      "key": "mandelbrot:crystal-mandelbrot-compact",
+      "language": "crystal",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-mandelbrot-compact",
+      "binary_sha256": "fe0f4ea9273aca73e5cbaf7037f6d956e4806c302b7687ffb3ee74142aaeb9d9",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-mandelbrot-compact",
+        "{n}"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012",
+      "runtime_environment": {
+        "CRYSTAL_WORKERS": "8",
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "qualification_origin": "exact-unchanged-layout-v2-binary-and-records",
+      "prior_bounded_records": [
+        {
+          "case": "n-0",
+          "prior_attempt": 9,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/009-crystal-mandelbrot-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/009-crystal-mandelbrot-compact.supervisor.json",
+          "stdout_sha256": "636415170043dd6d03f2099060158760eed57cd15a545377e78359eca4611a38"
+        },
+        {
+          "case": "n-1",
+          "prior_attempt": 10,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/010-crystal-mandelbrot-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/010-crystal-mandelbrot-compact.supervisor.json",
+          "stdout_sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819"
+        },
+        {
+          "case": "n-129",
+          "prior_attempt": 21,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/021-crystal-mandelbrot-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/021-crystal-mandelbrot-compact.supervisor.json",
+          "stdout_sha256": "9285001b8e46c26687a2fd422846eab8601aae328fc69dc3fa8265bcefdd6ba9"
+        },
+        {
+          "case": "n-15",
+          "prior_attempt": 16,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/016-crystal-mandelbrot-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/016-crystal-mandelbrot-compact.supervisor.json",
+          "stdout_sha256": "54a9b8222c44b98bb617334737b4932c611208958df4acaee3f9fa7c90d1ee93"
+        },
+        {
+          "case": "n-16",
+          "prior_attempt": 17,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/017-crystal-mandelbrot-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/017-crystal-mandelbrot-compact.supervisor.json",
+          "stdout_sha256": "8560a9f45ef36c9d5d15f5024ad4c91a322a4b373d675d163f6cf51f54d5b141"
+        },
+        {
+          "case": "n-17",
+          "prior_attempt": 18,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/018-crystal-mandelbrot-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/018-crystal-mandelbrot-compact.supervisor.json",
+          "stdout_sha256": "11a01916753a7774492b5b818545d4d6dfaabcd93de1da2c4eb5dd3597fcaf79"
+        },
+        {
+          "case": "n-2",
+          "prior_attempt": 11,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/011-crystal-mandelbrot-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/011-crystal-mandelbrot-compact.supervisor.json",
+          "stdout_sha256": "2e4e5f9f953fd314adbaa1326f7020d08d403929fec8e60c1ef777440af987dd"
+        },
+        {
+          "case": "n-200",
+          "prior_attempt": 22,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/022-crystal-mandelbrot-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/022-crystal-mandelbrot-compact.supervisor.json",
+          "stdout_sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5"
+        },
+        {
+          "case": "n-3",
+          "prior_attempt": 12,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/012-crystal-mandelbrot-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/012-crystal-mandelbrot-compact.supervisor.json",
+          "stdout_sha256": "283b41658c4a4006825d9a3a188f42018305cdc5a19247921d2470c56121ee76"
+        },
+        {
+          "case": "n-31",
+          "prior_attempt": 19,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/019-crystal-mandelbrot-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/019-crystal-mandelbrot-compact.supervisor.json",
+          "stdout_sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1"
+        },
+        {
+          "case": "n-65",
+          "prior_attempt": 20,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/020-crystal-mandelbrot-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/020-crystal-mandelbrot-compact.supervisor.json",
+          "stdout_sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c"
+        },
+        {
+          "case": "n-7",
+          "prior_attempt": 13,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/013-crystal-mandelbrot-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/013-crystal-mandelbrot-compact.supervisor.json",
+          "stdout_sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108"
+        },
+        {
+          "case": "n-8",
+          "prior_attempt": 14,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/014-crystal-mandelbrot-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/014-crystal-mandelbrot-compact.supervisor.json",
+          "stdout_sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3"
+        },
+        {
+          "case": "n-9",
+          "prior_attempt": 15,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/015-crystal-mandelbrot-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/015-crystal-mandelbrot-compact.supervisor.json",
+          "stdout_sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce"
+        }
+      ],
+      "new_native_cases": 0,
+      "producer_loc": null,
+      "loc_status": "pending separate immutable canonical LOC overlay",
+      "eligible_for_chart": false,
+      "chart_admission": false,
+      "role": "Qualified complete Crystal compact application",
+      "required_work_review": {
+        "status": "passed",
+        "method": "Complete source review plus independent bounded outputs and actual primitive/map/division/node traces",
+        "source_sha256": "ed4fb0e6a53fe8db69431935011d8de7677430ff0091c7a56e2a40e36cdd3e1c",
+        "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/pipeline-v2/REQUIRED_WORK_REVIEW.md",
+        "qualification": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-input-archive-filter-v6/report.json"
+      },
+      "samples_seconds": [
+        11.034763917,
+        10.838388917,
+        10.843556834
+      ],
+      "sample_validation": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        }
+      ],
+      "attempts": [
+        1,
+        6,
+        8
+      ],
+      "measurement_status": "measured",
+      "median_seconds": 10.843556834,
+      "sample_stdev_seconds": 0.11191514388178789,
+      "time_x_mech": 23.12045883764763,
+      "matched_mech_control": "mech-aot-control",
+      "matched_mech_source_sha256": "baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde"
+    },
+    "crystal-mandelbrot-optimized": {
+      "id": "crystal-mandelbrot-optimized",
+      "benchmark": "mandelbrot",
+      "variant": "optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/source-snapshot/sources/mandelbrot/optimized.cr",
+      "status": "authored-unbuilt-unqualified",
+      "source_sha256": "5671d8d0a8bf31b80d4e6c8539d430d38e47d4ddff91a5558fe9b687d8de363f",
+      "loc": null,
+      "canonical_loc_status": "pending common normalization audit",
+      "upstream_provenance": {
+        "repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+        "path": "bench/algorithm/mandelbrot/2.cr",
+        "kind": "locally-adapted-published-algorithm; original remains immutable"
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "required_work_review": "pending bounded native qualification and independent traces",
+        "required_work": {
+          "maximum_actual_recurrences": 50,
+          "original_dimensions": true,
+          "full_binary_pbm": true,
+          "zero_tail_bits": true
+        }
+      },
+      "required_work": {
+        "maximum_actual_recurrences": 50,
+        "original_dimensions": true,
+        "full_binary_pbm": true,
+        "zero_tail_bits": true
+      },
+      "maximum_workers": 8,
+      "technique": "Eight standard row fibers, fixed eight-lane arrays/five-step escape blocks, exact dimensions and full PBM.",
+      "compiler_flags": [
+        "--release",
+        "--no-debug",
+        "--mcpu",
+        "native"
+      ],
+      "timing_samples": [],
+      "chart_eligible": false,
+      "key": "mandelbrot:crystal-mandelbrot-optimized",
+      "language": "crystal",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-mandelbrot-optimized",
+      "binary_sha256": "8b741342f02f75396ff7af69b4b5a431544760c3b7fcc532e555bd1fcdfb8b9f",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-mandelbrot-optimized",
+        "{n}"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012",
+      "runtime_environment": {
+        "CRYSTAL_WORKERS": "8",
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "qualification_origin": "exact-unchanged-layout-v2-binary-and-records",
+      "prior_bounded_records": [
+        {
+          "case": "n-0",
+          "prior_attempt": 23,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/023-crystal-mandelbrot-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/023-crystal-mandelbrot-optimized.supervisor.json",
+          "stdout_sha256": "636415170043dd6d03f2099060158760eed57cd15a545377e78359eca4611a38"
+        },
+        {
+          "case": "n-1",
+          "prior_attempt": 24,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/024-crystal-mandelbrot-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/024-crystal-mandelbrot-optimized.supervisor.json",
+          "stdout_sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819"
+        },
+        {
+          "case": "n-129",
+          "prior_attempt": 35,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/035-crystal-mandelbrot-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/035-crystal-mandelbrot-optimized.supervisor.json",
+          "stdout_sha256": "9285001b8e46c26687a2fd422846eab8601aae328fc69dc3fa8265bcefdd6ba9"
+        },
+        {
+          "case": "n-15",
+          "prior_attempt": 30,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/030-crystal-mandelbrot-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/030-crystal-mandelbrot-optimized.supervisor.json",
+          "stdout_sha256": "54a9b8222c44b98bb617334737b4932c611208958df4acaee3f9fa7c90d1ee93"
+        },
+        {
+          "case": "n-16",
+          "prior_attempt": 31,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/031-crystal-mandelbrot-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/031-crystal-mandelbrot-optimized.supervisor.json",
+          "stdout_sha256": "8560a9f45ef36c9d5d15f5024ad4c91a322a4b373d675d163f6cf51f54d5b141"
+        },
+        {
+          "case": "n-17",
+          "prior_attempt": 32,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/032-crystal-mandelbrot-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/032-crystal-mandelbrot-optimized.supervisor.json",
+          "stdout_sha256": "11a01916753a7774492b5b818545d4d6dfaabcd93de1da2c4eb5dd3597fcaf79"
+        },
+        {
+          "case": "n-2",
+          "prior_attempt": 25,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/025-crystal-mandelbrot-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/025-crystal-mandelbrot-optimized.supervisor.json",
+          "stdout_sha256": "2e4e5f9f953fd314adbaa1326f7020d08d403929fec8e60c1ef777440af987dd"
+        },
+        {
+          "case": "n-200",
+          "prior_attempt": 36,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/036-crystal-mandelbrot-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/036-crystal-mandelbrot-optimized.supervisor.json",
+          "stdout_sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5"
+        },
+        {
+          "case": "n-3",
+          "prior_attempt": 26,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/026-crystal-mandelbrot-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/026-crystal-mandelbrot-optimized.supervisor.json",
+          "stdout_sha256": "283b41658c4a4006825d9a3a188f42018305cdc5a19247921d2470c56121ee76"
+        },
+        {
+          "case": "n-31",
+          "prior_attempt": 33,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/033-crystal-mandelbrot-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/033-crystal-mandelbrot-optimized.supervisor.json",
+          "stdout_sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1"
+        },
+        {
+          "case": "n-65",
+          "prior_attempt": 34,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/034-crystal-mandelbrot-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/034-crystal-mandelbrot-optimized.supervisor.json",
+          "stdout_sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c"
+        },
+        {
+          "case": "n-7",
+          "prior_attempt": 27,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/027-crystal-mandelbrot-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/027-crystal-mandelbrot-optimized.supervisor.json",
+          "stdout_sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108"
+        },
+        {
+          "case": "n-8",
+          "prior_attempt": 28,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/028-crystal-mandelbrot-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/028-crystal-mandelbrot-optimized.supervisor.json",
+          "stdout_sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3"
+        },
+        {
+          "case": "n-9",
+          "prior_attempt": 29,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/029-crystal-mandelbrot-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/029-crystal-mandelbrot-optimized.supervisor.json",
+          "stdout_sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce"
+        }
+      ],
+      "new_native_cases": 0,
+      "producer_loc": null,
+      "loc_status": "pending separate immutable canonical LOC overlay",
+      "eligible_for_chart": false,
+      "chart_admission": false,
+      "role": "Qualified complete Crystal optimized application",
+      "required_work_review": {
+        "status": "passed",
+        "method": "Complete source review plus independent bounded outputs and actual primitive/map/division/node traces",
+        "source_sha256": "5671d8d0a8bf31b80d4e6c8539d430d38e47d4ddff91a5558fe9b687d8de363f",
+        "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/pipeline-v2/REQUIRED_WORK_REVIEW.md",
+        "qualification": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-input-archive-filter-v6/report.json"
+      },
+      "samples_seconds": [
+        1.201800542,
+        0.933340042,
+        0.906164209
+      ],
+      "sample_validation": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        }
+      ],
+      "attempts": [
+        2,
+        4,
+        9
+      ],
+      "measurement_status": "measured",
+      "median_seconds": 0.933340042,
+      "sample_stdev_seconds": 0.16340665395936846,
+      "time_x_mech": 1.990052743111699,
+      "matched_mech_control": "mech-aot-control",
+      "matched_mech_source_sha256": "baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde"
+    },
+    "mech-aot-control": {
+      "id": "mech-aot-control",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec",
+      "source_sha256": "baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde",
+      "loc": null,
+      "simd": true,
+      "loop_fma": true,
+      "executable": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+      "emission": {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/.build/arrow-mutations-current/mech-clbg-mandelbrot-compiled",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec",
+          "emit-cranelift-simd",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma.o",
+          "--source-program",
+          "--fp-contract-loop"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "link": {
+        "command": [
+          "/opt/homebrew/opt/llvm@22/bin/clang-22",
+          "-O3",
+          "-mcpu=native",
+          "-ffp-contract=off",
+          "-isysroot",
+          "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma.o",
+          "-lm",
+          "-pthread",
+          "-o",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": "ld: warning: no platform load command found in '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma.o', assuming: macOS\n"
+      },
+      "generated_c_sha256": "0d442a69533edc4868567f8f10762f2e706e8851aab56f8c7d92d3b1d4dabfe1",
+      "native_object_sha256": "41ad4bedd5f8baf3093a0b2e65dfbf60e4638f0bb5d177d2f9f39c1a9e3f6843",
+      "object_inspection": {
+        "_mech_map_bits": {
+          "instructions": 219,
+          "mnemonics": {
+            "and": 8,
+            "b": 1,
+            "b.ne": 1,
+            "cmp": 1,
+            "csel": 1,
+            "dup.2d": 2,
+            "fadd": 1,
+            "fadd.2d": 40,
+            "fcmge.2d": 4,
+            "fcmp": 1,
+            "fdiv": 1,
+            "fmla.2d": 24,
+            "fmls.2d": 20,
+            "fmov": 8,
+            "fmov.2d": 2,
+            "fmul": 1,
+            "fmul.2d": 24,
+            "fsub": 1,
+            "fsub.2d": 4,
+            "ldr": 10,
+            "mov": 3,
+            "mov.16b": 31,
+            "mov.d": 12,
+            "movi.16b": 1,
+            "movi.2s": 1,
+            "orn": 1,
+            "orr": 14,
+            "ret": 1
+          },
+          "memory_instructions": [
+            {
+              "address": 0,
+              "mnemonic": "ldr",
+              "operands": "d5, [x0]"
+            },
+            {
+              "address": 4,
+              "mnemonic": "ldr",
+              "operands": "d23, [x0, #0x8]"
+            },
+            {
+              "address": 8,
+              "mnemonic": "ldr",
+              "operands": "d6, [x0, #0x10]"
+            },
+            {
+              "address": 12,
+              "mnemonic": "ldr",
+              "operands": "d22, [x0, #0x18]"
+            },
+            {
+              "address": 16,
+              "mnemonic": "ldr",
+              "operands": "d7, [x0, #0x20]"
+            },
+            {
+              "address": 20,
+              "mnemonic": "ldr",
+              "operands": "d20, [x0, #0x28]"
+            },
+            {
+              "address": 24,
+              "mnemonic": "ldr",
+              "operands": "d17, [x0, #0x30]"
+            },
+            {
+              "address": 28,
+              "mnemonic": "ldr",
+              "operands": "d19, [x0, #0x38]"
+            },
+            {
+              "address": 32,
+              "mnemonic": "ldr",
+              "operands": "d18, [x0, #0x40]"
+            },
+            {
+              "address": 36,
+              "mnemonic": "ldr",
+              "operands": "d25, [x0, #0x48]"
+            }
+          ]
+        },
+        "_mech_grid_row": {
+          "instructions": 65,
+          "mnemonics": {
+            "add": 9,
+            "and": 1,
+            "b": 1,
+            "b.eq": 1,
+            "b.hs": 1,
+            "bl": 1,
+            "cmp": 3,
+            "csel": 1,
+            "ldp": 3,
+            "lsl": 1,
+            "lsr": 1,
+            "mov": 13,
+            "pacibsp": 1,
+            "retab": 1,
+            "stp": 3,
+            "strb": 1,
+            "stur": 10,
+            "sub": 3,
+            "ucvtf": 10
+          },
+          "memory_instructions": [
+            {
+              "address": 880,
+              "mnemonic": "stp",
+              "operands": "x29, x30, [sp, #-0x10]!"
+            },
+            {
+              "address": 888,
+              "mnemonic": "stp",
+              "operands": "x21, x22, [sp, #-0x10]!"
+            },
+            {
+              "address": 892,
+              "mnemonic": "stp",
+              "operands": "x19, x20, [sp, #-0x10]!"
+            },
+            {
+              "address": 912,
+              "mnemonic": "stur",
+              "operands": "d0, [sp]"
+            },
+            {
+              "address": 920,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x48]"
+            },
+            {
+              "address": 944,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x8]"
+            },
+            {
+              "address": 956,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x10]"
+            },
+            {
+              "address": 968,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x18]"
+            },
+            {
+              "address": 980,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x20]"
+            },
+            {
+              "address": 992,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x28]"
+            },
+            {
+              "address": 1004,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x30]"
+            },
+            {
+              "address": 1016,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x38]"
+            },
+            {
+              "address": 1028,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x40]"
+            },
+            {
+              "address": 1088,
+              "mnemonic": "strb",
+              "operands": "w0, [x2, x1]"
+            },
+            {
+              "address": 1120,
+              "mnemonic": "ldp",
+              "operands": "x19, x20, [sp], #0x10"
+            },
+            {
+              "address": 1124,
+              "mnemonic": "ldp",
+              "operands": "x21, x22, [sp], #0x10"
+            },
+            {
+              "address": 1128,
+              "mnemonic": "ldp",
+              "operands": "x29, x30, [sp], #0x10"
+            }
+          ]
+        }
+      },
+      "binary_sha256": "42a54ae5ab8902a4b71d031f3744a1da23c1da1fa26af6943fa3b77475691d8f",
+      "key": "mandelbrot:crystal-full-study:mech-control",
+      "benchmark": "mandelbrot",
+      "language": "mech",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+        "{n}",
+        "8"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "state_layout": "2x8 numeric state plus scalar iteration",
+      "role": "Fresh unchanged current fastest Mech AOT source control",
+      "mode": "aot-control",
+      "timing_boundary": "Fresh-process elapsed including startup, complete PBM output and shutdown; unchanged canonical-source AOT binary from the completed array-state study.",
+      "maximum_workers": 8,
+      "producer_loc": 16,
+      "loc_status": "pending canonical count overlay",
+      "samples_seconds": [
+        0.493113875,
+        0.441552375,
+        0.469002666
+      ],
+      "sample_validation": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        }
+      ],
+      "attempts": [
+        3,
+        5,
+        7
+      ],
+      "measurement_status": "measured",
+      "median_seconds": 0.469002666,
+      "sample_stdev_seconds": 0.02579876339955192,
+      "time_x_mech": 1.0,
+      "matched_mech_control": "mech-aot-control",
+      "matched_mech_source_sha256": "baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde"
+    }
+  },
+  "orders": [
+    {
+      "round": 1,
+      "profiles": [
+        "crystal-mandelbrot-compact",
+        "crystal-mandelbrot-optimized",
+        "mech-aot-control"
+      ]
+    },
+    {
+      "round": 2,
+      "profiles": [
+        "crystal-mandelbrot-optimized",
+        "mech-aot-control",
+        "crystal-mandelbrot-compact"
+      ]
+    },
+    {
+      "round": 3,
+      "profiles": [
+        "mech-aot-control",
+        "crystal-mandelbrot-compact",
+        "crystal-mandelbrot-optimized"
+      ]
+    }
+  ],
+  "attempts": [
+    {
+      "key": "mandelbrot:crystal-mandelbrot-compact",
+      "id": "crystal-mandelbrot-compact",
+      "benchmark": "mandelbrot",
+      "language": "crystal",
+      "source_sha256": "ed4fb0e6a53fe8db69431935011d8de7677430ff0091c7a56e2a40e36cdd3e1c",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-mandelbrot-compact",
+        "16000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012",
+      "runtime_environment": {
+        "CRYSTAL_WORKERS": "8",
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"fe0f4ea9273aca73e5cbaf7037f6d956e4806c302b7687ffb3ee74142aaeb9d9\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-mandelbrot-compact\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012\", \"environment\": {\"CRYSTAL_WORKERS\": \"8\", \"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"ed4fb0e6a53fe8db69431935011d8de7677430ff0091c7a56e2a40e36cdd3e1c\", \"support\": {}}",
+      "started_at": "2026-10-13T00:45:28.553270+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 11.034763917,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 2672,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T00:45:39.823545+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 1,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/mandelbrot/attempts/001-crystal-mandelbrot-compact.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 97612,
+        "pgid": 97612,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-mandelbrot-compact",
+          "16000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/mandelbrot/attempts/001-crystal-mandelbrot-compact.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "mandelbrot:crystal-mandelbrot-optimized",
+      "id": "crystal-mandelbrot-optimized",
+      "benchmark": "mandelbrot",
+      "language": "crystal",
+      "source_sha256": "5671d8d0a8bf31b80d4e6c8539d430d38e47d4ddff91a5558fe9b687d8de363f",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-mandelbrot-optimized",
+        "16000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012",
+      "runtime_environment": {
+        "CRYSTAL_WORKERS": "8",
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"8b741342f02f75396ff7af69b4b5a431544760c3b7fcc532e555bd1fcdfb8b9f\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-mandelbrot-optimized\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012\", \"environment\": {\"CRYSTAL_WORKERS\": \"8\", \"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"5671d8d0a8bf31b80d4e6c8539d430d38e47d4ddff91a5558fe9b687d8de363f\", \"support\": {}}",
+      "started_at": "2026-10-13T00:48:47.255910+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 1.201800542,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 34688,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T00:48:48.699352+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 2,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/mandelbrot/attempts/002-crystal-mandelbrot-optimized.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 98967,
+        "pgid": 98967,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-mandelbrot-optimized",
+          "16000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/mandelbrot/attempts/002-crystal-mandelbrot-optimized.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "mandelbrot:crystal-full-study:mech-control",
+      "id": "mech-aot-control",
+      "benchmark": "mandelbrot",
+      "language": "mech",
+      "source_sha256": "baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+        "16000",
+        "8"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"42a54ae5ab8902a4b71d031f3744a1da23c1da1fa26af6943fa3b77475691d8f\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma\", \"{n}\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde\", \"support\": {}}",
+      "started_at": "2026-10-13T01:02:33.304501+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.493113875,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T01:02:34.039270+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 3,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/mandelbrot/attempts/003-mech-aot-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 2940,
+        "pgid": 2940,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+          "16000",
+          "8"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/mandelbrot/attempts/003-mech-aot-control.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "mandelbrot:crystal-mandelbrot-optimized",
+      "id": "crystal-mandelbrot-optimized",
+      "benchmark": "mandelbrot",
+      "language": "crystal",
+      "source_sha256": "5671d8d0a8bf31b80d4e6c8539d430d38e47d4ddff91a5558fe9b687d8de363f",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-mandelbrot-optimized",
+        "16000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012",
+      "runtime_environment": {
+        "CRYSTAL_WORKERS": "8",
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"8b741342f02f75396ff7af69b4b5a431544760c3b7fcc532e555bd1fcdfb8b9f\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-mandelbrot-optimized\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012\", \"environment\": {\"CRYSTAL_WORKERS\": \"8\", \"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"5671d8d0a8bf31b80d4e6c8539d430d38e47d4ddff91a5558fe9b687d8de363f\", \"support\": {}}",
+      "started_at": "2026-10-13T01:17:19.441511+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.933340042,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T01:17:20.613379+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 4,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/mandelbrot/attempts/004-crystal-mandelbrot-optimized.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 9624,
+        "pgid": 9624,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-mandelbrot-optimized",
+          "16000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/mandelbrot/attempts/004-crystal-mandelbrot-optimized.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "mandelbrot:crystal-full-study:mech-control",
+      "id": "mech-aot-control",
+      "benchmark": "mandelbrot",
+      "language": "mech",
+      "source_sha256": "baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+        "16000",
+        "8"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"42a54ae5ab8902a4b71d031f3744a1da23c1da1fa26af6943fa3b77475691d8f\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma\", \"{n}\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde\", \"support\": {}}",
+      "started_at": "2026-10-13T01:18:18.624295+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.441552375,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T01:18:19.295901+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 5,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/mandelbrot/attempts/005-mech-aot-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 10065,
+        "pgid": 10065,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+          "16000",
+          "8"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/mandelbrot/attempts/005-mech-aot-control.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "mandelbrot:crystal-mandelbrot-compact",
+      "id": "crystal-mandelbrot-compact",
+      "benchmark": "mandelbrot",
+      "language": "crystal",
+      "source_sha256": "ed4fb0e6a53fe8db69431935011d8de7677430ff0091c7a56e2a40e36cdd3e1c",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-mandelbrot-compact",
+        "16000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012",
+      "runtime_environment": {
+        "CRYSTAL_WORKERS": "8",
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"fe0f4ea9273aca73e5cbaf7037f6d956e4806c302b7687ffb3ee74142aaeb9d9\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-mandelbrot-compact\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012\", \"environment\": {\"CRYSTAL_WORKERS\": \"8\", \"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"ed4fb0e6a53fe8db69431935011d8de7677430ff0091c7a56e2a40e36cdd3e1c\", \"support\": {}}",
+      "started_at": "2026-10-13T01:20:52.440577+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 10.838388917,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 2688,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T01:21:03.511577+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 6,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/mandelbrot/attempts/006-crystal-mandelbrot-compact.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 10881,
+        "pgid": 10881,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-mandelbrot-compact",
+          "16000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/mandelbrot/attempts/006-crystal-mandelbrot-compact.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "mandelbrot:crystal-full-study:mech-control",
+      "id": "mech-aot-control",
+      "benchmark": "mandelbrot",
+      "language": "mech",
+      "source_sha256": "baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+        "16000",
+        "8"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"42a54ae5ab8902a4b71d031f3744a1da23c1da1fa26af6943fa3b77475691d8f\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma\", \"{n}\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde\", \"support\": {}}",
+      "started_at": "2026-10-13T01:23:45.294652+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.469002666,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T01:23:46.001375+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 7,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/mandelbrot/attempts/007-mech-aot-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 11371,
+        "pgid": 11371,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+          "16000",
+          "8"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/mandelbrot/attempts/007-mech-aot-control.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "mandelbrot:crystal-mandelbrot-compact",
+      "id": "crystal-mandelbrot-compact",
+      "benchmark": "mandelbrot",
+      "language": "crystal",
+      "source_sha256": "ed4fb0e6a53fe8db69431935011d8de7677430ff0091c7a56e2a40e36cdd3e1c",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-mandelbrot-compact",
+        "16000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012",
+      "runtime_environment": {
+        "CRYSTAL_WORKERS": "8",
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"fe0f4ea9273aca73e5cbaf7037f6d956e4806c302b7687ffb3ee74142aaeb9d9\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-mandelbrot-compact\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012\", \"environment\": {\"CRYSTAL_WORKERS\": \"8\", \"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"ed4fb0e6a53fe8db69431935011d8de7677430ff0091c7a56e2a40e36cdd3e1c\", \"support\": {}}",
+      "started_at": "2026-10-13T01:26:08.177084+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 10.843556834,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 2688,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T01:26:19.250338+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 8,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/mandelbrot/attempts/008-crystal-mandelbrot-compact.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 12179,
+        "pgid": 12179,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-mandelbrot-compact",
+          "16000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/mandelbrot/attempts/008-crystal-mandelbrot-compact.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "mandelbrot:crystal-mandelbrot-optimized",
+      "id": "crystal-mandelbrot-optimized",
+      "benchmark": "mandelbrot",
+      "language": "crystal",
+      "source_sha256": "5671d8d0a8bf31b80d4e6c8539d430d38e47d4ddff91a5558fe9b687d8de363f",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-mandelbrot-optimized",
+        "16000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012",
+      "runtime_environment": {
+        "CRYSTAL_WORKERS": "8",
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"8b741342f02f75396ff7af69b4b5a431544760c3b7fcc532e555bd1fcdfb8b9f\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-mandelbrot-optimized\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012\", \"environment\": {\"CRYSTAL_WORKERS\": \"8\", \"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"5671d8d0a8bf31b80d4e6c8539d430d38e47d4ddff91a5558fe9b687d8de363f\", \"support\": {}}",
+      "started_at": "2026-10-13T01:34:27.856273+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.906164209,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T01:34:29.004262+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 9,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/mandelbrot/attempts/009-crystal-mandelbrot-optimized.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 13941,
+        "pgid": 13941,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-mandelbrot-optimized",
+          "16000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/mandelbrot/attempts/009-crystal-mandelbrot-optimized.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    }
+  ],
+  "active": null,
+  "supervisor": {
+    "pid": 74611,
+    "process_listing": "Mon Oct 12 19:01:50 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u benchmarks/clbg/crystal-comparison/20261012/studies/pipeline-v2/full_study.py --run --benchmark mandelbrot --revision full-v1 --manifest-sha256 52ed220cfa7fa4b97bfccec89771708bfbc72ee772cfc03724e1c3d60054179d"
+  },
+  "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+  "full_workload_n": 16000,
+  "chart_admission": false,
+  "no_automatic_retry": true,
+  "canonical_LOC_status": "pending separate immutable count overlay",
+  "finished_at": "2026-10-13T01:35:56.628576+00:00",
+  "pins_unchanged_at_end": true
+}

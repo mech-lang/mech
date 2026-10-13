@@ -1,0 +1,32 @@
+{
+  "status": "not-started",
+  "expected_ids": [
+    "named-header-and-value",
+    "inline-first-callback",
+    "expanded-first-callback",
+    "independent-callback-effect",
+    "two-real-callbacks",
+    "inline-receive-arm-body-close",
+    "expanded-receive-arm-body-close",
+    "nested-receive-two-outer-arms",
+    "packed-case-pattern-and-data",
+    "independent-case-arm-effect",
+    "runner-try-catch-two-effects",
+    "literal-keywords-and-separators",
+    "wrapped-data-retains-physical-row",
+    "independent-chained-matches",
+    "additional-anonymous-clause",
+    "unknown-authored-include",
+    "actual-parser-error",
+    "unknown-comprehension-owner",
+    "earlier-effect-before-callback",
+    "intervening-effect-between-callbacks",
+    "written-selector-matches-remain-gated"
+  ],
+  "started_ids": [],
+  "actual_cases": 0,
+  "raw_case_receipts": [],
+  "actual_common_mutex_held": true,
+  "actual_benchmark_processes": 0,
+  "no_synthetic_completed_fixture_status": true
+}

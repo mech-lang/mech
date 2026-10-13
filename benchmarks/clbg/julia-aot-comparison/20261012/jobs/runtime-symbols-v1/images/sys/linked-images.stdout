@@ -1,0 +1,6 @@
+/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/sys.dylib:
+	@rpath/sys.dylib (compatibility version 0.0.0, current version 0.0.0)
+	@rpath/libjulia-internal.dylib (compatibility version 1.13.0, current version 1.13.1)
+	@rpath/libjulia.1.13.dylib (compatibility version 1.13.0, current version 1.13.1)
+	/usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 2200.27.0)
+	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1359.0.0)

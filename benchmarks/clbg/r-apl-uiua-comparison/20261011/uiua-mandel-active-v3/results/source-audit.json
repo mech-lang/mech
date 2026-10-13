@@ -1,8 +1,8 @@
 {
-  "status": "pending-locked-runtime-validation",
-  "created_at": "2026-10-11T22:15:13.497637+00:00",
+  "status": "passed-source-audit",
+  "created_at": "2026-10-11T22:24:57.203443+00:00",
   "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/sources/fast.ua",
-  "source_sha256": "5388b822fbd264f6c6f2f30029905c29e4fca909d5eaf23be1120fed4683374f",
+  "source_sha256": "5a3397ac99a36bdff8bf834b5f1c81ed2d53ab969e4f80994ab4870172c9ca65",
   "physical_loc": 14,
   "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandelbrot-v2/sources/fast.ua",
   "original_source_sha256": "64f2913ec83009b70cc3ac8c4064438732bc1faf4448af198b7052e4cb0aaa4e",
@@ -26,10 +26,10 @@
   "native_runtime_proof": [
     {
       "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/sources/fast.ua",
-      "sha256": "5388b822fbd264f6c6f2f30029905c29e4fca909d5eaf23be1120fed4683374f",
+      "sha256": "5a3397ac99a36bdff8bf834b5f1c81ed2d53ab969e4f80994ab4870172c9ca65",
       "first_line": 1,
       "last_line": 14,
-      "excerpt": "N  ← ⋕◇∘⊡1 &args\nCr ← -1.5 ×2÷N⇡N\n~M {R I Index Cx Cy Iter}\nAdvance ← M ⊃(+⊃M.Cx(-⊃(˙×M.I)(˙×M.R))|+⊃M.Cy(×2×⊃M.R M.I)|M.Index|M.Cx|M.Cy|+1M.Iter)\n~Selection {State Keep}\nSelected ← Selection ⊃(∘|⊚ ≤4+⊃(˙×M.R)(˙×M.I))\nPrune ← M ⊃(⊏⊃Selection.Keep(M.R Selection.State)|⊏⊃Selection.Keep(M.I Selection.State)|⊏⊃Selection.Keep(M.Index Selection.State)|⊏⊃Selection.Keep(M.Cx Selection.State)|M.Cy Selection.State|M.Iter Selection.State) Selected\nIterate ← Prune Advance\nBits ← ⍜⊏⋅1 ⊃M.Index(⋅↯N 0)\nPack ← ≡/+ ×⊙(¤⇌˜ⁿ2⇡8) ⬚0↯(⌈÷8 N)_8\nRow ← &fwa \"/dev/stdout\" Pack Bits ⍢(Iterate|×⊃(<50M.Iter)(>0⧻M.Index)) M (↯N 0) (↯N 0) (⇡N) Cr ⊙0\n&p \"P4\"\n&p $\"_ _\" N N\n≡Row -1 ×2÷N⇡N",
+      "excerpt": "N  ← ⋕◇∘⊡1 &args\nCr ← -1.5 ×2÷N⇡N\n~M {R I Index Cx Cy Iter}\nAdvance ← M ⊃(+⊃M.Cx(-⊃(˙×M.I)(˙×M.R))|+⊃M.Cy(×2×⊃M.R M.I)|M.Index|M.Cx|M.Cy|+1M.Iter)\n~Selection {State Keep}\nSelected ← Selection ⊃(∘|⊚ ≤4+⊃(˙×M.R)(˙×M.I))\nPrune ← M ⊃(⊏⊃Selection.Keep(M.R Selection.State)|⊏⊃Selection.Keep(M.I Selection.State)|⊏⊃Selection.Keep(M.Index Selection.State)|⊏⊃Selection.Keep(M.Cx Selection.State)|M.Cy Selection.State|M.Iter Selection.State) Selected\nIterate ← Prune Advance\nBits ← ⍜⊏(⋅1) ⊃M.Index(⋅(↯N 0))\nPack ← ≡/+ ×⊙(¤⇌˜ⁿ2⇡8) ⬚0↯(⌈÷8 N)_8\nRow ← &fwa \"/dev/stdout\" Pack Bits ⍢(Iterate|×⊃(<50M.Iter)(>0⧻M.Index)) M (↯N 0) (↯N 0) (⇡N) Cr ⊙0\n&p \"P4\"\n&p $\"_ _\" N N\n≡Row -1 ×2÷N⇡N",
       "conclusion": "All 14 application/helper lines are counted. Each exact recurrence updates active state; native Where/Select retain states, coordinates and original pixel identities; one final Under Select restores exact-width bits."
     },
     {
@@ -94,7 +94,7 @@
       "first_line": 919,
       "last_line": 924,
       "excerpt": "            ImplPrimitive::UndoSelect => {\n                let index = env.pop(1)?;\n                let into = env.pop(2)?;\n                let from = env.pop(3)?;\n                env.push(from.undo_select(index, into, env)?);\n            }",
-      "conclusion": "UndoSelect pops replacement, original selector and target then dispatches to the ordinary native indexed update."
+      "conclusion": "UndoSelect directly dispatches the replacement, original selector and target values to the ordinary native indexed update."
     },
     {
       "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/algorithm/dyadic/structure.rs",
@@ -129,9 +129,9 @@
     "scatter_checks_passed": 7,
     "primitive_checks_passed": 14
   },
-  "validation_status": "pending",
+  "validation_status": "passed",
   "validation_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/results/validation.json",
-  "validation_sha256": null,
+  "validation_sha256": "b9643fac565c9ae3ddc5f23460ce0f381956cc7fed500e99b766cb1596b2f221",
   "full_performance_runs": 0,
   "measured_speedup": null
 }

@@ -1,0 +1,9 @@
+{
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbol-routes-v2/report.json": "820505caf31a3e56593552d32fba6b4e539c0ccf8bf8f704a9cd47c85ef42a6b"
+  },
+  "exclusive_common_mutex_held": true,
+  "status": "public-implementation-fallback-lineage-awaiting-loaded-address-review",
+  "runtime_aot_proven": false,
+  "chart_admission": false
+}

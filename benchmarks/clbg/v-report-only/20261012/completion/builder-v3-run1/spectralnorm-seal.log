@@ -1,0 +1,2 @@
+WAIT common mutex: V full-study manifest spectralnorm
+{"manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/studies/spectralnorm/full-study/manifest.json", "sha256": "65c3ac625b779122cd92e189b93553e733e074d1fb4ce04d25ccb8b79ee6706d", "profiles": ["v-spectralnorm-compact-input-v2", "v-spectralnorm-optimized-input-v2", "mech-aot-control"], "full_processes": 9, "report_only": true}

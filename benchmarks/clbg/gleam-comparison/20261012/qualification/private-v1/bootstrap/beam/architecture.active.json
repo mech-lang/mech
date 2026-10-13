@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/usr/bin/lipo",
+    "-archs",
+    "/opt/homebrew/Cellar/erlang/29.1.1_2/lib/erlang/erts-17.1/bin/beam.smp"
+  ],
+  "started_at": "2026-10-12T23:07:45.729437+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 76478,
+  "identity": {
+    "pid": 76478,
+    "process_listing": "Mon Oct 12 19:07:45 2026     /usr/bin/lipo -archs /opt/homebrew/Cellar/erlang/29.1.1_2/lib/erlang/erts-17.1/bin/beam.smp"
+  }
+}

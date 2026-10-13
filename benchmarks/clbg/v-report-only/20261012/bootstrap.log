@@ -1,0 +1,10 @@
+WAIT common timing mutex for private V preparation
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/bootstrap.py", line 131, in <module>
+    main()
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/bootstrap.py", line 117, in main
+    run()
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/bootstrap.py", line 93, in run
+    assert build.returncode == 0, ('Production smoke build failed', build.returncode)
+           ^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('Production smoke build failed', 1)

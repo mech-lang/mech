@@ -1,0 +1,18 @@
+{
+  "started_at": "2026-10-13T06:57:11.089878+00:00",
+  "command_pid": 87188,
+  "command_identity": {
+    "pid": 87188,
+    "listing": "87188 87184 Tue Oct 13 02:57:11 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u continue_binarytrees_v1.py --revision remaining-eight-v1"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+    "-B",
+    "-u",
+    "continue_binarytrees_v1.py",
+    "--revision",
+    "remaining-eight-v1"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012"
+}

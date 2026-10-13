@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/usr/bin/otool",
+    "-tvV",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v4/bin/nim-binarytrees-optimized"
+  ],
+  "started_at": "2026-10-13T02:33:09.501729+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 60,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 35985,
+  "identity": {
+    "pid": 35985,
+    "process_listing": "Mon Oct 12 22:33:09 2026     /usr/bin/otool -tvV /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v4/bin/nim-binarytrees-optimized"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-13T02:33:09.531968+00:00",
+  "final_exit_status": 0
+}

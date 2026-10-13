@@ -1,0 +1,171 @@
+{
+  "status": "six-exact-source-closing-line-proposals-awaiting-root-review",
+  "evidence": "benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-07/candidate-audit.json",
+  "executed_at": "2026-10-12T15:56:34.353613+00:00",
+  "exclusive_common_mutex_verified": true,
+  "sources": [
+    {
+      "key": "spectralnorm:spectralnorm-apl-compact",
+      "sha256": "138dac87e5b26e8fea7a1b637468d79225a89685ee98c08b3fc4f238f86c7d61",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/spectralnorm.compact.apl",
+      "producer_loc": 27,
+      "proposed_canonical_loc": 29,
+      "extra_written_closes": 2,
+      "prior_nonclosing_count_matches": true,
+      "closing_line_increments": [
+        {
+          "line": 16,
+          "original": "∇",
+          "extra_lines": 1,
+          "reason": "Written standalone closing ∇ was excluded by the prior producer rule."
+        },
+        {
+          "line": 27,
+          "original": "∇",
+          "extra_lines": 1,
+          "reason": "Written standalone closing ∇ was excluded by the prior producer rule."
+        }
+      ],
+      "normalized_loc": null,
+      "review_status": "needs-explicit-closing-line-review"
+    },
+    {
+      "key": "spectralnorm:spectralnorm-apl-optimized",
+      "sha256": "34f1a097f3da19cf7b4435812c5f0256c21b6f0ae0c1982386361d114958f237",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/spectralnorm.optimized.apl",
+      "producer_loc": 29,
+      "proposed_canonical_loc": 31,
+      "extra_written_closes": 2,
+      "prior_nonclosing_count_matches": true,
+      "closing_line_increments": [
+        {
+          "line": 18,
+          "original": "∇",
+          "extra_lines": 1,
+          "reason": "Written standalone closing ∇ was excluded by the prior producer rule."
+        },
+        {
+          "line": 29,
+          "original": "∇",
+          "extra_lines": 1,
+          "reason": "Written standalone closing ∇ was excluded by the prior producer rule."
+        }
+      ],
+      "normalized_loc": null,
+      "review_status": "needs-explicit-closing-line-review"
+    },
+    {
+      "key": "pidigits:pidigits-apl-compact",
+      "sha256": "6a691668ec0835a4930cdc550dfceb5f04bbfbce08368e47834e26dd5be9ab76",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/pidigits.compact.apl",
+      "producer_loc": 55,
+      "proposed_canonical_loc": 57,
+      "extra_written_closes": 2,
+      "prior_nonclosing_count_matches": true,
+      "closing_line_increments": [
+        {
+          "line": 12,
+          "original": "∇",
+          "extra_lines": 1,
+          "reason": "Written standalone closing ∇ was excluded by the prior producer rule."
+        },
+        {
+          "line": 55,
+          "original": "∇",
+          "extra_lines": 1,
+          "reason": "Written standalone closing ∇ was excluded by the prior producer rule."
+        }
+      ],
+      "normalized_loc": null,
+      "review_status": "needs-explicit-closing-line-review"
+    },
+    {
+      "key": "regexredux:regexredux-apl-v3-optimized",
+      "sha256": "bfcfeb21c2753bb6217b26e2db1cff17eed762d9ade7d27077d523e2b27401d8",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-regex-v3/sources/regexredux.optimized.apl",
+      "producer_loc": 33,
+      "proposed_canonical_loc": 35,
+      "extra_written_closes": 2,
+      "prior_nonclosing_count_matches": true,
+      "closing_line_increments": [
+        {
+          "line": 13,
+          "original": "∇",
+          "extra_lines": 1,
+          "reason": "Written standalone closing ∇ was excluded by the prior producer rule."
+        },
+        {
+          "line": 33,
+          "original": "∇",
+          "extra_lines": 1,
+          "reason": "Written standalone closing ∇ was excluded by the prior producer rule."
+        }
+      ],
+      "normalized_loc": null,
+      "review_status": "needs-explicit-closing-line-review"
+    },
+    {
+      "key": "revcomp:revcomp-apl-v2-compact",
+      "sha256": "611f8f040cd5893993d5d43830ff4c7e74c0c3bf1cc6b8f4832f616de7400d38",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/sources/revcomp.compact.apl",
+      "producer_loc": 51,
+      "proposed_canonical_loc": 53,
+      "extra_written_closes": 2,
+      "prior_nonclosing_count_matches": true,
+      "closing_line_increments": [
+        {
+          "line": 22,
+          "original": "∇",
+          "extra_lines": 1,
+          "reason": "Written standalone closing ∇ was excluded by the prior producer rule."
+        },
+        {
+          "line": 51,
+          "original": "∇",
+          "extra_lines": 1,
+          "reason": "Written standalone closing ∇ was excluded by the prior producer rule."
+        }
+      ],
+      "normalized_loc": null,
+      "review_status": "needs-explicit-closing-line-review"
+    },
+    {
+      "key": "revcomp:revcomp-apl-v2-optimized",
+      "sha256": "a4fcaa32c69f215bc07a9d1794bd72ceb764bd47059dfd4ec9490b0a8ab4d991",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/sources/revcomp.optimized.apl",
+      "producer_loc": 71,
+      "proposed_canonical_loc": 75,
+      "extra_written_closes": 4,
+      "prior_nonclosing_count_matches": true,
+      "closing_line_increments": [
+        {
+          "line": 25,
+          "original": "∇",
+          "extra_lines": 1,
+          "reason": "Written standalone closing ∇ was excluded by the prior producer rule."
+        },
+        {
+          "line": 29,
+          "original": "∇",
+          "extra_lines": 1,
+          "reason": "Written standalone closing ∇ was excluded by the prior producer rule."
+        },
+        {
+          "line": 63,
+          "original": "∇",
+          "extra_lines": 1,
+          "reason": "Written standalone closing ∇ was excluded by the prior producer rule."
+        },
+        {
+          "line": 73,
+          "original": "∇",
+          "extra_lines": 1,
+          "reason": "Written standalone closing ∇ was excluded by the prior producer rule."
+        }
+      ],
+      "normalized_loc": null,
+      "review_status": "needs-explicit-closing-line-review"
+    }
+  ],
+  "chart_admitted": false
+}

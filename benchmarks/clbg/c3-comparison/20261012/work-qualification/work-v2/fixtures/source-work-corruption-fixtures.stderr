@@ -1,0 +1,22 @@
+test_final_arm_leaf_shortcut_before_allocation_rejected (test_work_traces.LoweringChecks.test_final_arm_leaf_shortcut_before_allocation_rejected) ... ok
+test_original_ir_leaf_path_must_allocate_unconditionally (test_work_traces.LoweringChecks.test_original_ir_leaf_path_must_allocate_unconditionally) ... ok
+test_all_real_tables_and_tail_windows (test_work_traces.MapChecks.test_all_real_tables_and_tail_windows) ... ok
+test_fixed_capacity_on_growth_fixture_rejected (test_work_traces.MapChecks.test_fixed_capacity_on_growth_fixture_rejected) ... ok
+test_main_thread_substituted_for_map_owner_rejected (test_work_traces.MapChecks.test_main_thread_substituted_for_map_owner_rejected) ... ok
+test_missing_overlapping_window_rejected (test_work_traces.MapChecks.test_missing_overlapping_window_rejected) ... ok
+test_real_accepted_and_rejected_candidates_and_zero (test_work_traces.PiChecks.test_real_accepted_and_rejected_candidates_and_zero) ... ok
+test_wrong_actual_second_division_rejected (test_work_traces.PiChecks.test_wrong_actual_second_division_rejected) ... ok
+test_actual_worker_iteration_labels_must_match_each_interval (test_work_traces.TreeChecks.test_actual_worker_iteration_labels_must_match_each_interval) ... ok
+test_concurrently_live_churn_graph_cannot_overlap_retained_graph (test_work_traces.TreeChecks.test_concurrently_live_churn_graph_cannot_overlap_retained_graph) ... ok
+test_every_actual_root_and_retained_graph (test_work_traces.TreeChecks.test_every_actual_root_and_retained_graph) ... ok
+test_removed_real_leaf_rejected (test_work_traces.TreeChecks.test_removed_real_leaf_rejected) ... ok
+test_replaced_long_lived_root_rejected (test_work_traces.TreeChecks.test_replaced_long_lived_root_rejected) ... ok
+test_every_ownership_environment_workload_or_pin_gate_is_literal_true (test_full_study.FailureIsolation.test_every_ownership_environment_workload_or_pin_gate_is_literal_true) ... ok
+test_exact_twenty_key_inventory_and_boolean_types_are_required (test_full_study.FailureIsolation.test_exact_twenty_key_inventory_and_boolean_types_are_required) ... ok
+test_frozen_guard_rejection_is_never_relabelled_source_failure (test_full_study.FailureIsolation.test_frozen_guard_rejection_is_never_relabelled_source_failure) ... ok
+test_guard_admitted_runtime_output_or_resource_failure_can_continue_other_profiles (test_full_study.FailureIsolation.test_guard_admitted_runtime_output_or_resource_failure_can_continue_other_profiles) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 0.028s
+
+OK

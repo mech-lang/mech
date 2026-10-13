@@ -1,0 +1,30 @@
+FULL REMAINING r fannkuchredux 2 fannkuchredux-r-array-batched
+FULL REMAINING r fannkuchredux 2 fannkuchredux-r-array-compact
+FULL REMAINING r fannkuchredux 2 mech-control-fannkuchredux-for-r
+FULL REMAINING r fannkuchredux 3 fannkuchredux-r-array-compact
+FULL REMAINING r fannkuchredux 3 mech-control-fannkuchredux-for-r
+FULL REMAINING r fannkuchredux 3 fannkuchredux-r-array-batched
+FULL REMAINING apl mandelbrot 1 mandelbrot-apl-compact
+FULL REMAINING apl mandelbrot 1 mandelbrot-apl-active-v2-optimized
+FULL REMAINING apl mandelbrot 1 mandelbrot-apl-active-v2-compact
+FULL REMAINING apl mandelbrot 2 mandelbrot-apl-active-v2-optimized
+FULL REMAINING apl mandelbrot 2 mech-control-mandelbrot-for-apl-medium-v3
+FULL REMAINING apl mandelbrot 2 mandelbrot-apl-active-v2-compact
+FULL REMAINING apl mandelbrot 2 mandelbrot-apl-compact
+FULL REMAINING apl mandelbrot 3 mandelbrot-apl-active-v2-compact
+FULL REMAINING apl mandelbrot 3 mandelbrot-apl-compact
+FULL REMAINING apl mandelbrot 3 mech-control-mandelbrot-for-apl-medium-v3
+FULL REMAINING apl mandelbrot 3 mandelbrot-apl-active-v2-optimized
+FULL REMAINING apl fasta 1 fasta-apl-compact
+FULL REMAINING apl fasta 1 mech-control-fasta-for-apl-medium-v3
+FULL REMAINING apl fasta 1 fasta-apl-affine-hoisted-optimized-v3
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining_owner.py", line 521, in <module>
+    main()
+    ~~~~^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining_owner.py", line 496, in main
+    execute_remaining(args.manifest_sha256)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining_owner.py", line 464, in execute_remaining
+    raise RuntimeError('Remaining actual sample failed qualification; evidence retained and no retry')
+RuntimeError: Remaining actual sample failed qualification; evidence retained and no retry

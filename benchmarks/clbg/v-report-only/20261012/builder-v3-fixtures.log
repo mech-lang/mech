@@ -1,0 +1,11 @@
+test_complete_two_retained_benchmarks_keep_distinct_records (__main__.BuilderChecks.test_complete_two_retained_benchmarks_keep_distinct_records) ... ok
+test_exact_one_source_and_declaration_repair (__main__.BuilderChecks.test_exact_one_source_and_declaration_repair) ... ok
+test_missing_duplicate_or_unqualified_retained_records_fail (__main__.BuilderChecks.test_missing_duplicate_or_unqualified_retained_records_fail) ... ok
+test_proven_probe_oracle_and_owned_controller_functions_are_unchanged (__main__.BuilderChecks.test_proven_probe_oracle_and_owned_controller_functions_are_unchanged) ... ok
+test_raw_source_binary_power_or_native_contradictions_fail (__main__.BuilderChecks.test_raw_source_binary_power_or_native_contradictions_fail) ... ok
+test_unrelated_flags_source_and_algorithm_changes_are_rejected (__main__.BuilderChecks.test_unrelated_flags_source_and_algorithm_changes_are_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.050s
+
+OK

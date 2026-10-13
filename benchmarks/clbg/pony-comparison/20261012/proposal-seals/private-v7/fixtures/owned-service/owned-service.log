@@ -1,0 +1,8 @@
+test_failed_group_kill_and_wait_preserve_bounded_receipt (test_owned_service_v7.OwnedService.test_failed_group_kill_and_wait_preserve_bounded_receipt) ... ok
+test_missing_live_identity_still_cleans_and_journals (test_owned_service_v7.OwnedService.test_missing_live_identity_still_cleans_and_journals) ... ok
+test_success_requires_bounded_reap_and_empty_group (test_owned_service_v7.OwnedService.test_success_requires_bounded_reap_and_empty_group) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.004s
+
+OK

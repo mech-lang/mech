@@ -1,0 +1,21 @@
+{
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+    "-B",
+    "-m",
+    "unittest",
+    "-v",
+    "test_guarded_prepare_v2",
+    "test_proof_reuse_v2"
+  ],
+  "started_at": "2026-10-12T16:36:28.029622+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 79761,
+  "identity": {
+    "pid": 79761,
+    "process_listing": "Mon Oct 12 12:36:28 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3 -B -m unittest -v test_guarded_prepare_v2 test_proof_reuse_v2"
+  }
+}

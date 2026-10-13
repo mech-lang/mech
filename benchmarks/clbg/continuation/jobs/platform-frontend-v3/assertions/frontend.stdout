@@ -1,0 +1,17 @@
+TAP version 13
+# Platform evidence and selection fixtures passed.
+# Subtest: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-frontend-v3/snapshot/continuation/platform-filter-proposal-v3/test_platform.mjs
+ok 1 - /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-frontend-v3/snapshot/continuation/platform-filter-proposal-v3/test_platform.mjs
+  ---
+  duration_ms: 63.424375
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 68.0715

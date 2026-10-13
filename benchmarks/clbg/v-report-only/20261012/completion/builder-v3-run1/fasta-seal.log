@@ -1,0 +1,2 @@
+WAIT common mutex: V full-study manifest fasta
+{"manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/studies/fasta/full-study/manifest.json", "sha256": "ec9114704438cd7f886dc480a2dedfcf8ff548bc4008b5f92f2a0ee56fa8e086", "profiles": ["v-fasta-compact-input-v2", "v-fasta-optimized-input-v2", "mech-aot-control"], "full_processes": 9, "report_only": true}

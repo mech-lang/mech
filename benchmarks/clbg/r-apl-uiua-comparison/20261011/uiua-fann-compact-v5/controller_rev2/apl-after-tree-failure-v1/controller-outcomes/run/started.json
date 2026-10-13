@@ -1,0 +1,10 @@
+{
+  "operation": "run",
+  "actual_argv": [
+    "benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/apl-after-tree-failure-v1/controller.py",
+    "--run",
+    "--manifest-sha256",
+    "afe92e55cea508e497e943143ae1934531330abd023c67020d03bf5e2c71e1ed"
+  ],
+  "full_runs_started": false
+}

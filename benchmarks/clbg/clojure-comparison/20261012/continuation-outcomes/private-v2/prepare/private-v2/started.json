@@ -1,0 +1,20 @@
+{
+  "status": "failed",
+  "mode": "prepare",
+  "revision": "private-v2",
+  "common_mutex_held": true,
+  "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+  "full_performance_runs": 0,
+  "chart_admission": false,
+  "argv": [
+    "benchmarks/clbg/clojure-comparison/20261012/revisions/private-v2/guarded_prepare.py",
+    "--prepare",
+    "--proposal-file",
+    "benchmarks/clbg/clojure-comparison/20261012/proposals/private-v2.json",
+    "--proposal-sha256",
+    "c234215757179d3fe51f047d041df594fc31d0e589515bb88af9669cab697ad3",
+    "--revision",
+    "private-v2"
+  ],
+  "inherited_fd": 4
+}

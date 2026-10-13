@@ -1,0 +1,17 @@
+{
+  "status": "guarded-launch-completed",
+  "recorded_at": "2026-10-11T23:48:41.894192+00:00",
+  "launcher_pid": 44534,
+  "launcher_identity": "Sun Oct 11 19:35:37 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python benchmarks/clbg/mandelbrot/experiments/20261011-array-state/full_study.py --detach --manifest-sha256 a8f8d3069a25ffe47ab1bec2e6922108570432baeb5b467fc17d4a44734f55a9",
+  "approved_manifest_sha256": "a8f8d3069a25ffe47ab1bec2e6922108570432baeb5b467fc17d4a44734f55a9",
+  "reviewed_runner_sha256": "8f391228877967f7c41c36936da181f1dc87eec8180617c3056205a2737d0dfb",
+  "reviewer": "application_state_fix",
+  "planned_processes": 15,
+  "size": 16000,
+  "workers": 8,
+  "shared_lock": "/tmp/mech-clbg-timing.lock",
+  "supervisor_pid": 47652,
+  "launched_at": "2026-10-11T23:51:01.699001+00:00",
+  "launch_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/full-study/launch.json",
+  "initial_supervisor_status": "waiting for initial shared-lock pin verification; no samples yet"
+}

@@ -1,0 +1,60 @@
+{
+  "status": "native-preparation-and-metadata-seals-complete-awaiting-reviewed-next-stages",
+  "prior_checkpoint": "jobs/continuation-state-v8.json",
+  "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+  "crystal_preparation": {
+    "pid": 44652,
+    "session": 51913,
+    "exit_status": 0,
+    "report": "qualification/private-input-archive-filter-v6/report.json",
+    "report_sha256_from_full_seal": "1b1f4ae9b39a9ee17e66204095f7532718f299f318e6cde3d9def2c1cd761372",
+    "status": "bounded-output-ownership-work-passed-awaiting-LOC-and-full-review",
+    "fresh_builds": 5,
+    "fresh_bounded_output_cases": 44,
+    "reused_bounded_cases": 112,
+    "actual_required_work_proofs": "passed"
+  },
+  "crystal_source_replay": {
+    "pid": 44704,
+    "session": 65331,
+    "exit_status": 0,
+    "output": "source-counts/boundary-audit-18-source-proposals-v1.json",
+    "sha256": "b5d094c0404de992475e406436b63be1673675e8dfbfb940b138c15c8346f1c1",
+    "sources": 20,
+    "diagnostics": 0,
+    "canonical_LOC_admitted": false,
+    "semantic_review": "pending exact per-source ownership review and separately authoritative compiled input inventory"
+  },
+  "crystal_full_metadata_seal": {
+    "session": 40979,
+    "exit_status": 0,
+    "index": "studies/full-v1/index.json",
+    "sha256": "f8b3f9f20265245461020f112bf0c7b2bd880c702f726c246ccf68a480147476",
+    "benchmarks": 10,
+    "planned_full_processes": 90,
+    "actual_full_processes": 0,
+    "status": "sealed-awaiting-root-review",
+    "runner": "studies/pipeline-v2/full_study.py"
+  },
+  "matlab_correction_metadata_seal": {
+    "pid": 62772,
+    "session": 22327,
+    "exit_status": 0,
+    "proposal": "../matlab-comparison/20261012/regex-case-sensitive-v1/proposal-sealed-v1.json",
+    "sha256": "446e83d95ab413865c55ba6b27158e4873cb323df2679f2cad5e67883fff67bc",
+    "fixture_inventory": "3 exact discovered and actual-started methods, all passed, zero skip/expectedFailure/unexpectedSuccess",
+    "native_correction_processes": 0,
+    "status": "sealed-awaiting-root-native-review"
+  },
+  "clojure_candidate": {
+    "directory": "../clojure-comparison/20261012",
+    "status": "source-only-complete-first-packet-awaiting-root-static-review",
+    "applications": 20,
+    "authored_helpers": 1,
+    "controller": "revisions/private-v1/guarded_prepare.py",
+    "native_or_compiler_or_fixture_or_download_queue_started": false
+  },
+  "chart_admission": false,
+  "frozen_evidence_modified": false,
+  "next": "Root exact full index/proposal review, then guarded Crystal full measurements and MATLAB bounded semantic qualification; Clojure first metadata seal only after root static approval."
+}

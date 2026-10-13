@@ -1,0 +1,17 @@
+test_actual_complete_distinct_tree_forest (test_source_trace.WorkChecks.test_actual_complete_distinct_tree_forest) ... ok
+test_all_seven_actual_maps_both_forms (test_source_trace.WorkChecks.test_all_seven_actual_maps_both_forms) ... ok
+test_all_six_actual_source_anchors (test_source_trace.WorkChecks.test_all_six_actual_source_anchors) ... ok
+test_both_actual_pi_divisions_both_forms (test_source_trace.WorkChecks.test_both_actual_pi_divisions_both_forms) ... ok
+test_changed_long_lived_root_and_incomplete_trace_rejected (test_source_trace.WorkChecks.test_changed_long_lived_root_and_incomplete_trace_rejected) ... ok
+test_exact_parser_comment_crlf_eof (test_source_trace.WorkChecks.test_exact_parser_comment_crlf_eof) ... ok
+test_missing_map_rejected (test_source_trace.WorkChecks.test_missing_map_rejected) ... ok
+test_missing_second_pi_division_rejected (test_source_trace.WorkChecks.test_missing_second_pi_division_rejected) ... ok
+test_shared_leaf_and_missing_temporary_root_rejected (test_source_trace.WorkChecks.test_shared_leaf_and_missing_temporary_root_rejected) ... ok
+test_unused_packed_high_bits_rejected (test_source_trace.WorkChecks.test_unused_packed_high_bits_rejected) ... ok
+test_wrong_map_count_rejected (test_source_trace.WorkChecks.test_wrong_map_count_rejected) ... ok
+test_wrong_second_pi_quotient_rejected (test_source_trace.WorkChecks.test_wrong_second_pi_quotient_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 0.026s
+
+OK

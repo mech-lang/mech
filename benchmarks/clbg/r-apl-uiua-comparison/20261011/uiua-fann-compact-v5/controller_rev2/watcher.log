@@ -1,0 +1,24 @@
+{
+  "status": "maintenance-complete-new-owner-awaiting-review",
+  "finished_at": "2026-10-12T13:44:44.903302+00:00",
+  "plan_sha256": "b29989867eb1e899f31025ef7259e9593a0e9e31a07da7d9c8a101fc765a994d",
+  "boundary": {
+    "observed_at": "2026-10-12T13:44:44.514595+00:00",
+    "last_stage_log_line": "WAIT LOCK 2 fannkuchredux-r-array-batched",
+    "stage_descendants": [],
+    "report_sha256": {
+      "r": "44a20749c5ee485392af2c220ef074d3846323e04c613243a73d3c6f9da49b0a",
+      "uiua": "da5ccf102e90dc2755388414390f6401402b2f67edb177ba74a377f2c5cae709",
+      "apl": "9ef8f3776ce6c7ddf65a29cec7378e782188862a271aea2826df486cac0f98f7"
+    }
+  },
+  "stage_exit_status": -2,
+  "signal": "SIGINT to waiting Python stage owner only",
+  "native_processes_signalled": false,
+  "benchmarks_launched": false,
+  "revision_directory": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/revision",
+  "endpoint_revision": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/revision/uiua-fann-v5-endpoint-revision.json",
+  "endpoint_revision_sha256": "91217bd8622d8d703c096e87e428b7ad1e995e93732d66b325862b6075303770",
+  "mapping": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/revision/report-mapping.json",
+  "mapping_sha256": "adb437f2b08006c2396336071807d55497e2a0b8a18c3e44ef76b865f47c8543"
+}

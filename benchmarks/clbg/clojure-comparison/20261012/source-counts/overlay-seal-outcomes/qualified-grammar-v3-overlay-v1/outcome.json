@@ -1,0 +1,19 @@
+{
+  "status": "failed-before-output",
+  "actual_common_mutex_held": true,
+  "common_timing_mutex": "/tmp/mech-clbg-timing.lock",
+  "original_sources_or_timings_mutated": false,
+  "chart_admission": false,
+  "error": "[Errno 2] No such file or directory: '/private/tmp/mech-clbg-compact-libs/pygments/__init__.py'",
+  "error_type": "FileNotFoundError",
+  "partial_output_overwritten": false,
+  "actual_terminal_evidence_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/source-counts/overlay-seal-outcomes/qualified-grammar-v3-overlay-v1/started.json": "7cb07d410406b971adefeb5792a89dcb7a04f4f42d8c80053e171578e872f501",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/source-counts/overlay-seal-outcomes/qualified-grammar-v3-overlay-v1/actual-error.log": "88c5600a1cca52d02e312508e7077a4f4684f5362fa4bd756874d42fa36f01fa",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/source-counts/seal_overlay_v3.py": "75561b469e0b987ae8d4222a0d87a12eda64fee7a472d17dfd77bdcdc57d7287",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/clojure-grammar-v3/jobs/grammar-v3-source-replay-v1/source-proposals.json": "ef10308e6dad994658c626ca34e7c4f21d78e4e91afc92f2a7b58fbe7a6c4bd7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/source-counts/semantic-source-review-v3.json": "9a0d8414733b10a9fd2991e32efacee05528c43eef947eca8a62922d040047c1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/report.json": "69bf7cdb025759e6d10cb8c1ae1c189839e253ced9aca50e4f9cc1e838d36d79"
+  },
+  "available_bytes_not_fully_pinned": false
+}

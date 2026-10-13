@@ -1,0 +1,18 @@
+{
+  "pid": 47063,
+  "pgid": 47063,
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/work-full-v1/await_qualification.py",
+    "--job",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/jobs/private-v6-work-seal"
+  ],
+  "launched_at": "2026-10-12T21:31:29.123480+00:00",
+  "metadata_seal_only": true,
+  "native_processes_launched": 0,
+  "automatic_retry": false,
+  "native_work_review_required": true,
+  "full_timing_review_required": true
+}

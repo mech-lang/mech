@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Library/Developer/CommandLineTools/usr/bin/lldb",
+    "-P"
+  ],
+  "started_at": "2026-10-13T02:43:25.549800+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 37320,
+  "identity": {
+    "pid": 37320,
+    "process_listing": "Mon Oct 12 22:43:25 2026     /Library/Developer/CommandLineTools/usr/bin/lldb -P"
+  }
+}

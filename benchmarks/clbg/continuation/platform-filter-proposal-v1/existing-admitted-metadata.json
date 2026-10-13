@@ -1,0 +1,3389 @@
+{
+  "status": "metadata-read-only-awaiting-common-lock-pin-verification",
+  "chart_admission": false,
+  "records": [
+    {
+      "key": "fannkuchredux:fannkuchredux-erlang-1",
+      "language": "erlang",
+      "report": "erlang-comparison/20261010/results/timings.json",
+      "expected_report_sha256": "b2e6486b3905609bf46d2ef4072dea8b5a91ef4ce3a8fae8a206b68e3decba2b",
+      "proposed_backend": "beam-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "erlang-comparison/20261010/sources/fannkuchredux-erlang-1.erl",
+          "sha256": "7c5bde88454b01136675a9e337706264f30dc6d55d5b4ba906c947cc0b3b3ac5"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/fannkuchredux-erlang-1.erl",
+      "saved_source_sha256": "7c5bde88454b01136675a9e337706264f30dc6d55d5b4ba906c947cc0b3b3ac5",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/builds/fannkuchredux-erlang-1/fannkuchredux.beam",
+      "saved_binary_sha256": "6a7aad3322307076a2e2afccdb86d9e302ddea88b75698068ada16e8f0da111d",
+      "saved_runtime": null,
+      "saved_command": [
+        "/opt/homebrew/Cellar/erlang/29.1.1_2/lib/erlang/bin/erl",
+        "+S",
+        "8:8",
+        "-noshell",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/builds/fannkuchredux-erlang-1",
+        "-run",
+        "fannkuchredux",
+        "main",
+        "{n}"
+      ],
+      "display_runtime_sha256": "317a5aa96d7f488ee1f5377f76cb87f47279e235b3eff835ec3c98265074116b",
+      "display_runtime_policy": "Erlang/OTP 29.1.1 on native Apple Silicon, BEAM load-time JIT enabled; eight online schedulers, published worker partitioning retained, default garbage collection and heap settings.",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        18.156963083,
+        18.581655584,
+        18.858973625
+      ],
+      "preserved_samples": [
+        18.156963083,
+        18.581655584,
+        18.858973625
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "nbody:nbody-erlang-3",
+      "language": "erlang",
+      "report": "erlang-comparison/20261010/results/timings.json",
+      "expected_report_sha256": "b2e6486b3905609bf46d2ef4072dea8b5a91ef4ce3a8fae8a206b68e3decba2b",
+      "proposed_backend": "beam-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "erlang-comparison/20261010/sources/nbody-erlang-3.erl",
+          "sha256": "9f66ffe55a1945b707621544345ed2840a1fcc7e84378668a595e58dea4046f0"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/nbody-erlang-3.erl",
+      "saved_source_sha256": "9f66ffe55a1945b707621544345ed2840a1fcc7e84378668a595e58dea4046f0",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/builds/nbody-erlang-3/nbody.beam",
+      "saved_binary_sha256": "d7f159df3b9effc90f584d8356e8dc5f433f8e8adb723a322fa95685c693ef1a",
+      "saved_runtime": null,
+      "saved_command": [
+        "/opt/homebrew/Cellar/erlang/29.1.1_2/lib/erlang/bin/erl",
+        "+S",
+        "8:8",
+        "-noshell",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/builds/nbody-erlang-3",
+        "-run",
+        "nbody",
+        "main",
+        "{n}"
+      ],
+      "display_runtime_sha256": "317a5aa96d7f488ee1f5377f76cb87f47279e235b3eff835ec3c98265074116b",
+      "display_runtime_policy": "Erlang/OTP 29.1.1 on native Apple Silicon, BEAM load-time JIT enabled; eight online schedulers, published worker partitioning retained, default garbage collection and heap settings.",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        49.133544166,
+        48.873338708,
+        48.691932125
+      ],
+      "preserved_samples": [
+        49.133544166,
+        48.873338708,
+        48.691932125
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "pidigits:pidigits-erlang-2",
+      "language": "erlang",
+      "report": "erlang-comparison/20261010/results/timings.json",
+      "expected_report_sha256": "b2e6486b3905609bf46d2ef4072dea8b5a91ef4ce3a8fae8a206b68e3decba2b",
+      "proposed_backend": "beam-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "erlang-comparison/20261010/sources/pidigits-erlang-2.erl",
+          "sha256": "015899cd3d1691016a43ee541f839b15b3040ebc2dbbea0a0b0e7bbe84804ea9"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/pidigits-erlang-2.erl",
+      "saved_source_sha256": "015899cd3d1691016a43ee541f839b15b3040ebc2dbbea0a0b0e7bbe84804ea9",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/builds/pidigits-erlang-2/pidigits.beam",
+      "saved_binary_sha256": "64fbe634bf99850e70901c6c02be27320008ccd01250a2eca552d49b9813ab96",
+      "saved_runtime": null,
+      "saved_command": [
+        "/opt/homebrew/Cellar/erlang/29.1.1_2/lib/erlang/bin/erl",
+        "+S",
+        "8:8",
+        "-noshell",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/builds/pidigits-erlang-2",
+        "-run",
+        "pidigits",
+        "main",
+        "{n}"
+      ],
+      "display_runtime_sha256": "317a5aa96d7f488ee1f5377f76cb87f47279e235b3eff835ec3c98265074116b",
+      "display_runtime_policy": "Erlang/OTP 29.1.1 on native Apple Silicon, BEAM load-time JIT enabled; eight online schedulers, published worker partitioning retained, default garbage collection and heap settings.",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        1.738379084,
+        1.726159125,
+        1.763211083
+      ],
+      "preserved_samples": [
+        1.738379084,
+        1.726159125,
+        1.763211083
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "pidigits:pidigits-erlang-3",
+      "language": "erlang",
+      "report": "erlang-comparison/20261010/results/timings.json",
+      "expected_report_sha256": "b2e6486b3905609bf46d2ef4072dea8b5a91ef4ce3a8fae8a206b68e3decba2b",
+      "proposed_backend": "beam-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "erlang-comparison/20261010/sources/pidigits-erlang-3.erl",
+          "sha256": "3310461c73c004633339c749b906365dce5b298f55064826d37f92ce2d4aaa6c"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/pidigits-erlang-3.erl",
+      "saved_source_sha256": "3310461c73c004633339c749b906365dce5b298f55064826d37f92ce2d4aaa6c",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/builds/pidigits-erlang-3/pidigits.beam",
+      "saved_binary_sha256": "44d944cac39116433a4491c1908035ae39f77213d8836b7881fcf14508d53709",
+      "saved_runtime": null,
+      "saved_command": [
+        "/opt/homebrew/Cellar/erlang/29.1.1_2/lib/erlang/bin/erl",
+        "+S",
+        "8:8",
+        "-noshell",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/builds/pidigits-erlang-3",
+        "-run",
+        "pidigits",
+        "main",
+        "{n}"
+      ],
+      "display_runtime_sha256": "317a5aa96d7f488ee1f5377f76cb87f47279e235b3eff835ec3c98265074116b",
+      "display_runtime_policy": "Erlang/OTP 29.1.1 on native Apple Silicon, BEAM load-time JIT enabled; eight online schedulers, published worker partitioning retained, default garbage collection and heap settings.",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        1.52778375,
+        1.532617333,
+        1.557549917
+      ],
+      "preserved_samples": [
+        1.52778375,
+        1.532617333,
+        1.557549917
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "revcomp:revcomp-erlang-4",
+      "language": "erlang",
+      "report": "erlang-comparison/20261010/results/timings.json",
+      "expected_report_sha256": "b2e6486b3905609bf46d2ef4072dea8b5a91ef4ce3a8fae8a206b68e3decba2b",
+      "proposed_backend": "beam-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "erlang-comparison/20261010/sources/revcomp-erlang-4.erl",
+          "sha256": "4e74c9e502428fa2511c9ff2ee4117861d7755a23f0ac4e53f014ba4b53669dd"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/revcomp-erlang-4.erl",
+      "saved_source_sha256": "4e74c9e502428fa2511c9ff2ee4117861d7755a23f0ac4e53f014ba4b53669dd",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/builds/revcomp-erlang-4/revcomp.beam",
+      "saved_binary_sha256": "3895c92160058cd41a9636d61172d073960037cf730fcb6eb2d5d5e110f36513",
+      "saved_runtime": null,
+      "saved_command": [
+        "/opt/homebrew/Cellar/erlang/29.1.1_2/lib/erlang/bin/erl",
+        "+S",
+        "8:8",
+        "-noshell",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/builds/revcomp-erlang-4",
+        "-run",
+        "revcomp",
+        "main",
+        "0"
+      ],
+      "display_runtime_sha256": "317a5aa96d7f488ee1f5377f76cb87f47279e235b3eff835ec3c98265074116b",
+      "display_runtime_policy": "Erlang/OTP 29.1.1 on native Apple Silicon, BEAM load-time JIT enabled; eight online schedulers, published worker partitioning retained, default garbage collection and heap settings.",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        17.123149375,
+        17.085307333,
+        17.084522584
+      ],
+      "preserved_samples": [
+        17.123149375,
+        17.085307333,
+        17.084522584
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "revcomp:revcomp-erlang-3",
+      "language": "erlang",
+      "report": "erlang-comparison/20261010/results/timings.json",
+      "expected_report_sha256": "b2e6486b3905609bf46d2ef4072dea8b5a91ef4ce3a8fae8a206b68e3decba2b",
+      "proposed_backend": "beam-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "erlang-comparison/20261010/sources/revcomp-erlang-3.erl",
+          "sha256": "9429dffd13cb779a0d254a3ac32bc8376b735e230a00a3bf389a2c2ec556163d"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/revcomp-erlang-3.erl",
+      "saved_source_sha256": "9429dffd13cb779a0d254a3ac32bc8376b735e230a00a3bf389a2c2ec556163d",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/builds/revcomp-erlang-3/revcomp.beam",
+      "saved_binary_sha256": "7da708674ca6148575e25a0fc484b6cecc5f0b5c8c628b8987a72f2e9b4001fa",
+      "saved_runtime": null,
+      "saved_command": [
+        "/opt/homebrew/Cellar/erlang/29.1.1_2/lib/erlang/bin/erl",
+        "+S",
+        "8:8",
+        "-noshell",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/builds/revcomp-erlang-3",
+        "-run",
+        "revcomp",
+        "main",
+        "0"
+      ],
+      "display_runtime_sha256": "317a5aa96d7f488ee1f5377f76cb87f47279e235b3eff835ec3c98265074116b",
+      "display_runtime_policy": "Erlang/OTP 29.1.1 on native Apple Silicon, BEAM load-time JIT enabled; eight online schedulers, published worker partitioning retained, default garbage collection and heap settings.",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        20.927591042,
+        20.917955625,
+        21.0407115
+      ],
+      "preserved_samples": [
+        20.927591042,
+        20.917955625,
+        21.0407115
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "spectralnorm:spectralnorm-erlang-2",
+      "language": "erlang",
+      "report": "erlang-comparison/20261010/results/timings.json",
+      "expected_report_sha256": "b2e6486b3905609bf46d2ef4072dea8b5a91ef4ce3a8fae8a206b68e3decba2b",
+      "proposed_backend": "beam-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "erlang-comparison/20261010/sources/spectralnorm-erlang-2.erl",
+          "sha256": "e73d96678f5a437fad29318b04867608b4ec79a4996bd131614770bf65654c76"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/spectralnorm-erlang-2.erl",
+      "saved_source_sha256": "e73d96678f5a437fad29318b04867608b4ec79a4996bd131614770bf65654c76",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/builds/spectralnorm-erlang-2/spectralnorm.beam",
+      "saved_binary_sha256": "98ffd242e94f5d0ab850fe40ae3004cb610c37b7f6b3ab63005f747c697cc890",
+      "saved_runtime": null,
+      "saved_command": [
+        "/opt/homebrew/Cellar/erlang/29.1.1_2/lib/erlang/bin/erl",
+        "+S",
+        "8:8",
+        "-noshell",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/builds/spectralnorm-erlang-2",
+        "-run",
+        "spectralnorm",
+        "main",
+        "{n}"
+      ],
+      "display_runtime_sha256": "317a5aa96d7f488ee1f5377f76cb87f47279e235b3eff835ec3c98265074116b",
+      "display_runtime_policy": "Erlang/OTP 29.1.1 on native Apple Silicon, BEAM load-time JIT enabled; eight online schedulers, published worker partitioning retained, default garbage collection and heap settings.",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        2.415637334,
+        2.478554291,
+        2.475461417
+      ],
+      "preserved_samples": [
+        2.415637334,
+        2.478554291,
+        2.475461417
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "binarytrees:binarytrees-erlang-1-faithful",
+      "language": "erlang",
+      "report": "erlang-comparison/20261010/results/timings.json",
+      "expected_report_sha256": "b2e6486b3905609bf46d2ef4072dea8b5a91ef4ce3a8fae8a206b68e3decba2b",
+      "proposed_backend": "beam-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "erlang-comparison/20261010/sources/binarytrees-erlang-1-faithful.erl",
+          "sha256": "3ec54d1186802716832fd59b0f335ebbdeebbc9f67bb04d78040e080ff5bad68"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/binarytrees-erlang-1-faithful.erl",
+      "saved_source_sha256": "3ec54d1186802716832fd59b0f335ebbdeebbc9f67bb04d78040e080ff5bad68",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/builds/binarytrees-erlang-1-faithful/binarytrees.beam",
+      "saved_binary_sha256": "08bd1b33fbe20159e177bb901d6ad03e5704aa7438bec0327b49a2b421cc7f1c",
+      "saved_runtime": null,
+      "saved_command": [
+        "/opt/homebrew/Cellar/erlang/29.1.1_2/lib/erlang/bin/erl",
+        "+S",
+        "8:8",
+        "-noshell",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/builds/binarytrees-erlang-1-faithful",
+        "-run",
+        "binarytrees",
+        "main",
+        "{n}"
+      ],
+      "display_runtime_sha256": "317a5aa96d7f488ee1f5377f76cb87f47279e235b3eff835ec3c98265074116b",
+      "display_runtime_policy": "Erlang/OTP 29.1.1 on native Apple Silicon, BEAM load-time JIT enabled; eight online schedulers, published worker partitioning retained, default garbage collection and heap settings.",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        5.711682209,
+        5.407122834,
+        5.419152625
+      ],
+      "preserved_samples": [
+        5.711682209,
+        5.407122834,
+        5.419152625
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "binarytrees:binarytrees-erlang-2-faithful",
+      "language": "erlang",
+      "report": "erlang-comparison/20261010/results/timings.json",
+      "expected_report_sha256": "b2e6486b3905609bf46d2ef4072dea8b5a91ef4ce3a8fae8a206b68e3decba2b",
+      "proposed_backend": "beam-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "erlang-comparison/20261010/sources/binarytrees-erlang-2-faithful.erl",
+          "sha256": "4e7e3bbffcde7fd09a529e135c22bda8728d11573b60bba7fae78b9074c825c6"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/binarytrees-erlang-2-faithful.erl",
+      "saved_source_sha256": "4e7e3bbffcde7fd09a529e135c22bda8728d11573b60bba7fae78b9074c825c6",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/builds/binarytrees-erlang-2-faithful/binarytrees.beam",
+      "saved_binary_sha256": "6268bc6c463ac83dcc7ae3a0d163c23ebd3c9c26e26eb2d0956b0c87842c518a",
+      "saved_runtime": null,
+      "saved_command": [
+        "/opt/homebrew/Cellar/erlang/29.1.1_2/lib/erlang/bin/erl",
+        "+S",
+        "8:8",
+        "-noshell",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/builds/binarytrees-erlang-2-faithful",
+        "-run",
+        "binarytrees",
+        "main",
+        "{n}"
+      ],
+      "display_runtime_sha256": "317a5aa96d7f488ee1f5377f76cb87f47279e235b3eff835ec3c98265074116b",
+      "display_runtime_policy": "Erlang/OTP 29.1.1 on native Apple Silicon, BEAM load-time JIT enabled; eight online schedulers, published worker partitioning retained, default garbage collection and heap settings.",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        3.25467525,
+        3.246262541,
+        3.240830541
+      ],
+      "preserved_samples": [
+        3.25467525,
+        3.246262541,
+        3.240830541
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "fasta:fasta-erlang-2-faithful",
+      "language": "erlang",
+      "report": "erlang-comparison/20261010/results/timings.json",
+      "expected_report_sha256": "b2e6486b3905609bf46d2ef4072dea8b5a91ef4ce3a8fae8a206b68e3decba2b",
+      "proposed_backend": "beam-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "erlang-comparison/20261010/sources/fasta-erlang-2-faithful.erl",
+          "sha256": "7209bbd711666fb1a24470c73bae4935448bbd0b695cd574bfa3590a81320259"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/fasta-erlang-2-faithful.erl",
+      "saved_source_sha256": "7209bbd711666fb1a24470c73bae4935448bbd0b695cd574bfa3590a81320259",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/builds/fasta-erlang-2-faithful/fasta.beam",
+      "saved_binary_sha256": "07e3013cadf561075e9ed78291aa219f086c83570188e48c9b6808b214718279",
+      "saved_runtime": null,
+      "saved_command": [
+        "/opt/homebrew/Cellar/erlang/29.1.1_2/lib/erlang/bin/erl",
+        "+S",
+        "8:8",
+        "-noshell",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/builds/fasta-erlang-2-faithful",
+        "-run",
+        "fasta",
+        "main",
+        "{n}"
+      ],
+      "display_runtime_sha256": "317a5aa96d7f488ee1f5377f76cb87f47279e235b3eff835ec3c98265074116b",
+      "display_runtime_policy": "Erlang/OTP 29.1.1 on native Apple Silicon, BEAM load-time JIT enabled; eight online schedulers, published worker partitioning retained, default garbage collection and heap settings.",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        9.55035075,
+        7.925410792,
+        8.088914417
+      ],
+      "preserved_samples": [
+        9.55035075,
+        7.925410792,
+        8.088914417
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "knucleotide:knucleotide-erlang-3-faithful",
+      "language": "erlang",
+      "report": "erlang-comparison/20261010/results/timings.json",
+      "expected_report_sha256": "b2e6486b3905609bf46d2ef4072dea8b5a91ef4ce3a8fae8a206b68e3decba2b",
+      "proposed_backend": "beam-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "erlang-comparison/20261010/sources/knucleotide-erlang-3-faithful.erl",
+          "sha256": "8e4825a9b38a083802f382e0f14490c7e1f1b6971d6d7ec2bb329869375155e2"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/knucleotide-erlang-3-faithful.erl",
+      "saved_source_sha256": "8e4825a9b38a083802f382e0f14490c7e1f1b6971d6d7ec2bb329869375155e2",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/builds/knucleotide-erlang-3-faithful/knucleotide.beam",
+      "saved_binary_sha256": "1bb77b7d54d66064952d7598a5ea292902b26ce4128ffbdbe480cd34916f3a50",
+      "saved_runtime": null,
+      "saved_command": [
+        "/opt/homebrew/Cellar/erlang/29.1.1_2/lib/erlang/bin/erl",
+        "+S",
+        "8:8",
+        "-noshell",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/builds/knucleotide-erlang-3-faithful",
+        "-run",
+        "knucleotide",
+        "main",
+        "0"
+      ],
+      "display_runtime_sha256": "317a5aa96d7f488ee1f5377f76cb87f47279e235b3eff835ec3c98265074116b",
+      "display_runtime_policy": "Erlang/OTP 29.1.1 on native Apple Silicon, BEAM load-time JIT enabled; eight online schedulers, published worker partitioning retained, default garbage collection and heap settings.",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        30.33304775,
+        29.416427,
+        30.081507375
+      ],
+      "preserved_samples": [
+        30.33304775,
+        29.416427,
+        30.081507375
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "mandelbrot:mandelbrot-erlang-4-faithful",
+      "language": "erlang",
+      "report": "erlang-comparison/20261010/results/timings.json",
+      "expected_report_sha256": "b2e6486b3905609bf46d2ef4072dea8b5a91ef4ce3a8fae8a206b68e3decba2b",
+      "proposed_backend": "beam-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "erlang-comparison/20261010/sources/mandelbrot-erlang-4-faithful.erl",
+          "sha256": "523734fe27613f50fc2f8408456d814ef5a28776cb1f17dcc992e5a5b2e6fb33"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/mandelbrot-erlang-4-faithful.erl",
+      "saved_source_sha256": "523734fe27613f50fc2f8408456d814ef5a28776cb1f17dcc992e5a5b2e6fb33",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/builds/mandelbrot-erlang-4-faithful/mandelbrot.beam",
+      "saved_binary_sha256": "56d729948af47c1cf06a4f0bfb6162b84fae28817a3a81839e52473b8760e29b",
+      "saved_runtime": null,
+      "saved_command": [
+        "/opt/homebrew/Cellar/erlang/29.1.1_2/lib/erlang/bin/erl",
+        "+S",
+        "8:8",
+        "-noshell",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/builds/mandelbrot-erlang-4-faithful",
+        "-run",
+        "mandelbrot",
+        "main",
+        "{n}"
+      ],
+      "display_runtime_sha256": "317a5aa96d7f488ee1f5377f76cb87f47279e235b3eff835ec3c98265074116b",
+      "display_runtime_policy": "Erlang/OTP 29.1.1 on native Apple Silicon, BEAM load-time JIT enabled; eight online schedulers, published worker partitioning retained, default garbage collection and heap settings.",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        18.730316542,
+        19.312879042,
+        19.905681
+      ],
+      "preserved_samples": [
+        18.730316542,
+        19.312879042,
+        19.905681
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "mandelbrot:mandelbrot-erlang-1-faithful",
+      "language": "erlang",
+      "report": "erlang-comparison/20261010/results/timings.json",
+      "expected_report_sha256": "b2e6486b3905609bf46d2ef4072dea8b5a91ef4ce3a8fae8a206b68e3decba2b",
+      "proposed_backend": "beam-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "erlang-comparison/20261010/sources/mandelbrot-erlang-1-faithful.erl",
+          "sha256": "3f63c723f3e377096f35b96eb6e289f58dc7397df4ac981ef07d1cf63aa48f43"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/mandelbrot-erlang-1-faithful.erl",
+      "saved_source_sha256": "3f63c723f3e377096f35b96eb6e289f58dc7397df4ac981ef07d1cf63aa48f43",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/builds/mandelbrot-erlang-1-faithful/mandelbrot.beam",
+      "saved_binary_sha256": "ab12eb8aad895d7fa3f155f0387e2ee5004b71743ba230ee8aa0bc70bacf6668",
+      "saved_runtime": null,
+      "saved_command": [
+        "/opt/homebrew/Cellar/erlang/29.1.1_2/lib/erlang/bin/erl",
+        "+S",
+        "8:8",
+        "-noshell",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/builds/mandelbrot-erlang-1-faithful",
+        "-run",
+        "mandelbrot",
+        "main",
+        "{n}"
+      ],
+      "display_runtime_sha256": "317a5aa96d7f488ee1f5377f76cb87f47279e235b3eff835ec3c98265074116b",
+      "display_runtime_policy": "Erlang/OTP 29.1.1 on native Apple Silicon, BEAM load-time JIT enabled; eight online schedulers, published worker partitioning retained, default garbage collection and heap settings.",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        21.602504833,
+        21.983736875,
+        22.039149709
+      ],
+      "preserved_samples": [
+        21.602504833,
+        21.983736875,
+        22.039149709
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "regexredux:regexredux-erlang-6-faithful",
+      "language": "erlang",
+      "report": "erlang-comparison/20261010/results/timings.json",
+      "expected_report_sha256": "b2e6486b3905609bf46d2ef4072dea8b5a91ef4ce3a8fae8a206b68e3decba2b",
+      "proposed_backend": "beam-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "erlang-comparison/20261010/sources/regexredux-erlang-6-faithful.erl",
+          "sha256": "dc53ea64bda55c8b1472f7f16e322700bf31ef6b4bea1e581662639a02c09bac"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/regexredux-erlang-6-faithful.erl",
+      "saved_source_sha256": "dc53ea64bda55c8b1472f7f16e322700bf31ef6b4bea1e581662639a02c09bac",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/builds/regexredux-erlang-6-faithful/regexredux.beam",
+      "saved_binary_sha256": "25ce867c969164c7205a8e28f07e2874e814754cb1881ea60b8e68152010319c",
+      "saved_runtime": null,
+      "saved_command": [
+        "/opt/homebrew/Cellar/erlang/29.1.1_2/lib/erlang/bin/erl",
+        "+S",
+        "8:8",
+        "-noshell",
+        "-noinput",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/builds/regexredux-erlang-6-faithful",
+        "-run",
+        "regexredux",
+        "main",
+        "0"
+      ],
+      "display_runtime_sha256": "317a5aa96d7f488ee1f5377f76cb87f47279e235b3eff835ec3c98265074116b",
+      "display_runtime_policy": "Erlang/OTP 29.1.1 on native Apple Silicon, BEAM load-time JIT enabled; eight online schedulers, published worker partitioning retained, default garbage collection and heap settings.",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        7.40315725,
+        7.458111,
+        7.184391375
+      ],
+      "preserved_samples": [
+        7.40315725,
+        7.458111,
+        7.184391375
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "binarytrees:binarytrees-csharpcore-3-jit",
+      "language": "csharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/binarytrees-csharpcore-3.cs",
+          "sha256": "970cf62b15e5986fe68169d6ac92556b6cde985e8f80d7ddae782f869d929fb0"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/binarytrees-csharpcore-3.cs",
+      "saved_source_sha256": "970cf62b15e5986fe68169d6ac92556b6cde985e8f80d7ddae782f869d929fb0",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/binarytrees-csharpcore-3-jit/app.dll",
+      "saved_binary_sha256": "4c5753877e5823790524f8c307ead9cf45f1f1737b2c48da23318d5d62beb366",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/binarytrees-csharpcore-3-jit/app.dll",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        1.760256333,
+        1.673876084,
+        1.666233
+      ],
+      "preserved_samples": [
+        1.760256333,
+        1.673876084,
+        1.666233
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "binarytrees:binarytrees-csharpcore-7-jit",
+      "language": "csharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/binarytrees-csharpcore-7.cs",
+          "sha256": "be3604348e0b2d0d7e48978e26753d758bac1425454d482c9141d3cecee8e44d"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/binarytrees-csharpcore-7.cs",
+      "saved_source_sha256": "be3604348e0b2d0d7e48978e26753d758bac1425454d482c9141d3cecee8e44d",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/binarytrees-csharpcore-7-jit/app.dll",
+      "saved_binary_sha256": "5c6884c77f859a3f13a8e35b8257250dfcf6a67d502a2d5730873e78ab56075a",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/binarytrees-csharpcore-7-jit/app.dll",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        1.627946792,
+        1.63229525,
+        1.637908
+      ],
+      "preserved_samples": [
+        1.627946792,
+        1.63229525,
+        1.637908
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "fannkuchredux:fannkuchredux-csharpcore-5-arm64-faithful-jit",
+      "language": "csharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/fannkuchredux-csharpcore-5-arm64-faithful.cs",
+          "sha256": "5e68341ac5640b9bfc1b598d3fa8a2f582ebf66471811a4a4c9f8aac1a707cb5"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/fannkuchredux-csharpcore-5-arm64-faithful.cs",
+      "saved_source_sha256": "5e68341ac5640b9bfc1b598d3fa8a2f582ebf66471811a4a4c9f8aac1a707cb5",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fannkuchredux-csharpcore-5-arm64-faithful-jit/app.dll",
+      "saved_binary_sha256": "3343d082320b4e26196fd2b5705c3851b40df3f129165562024fa234deaf5cad",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fannkuchredux-csharpcore-5-arm64-faithful-jit/app.dll",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        2.41241075,
+        2.430057667,
+        2.421078875
+      ],
+      "preserved_samples": [
+        2.41241075,
+        2.430057667,
+        2.421078875
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "fannkuchredux:fannkuchredux-csharpcore-8-jit",
+      "language": "csharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/fannkuchredux-csharpcore-8.cs",
+          "sha256": "d9d7a87488a1be0dd06c8823d53310104e82b5bca4c85af1b2c013607d0ed5ff"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/fannkuchredux-csharpcore-8.cs",
+      "saved_source_sha256": "d9d7a87488a1be0dd06c8823d53310104e82b5bca4c85af1b2c013607d0ed5ff",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fannkuchredux-csharpcore-8-jit/app.dll",
+      "saved_binary_sha256": "520861ca50175cda45fcb9ec4115b6a0876db02a210a5b9497287e8365d2343d",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fannkuchredux-csharpcore-8-jit/app.dll",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        23.994728958,
+        23.995440625,
+        24.018979208
+      ],
+      "preserved_samples": [
+        23.994728958,
+        23.995440625,
+        24.018979208
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "fasta:fasta-csharpcore-8-jit",
+      "language": "csharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/fasta-csharpcore-8.cs",
+          "sha256": "708900340cb51a675e5019a1df16d7f958999432e129895dadd0edd4c177ee98"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/fasta-csharpcore-8.cs",
+      "saved_source_sha256": "708900340cb51a675e5019a1df16d7f958999432e129895dadd0edd4c177ee98",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fasta-csharpcore-8-jit/app.dll",
+      "saved_binary_sha256": "4572855f208fa7b824cf6dc1786b6f4ed093fd6a1b846946af7bbd2c40496e73",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fasta-csharpcore-8-jit/app.dll",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        3.447910375,
+        3.437391791,
+        3.4596565
+      ],
+      "preserved_samples": [
+        3.447910375,
+        3.437391791,
+        3.4596565
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "fasta:fasta-csharpcore-9-arm64-faithful-jit",
+      "language": "csharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/fasta-csharpcore-9-arm64-faithful.cs",
+          "sha256": "62e1b2282931b6c1091c8406fd700abac2ddde44cc362536034380817b85e393"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/fasta-csharpcore-9-arm64-faithful.cs",
+      "saved_source_sha256": "62e1b2282931b6c1091c8406fd700abac2ddde44cc362536034380817b85e393",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fasta-csharpcore-9-arm64-faithful-jit/app.dll",
+      "saved_binary_sha256": "ba3b9be4c3acf0d01e03a5870cc2427d565f844c6d749b6da0c1269e6c8c75ac",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fasta-csharpcore-9-arm64-faithful-jit/app.dll",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        2.257990542,
+        2.262577791,
+        2.254155875
+      ],
+      "preserved_samples": [
+        2.257990542,
+        2.262577791,
+        2.254155875
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "knucleotide:knucleotide-csharpcore-8-arm64-faithful-jit",
+      "language": "csharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/knucleotide-csharpcore-8-arm64-faithful.cs",
+          "sha256": "888ebde7cbfb1368a0eac86960477948f29853649d1c3f4016123cf4970ab5fe"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/knucleotide-csharpcore-8-arm64-faithful.cs",
+      "saved_source_sha256": "888ebde7cbfb1368a0eac86960477948f29853649d1c3f4016123cf4970ab5fe",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-csharpcore-8-arm64-faithful-jit/app.dll",
+      "saved_binary_sha256": "6088e9eb7f4e717532a204430e211ab2241fa2be6ba3c3e6e2f81d339781613b",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-csharpcore-8-arm64-faithful-jit/app.dll"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        23.890814833,
+        23.91855075,
+        23.788562667
+      ],
+      "preserved_samples": [
+        23.890814833,
+        23.91855075,
+        23.788562667
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "mandelbrot:mandelbrot-csharpcore-7-jit",
+      "language": "csharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/mandelbrot-csharpcore-7.cs",
+          "sha256": "d22346944ed5d13c1dbb2d626f17f38c5ff075a23c97b31eca1bb129c6630679"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/mandelbrot-csharpcore-7.cs",
+      "saved_source_sha256": "d22346944ed5d13c1dbb2d626f17f38c5ff075a23c97b31eca1bb129c6630679",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-csharpcore-7-jit/app.dll",
+      "saved_binary_sha256": "aa9c66247256a58664daf38e2ba8baf4009abfa62e1971b6dbee509e15a7704a",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-csharpcore-7-jit/app.dll",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        0.636318792,
+        0.671871541,
+        0.679294958
+      ],
+      "preserved_samples": [
+        0.636318792,
+        0.671871541,
+        0.679294958
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "nbody:nbody-csharpcore-0-jit",
+      "language": "csharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/nbody-csharpcore-0.cs",
+          "sha256": "212627189a66c75feb27605ae77e0a1d47fcf20ea8ddc080bd4f18e97e9950a7"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/nbody-csharpcore-0.cs",
+      "saved_source_sha256": "212627189a66c75feb27605ae77e0a1d47fcf20ea8ddc080bd4f18e97e9950a7",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-csharpcore-0-jit/app.dll",
+      "saved_binary_sha256": "0f2bdb4b9282a0f2e758724e40e87e2727d7d50a089475390c9978a1a6e82192",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-csharpcore-0-jit/app.dll",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        1.886258458,
+        1.887685917,
+        1.885562917
+      ],
+      "preserved_samples": [
+        1.886258458,
+        1.887685917,
+        1.885562917
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "nbody:nbody-csharpcore-6-arm64-faithful-jit",
+      "language": "csharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/nbody-csharpcore-6-arm64-faithful.cs",
+          "sha256": "603be6e0c78135fc00ce3109c020dfa486df06651ef88a4f3f2a149d61de7b9a"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/nbody-csharpcore-6-arm64-faithful.cs",
+      "saved_source_sha256": "603be6e0c78135fc00ce3109c020dfa486df06651ef88a4f3f2a149d61de7b9a",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-csharpcore-6-arm64-faithful-jit/app.dll",
+      "saved_binary_sha256": "ae83d28f23d709974b7392346b663e9323377a613e98361e6bff3699e0c338a0",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-csharpcore-6-arm64-faithful-jit/app.dll",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        1.736036458,
+        1.734523792,
+        1.737941459
+      ],
+      "preserved_samples": [
+        1.736036458,
+        1.734523792,
+        1.737941459
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "pidigits:pidigits-csharpcore-6-arm64-faithful-jit",
+      "language": "csharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/pidigits-csharpcore-6-arm64-faithful.cs",
+          "sha256": "a5e9734cd31f06a454ac4d2ed11bb249e8be236ea84eead9cf4677d8fe99679c"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/pidigits-csharpcore-6-arm64-faithful.cs",
+      "saved_source_sha256": "a5e9734cd31f06a454ac4d2ed11bb249e8be236ea84eead9cf4677d8fe99679c",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/pidigits-csharpcore-6-arm64-faithful-jit/app.dll",
+      "saved_binary_sha256": "1d413dfc2eb975ac5ab355526610cef1ec858e755ed4616cbeca3e7e04abac49",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/pidigits-csharpcore-6-arm64-faithful-jit/app.dll",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        0.318194375,
+        0.32374875,
+        0.330912834
+      ],
+      "preserved_samples": [
+        0.318194375,
+        0.32374875,
+        0.330912834
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "pidigits:pidigits-csharpcore-7-jit",
+      "language": "csharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/pidigits-csharpcore-7.cs",
+          "sha256": "a8e114e5b22bea6aa9e373960b09e1eb42eaf20836d921e6591803194a381413"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/pidigits-csharpcore-7.cs",
+      "saved_source_sha256": "a8e114e5b22bea6aa9e373960b09e1eb42eaf20836d921e6591803194a381413",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/pidigits-csharpcore-7-jit/app.dll",
+      "saved_binary_sha256": "b7ba40dc53546406b949611d8891dc67f1c8755ffa7013f0c414fcb91b184c46",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/pidigits-csharpcore-7-jit/app.dll",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        4.267429875,
+        4.361566,
+        4.28753725
+      ],
+      "preserved_samples": [
+        4.267429875,
+        4.361566,
+        4.28753725
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "regexredux:regexredux-csharpcore-5-jit",
+      "language": "csharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/regexredux-csharpcore-5.cs",
+          "sha256": "fbb853f13926ddb2ba9a70ce2a3614fce6ffb1df7e3e8ebbac8054aca882f46f"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/regexredux-csharpcore-5.cs",
+      "saved_source_sha256": "fbb853f13926ddb2ba9a70ce2a3614fce6ffb1df7e3e8ebbac8054aca882f46f",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-csharpcore-5-jit/app.dll",
+      "saved_binary_sha256": "0979c0131d23777347bd49a8d519a89029097374a9c8b1038dbc56914ed4d706",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-csharpcore-5-jit/app.dll"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        0.715934041,
+        0.724733459,
+        0.72615425
+      ],
+      "preserved_samples": [
+        0.715934041,
+        0.724733459,
+        0.72615425
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "revcomp:revcomp-csharpcore-3-jit",
+      "language": "csharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/revcomp-csharpcore-3.cs",
+          "sha256": "d1b214b471909300cce9f40a55d0542da654b9aaabc087ddd03d9ba579ecff9d"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/revcomp-csharpcore-3.cs",
+      "saved_source_sha256": "d1b214b471909300cce9f40a55d0542da654b9aaabc087ddd03d9ba579ecff9d",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/revcomp-csharpcore-3-jit/app.dll",
+      "saved_binary_sha256": "e9fad26413b100c8f24c57988a56345484ee3f3eee81c16db42ceb03d7e4bd4f",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/revcomp-csharpcore-3-jit/app.dll"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        1.0385705,
+        1.032759125,
+        1.039082542
+      ],
+      "preserved_samples": [
+        1.0385705,
+        1.032759125,
+        1.039082542
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "revcomp:revcomp-csharpcore-9-arm64-faithful-jit",
+      "language": "csharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/revcomp-csharpcore-9-arm64-faithful.cs",
+          "sha256": "c9c90844bf2f9ad3c2e7f09fabc01a6fcd3660694b64a1a5a01404fb61b49c4d"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/revcomp-csharpcore-9-arm64-faithful.cs",
+      "saved_source_sha256": "c9c90844bf2f9ad3c2e7f09fabc01a6fcd3660694b64a1a5a01404fb61b49c4d",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/revcomp-csharpcore-9-arm64-faithful-jit/app.dll",
+      "saved_binary_sha256": "4f42938ed57d01c63353fc0297bf7fa189513d0224ecdaf510c30cfd22bc4e2e",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/revcomp-csharpcore-9-arm64-faithful-jit/app.dll"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        0.105054208,
+        0.096585459,
+        0.098118041
+      ],
+      "preserved_samples": [
+        0.105054208,
+        0.096585459,
+        0.098118041
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "spectralnorm:spectralnorm-csharpcore-5-arm64-faithful-jit",
+      "language": "csharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/spectralnorm-csharpcore-5-arm64-faithful.cs",
+          "sha256": "81fad5d7b9226afe4a514ecac92d888841e9f2fb2feaeb18fc83ebc10007c170"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/spectralnorm-csharpcore-5-arm64-faithful.cs",
+      "saved_source_sha256": "81fad5d7b9226afe4a514ecac92d888841e9f2fb2feaeb18fc83ebc10007c170",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/spectralnorm-csharpcore-5-arm64-faithful-jit/app.dll",
+      "saved_binary_sha256": "90dfffec94b83da791c521df57669f21c9be2f35720923497346ecbfaeb65e12",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/spectralnorm-csharpcore-5-arm64-faithful-jit/app.dll",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        0.330868958,
+        0.321516833,
+        0.321852333
+      ],
+      "preserved_samples": [
+        0.330868958,
+        0.321516833,
+        0.321852333
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "spectralnorm:spectralnorm-csharpcore-8-jit",
+      "language": "csharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/spectralnorm-csharpcore-8.cs",
+          "sha256": "59a6bae9bbae6cdba2b6e2e36eb0e06796dc46079fa2393c83a822aa691108e7"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/spectralnorm-csharpcore-8.cs",
+      "saved_source_sha256": "59a6bae9bbae6cdba2b6e2e36eb0e06796dc46079fa2393c83a822aa691108e7",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/spectralnorm-csharpcore-8-jit/app.dll",
+      "saved_binary_sha256": "388ce631bf97fa904ec8830d0cd25d6b3df74b16b57bd3277f7efe9b74bbe3d5",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/spectralnorm-csharpcore-8-jit/app.dll",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        1.019937208,
+        1.300332333,
+        1.01736925
+      ],
+      "preserved_samples": [
+        1.019937208,
+        1.300332333,
+        1.01736925
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "binarytrees:binarytrees-fsharpcore-7-jit",
+      "language": "fsharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/fsharp/binarytrees-fsharpcore-7.fs",
+          "sha256": "38a350425437359dbc0641804d15b625c0ad5ccbd295a0d5434d2c06346d1e59"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/binarytrees-fsharpcore-7.fs",
+      "saved_source_sha256": "38a350425437359dbc0641804d15b625c0ad5ccbd295a0d5434d2c06346d1e59",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/binarytrees-fsharpcore-7-jit/app.dll",
+      "saved_binary_sha256": "d47a506a5cbb84bf91ee1724cba6ce19918fbf7ffc697fc920ea7bf70a3fa48d",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/binarytrees-fsharpcore-7-jit/app.dll",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · F# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        1.830832666,
+        1.814268875,
+        1.779818917
+      ],
+      "preserved_samples": [
+        1.830832666,
+        1.814268875,
+        1.779818917
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "fannkuchredux:fannkuchredux-fsharpcore-1-jit",
+      "language": "fsharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/fsharp/fannkuchredux-fsharpcore-1.fs",
+          "sha256": "90ee8404e644cbfc47301c897f733c5fd216dcf65c9e6e7d9ca4889d0334f1b6"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/fannkuchredux-fsharpcore-1.fs",
+      "saved_source_sha256": "90ee8404e644cbfc47301c897f733c5fd216dcf65c9e6e7d9ca4889d0334f1b6",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fannkuchredux-fsharpcore-1-jit/app.dll",
+      "saved_binary_sha256": "1ae6d527c1ddc16625f4eda2080397573ad34643b502fa1f4ae7d91ce128ce39",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fannkuchredux-fsharpcore-1-jit/app.dll",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · F# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        41.001625292,
+        40.984095541,
+        40.920787459
+      ],
+      "preserved_samples": [
+        41.001625292,
+        40.984095541,
+        40.920787459
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "fannkuchredux:fannkuchredux-fsharpcore-6-jit",
+      "language": "fsharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/fsharp/fannkuchredux-fsharpcore-6.fs",
+          "sha256": "0b21b5743c7caf008a8683ca5937342d72c269f800261fc5dd08c271bc5354dd"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/fannkuchredux-fsharpcore-6.fs",
+      "saved_source_sha256": "0b21b5743c7caf008a8683ca5937342d72c269f800261fc5dd08c271bc5354dd",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fannkuchredux-fsharpcore-6-jit/app.dll",
+      "saved_binary_sha256": "7cf26467f9985fc032bb89bb9a7ba53ba136b6e67ab4b83f53ae7f9e9acc249a",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fannkuchredux-fsharpcore-6-jit/app.dll",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · F# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        2.773683875,
+        2.767036625,
+        2.776705333
+      ],
+      "preserved_samples": [
+        2.773683875,
+        2.767036625,
+        2.776705333
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "fasta:fasta-fsharpcore-4-arm64-faithful-jit",
+      "language": "fsharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/fsharp/fasta-fsharpcore-4-arm64-faithful.fs",
+          "sha256": "2838e6e464540494997ea84aaf669c20bbe9a4e10c26fab9a0272099442fe766"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/fasta-fsharpcore-4-arm64-faithful.fs",
+      "saved_source_sha256": "2838e6e464540494997ea84aaf669c20bbe9a4e10c26fab9a0272099442fe766",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fasta-fsharpcore-4-arm64-faithful-jit/app.dll",
+      "saved_binary_sha256": "188f35356235d86d8d31718fd3835139323098b2dc3a6681db56204ed4f13cce",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fasta-fsharpcore-4-arm64-faithful-jit/app.dll",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · F# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        0.756927417,
+        0.755071708,
+        0.754541833
+      ],
+      "preserved_samples": [
+        0.756927417,
+        0.755071708,
+        0.754541833
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "nbody:nbody-fsharpcore-4-jit",
+      "language": "fsharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/fsharp/nbody-fsharpcore-4.fs",
+          "sha256": "64a6570863ecc8665e5217c12d722cf745878134fd9e10d890ab07fba76e7cf7"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/nbody-fsharpcore-4.fs",
+      "saved_source_sha256": "64a6570863ecc8665e5217c12d722cf745878134fd9e10d890ab07fba76e7cf7",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-fsharpcore-4-jit/app.dll",
+      "saved_binary_sha256": "e2e5e85bb92cc4626931db4627d2005b0dc54d9061b6ad3d4798451b52372f30",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-fsharpcore-4-jit/app.dll",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · F# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        2.562791125,
+        2.555566125,
+        2.550604459
+      ],
+      "preserved_samples": [
+        2.562791125,
+        2.555566125,
+        2.550604459
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "nbody:nbody-fsharpcore-6-arm64-faithful-jit",
+      "language": "fsharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/fsharp/nbody-fsharpcore-6-arm64-faithful.fs",
+          "sha256": "fd96bae4aed10610a74bc547e497bba12c23503ee2a879c47de3caa7b812d965"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/nbody-fsharpcore-6-arm64-faithful.fs",
+      "saved_source_sha256": "fd96bae4aed10610a74bc547e497bba12c23503ee2a879c47de3caa7b812d965",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-fsharpcore-6-arm64-faithful-jit/app.dll",
+      "saved_binary_sha256": "58d142021b8803a13775640c5c2aeed0a06dde385b2745c4f58debf65cce1b97",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-fsharpcore-6-arm64-faithful-jit/app.dll",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · F# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        1.867982709,
+        1.864224125,
+        1.863963875
+      ],
+      "preserved_samples": [
+        1.867982709,
+        1.864224125,
+        1.863963875
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "pidigits:pidigits-fsharpcore-6-arm64-faithful-jit",
+      "language": "fsharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/fsharp/pidigits-fsharpcore-6-arm64-faithful.fs",
+          "sha256": "54d63497939574cee5c4b9e8ca2ff2d7f24da671eb0478c0b04263e069bd091d"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/pidigits-fsharpcore-6-arm64-faithful.fs",
+      "saved_source_sha256": "54d63497939574cee5c4b9e8ca2ff2d7f24da671eb0478c0b04263e069bd091d",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/pidigits-fsharpcore-6-arm64-faithful-jit/app.dll",
+      "saved_binary_sha256": "4b48c9989d61ec1635f02bd9f255dff04907fa095e5ee3bf4ba37d8d01537f2c",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/pidigits-fsharpcore-6-arm64-faithful-jit/app.dll",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · F# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        0.30583375,
+        0.325946916,
+        0.326139333
+      ],
+      "preserved_samples": [
+        0.30583375,
+        0.325946916,
+        0.326139333
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "regexredux:regexredux-fsharpcore-2-jit",
+      "language": "fsharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/fsharp/regexredux-fsharpcore-2.fs",
+          "sha256": "ebf5bdd78c1f6faa725f8cf4060f88149486641da01e53cb73a9def2150a97c7"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/regexredux-fsharpcore-2.fs",
+      "saved_source_sha256": "ebf5bdd78c1f6faa725f8cf4060f88149486641da01e53cb73a9def2150a97c7",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-fsharpcore-2-jit/app.dll",
+      "saved_binary_sha256": "eb001cde3f7656a9270ba50e50f9a2113b7a2d7cc17ba9d25a8b86541508f0c8",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-fsharpcore-2-jit/app.dll"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · F# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        2.570265792,
+        2.593549375,
+        2.572619584
+      ],
+      "preserved_samples": [
+        2.570265792,
+        2.593549375,
+        2.572619584
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "regexredux:regexredux-fsharpcore-6-jit",
+      "language": "fsharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/fsharp/regexredux-fsharpcore-6.fs",
+          "sha256": "4fcf77c033e959328809011b76e7f905611ce59ef44e56ea9597ebb60550d8d2"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/regexredux-fsharpcore-6.fs",
+      "saved_source_sha256": "4fcf77c033e959328809011b76e7f905611ce59ef44e56ea9597ebb60550d8d2",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-fsharpcore-6-jit/app.dll",
+      "saved_binary_sha256": "7024e6c80d91f2b14b7185b2cb414a8a18c646fa3dfc45a67ebdb194a8c5b805",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-fsharpcore-6-jit/app.dll"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · F# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        0.741886,
+        0.71442975,
+        0.69004475
+      ],
+      "preserved_samples": [
+        0.741886,
+        0.71442975,
+        0.69004475
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "revcomp:revcomp-fsharpcore-1-jit",
+      "language": "fsharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/fsharp/revcomp-fsharpcore-1.fs",
+          "sha256": "46fdf71361bc55431f99359428f4aafea73c5be2458088bd4d1605a02612f509"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/revcomp-fsharpcore-1.fs",
+      "saved_source_sha256": "46fdf71361bc55431f99359428f4aafea73c5be2458088bd4d1605a02612f509",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/revcomp-fsharpcore-1-jit/app.dll",
+      "saved_binary_sha256": "46e7a8f8812fb4868a1db145150c59fe0a02697b9e0b879f041f44f8b3d90ec2",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/revcomp-fsharpcore-1-jit/app.dll"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · F# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        15.297952458,
+        15.093005333,
+        14.861431625
+      ],
+      "preserved_samples": [
+        15.297952458,
+        15.093005333,
+        14.861431625
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "spectralnorm:spectralnorm-fsharpcore-4-jit",
+      "language": "fsharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/fsharp/spectralnorm-fsharpcore-4.fs",
+          "sha256": "a355c5804474d2ecd074a8030af671538bc8f9a9fc6e0d4d0c68efce3c194f67"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/spectralnorm-fsharpcore-4.fs",
+      "saved_source_sha256": "a355c5804474d2ecd074a8030af671538bc8f9a9fc6e0d4d0c68efce3c194f67",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/spectralnorm-fsharpcore-4-jit/app.dll",
+      "saved_binary_sha256": "2c4ca7f607f0d2386faed6dd55496da45e62bee89a8df33efd7c28db96575c0d",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/spectralnorm-fsharpcore-4-jit/app.dll",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · F# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        0.211616166,
+        0.205670667,
+        0.209788209
+      ],
+      "preserved_samples": [
+        0.211616166,
+        0.205670667,
+        0.209788209
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "regexredux:regexredux-csharpcore-2-arm64-faithful-jit",
+      "language": "csharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/regexredux-csharpcore-2-arm64-faithful.cs",
+          "sha256": "4d4a9abfb13ab40f4d75269cf00e472cb73be9ea96359377d84e8920b4820466"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/regexredux-csharpcore-2-arm64-faithful.cs",
+      "saved_source_sha256": "4d4a9abfb13ab40f4d75269cf00e472cb73be9ea96359377d84e8920b4820466",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-csharpcore-2-arm64-faithful-jit/app.dll",
+      "saved_binary_sha256": "5e614bd46be19c1839240b4d634f76933bcfa6daebf8b94b6654cd61013da10a",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-csharpcore-2-arm64-faithful-jit/app.dll"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        0.701841834,
+        0.697473833,
+        0.684298834
+      ],
+      "preserved_samples": [
+        0.701841834,
+        0.697473833,
+        0.684298834
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "knucleotide:knucleotide-fsharp-local-compact-jit",
+      "language": "fsharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/fsharp/knucleotide-fsharp-local-compact.fs",
+          "sha256": "106c1b62ab391ccc4e0914e625f5c14e1b517f0403b70f0576ba23b098ed63af"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/knucleotide-fsharp-local-compact.fs",
+      "saved_source_sha256": "106c1b62ab391ccc4e0914e625f5c14e1b517f0403b70f0576ba23b098ed63af",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharp-local-compact-jit/app.dll",
+      "saved_binary_sha256": "adccbd02034610a32b4ce743270fc215cca9c9cc7b42eff4e5af54b2a76f876e",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharp-local-compact-jit/app.dll"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · F# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        21.632734041,
+        21.67244475,
+        21.593618083
+      ],
+      "preserved_samples": [
+        21.632734041,
+        21.67244475,
+        21.593618083
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "knucleotide:knucleotide-fsharp-local-rolling-jit",
+      "language": "fsharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/fsharp/knucleotide-fsharp-local-rolling.fs",
+          "sha256": "93b7fd7dcfc27b0e6bb1942466ff7545591ab7a3311bc57a1c8fe88d694e7b69"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/knucleotide-fsharp-local-rolling.fs",
+      "saved_source_sha256": "93b7fd7dcfc27b0e6bb1942466ff7545591ab7a3311bc57a1c8fe88d694e7b69",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharp-local-rolling-jit/app.dll",
+      "saved_binary_sha256": "a298504b65845f6d4e9a5c5fd7440208ca325cd7759b4aff0935621e1c9bb982",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharp-local-rolling-jit/app.dll"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · F# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        2.862067666,
+        2.827723958,
+        2.894173792
+      ],
+      "preserved_samples": [
+        2.862067666,
+        2.827723958,
+        2.894173792
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "knucleotide:knucleotide-csharpcore-1-arm64-faithful-jit",
+      "language": "csharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/knucleotide-csharpcore-1-arm64-faithful.cs",
+          "sha256": "5f4cb3646bdcf031b1f9f675f8e952cfccf36f3a14d60df580032d8fd4a982dc"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/knucleotide-csharpcore-1-arm64-faithful.cs",
+      "saved_source_sha256": "5f4cb3646bdcf031b1f9f675f8e952cfccf36f3a14d60df580032d8fd4a982dc",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-csharpcore-1-arm64-faithful-jit/app.dll",
+      "saved_binary_sha256": "0a38e13378dbc98455751ecb45915d15949b33b53d98ba91e55ed491f8afc48b",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-csharpcore-1-arm64-faithful-jit/app.dll"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        1.519450459,
+        1.471211542,
+        1.486446292
+      ],
+      "preserved_samples": [
+        1.519450459,
+        1.471211542,
+        1.486446292
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "mandelbrot:mandelbrot-csharpcore-2-arm64-faithful-jit",
+      "language": "csharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/mandelbrot-csharpcore-2-arm64-faithful.cs",
+          "sha256": "9d270ef86c59f14ad11f16d731647a09e798dab7fca2a25de3086be0ce47fe20"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/mandelbrot-csharpcore-2-arm64-faithful.cs",
+      "saved_source_sha256": "9d270ef86c59f14ad11f16d731647a09e798dab7fca2a25de3086be0ce47fe20",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-csharpcore-2-arm64-faithful-jit/app.dll",
+      "saved_binary_sha256": "4b3f5ed8f3cb2ac99fad945622f0d42d2a9e02d15addd88e85c5e023fe820bdc",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-csharpcore-2-arm64-faithful-jit/app.dll",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        50.21125775,
+        50.022617125,
+        49.263415333
+      ],
+      "preserved_samples": [
+        50.21125775,
+        50.022617125,
+        49.263415333
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "mandelbrot:mandelbrot-fsharpcore-1-arm64-faithful-jit",
+      "language": "fsharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/fsharp/mandelbrot-fsharpcore-1-arm64-faithful.fs",
+          "sha256": "1fb9c13c147db01963785ff9b4518ca23b0eddbbbc59b7ff34c7ed6ee07d5453"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/mandelbrot-fsharpcore-1-arm64-faithful.fs",
+      "saved_source_sha256": "1fb9c13c147db01963785ff9b4518ca23b0eddbbbc59b7ff34c7ed6ee07d5453",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-fsharpcore-1-arm64-faithful-jit/app.dll",
+      "saved_binary_sha256": "b72b6070e1ee0f6cbcb1aa465e14063c0d067eaace0e506de3cc0e49c4e0815e",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-fsharpcore-1-arm64-faithful-jit/app.dll",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · F# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        1.3977485,
+        1.445725375,
+        1.443723708
+      ],
+      "preserved_samples": [
+        1.3977485,
+        1.445725375,
+        1.443723708
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "mandelbrot:mandelbrot-fsharpcore-6-arm64-faithful-jit",
+      "language": "fsharp",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-jit",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/fsharp/mandelbrot-fsharpcore-6-arm64-faithful.fs",
+          "sha256": "f1148d6f9174247c0a1470ccaefb5691c2557ac7b3d343cbba87b024cfe3faec"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/mandelbrot-fsharpcore-6-arm64-faithful.fs",
+      "saved_source_sha256": "f1148d6f9174247c0a1470ccaefb5691c2557ac7b3d343cbba87b024cfe3faec",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-fsharpcore-6-arm64-faithful-jit/app.dll",
+      "saved_binary_sha256": "c728bd537656b648b9473cbe464b6218e0a773ee715712dbae801fec8f428950",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-fsharpcore-6-arm64-faithful-jit/app.dll",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · F# · fresh optimizing JIT process",
+      "display_execution_mode": "jit",
+      "display_samples": [
+        1.293486625,
+        1.295833209,
+        1.360641459
+      ],
+      "preserved_samples": [
+        1.293486625,
+        1.295833209,
+        1.360641459
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "binarytrees:binarytrees-csharpcore-3-aot",
+      "language": "csharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/binarytrees-csharpcore-3.cs",
+          "sha256": "970cf62b15e5986fe68169d6ac92556b6cde985e8f80d7ddae782f869d929fb0"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/binarytrees-csharpcore-3.cs",
+      "saved_source_sha256": "970cf62b15e5986fe68169d6ac92556b6cde985e8f80d7ddae782f869d929fb0",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/binarytrees-csharpcore-3-aot/app",
+      "saved_binary_sha256": "de39cb9aa10ef292243b1090e53ecc7ba6e2b0e375837342bdbbe97adc174a77",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/binarytrees-csharpcore-3-aot/app",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        1.664767208,
+        1.504400209,
+        1.487759459
+      ],
+      "preserved_samples": [
+        1.664767208,
+        1.504400209,
+        1.487759459
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "fannkuchredux:fannkuchredux-csharpcore-5-arm64-faithful-aot",
+      "language": "csharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/fannkuchredux-csharpcore-5-arm64-faithful.cs",
+          "sha256": "5e68341ac5640b9bfc1b598d3fa8a2f582ebf66471811a4a4c9f8aac1a707cb5"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/fannkuchredux-csharpcore-5-arm64-faithful.cs",
+      "saved_source_sha256": "5e68341ac5640b9bfc1b598d3fa8a2f582ebf66471811a4a4c9f8aac1a707cb5",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fannkuchredux-csharpcore-5-arm64-faithful-aot/app",
+      "saved_binary_sha256": "005ea3865f8eef9ab7aa15ecdd36b596f8f4f3301774071a8056a988cb838d06",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fannkuchredux-csharpcore-5-arm64-faithful-aot/app",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        2.671146417,
+        2.413904208,
+        2.399022583
+      ],
+      "preserved_samples": [
+        2.671146417,
+        2.413904208,
+        2.399022583
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "fannkuchredux:fannkuchredux-csharpcore-8-aot",
+      "language": "csharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/fannkuchredux-csharpcore-8.cs",
+          "sha256": "d9d7a87488a1be0dd06c8823d53310104e82b5bca4c85af1b2c013607d0ed5ff"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/fannkuchredux-csharpcore-8.cs",
+      "saved_source_sha256": "d9d7a87488a1be0dd06c8823d53310104e82b5bca4c85af1b2c013607d0ed5ff",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fannkuchredux-csharpcore-8-aot/app",
+      "saved_binary_sha256": "093ea1250455a09028e7866a5f2c2617c1eabd4e1e386f8dba2170b3b77686f7",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fannkuchredux-csharpcore-8-aot/app",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        23.655160625,
+        23.312059125,
+        23.406499375
+      ],
+      "preserved_samples": [
+        23.655160625,
+        23.312059125,
+        23.406499375
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "fasta:fasta-csharpcore-8-aot",
+      "language": "csharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/fasta-csharpcore-8.cs",
+          "sha256": "708900340cb51a675e5019a1df16d7f958999432e129895dadd0edd4c177ee98"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/fasta-csharpcore-8.cs",
+      "saved_source_sha256": "708900340cb51a675e5019a1df16d7f958999432e129895dadd0edd4c177ee98",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fasta-csharpcore-8-aot/app",
+      "saved_binary_sha256": "90f907bb5a4a4f23a0985b1c22126da7b99f336fd5652c47e3f5a83f803d9d3b",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fasta-csharpcore-8-aot/app",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        4.348639375,
+        4.06133425,
+        4.047795541
+      ],
+      "preserved_samples": [
+        4.348639375,
+        4.06133425,
+        4.047795541
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "fasta:fasta-csharpcore-9-arm64-faithful-aot",
+      "language": "csharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/fasta-csharpcore-9-arm64-faithful.cs",
+          "sha256": "62e1b2282931b6c1091c8406fd700abac2ddde44cc362536034380817b85e393"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/fasta-csharpcore-9-arm64-faithful.cs",
+      "saved_source_sha256": "62e1b2282931b6c1091c8406fd700abac2ddde44cc362536034380817b85e393",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fasta-csharpcore-9-arm64-faithful-aot/app",
+      "saved_binary_sha256": "90b82a81d8dd80176d3c70bc96502f5a1bcd20ddd08616cd72b52bff267874d8",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fasta-csharpcore-9-arm64-faithful-aot/app",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        2.83880025,
+        2.433921667,
+        2.562407292
+      ],
+      "preserved_samples": [
+        2.83880025,
+        2.433921667,
+        2.562407292
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "knucleotide:knucleotide-csharpcore-8-arm64-faithful-aot",
+      "language": "csharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/knucleotide-csharpcore-8-arm64-faithful.cs",
+          "sha256": "888ebde7cbfb1368a0eac86960477948f29853649d1c3f4016123cf4970ab5fe"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/knucleotide-csharpcore-8-arm64-faithful.cs",
+      "saved_source_sha256": "888ebde7cbfb1368a0eac86960477948f29853649d1c3f4016123cf4970ab5fe",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-csharpcore-8-arm64-faithful-aot/app",
+      "saved_binary_sha256": "ac2af8c1c8657ce795d8657dda2ca46363238debf279c4c12a333eb30670d021",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-csharpcore-8-arm64-faithful-aot/app"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        25.005797792,
+        24.711289958,
+        24.864513
+      ],
+      "preserved_samples": [
+        25.005797792,
+        24.711289958,
+        24.864513
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "mandelbrot:mandelbrot-csharpcore-7-aot",
+      "language": "csharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/mandelbrot-csharpcore-7.cs",
+          "sha256": "d22346944ed5d13c1dbb2d626f17f38c5ff075a23c97b31eca1bb129c6630679"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/mandelbrot-csharpcore-7.cs",
+      "saved_source_sha256": "d22346944ed5d13c1dbb2d626f17f38c5ff075a23c97b31eca1bb129c6630679",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-csharpcore-7-aot/app",
+      "saved_binary_sha256": "fd9510a87374e0e63cb6f8040acabdb9c17e5bf5bc049eda8d3cefefe92d2a28",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-csharpcore-7-aot/app",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        0.41684825,
+        0.421397541,
+        0.419310917
+      ],
+      "preserved_samples": [
+        0.41684825,
+        0.421397541,
+        0.419310917
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "nbody:nbody-csharpcore-0-aot",
+      "language": "csharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/nbody-csharpcore-0.cs",
+          "sha256": "212627189a66c75feb27605ae77e0a1d47fcf20ea8ddc080bd4f18e97e9950a7"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/nbody-csharpcore-0.cs",
+      "saved_source_sha256": "212627189a66c75feb27605ae77e0a1d47fcf20ea8ddc080bd4f18e97e9950a7",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-csharpcore-0-aot/app",
+      "saved_binary_sha256": "aee265b57cc480543f96c455484d758d39de69786df9b6974e9a57f5c0801be7",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-csharpcore-0-aot/app",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        1.868801709,
+        1.867404375,
+        1.869167209
+      ],
+      "preserved_samples": [
+        1.868801709,
+        1.867404375,
+        1.869167209
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "nbody:nbody-csharpcore-6-arm64-faithful-aot",
+      "language": "csharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/nbody-csharpcore-6-arm64-faithful.cs",
+          "sha256": "603be6e0c78135fc00ce3109c020dfa486df06651ef88a4f3f2a149d61de7b9a"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/nbody-csharpcore-6-arm64-faithful.cs",
+      "saved_source_sha256": "603be6e0c78135fc00ce3109c020dfa486df06651ef88a4f3f2a149d61de7b9a",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-csharpcore-6-arm64-faithful-aot/app",
+      "saved_binary_sha256": "0c2f29815acc650cc94094e77a91d855967802a69263b8b58683ef742682fb8b",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-csharpcore-6-arm64-faithful-aot/app",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        1.70933725,
+        1.709704959,
+        1.707245875
+      ],
+      "preserved_samples": [
+        1.70933725,
+        1.709704959,
+        1.707245875
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "pidigits:pidigits-csharpcore-6-arm64-faithful-aot",
+      "language": "csharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/pidigits-csharpcore-6-arm64-faithful.cs",
+          "sha256": "a5e9734cd31f06a454ac4d2ed11bb249e8be236ea84eead9cf4677d8fe99679c"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/pidigits-csharpcore-6-arm64-faithful.cs",
+      "saved_source_sha256": "a5e9734cd31f06a454ac4d2ed11bb249e8be236ea84eead9cf4677d8fe99679c",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/pidigits-csharpcore-6-arm64-faithful-aot/app",
+      "saved_binary_sha256": "f1c77cc11fe52ec74395ea6a49764560e418d816a3903b10b477fe8d12f1a166",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/pidigits-csharpcore-6-arm64-faithful-aot/app",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        0.298632625,
+        0.305774708,
+        0.310017042
+      ],
+      "preserved_samples": [
+        0.298632625,
+        0.305774708,
+        0.310017042
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "pidigits:pidigits-csharpcore-7-aot",
+      "language": "csharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/pidigits-csharpcore-7.cs",
+          "sha256": "a8e114e5b22bea6aa9e373960b09e1eb42eaf20836d921e6591803194a381413"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/pidigits-csharpcore-7.cs",
+      "saved_source_sha256": "a8e114e5b22bea6aa9e373960b09e1eb42eaf20836d921e6591803194a381413",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/pidigits-csharpcore-7-aot/app",
+      "saved_binary_sha256": "f71b5fd56de1cd702c2628fdaeaa3abff4d13aa16bd3dc8920b9680ae9126fe3",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/pidigits-csharpcore-7-aot/app",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        4.128064333,
+        4.121555333,
+        4.097377333
+      ],
+      "preserved_samples": [
+        4.128064333,
+        4.121555333,
+        4.097377333
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "regexredux:regexredux-csharpcore-5-aot",
+      "language": "csharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/regexredux-csharpcore-5.cs",
+          "sha256": "fbb853f13926ddb2ba9a70ce2a3614fce6ffb1df7e3e8ebbac8054aca882f46f"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/regexredux-csharpcore-5.cs",
+      "saved_source_sha256": "fbb853f13926ddb2ba9a70ce2a3614fce6ffb1df7e3e8ebbac8054aca882f46f",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-csharpcore-5-aot/app",
+      "saved_binary_sha256": "29f45f41da4cc7e7a23b192c10f926ca5654713f25fea2e431fbc2ee479a855b",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-csharpcore-5-aot/app"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        1.213399208,
+        1.212362042,
+        1.465093708
+      ],
+      "preserved_samples": [
+        1.213399208,
+        1.212362042,
+        1.465093708
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "revcomp:revcomp-csharpcore-3-aot",
+      "language": "csharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/revcomp-csharpcore-3.cs",
+          "sha256": "d1b214b471909300cce9f40a55d0542da654b9aaabc087ddd03d9ba579ecff9d"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/revcomp-csharpcore-3.cs",
+      "saved_source_sha256": "d1b214b471909300cce9f40a55d0542da654b9aaabc087ddd03d9ba579ecff9d",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/revcomp-csharpcore-3-aot/app",
+      "saved_binary_sha256": "3eb4cd12d67d44c8ad6a8e562132fb1aaa676ea33a9e959bb2d0583dbb832a51",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/revcomp-csharpcore-3-aot/app"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        0.987459959,
+        0.709630875,
+        0.710751875
+      ],
+      "preserved_samples": [
+        0.987459959,
+        0.709630875,
+        0.710751875
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "revcomp:revcomp-csharpcore-9-arm64-faithful-aot",
+      "language": "csharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/revcomp-csharpcore-9-arm64-faithful.cs",
+          "sha256": "c9c90844bf2f9ad3c2e7f09fabc01a6fcd3660694b64a1a5a01404fb61b49c4d"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/revcomp-csharpcore-9-arm64-faithful.cs",
+      "saved_source_sha256": "c9c90844bf2f9ad3c2e7f09fabc01a6fcd3660694b64a1a5a01404fb61b49c4d",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/revcomp-csharpcore-9-arm64-faithful-aot/app",
+      "saved_binary_sha256": "0c4813f3569584d36311ac75c4c49eac9313190fe8dce17047c5d96c9d33701c",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/revcomp-csharpcore-9-arm64-faithful-aot/app"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        0.340655792,
+        0.074906292,
+        0.077569125
+      ],
+      "preserved_samples": [
+        0.340655792,
+        0.074906292,
+        0.077569125
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "spectralnorm:spectralnorm-csharpcore-5-arm64-faithful-aot",
+      "language": "csharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/spectralnorm-csharpcore-5-arm64-faithful.cs",
+          "sha256": "81fad5d7b9226afe4a514ecac92d888841e9f2fb2feaeb18fc83ebc10007c170"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/spectralnorm-csharpcore-5-arm64-faithful.cs",
+      "saved_source_sha256": "81fad5d7b9226afe4a514ecac92d888841e9f2fb2feaeb18fc83ebc10007c170",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/spectralnorm-csharpcore-5-arm64-faithful-aot/app",
+      "saved_binary_sha256": "78930832ff16d58aed568cd70ae11a3752d99c37c3c0797bc914681ba2ccc42c",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/spectralnorm-csharpcore-5-arm64-faithful-aot/app",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        0.124950916,
+        0.120097875,
+        0.121808625
+      ],
+      "preserved_samples": [
+        0.124950916,
+        0.120097875,
+        0.121808625
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "spectralnorm:spectralnorm-csharpcore-8-aot",
+      "language": "csharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/spectralnorm-csharpcore-8.cs",
+          "sha256": "59a6bae9bbae6cdba2b6e2e36eb0e06796dc46079fa2393c83a822aa691108e7"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/spectralnorm-csharpcore-8.cs",
+      "saved_source_sha256": "59a6bae9bbae6cdba2b6e2e36eb0e06796dc46079fa2393c83a822aa691108e7",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/spectralnorm-csharpcore-8-aot/app",
+      "saved_binary_sha256": "0cdc5f06ecf8085bff007f9d68d905bbae4cfd240d2a6bb648d5d629b35bef46",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/spectralnorm-csharpcore-8-aot/app",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        2.503175875,
+        2.477851167,
+        2.503573667
+      ],
+      "preserved_samples": [
+        2.503175875,
+        2.477851167,
+        2.503573667
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "binarytrees:binarytrees-fsharpcore-7-static-output-aot",
+      "language": "fsharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/fsharp/binarytrees-fsharpcore-7-static-output.fs",
+          "sha256": "d814046cd7d454a0efb26d4edde6cfa91ffee99473f133b785ca3edd51155ade"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/binarytrees-fsharpcore-7-static-output.fs",
+      "saved_source_sha256": "d814046cd7d454a0efb26d4edde6cfa91ffee99473f133b785ca3edd51155ade",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/binarytrees-fsharpcore-7-static-output-aot/app",
+      "saved_binary_sha256": "35a03a5a61ded630d30ee62595de958660ab770db6c884ef6e019e736d51d644",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/binarytrees-fsharpcore-7-static-output-aot/app",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · F# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        2.217291875,
+        1.646792125,
+        1.715436875
+      ],
+      "preserved_samples": [
+        2.217291875,
+        1.646792125,
+        1.715436875
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "fannkuchredux:fannkuchredux-fsharpcore-1-static-output-aot",
+      "language": "fsharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/fsharp/fannkuchredux-fsharpcore-1-static-output.fs",
+          "sha256": "46801dcc5acaac9cdde6d6fa673d62bf64ac805572565cb252c2d3dc7d12f485"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/fannkuchredux-fsharpcore-1-static-output.fs",
+      "saved_source_sha256": "46801dcc5acaac9cdde6d6fa673d62bf64ac805572565cb252c2d3dc7d12f485",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fannkuchredux-fsharpcore-1-static-output-aot/app",
+      "saved_binary_sha256": "dd34dff341d367c229bbf7906d9b2fcfca2312e2411a5bd181fd4600238ca64e",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fannkuchredux-fsharpcore-1-static-output-aot/app",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · F# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        38.631650834,
+        38.53586275,
+        38.379437625
+      ],
+      "preserved_samples": [
+        38.631650834,
+        38.53586275,
+        38.379437625
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "fannkuchredux:fannkuchredux-fsharpcore-6-static-output-aot",
+      "language": "fsharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/fsharp/fannkuchredux-fsharpcore-6-static-output.fs",
+          "sha256": "445abe83d4bee87bd10998eb85b09b989e69ff388717e004938bc3b99383399f"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/fannkuchredux-fsharpcore-6-static-output.fs",
+      "saved_source_sha256": "445abe83d4bee87bd10998eb85b09b989e69ff388717e004938bc3b99383399f",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fannkuchredux-fsharpcore-6-static-output-aot/app",
+      "saved_binary_sha256": "c9e5494a327125ae3db9ed32bd67b5cb97676a74d8b1d65e8fdc20a2b255198b",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fannkuchredux-fsharpcore-6-static-output-aot/app",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · F# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        2.9888705,
+        2.694858458,
+        2.708164875
+      ],
+      "preserved_samples": [
+        2.9888705,
+        2.694858458,
+        2.708164875
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "fasta:fasta-fsharpcore-4-arm64-faithful-aot",
+      "language": "fsharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/fsharp/fasta-fsharpcore-4-arm64-faithful.fs",
+          "sha256": "2838e6e464540494997ea84aaf669c20bbe9a4e10c26fab9a0272099442fe766"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/fasta-fsharpcore-4-arm64-faithful.fs",
+      "saved_source_sha256": "2838e6e464540494997ea84aaf669c20bbe9a4e10c26fab9a0272099442fe766",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fasta-fsharpcore-4-arm64-faithful-aot/app",
+      "saved_binary_sha256": "3f912613cc9b4b14dee62d1aa35b0b3c69e072c322a599308e42fcbbc98f5d5e",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fasta-fsharpcore-4-arm64-faithful-aot/app",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · F# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        0.994581625,
+        0.735263417,
+        0.735919167
+      ],
+      "preserved_samples": [
+        0.994581625,
+        0.735263417,
+        0.735919167
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "nbody:nbody-fsharpcore-4-static-output-aot",
+      "language": "fsharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/fsharp/nbody-fsharpcore-4-static-output.fs",
+          "sha256": "3f42aff7c0afec155f4789029c2fbea4f865f1efcf6235ebd2999e4d8de05530"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/nbody-fsharpcore-4-static-output.fs",
+      "saved_source_sha256": "3f42aff7c0afec155f4789029c2fbea4f865f1efcf6235ebd2999e4d8de05530",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-fsharpcore-4-static-output-aot/app",
+      "saved_binary_sha256": "a499649cac6e7f8363433041b4bbddd148a6f03898cb9f61cd8f3cd373b32b2d",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-fsharpcore-4-static-output-aot/app",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · F# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        2.48469975,
+        2.485390292,
+        2.484897583
+      ],
+      "preserved_samples": [
+        2.48469975,
+        2.485390292,
+        2.484897583
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "nbody:nbody-fsharpcore-6-arm64-faithful-static-output-aot",
+      "language": "fsharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/fsharp/nbody-fsharpcore-6-arm64-faithful-static-output.fs",
+          "sha256": "b57eb154572d52b1d2df68889150cfba0224cf546c85faeb25ceb48abc07dded"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/nbody-fsharpcore-6-arm64-faithful-static-output.fs",
+      "saved_source_sha256": "b57eb154572d52b1d2df68889150cfba0224cf546c85faeb25ceb48abc07dded",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-fsharpcore-6-arm64-faithful-static-output-aot/app",
+      "saved_binary_sha256": "98be0726600b99667ea981c13e1dbbd491b0c700e59cd7ec3f8fb1e382441bc8",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-fsharpcore-6-arm64-faithful-static-output-aot/app",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · F# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        1.833389709,
+        1.821472375,
+        1.826110291
+      ],
+      "preserved_samples": [
+        1.833389709,
+        1.821472375,
+        1.826110291
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "pidigits:pidigits-fsharpcore-6-arm64-faithful-aot",
+      "language": "fsharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/fsharp/pidigits-fsharpcore-6-arm64-faithful.fs",
+          "sha256": "54d63497939574cee5c4b9e8ca2ff2d7f24da671eb0478c0b04263e069bd091d"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/pidigits-fsharpcore-6-arm64-faithful.fs",
+      "saved_source_sha256": "54d63497939574cee5c4b9e8ca2ff2d7f24da671eb0478c0b04263e069bd091d",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/pidigits-fsharpcore-6-arm64-faithful-aot/app",
+      "saved_binary_sha256": "537de9c9088a733ba43359ff63c4aca46aa8e252548c391c574952df41ad5464",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/pidigits-fsharpcore-6-arm64-faithful-aot/app",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · F# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        0.305879833,
+        0.309286459,
+        0.312986125
+      ],
+      "preserved_samples": [
+        0.305879833,
+        0.309286459,
+        0.312986125
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "regexredux:regexredux-fsharpcore-2-static-output-aot",
+      "language": "fsharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/fsharp/regexredux-fsharpcore-2-static-output.fs",
+          "sha256": "00657dd8b5e720f5f1f02cb85b6fd7680c75e028c7c2125f7f30fb5fc1565a8b"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/regexredux-fsharpcore-2-static-output.fs",
+      "saved_source_sha256": "00657dd8b5e720f5f1f02cb85b6fd7680c75e028c7c2125f7f30fb5fc1565a8b",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-fsharpcore-2-static-output-aot/app",
+      "saved_binary_sha256": "0be8a040d73cdc78e104f7c26e529d0f50c985a750442395a1abd54ef07b62c8",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-fsharpcore-2-static-output-aot/app"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · F# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        4.961225125,
+        5.104968417,
+        5.106299041
+      ],
+      "preserved_samples": [
+        4.961225125,
+        5.104968417,
+        5.106299041
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "regexredux:regexredux-fsharpcore-6-static-output-aot",
+      "language": "fsharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/fsharp/regexredux-fsharpcore-6-static-output.fs",
+          "sha256": "ee82cb382b59f52fd09106b1a4843ffdc7781f72db561097cc31045568af30a9"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/regexredux-fsharpcore-6-static-output.fs",
+      "saved_source_sha256": "ee82cb382b59f52fd09106b1a4843ffdc7781f72db561097cc31045568af30a9",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-fsharpcore-6-static-output-aot/app",
+      "saved_binary_sha256": "16a271cbabf2c7ad2bd54a5052ca7f6cdbe59b5184e48a6eb6c9cb349c96c6d0",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-fsharpcore-6-static-output-aot/app"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · F# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        1.206478208,
+        1.222682833,
+        1.2032875
+      ],
+      "preserved_samples": [
+        1.206478208,
+        1.222682833,
+        1.2032875
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "revcomp:revcomp-fsharpcore-1-aot",
+      "language": "fsharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/fsharp/revcomp-fsharpcore-1.fs",
+          "sha256": "46fdf71361bc55431f99359428f4aafea73c5be2458088bd4d1605a02612f509"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/revcomp-fsharpcore-1.fs",
+      "saved_source_sha256": "46fdf71361bc55431f99359428f4aafea73c5be2458088bd4d1605a02612f509",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/revcomp-fsharpcore-1-aot/app",
+      "saved_binary_sha256": "29652df3e73f99e96ca6f70bee06c53f037e108c4f4c3373591bc29adcf464f0",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/revcomp-fsharpcore-1-aot/app"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · F# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        14.951059959,
+        15.732495875,
+        14.630520666
+      ],
+      "preserved_samples": [
+        14.951059959,
+        15.732495875,
+        14.630520666
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "spectralnorm:spectralnorm-fsharpcore-4-static-output-aot",
+      "language": "fsharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/fsharp/spectralnorm-fsharpcore-4-static-output.fs",
+          "sha256": "d40399b56e652608b93c1aef2c7fde608db478bdc65f15c00cd6f76c79bae8c6"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/spectralnorm-fsharpcore-4-static-output.fs",
+      "saved_source_sha256": "d40399b56e652608b93c1aef2c7fde608db478bdc65f15c00cd6f76c79bae8c6",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/spectralnorm-fsharpcore-4-static-output-aot/app",
+      "saved_binary_sha256": "58b7ff285d7573c6249c2f155876946f1fbd88d72cb3e73ee0b9ad8a65569459",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/spectralnorm-fsharpcore-4-static-output-aot/app",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · F# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        0.178618416,
+        0.178409209,
+        0.176259875
+      ],
+      "preserved_samples": [
+        0.178618416,
+        0.178409209,
+        0.176259875
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "regexredux:regexredux-csharpcore-2-arm64-faithful-aot",
+      "language": "csharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/regexredux-csharpcore-2-arm64-faithful.cs",
+          "sha256": "4d4a9abfb13ab40f4d75269cf00e472cb73be9ea96359377d84e8920b4820466"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/regexredux-csharpcore-2-arm64-faithful.cs",
+      "saved_source_sha256": "4d4a9abfb13ab40f4d75269cf00e472cb73be9ea96359377d84e8920b4820466",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-csharpcore-2-arm64-faithful-aot/app",
+      "saved_binary_sha256": "0816918bc7a1f876d45d3a3f82e52339f4feca9c8e5a1e8383218ab9dc53c0e8",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-csharpcore-2-arm64-faithful-aot/app"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        0.682537,
+        0.685856291,
+        0.934094333
+      ],
+      "preserved_samples": [
+        0.682537,
+        0.685856291,
+        0.934094333
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "knucleotide:knucleotide-fsharp-local-compact-static-output-aot",
+      "language": "fsharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/fsharp/knucleotide-fsharp-local-compact-static-output.fs",
+          "sha256": "4cddefdea835f3f007aeaf307c7437089f64408d6d8496b97ebb902686401fa5"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/knucleotide-fsharp-local-compact-static-output.fs",
+      "saved_source_sha256": "4cddefdea835f3f007aeaf307c7437089f64408d6d8496b97ebb902686401fa5",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharp-local-compact-static-output-aot/app",
+      "saved_binary_sha256": "ee572f53ae00825f6e6e0f3225d07d0c478dc7ce5bbb5aa9629cc1504309dbfb",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharp-local-compact-static-output-aot/app"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · F# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        23.570851167,
+        23.24503775,
+        23.352799792
+      ],
+      "preserved_samples": [
+        23.570851167,
+        23.24503775,
+        23.352799792
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "knucleotide:knucleotide-fsharp-local-rolling-static-output-aot",
+      "language": "fsharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/fsharp/knucleotide-fsharp-local-rolling-static-output.fs",
+          "sha256": "a479f9e1154da47b78dc22da9db0c5d2fe29e6a659d64273819d9c22da6bb481"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/knucleotide-fsharp-local-rolling-static-output.fs",
+      "saved_source_sha256": "a479f9e1154da47b78dc22da9db0c5d2fe29e6a659d64273819d9c22da6bb481",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharp-local-rolling-static-output-aot/app",
+      "saved_binary_sha256": "53837183845ddd74e5970b62a6c953dd07dbbd35dc0ac5072998ed858824d36f",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharp-local-rolling-static-output-aot/app"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · F# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        2.787862334,
+        2.468421542,
+        2.530281416
+      ],
+      "preserved_samples": [
+        2.787862334,
+        2.468421542,
+        2.530281416
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "knucleotide:knucleotide-csharpcore-1-arm64-faithful-aot",
+      "language": "csharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/knucleotide-csharpcore-1-arm64-faithful.cs",
+          "sha256": "5f4cb3646bdcf031b1f9f675f8e952cfccf36f3a14d60df580032d8fd4a982dc"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/knucleotide-csharpcore-1-arm64-faithful.cs",
+      "saved_source_sha256": "5f4cb3646bdcf031b1f9f675f8e952cfccf36f3a14d60df580032d8fd4a982dc",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-csharpcore-1-arm64-faithful-aot/app",
+      "saved_binary_sha256": "fa27fdb24b8db8d1029015b4e6a3bf8e21f05b4df89d53621e47ad1d248a068e",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-csharpcore-1-arm64-faithful-aot/app"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        1.909746834,
+        1.648583459,
+        1.676538417
+      ],
+      "preserved_samples": [
+        1.909746834,
+        1.648583459,
+        1.676538417
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "mandelbrot:mandelbrot-csharpcore-2-arm64-faithful-aot",
+      "language": "csharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/csharp/mandelbrot-csharpcore-2-arm64-faithful.cs",
+          "sha256": "9d270ef86c59f14ad11f16d731647a09e798dab7fca2a25de3086be0ce47fe20"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/mandelbrot-csharpcore-2-arm64-faithful.cs",
+      "saved_source_sha256": "9d270ef86c59f14ad11f16d731647a09e798dab7fca2a25de3086be0ce47fe20",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-csharpcore-2-arm64-faithful-aot/app",
+      "saved_binary_sha256": "6f610da4db5ffeaed18cf26da099d8105c916aa8841c31a9c2803ffbbed9b6dc",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-csharpcore-2-arm64-faithful-aot/app",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · C# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        49.762871291,
+        49.847045833,
+        50.392325208
+      ],
+      "preserved_samples": [
+        49.762871291,
+        49.847045833,
+        50.392325208
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "mandelbrot:mandelbrot-fsharpcore-1-arm64-faithful-aot",
+      "language": "fsharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/fsharp/mandelbrot-fsharpcore-1-arm64-faithful.fs",
+          "sha256": "1fb9c13c147db01963785ff9b4518ca23b0eddbbbc59b7ff34c7ed6ee07d5453"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/mandelbrot-fsharpcore-1-arm64-faithful.fs",
+      "saved_source_sha256": "1fb9c13c147db01963785ff9b4518ca23b0eddbbbc59b7ff34c7ed6ee07d5453",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-fsharpcore-1-arm64-faithful-aot/app",
+      "saved_binary_sha256": "3cbead7b25a2968551a614fb4320d0001a609bad227c72527d56470de7de7cab",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-fsharpcore-1-arm64-faithful-aot/app",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · F# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        1.28336425,
+        1.277559709,
+        1.272767583
+      ],
+      "preserved_samples": [
+        1.28336425,
+        1.277559709,
+        1.272767583
+      ],
+      "stored_samples_agree": true
+    },
+    {
+      "key": "mandelbrot:mandelbrot-fsharpcore-6-arm64-faithful-aot",
+      "language": "fsharp-aot",
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "expected_report_sha256": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+      "proposed_backend": "dotnet-native-aot",
+      "verified": false,
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "remaining-languages-comparison/20261011/sources/fsharp/mandelbrot-fsharpcore-6-arm64-faithful.fs",
+          "sha256": "f1148d6f9174247c0a1470ccaefb5691c2557ac7b3d343cbba87b024cfe3faec"
+        }
+      ],
+      "saved_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/mandelbrot-fsharpcore-6-arm64-faithful.fs",
+      "saved_source_sha256": "f1148d6f9174247c0a1470ccaefb5691c2557ac7b3d343cbba87b024cfe3faec",
+      "saved_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-fsharpcore-6-arm64-faithful-aot/app",
+      "saved_binary_sha256": "2aed8815e65323bfa60a8c329b22f9056a8006eb694af8bae997949b39843f02",
+      "saved_runtime": null,
+      "saved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-fsharpcore-6-arm64-faithful-aot/app",
+        "{n}"
+      ],
+      "display_runtime_sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+      "display_runtime_policy": ".NET 10.0.12 · F# NativeAOT · Release · native ARM64",
+      "display_execution_mode": "aot",
+      "display_samples": [
+        1.182291584,
+        1.181819834,
+        1.178754625
+      ],
+      "preserved_samples": [
+        1.182291584,
+        1.181819834,
+        1.178754625
+      ],
+      "stored_samples_agree": true
+    }
+  ],
+  "runtime_receipts": {
+    "erlang": {
+      "report": "erlang-comparison/20261010/results/builds.json",
+      "runtimes": {
+        "launcher": {
+          "path": "/opt/homebrew/Cellar/erlang/29.1.1_2/lib/erlang/bin/erl",
+          "sha256": "ef68f389ca08a7984d2cfbf9beedc44a111cf42215f77d020c3868a9a6ef88f1"
+        },
+        "compiler": {
+          "path": "/opt/homebrew/Cellar/erlang/29.1.1_2/lib/erlang/bin/erlc",
+          "sha256": "8facb0ac0c8c1b9a4f2412ae85261f0a8ed17a4a8df7927e6b8d65c4cceda58d"
+        },
+        "engine": {
+          "path": "/opt/homebrew/Cellar/erlang/29.1.1_2/lib/erlang/erts-17.1/bin/beam.smp",
+          "sha256": "317a5aa96d7f488ee1f5377f76cb87f47279e235b3eff835ec3c98265074116b"
+        }
+      },
+      "runtime_details": {
+        "otp": "29",
+        "schedulers": 8,
+        "erts": "17.1",
+        "jit": "jit",
+        "arch": "aarch64-apple-darwin25.6.0",
+        "release": "29.1.1"
+      },
+      "runtime_policy": "Erlang/OTP 29.1.1 on native Apple Silicon, BEAM load-time JIT enabled; eight online schedulers, published worker partitioning retained, default garbage collection and heap settings."
+    },
+    "dotnet": {
+      "report": "remaining-languages-comparison/20261011/results/summary.json",
+      "runtimes": {
+        "csharp": {
+          "version": "10.0.401",
+          "asset": {
+            "name": "dotnet-sdk-osx-arm64.tar.gz",
+            "rid": "osx-arm64",
+            "url": "https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.401/dotnet-sdk-10.0.401-osx-arm64.tar.gz",
+            "hash": "69f64eb00dc045398755c440b152225d544301a345a146a16e86a56a0c52b7c94b2c331520e976dbb821f18d31930aafbd25bb85961e3517e0665414ce0cbcff"
+          },
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+          "sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+          "archive": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-sdk-10.0.401-osx-arm64.tar.gz",
+          "archive_sha256": "d143ccec4474dce17d7b778854598137a2599b81828bce51e809897fe8bdf035",
+          "official_sha512_verified": true
+        },
+        "fsharp": {
+          "version": "10.0.401",
+          "asset": {
+            "name": "dotnet-sdk-osx-arm64.tar.gz",
+            "rid": "osx-arm64",
+            "url": "https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.401/dotnet-sdk-10.0.401-osx-arm64.tar.gz",
+            "hash": "69f64eb00dc045398755c440b152225d544301a345a146a16e86a56a0c52b7c94b2c331520e976dbb821f18d31930aafbd25bb85961e3517e0665414ce0cbcff"
+          },
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+          "sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+          "archive": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-sdk-10.0.401-osx-arm64.tar.gz",
+          "archive_sha256": "d143ccec4474dce17d7b778854598137a2599b81828bce51e809897fe8bdf035",
+          "official_sha512_verified": true
+        },
+        "csharp-aot": {
+          "version": "10.0.401",
+          "asset": {
+            "name": "dotnet-sdk-osx-arm64.tar.gz",
+            "rid": "osx-arm64",
+            "url": "https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.401/dotnet-sdk-10.0.401-osx-arm64.tar.gz",
+            "hash": "69f64eb00dc045398755c440b152225d544301a345a146a16e86a56a0c52b7c94b2c331520e976dbb821f18d31930aafbd25bb85961e3517e0665414ce0cbcff"
+          },
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+          "sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+          "archive": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-sdk-10.0.401-osx-arm64.tar.gz",
+          "archive_sha256": "d143ccec4474dce17d7b778854598137a2599b81828bce51e809897fe8bdf035",
+          "official_sha512_verified": true
+        },
+        "fsharp-aot": {
+          "version": "10.0.401",
+          "asset": {
+            "name": "dotnet-sdk-osx-arm64.tar.gz",
+            "rid": "osx-arm64",
+            "url": "https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.401/dotnet-sdk-10.0.401-osx-arm64.tar.gz",
+            "hash": "69f64eb00dc045398755c440b152225d544301a345a146a16e86a56a0c52b7c94b2c331520e976dbb821f18d31930aafbd25bb85961e3517e0665414ce0cbcff"
+          },
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+          "sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+          "archive": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-sdk-10.0.401-osx-arm64.tar.gz",
+          "archive_sha256": "d143ccec4474dce17d7b778854598137a2599b81828bce51e809897fe8bdf035",
+          "official_sha512_verified": true
+        }
+      },
+      "report_pins": {
+        "results/native-timings-v2.json": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+        "results/ada-regex-repair.json": "79cd14804a173326bc21d297915e887b65163cc0e86b2e55e660abcce9ce7436"
+      }
+    },
+    "nativeaot": {
+      "report": "remaining-languages-comparison/20261011/dotnet_aot_builds.json",
+      "status": "prepared",
+      "fields": [
+        "excluded",
+        "programs",
+        "status"
+      ]
+    }
+  },
+  "pin_rule": "Under the common lock reconcile every exact admitted display source and saved report record, runtime/build receipts and three sample arrays. .NET JIT must execute the pinned dotnet host/DLL; NativeAOT must execute its pinned produced native binary. Report/backend labels alone are insufficient. No new timings or edits to historical reports."
+}

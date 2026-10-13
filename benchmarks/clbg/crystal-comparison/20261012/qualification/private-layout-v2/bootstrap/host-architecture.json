@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/usr/bin/uname",
+    "-m"
+  ],
+  "started_at": "2026-10-12T17:12:53.822507+00:00",
+  "inherited_common_mutex": true,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "timeout_seconds": 30,
+  "pid": 88756,
+  "identity": {
+    "pid": 88756,
+    "process_listing": "Mon Oct 12 13:12:53 2026     <defunct>"
+  },
+  "exit_status": 0,
+  "final_exit_status": 0,
+  "finished_at": "2026-10-12T17:12:53.889233+00:00"
+}

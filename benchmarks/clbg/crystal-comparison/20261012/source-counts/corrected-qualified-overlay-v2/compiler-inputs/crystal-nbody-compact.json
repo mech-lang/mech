@@ -1,0 +1,47 @@
+{
+  "status": "qualified-exact-authored-compiler-inputs",
+  "profile": "crystal-nbody-compact",
+  "source_sha256": "b2fc0082ebd9b48b79d63c8ff59e8221d9eaebe1bb934af5847fc93bb7933fde",
+  "binary_sha256": "76c8cbfcf00d3809e47ad624cecefdec4bc3a7813da6a7a992b085ffffb6a358",
+  "files": [
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/source-snapshot/sources/nbody/compact.cr",
+      "sha256": "b2fc0082ebd9b48b79d63c8ff59e8221d9eaebe1bb934af5847fc93bb7933fde"
+    }
+  ],
+  "actual_build_receipt": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/builds/crystal-nbody-compact/build.json",
+    "sha256": "ce299b100f5b2b0b8f84a1755979e4025b5ca832884bb63b8f5aac20b2e62685"
+  },
+  "actual_build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/bin/crystal",
+    "build",
+    "--release",
+    "--no-debug",
+    "--no-color",
+    "--error-trace",
+    "--mcpu",
+    "native",
+    "--threads",
+    "1",
+    "--link-flags",
+    "-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk -mmacosx-version-min=14.4 -L /opt/homebrew/Cellar/gmp/6.3.0/lib -L /opt/homebrew/Cellar/pcre2/10.49/lib -L /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-nbody-compact",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/source-snapshot/sources/nbody/compact.cr"
+  ],
+  "qualified_preparation": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-input-archive-filter-v6/report.json",
+    "sha256": "1b1f4ae9b39a9ee17e66204095f7532718f299f318e6cde3d9def2c1cd761372"
+  },
+  "source_role_review": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/source-counts/repaired-replay-semantic-review-v2.json",
+    "sha256": "3087d38fe95ab7d9cc1340291d361448367b8995f43da744124a5af8362303f0",
+    "review_identity": "crystal-repaired-replay-source-review-v2:crystal-nbody-compact",
+    "disposition": "Numeric body arrays and displacement StaticArray are data; method/loop/callback bodies and independent momentum, coordinate and velocity assignments retain owners."
+  },
+  "counted_source_alias": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/sources/nbody/compact.cr",
+  "alias_bytes_equal": true,
+  "vendor_inputs": "Pinned Crystal standard library/compiler/native dependencies; no local authored helper is compiled",
+  "source_inventory_is_derived_from_actual_compiler_receipt": true
+}

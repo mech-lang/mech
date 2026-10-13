@@ -1,0 +1,20 @@
+{
+  "status": "command-exited-zero-awaiting-report-review",
+  "started_at": "2026-10-13T12:09:19.644316+00:00",
+  "worker_identity": {
+    "pid": 3610,
+    "listing": "3610     1 Tue Oct 13 08:09:19 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/clojure-full90-launch-v1 --lease-fd 3 --go-fd 4"
+  },
+  "actual_command_started": true,
+  "exit_code": 0,
+  "qualification_granted": false,
+  "automatic_retry": false,
+  "command_pid": 3617,
+  "command_identity": {
+    "pid": 3617,
+    "listing": "3617  3610 Tue Oct 13 08:09:19 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_clojure_full90_v1.py"
+  },
+  "command_identity_observation_missing": false,
+  "finished_at": "2026-10-13T12:11:15.475844+00:00",
+  "stop_signals": []
+}

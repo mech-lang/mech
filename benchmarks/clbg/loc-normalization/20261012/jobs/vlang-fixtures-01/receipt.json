@@ -1,0 +1,32 @@
+{
+  "status": "failed-fixtures",
+  "tests_run": 17,
+  "failures": 1,
+  "errors": 0,
+  "common_timing_mutex": "/tmp/mech-clbg-timing.lock",
+  "exclusive_mutex_held": true,
+  "python_executable": "/opt/homebrew/opt/python@3.14/bin/python3.14",
+  "python_version": "3.14.8 (main, Sep 30 2026, 17:55:09) [Clang 21.0.0 (clang-2100.3.34.2)]",
+  "pygments_version": "2.19.2",
+  "pygments_module": "/private/tmp/mech-clbg-compact-libs/pygments/__init__.py",
+  "pygments_module_sha256": "ff7513f3a4c6a47b96f057a4759f2e2e2744647d4d86670b88ecb628a34f0ade",
+  "frozen_module_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/vlang-fixtures-01/snapshot/audit.py": "8a4e3a3f58179641c839834646234a200c9cb3e486cb7835281abe94d15a64e3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/vlang-fixtures-01/snapshot/canonical.py": "6547bbfa7ad5788503e7cb53e48a685cbcdff5a46a76ac91b91f1fa78d3cae7e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/vlang-fixtures-01/snapshot/comparisons.py": "849575cef5487937ab741f4a64418ed25faa4018b0322cea9fa59ed8e4dbf462",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/vlang-fixtures-01/snapshot/lexical.py": "0e911ec6544821ae42d40f115963d163f58f72097a3746a991dc203940348111",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/vlang-fixtures-01/snapshot/normalizer.py": "c2e8320bb6348acd96423086ca51b1292dd128f576804c199fac24d6c9857d7c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/vlang-fixtures-01/snapshot/pools.py": "8dc5a3da1281c0d4863b4d708478a579d1aa3eb3ef9bbb842cdc831881e6c37c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/vlang-fixtures-01/snapshot/prior_array_loc.py": "e574536fa6430bb47df94ba0b2c6d20925af39ac13afabf6835cbebcd7b39ca7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/vlang-fixtures-01/snapshot/test_vlang.py": "bdb8865c140cf21a1c2a4ad8d5d44e0f10942f36b461d5e8a694a149bcde6a6f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/vlang-fixtures-01/snapshot/vlang.py": "b80e38fcd3b815d8e8a3157c857fec787b57b0536b3f279d790aad873438f60d"
+  },
+  "suites": [
+    "test_vlang"
+  ],
+  "benchmark_processes_started": 0,
+  "source_pool_audit_started": false,
+  "chart_admitted": false,
+  "automatic_retry": false,
+  "completed_at": "2026-10-12T16:07:24.493795+00:00"
+}

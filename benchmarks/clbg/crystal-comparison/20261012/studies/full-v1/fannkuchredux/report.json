@@ -1,0 +1,1294 @@
+{
+  "status": "complete",
+  "started_at": "2026-10-12T23:36:42.617092+00:00",
+  "benchmark": "fannkuchredux",
+  "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/fannkuchredux/manifest.json",
+  "manifest_sha256": "e341e658c66e4dce897b435197fb4283e560b6dffb974df465a92afb7af3dfe5",
+  "sample_count": 3,
+  "profiles": {
+    "crystal-fannkuchredux-compact": {
+      "id": "crystal-fannkuchredux-compact",
+      "benchmark": "fannkuchredux",
+      "variant": "compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/source-snapshot/sources/fannkuchredux/compact.cr",
+      "status": "authored-unbuilt-unqualified",
+      "source_sha256": "0a7eebec4367e0855e166286640564c3367fd8108db71e34ad1f3b02cabd6db6",
+      "loc": null,
+      "canonical_loc_status": "pending common normalization audit",
+      "upstream_provenance": {
+        "repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+        "path": "bench/algorithm/fannkuch-redux/1.cr",
+        "kind": "locally-adapted-published-algorithm; original remains immutable"
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "required_work_review": "pending bounded native qualification and independent traces",
+        "required_work": {
+          "all_factorial_ranks": true,
+          "global_rank_parity": true,
+          "actual_prefix_flips": true,
+          "permutation_cache": false
+        }
+      },
+      "required_work": {
+        "all_factorial_ranks": true,
+        "global_rank_parity": true,
+        "actual_prefix_flips": true,
+        "permutation_cache": false
+      },
+      "maximum_workers": 1,
+      "technique": "Published fixed-array sequential permutation rotations and actual prefix flips/global parity.",
+      "compiler_flags": [
+        "--release",
+        "--no-debug",
+        "--mcpu",
+        "native"
+      ],
+      "timing_samples": [],
+      "chart_eligible": false,
+      "key": "fannkuchredux:crystal-fannkuchredux-compact",
+      "language": "crystal",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-fannkuchredux-compact",
+      "binary_sha256": "9925e4958ecc606c39988fa04bc962bce6754edfff68f04292e09673d01fe1e0",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-fannkuchredux-compact",
+        "{n}"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012",
+      "runtime_environment": {
+        "CRYSTAL_WORKERS": "8",
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "qualification_origin": "exact-unchanged-layout-v2-binary-and-records",
+      "prior_bounded_records": [
+        {
+          "case": "n-1",
+          "prior_attempt": 57,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/057-crystal-fannkuchredux-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/057-crystal-fannkuchredux-compact.supervisor.json",
+          "stdout_sha256": "e7f542166d9723160df7a0642f70bd9adc5a2275a5d5684b86420d00d8e5a30a"
+        },
+        {
+          "case": "n-2",
+          "prior_attempt": 58,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/058-crystal-fannkuchredux-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/058-crystal-fannkuchredux-compact.supervisor.json",
+          "stdout_sha256": "1056da674bb6ac2820a0d95b58eb146905291edd7019f1f5146db3c67596779a"
+        },
+        {
+          "case": "n-3",
+          "prior_attempt": 59,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/059-crystal-fannkuchredux-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/059-crystal-fannkuchredux-compact.supervisor.json",
+          "stdout_sha256": "773fd4dac2ff800cc6f45e905bbdcc6ae1016192af8bd4ab802cd33740e3c6d3"
+        },
+        {
+          "case": "n-4",
+          "prior_attempt": 60,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/060-crystal-fannkuchredux-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/060-crystal-fannkuchredux-compact.supervisor.json",
+          "stdout_sha256": "890d8d8d321817f27ab4b2d922865a014c08b4f5064b41eb070ad475c72c0553"
+        },
+        {
+          "case": "n-5",
+          "prior_attempt": 61,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/061-crystal-fannkuchredux-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/061-crystal-fannkuchredux-compact.supervisor.json",
+          "stdout_sha256": "e9a8b35247e69dddecaf5a1d4427d747d7690dee1f9366bd0f1a5617ee550578"
+        },
+        {
+          "case": "n-6",
+          "prior_attempt": 62,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/062-crystal-fannkuchredux-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/062-crystal-fannkuchredux-compact.supervisor.json",
+          "stdout_sha256": "8b3142d97484900e73159068876753e0072acee75e85f0187265281d089bb0de"
+        },
+        {
+          "case": "n-7",
+          "prior_attempt": 63,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/063-crystal-fannkuchredux-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/063-crystal-fannkuchredux-compact.supervisor.json",
+          "stdout_sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f"
+        },
+        {
+          "case": "n-8",
+          "prior_attempt": 64,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/064-crystal-fannkuchredux-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/064-crystal-fannkuchredux-compact.supervisor.json",
+          "stdout_sha256": "66af13d659e1cb5687f27dd8a463a9ce871df7faf2c76f122fe80d1f75ffd3ed"
+        }
+      ],
+      "new_native_cases": 0,
+      "producer_loc": null,
+      "loc_status": "pending separate immutable canonical LOC overlay",
+      "eligible_for_chart": false,
+      "chart_admission": false,
+      "role": "Qualified complete Crystal compact application",
+      "required_work_review": {
+        "status": "passed",
+        "method": "Complete source review plus independent bounded outputs and actual primitive/map/division/node traces",
+        "source_sha256": "0a7eebec4367e0855e166286640564c3367fd8108db71e34ad1f3b02cabd6db6",
+        "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/pipeline-v2/REQUIRED_WORK_REVIEW.md",
+        "qualification": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-input-archive-filter-v6/report.json"
+      },
+      "samples_seconds": [
+        24.236330167,
+        24.013164,
+        24.042741291
+      ],
+      "sample_validation": [
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        }
+      ],
+      "attempts": [
+        1,
+        6,
+        8
+      ],
+      "measurement_status": "measured",
+      "median_seconds": 24.042741291,
+      "sample_stdev_seconds": 0.12121235301961678,
+      "time_x_mech": 13.97484965866084,
+      "matched_mech_control": "mech-aot-control",
+      "matched_mech_source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe"
+    },
+    "crystal-fannkuchredux-optimized": {
+      "id": "crystal-fannkuchredux-optimized",
+      "benchmark": "fannkuchredux",
+      "variant": "optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/source-snapshot/sources/fannkuchredux/optimized.cr",
+      "status": "authored-unbuilt-unqualified",
+      "source_sha256": "7dd38850ef149e9c47ef4e15dcaf34fba6168a252b77b55fe9ca852d63a0e0b3",
+      "loc": null,
+      "canonical_loc_status": "pending common normalization audit",
+      "upstream_provenance": {
+        "repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+        "path": "bench/algorithm/fannkuch-redux/1.cr",
+        "kind": "locally-adapted-published-algorithm; original remains immutable"
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "required_work_review": "pending bounded native qualification and independent traces",
+        "required_work": {
+          "all_factorial_ranks": true,
+          "global_rank_parity": true,
+          "actual_prefix_flips": true,
+          "permutation_cache": false
+        }
+      },
+      "required_work": {
+        "all_factorial_ranks": true,
+        "global_rank_parity": true,
+        "actual_prefix_flips": true,
+        "permutation_cache": false
+      },
+      "maximum_workers": 8,
+      "technique": "Eight standard fibers over complete factoradic rank intervals; real flips/global parity and overflow-safe boundaries.",
+      "compiler_flags": [
+        "--release",
+        "--no-debug",
+        "--mcpu",
+        "native"
+      ],
+      "timing_samples": [],
+      "chart_eligible": false,
+      "key": "fannkuchredux:crystal-fannkuchredux-optimized",
+      "language": "crystal",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-fannkuchredux-optimized",
+      "binary_sha256": "f77e26ed4698abccf9f1887635e67f81849d42908a566dc137afc4122add3714",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-fannkuchredux-optimized",
+        "{n}"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012",
+      "runtime_environment": {
+        "CRYSTAL_WORKERS": "8",
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "qualification_origin": "exact-unchanged-layout-v2-binary-and-records",
+      "prior_bounded_records": [
+        {
+          "case": "n-1",
+          "prior_attempt": 65,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/065-crystal-fannkuchredux-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/065-crystal-fannkuchredux-optimized.supervisor.json",
+          "stdout_sha256": "e7f542166d9723160df7a0642f70bd9adc5a2275a5d5684b86420d00d8e5a30a"
+        },
+        {
+          "case": "n-2",
+          "prior_attempt": 66,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/066-crystal-fannkuchredux-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/066-crystal-fannkuchredux-optimized.supervisor.json",
+          "stdout_sha256": "1056da674bb6ac2820a0d95b58eb146905291edd7019f1f5146db3c67596779a"
+        },
+        {
+          "case": "n-3",
+          "prior_attempt": 67,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/067-crystal-fannkuchredux-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/067-crystal-fannkuchredux-optimized.supervisor.json",
+          "stdout_sha256": "773fd4dac2ff800cc6f45e905bbdcc6ae1016192af8bd4ab802cd33740e3c6d3"
+        },
+        {
+          "case": "n-4",
+          "prior_attempt": 68,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/068-crystal-fannkuchredux-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/068-crystal-fannkuchredux-optimized.supervisor.json",
+          "stdout_sha256": "890d8d8d321817f27ab4b2d922865a014c08b4f5064b41eb070ad475c72c0553"
+        },
+        {
+          "case": "n-5",
+          "prior_attempt": 69,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/069-crystal-fannkuchredux-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/069-crystal-fannkuchredux-optimized.supervisor.json",
+          "stdout_sha256": "e9a8b35247e69dddecaf5a1d4427d747d7690dee1f9366bd0f1a5617ee550578"
+        },
+        {
+          "case": "n-6",
+          "prior_attempt": 70,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/070-crystal-fannkuchredux-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/070-crystal-fannkuchredux-optimized.supervisor.json",
+          "stdout_sha256": "8b3142d97484900e73159068876753e0072acee75e85f0187265281d089bb0de"
+        },
+        {
+          "case": "n-7",
+          "prior_attempt": 71,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/071-crystal-fannkuchredux-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/071-crystal-fannkuchredux-optimized.supervisor.json",
+          "stdout_sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f"
+        },
+        {
+          "case": "n-8",
+          "prior_attempt": 72,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/072-crystal-fannkuchredux-optimized.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/072-crystal-fannkuchredux-optimized.supervisor.json",
+          "stdout_sha256": "66af13d659e1cb5687f27dd8a463a9ce871df7faf2c76f122fe80d1f75ffd3ed"
+        }
+      ],
+      "new_native_cases": 0,
+      "producer_loc": null,
+      "loc_status": "pending separate immutable canonical LOC overlay",
+      "eligible_for_chart": false,
+      "chart_admission": false,
+      "role": "Qualified complete Crystal optimized application",
+      "required_work_review": {
+        "status": "passed",
+        "method": "Complete source review plus independent bounded outputs and actual primitive/map/division/node traces",
+        "source_sha256": "7dd38850ef149e9c47ef4e15dcaf34fba6168a252b77b55fe9ca852d63a0e0b3",
+        "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/pipeline-v2/REQUIRED_WORK_REVIEW.md",
+        "qualification": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-input-archive-filter-v6/report.json"
+      },
+      "samples_seconds": [
+        4.378385584,
+        4.145076333,
+        4.199501625
+      ],
+      "sample_validation": [
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        }
+      ],
+      "attempts": [
+        2,
+        4,
+        9
+      ],
+      "measurement_status": "measured",
+      "median_seconds": 4.199501625,
+      "sample_stdev_seconds": 0.12206199913635442,
+      "time_x_mech": 2.440961417018015,
+      "matched_mech_control": "mech-aot-control",
+      "matched_mech_source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe"
+    },
+    "mech-aot-control": {
+      "id": "mech-aot-control",
+      "key": "fannkuchredux:crystal-full-study:mech-control",
+      "benchmark": "fannkuchredux",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux-even.mec",
+      "source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after",
+      "binary_sha256": "3d3599f1f174915251d6323592ea81bf3dc7ca57f0f07b8f310cd6825393e004",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "loc": null,
+      "published_chart_key": "fannkuchredux:mech-fannkuch-even",
+      "previous_seconds": 1.702457333,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "The Mech program enumerates all factorial permutations in the required factoradic order, performs actual prefix flips, and reduces the alternating checksum and maximum. Parallel ranges cover the full permutation domain.",
+        "full_work": {
+          "n": 12,
+          "permutations": 479001600
+        },
+        "evidence": [
+          {
+            "path": "fannkuchredux/fannkuchredux.mec",
+            "sha256": "0a5bee0d62631abf4f200489ddf9044c9b238f0c2dcd6a074c60ec93c90fdb8f"
+          },
+          {
+            "path": "fannkuchredux/fannkuchredux-even.mec",
+            "sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fannkuchredux.html",
+        "native_benchmark_kernel": false
+      },
+      "control_for": "r",
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "producer_loc": 59,
+      "loc_status": "pending canonical count overlay",
+      "maximum_workers": 8,
+      "role": "Fresh unchanged current fastest Mech AOT source control",
+      "samples_seconds": [
+        1.721015,
+        1.713382,
+        1.720429334
+      ],
+      "sample_validation": [
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        }
+      ],
+      "attempts": [
+        3,
+        5,
+        7
+      ],
+      "measurement_status": "measured",
+      "median_seconds": 1.720429334,
+      "sample_stdev_seconds": 0.0042479526474744995,
+      "time_x_mech": 1.0,
+      "matched_mech_control": "mech-aot-control",
+      "matched_mech_source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe"
+    }
+  },
+  "orders": [
+    {
+      "round": 1,
+      "profiles": [
+        "crystal-fannkuchredux-compact",
+        "crystal-fannkuchredux-optimized",
+        "mech-aot-control"
+      ]
+    },
+    {
+      "round": 2,
+      "profiles": [
+        "crystal-fannkuchredux-optimized",
+        "mech-aot-control",
+        "crystal-fannkuchredux-compact"
+      ]
+    },
+    {
+      "round": 3,
+      "profiles": [
+        "mech-aot-control",
+        "crystal-fannkuchredux-compact",
+        "crystal-fannkuchredux-optimized"
+      ]
+    }
+  ],
+  "attempts": [
+    {
+      "key": "fannkuchredux:crystal-fannkuchredux-compact",
+      "id": "crystal-fannkuchredux-compact",
+      "benchmark": "fannkuchredux",
+      "language": "crystal",
+      "source_sha256": "0a7eebec4367e0855e166286640564c3367fd8108db71e34ad1f3b02cabd6db6",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-fannkuchredux-compact",
+        "12"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012",
+      "runtime_environment": {
+        "CRYSTAL_WORKERS": "8",
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"9925e4958ecc606c39988fa04bc962bce6754edfff68f04292e09673d01fe1e0\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-fannkuchredux-compact\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012\", \"environment\": {\"CRYSTAL_WORKERS\": \"8\", \"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"0a7eebec4367e0855e166286640564c3367fd8108db71e34ad1f3b02cabd6db6\", \"support\": {}}",
+      "started_at": "2026-10-13T00:46:37.007295+00:00",
+      "workload_n": 12,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 24.236330167,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 2640,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 29,
+      "stdout_sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+      "validation": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T00:47:01.456180+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 1,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/fannkuchredux/attempts/001-crystal-fannkuchredux-compact.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 97936,
+        "pgid": 97936,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-fannkuchredux-compact",
+          "12"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/fannkuchredux/attempts/001-crystal-fannkuchredux-compact.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "fannkuchredux:crystal-fannkuchredux-optimized",
+      "id": "crystal-fannkuchredux-optimized",
+      "benchmark": "fannkuchredux",
+      "language": "crystal",
+      "source_sha256": "7dd38850ef149e9c47ef4e15dcaf34fba6168a252b77b55fe9ca852d63a0e0b3",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-fannkuchredux-optimized",
+        "12"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012",
+      "runtime_environment": {
+        "CRYSTAL_WORKERS": "8",
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"f77e26ed4698abccf9f1887635e67f81849d42908a566dc137afc4122add3714\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-fannkuchredux-optimized\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012\", \"environment\": {\"CRYSTAL_WORKERS\": \"8\", \"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"7dd38850ef149e9c47ef4e15dcaf34fba6168a252b77b55fe9ca852d63a0e0b3\", \"support\": {}}",
+      "started_at": "2026-10-13T00:49:21.205749+00:00",
+      "workload_n": 12,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 4.378385584,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 3104,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 29,
+      "stdout_sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+      "validation": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T00:49:25.802939+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 2,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/fannkuchredux/attempts/002-crystal-fannkuchredux-optimized.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 99223,
+        "pgid": 99223,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-fannkuchredux-optimized",
+          "12"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/fannkuchredux/attempts/002-crystal-fannkuchredux-optimized.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "fannkuchredux:crystal-full-study:mech-control",
+      "id": "mech-aot-control",
+      "benchmark": "fannkuchredux",
+      "language": "mech",
+      "source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after",
+        "12"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"3d3599f1f174915251d6323592ea81bf3dc7ca57f0f07b8f310cd6825393e004\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe\", \"support\": {\"fannkuchredux/fannkuchredux-even.mec\": \"b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe\", \"fannkuchredux/fannkuchredux.mec\": \"0a5bee0d62631abf4f200489ddf9044c9b238f0c2dcd6a074c60ec93c90fdb8f\"}}",
+      "started_at": "2026-10-13T01:02:47.208142+00:00",
+      "workload_n": 12,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 1.721015,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 1840,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 29,
+      "stdout_sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+      "validation": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T01:02:49.138185+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 3,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/fannkuchredux/attempts/003-mech-aot-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 3059,
+        "pgid": 3059,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after",
+          "12"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/fannkuchredux/attempts/003-mech-aot-control.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "fannkuchredux:crystal-fannkuchredux-optimized",
+      "id": "crystal-fannkuchredux-optimized",
+      "benchmark": "fannkuchredux",
+      "language": "crystal",
+      "source_sha256": "7dd38850ef149e9c47ef4e15dcaf34fba6168a252b77b55fe9ca852d63a0e0b3",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-fannkuchredux-optimized",
+        "12"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012",
+      "runtime_environment": {
+        "CRYSTAL_WORKERS": "8",
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"f77e26ed4698abccf9f1887635e67f81849d42908a566dc137afc4122add3714\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-fannkuchredux-optimized\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012\", \"environment\": {\"CRYSTAL_WORKERS\": \"8\", \"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"7dd38850ef149e9c47ef4e15dcaf34fba6168a252b77b55fe9ca852d63a0e0b3\", \"support\": {}}",
+      "started_at": "2026-10-13T01:17:52.001300+00:00",
+      "workload_n": 12,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 4.145076333,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 3104,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 29,
+      "stdout_sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+      "validation": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T01:17:56.364869+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 4,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/fannkuchredux/attempts/004-crystal-fannkuchredux-optimized.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 9862,
+        "pgid": 9862,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-fannkuchredux-optimized",
+          "12"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/fannkuchredux/attempts/004-crystal-fannkuchredux-optimized.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "fannkuchredux:crystal-full-study:mech-control",
+      "id": "mech-aot-control",
+      "benchmark": "fannkuchredux",
+      "language": "mech",
+      "source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after",
+        "12"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"3d3599f1f174915251d6323592ea81bf3dc7ca57f0f07b8f310cd6825393e004\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe\", \"support\": {\"fannkuchredux/fannkuchredux-even.mec\": \"b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe\", \"fannkuchredux/fannkuchredux.mec\": \"0a5bee0d62631abf4f200489ddf9044c9b238f0c2dcd6a074c60ec93c90fdb8f\"}}",
+      "started_at": "2026-10-13T01:18:34.466220+00:00",
+      "workload_n": 12,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 1.713382,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 1840,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 29,
+      "stdout_sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+      "validation": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T01:18:36.398165+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 5,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/fannkuchredux/attempts/005-mech-aot-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 10222,
+        "pgid": 10222,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after",
+          "12"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/fannkuchredux/attempts/005-mech-aot-control.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "fannkuchredux:crystal-fannkuchredux-compact",
+      "id": "crystal-fannkuchredux-compact",
+      "benchmark": "fannkuchredux",
+      "language": "crystal",
+      "source_sha256": "0a7eebec4367e0855e166286640564c3367fd8108db71e34ad1f3b02cabd6db6",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-fannkuchredux-compact",
+        "12"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012",
+      "runtime_environment": {
+        "CRYSTAL_WORKERS": "8",
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"9925e4958ecc606c39988fa04bc962bce6754edfff68f04292e09673d01fe1e0\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-fannkuchredux-compact\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012\", \"environment\": {\"CRYSTAL_WORKERS\": \"8\", \"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"0a7eebec4367e0855e166286640564c3367fd8108db71e34ad1f3b02cabd6db6\", \"support\": {}}",
+      "started_at": "2026-10-13T01:21:59.474700+00:00",
+      "workload_n": 12,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 24.013164,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 2640,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 29,
+      "stdout_sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+      "validation": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T01:22:23.694336+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 6,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/fannkuchredux/attempts/006-crystal-fannkuchredux-compact.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 11099,
+        "pgid": 11099,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-fannkuchredux-compact",
+          "12"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/fannkuchredux/attempts/006-crystal-fannkuchredux-compact.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "fannkuchredux:crystal-full-study:mech-control",
+      "id": "mech-aot-control",
+      "benchmark": "fannkuchredux",
+      "language": "mech",
+      "source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after",
+        "12"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"3d3599f1f174915251d6323592ea81bf3dc7ca57f0f07b8f310cd6825393e004\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe\", \"support\": {\"fannkuchredux/fannkuchredux-even.mec\": \"b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe\", \"fannkuchredux/fannkuchredux.mec\": \"0a5bee0d62631abf4f200489ddf9044c9b238f0c2dcd6a074c60ec93c90fdb8f\"}}",
+      "started_at": "2026-10-13T01:23:59.061050+00:00",
+      "workload_n": 12,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 1.720429334,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 1840,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 29,
+      "stdout_sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+      "validation": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T01:24:00.976470+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 7,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/fannkuchredux/attempts/007-mech-aot-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 11497,
+        "pgid": 11497,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after",
+          "12"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/fannkuchredux/attempts/007-mech-aot-control.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "fannkuchredux:crystal-fannkuchredux-compact",
+      "id": "crystal-fannkuchredux-compact",
+      "benchmark": "fannkuchredux",
+      "language": "crystal",
+      "source_sha256": "0a7eebec4367e0855e166286640564c3367fd8108db71e34ad1f3b02cabd6db6",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-fannkuchredux-compact",
+        "12"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012",
+      "runtime_environment": {
+        "CRYSTAL_WORKERS": "8",
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"9925e4958ecc606c39988fa04bc962bce6754edfff68f04292e09673d01fe1e0\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-fannkuchredux-compact\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012\", \"environment\": {\"CRYSTAL_WORKERS\": \"8\", \"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"0a7eebec4367e0855e166286640564c3367fd8108db71e34ad1f3b02cabd6db6\", \"support\": {}}",
+      "started_at": "2026-10-13T01:27:15.253517+00:00",
+      "workload_n": 12,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 24.042741291,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 2640,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 29,
+      "stdout_sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+      "validation": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T01:27:39.508081+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 8,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/fannkuchredux/attempts/008-crystal-fannkuchredux-compact.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 12501,
+        "pgid": 12501,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-fannkuchredux-compact",
+          "12"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/fannkuchredux/attempts/008-crystal-fannkuchredux-compact.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "fannkuchredux:crystal-fannkuchredux-optimized",
+      "id": "crystal-fannkuchredux-optimized",
+      "benchmark": "fannkuchredux",
+      "language": "crystal",
+      "source_sha256": "7dd38850ef149e9c47ef4e15dcaf34fba6168a252b77b55fe9ca852d63a0e0b3",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-fannkuchredux-optimized",
+        "12"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012",
+      "runtime_environment": {
+        "CRYSTAL_WORKERS": "8",
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"f77e26ed4698abccf9f1887635e67f81849d42908a566dc137afc4122add3714\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-fannkuchredux-optimized\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012\", \"environment\": {\"CRYSTAL_WORKERS\": \"8\", \"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"7dd38850ef149e9c47ef4e15dcaf34fba6168a252b77b55fe9ca852d63a0e0b3\", \"support\": {}}",
+      "started_at": "2026-10-13T01:35:00.274888+00:00",
+      "workload_n": 12,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 4.199501625,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 3104,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 29,
+      "stdout_sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+      "validation": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T01:35:04.689845+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 9,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/fannkuchredux/attempts/009-crystal-fannkuchredux-optimized.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 14113,
+        "pgid": 14113,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-fannkuchredux-optimized",
+          "12"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/fannkuchredux/attempts/009-crystal-fannkuchredux-optimized.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    }
+  ],
+  "active": null,
+  "supervisor": {
+    "pid": 74702,
+    "process_listing": "Mon Oct 12 19:01:56 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u benchmarks/clbg/crystal-comparison/20261012/studies/pipeline-v2/full_study.py --run --benchmark fannkuchredux --revision full-v1 --manifest-sha256 e341e658c66e4dce897b435197fb4283e560b6dffb974df465a92afb7af3dfe5"
+  },
+  "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+  "full_workload_n": 12,
+  "chart_admission": false,
+  "no_automatic_retry": true,
+  "canonical_LOC_status": "pending separate immutable count overlay",
+  "finished_at": "2026-10-13T01:35:58.690704+00:00",
+  "pins_unchanged_at_end": true
+}

@@ -1,0 +1,49 @@
+test_cleanup_failure_is_fatal_and_waits (test_guarded_prepare_v4.OwnershipChecks.test_cleanup_failure_is_fatal_and_waits) ... ok
+test_identity_failure_cleans_known_child (test_guarded_prepare_v4.OwnershipChecks.test_identity_failure_cleans_known_child) ... ok
+test_journal_failure_cleans_known_child (test_guarded_prepare_v4.OwnershipChecks.test_journal_failure_cleans_known_child) ... ok
+test_orphan_compiler_child_is_fatal (test_guarded_prepare_v4.OwnershipChecks.test_orphan_compiler_child_is_fatal) ... ok
+test_popen_failure_has_no_foreign_cleanup (test_guarded_prepare_v4.OwnershipChecks.test_popen_failure_has_no_foreign_cleanup) ... ok
+test_timeout_preserves_complete_drained_output (test_guarded_prepare_v4.OwnershipChecks.test_timeout_preserves_complete_drained_output) ... ok
+test_absent_input_key_is_removed_on_failure (test_guarded_prepare_v4.ProbeRestorationChecks.test_absent_input_key_is_removed_on_failure) ... ok
+test_parent_failure_archives_actual_sampler_bytes (test_guarded_prepare_v4.ProbeRestorationChecks.test_parent_failure_archives_actual_sampler_bytes) ... ok
+test_setup_failure_restores_present_state (test_guarded_prepare_v4.ProbeRestorationChecks.test_setup_failure_restores_present_state) ... ok
+test_trace_failure_archives_and_stops (test_guarded_prepare_v4.ProbeRestorationChecks.test_trace_failure_archives_and_stops) ... ok
+test_alias_is_only_build_change_and_core_ownership_guards_identical (test_proof_reuse_v4.ExactOldProofChecks.test_alias_is_only_build_change_and_core_ownership_guards_identical) ... ok
+test_all_case_labels_preflight_before_any_native_work (test_proof_reuse_v4.ExactOldProofChecks.test_all_case_labels_preflight_before_any_native_work) ... ok
+test_changed_fingerprint_or_runtime_rejected (test_proof_reuse_v4.ExactOldProofChecks.test_changed_fingerprint_or_runtime_rejected) ... ok
+test_changed_source_or_binary_identity_rejected (test_proof_reuse_v4.ExactOldProofChecks.test_changed_source_or_binary_identity_rejected) ... ok
+test_failed_output_or_execution_or_integrity_rejected (test_proof_reuse_v4.ExactOldProofChecks.test_failed_output_or_execution_or_integrity_rejected) ... ok
+test_four_source_copies_change_only_explicit_parentheses (test_proof_reuse_v4.ExactOldProofChecks.test_four_source_copies_change_only_explicit_parentheses) ... ok
+test_full_scored_or_unqualified_record_cannot_be_reused (test_proof_reuse_v4.ExactOldProofChecks.test_full_scored_or_unqualified_record_cannot_be_reused) ... ok
+test_missing_or_duplicate_case_rejected (test_proof_reuse_v4.ExactOldProofChecks.test_missing_or_duplicate_case_rejected) ... ok
+test_native_cap_and_inherited_lock_are_required (test_proof_reuse_v4.ExactOldProofChecks.test_native_cap_and_inherited_lock_are_required) ... ok
+test_numeric_label_must_match_actual_input (test_proof_reuse_v4.ExactOldProofChecks.test_numeric_label_must_match_actual_input) ... ok
+test_profile_revision_is_exactly_four_new_sources_and_eight_fresh_builds (test_proof_reuse_v4.ExactOldProofChecks.test_profile_revision_is_exactly_four_new_sources_and_eight_fresh_builds) ... ok
+test_retained_archive_must_match_extracted_tool_bytes (test_proof_reuse_v4.ExactOldProofChecks.test_retained_archive_must_match_extracted_tool_bytes) ... ok
+test_reused_row_keeps_exact_old_execution_and_provenance (test_proof_reuse_v4.ExactOldProofChecks.test_reused_row_keeps_exact_old_execution_and_provenance) ... ok
+test_seventy_eight_mock_records_preserve_eight_fingerprints (test_proof_reuse_v4.ExactOldProofChecks.test_seventy_eight_mock_records_preserve_eight_fingerprints) ... ok
+test_build_native_owner_probe_and_inventory_guards_unchanged (test_proof_reuse_v5.V5ProofChecks.test_build_native_owner_probe_and_inventory_guards_unchanged) ... ok
+test_changed_source_binary_fingerprint_rejected (test_proof_reuse_v5.V5ProofChecks.test_changed_source_binary_fingerprint_rejected) ... ok
+test_environment_cleanup_resource_and_output_gates (test_proof_reuse_v5.V5ProofChecks.test_environment_cleanup_resource_and_output_gates) ... ok
+test_lossless_shift_casts_are_only_source_changes (test_proof_reuse_v5.V5ProofChecks.test_lossless_shift_casts_are_only_source_changes) ... ok
+test_missing_duplicate_wrong_workload_case_rejected (test_proof_reuse_v5.V5ProofChecks.test_missing_duplicate_wrong_workload_case_rejected) ... ok
+test_profile_lineage_is_one_new_profile_seven_fresh (test_proof_reuse_v5.V5ProofChecks.test_profile_lineage_is_one_new_profile_seven_fresh) ... ok
+test_profile_row_keeps_old_binary_command (test_proof_reuse_v5.V5ProofChecks.test_profile_row_keeps_old_binary_command) ... ERROR
+test_twelve_exact_records_are_preserved (test_proof_reuse_v5.V5ProofChecks.test_twelve_exact_records_are_preserved) ... ok
+test_unqualified_full_or_invented_checks_rejected (test_proof_reuse_v5.V5ProofChecks.test_unqualified_full_or_invented_checks_rejected) ... ok
+
+======================================================================
+ERROR: test_profile_row_keeps_old_binary_command (test_proof_reuse_v5.V5ProofChecks.test_profile_row_keeps_old_binary_command)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/test_proof_reuse_v5.py", line 117, in test_profile_row_keeps_old_binary_command
+    row = reuse.profile_row(prior)
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/proof_reuse_v5.py", line 125, in profile_row
+    fingerprint = json.loads(prior['execution_fingerprint'])
+                             ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'execution_fingerprint'
+
+----------------------------------------------------------------------
+Ran 33 tests in 0.164s
+
+FAILED (errors=1)

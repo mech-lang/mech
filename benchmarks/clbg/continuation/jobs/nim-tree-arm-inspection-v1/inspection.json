@@ -1,0 +1,42 @@
+{
+  "status": "saved-evidence-extracted-awaiting-path-review",
+  "creator_symbol": "make__compact_u7",
+  "prior_failed_report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/work-qualification/work-v3/report.json",
+  "disassembly_receipt": {
+    "command": [
+      "/usr/bin/otool",
+      "-tvV",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v4/bin/nim-binarytrees-compact"
+    ],
+    "started_at": "2026-10-13T01:38:24.594974+00:00",
+    "inherited_common_mutex": true,
+    "timeout_seconds": 60,
+    "preparation_only": true,
+    "never_chart_eligible": true,
+    "pid": 15731,
+    "identity": {
+      "pid": 15731,
+      "process_listing": "Mon Oct 12 21:38:24 2026     /Library/Developer/CommandLineTools/usr/bin/otool -tvV /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v4/bin/nim-binarytrees-compact"
+    },
+    "exit_status": 0,
+    "finished_at": "2026-10-13T01:38:24.647169+00:00",
+    "final_exit_status": 0
+  },
+  "creator": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/nim-tree-arm-inspection-v1/compact-scored-creator.arm",
+  "creator_bytes": 3530,
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/work-qualification/work-v3/report.json": "cf6084b9b4fa09195386d96ab0144fa9fa32f3d890ad861b3601e76ccfaef347",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/work-qualification/work-v3/nim-binarytrees-compact/scored-creator.c": "a3fc5cdad9871566b94a4137cd0c12ea7f07ce7bc7bdb07d605a9360c57a052f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/work-qualification/work-v3/nim-binarytrees-compact/scored-binary/disassembly.stdout": "90de2d18d4cb7a34c578711105ef4d28309f7ccaedf0ebf114733b64af7b8fc1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/work-qualification/work-v3/nim-binarytrees-compact/scored-binary/disassembly.json": "71d5e5e4f50bf39fbc8fc061b0a767506eb426e77a3563851fc2451330e05916",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/nim-tree-arm-inspection-v1/compact-scored-creator.arm": "563a8dc1c8ed8c5b55092785769ab73b58f59f2835d2463400e9aeba10ea2373",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/inspect_nim_tree_arm_v1.py": "7fd078b4e13fb2303696fa9b95b49af4c36674c449d896ddeb92562abae68049"
+  },
+  "actual_pid": 17271,
+  "exclusive_common_mutex_held": true,
+  "native_processes": 0,
+  "benchmark_replays": 0,
+  "source_edits": 0,
+  "allocation_gate_changed": false,
+  "completed_at": "2026-10-13T01:44:06.124626+00:00"
+}

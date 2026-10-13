@@ -1,0 +1,28 @@
+{
+  "status": "reviewed-input-digests-captured",
+  "pins": {
+    "descriptor": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/publication-crystal-metadata-v1/descriptor.json",
+      "sha256": "a5f1c6f08cf0ed603c372267d95d974bec1e23e44dc72d6b0ce09dd9db46054b"
+    },
+    "qualifier": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/publication-crystal-metadata-v1/qualify_descriptor.py",
+      "sha256": "c2e33cd0fb9a9431b448d81465b49399ec37a761efee3fc6e1a35c8b9c9b1471"
+    },
+    "review": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/publication-crystal-metadata-v1/REVIEW.md",
+      "sha256": "f3865941adf32c9d86ed9abbcf0464ab26bc57bc2989185d59f26ef11012366e"
+    },
+    "suite": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/reconciliation/full-v1-suite-v2.json",
+      "sha256": "386356315c9fc5c680e99077fa70fe52db130c369fe74f7e0aa301e5f7ea6490"
+    },
+    "importer": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/native_languages_data_v1.py",
+      "sha256": "27779d09a6cfea98d0377c58d4cdd459fc7f59aac46efdb8f61144070a871dc7"
+    }
+  },
+  "exclusive_common_timing_mutex_held": true,
+  "actual_native_processes": 0,
+  "chart_admission": false
+}

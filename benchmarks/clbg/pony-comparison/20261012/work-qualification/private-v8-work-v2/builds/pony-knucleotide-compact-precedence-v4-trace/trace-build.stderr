@@ -1,0 +1,49 @@
+Building builtin -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/builtin
+Building /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v2/source-snapshot/sources/knucleotide/compact -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v2/source-snapshot/sources/knucleotide/compact
+Building collections -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/collections
+Building pony_test -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/pony_test
+Building random -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/random
+Building time -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/time
+Building collections/persistent -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/collections/persistent
+Building itertools -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/itertools
+Building files -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/files
+Building buffered -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/buffered
+Building term -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/term
+Building promises -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/promises
+Building strings -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/strings
+Building constrained_types -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/constrained_types
+Building signals -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/signals
+Building capsicum -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/capsicum
+Building format -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/format
+Error:
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v2/source-snapshot/sources/knucleotide/compact/main.pony:110:40: receiver type is not a subtype of target type
+      for (word, count) in counts.pairs() do
+                                       ^
+    Info:
+    /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v2/source-snapshot/sources/knucleotide/compact/main.pony:110:28: receiver type: Map[String val, U64 val] iso
+          for (word, count) in counts.pairs() do
+                               ^
+    /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/collections/map.pony:382:3: target type: Map[String val, U64 val] box^
+      fun pairs(): MapPairs[K, V, H, this->HashMap[K, V, H]]^ =>
+      ^
+    /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/collections/map.pony:5:3: HashMap[String val, U64 val, HashEq[String val] val] iso is not a subtype of HashMap[String val, U64 val, HashEq[String val] val] box^: iso is not a subcap of box^
+      HashMap[K, V, HashEq[K]]
+      ^
+    /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/collections/map.pony:5:26: this would be possible if the subcap were more ephemeral. Perhaps you meant to consume this variable
+      HashMap[K, V, HashEq[K]]
+                             ^
+Error:
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v2/source-snapshot/sources/knucleotide/compact/main.pony:110:7: cannot infer type of for loop iterator
+
+      for (word, count) in counts.pairs() do
+      ^
+Error:
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v2/source-snapshot/sources/knucleotide/compact/main.pony:111:50: cannot infer type of word
+
+        Trace("MAP\t" + _width.string() + "\t" + word + "\t" + count.string())
+                                                 ^
+Error:
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v2/source-snapshot/sources/knucleotide/compact/main.pony:111:64: cannot infer type of count
+
+        Trace("MAP\t" + _width.string() + "\t" + word + "\t" + count.string())
+                                                               ^

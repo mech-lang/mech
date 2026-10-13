@@ -1,0 +1,14 @@
+{
+  "pid": 31810,
+  "launched_at": "2026-10-11T22:25:31.786817+00:00",
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/supervise_v4.py",
+    "--orphan-pid",
+    "25078"
+  ],
+  "detached_session": true,
+  "log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/coordinator-v4/supervisor.log",
+  "root_review": "Approved event-only reconciliation, completion-only unassigned abandoned ordinal, exact orphan cleanup and idempotent duplicate-event protection."
+}

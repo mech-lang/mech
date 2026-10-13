@@ -1,0 +1,10 @@
+{
+  "common_mutex_held": true,
+  "receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-proposal-v2/jobs/fixtures-v2/fixture-receipt.json",
+  "receipt_sha256": "b07a3baa146c509cf375dfa82eb6c845484ee77dd9ef789ea2d180e4c4c6457b",
+  "raw_fixture_log": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-proposal-v2/jobs/fixtures-v2/fixtures.log",
+    "sha256": "c6788c85ce0debf1b43bde3edf395781537485fcb8d01955a26cfab9b30db1fe"
+  },
+  "automatic_retry": false
+}

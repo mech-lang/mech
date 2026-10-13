@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "status": "static-repair-not-executed-not-admitted",
+  "frozen_evidence": "jobs/boundary-audit-12/fixtures.log:614-706",
+  "executed_prior_run": {
+    "methods": 611,
+    "passed": 605,
+    "failed": 6,
+    "audit_started": false
+  },
+  "owned_failures": [
+    {
+      "fixture": "test_explicit_csharp_block_callback",
+      "expected": 3,
+      "prior_actual": 4,
+      "repair": "Prepend source-position metadata so the immediate real grammar owner remains context[-1]."
+    },
+    {
+      "fixture": "test_explicit_dart_block_callback",
+      "expected": 3,
+      "prior_actual": 4,
+      "repair": "Same context ordering repair restores the existing argument/data structural suffix proof."
+    },
+    {
+      "fixture": "test_generic_constructor_commas_are_type_structure",
+      "repair": "Nested suspect generic openings are structurally owned only when contained in a complete proved attached type-argument span."
+    },
+    {
+      "fixture": "test_generic_method_type_arguments_are_callee_agnostic",
+      "repair": "Same complete-span containment proof prevents the inner type argument from acquiring a stale generic gate."
+    },
+    {
+      "fixture": "test_wrapped_argument_literals_do_not_become_declarations",
+      "repair": "Fallback emits the generic gate only for unproved type-list ownership; complete attached generic call prefix remains an argument owner."
+    }
+  ],
+  "fixture_methods_after_repair": 46,
+  "expected_counts_modified": false,
+  "new_contrast": "Nested malformed generic initializer remains gated inside an existing fixture method.",
+  "required_validation": "Parent freezes dependencies and executes a new guarded fixture job; reviewer did not execute normalization, imports, tests, hashes, builds or jobs."
+}

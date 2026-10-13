@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/usr/bin/lipo",
+    "-archs",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/explicit-f64-v5/.build/broad/target/release/mech-algebraic-conformance"
+  ],
+  "started_at": "2026-10-12T23:32:10.820503+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 83659,
+  "identity": {
+    "pid": 83659,
+    "process_listing": "Mon Oct 12 19:32:10 2026     /usr/bin/lipo -archs /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/explicit-f64-v5/.build/broad/target/release/mech-algebraic-conformance"
+  }
+}

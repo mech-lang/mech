@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "tests_run": 6,
+  "failures": 0,
+  "errors": 0,
+  "native_probes": 0,
+  "actual_signals_sent": 0,
+  "source_revision": "input-label-archive-fixture-v5",
+  "never_chart_eligible": true,
+  "original112probes_reexecuted": false,
+  "prior_fixture_methods_reexecuted": false,
+  "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/test_archive_v5.py": "df44effe9294209fb98d174713e714ac7048009d7ff26417830655431a58f84b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/guarded_prepare_v5.py": "c21fef40570daf39df9c31498dbebebf19cb7c291ac613984d8b31b31286b2a7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/proof_reuse_v4.py": "cee6e6f8969fd0ae04ee2e7c91d55be4087ca7a340c3db8da78deafb6b2d3cc3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/ARCHIVE_FIXTURE_V5.md": "3c861e7357d26b5382e13d711a6bf956c3f7c566b6c7a6c2dd0c75e0367372c0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/guarded_prepare_v3.py": "de7bcbb690d5300527826323090a1a4cad12bbf2d8096051b6a54a7dbcc1b061",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/proof_reuse_v3.py": "c559582c32df7d5dc12819b2a962062a2d23533060eb5280e82893baa278ddfb",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/input-v3-fixtures.json": "c642aeb23999b0977407ae24189534ba56d7517c833f8dc7208d7d4184b3d15d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/metadata-failures/archive-v4-fixtures-001/failure.json": "1d42a1bcbc97ccecef3aab7523756643370a8e961cb087deee3cefbe571d7fd2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/archive-v5-fixtures.log": "f27e8cc5948e4c05781a680eefb5606b9f7cfd19538eeb179cfc7a7bde104b3c"
+  }
+}

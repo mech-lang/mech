@@ -1,0 +1,198 @@
+{
+  "purpose": "unscored-missing-native-canary-calibration",
+  "executable": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/canary",
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1",
+  "arguments": [
+    "41",
+    "--julia-args",
+    "--compile=no",
+    "--threads=8,0",
+    "--startup-file=no",
+    "--history-file=no",
+    "-O3"
+  ],
+  "environment": {
+    "PATH": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/packagecompiler-bootstrap-v2/restored-runtime/julia-1.13.1/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin",
+    "HOME": "/Users/cim310",
+    "TMPDIR": "/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/",
+    "LANG": "C",
+    "LC_ALL": "C",
+    "JULIA_DEPOT_PATH": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/packagecompiler-bootstrap-v2/depot",
+    "JULIA_LOAD_PATH": "@:@stdlib",
+    "JULIA_PKG_PRECOMPILE_AUTO": "0",
+    "JULIA_NUM_PRECOMPILE_TASKS": "1"
+  },
+  "output": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/native-observation",
+  "hooks": [
+    {
+      "name": "jl_fptr_interpret_call",
+      "kind": "interpreter",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbols-v1/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-internal.1.13.1.dylib",
+      "original_image_sha256": "aaf25ba7ac705b5e0d564e6942da9d158bf59cf387fa9d5dca097a254764d816",
+      "original_file_symbol_value": "000000000003f1f8"
+    },
+    {
+      "name": "jl_interpret_opaque_closure",
+      "kind": "interpreter",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbols-v1/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-internal.1.13.1.dylib",
+      "original_image_sha256": "aaf25ba7ac705b5e0d564e6942da9d158bf59cf387fa9d5dca097a254764d816",
+      "original_file_symbol_value": "000000000003fe10"
+    },
+    {
+      "name": "jl_interpret_toplevel_thunk",
+      "kind": "interpreter",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbols-v1/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-internal.1.13.1.dylib",
+      "original_image_sha256": "aaf25ba7ac705b5e0d564e6942da9d158bf59cf387fa9d5dca097a254764d816",
+      "original_file_symbol_value": "0000000000040054"
+    },
+    {
+      "name": "jl_interpret_toplevel_expr_in",
+      "kind": "interpreter",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbols-v1/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-internal.1.13.1.dylib",
+      "original_image_sha256": "aaf25ba7ac705b5e0d564e6942da9d158bf59cf387fa9d5dca097a254764d816",
+      "original_file_symbol_value": "000000000004018c"
+    },
+    {
+      "name": "jl_emit_codeinst_to_jit",
+      "kind": "codegen-route-entry",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbol-routes-v2/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/libjulia.1.13.1.dylib",
+      "original_image_sha256": "459753693d70784e22bf5b7a88013b78116bbe8037af129aa49fe7be55e31289",
+      "original_file_symbol_value": "00000000000026d8"
+    },
+    {
+      "name": "jl_generate_fptr_for_unspecialized",
+      "kind": "codegen-route-entry",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbol-routes-v2/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/libjulia.1.13.1.dylib",
+      "original_image_sha256": "459753693d70784e22bf5b7a88013b78116bbe8037af129aa49fe7be55e31289",
+      "original_file_symbol_value": "0000000000002798"
+    },
+    {
+      "name": "jl_jit_abi_converter_impl",
+      "kind": "codegen-route-entry",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbol-routes-v2/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-codegen.1.13.1.dylib",
+      "original_image_sha256": "030b316273f4b3c0ecf285e866a0a9653f37471f57e3d51be7476154f6aa9781",
+      "original_file_symbol_value": "0000000000088a2c"
+    },
+    {
+      "name": "_ZN9JuliaOJIT9addModuleEN4llvm3orc16ThreadSafeModuleE",
+      "kind": "engine-emission",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbols-v1/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-codegen.1.13.1.dylib",
+      "original_image_sha256": "030b316273f4b3c0ecf285e866a0a9653f37471f57e3d51be7476154f6aa9781",
+      "original_file_symbol_value": "0000000000089654"
+    },
+    {
+      "name": "_ZN9JuliaOJIT9addModuleEN4llvm3orc16ThreadSafeModuleE.cold.1",
+      "kind": "engine-emission",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbols-v1/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-codegen.1.13.1.dylib",
+      "original_image_sha256": "030b316273f4b3c0ecf285e866a0a9653f37471f57e3d51be7476154f6aa9781",
+      "original_file_symbol_value": "000000000011f984"
+    },
+    {
+      "name": "jl_compile_codeinst",
+      "kind": "codegen-route-entry",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbol-routes-v2/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/libjulia.1.13.1.dylib",
+      "original_image_sha256": "459753693d70784e22bf5b7a88013b78116bbe8037af129aa49fe7be55e31289",
+      "original_file_symbol_value": "00000000000027a4"
+    },
+    {
+      "name": "jl_compile_codeinst_fallback",
+      "kind": "codegen-route-entry",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbol-routes-v2/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-internal.1.13.1.dylib",
+      "original_image_sha256": "aaf25ba7ac705b5e0d564e6942da9d158bf59cf387fa9d5dca097a254764d816",
+      "original_file_symbol_value": "00000000000b4e2c"
+    },
+    {
+      "name": "jl_compile_codeinst_impl",
+      "kind": "codegen-route-entry",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbol-routes-v2/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-codegen.1.13.1.dylib",
+      "original_image_sha256": "030b316273f4b3c0ecf285e866a0a9653f37471f57e3d51be7476154f6aa9781",
+      "original_file_symbol_value": "000000000008c0bc"
+    },
+    {
+      "name": "jl_emit_codeinst_to_jit_fallback",
+      "kind": "codegen-route-entry",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbol-routes-v2/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-internal.1.13.1.dylib",
+      "original_image_sha256": "aaf25ba7ac705b5e0d564e6942da9d158bf59cf387fa9d5dca097a254764d816",
+      "original_file_symbol_value": "00000000000b4e34"
+    },
+    {
+      "name": "jl_emit_codeinst_to_jit_impl",
+      "kind": "codegen-route-entry",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbol-routes-v2/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-codegen.1.13.1.dylib",
+      "original_image_sha256": "030b316273f4b3c0ecf285e866a0a9653f37471f57e3d51be7476154f6aa9781",
+      "original_file_symbol_value": "0000000000089efc"
+    },
+    {
+      "name": "jl_generate_fptr_for_unspecialized_fallback",
+      "kind": "codegen-route-entry",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbol-routes-v2/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-internal.1.13.1.dylib",
+      "original_image_sha256": "aaf25ba7ac705b5e0d564e6942da9d158bf59cf387fa9d5dca097a254764d816",
+      "original_file_symbol_value": "00000000000b4e18"
+    },
+    {
+      "name": "jl_generate_fptr_for_unspecialized_impl",
+      "kind": "codegen-route-entry",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbol-routes-v2/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-codegen.1.13.1.dylib",
+      "original_image_sha256": "030b316273f4b3c0ecf285e866a0a9653f37471f57e3d51be7476154f6aa9781",
+      "original_file_symbol_value": "000000000008df14"
+    },
+    {
+      "name": "jl_init_codegen",
+      "kind": "codegen-initialization",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbol-routes-v2/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/libjulia.1.13.1.dylib",
+      "original_image_sha256": "459753693d70784e22bf5b7a88013b78116bbe8037af129aa49fe7be55e31289",
+      "original_file_symbol_value": "0000000000002774"
+    },
+    {
+      "name": "jl_init_codegen_fallback",
+      "kind": "codegen-initialization",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbol-routes-v2/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-internal.1.13.1.dylib",
+      "original_image_sha256": "aaf25ba7ac705b5e0d564e6942da9d158bf59cf387fa9d5dca097a254764d816",
+      "original_file_symbol_value": "00000000000b4e08"
+    },
+    {
+      "name": "jl_init_codegen_impl",
+      "kind": "codegen-initialization",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbol-routes-v2/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-codegen.1.13.1.dylib",
+      "original_image_sha256": "030b316273f4b3c0ecf285e866a0a9653f37471f57e3d51be7476154f6aa9781",
+      "original_file_symbol_value": "0000000000023960"
+    },
+    {
+      "name": "jl_jit_abi_converter",
+      "kind": "codegen-route-entry",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbol-routes-v2/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/libjulia.1.13.1.dylib",
+      "original_image_sha256": "459753693d70784e22bf5b7a88013b78116bbe8037af129aa49fe7be55e31289",
+      "original_file_symbol_value": "0000000000002858"
+    },
+    {
+      "name": "jl_jit_abi_converter_fallback",
+      "kind": "codegen-route-entry",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbol-routes-v2/report.json",
+      "original_image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-internal.1.13.1.dylib",
+      "original_image_sha256": "aaf25ba7ac705b5e0d564e6942da9d158bf59cf387fa9d5dca097a254764d816",
+      "original_file_symbol_value": "00000000000b76a8"
+    }
+  ],
+  "actual_common_mutex_held": true,
+  "all_benchmark_timings_excluded": true
+}

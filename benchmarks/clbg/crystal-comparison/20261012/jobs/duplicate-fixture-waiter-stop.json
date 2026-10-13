@@ -1,0 +1,7 @@
+{
+  "pid": 27693,
+  "command": "/tmp/mech-nbody-plot-runtime/bin/python3 -B -u benchmarks/clbg/crystal-comparison/20261012/test_archive_v6.py",
+  "signal": "SIGINT",
+  "reason": "Exact duplicate of already completed exclusive archive-v6 metadata fixture; no children/native work",
+  "exit_confirmed": true
+}

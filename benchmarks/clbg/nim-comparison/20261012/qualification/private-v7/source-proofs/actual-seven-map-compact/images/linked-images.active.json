@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/usr/bin/otool",
+    "-L",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v7/bin/actual-seven-map-compact"
+  ],
+  "started_at": "2026-10-13T01:28:38.378939+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 12729,
+  "identity": {
+    "pid": 12729,
+    "process_listing": "Mon Oct 12 21:28:38 2026     /Library/Developer/CommandLineTools/usr/bin/otool -L /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v7/bin/actual-seven-map-compact"
+  }
+}

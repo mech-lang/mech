@@ -1,0 +1,33 @@
+{
+  "status": "stopped",
+  "supervisor": {
+    "pid": 52680,
+    "process_listing": "Mon Oct 12 09:56:31 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining_owner.py --run --manifest-sha256 affba5b243da43d1a15c28e5364741828e4f684bb1b43d15d81ad720b28ef39f"
+  },
+  "manifest_sha256": "affba5b243da43d1a15c28e5364741828e4f684bb1b43d15d81ad720b28ef39f",
+  "stages": [
+    {
+      "language": "r",
+      "benchmark": "fannkuchredux",
+      "started_at": "2026-10-12T13:56:31.473289+00:00",
+      "status": "complete",
+      "finished_at": "2026-10-12T14:57:57.505783+00:00"
+    },
+    {
+      "language": "apl",
+      "benchmark": "mandelbrot",
+      "started_at": "2026-10-12T14:57:57.506032+00:00",
+      "status": "complete",
+      "finished_at": "2026-10-12T17:35:52.600809+00:00"
+    },
+    {
+      "language": "apl",
+      "benchmark": "fasta",
+      "started_at": "2026-10-12T17:35:52.601444+00:00"
+    }
+  ],
+  "started_at": "2026-10-12T13:56:31.472771+00:00",
+  "error": "Remaining actual sample failed qualification; evidence retained and no retry",
+  "error_type": "RuntimeError",
+  "finished_at": "2026-10-12T17:59:20.407136+00:00"
+}

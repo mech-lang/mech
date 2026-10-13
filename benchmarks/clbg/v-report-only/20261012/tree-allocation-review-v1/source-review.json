@@ -1,0 +1,51 @@
+{
+  "status": "reviewed-source-meaning-awaiting-guarded-identity-seal",
+  "review_identity": "Crystal peer static V production-builder-v3 tree creator and allocator review, 2026-10-13",
+  "source_revision": "production-builder-v3",
+  "work_revision": "builder-v3-work1",
+  "unresolved": [],
+  "hashes_transcribed_from_saved_lowering_pins": true,
+  "hash_audit_executed_by_author": false,
+  "native_or_compiler_executed_by_author": false,
+  "profiles": [
+    {
+      "id": "v-binarytrees-compact-input-v2",
+      "variant": "compact",
+      "source_sha256": "24b173a1d2f978f2e89d6deb6a40e3c3e564b2684071ec070ab899916d7faa86",
+      "generated_c_sha256": "3e2641a41195eec4659201498c78b769f64cad03ab5e717f9db233f7412ab55e",
+      "creator_symbol": "main__create",
+      "leaf_allocator_symbol": "builtin__memdup",
+      "native_allocator_symbol": "builtin___v_malloc",
+      "node_declaration_line": 1968,
+      "creator_line": 6305,
+      "heap_macro_line": 246,
+      "leaf_allocator_line": 3181,
+      "native_allocator_line": 3001,
+      "selected_GC_MALLOC_line": 3018,
+      "both_recursive_children": true,
+      "interior_and_leaf_heap_allocations": true,
+      "review": "main__Node has two actual pointer fields. The depth-zero path returns HEAP(Node, zero children), whose macro calls memdup with sizeof(Node), not a shared static node. memdup takes the positive-size __v_malloc path then copies the initialized fields. The selected gcboehm macro makes __v_malloc call GC_MALLOC; zero-size/null-return branches cannot apply to this two-pointer Node. The interior path allocates another Node, writes two separate recursive create(depth-1) results and returns that allocation. check reads actual child pointers and recursively visits both children. main constructs stretch and long-lived graphs, constructs/checks every prescribed temporary tree, and reads the retained long-lived graph after churn; GC_reachable_here keeps it live. Actual n6/7/9 graph traces separately establish distinct leaves/edges and unchanged retained identity. The retained C compiler command uses the same actual compiler/production flags/source plus only -keepc; this review does not claim the separately retained evidence binary was timed."
+    },
+    {
+      "id": "v-binarytrees-optimized-input-v2",
+      "variant": "optimized",
+      "source_sha256": "09db869d799f7efa172e2a82ad604c075a269aed2811ba84441518a7fbaefbf8",
+      "generated_c_sha256": "83d7c314d8687655ccb277f941e511769b86665d9589550efbfbf94e8a32ad7b",
+      "creator_symbol": "main__create",
+      "leaf_allocator_symbol": "builtin__memdup",
+      "native_allocator_symbol": "builtin___v_malloc",
+      "node_declaration_line": 2150,
+      "creator_line": 7783,
+      "heap_macro_line": 256,
+      "leaf_allocator_line": 3565,
+      "native_allocator_line": 3331,
+      "selected_GC_MALLOC_line": 3348,
+      "both_recursive_children": true,
+      "interior_and_leaf_heap_allocations": true,
+      "review": "The actual Node, creator, leaf HEAP/memdup and selected gcboehm __v_malloc/GC_MALLOC paths have the same allocation behavior as compact. Every interior has its own allocation and two recursive child calls; every leaf has its own positive-size allocation. trees(depth,maximum) constructs/checks all count=1<<(maximum-depth+4) temporary roots. main starts at most eight disjoint depth jobs in each batch, waits on each native thread before reading its TreeResult, and accesses the retained long-lived graph after all batches. Native graph traces for both source forms establish real leaves, full temporary inventories, retained graph identity and disjoint concurrently live churn. The proof refers to the original unchanged scored V source and its retained production lowering; observation code remains unscored."
+    }
+  ],
+  "canonical_LOC_admitted": false,
+  "chart_admission": false,
+  "full_performance_runs": 0
+}

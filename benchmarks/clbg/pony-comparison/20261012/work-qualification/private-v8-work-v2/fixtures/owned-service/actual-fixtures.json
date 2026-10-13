@@ -1,0 +1,32 @@
+{
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/work-full-v2/run_work_fixtures.py",
+    "--suite",
+    "owned-service",
+    "--output",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v2/fixtures/owned-service",
+    "--lock-fd",
+    "3"
+  ],
+  "started_at": "2026-10-13T01:38:48.570376+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "bounded_local_service": true,
+  "cleanup_errors": [],
+  "pid": 15943,
+  "identity": {
+    "pid": 15943,
+    "process_listing": "Mon Oct 12 21:38:48 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/work-full-v2/run_work_fixtures.py --suite owned-service --output /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v2/fixtures/owned-service --lock-fd 3"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-13T01:38:48.679584+00:00",
+  "final_exit_status": 0,
+  "leader_reaped": true,
+  "remaining_group_members": [],
+  "cleanup_complete": true,
+  "journal_finished_at": "2026-10-13T01:38:48.793009+00:00"
+}

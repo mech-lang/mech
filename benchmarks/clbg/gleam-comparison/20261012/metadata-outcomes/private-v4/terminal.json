@@ -1,0 +1,23 @@
+{
+  "status": "sealed-awaiting-root-review",
+  "proposal": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/proposals/private-v4.json",
+  "exclusive_common_mutex_held": true,
+  "chart_admission": false,
+  "native_benchmarks": 0,
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/metadata-outcomes/private-v4/started.json": "4b9acbde4d1d962ef8279ac324a735f606cee036ecb0df7014d45ea778ee0b74",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/proposal-seals/private-v4/generic-ownership-fixtures.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/proposal-seals/private-v4/gleam-bundle-inventory.json": "bf01ae4f33aa441d9a4f14d18c0117b823bab16d2b34180edfd1b69ccc2bea1b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/proposal-seals/private-v4/generic-ownership-fixtures.stderr": "8c5d629a3c2728f05148d6e2259e17a9f5cd5ce4a3cd6fab4598bbd4e29eef4a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/proposal-seals/private-v4/generic-ownership-inventory.json": "44178d322cf7e5b390d3150c6e4cfb73b1e8758ab9bb8953dc7f6aa769f7b1e3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/proposal-seals/private-v4/gleam-bundle-fixtures.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/proposal-seals/private-v4/gleam-bundle-fixtures.stderr": "b521362ceaa9294d9def865eb7e789d015c1361ad5afd23e59b9d5c02f553806",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/proposal-seals/private-v4/prior-app-reuse.json": "67918e80e3fcb92e350a7ab67a2d4d2f10178cd3fc813329649ab5c65fce4280",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/proposal-seals/private-v4/generic-ownership-fixtures.active.json": "19e1ec06277335c84aa6767dff330862e95da6553924946103e70e3e553335bf",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/proposal-seals/private-v4/gleam-bundle-fixtures.json": "41370dbf894ac96fcb6290853eeaea11bc71b7bfd9c890ea2b004e09ef62c138",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/proposal-seals/private-v4/generic-ownership-fixtures.json": "f131641d3553270ad185902f2f6f463a3fc2b2a695ad41279bffd596c3e7eeb3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/proposal-seals/private-v4/gleam-bundle-fixtures.active.json": "02ee0e9df2dd067bd3b1887a81f62aaec062d509edb861db2a549ba423e7b3db",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/proposals/private-v4.json": "97569becabcf43681ea5c43ff09c8fb206f7f0a936129762166b6c81202dc340"
+  },
+  "finished_at": "2026-10-13T01:35:54.210082+00:00"
+}

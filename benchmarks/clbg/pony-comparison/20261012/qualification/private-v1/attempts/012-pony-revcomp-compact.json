@@ -1,0 +1,55 @@
+{
+  "key": "revcomp:pony-revcomp-compact",
+  "id": "pony-revcomp-compact",
+  "benchmark": "revcomp",
+  "language": "pony",
+  "source_sha256": "8c9672533d2e49c8cf704113b1ce5bfdfafb626532c3b04fcd35aca66f1096a1",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/bin/pony-revcomp-compact/pony-revcomp-compact",
+    "1000",
+    "--ponymaxthreads",
+    "8"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012",
+  "runtime_environment": {
+    "LC_ALL": "C",
+    "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"3e23655812f4fcf89e9b85e751650e38436d79aa4cd3278489771863997f25e5\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/bin/pony-revcomp-compact/pony-revcomp-compact\", \"{n}\", \"--ponymaxthreads\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"8c9672533d2e49c8cf704113b1ce5bfdfafb626532c3b04fcd35aca66f1096a1\", \"support\": {}}",
+  "started_at": "2026-10-12T16:08:46.043143+00:00",
+  "workload_n": 1000,
+  "full_workload": false,
+  "timeout_seconds": 120,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.054895667,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 22,
+  "stdout_sha256": "b2da7c0f1ffcc8ba81b168b53d499da9d3975a4717ffd3160c5201141557dfb6",
+  "validation": {
+    "reference_match": true,
+    "bytes": 22,
+    "sha256": "b2da7c0f1ffcc8ba81b168b53d499da9d3975a4717ffd3160c5201141557dfb6"
+  },
+  "finished_at": "2026-10-12T16:08:46.285217+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true
+}

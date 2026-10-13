@@ -1,0 +1,516 @@
+{
+  "status": "studies-launched-awaiting-measurements-and-root-tree-review",
+  "started_at": "2026-10-12T20:18:07.435462+00:00",
+  "supervisor": {
+    "pid": 28471,
+    "process_listing": "Mon Oct 12 16:18:07 2026     /tmp/mech-nbody-plot-runtime/bin/python3 -B -u complete_builder_v3.py"
+  },
+  "report_only": true,
+  "never_chart_eligible": true,
+  "active": null,
+  "completed_stages": [
+    "pidigits-work",
+    "pidigits-seal",
+    "pidigits-launch",
+    "spectralnorm-seal",
+    "spectralnorm-launch",
+    "mandelbrot-seal",
+    "mandelbrot-launch",
+    "fasta-seal",
+    "fasta-launch",
+    "knucleotide-work",
+    "knucleotide-seal",
+    "knucleotide-launch",
+    "binarytrees-work",
+    "binarytrees-lowering",
+    "nbody-seal",
+    "nbody-launch",
+    "fannkuchredux-seal",
+    "fannkuchredux-launch"
+  ],
+  "launched_studies": [
+    {
+      "benchmark": "pidigits",
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/studies/pidigits/full-study/manifest.json",
+      "manifest_sha256": "dbc7ddfd0e868693669c66a5aa2086e62cd4a5c9ddc1eabf8b6a91e589503215"
+    },
+    {
+      "benchmark": "spectralnorm",
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/studies/spectralnorm/full-study/manifest.json",
+      "manifest_sha256": "65c3ac625b779122cd92e189b93553e733e074d1fb4ce04d25ccb8b79ee6706d"
+    },
+    {
+      "benchmark": "mandelbrot",
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/studies/mandelbrot/full-study/manifest.json",
+      "manifest_sha256": "a83657d329ce6850f300387abc6978b4ff8c06c65ef5f08d884b0b0f6fce1372"
+    },
+    {
+      "benchmark": "fasta",
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/studies/fasta/full-study/manifest.json",
+      "manifest_sha256": "ec9114704438cd7f886dc480a2dedfcf8ff548bc4008b5f92f2a0ee56fa8e086"
+    },
+    {
+      "benchmark": "knucleotide",
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/studies/knucleotide/full-study/manifest.json",
+      "manifest_sha256": "495a6fb5623f550323426fa2070ba5e2b0d025c56655e54b8567a0e40830284e"
+    },
+    {
+      "benchmark": "nbody",
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/studies/nbody/full-study/manifest.json",
+      "manifest_sha256": "df293f49d15b34b778a30285ddaa2ffcb8240af0944199de563262629282ada9"
+    },
+    {
+      "benchmark": "fannkuchredux",
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/studies/fannkuchredux/full-study/manifest.json",
+      "manifest_sha256": "f48716e9903d56f1aec2f469f88f5465817b833cdca33a82010f6d30adaae600"
+    }
+  ],
+  "pending_root_reviews": [
+    {
+      "benchmark": "binarytrees",
+      "lowering": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/lowering-evidence/builder-v3-work1/report.json",
+      "work": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/work-qualification/builder-v3-work1/binarytrees/report.json"
+    }
+  ],
+  "waiting_benchmark": null,
+  "preparation_supervisor": {
+    "pid": 20372,
+    "process_listing": "Mon Oct 12 15:55:07 2026     /tmp/mech-nbody-plot-runtime/bin/python3 -B -u prepare_builder_v3_cohort.py --revision production-builder-v3"
+  },
+  "child_receipts": [
+    {
+      "stage": "pidigits-work",
+      "log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/completion/builder-v3-run1/pidigits-work.log",
+      "command": [
+        "/tmp/mech-nbody-plot-runtime/bin/python3",
+        "-B",
+        "-u",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualify_work_trace.py",
+        "--benchmark",
+        "pidigits",
+        "--source-revision",
+        "production-builder-v3",
+        "--revision",
+        "builder-v3-work1"
+      ],
+      "started_at": "2026-10-12T21:20:58.860363+00:00",
+      "pid": 43949,
+      "identity": {
+        "pid": 43949,
+        "process_listing": "Mon Oct 12 17:20:58 2026     /tmp/mech-nbody-plot-runtime/bin/python3 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualify_work_trace.py --benchmark pidigits --source-revision production-builder-v3 --revision builder-v3-work1"
+      },
+      "returncode": 0,
+      "cleanup_confirmed": true,
+      "finished_at": "2026-10-12T21:22:13.055136+00:00"
+    },
+    {
+      "stage": "pidigits-seal",
+      "log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/completion/builder-v3-run1/pidigits-seal.log",
+      "command": [
+        "/tmp/mech-nbody-plot-runtime/bin/python3",
+        "-B",
+        "-u",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/seal_builder_v3_study.py",
+        "--benchmark",
+        "pidigits",
+        "--source-revision",
+        "production-builder-v3",
+        "--work-report",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/work-qualification/builder-v3-work1/pidigits/report.json",
+        "--work-report-sha256",
+        "2e3d8bd06baea7639c2ee2e0d8b0a9351e04236e1e2f5fa46ad4984fed710149"
+      ],
+      "started_at": "2026-10-12T22:27:53.745381+00:00",
+      "pid": 64027,
+      "identity": {
+        "pid": 64027,
+        "process_listing": "Mon Oct 12 18:27:53 2026     /tmp/mech-nbody-plot-runtime/bin/python3 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/seal_builder_v3_study.py --benchmark pidigits --source-revision production-builder-v3 --work-report /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/work-qualification/builder-v3-work1/pidigits/report.json --work-report-sha256 2e3d8bd06baea7639c2ee2e0d8b0a9351e04236e1e2f5fa46ad4984fed710149"
+      },
+      "returncode": 0,
+      "cleanup_confirmed": true,
+      "finished_at": "2026-10-12T22:53:53.497328+00:00"
+    },
+    {
+      "stage": "pidigits-launch",
+      "log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/completion/builder-v3-run1/pidigits-launch.log",
+      "command": [
+        "/tmp/mech-nbody-plot-runtime/bin/python3",
+        "-B",
+        "-u",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/full_study.py",
+        "--detach",
+        "--benchmark",
+        "pidigits",
+        "--manifest-sha256",
+        "dbc7ddfd0e868693669c66a5aa2086e62cd4a5c9ddc1eabf8b6a91e589503215"
+      ],
+      "started_at": "2026-10-12T23:07:41.850592+00:00",
+      "pid": 76424,
+      "identity": {
+        "pid": 76424,
+        "process_listing": "Mon Oct 12 19:07:41 2026     /tmp/mech-nbody-plot-runtime/bin/python3 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/full_study.py --detach --benchmark pidigits --manifest-sha256 dbc7ddfd0e868693669c66a5aa2086e62cd4a5c9ddc1eabf8b6a91e589503215"
+      },
+      "returncode": 0,
+      "cleanup_confirmed": true,
+      "finished_at": "2026-10-13T00:42:51.141787+00:00"
+    },
+    {
+      "stage": "spectralnorm-seal",
+      "log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/completion/builder-v3-run1/spectralnorm-seal.log",
+      "command": [
+        "/tmp/mech-nbody-plot-runtime/bin/python3",
+        "-B",
+        "-u",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/seal_builder_v3_study.py",
+        "--benchmark",
+        "spectralnorm",
+        "--source-revision",
+        "production-builder-v3"
+      ],
+      "started_at": "2026-10-13T00:42:51.155775+00:00",
+      "pid": 97291,
+      "identity": {
+        "pid": 97291,
+        "process_listing": "Mon Oct 12 20:42:51 2026     /tmp/mech-nbody-plot-runtime/bin/python3 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/seal_builder_v3_study.py --benchmark spectralnorm --source-revision production-builder-v3"
+      },
+      "returncode": 0,
+      "cleanup_confirmed": true,
+      "finished_at": "2026-10-13T00:47:57.728172+00:00"
+    },
+    {
+      "stage": "spectralnorm-launch",
+      "log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/completion/builder-v3-run1/spectralnorm-launch.log",
+      "command": [
+        "/tmp/mech-nbody-plot-runtime/bin/python3",
+        "-B",
+        "-u",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/full_study.py",
+        "--detach",
+        "--benchmark",
+        "spectralnorm",
+        "--manifest-sha256",
+        "65c3ac625b779122cd92e189b93553e733e074d1fb4ce04d25ccb8b79ee6706d"
+      ],
+      "started_at": "2026-10-13T01:02:22.440866+00:00",
+      "pid": 2848,
+      "identity": {
+        "pid": 2848,
+        "process_listing": "Mon Oct 12 21:02:22 2026     /tmp/mech-nbody-plot-runtime/bin/python3 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/full_study.py --detach --benchmark spectralnorm --manifest-sha256 65c3ac625b779122cd92e189b93553e733e074d1fb4ce04d25ccb8b79ee6706d"
+      },
+      "returncode": 0,
+      "cleanup_confirmed": true,
+      "finished_at": "2026-10-13T01:16:30.093442+00:00"
+    },
+    {
+      "stage": "mandelbrot-seal",
+      "log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/completion/builder-v3-run1/mandelbrot-seal.log",
+      "command": [
+        "/tmp/mech-nbody-plot-runtime/bin/python3",
+        "-B",
+        "-u",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/seal_builder_v3_study.py",
+        "--benchmark",
+        "mandelbrot",
+        "--source-revision",
+        "production-builder-v3"
+      ],
+      "started_at": "2026-10-13T01:16:30.106557+00:00",
+      "pid": 9361,
+      "identity": {
+        "pid": 9361,
+        "process_listing": "Mon Oct 12 21:16:30 2026     /tmp/mech-nbody-plot-runtime/bin/python3 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/seal_builder_v3_study.py --benchmark mandelbrot --source-revision production-builder-v3"
+      },
+      "returncode": 0,
+      "cleanup_confirmed": true,
+      "finished_at": "2026-10-13T01:18:07.839312+00:00"
+    },
+    {
+      "stage": "mandelbrot-launch",
+      "log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/completion/builder-v3-run1/mandelbrot-launch.log",
+      "command": [
+        "/tmp/mech-nbody-plot-runtime/bin/python3",
+        "-B",
+        "-u",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/full_study.py",
+        "--detach",
+        "--benchmark",
+        "mandelbrot",
+        "--manifest-sha256",
+        "a83657d329ce6850f300387abc6978b4ff8c06c65ef5f08d884b0b0f6fce1372"
+      ],
+      "started_at": "2026-10-13T01:19:09.744468+00:00",
+      "pid": 10543,
+      "identity": {
+        "pid": 10543,
+        "process_listing": "Mon Oct 12 21:19:09 2026     /tmp/mech-nbody-plot-runtime/bin/python3 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/full_study.py --detach --benchmark mandelbrot --manifest-sha256 a83657d329ce6850f300387abc6978b4ff8c06c65ef5f08d884b0b0f6fce1372"
+      },
+      "returncode": 0,
+      "cleanup_confirmed": true,
+      "finished_at": "2026-10-13T01:23:25.064154+00:00"
+    },
+    {
+      "stage": "fasta-seal",
+      "log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/completion/builder-v3-run1/fasta-seal.log",
+      "command": [
+        "/tmp/mech-nbody-plot-runtime/bin/python3",
+        "-B",
+        "-u",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/seal_builder_v3_study.py",
+        "--benchmark",
+        "fasta",
+        "--source-revision",
+        "production-builder-v3"
+      ],
+      "started_at": "2026-10-13T01:23:25.079954+00:00",
+      "pid": 11278,
+      "identity": {
+        "pid": 11278,
+        "process_listing": "Mon Oct 12 21:23:25 2026     /tmp/mech-nbody-plot-runtime/bin/python3 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/seal_builder_v3_study.py --benchmark fasta --source-revision production-builder-v3"
+      },
+      "returncode": 0,
+      "cleanup_confirmed": true,
+      "finished_at": "2026-10-13T01:24:25.380816+00:00"
+    },
+    {
+      "stage": "fasta-launch",
+      "log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/completion/builder-v3-run1/fasta-launch.log",
+      "command": [
+        "/tmp/mech-nbody-plot-runtime/bin/python3",
+        "-B",
+        "-u",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/full_study.py",
+        "--detach",
+        "--benchmark",
+        "fasta",
+        "--manifest-sha256",
+        "ec9114704438cd7f886dc480a2dedfcf8ff548bc4008b5f92f2a0ee56fa8e086"
+      ],
+      "started_at": "2026-10-13T01:27:48.434327+00:00",
+      "pid": 12630,
+      "identity": {
+        "pid": 12630,
+        "process_listing": "Mon Oct 12 21:27:48 2026     /tmp/mech-nbody-plot-runtime/bin/python3 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/full_study.py --detach --benchmark fasta --manifest-sha256 ec9114704438cd7f886dc480a2dedfcf8ff548bc4008b5f92f2a0ee56fa8e086"
+      },
+      "returncode": 0,
+      "cleanup_confirmed": true,
+      "finished_at": "2026-10-13T01:35:52.035655+00:00"
+    },
+    {
+      "stage": "knucleotide-work",
+      "log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/completion/builder-v3-run1/knucleotide-work.log",
+      "command": [
+        "/tmp/mech-nbody-plot-runtime/bin/python3",
+        "-B",
+        "-u",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualify_work_trace.py",
+        "--benchmark",
+        "knucleotide",
+        "--source-revision",
+        "production-builder-v3",
+        "--revision",
+        "builder-v3-work1"
+      ],
+      "started_at": "2026-10-13T01:35:52.048329+00:00",
+      "pid": 14576,
+      "identity": {
+        "pid": 14576,
+        "process_listing": "Mon Oct 12 21:35:52 2026     /tmp/mech-nbody-plot-runtime/bin/python3 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualify_work_trace.py --benchmark knucleotide --source-revision production-builder-v3 --revision builder-v3-work1"
+      },
+      "returncode": 0,
+      "cleanup_confirmed": true,
+      "finished_at": "2026-10-13T01:36:45.096709+00:00"
+    },
+    {
+      "stage": "knucleotide-seal",
+      "log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/completion/builder-v3-run1/knucleotide-seal.log",
+      "command": [
+        "/tmp/mech-nbody-plot-runtime/bin/python3",
+        "-B",
+        "-u",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/seal_builder_v3_study.py",
+        "--benchmark",
+        "knucleotide",
+        "--source-revision",
+        "production-builder-v3",
+        "--work-report",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/work-qualification/builder-v3-work1/knucleotide/report.json",
+        "--work-report-sha256",
+        "735d32f8a63bb7de27e95401b8d10ff20be56db25c8e752da6ccf55048d56126"
+      ],
+      "started_at": "2026-10-13T01:37:04.521336+00:00",
+      "pid": 15289,
+      "identity": {
+        "pid": 15289,
+        "process_listing": "Mon Oct 12 21:37:04 2026     /tmp/mech-nbody-plot-runtime/bin/python3 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/seal_builder_v3_study.py --benchmark knucleotide --source-revision production-builder-v3 --work-report /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/work-qualification/builder-v3-work1/knucleotide/report.json --work-report-sha256 735d32f8a63bb7de27e95401b8d10ff20be56db25c8e752da6ccf55048d56126"
+      },
+      "returncode": 0,
+      "cleanup_confirmed": true,
+      "finished_at": "2026-10-13T01:37:14.232362+00:00"
+    },
+    {
+      "stage": "knucleotide-launch",
+      "log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/completion/builder-v3-run1/knucleotide-launch.log",
+      "command": [
+        "/tmp/mech-nbody-plot-runtime/bin/python3",
+        "-B",
+        "-u",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/full_study.py",
+        "--detach",
+        "--benchmark",
+        "knucleotide",
+        "--manifest-sha256",
+        "495a6fb5623f550323426fa2070ba5e2b0d025c56655e54b8567a0e40830284e"
+      ],
+      "started_at": "2026-10-13T01:37:24.003539+00:00",
+      "pid": 15458,
+      "identity": {
+        "pid": 15458,
+        "process_listing": "Mon Oct 12 21:37:24 2026     /tmp/mech-nbody-plot-runtime/bin/python3 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/full_study.py --detach --benchmark knucleotide --manifest-sha256 495a6fb5623f550323426fa2070ba5e2b0d025c56655e54b8567a0e40830284e"
+      },
+      "returncode": 0,
+      "cleanup_confirmed": true,
+      "finished_at": "2026-10-13T01:37:43.041354+00:00"
+    },
+    {
+      "stage": "binarytrees-work",
+      "log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/completion/builder-v3-run1/binarytrees-work.log",
+      "command": [
+        "/tmp/mech-nbody-plot-runtime/bin/python3",
+        "-B",
+        "-u",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualify_binarytrees.py",
+        "--source-revision",
+        "production-builder-v3",
+        "--revision",
+        "builder-v3-work1"
+      ],
+      "started_at": "2026-10-13T01:37:43.054414+00:00",
+      "pid": 15625,
+      "identity": {
+        "pid": 15625,
+        "process_listing": "Mon Oct 12 21:37:43 2026     /tmp/mech-nbody-plot-runtime/bin/python3 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualify_binarytrees.py --source-revision production-builder-v3 --revision builder-v3-work1"
+      },
+      "returncode": 0,
+      "cleanup_confirmed": true,
+      "finished_at": "2026-10-13T01:38:44.507352+00:00"
+    },
+    {
+      "stage": "binarytrees-lowering",
+      "log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/completion/builder-v3-run1/binarytrees-lowering.log",
+      "command": [
+        "/tmp/mech-nbody-plot-runtime/bin/python3",
+        "-B",
+        "-u",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/preserve_tree_lowering.py",
+        "--source-revision",
+        "production-builder-v3",
+        "--revision",
+        "builder-v3-work1"
+      ],
+      "started_at": "2026-10-13T01:38:44.508317+00:00",
+      "pid": 15899,
+      "identity": {
+        "pid": 15899,
+        "process_listing": "Mon Oct 12 21:38:44 2026     /tmp/mech-nbody-plot-runtime/bin/python3 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/preserve_tree_lowering.py --source-revision production-builder-v3 --revision builder-v3-work1"
+      },
+      "returncode": 0,
+      "cleanup_confirmed": true,
+      "finished_at": "2026-10-13T01:39:13.366301+00:00"
+    },
+    {
+      "stage": "nbody-seal",
+      "log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/completion/builder-v3-run1/nbody-seal.log",
+      "command": [
+        "/tmp/mech-nbody-plot-runtime/bin/python3",
+        "-B",
+        "-u",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/seal_builder_v3_study.py",
+        "--benchmark",
+        "nbody",
+        "--source-revision",
+        "production-builder-v3"
+      ],
+      "started_at": "2026-10-13T01:39:13.379679+00:00",
+      "pid": 16057,
+      "identity": {
+        "pid": 16057,
+        "process_listing": "Mon Oct 12 21:39:13 2026     /tmp/mech-nbody-plot-runtime/bin/python3 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/seal_builder_v3_study.py --benchmark nbody --source-revision production-builder-v3"
+      },
+      "returncode": 0,
+      "cleanup_confirmed": true,
+      "finished_at": "2026-10-13T01:39:47.824984+00:00"
+    },
+    {
+      "stage": "nbody-launch",
+      "log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/completion/builder-v3-run1/nbody-launch.log",
+      "command": [
+        "/tmp/mech-nbody-plot-runtime/bin/python3",
+        "-B",
+        "-u",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/full_study.py",
+        "--detach",
+        "--benchmark",
+        "nbody",
+        "--manifest-sha256",
+        "df293f49d15b34b778a30285ddaa2ffcb8240af0944199de563262629282ada9"
+      ],
+      "started_at": "2026-10-13T01:39:56.709604+00:00",
+      "pid": 16279,
+      "identity": {
+        "pid": 16279,
+        "process_listing": "Mon Oct 12 21:39:56 2026     /tmp/mech-nbody-plot-runtime/bin/python3 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/full_study.py --detach --benchmark nbody --manifest-sha256 df293f49d15b34b778a30285ddaa2ffcb8240af0944199de563262629282ada9"
+      },
+      "returncode": 0,
+      "cleanup_confirmed": true,
+      "finished_at": "2026-10-13T01:40:07.446223+00:00"
+    },
+    {
+      "stage": "fannkuchredux-seal",
+      "log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/completion/builder-v3-run1/fannkuchredux-seal.log",
+      "command": [
+        "/tmp/mech-nbody-plot-runtime/bin/python3",
+        "-B",
+        "-u",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/seal_builder_v3_study.py",
+        "--benchmark",
+        "fannkuchredux",
+        "--source-revision",
+        "production-builder-v3"
+      ],
+      "started_at": "2026-10-13T01:40:07.459470+00:00",
+      "pid": 16369,
+      "identity": {
+        "pid": 16369,
+        "process_listing": "Mon Oct 12 21:40:07 2026     /tmp/mech-nbody-plot-runtime/bin/python3 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/seal_builder_v3_study.py --benchmark fannkuchredux --source-revision production-builder-v3"
+      },
+      "returncode": 0,
+      "cleanup_confirmed": true,
+      "finished_at": "2026-10-13T01:40:18.452254+00:00"
+    },
+    {
+      "stage": "fannkuchredux-launch",
+      "log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/completion/builder-v3-run1/fannkuchredux-launch.log",
+      "command": [
+        "/tmp/mech-nbody-plot-runtime/bin/python3",
+        "-B",
+        "-u",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/full_study.py",
+        "--detach",
+        "--benchmark",
+        "fannkuchredux",
+        "--manifest-sha256",
+        "f48716e9903d56f1aec2f469f88f5465817b833cdca33a82010f6d30adaae600"
+      ],
+      "started_at": "2026-10-13T01:40:21.790735+00:00",
+      "pid": 16456,
+      "identity": {
+        "pid": 16456,
+        "process_listing": "Mon Oct 12 21:40:21 2026     /tmp/mech-nbody-plot-runtime/bin/python3 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/full_study.py --detach --benchmark fannkuchredux --manifest-sha256 f48716e9903d56f1aec2f469f88f5465817b833cdca33a82010f6d30adaae600"
+      },
+      "returncode": 0,
+      "cleanup_confirmed": true,
+      "finished_at": "2026-10-13T01:40:52.375473+00:00"
+    }
+  ],
+  "finished_at": "2026-10-13T01:40:52.376871+00:00"
+}

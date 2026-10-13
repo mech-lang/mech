@@ -1,1 +1,31 @@
 Waiting for common mutex; every runtime/reference probe requires acquisition.
+Locked bounded active-pixel validation.
+1 OUTPUT PASS
+2 OUTPUT PASS
+3 OUTPUT PASS
+7 OUTPUT PASS
+8 OUTPUT PASS
+9 OUTPUT PASS
+15 OUTPUT PASS
+16 OUTPUT PASS
+17 OUTPUT PASS
+31 OUTPUT PASS
+32 OUTPUT PASS
+33 OUTPUT PASS
+63 OUTPUT PASS
+64 OUTPUT PASS
+65 OUTPUT PASS
+127 OUTPUT PASS
+128 OUTPUT PASS
+129 OUTPUT PASS
+200 OUTPUT PASS
+257 OUTPUT PASS
+1 ALL PIXEL/ESCAPE STATE PASS
+9 ALL PIXEL/ESCAPE STATE PASS
+17 ALL PIXEL/ESCAPE STATE PASS
+33 ALL PIXEL/ESCAPE STATE PASS
+65 ALL PIXEL/ESCAPE STATE PASS
+129 ALL PIXEL/ESCAPE STATE PASS
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/manifest.json prepared 05fe746e63e1267c4cb7193ff39f906c027636abeaf1d223e5c343edf324363b
+mandelbrot:mandelbrot-uiua-active-pixels-optimized-v3 14 LOC 5a3397ac99a36bdff8bf834b5f1c81ed2d53ab969e4f80994ab4870172c9ca65
+PASS 20 outputs 4 baseline controls 6 all-state traces 8 select 7 scatter 14 packing

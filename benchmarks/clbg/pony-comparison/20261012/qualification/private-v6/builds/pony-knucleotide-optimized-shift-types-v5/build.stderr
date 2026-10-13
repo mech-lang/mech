@@ -1,0 +1,62 @@
+Building builtin -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/builtin
+Building /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v6/source-snapshot/revisions/shift-types-v5/sources/knucleotide/optimized -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v6/source-snapshot/revisions/shift-types-v5/sources/knucleotide/optimized
+Building collections -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/collections
+Building pony_test -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/pony_test
+Building random -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/random
+Building time -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/time
+Building collections/persistent -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/collections/persistent
+Building itertools -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/itertools
+Building files -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/files
+Building buffered -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/buffered
+Building term -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/term
+Building promises -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/promises
+Building strings -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/strings
+Building constrained_types -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/constrained_types
+Building signals -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/signals
+Building capsicum -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/capsicum
+Building format -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/format
+Generating
+ Reachability
+ Selector painting
+ Data prototypes
+ Data types
+ Function prototypes
+ Functions
+ Descriptors
+Verifying optimized
+Verifying optimized.builtin
+Verifying optimized.collections
+Verifying optimized.pony_test
+Verifying optimized.random
+Verifying optimized.time
+Verifying optimized.persistent
+Verifying optimized.itertools
+Verifying optimized.files
+Verifying optimized.buffered
+Verifying optimized.term
+Verifying optimized.promises
+Verifying optimized.strings
+Verifying optimized.constrained_types
+Verifying optimized.signals
+Verifying optimized.capsicum
+Verifying optimized.format
+Merging runtime
+Emitting 17 per-package modules
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/bin/pony-knucleotide-optimized-shift-types-v5/pony-knucleotide-optimized-shift-types-v5.main.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/bin/pony-knucleotide-optimized-shift-types-v5/pony-knucleotide-optimized-shift-types-v5.builtin.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/bin/pony-knucleotide-optimized-shift-types-v5/pony-knucleotide-optimized-shift-types-v5.collections.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/bin/pony-knucleotide-optimized-shift-types-v5/pony-knucleotide-optimized-shift-types-v5.pony_test.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/bin/pony-knucleotide-optimized-shift-types-v5/pony-knucleotide-optimized-shift-types-v5.random.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/bin/pony-knucleotide-optimized-shift-types-v5/pony-knucleotide-optimized-shift-types-v5.time.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/bin/pony-knucleotide-optimized-shift-types-v5/pony-knucleotide-optimized-shift-types-v5.persistent.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/bin/pony-knucleotide-optimized-shift-types-v5/pony-knucleotide-optimized-shift-types-v5.itertools.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/bin/pony-knucleotide-optimized-shift-types-v5/pony-knucleotide-optimized-shift-types-v5.files.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/bin/pony-knucleotide-optimized-shift-types-v5/pony-knucleotide-optimized-shift-types-v5.buffered.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/bin/pony-knucleotide-optimized-shift-types-v5/pony-knucleotide-optimized-shift-types-v5.term.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/bin/pony-knucleotide-optimized-shift-types-v5/pony-knucleotide-optimized-shift-types-v5.promises.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/bin/pony-knucleotide-optimized-shift-types-v5/pony-knucleotide-optimized-shift-types-v5.strings.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/bin/pony-knucleotide-optimized-shift-types-v5/pony-knucleotide-optimized-shift-types-v5.constrained_types.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/bin/pony-knucleotide-optimized-shift-types-v5/pony-knucleotide-optimized-shift-types-v5.signals.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/bin/pony-knucleotide-optimized-shift-types-v5/pony-knucleotide-optimized-shift-types-v5.capsicum.bc
+Writing /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/bin/pony-knucleotide-optimized-shift-types-v5/pony-knucleotide-optimized-shift-types-v5.format.bc
+Linking /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/bin/pony-knucleotide-optimized-shift-types-v5/pony-knucleotide-optimized-shift-types-v5

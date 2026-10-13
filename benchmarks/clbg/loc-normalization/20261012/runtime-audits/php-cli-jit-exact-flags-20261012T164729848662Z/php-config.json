@@ -1,0 +1,31 @@
+{
+  "command": [
+    "/opt/homebrew/Cellar/php/8.5.11/bin/php",
+    "-n",
+    "-d",
+    "memory_limit=-1",
+    "-d",
+    "opcache.enable_cli=1",
+    "-d",
+    "opcache.jit_buffer_size=64M",
+    "-d",
+    "opcache.jit=tracing",
+    "-d",
+    "short_open_tag=1",
+    "-r",
+    "\n$status = function_exists('opcache_get_status') ? opcache_get_status(false) : null;\n$directives = [];\nforeach (['opcache.enable_cli','opcache.jit_buffer_size','opcache.jit','extension_dir','short_open_tag','memory_limit'] as $key) {\n    $directives[$key] = ini_get($key);\n}\necho json_encode([\n    'version' => PHP_VERSION,\n    'loaded_zend_extensions' => get_loaded_extensions(true),\n    'opcache_module_loaded' => extension_loaded('Zend OPcache'),\n    'opcache_status' => $status,\n    'ini_directives' => $directives,\n    'loaded_ini_file' => php_ini_loaded_file(),\n    'scanned_ini_files' => php_ini_scanned_files(),\n], JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR), \"\\n\";\n"
+  ],
+  "started_at": "2026-10-12T16:47:29.860917+00:00",
+  "inherited_common_mutex": true,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "timeout_seconds": 30,
+  "pid": 82740,
+  "identity": {
+    "pid": 82740,
+    "process_listing": "Mon Oct 12 12:47:29 2026     /opt/homebrew/Cellar/php/8.5.11/bin/php -n -d memory_limit=-1 -d opcache.enable_cli=1 -d opcache.jit_buffer_size=64M -d opcache.jit=tracing -d short_open_tag=1 -r \\012$status = function_exists('opcache_get_status') ? opcache_get_status(false) : null;\\012$directives = [];\\012foreach (['opcache.enable_cli','opcache.jit_buffer_size','opcache.jit','extension_dir','short_open_tag','memory_limit'] as $key) {\\012    $directives[$key] = ini_get($key);\\012}\\012echo json_encode([\\012    'version' => PHP_VERSION,\\012    'loaded_zend_extensions' => get_loaded_extensions(true),\\012    'opcache_module_loaded' => extension_loaded('Zend OPcache'),\\012    'opcache_status' => $status,\\012    'ini_directives' => $directives,\\012    'loaded_ini_file' => php_ini_loaded_file(),\\012    'scanned_ini_files' => php_ini_scanned_files(),\\012], JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR), \"\\n\";\\012"
+  },
+  "exit_status": 0,
+  "final_exit_status": 0,
+  "finished_at": "2026-10-12T16:47:30.619142+00:00"
+}

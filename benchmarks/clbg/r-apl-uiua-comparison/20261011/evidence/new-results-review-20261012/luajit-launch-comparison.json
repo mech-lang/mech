@@ -1,0 +1,194 @@
+{
+  "status": "sealed-independent-review-passed-awaiting-root-full-launch-approval",
+  "at": "2026-10-12T13:44:43.421269+00:00",
+  "lua_manifest_sha256": "aaf6af5fad6bb4d2f9008e8f91be7037025e117f2cb9532dfb14ae928f6f55dd",
+  "luajit_manifest_sha256": "8d07430a48e9613460f1d927a92c4ae88ba65e1e48a5e846bdd4c83ddebeeb5a",
+  "luajit_pins_verified": 49,
+  "shared_pin_count": 28,
+  "shared_pin_digests_identical": true,
+  "identical_configuration": [
+    "samples",
+    "sample_count",
+    "size",
+    "shared_timing_lock",
+    "required_power_profile",
+    "maximum_rss_mib",
+    "timeout_seconds",
+    "environment_retry_limit",
+    "maximum_compute_workers",
+    "full_output_reference",
+    "ownership",
+    "retry_policy",
+    "chart_policy",
+    "preparation_full_output_checks",
+    "full_performance_runs"
+  ],
+  "source_differences": [
+    {
+      "profile": "luajit-listed-1",
+      "identical_source_sha256": "e2e0139198ef7b00dd616fdd82d756e079a96db64702c72c4f9bed0a2d9d1e82",
+      "loc": 62,
+      "old_runtime": {
+        "path": "/opt/homebrew/bin/lua",
+        "sha256": "83ea84efb4f7692a4452cfedf9325cc1f342edc6cf0d50b262add4eab1b75bea",
+        "version": "Lua 5.5.1  Copyright (C) 1994-2026 Lua.org, PUC-Rio"
+      },
+      "new_runtime": {
+        "path": "/tmp/mech-clbg-luajit/src/luajit",
+        "sha256": "ffe74a185b665faae02da56c194493c82d921afae03f3421b3d0a270886dd4c3",
+        "version": "LuaJIT 2.1.1788856981 -- Copyright (C) 2005-2026 Mike Pall. https://luajit.org/"
+      },
+      "old_environment": {
+        "LUA_CPATH": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/build/?.so;;"
+      },
+      "new_environment": {
+        "LUA_CPATH": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/?.so;;"
+      }
+    },
+    {
+      "profile": "luajit-listed-5",
+      "identical_source_sha256": "00734d693c0968a606b8aef2cfeffa15da58e7f4ac81731c19fb7f1dde7a0c36",
+      "loc": 77,
+      "old_runtime": {
+        "path": "/opt/homebrew/bin/lua",
+        "sha256": "83ea84efb4f7692a4452cfedf9325cc1f342edc6cf0d50b262add4eab1b75bea",
+        "version": "Lua 5.5.1  Copyright (C) 1994-2026 Lua.org, PUC-Rio"
+      },
+      "new_runtime": {
+        "path": "/tmp/mech-clbg-luajit/src/luajit",
+        "sha256": "ffe74a185b665faae02da56c194493c82d921afae03f3421b3d0a270886dd4c3",
+        "version": "LuaJIT 2.1.1788856981 -- Copyright (C) 2005-2026 Mike Pall. https://luajit.org/"
+      },
+      "old_environment": {
+        "LUA_CPATH": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/build/?.so;;"
+      },
+      "new_environment": {
+        "LUA_CPATH": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/?.so;;"
+      }
+    },
+    {
+      "profile": "luajit-listed-6",
+      "identical_source_sha256": "ce34fae5e45f842c8b414b18fa368e90809165fda0781b8a00da2bc29d50d930",
+      "loc": 63,
+      "old_runtime": {
+        "path": "/opt/homebrew/bin/lua",
+        "sha256": "83ea84efb4f7692a4452cfedf9325cc1f342edc6cf0d50b262add4eab1b75bea",
+        "version": "Lua 5.5.1  Copyright (C) 1994-2026 Lua.org, PUC-Rio"
+      },
+      "new_runtime": {
+        "path": "/tmp/mech-clbg-luajit/src/luajit",
+        "sha256": "ffe74a185b665faae02da56c194493c82d921afae03f3421b3d0a270886dd4c3",
+        "version": "LuaJIT 2.1.1788856981 -- Copyright (C) 2005-2026 Mike Pall. https://luajit.org/"
+      },
+      "old_environment": {
+        "LUA_CPATH": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/build/?.so;;"
+      },
+      "new_environment": {
+        "LUA_CPATH": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/?.so;;"
+      }
+    },
+    {
+      "profile": "luajit-listed-7",
+      "identical_source_sha256": "cca5f009f82162b0bdd50d839add97ef21859b5d8ddd047b3db9f286973c9c2c",
+      "loc": 57,
+      "old_runtime": {
+        "path": "/opt/homebrew/bin/lua",
+        "sha256": "83ea84efb4f7692a4452cfedf9325cc1f342edc6cf0d50b262add4eab1b75bea",
+        "version": "Lua 5.5.1  Copyright (C) 1994-2026 Lua.org, PUC-Rio"
+      },
+      "new_runtime": {
+        "path": "/tmp/mech-clbg-luajit/src/luajit",
+        "sha256": "ffe74a185b665faae02da56c194493c82d921afae03f3421b3d0a270886dd4c3",
+        "version": "LuaJIT 2.1.1788856981 -- Copyright (C) 2005-2026 Mike Pall. https://luajit.org/"
+      },
+      "old_environment": {
+        "LUA_CPATH": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/build/?.so;;"
+      },
+      "new_environment": {
+        "LUA_CPATH": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/?.so;;"
+      }
+    }
+  ],
+  "lua_library": {
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/support/gmp.c",
+    "source_sha256": "ae50244bd96f7961201a40780c2dfeab4bb193fc0e2da2184c37753469ef4e6c",
+    "build_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-bundle",
+      "-undefined",
+      "dynamic_lookup",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-I/opt/homebrew/opt/lua/include/lua",
+      "-I/opt/homebrew/opt/gmp/include",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/support/gmp.c",
+      "-L/opt/homebrew/opt/gmp/lib",
+      "-lgmp",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/build/general-gmp.so"
+    ],
+    "compiler_version": "Homebrew clang version 22.1.8",
+    "modules": {
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/build/general-gmp.so": "363d291c3b3b0b1298874a56eb40e76c8597cd4e11dbea4df2208fc398e0dab0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/build/c-gmp.so": "363d291c3b3b0b1298874a56eb40e76c8597cd4e11dbea4df2208fc398e0dab0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/build/bn.so": "363d291c3b3b0b1298874a56eb40e76c8597cd4e11dbea4df2208fc398e0dab0",
+      "/opt/homebrew/opt/gmp/lib/libgmp.10.dylib": "571ffb9eb5b5110cda32f62197c1f039e5627d66524ba47bb0774eca184532b9"
+    },
+    "scope": "Ordinary standard arbitrary-precision arithmetic only; all spigot/extraction/control/output work remains Lua application source.",
+    "counted_in_application_loc": false
+  },
+  "luajit_library": {
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/support/gmp-lua51.c",
+    "source_sha256": "0c878da03ae99651eeac31defa0419f5925e159e3d74251cfe2230a98a5518c1",
+    "shared_implementation": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/support/gmp.c",
+    "shared_implementation_sha256": "ae50244bd96f7961201a40780c2dfeab4bb193fc0e2da2184c37753469ef4e6c",
+    "abi_compatibility_header": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/support/lua51_compat.h",
+    "abi_compatibility_sha256": "14cf219f8ea0d45d987cf303248e349b96596ef083fd483927ef87cfb5c5ba53",
+    "numeric_policy": "Lua 5.1 doubles; finite integral in-range scalar arguments; arbitrary constructors retain GMP set_d semantics; numeric results preserve ordinary GMP truncation and overflow to infinities.",
+    "build_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-bundle",
+      "-undefined",
+      "dynamic_lookup",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-I/tmp/mech-clbg-luajit/src",
+      "-I/opt/homebrew/opt/gmp/include",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/support/gmp-lua51.c",
+      "-L/opt/homebrew/opt/gmp/lib",
+      "-lgmp",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/general-gmp.so"
+    ],
+    "compiler_version": "Homebrew clang version 22.1.8",
+    "modules": {
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/general-gmp.so": "42cfa9814e4811ea17cafba1f1a4ad1b928baa1b787fe6cb411b13631b0aa3c7",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/c-gmp.so": "42cfa9814e4811ea17cafba1f1a4ad1b928baa1b787fe6cb411b13631b0aa3c7",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/build/bn.so": "42cfa9814e4811ea17cafba1f1a4ad1b928baa1b787fe6cb411b13631b0aa3c7",
+      "/opt/homebrew/opt/gmp/lib/libgmp.10.dylib": "571ffb9eb5b5110cda32f62197c1f039e5627d66524ba47bb0774eca184532b9"
+    },
+    "scope": "Ordinary standard arbitrary-precision arithmetic only; all spigot/extraction/control/output work remains Lua application source.",
+    "counted_in_application_loc": false
+  },
+  "lua_runner_sha256": "794627690a92d45f4fee6649d96d21917d55b5e74c562bd34c229d2736227a23",
+  "luajit_runner_sha256": "fbcec3b092a36386c17e9d3d08ee74ba922a475aaee4984fe50fe32e6cb3fb11",
+  "wrapper_scope": "Only wrapper module name/HERE/report paths differ; helper.run/sampler/one_attempt remain the shared frozen implementation.",
+  "qualification": {
+    "each_application_checks": 248,
+    "each_control_checks": 18,
+    "each_full_output_checks": 10,
+    "generic_primitive_tests": true,
+    "actual_two_extract_traces": true
+  },
+  "old_modules_reports_and_sources_preserved": true,
+  "full_launch_performed": false,
+  "chart_admission": false
+}

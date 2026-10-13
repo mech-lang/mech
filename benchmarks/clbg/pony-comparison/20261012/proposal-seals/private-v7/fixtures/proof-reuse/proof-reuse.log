@@ -1,0 +1,11 @@
+test_all_seven_exact_profiles_and_44_cases (test_proof_reuse_v7.ExactProofReuse.test_all_seven_exact_profiles_and_44_cases) ... ok
+test_duplicate_or_missing_case_rejected (test_proof_reuse_v7.ExactProofReuse.test_duplicate_or_missing_case_rejected) ... ok
+test_environment_or_memory_failure_not_reused (test_proof_reuse_v7.ExactProofReuse.test_environment_or_memory_failure_not_reused) ... ok
+test_failed_source_attempt_not_reused (test_proof_reuse_v7.ExactProofReuse.test_failed_source_attempt_not_reused) ... ok
+test_false_missing_nonliteral_qualification_rejected (test_proof_reuse_v7.ExactProofReuse.test_false_missing_nonliteral_qualification_rejected) ... ok
+test_native_command_mismatch_rejected (test_proof_reuse_v7.ExactProofReuse.test_native_command_mismatch_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.008s
+
+OK

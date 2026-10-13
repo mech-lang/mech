@@ -1,0 +1,255 @@
+Compiled from "PersistentHashMap.java"
+final class clojure.lang.PersistentHashMap$TransientHashMap extends clojure.lang.ATransientMap {
+  final java.util.concurrent.atomic.AtomicReference<java.lang.Thread> edit;
+
+  volatile clojure.lang.PersistentHashMap$INode root;
+
+  volatile int count;
+
+  volatile boolean hasNull;
+
+  volatile java.lang.Object nullValue;
+
+  final clojure.lang.Box leafFlag;
+
+  clojure.lang.PersistentHashMap$TransientHashMap(clojure.lang.PersistentHashMap);
+    Code:
+         0: aload_0
+         1: new           #1                  // class java/util/concurrent/atomic/AtomicReference
+         4: dup
+         5: invokestatic  #2                  // Method java/lang/Thread.currentThread:()Ljava/lang/Thread;
+         8: invokespecial #3                  // Method java/util/concurrent/atomic/AtomicReference."<init>":(Ljava/lang/Object;)V
+        11: aload_1
+        12: getfield      #4                  // Field clojure/lang/PersistentHashMap.root:Lclojure/lang/PersistentHashMap$INode;
+        15: aload_1
+        16: getfield      #5                  // Field clojure/lang/PersistentHashMap.count:I
+        19: aload_1
+        20: getfield      #6                  // Field clojure/lang/PersistentHashMap.hasNull:Z
+        23: aload_1
+        24: getfield      #7                  // Field clojure/lang/PersistentHashMap.nullValue:Ljava/lang/Object;
+        27: invokespecial #8                  // Method "<init>":(Ljava/util/concurrent/atomic/AtomicReference;Lclojure/lang/PersistentHashMap$INode;IZLjava/lang/Object;)V
+        30: return
+
+  clojure.lang.PersistentHashMap$TransientHashMap(java.util.concurrent.atomic.AtomicReference<java.lang.Thread>, clojure.lang.PersistentHashMap$INode, int, boolean, java.lang.Object);
+    Code:
+         0: aload_0
+         1: invokespecial #9                  // Method clojure/lang/ATransientMap."<init>":()V
+         4: aload_0
+         5: new           #10                 // class clojure/lang/Box
+         8: dup
+         9: aconst_null
+        10: invokespecial #11                 // Method clojure/lang/Box."<init>":(Ljava/lang/Object;)V
+        13: putfield      #12                 // Field leafFlag:Lclojure/lang/Box;
+        16: aload_0
+        17: aload_1
+        18: putfield      #13                 // Field edit:Ljava/util/concurrent/atomic/AtomicReference;
+        21: aload_0
+        22: aload_2
+        23: putfield      #14                 // Field root:Lclojure/lang/PersistentHashMap$INode;
+        26: aload_0
+        27: iload_3
+        28: putfield      #15                 // Field count:I
+        31: aload_0
+        32: iload         4
+        34: putfield      #16                 // Field hasNull:Z
+        37: aload_0
+        38: aload         5
+        40: putfield      #17                 // Field nullValue:Ljava/lang/Object;
+        43: return
+
+  clojure.lang.ITransientMap doAssoc(java.lang.Object, java.lang.Object);
+    Code:
+         0: aload_1
+         1: ifnonnull     41
+         4: aload_0
+         5: getfield      #17                 // Field nullValue:Ljava/lang/Object;
+         8: aload_2
+         9: if_acmpeq     17
+        12: aload_0
+        13: aload_2
+        14: putfield      #17                 // Field nullValue:Ljava/lang/Object;
+        17: aload_0
+        18: getfield      #16                 // Field hasNull:Z
+        21: ifne          39
+        24: aload_0
+        25: dup
+        26: getfield      #15                 // Field count:I
+        29: iconst_1
+        30: iadd
+        31: putfield      #15                 // Field count:I
+        34: aload_0
+        35: iconst_1
+        36: putfield      #16                 // Field hasNull:Z
+        39: aload_0
+        40: areturn
+        41: aload_0
+        42: getfield      #12                 // Field leafFlag:Lclojure/lang/Box;
+        45: aconst_null
+        46: putfield      #18                 // Field clojure/lang/Box.val:Ljava/lang/Object;
+        49: aload_0
+        50: getfield      #14                 // Field root:Lclojure/lang/PersistentHashMap$INode;
+        53: ifnonnull     62
+        56: getstatic     #19                 // Field clojure/lang/PersistentHashMap$BitmapIndexedNode.EMPTY:Lclojure/lang/PersistentHashMap$BitmapIndexedNode;
+        59: goto          66
+        62: aload_0
+        63: getfield      #14                 // Field root:Lclojure/lang/PersistentHashMap$INode;
+        66: aload_0
+        67: getfield      #13                 // Field edit:Ljava/util/concurrent/atomic/AtomicReference;
+        70: iconst_0
+        71: aload_1
+        72: invokestatic  #20                 // Method clojure/lang/PersistentHashMap.hash:(Ljava/lang/Object;)I
+        75: aload_1
+        76: aload_2
+        77: aload_0
+        78: getfield      #12                 // Field leafFlag:Lclojure/lang/Box;
+        81: invokeinterface #21,  7           // InterfaceMethod clojure/lang/PersistentHashMap$INode.assoc:(Ljava/util/concurrent/atomic/AtomicReference;IILjava/lang/Object;Ljava/lang/Object;Lclojure/lang/Box;)Lclojure/lang/PersistentHashMap$INode;
+        86: astore_3
+        87: aload_3
+        88: aload_0
+        89: getfield      #14                 // Field root:Lclojure/lang/PersistentHashMap$INode;
+        92: if_acmpeq     100
+        95: aload_0
+        96: aload_3
+        97: putfield      #14                 // Field root:Lclojure/lang/PersistentHashMap$INode;
+       100: aload_0
+       101: getfield      #12                 // Field leafFlag:Lclojure/lang/Box;
+       104: getfield      #18                 // Field clojure/lang/Box.val:Ljava/lang/Object;
+       107: ifnull        120
+       110: aload_0
+       111: dup
+       112: getfield      #15                 // Field count:I
+       115: iconst_1
+       116: iadd
+       117: putfield      #15                 // Field count:I
+       120: aload_0
+       121: areturn
+
+  clojure.lang.ITransientMap doWithout(java.lang.Object);
+    Code:
+         0: aload_1
+         1: ifnonnull     35
+         4: aload_0
+         5: getfield      #16                 // Field hasNull:Z
+         8: ifne          13
+        11: aload_0
+        12: areturn
+        13: aload_0
+        14: iconst_0
+        15: putfield      #16                 // Field hasNull:Z
+        18: aload_0
+        19: aconst_null
+        20: putfield      #17                 // Field nullValue:Ljava/lang/Object;
+        23: aload_0
+        24: dup
+        25: getfield      #15                 // Field count:I
+        28: iconst_1
+        29: isub
+        30: putfield      #15                 // Field count:I
+        33: aload_0
+        34: areturn
+        35: aload_0
+        36: getfield      #14                 // Field root:Lclojure/lang/PersistentHashMap$INode;
+        39: ifnonnull     44
+        42: aload_0
+        43: areturn
+        44: aload_0
+        45: getfield      #12                 // Field leafFlag:Lclojure/lang/Box;
+        48: aconst_null
+        49: putfield      #18                 // Field clojure/lang/Box.val:Ljava/lang/Object;
+        52: aload_0
+        53: getfield      #14                 // Field root:Lclojure/lang/PersistentHashMap$INode;
+        56: aload_0
+        57: getfield      #13                 // Field edit:Ljava/util/concurrent/atomic/AtomicReference;
+        60: iconst_0
+        61: aload_1
+        62: invokestatic  #20                 // Method clojure/lang/PersistentHashMap.hash:(Ljava/lang/Object;)I
+        65: aload_1
+        66: aload_0
+        67: getfield      #12                 // Field leafFlag:Lclojure/lang/Box;
+        70: invokeinterface #22,  6           // InterfaceMethod clojure/lang/PersistentHashMap$INode.without:(Ljava/util/concurrent/atomic/AtomicReference;IILjava/lang/Object;Lclojure/lang/Box;)Lclojure/lang/PersistentHashMap$INode;
+        75: astore_2
+        76: aload_2
+        77: aload_0
+        78: getfield      #14                 // Field root:Lclojure/lang/PersistentHashMap$INode;
+        81: if_acmpeq     89
+        84: aload_0
+        85: aload_2
+        86: putfield      #14                 // Field root:Lclojure/lang/PersistentHashMap$INode;
+        89: aload_0
+        90: getfield      #12                 // Field leafFlag:Lclojure/lang/Box;
+        93: getfield      #18                 // Field clojure/lang/Box.val:Ljava/lang/Object;
+        96: ifnull        109
+        99: aload_0
+       100: dup
+       101: getfield      #15                 // Field count:I
+       104: iconst_1
+       105: isub
+       106: putfield      #15                 // Field count:I
+       109: aload_0
+       110: areturn
+
+  clojure.lang.IPersistentMap doPersistent();
+    Code:
+         0: aload_0
+         1: getfield      #13                 // Field edit:Ljava/util/concurrent/atomic/AtomicReference;
+         4: aconst_null
+         5: invokevirtual #23                 // Method java/util/concurrent/atomic/AtomicReference.set:(Ljava/lang/Object;)V
+         8: new           #24                 // class clojure/lang/PersistentHashMap
+        11: dup
+        12: aload_0
+        13: getfield      #15                 // Field count:I
+        16: aload_0
+        17: getfield      #14                 // Field root:Lclojure/lang/PersistentHashMap$INode;
+        20: aload_0
+        21: getfield      #16                 // Field hasNull:Z
+        24: aload_0
+        25: getfield      #17                 // Field nullValue:Ljava/lang/Object;
+        28: invokespecial #25                 // Method clojure/lang/PersistentHashMap."<init>":(ILclojure/lang/PersistentHashMap$INode;ZLjava/lang/Object;)V
+        31: areturn
+
+  java.lang.Object doValAt(java.lang.Object, java.lang.Object);
+    Code:
+         0: aload_1
+         1: ifnonnull     18
+         4: aload_0
+         5: getfield      #16                 // Field hasNull:Z
+         8: ifeq          16
+        11: aload_0
+        12: getfield      #17                 // Field nullValue:Ljava/lang/Object;
+        15: areturn
+        16: aload_2
+        17: areturn
+        18: aload_0
+        19: getfield      #14                 // Field root:Lclojure/lang/PersistentHashMap$INode;
+        22: ifnonnull     27
+        25: aload_2
+        26: areturn
+        27: aload_0
+        28: getfield      #14                 // Field root:Lclojure/lang/PersistentHashMap$INode;
+        31: iconst_0
+        32: aload_1
+        33: invokestatic  #20                 // Method clojure/lang/PersistentHashMap.hash:(Ljava/lang/Object;)I
+        36: aload_1
+        37: aload_2
+        38: invokeinterface #26,  5           // InterfaceMethod clojure/lang/PersistentHashMap$INode.find:(IILjava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+        43: areturn
+
+  int doCount();
+    Code:
+         0: aload_0
+         1: getfield      #15                 // Field count:I
+         4: ireturn
+
+  void ensureEditable();
+    Code:
+         0: aload_0
+         1: getfield      #13                 // Field edit:Ljava/util/concurrent/atomic/AtomicReference;
+         4: invokevirtual #27                 // Method java/util/concurrent/atomic/AtomicReference.get:()Ljava/lang/Object;
+         7: ifnonnull     20
+        10: new           #28                 // class java/lang/IllegalAccessError
+        13: dup
+        14: ldc           #29                 // String Transient used after persistent! call
+        16: invokespecial #30                 // Method java/lang/IllegalAccessError."<init>":(Ljava/lang/String;)V
+        19: athrow
+        20: return
+}

@@ -1,0 +1,19 @@
+{
+  "observed_at": "2026-10-12T13:44:44.514595+00:00",
+  "last_stage_log_line": "WAIT LOCK 2 fannkuchredux-r-array-batched",
+  "stage_descendants": [],
+  "report_sha256": {
+    "r": "44a20749c5ee485392af2c220ef074d3846323e04c613243a73d3c6f9da49b0a",
+    "uiua": "da5ccf102e90dc2755388414390f6401402b2f67edb177ba74a377f2c5cae709",
+    "apl": "9ef8f3776ce6c7ddf65a29cec7378e782188862a271aea2826df486cac0f98f7"
+  },
+  "plan_sha256": "b29989867eb1e899f31025ef7259e9593a0e9e31a07da7d9c8a101fc765a994d",
+  "owner": {
+    "pid": 54174,
+    "listing": "Sun Oct 11 20:33:45 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/supervise_v4.py --run-stage long-r-uiua"
+  },
+  "supervisor": {
+    "pid": 31810,
+    "listing": "Sun Oct 11 18:25:31 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/supervise_v4.py --orphan-pid 25078"
+  }
+}

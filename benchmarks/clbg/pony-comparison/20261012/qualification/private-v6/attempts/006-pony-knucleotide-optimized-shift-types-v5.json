@@ -1,0 +1,55 @@
+{
+  "key": "knucleotide:pony-knucleotide-optimized-shift-types-v5",
+  "id": "pony-knucleotide-optimized-shift-types-v5",
+  "benchmark": "knucleotide",
+  "language": "pony",
+  "source_sha256": "b2aef299eed92772a2d49c25bc64a3194010acf04d56fffc9b327bf53732d8d0",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/bin/pony-knucleotide-optimized-shift-types-v5/pony-knucleotide-optimized-shift-types-v5",
+    "1000",
+    "--ponymaxthreads",
+    "8"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012",
+  "runtime_environment": {
+    "LC_ALL": "C",
+    "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"9456b20931ab70096db101feb13d7b3b0aac773116ea3d04f792ff1b56bb93e3\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/bin/pony-knucleotide-optimized-shift-types-v5/pony-knucleotide-optimized-shift-types-v5\", \"{n}\", \"--ponymaxthreads\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"b2aef299eed92772a2d49c25bc64a3194010acf04d56fffc9b327bf53732d8d0\", \"support\": {}}",
+  "started_at": "2026-10-12T22:45:04.791606+00:00",
+  "workload_n": 1000,
+  "full_workload": false,
+  "timeout_seconds": 120,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.080024667,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 176,
+  "stdout_sha256": "04324f010a0d6307b059dc1ce2e4cba03d304f9fa9c24f505c672a1e0dc68d19",
+  "validation": {
+    "reference_match": true,
+    "bytes": 176,
+    "sha256": "04324f010a0d6307b059dc1ce2e4cba03d304f9fa9c24f505c672a1e0dc68d19"
+  },
+  "finished_at": "2026-10-12T22:45:05.081985+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true
+}

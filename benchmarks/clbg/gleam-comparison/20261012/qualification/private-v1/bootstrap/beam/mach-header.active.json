@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/usr/bin/otool",
+    "-hv",
+    "/opt/homebrew/Cellar/erlang/29.1.1_2/lib/erlang/erts-17.1/bin/beam.smp"
+  ],
+  "started_at": "2026-10-12T23:07:45.817098+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 76482,
+  "identity": {
+    "pid": 76482,
+    "process_listing": "Mon Oct 12 19:07:45 2026     /usr/bin/otool -hv /opt/homebrew/Cellar/erlang/29.1.1_2/lib/erlang/erts-17.1/bin/beam.smp"
+  }
+}

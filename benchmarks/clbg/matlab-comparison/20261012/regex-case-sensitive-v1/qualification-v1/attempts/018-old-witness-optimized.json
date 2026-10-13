@@ -1,0 +1,109 @@
+{
+  "key": "regexredux:old-witness-optimized",
+  "id": "old-witness-optimized",
+  "benchmark": "regexredux",
+  "language": "matlab",
+  "source_sha256": "0a6b33da5a01bd571fabe43ede4a5dcce6e8a9a5e6e0d36ad8e501e21985cd01",
+  "command": [
+    "/bin/sh",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/matlab-stdin.sh",
+    "/Applications/MATLAB_R2026b.app/bin/matlab",
+    "-licmode",
+    "onlinelicensing",
+    "-nodisplay",
+    "-sd",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources",
+    "-batch",
+    "regexredux_optimized()"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1",
+  "runtime_environment": {
+    "MATLAB_JAVA": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/bin/sh\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/matlab-stdin.sh\", \"/Applications/MATLAB_R2026b.app/bin/matlab\", \"-licmode\", \"onlinelicensing\", \"-nodisplay\", \"-sd\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources\", \"-batch\", \"regexredux_optimized()\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1\", \"environment\": {\"MATLAB_JAVA\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home\"}, \"source_sha256\": \"0a6b33da5a01bd571fabe43ede4a5dcce6e8a9a5e6e0d36ad8e501e21985cd01\", \"support\": {}}",
+  "started_at": "2026-10-12T23:37:37.507580+00:00",
+  "workload_n": 1000,
+  "full_workload": false,
+  "timeout_seconds": 14400,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 2.439233667,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 625968,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 254,
+  "stdout_sha256": "b9d20b068165d275135ee381ac29a126fbeff9556618983c2693a7a515c8ff84",
+  "validation": {
+    "reference_match": true,
+    "bytes": 254,
+    "sha256": "b9d20b068165d275135ee381ac29a126fbeff9556618983c2693a7a515c8ff84"
+  },
+  "finished_at": "2026-10-12T23:37:40.157228+00:00",
+  "valid_environment": true,
+  "bounded_mutex_fd_evidence": {
+    "descriptor": 64,
+    "native_MATLAB_engine_observed": true,
+    "observations": [
+      {
+        "at": 1791848257.658723,
+        "native_group": 86252,
+        "lsof": "p86252\ncbash\nf64\nn/private/tmp/mech-clbg-timing.lock\n"
+      },
+      {
+        "at": 1791848257.92831,
+        "native_group": 86252,
+        "lsof": "p86252\ncMATLAB\nf64\nn/private/tmp/mech-clbg-timing.lock\n"
+      },
+      {
+        "at": 1791848258.20154,
+        "native_group": 86252,
+        "lsof": "p86252\ncMATLAB\nf64\nn/private/tmp/mech-clbg-timing.lock\n"
+      },
+      {
+        "at": 1791848258.472333,
+        "native_group": 86252,
+        "lsof": "p86252\ncMATLAB\nf64\nn/private/tmp/mech-clbg-timing.lock\n"
+      },
+      {
+        "at": 1791848258.742492,
+        "native_group": 86252,
+        "lsof": "p86252\ncMATLAB\nf64\nn/private/tmp/mech-clbg-timing.lock\n"
+      },
+      {
+        "at": 1791848259.052182,
+        "native_group": 86252,
+        "lsof": "p86252\ncMATLAB\nf64\nn/private/tmp/mech-clbg-timing.lock\n"
+      },
+      {
+        "at": 1791848259.321665,
+        "native_group": 86252,
+        "lsof": "p86252\ncMATLAB\nf64\nn/private/tmp/mech-clbg-timing.lock\n"
+      },
+      {
+        "at": 1791848259.598752,
+        "native_group": 86252,
+        "lsof": "p86252\ncMATLAB\nf64\nn/private/tmp/mech-clbg-timing.lock\n"
+      },
+      {
+        "at": 1791848259.874061,
+        "native_group": 86252,
+        "lsof": "p86252\ncMATLAB\nf64\nn/private/tmp/mech-clbg-timing.lock\n"
+      }
+    ],
+    "errors": []
+  },
+  "pins_unchanged_at_end": true
+}

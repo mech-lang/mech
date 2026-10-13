@@ -1,0 +1,22 @@
+{
+  "pid": 14574,
+  "identity": {
+    "pid": 14574,
+    "process_listing": "Mon Oct 12 21:35:52 2026     /tmp/mech-nbody-plot-runtime/bin/python3 -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/full_study.py --run --benchmark fasta --manifest-sha256 ec9114704438cd7f886dc480a2dedfcf8ff548bc4008b5f92f2a0ee56fa8e086"
+  },
+  "benchmark": "fasta",
+  "command": [
+    "/tmp/mech-nbody-plot-runtime/bin/python3",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/full_study.py",
+    "--run",
+    "--benchmark",
+    "fasta",
+    "--manifest-sha256",
+    "ec9114704438cd7f886dc480a2dedfcf8ff548bc4008b5f92f2a0ee56fa8e086"
+  ],
+  "manifest_sha256": "ec9114704438cd7f886dc480a2dedfcf8ff548bc4008b5f92f2a0ee56fa8e086",
+  "launched_at": "2026-10-13T01:35:52.029887+00:00",
+  "report_only": true,
+  "never_chart_eligible": true
+}

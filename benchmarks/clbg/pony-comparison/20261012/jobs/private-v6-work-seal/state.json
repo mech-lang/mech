@@ -1,0 +1,12 @@
+{
+  "status": "stopped-terminal-prerequisite-failure",
+  "updated_at": "2026-10-12T22:52:38.063046+00:00",
+  "watcher_pid": 47063,
+  "native_processes_launched": 0,
+  "automatic_retry": false,
+  "native_work_review_required": true,
+  "full_timing_review_required": true,
+  "prerequisite": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v6/report.json",
+  "prerequisite_status": "stopped-unqualified",
+  "prerequisite_error": "('Owned command failed', 'standard-primitives', 255)"
+}

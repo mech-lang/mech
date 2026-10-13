@@ -1,0 +1,24 @@
+{
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-qualification-v2/measured-backends.json": "d8920942ab078dc79228d6d77af64391a818354ddc6b5af9cf383ade46dbe8d8",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-qualification-v2/qualification-receipt-pin.json": "8280e0ce64909a61c233c38563a89f496486a884c2ff80dbe7ce5d378e221e45",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-qualification-v2/fixture-receipt.json": "4604f8ad905c5856c0cdb906cf8a5b676a45097b950d0268070be775295b6ae1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-qualification-v2/qualification-receipt.json": "c49db52205aba82db5e19be6607a03d3934776254bee31506a146800889ff427",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-qualification-v2/fixtures.log": "23880f0d2518b31d29c3dfc77ec69e616373b5ca426567d10a4613f2ab12a3b6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-qualification-v2/snapshot/4-data.json": "65bfa4d833f61fff69b16eb3c917e4fcd1eb21d5788bbbeed7e09e9f2382d32f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-qualification-v2/snapshot/7-platform-evidence-plan.json": "6d484dfa634aa89b3c3adbd1cdf4ed93fe51b9aa260b8c55757e7e1d01ba2523",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-qualification-v2/snapshot/8-platform.mjs": "b6f683519ccc9c621a6d4700b5f209aa35ef5eaa869fc2840d4eb4d5ab234c6b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-qualification-v2/snapshot/9-REVIEW.md": "dbf9522f57a3d379d0e5523869a5e30f591d4867b88f8162a96eeb6f19ffcfb0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-qualification-v2/snapshot/qualify_metadata.py": "db3c46062d7f84c1c418dadc1a2ea03924b950b7b75f2467847ef0d0d0ba9e7d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-qualification-v2/snapshot/6-existing-admitted-metadata.json": "86efe583e88b36cbaac288b9dd4788e3a3374aacde7a6fb3d2bbc9792de6fe3d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-qualification-v2/snapshot/test_qualify_metadata.py": "d7bdcefa3d139355233f72e0141e49afd08ba65418c04f7b4af31fbbc73856a5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-qualification-v2/snapshot/5-java-admitted-metadata.json": "3417d8f2292e6e857fab559b0d1f55a621b04fe3f36999bd595d199ad0d5f640",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-qualification-v2/snapshot/REVIEW.md": "6997fdaecafd4c3beb8475c3f7a78b478075e4e1933f44066f0400643402a1f0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-qualification-v2/snapshot/expected-program-ids.json": "492fc1d0e828d8c9b49cd9ef306e43ba963b1ec2015a9bca7595fdf5c51c60a4"
+  },
+  "receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-qualification-v2/qualification-receipt.json",
+  "receipt_sha256": "c49db52205aba82db5e19be6607a03d3934776254bee31506a146800889ff427",
+  "terminal_status": "reconciled-with-unresolved-platform-metadata",
+  "exclusive_common_timing_mutex_held": true,
+  "chart_admission": false
+}

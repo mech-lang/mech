@@ -1,0 +1,926 @@
+{
+  "status": "metadata-read-only-awaiting-common-lock-pin-verification",
+  "chart_admission": false,
+  "source_bytes_changed": false,
+  "measurement_bytes_changed": false,
+  "proposed_platform": "jvm",
+  "proposed_execution": "jit",
+  "proposed_label": "OpenJDK JVM JIT; upstream source published as GraalVM NativeAOT",
+  "expected_admitted_profiles": 17,
+  "records": [
+    {
+      "key": "nbody:nbody-graalvmaot-5",
+      "report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "expected_report_sha256": "f0318ba0df5bb95cd694c399bf6e9b62387500762b2a6c19dfa5738e71316def",
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "nbody/upstream/nbody-graalvmaot-5.java",
+          "sha256": "16bf94e566183c4eec4b28ee7d807b7211cd375133905383ab0ddc66af5cfc4b"
+        }
+      ],
+      "saved_source": {
+        "paths": [
+          "upstream/nbody-graalvmaot-5.java"
+        ],
+        "sha256": {
+          "upstream/nbody-graalvmaot-5.java": "16bf94e566183c4eec4b28ee7d807b7211cd375133905383ab0ddc66af5cfc4b"
+        },
+        "physical_lines": 181,
+        "nonblank_noncomment_lines": 130,
+        "normalized_bytes": 4203,
+        "gzip1_bytes": 1424
+      },
+      "saved_sha256": "16bf94e566183c4eec4b28ee7d807b7211cd375133905383ab0ddc66af5cfc4b",
+      "saved_source_sha256": null,
+      "saved_command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=1",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-graalvmaot-5",
+        "nbody",
+        "{n}"
+      ],
+      "saved_compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-graalvmaot-5",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-graalvmaot-5/nbody.java"
+      ],
+      "saved_execution_mode": "OpenJDK JIT",
+      "saved_original_report": "nbody/results/apple-m3-v04-native-optimized-50m.json",
+      "saved_runtime_receipt": null,
+      "display_samples": [
+        1.988945667,
+        1.998181542,
+        1.991060541
+      ],
+      "preserved_samples": [
+        1.988945667,
+        1.998181542,
+        1.991060541
+      ],
+      "stored_samples_agree": true,
+      "proposed_backend": "openjdk-jit",
+      "verified": false
+    },
+    {
+      "key": "nbody:nbody-graalvmaot-8",
+      "report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "expected_report_sha256": "f0318ba0df5bb95cd694c399bf6e9b62387500762b2a6c19dfa5738e71316def",
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "nbody/upstream/nbody-graalvmaot-8.java",
+          "sha256": "67a99e94ab2b6e0067942bf2b9f2e0274c4de7a9f28fb3fafc455178e2471a4d"
+        }
+      ],
+      "saved_source": {
+        "paths": [
+          "upstream/nbody-graalvmaot-8.java"
+        ],
+        "sha256": {
+          "upstream/nbody-graalvmaot-8.java": "67a99e94ab2b6e0067942bf2b9f2e0274c4de7a9f28fb3fafc455178e2471a4d"
+        },
+        "physical_lines": 150,
+        "nonblank_noncomment_lines": 127,
+        "normalized_bytes": 3235,
+        "gzip1_bytes": 1312
+      },
+      "saved_sha256": "67a99e94ab2b6e0067942bf2b9f2e0274c4de7a9f28fb3fafc455178e2471a4d",
+      "saved_source_sha256": null,
+      "saved_command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=1",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-graalvmaot-8",
+        "nbody",
+        "{n}"
+      ],
+      "saved_compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-graalvmaot-8",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-graalvmaot-8/nbody.java"
+      ],
+      "saved_execution_mode": "OpenJDK JIT",
+      "saved_original_report": "nbody/results/apple-m3-v04-native-optimized-50m.json",
+      "saved_runtime_receipt": null,
+      "display_samples": [
+        2.099169292,
+        2.096551292,
+        2.093246458
+      ],
+      "preserved_samples": [
+        2.099169292,
+        2.096551292,
+        2.093246458
+      ],
+      "stored_samples_agree": true,
+      "proposed_backend": "openjdk-jit",
+      "verified": false
+    },
+    {
+      "key": "mandelbrot:mandelbrot-graalvmaot-6",
+      "report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "expected_report_sha256": "f0318ba0df5bb95cd694c399bf6e9b62387500762b2a6c19dfa5738e71316def",
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "mandelbrot/upstream/mandelbrot-graalvmaot-6.java",
+          "sha256": "f6b630a1faac92820f9d394392ad4e3acb84b21aacccf3a89662c8aa0a0d406a"
+        }
+      ],
+      "saved_source": {
+        "paths": [
+          "upstream/mandelbrot-graalvmaot-6.java"
+        ],
+        "sha256": "f6b630a1faac92820f9d394392ad4e3acb84b21aacccf3a89662c8aa0a0d406a",
+        "physical_lines": 79,
+        "nonblank_noncomment_lines": 57,
+        "normalized_bytes": 1546,
+        "gzip1_bytes": 798
+      },
+      "saved_sha256": "f6b630a1faac92820f9d394392ad4e3acb84b21aacccf3a89662c8aa0a0d406a",
+      "saved_source_sha256": null,
+      "saved_command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=8",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-graalvmaot-6",
+        "mandelbrot",
+        "{n}"
+      ],
+      "saved_compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-graalvmaot-6",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-graalvmaot-6/mandelbrot.java"
+      ],
+      "saved_execution_mode": "OpenJDK JIT; upstream GraalVM AOT submission source",
+      "saved_original_report": "mandelbrot/results/apple-m3-revised-corner-16000.json",
+      "saved_runtime_receipt": null,
+      "display_samples": [
+        1.31025725,
+        1.298129667,
+        1.41733175
+      ],
+      "preserved_samples": [
+        1.31025725,
+        1.298129667,
+        1.41733175
+      ],
+      "stored_samples_agree": true,
+      "proposed_backend": "openjdk-jit",
+      "verified": false
+    },
+    {
+      "key": "mandelbrot:mandelbrot-graalvmaot-8",
+      "report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "expected_report_sha256": "f0318ba0df5bb95cd694c399bf6e9b62387500762b2a6c19dfa5738e71316def",
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "mandelbrot/upstream/mandelbrot-graalvmaot-8.java",
+          "sha256": "8a8d0cb3f7fd0fcaa202ed6bddaf71e08b1e79ea28e12ad6394e7191a9ee5afb"
+        }
+      ],
+      "saved_source": {
+        "paths": [
+          "upstream/mandelbrot-graalvmaot-8.java"
+        ],
+        "sha256": "8a8d0cb3f7fd0fcaa202ed6bddaf71e08b1e79ea28e12ad6394e7191a9ee5afb",
+        "physical_lines": 59,
+        "nonblank_noncomment_lines": 43,
+        "normalized_bytes": 774,
+        "gzip1_bytes": 426
+      },
+      "saved_sha256": "8a8d0cb3f7fd0fcaa202ed6bddaf71e08b1e79ea28e12ad6394e7191a9ee5afb",
+      "saved_source_sha256": null,
+      "saved_command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=8",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-graalvmaot-8",
+        "mandelbrot",
+        "{n}"
+      ],
+      "saved_compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-graalvmaot-8",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-graalvmaot-8/mandelbrot.java"
+      ],
+      "saved_execution_mode": "OpenJDK JIT; upstream GraalVM AOT submission source",
+      "saved_original_report": "mandelbrot/results/apple-m3-revised-corner-16000.json",
+      "saved_runtime_receipt": null,
+      "display_samples": [
+        11.456095791,
+        11.286028208,
+        11.653222167
+      ],
+      "preserved_samples": [
+        11.456095791,
+        11.286028208,
+        11.653222167
+      ],
+      "stored_samples_agree": true,
+      "proposed_backend": "openjdk-jit",
+      "verified": false
+    },
+    {
+      "key": "knucleotide:knucleotide-graalvmaot-1",
+      "report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "expected_report_sha256": "f0318ba0df5bb95cd694c399bf6e9b62387500762b2a6c19dfa5738e71316def",
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "knucleotide/upstream/knucleotide-graalvmaot-1.java",
+          "sha256": "3e46664f01b528f840cd8bea1ebf5a5767290091ecf14e52170e75452d9975ff"
+        }
+      ],
+      "saved_source": {
+        "paths": [
+          "upstream/knucleotide-graalvmaot-1.java"
+        ],
+        "sha256": "3e46664f01b528f840cd8bea1ebf5a5767290091ecf14e52170e75452d9975ff",
+        "physical_lines": 181,
+        "nonblank_noncomment_lines": 140,
+        "normalized_bytes": 4756,
+        "gzip1_bytes": 1794
+      },
+      "saved_sha256": "3e46664f01b528f840cd8bea1ebf5a5767290091ecf14e52170e75452d9975ff",
+      "saved_source_sha256": null,
+      "saved_command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=8",
+        "-Xmx4g",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-graalvmaot-1:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/fastutil-8.3.1.jar",
+        "knucleotide"
+      ],
+      "saved_compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-graalvmaot-1:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/fastutil-8.3.1.jar",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-graalvmaot-1",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-graalvmaot-1/knucleotide.java"
+      ],
+      "saved_execution_mode": "OpenJDK JIT; unmodified upstream GraalVM AOT source",
+      "saved_original_report": "knucleotide/results/apple-m3-revised-corner-25000000.json",
+      "saved_runtime_receipt": null,
+      "display_samples": [
+        1.284763666,
+        1.295080791,
+        1.313668375
+      ],
+      "preserved_samples": [
+        1.284763666,
+        1.295080791,
+        1.313668375
+      ],
+      "stored_samples_agree": true,
+      "proposed_backend": "openjdk-jit",
+      "verified": false
+    },
+    {
+      "key": "knucleotide:knucleotide-graalvmaot-8",
+      "report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "expected_report_sha256": "f0318ba0df5bb95cd694c399bf6e9b62387500762b2a6c19dfa5738e71316def",
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "knucleotide/upstream/knucleotide-graalvmaot-8.java",
+          "sha256": "9c5a4d6de2d4949113935aadd76de3855940dfe702f427ef43341bbba304edd0"
+        }
+      ],
+      "saved_source": {
+        "paths": [
+          "upstream/knucleotide-graalvmaot-8.java"
+        ],
+        "sha256": "9c5a4d6de2d4949113935aadd76de3855940dfe702f427ef43341bbba304edd0",
+        "physical_lines": 79,
+        "nonblank_noncomment_lines": 64,
+        "normalized_bytes": 1681,
+        "gzip1_bytes": 775
+      },
+      "saved_sha256": "9c5a4d6de2d4949113935aadd76de3855940dfe702f427ef43341bbba304edd0",
+      "saved_source_sha256": null,
+      "saved_command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=8",
+        "-Xmx4g",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-graalvmaot-8:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/fastutil-8.3.1.jar",
+        "knucleotide"
+      ],
+      "saved_compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-graalvmaot-8:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/fastutil-8.3.1.jar",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-graalvmaot-8",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-graalvmaot-8/knucleotide.java"
+      ],
+      "saved_execution_mode": "OpenJDK JIT; unmodified upstream GraalVM AOT source",
+      "saved_original_report": "knucleotide/results/apple-m3-revised-corner-25000000.json",
+      "saved_runtime_receipt": null,
+      "display_samples": [
+        21.642509166,
+        22.211426917,
+        21.657464042
+      ],
+      "preserved_samples": [
+        21.642509166,
+        22.211426917,
+        21.657464042
+      ],
+      "stored_samples_agree": true,
+      "proposed_backend": "openjdk-jit",
+      "verified": false
+    },
+    {
+      "key": "spectralnorm:spectralnorm-graalvmaot-3",
+      "report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "expected_report_sha256": "f0318ba0df5bb95cd694c399bf6e9b62387500762b2a6c19dfa5738e71316def",
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "spectralnorm/upstream/spectralnorm-graalvmaot-3.java",
+          "sha256": "10b296b1143288adeec9646f090a087fa327c05a10c603e391e092ab4f3f7747"
+        }
+      ],
+      "saved_source": {
+        "paths": [
+          "upstream/spectralnorm-graalvmaot-3.java"
+        ],
+        "sha256": "10b296b1143288adeec9646f090a087fa327c05a10c603e391e092ab4f3f7747",
+        "physical_lines": 85,
+        "nonblank_noncomment_lines": 68,
+        "normalized_bytes": 1786,
+        "gzip1_bytes": 751
+      },
+      "saved_sha256": "10b296b1143288adeec9646f090a087fa327c05a10c603e391e092ab4f3f7747",
+      "saved_source_sha256": null,
+      "saved_command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=8",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/spectralnorm-graalvmaot-3",
+        "spectralnorm",
+        "{n}"
+      ],
+      "saved_compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/spectralnorm-graalvmaot-3",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/spectralnorm-graalvmaot-3/spectralnorm.java"
+      ],
+      "saved_execution_mode": "OpenJDK JIT, fresh process; unchanged upstream GraalVM AOT submission source",
+      "saved_original_report": "spectralnorm/results/apple-m3-optimized-5500.json",
+      "saved_runtime_receipt": null,
+      "display_samples": [
+        0.249797375,
+        0.294928166,
+        0.249471083
+      ],
+      "preserved_samples": [
+        0.249797375,
+        0.294928166,
+        0.249471083
+      ],
+      "stored_samples_agree": true,
+      "proposed_backend": "openjdk-jit",
+      "verified": false
+    },
+    {
+      "key": "spectralnorm:spectralnorm-graalvmaot-8",
+      "report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "expected_report_sha256": "f0318ba0df5bb95cd694c399bf6e9b62387500762b2a6c19dfa5738e71316def",
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "spectralnorm/upstream/spectralnorm-graalvmaot-8.java",
+          "sha256": "15754d3b51597372bd265bae66e289827d9d6d89cff50d305ca1fdfd5fa9cd1b"
+        }
+      ],
+      "saved_source": {
+        "paths": [
+          "upstream/spectralnorm-graalvmaot-8.java"
+        ],
+        "sha256": "15754d3b51597372bd265bae66e289827d9d6d89cff50d305ca1fdfd5fa9cd1b",
+        "physical_lines": 53,
+        "nonblank_noncomment_lines": 42,
+        "normalized_bytes": 984,
+        "gzip1_bytes": 442
+      },
+      "saved_sha256": "15754d3b51597372bd265bae66e289827d9d6d89cff50d305ca1fdfd5fa9cd1b",
+      "saved_source_sha256": null,
+      "saved_command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=8",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/spectralnorm-graalvmaot-8",
+        "spectralnorm",
+        "{n}"
+      ],
+      "saved_compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/spectralnorm-graalvmaot-8",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/spectralnorm-graalvmaot-8/spectralnorm.java"
+      ],
+      "saved_execution_mode": "OpenJDK JIT, fresh process; unchanged upstream GraalVM AOT submission source",
+      "saved_original_report": "spectralnorm/results/apple-m3-optimized-5500.json",
+      "saved_runtime_receipt": null,
+      "display_samples": [
+        0.862266542,
+        0.850370625,
+        0.861895083
+      ],
+      "preserved_samples": [
+        0.862266542,
+        0.850370625,
+        0.861895083
+      ],
+      "stored_samples_agree": true,
+      "proposed_backend": "openjdk-jit",
+      "verified": false
+    },
+    {
+      "key": "revcomp:revcomp-graalvmaot-4",
+      "report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "expected_report_sha256": "f0318ba0df5bb95cd694c399bf6e9b62387500762b2a6c19dfa5738e71316def",
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "revcomp/upstream/revcomp-graalvmaot-4.java",
+          "sha256": "f27fb8a4a191efd1bede4f29eb8b1254634bba745456cb71195ef39739a3f832"
+        }
+      ],
+      "saved_source": {
+        "paths": [
+          "upstream/revcomp-graalvmaot-4.java"
+        ],
+        "sha256": "f27fb8a4a191efd1bede4f29eb8b1254634bba745456cb71195ef39739a3f832",
+        "physical_lines": 66,
+        "nonblank_noncomment_lines": 57,
+        "normalized_bytes": 1303,
+        "gzip1_bytes": 587
+      },
+      "saved_sha256": "f27fb8a4a191efd1bede4f29eb8b1254634bba745456cb71195ef39739a3f832",
+      "saved_source_sha256": null,
+      "saved_command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=8",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/revcomp/.build/revcomp-graalvmaot-4",
+        "revcomp"
+      ],
+      "saved_compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/revcomp/.build/revcomp-graalvmaot-4",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/revcomp/.build/revcomp-graalvmaot-4/revcomp.java"
+      ],
+      "saved_execution_mode": "OpenJDK JIT fresh process; source was published for native AOT",
+      "saved_original_report": "revcomp/results/apple-m3-final-25000000.json",
+      "saved_runtime_receipt": null,
+      "display_samples": [
+        0.517415708,
+        0.512224667,
+        0.513154542
+      ],
+      "preserved_samples": [
+        0.517415708,
+        0.512224667,
+        0.513154542
+      ],
+      "stored_samples_agree": true,
+      "proposed_backend": "openjdk-jit",
+      "verified": false
+    },
+    {
+      "key": "revcomp:revcomp-graalvmaot-3",
+      "report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "expected_report_sha256": "f0318ba0df5bb95cd694c399bf6e9b62387500762b2a6c19dfa5738e71316def",
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "revcomp/upstream/revcomp-graalvmaot-3.java",
+          "sha256": "dcf6247c714bd82b608c4827c87ac3d4de7207f2b4e3bcf6a15b6d74df72f5bd"
+        }
+      ],
+      "saved_source": {
+        "paths": [
+          "upstream/revcomp-graalvmaot-3.java"
+        ],
+        "sha256": "dcf6247c714bd82b608c4827c87ac3d4de7207f2b4e3bcf6a15b6d74df72f5bd",
+        "physical_lines": 235,
+        "nonblank_noncomment_lines": 195,
+        "normalized_bytes": 4481,
+        "gzip1_bytes": 1653
+      },
+      "saved_sha256": "dcf6247c714bd82b608c4827c87ac3d4de7207f2b4e3bcf6a15b6d74df72f5bd",
+      "saved_source_sha256": null,
+      "saved_command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=8",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/revcomp/.build/revcomp-graalvmaot-3",
+        "revcomp"
+      ],
+      "saved_compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/revcomp/.build/revcomp-graalvmaot-3",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/revcomp/.build/revcomp-graalvmaot-3/revcomp.java"
+      ],
+      "saved_execution_mode": "OpenJDK JIT fresh process; source was published for native AOT",
+      "saved_original_report": "revcomp/results/apple-m3-final-25000000.json",
+      "saved_runtime_receipt": null,
+      "display_samples": [
+        0.254955,
+        0.247307083,
+        0.259994083
+      ],
+      "preserved_samples": [
+        0.254955,
+        0.247307083,
+        0.259994083
+      ],
+      "stored_samples_agree": true,
+      "proposed_backend": "openjdk-jit",
+      "verified": false
+    },
+    {
+      "key": "fannkuchredux:fannkuchredux-graalvmaot-2",
+      "report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "expected_report_sha256": "f0318ba0df5bb95cd694c399bf6e9b62387500762b2a6c19dfa5738e71316def",
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "fannkuchredux/upstream/fannkuchredux-graalvmaot-2.java",
+          "sha256": "f55e671f4aab2ac2881f9ab9ada9a67bb08c72de74fef273fd999d8e47237296"
+        }
+      ],
+      "saved_source": {
+        "paths": [
+          "upstream/fannkuchredux-graalvmaot-2.java"
+        ],
+        "sha256": "f55e671f4aab2ac2881f9ab9ada9a67bb08c72de74fef273fd999d8e47237296",
+        "physical_lines": 69,
+        "nonblank_noncomment_lines": 51,
+        "normalized_bytes": 1074,
+        "gzip1_bytes": 508
+      },
+      "saved_sha256": "f55e671f4aab2ac2881f9ab9ada9a67bb08c72de74fef273fd999d8e47237296",
+      "saved_source_sha256": null,
+      "saved_command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=8",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-graalvmaot-2",
+        "fannkuchredux",
+        "{n}"
+      ],
+      "saved_compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-graalvmaot-2",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-graalvmaot-2/fannkuchredux.java"
+      ],
+      "saved_execution_mode": "OpenJDK JIT; source was published as native AOT",
+      "saved_original_report": "fannkuchredux/results/apple-m3-final-12.json",
+      "saved_runtime_receipt": null,
+      "display_samples": [
+        26.427993375,
+        22.110095584,
+        21.919322542
+      ],
+      "preserved_samples": [
+        26.427993375,
+        22.110095584,
+        21.919322542
+      ],
+      "stored_samples_agree": true,
+      "proposed_backend": "openjdk-jit",
+      "verified": false
+    },
+    {
+      "key": "fannkuchredux:fannkuchredux-graalvmaot-1",
+      "report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "expected_report_sha256": "f0318ba0df5bb95cd694c399bf6e9b62387500762b2a6c19dfa5738e71316def",
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "fannkuchredux/upstream/fannkuchredux-graalvmaot-1.java",
+          "sha256": "dcff27bde49720bdc698c669dca93ddf3bfacc8e3f349422aefe9c51049600cc"
+        }
+      ],
+      "saved_source": {
+        "paths": [
+          "upstream/fannkuchredux-graalvmaot-1.java"
+        ],
+        "sha256": "dcff27bde49720bdc698c669dca93ddf3bfacc8e3f349422aefe9c51049600cc",
+        "physical_lines": 182,
+        "nonblank_noncomment_lines": 150,
+        "normalized_bytes": 2961,
+        "gzip1_bytes": 1278
+      },
+      "saved_sha256": "dcff27bde49720bdc698c669dca93ddf3bfacc8e3f349422aefe9c51049600cc",
+      "saved_source_sha256": null,
+      "saved_command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=8",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-graalvmaot-1",
+        "fannkuchredux",
+        "{n}"
+      ],
+      "saved_compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-graalvmaot-1",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-graalvmaot-1/fannkuchredux.java"
+      ],
+      "saved_execution_mode": "OpenJDK JIT; source was published as native AOT",
+      "saved_original_report": "fannkuchredux/results/apple-m3-final-12.json",
+      "saved_runtime_receipt": null,
+      "display_samples": [
+        3.368088917,
+        3.348268334,
+        3.421654084
+      ],
+      "preserved_samples": [
+        3.368088917,
+        3.348268334,
+        3.421654084
+      ],
+      "stored_samples_agree": true,
+      "proposed_backend": "openjdk-jit",
+      "verified": false
+    },
+    {
+      "key": "fasta:fasta-graalvmaot-2",
+      "report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "expected_report_sha256": "f0318ba0df5bb95cd694c399bf6e9b62387500762b2a6c19dfa5738e71316def",
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "fasta/upstream/fasta-graalvmaot-2.java",
+          "sha256": "38a88bdc4c297ac45994c1ec5eabc5a308e01c21b9ab62d506100f879258a67a"
+        }
+      ],
+      "saved_source": {
+        "paths": [
+          "upstream/fasta-graalvmaot-2.java"
+        ],
+        "sha256": "38a88bdc4c297ac45994c1ec5eabc5a308e01c21b9ab62d506100f879258a67a",
+        "physical_lines": 150,
+        "nonblank_noncomment_lines": 125,
+        "normalized_bytes": 3497,
+        "gzip1_bytes": 1236
+      },
+      "saved_sha256": "38a88bdc4c297ac45994c1ec5eabc5a308e01c21b9ab62d506100f879258a67a",
+      "saved_source_sha256": null,
+      "saved_command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=8",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/.build/fasta-graalvmaot-2",
+        "fasta",
+        "{n}"
+      ],
+      "saved_compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/.build/fasta-graalvmaot-2",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/.build/fasta-graalvmaot-2/fasta.java"
+      ],
+      "saved_execution_mode": "OpenJDK JIT; source was published as native AOT",
+      "saved_original_report": "fasta/results/apple-m3-streaming-20261008-25000000.json",
+      "saved_runtime_receipt": null,
+      "display_samples": [
+        2.929214959,
+        2.976084666,
+        2.992729084
+      ],
+      "preserved_samples": [
+        2.929214959,
+        2.976084666,
+        2.992729084
+      ],
+      "stored_samples_agree": true,
+      "proposed_backend": "openjdk-jit",
+      "verified": false
+    },
+    {
+      "key": "binarytrees:binarytrees-graalvmaot-7",
+      "report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "expected_report_sha256": "f0318ba0df5bb95cd694c399bf6e9b62387500762b2a6c19dfa5738e71316def",
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "binarytrees/upstream/binarytrees-graalvmaot-7.java",
+          "sha256": "c28a0b7f1bfb705b5cf11c523362114e312df69acf531ee6a8a2f1ca86bab57f"
+        }
+      ],
+      "saved_source": {
+        "paths": [
+          "upstream/binarytrees-graalvmaot-7.java"
+        ],
+        "sha256": "c28a0b7f1bfb705b5cf11c523362114e312df69acf531ee6a8a2f1ca86bab57f",
+        "physical_lines": 93,
+        "nonblank_noncomment_lines": 63,
+        "normalized_bytes": 1978,
+        "gzip1_bytes": 831
+      },
+      "saved_sha256": "c28a0b7f1bfb705b5cf11c523362114e312df69acf531ee6a8a2f1ca86bab57f",
+      "saved_source_sha256": null,
+      "saved_command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=8",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/.build/binarytrees-graalvmaot-7",
+        "binarytrees",
+        "{n}"
+      ],
+      "saved_compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/.build/binarytrees-graalvmaot-7",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/.build/binarytrees-graalvmaot-7/binarytrees.java"
+      ],
+      "saved_execution_mode": "OpenJDK JIT; source was published as native AOT",
+      "saved_original_report": "binarytrees/results/apple-m3-21.json",
+      "saved_runtime_receipt": null,
+      "display_samples": [
+        0.7877905,
+        0.695264125,
+        0.6780125
+      ],
+      "preserved_samples": [
+        0.7877905,
+        0.695264125,
+        0.6780125
+      ],
+      "stored_samples_agree": true,
+      "proposed_backend": "openjdk-jit",
+      "verified": false
+    },
+    {
+      "key": "binarytrees:binarytrees-graalvmaot-6",
+      "report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "expected_report_sha256": "f0318ba0df5bb95cd694c399bf6e9b62387500762b2a6c19dfa5738e71316def",
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "binarytrees/upstream/binarytrees-graalvmaot-6.java",
+          "sha256": "b8066408836014534f2e8c8fdf526685a42aa03886dd8822e6310b0dccc16a36"
+        }
+      ],
+      "saved_source": {
+        "paths": [
+          "upstream/binarytrees-graalvmaot-6.java"
+        ],
+        "sha256": "b8066408836014534f2e8c8fdf526685a42aa03886dd8822e6310b0dccc16a36",
+        "physical_lines": 62,
+        "nonblank_noncomment_lines": 42,
+        "normalized_bytes": 1206,
+        "gzip1_bytes": 525
+      },
+      "saved_sha256": "b8066408836014534f2e8c8fdf526685a42aa03886dd8822e6310b0dccc16a36",
+      "saved_source_sha256": null,
+      "saved_command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=8",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/.build/binarytrees-graalvmaot-6",
+        "binarytrees",
+        "{n}"
+      ],
+      "saved_compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/.build/binarytrees-graalvmaot-6",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/.build/binarytrees-graalvmaot-6/binarytrees.java"
+      ],
+      "saved_execution_mode": "OpenJDK JIT; source was published as native AOT",
+      "saved_original_report": "binarytrees/results/apple-m3-21.json",
+      "saved_runtime_receipt": null,
+      "display_samples": [
+        1.645618584,
+        1.598283708,
+        1.582489833
+      ],
+      "preserved_samples": [
+        1.645618584,
+        1.598283708,
+        1.582489833
+      ],
+      "stored_samples_agree": true,
+      "proposed_backend": "openjdk-jit",
+      "verified": false
+    },
+    {
+      "key": "regexredux:regexredux-graalvmaot-6",
+      "report": "regexredux/results/apple-m3-ac-normal-20261009.json",
+      "expected_report_sha256": "656d00e73b15a28a273718440aaaabee5d52c53c9ce4e842bd3f6bb52f09e603",
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "regexredux/upstream/regexredux-graalvmaot-6.java",
+          "sha256": "fb752d4086cd2261bb163108a6e3c63cb9a2fc133196e4f1f778bfd18067ecb0"
+        }
+      ],
+      "saved_source": {
+        "sha256": "fb752d4086cd2261bb163108a6e3c63cb9a2fc133196e4f1f778bfd18067ecb0",
+        "physical_lines": 68,
+        "nonblank_noncomment_lines": 51
+      },
+      "saved_sha256": "fb752d4086cd2261bb163108a6e3c63cb9a2fc133196e4f1f778bfd18067ecb0",
+      "saved_source_sha256": null,
+      "saved_command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=8",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/.build/regexredux-graalvmaot-6.java",
+        "regexredux"
+      ],
+      "saved_compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/.build/regexredux-graalvmaot-6.java",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/.build/regexredux-graalvmaot-6.java/regexredux.java"
+      ],
+      "saved_execution_mode": "OpenJDK JIT; pinned entry published as GraalVM native AOT",
+      "saved_original_report": null,
+      "saved_runtime_receipt": "openjdk 27 2026-09-15\nOpenJDK Runtime Environment Homebrew (build 27)\nOpenJDK 64-Bit Server VM Homebrew (build 27, mixed mode, sharing)",
+      "display_samples": [
+        2.211249833,
+        2.181280125,
+        2.256911541
+      ],
+      "preserved_samples": [
+        2.211249833,
+        2.181280125,
+        2.256911541
+      ],
+      "stored_samples_agree": true,
+      "proposed_backend": "openjdk-jit",
+      "verified": false
+    },
+    {
+      "key": "pidigits:pidigits-graalvmaot-1",
+      "report": "pidigits/results/apple-m3-ac-normal-20261009.json",
+      "expected_report_sha256": "8cb4fe825e100a7d2db9bbb92f1526de024b1c0c0eb62fca86d5e2c5387e073e",
+      "matched_preserved_records": 1,
+      "source_files": [
+        {
+          "path": "pidigits/upstream/pidigits-graalvmaot-1.java",
+          "sha256": "96c60aea2c4a7cf80c0d0f4e190ac92211ef539c3efd5b6a0f6b13e29f6708b0"
+        }
+      ],
+      "saved_source": {
+        "sha256": "96c60aea2c4a7cf80c0d0f4e190ac92211ef539c3efd5b6a0f6b13e29f6708b0",
+        "physical_lines": 123,
+        "nonblank_noncomment_lines": 97
+      },
+      "saved_sha256": "96c60aea2c4a7cf80c0d0f4e190ac92211ef539c3efd5b6a0f6b13e29f6708b0",
+      "saved_source_sha256": null,
+      "saved_command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=8",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/pidigits-graalvmaot-1.java",
+        "pidigits",
+        "{n}"
+      ],
+      "saved_compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/pidigits-graalvmaot-1.java",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/pidigits-graalvmaot-1.java/pidigits.java"
+      ],
+      "saved_execution_mode": "OpenJDK JIT; pinned entry published as GraalVM native AOT",
+      "saved_original_report": null,
+      "saved_runtime_receipt": "openjdk 27 2026-09-15\nOpenJDK Runtime Environment Homebrew (build 27)\nOpenJDK 64-Bit Server VM Homebrew (build 27, mixed mode, sharing)",
+      "display_samples": [
+        4.189683792,
+        4.165147042,
+        4.160194958
+      ],
+      "preserved_samples": [
+        4.189683792,
+        4.165147042,
+        4.160194958
+      ],
+      "stored_samples_agree": true,
+      "proposed_backend": "openjdk-jit",
+      "verified": false
+    }
+  ],
+  "pin_rule": "Hash actual admitted display source files, the three unchanged reports, this receipt and producer candidate only under the common timing mutex. Match every exact source pin and timing sample to its preserved record before qualifying metadata. If retime lacks its own Java version, follow the pinned original_report to the preserved Java version receipt; do not substitute a current executable version for the historical receipt. No new timing is needed for a metadata correction."
+}

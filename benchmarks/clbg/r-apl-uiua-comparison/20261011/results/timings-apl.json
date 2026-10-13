@@ -452,10 +452,41 @@
         }
       ],
       "eligible_for_chart": false,
-      "measurement_status": "pending",
-      "samples_seconds": [],
-      "sample_validation": [],
-      "attempts": []
+      "measurement_status": "measured",
+      "samples_seconds": [
+        1503.523473333,
+        1493.859751083,
+        1507.132155833
+      ],
+      "sample_validation": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        }
+      ],
+      "attempts": [
+        45,
+        51,
+        53
+      ],
+      "full_validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "median_seconds": 1503.523473333,
+      "sample_stdev_seconds": 6.86254137763819
     },
     "fannkuchredux:fannkuchredux-apl-compact": {
       "id": "fannkuchredux-apl-compact",
@@ -854,10 +885,26 @@
         }
       ],
       "eligible_for_chart": false,
-      "measurement_status": "pending",
-      "samples_seconds": [],
-      "sample_validation": [],
-      "attempts": []
+      "measurement_status": "partial",
+      "samples_seconds": [
+        333.146645875
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "attempts": [
+        56
+      ],
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "median_seconds": 333.146645875
     },
     "revcomp:revcomp-apl-compact": {
       "id": "revcomp-apl-compact",
@@ -3786,15 +3833,46 @@
       "normalized_loc": 35,
       "physical_loc": 35,
       "loc_expansions": [],
-      "measurement_status": "pending",
+      "measurement_status": "measured",
       "eligible_for_chart": false,
       "supersedes_keys": [
         "mandelbrot:mandelbrot-apl-compact"
       ],
       "supersedes_source_sha256": "ce26bde246eea5020d33f80f3168f712a0ddc74594ad00f98b3b0c6014d18eeb",
-      "samples_seconds": [],
-      "sample_validation": [],
-      "attempts": []
+      "samples_seconds": [
+        649.462829708,
+        646.459957833,
+        650.375225375
+      ],
+      "sample_validation": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        }
+      ],
+      "attempts": [
+        47,
+        50,
+        52
+      ],
+      "full_validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "median_seconds": 649.462829708,
+      "sample_stdev_seconds": 2.048537090879953
     },
     "mandelbrot:mandelbrot-apl-active-v2-optimized": {
       "id": "mandelbrot-apl-active-v2-optimized",
@@ -3935,15 +4013,46 @@
       "normalized_loc": 37,
       "physical_loc": 37,
       "loc_expansions": [],
-      "measurement_status": "pending",
+      "measurement_status": "measured",
       "eligible_for_chart": false,
       "supersedes_keys": [
         "mandelbrot:mandelbrot-apl-optimized"
       ],
       "supersedes_source_sha256": "e3c62726b4c552f810c9111d1ef181b7c93999250d805e1658b61d2415f3ff11",
-      "samples_seconds": [],
-      "sample_validation": [],
-      "attempts": []
+      "samples_seconds": [
+        660.299929417,
+        659.484641833,
+        660.673371958
+      ],
+      "sample_validation": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        }
+      ],
+      "attempts": [
+        46,
+        48,
+        55
+      ],
+      "full_validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "median_seconds": 660.299929417,
+      "sample_stdev_seconds": 0.6078969877284183
     },
     "fasta:fasta-apl-affine-hoisted-optimized-v3": {
       "id": "fasta-apl-affine-hoisted-optimized-v3",
@@ -4056,12 +4165,26 @@
       "loc_expansions": [],
       "samples_seconds": [],
       "sample_validation": [],
-      "attempts": [],
+      "attempts": [
+        58
+      ],
       "eligible_for_chart": false,
-      "measurement_status": "pending",
+      "measurement_status": "failed",
       "supersedes_keys": [
         "fasta:fasta-apl-optimized"
-      ]
+      ],
+      "full_failure": {
+        "error": "('fasta', 0, 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', (254166745, '3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa'))",
+        "error_type": "OutputValidationError",
+        "seconds": 0.039554333,
+        "exit_status": 0,
+        "attempt_number": 58,
+        "finished_at": "2026-10-12T17:59:19.801789+00:00",
+        "stdout_bytes": 0,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr": "VALUE ERROR+\n      /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/sources/fasta.optimized.apl\n                                                                                                                                            ^\n\nWARNING: File pipe-to_client still open - closing it\n",
+        "resource_violation": null
+      }
     },
     "nbody:nbody-apl-compact-canonical-v2": {
       "id": "nbody-apl-compact-canonical-v2",
@@ -4651,9 +4774,21 @@
       "control_for": "apl",
       "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
       "samples_seconds": [
-        0.444782708
+        0.444782708,
+        0.474527625,
+        0.436056459
       ],
       "sample_validation": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
         {
           "bytes": 32000015,
           "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
@@ -4661,15 +4796,18 @@
         }
       ],
       "attempts": [
-        44
+        44,
+        49,
+        54
       ],
-      "measurement_status": "partial",
+      "measurement_status": "measured",
       "full_validation": {
         "bytes": 32000015,
         "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
         "reference_match": true
       },
-      "median_seconds": 0.444782708
+      "median_seconds": 0.444782708,
+      "sample_stdev_seconds": 0.020169854248136606
     },
     "regexredux:mech-control-for-apl-additive-v3": {
       "id": "mech-control-regexredux-for-apl-additive-v3",
@@ -4910,10 +5048,26 @@
       },
       "control_for": "apl",
       "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
-      "samples_seconds": [],
-      "sample_validation": [],
-      "attempts": [],
-      "measurement_status": "pending"
+      "samples_seconds": [
+        0.586863042
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "attempts": [
+        57
+      ],
+      "measurement_status": "partial",
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "median_seconds": 0.586863042
     },
     "knucleotide:mech-control-for-apl": {
       "id": "mech-control-knucleotide-for-apl",
@@ -5069,6 +5223,25 @@
         "mandelbrot:mandelbrot-apl-compact",
         "mandelbrot:mandelbrot-apl-active-v2-optimized",
         "mandelbrot:mandelbrot-apl-active-v2-compact"
+      ],
+      [
+        "mandelbrot:mandelbrot-apl-active-v2-optimized",
+        "mandelbrot:mech-control-for-apl-medium-v3",
+        "mandelbrot:mandelbrot-apl-active-v2-compact",
+        "mandelbrot:mandelbrot-apl-compact"
+      ],
+      [
+        "mandelbrot:mandelbrot-apl-active-v2-compact",
+        "mandelbrot:mandelbrot-apl-compact",
+        "mandelbrot:mech-control-for-apl-medium-v3",
+        "mandelbrot:mandelbrot-apl-active-v2-optimized"
+      ]
+    ],
+    "fasta": [
+      [
+        "fasta:fasta-apl-compact",
+        "fasta:mech-control-for-apl-medium-v3",
+        "fasta:fasta-apl-affine-hoisted-optimized-v3"
       ]
     ]
   },
@@ -7382,10 +7555,1392 @@
       "valid_environment": true,
       "sample": 1,
       "attempt_number": 44
+    },
+    {
+      "key": "mandelbrot:mandelbrot-apl-compact",
+      "id": "mandelbrot-apl-compact",
+      "benchmark": "mandelbrot",
+      "language": "apl",
+      "source_sha256": "ce26bde246eea5020d33f80f3168f712a0ddc74594ad00f98b3b0c6014d18eeb",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "1",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/mandelbrot.compact.apl",
+        "--",
+        "16000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh\", \"--cc\", \"1\", \"-f\", \"{source}\", \"--\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011\", \"environment\": {\"LC_ALL\": \"C\"}, \"source_sha256\": \"ce26bde246eea5020d33f80f3168f712a0ddc74594ad00f98b3b0c6014d18eeb\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl\": \"ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh\": \"50c937c62df5095151dd766dcbd8bc2058e24a93ccefb6b5b601944a48cdadf4\", \"/opt/homebrew/Cellar/pcre2/10.49/lib/libpcre2-32.0.dylib\": \"ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9\", \"/opt/homebrew/opt/pcre2/lib/libpcre2-32.0.dylib\": \"ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9\"}}",
+      "started_at": "2026-10-12T14:57:59.044711+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 1503.523473333,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 13392,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T15:23:02.778269+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 45,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining-owner/attempts/045-mandelbrot-apl-compact.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 62498,
+        "pgid": 62498,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+          "--cc",
+          "1",
+          "-f",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/mandelbrot.compact.apl",
+          "--",
+          "16000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining-owner/attempts/045-mandelbrot-apl-compact.supervisor.json",
+      "sample": 1,
+      "attempt_number": 45,
+      "continuation_manifest_sha256": "affba5b243da43d1a15c28e5364741828e4f684bb1b43d15d81ad720b28ef39f"
+    },
+    {
+      "key": "mandelbrot:mandelbrot-apl-active-v2-optimized",
+      "id": "mandelbrot-apl-active-v2-optimized",
+      "benchmark": "mandelbrot",
+      "language": "apl",
+      "source_sha256": "74dc3d19f12a83b1c14f0c2f83f5edb343147cdcb9a312d020d679084be9cfaa",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/sources/mandelbrot.optimized.apl",
+        "--",
+        "16000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh\", \"--cc\", \"8\", \"-f\", \"{source}\", \"--\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011\", \"environment\": {\"LC_ALL\": \"C\"}, \"source_sha256\": \"74dc3d19f12a83b1c14f0c2f83f5edb343147cdcb9a312d020d679084be9cfaa\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl\": \"ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/results/optimized-200.work\": \"22699e83d7f8c49fb3acf15eebcfd60cdb66819c2bc83ee2529f7fd0249f2042\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh\": \"50c937c62df5095151dd766dcbd8bc2058e24a93ccefb6b5b601944a48cdadf4\", \"/opt/homebrew/Cellar/pcre2/10.49/lib/libpcre2-32.0.dylib\": \"ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9\", \"/opt/homebrew/opt/pcre2/lib/libpcre2-32.0.dylib\": \"ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9\"}}",
+      "started_at": "2026-10-12T15:23:04.752976+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 660.299929417,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 269392,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T15:34:05.285972+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 46,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining-owner/attempts/046-mandelbrot-apl-active-v2-optimized.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 66819,
+        "pgid": 66819,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+          "--cc",
+          "8",
+          "-f",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/sources/mandelbrot.optimized.apl",
+          "--",
+          "16000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining-owner/attempts/046-mandelbrot-apl-active-v2-optimized.supervisor.json",
+      "sample": 1,
+      "attempt_number": 46,
+      "continuation_manifest_sha256": "affba5b243da43d1a15c28e5364741828e4f684bb1b43d15d81ad720b28ef39f"
+    },
+    {
+      "key": "mandelbrot:mandelbrot-apl-active-v2-compact",
+      "id": "mandelbrot-apl-active-v2-compact",
+      "benchmark": "mandelbrot",
+      "language": "apl",
+      "source_sha256": "5c25c451aa2d8f6cad0e18e77a40d05d9bb47e816eeb55ebee9d865626c41a43",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "1",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/sources/mandelbrot.compact.apl",
+        "--",
+        "16000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh\", \"--cc\", \"1\", \"-f\", \"{source}\", \"--\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011\", \"environment\": {\"LC_ALL\": \"C\"}, \"source_sha256\": \"5c25c451aa2d8f6cad0e18e77a40d05d9bb47e816eeb55ebee9d865626c41a43\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl\": \"ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/results/compact-200.work\": \"40e5d54f60a7a3d9ddd8bbe2a26e634d20818ca40af898311d670a8722a5e18a\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh\": \"50c937c62df5095151dd766dcbd8bc2058e24a93ccefb6b5b601944a48cdadf4\", \"/opt/homebrew/Cellar/pcre2/10.49/lib/libpcre2-32.0.dylib\": \"ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9\", \"/opt/homebrew/opt/pcre2/lib/libpcre2-32.0.dylib\": \"ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9\"}}",
+      "started_at": "2026-10-12T15:34:15.580169+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 649.462829708,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 20800,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T15:45:05.280481+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 47,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining-owner/attempts/047-mandelbrot-apl-active-v2-compact.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 68475,
+        "pgid": 68475,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+          "--cc",
+          "1",
+          "-f",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/sources/mandelbrot.compact.apl",
+          "--",
+          "16000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining-owner/attempts/047-mandelbrot-apl-active-v2-compact.supervisor.json",
+      "sample": 1,
+      "attempt_number": 47,
+      "continuation_manifest_sha256": "affba5b243da43d1a15c28e5364741828e4f684bb1b43d15d81ad720b28ef39f"
+    },
+    {
+      "key": "mandelbrot:mandelbrot-apl-active-v2-optimized",
+      "id": "mandelbrot-apl-active-v2-optimized",
+      "benchmark": "mandelbrot",
+      "language": "apl",
+      "source_sha256": "74dc3d19f12a83b1c14f0c2f83f5edb343147cdcb9a312d020d679084be9cfaa",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/sources/mandelbrot.optimized.apl",
+        "--",
+        "16000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh\", \"--cc\", \"8\", \"-f\", \"{source}\", \"--\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011\", \"environment\": {\"LC_ALL\": \"C\"}, \"source_sha256\": \"74dc3d19f12a83b1c14f0c2f83f5edb343147cdcb9a312d020d679084be9cfaa\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl\": \"ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/results/optimized-200.work\": \"22699e83d7f8c49fb3acf15eebcfd60cdb66819c2bc83ee2529f7fd0249f2042\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh\": \"50c937c62df5095151dd766dcbd8bc2058e24a93ccefb6b5b601944a48cdadf4\", \"/opt/homebrew/Cellar/pcre2/10.49/lib/libpcre2-32.0.dylib\": \"ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9\", \"/opt/homebrew/opt/pcre2/lib/libpcre2-32.0.dylib\": \"ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9\"}}",
+      "started_at": "2026-10-12T15:45:06.938116+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 659.484641833,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 271280,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T15:56:06.650079+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 48,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining-owner/attempts/048-mandelbrot-apl-active-v2-optimized.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 70535,
+        "pgid": 70535,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+          "--cc",
+          "8",
+          "-f",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/sources/mandelbrot.optimized.apl",
+          "--",
+          "16000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining-owner/attempts/048-mandelbrot-apl-active-v2-optimized.supervisor.json",
+      "sample": 2,
+      "attempt_number": 48,
+      "continuation_manifest_sha256": "affba5b243da43d1a15c28e5364741828e4f684bb1b43d15d81ad720b28ef39f"
+    },
+    {
+      "key": "mandelbrot:mech-control-for-apl-medium-v3",
+      "id": "mech-control-mandelbrot-for-apl-medium-v3",
+      "benchmark": "mandelbrot",
+      "language": "mech",
+      "source_sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-after",
+        "16000",
+        "8"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"7ed5c8aad032b92c36c92fb6b0f7183e3fdbedc9ea5b7762d10c0a2c6490cddd\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-after\", \"{n}\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90\", \"support\": {\"mandelbrot/mandelbrot-compact-program.mec\": \"75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169\", \"mandelbrot/mandelbrot-program.mec\": \"c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90\"}}",
+      "started_at": "2026-10-12T15:56:35.226836+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.474527625,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T15:56:35.926558+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 49,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining-owner/attempts/049-mech-control-mandelbrot-for-apl-medium-v3.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 72254,
+        "pgid": 72254,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-after",
+          "16000",
+          "8"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining-owner/attempts/049-mech-control-mandelbrot-for-apl-medium-v3.supervisor.json",
+      "sample": 2,
+      "attempt_number": 49,
+      "continuation_manifest_sha256": "affba5b243da43d1a15c28e5364741828e4f684bb1b43d15d81ad720b28ef39f"
+    },
+    {
+      "key": "mandelbrot:mandelbrot-apl-active-v2-compact",
+      "id": "mandelbrot-apl-active-v2-compact",
+      "benchmark": "mandelbrot",
+      "language": "apl",
+      "source_sha256": "5c25c451aa2d8f6cad0e18e77a40d05d9bb47e816eeb55ebee9d865626c41a43",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "1",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/sources/mandelbrot.compact.apl",
+        "--",
+        "16000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh\", \"--cc\", \"1\", \"-f\", \"{source}\", \"--\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011\", \"environment\": {\"LC_ALL\": \"C\"}, \"source_sha256\": \"5c25c451aa2d8f6cad0e18e77a40d05d9bb47e816eeb55ebee9d865626c41a43\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl\": \"ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/results/compact-200.work\": \"40e5d54f60a7a3d9ddd8bbe2a26e634d20818ca40af898311d670a8722a5e18a\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh\": \"50c937c62df5095151dd766dcbd8bc2058e24a93ccefb6b5b601944a48cdadf4\", \"/opt/homebrew/Cellar/pcre2/10.49/lib/libpcre2-32.0.dylib\": \"ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9\", \"/opt/homebrew/opt/pcre2/lib/libpcre2-32.0.dylib\": \"ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9\"}}",
+      "started_at": "2026-10-12T15:56:37.136123+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 646.459957833,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 20416,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T16:07:23.824875+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 50,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining-owner/attempts/050-mandelbrot-apl-active-v2-compact.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 72274,
+        "pgid": 72274,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+          "--cc",
+          "1",
+          "-f",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/sources/mandelbrot.compact.apl",
+          "--",
+          "16000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining-owner/attempts/050-mandelbrot-apl-active-v2-compact.supervisor.json",
+      "sample": 2,
+      "attempt_number": 50,
+      "continuation_manifest_sha256": "affba5b243da43d1a15c28e5364741828e4f684bb1b43d15d81ad720b28ef39f"
+    },
+    {
+      "key": "mandelbrot:mandelbrot-apl-compact",
+      "id": "mandelbrot-apl-compact",
+      "benchmark": "mandelbrot",
+      "language": "apl",
+      "source_sha256": "ce26bde246eea5020d33f80f3168f712a0ddc74594ad00f98b3b0c6014d18eeb",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "1",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/mandelbrot.compact.apl",
+        "--",
+        "16000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh\", \"--cc\", \"1\", \"-f\", \"{source}\", \"--\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011\", \"environment\": {\"LC_ALL\": \"C\"}, \"source_sha256\": \"ce26bde246eea5020d33f80f3168f712a0ddc74594ad00f98b3b0c6014d18eeb\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl\": \"ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh\": \"50c937c62df5095151dd766dcbd8bc2058e24a93ccefb6b5b601944a48cdadf4\", \"/opt/homebrew/Cellar/pcre2/10.49/lib/libpcre2-32.0.dylib\": \"ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9\", \"/opt/homebrew/opt/pcre2/lib/libpcre2-32.0.dylib\": \"ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9\"}}",
+      "started_at": "2026-10-12T16:09:20.143627+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 1493.859751083,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 13440,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T16:34:14.243093+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 51,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining-owner/attempts/051-mandelbrot-apl-compact.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 74583,
+        "pgid": 74583,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+          "--cc",
+          "1",
+          "-f",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/mandelbrot.compact.apl",
+          "--",
+          "16000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining-owner/attempts/051-mandelbrot-apl-compact.supervisor.json",
+      "sample": 2,
+      "attempt_number": 51,
+      "continuation_manifest_sha256": "affba5b243da43d1a15c28e5364741828e4f684bb1b43d15d81ad720b28ef39f"
+    },
+    {
+      "key": "mandelbrot:mandelbrot-apl-active-v2-compact",
+      "id": "mandelbrot-apl-active-v2-compact",
+      "benchmark": "mandelbrot",
+      "language": "apl",
+      "source_sha256": "5c25c451aa2d8f6cad0e18e77a40d05d9bb47e816eeb55ebee9d865626c41a43",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "1",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/sources/mandelbrot.compact.apl",
+        "--",
+        "16000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh\", \"--cc\", \"1\", \"-f\", \"{source}\", \"--\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011\", \"environment\": {\"LC_ALL\": \"C\"}, \"source_sha256\": \"5c25c451aa2d8f6cad0e18e77a40d05d9bb47e816eeb55ebee9d865626c41a43\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl\": \"ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/results/compact-200.work\": \"40e5d54f60a7a3d9ddd8bbe2a26e634d20818ca40af898311d670a8722a5e18a\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh\": \"50c937c62df5095151dd766dcbd8bc2058e24a93ccefb6b5b601944a48cdadf4\", \"/opt/homebrew/Cellar/pcre2/10.49/lib/libpcre2-32.0.dylib\": \"ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9\", \"/opt/homebrew/opt/pcre2/lib/libpcre2-32.0.dylib\": \"ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9\"}}",
+      "started_at": "2026-10-12T16:36:29.023592+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 650.375225375,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 20400,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T16:47:19.636912+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 52,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining-owner/attempts/052-mandelbrot-apl-active-v2-compact.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 79774,
+        "pgid": 79774,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+          "--cc",
+          "1",
+          "-f",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/sources/mandelbrot.compact.apl",
+          "--",
+          "16000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining-owner/attempts/052-mandelbrot-apl-active-v2-compact.supervisor.json",
+      "sample": 3,
+      "attempt_number": 52,
+      "continuation_manifest_sha256": "affba5b243da43d1a15c28e5364741828e4f684bb1b43d15d81ad720b28ef39f"
+    },
+    {
+      "key": "mandelbrot:mandelbrot-apl-compact",
+      "id": "mandelbrot-apl-compact",
+      "benchmark": "mandelbrot",
+      "language": "apl",
+      "source_sha256": "ce26bde246eea5020d33f80f3168f712a0ddc74594ad00f98b3b0c6014d18eeb",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "1",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/mandelbrot.compact.apl",
+        "--",
+        "16000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh\", \"--cc\", \"1\", \"-f\", \"{source}\", \"--\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011\", \"environment\": {\"LC_ALL\": \"C\"}, \"source_sha256\": \"ce26bde246eea5020d33f80f3168f712a0ddc74594ad00f98b3b0c6014d18eeb\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl\": \"ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh\": \"50c937c62df5095151dd766dcbd8bc2058e24a93ccefb6b5b601944a48cdadf4\", \"/opt/homebrew/Cellar/pcre2/10.49/lib/libpcre2-32.0.dylib\": \"ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9\", \"/opt/homebrew/opt/pcre2/lib/libpcre2-32.0.dylib\": \"ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9\"}}",
+      "started_at": "2026-10-12T16:47:36.212899+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 1507.132155833,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 13392,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T17:12:43.579080+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 53,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining-owner/attempts/053-mandelbrot-apl-compact.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 82781,
+        "pgid": 82781,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+          "--cc",
+          "1",
+          "-f",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/mandelbrot.compact.apl",
+          "--",
+          "16000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining-owner/attempts/053-mandelbrot-apl-compact.supervisor.json",
+      "sample": 3,
+      "attempt_number": 53,
+      "continuation_manifest_sha256": "affba5b243da43d1a15c28e5364741828e4f684bb1b43d15d81ad720b28ef39f"
+    },
+    {
+      "key": "mandelbrot:mech-control-for-apl-medium-v3",
+      "id": "mech-control-mandelbrot-for-apl-medium-v3",
+      "benchmark": "mandelbrot",
+      "language": "mech",
+      "source_sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-after",
+        "16000",
+        "8"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"7ed5c8aad032b92c36c92fb6b0f7183e3fdbedc9ea5b7762d10c0a2c6490cddd\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-after\", \"{n}\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90\", \"support\": {\"mandelbrot/mandelbrot-compact-program.mec\": \"75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169\", \"mandelbrot/mandelbrot-program.mec\": \"c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90\"}}",
+      "started_at": "2026-10-12T17:24:23.732128+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.436056459,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T17:24:24.382930+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 54,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining-owner/attempts/054-mech-control-mandelbrot-for-apl-medium-v3.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 94270,
+        "pgid": 94270,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-after",
+          "16000",
+          "8"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining-owner/attempts/054-mech-control-mandelbrot-for-apl-medium-v3.supervisor.json",
+      "sample": 3,
+      "attempt_number": 54,
+      "continuation_manifest_sha256": "affba5b243da43d1a15c28e5364741828e4f684bb1b43d15d81ad720b28ef39f"
+    },
+    {
+      "key": "mandelbrot:mandelbrot-apl-active-v2-optimized",
+      "id": "mandelbrot-apl-active-v2-optimized",
+      "benchmark": "mandelbrot",
+      "language": "apl",
+      "source_sha256": "74dc3d19f12a83b1c14f0c2f83f5edb343147cdcb9a312d020d679084be9cfaa",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/sources/mandelbrot.optimized.apl",
+        "--",
+        "16000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh\", \"--cc\", \"8\", \"-f\", \"{source}\", \"--\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011\", \"environment\": {\"LC_ALL\": \"C\"}, \"source_sha256\": \"74dc3d19f12a83b1c14f0c2f83f5edb343147cdcb9a312d020d679084be9cfaa\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl\": \"ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/results/optimized-200.work\": \"22699e83d7f8c49fb3acf15eebcfd60cdb66819c2bc83ee2529f7fd0249f2042\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh\": \"50c937c62df5095151dd766dcbd8bc2058e24a93ccefb6b5b601944a48cdadf4\", \"/opt/homebrew/Cellar/pcre2/10.49/lib/libpcre2-32.0.dylib\": \"ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9\", \"/opt/homebrew/opt/pcre2/lib/libpcre2-32.0.dylib\": \"ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9\"}}",
+      "started_at": "2026-10-12T17:24:51.064273+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 660.673371958,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 270768,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T17:35:51.978492+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 55,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining-owner/attempts/055-mandelbrot-apl-active-v2-optimized.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 94577,
+        "pgid": 94577,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+          "--cc",
+          "8",
+          "-f",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/sources/mandelbrot.optimized.apl",
+          "--",
+          "16000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining-owner/attempts/055-mandelbrot-apl-active-v2-optimized.supervisor.json",
+      "sample": 3,
+      "attempt_number": 55,
+      "continuation_manifest_sha256": "affba5b243da43d1a15c28e5364741828e4f684bb1b43d15d81ad720b28ef39f"
+    },
+    {
+      "key": "fasta:fasta-apl-compact",
+      "id": "fasta-apl-compact",
+      "benchmark": "fasta",
+      "language": "apl",
+      "source_sha256": "d41ae162630187a26ee6f1ca2a89e9e83e8cfe0130d5aa3d7eafc5351337b21f",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "1",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/fasta.compact.apl",
+        "--",
+        "25000000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh\", \"--cc\", \"1\", \"-f\", \"{source}\", \"--\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011\", \"environment\": {\"LC_ALL\": \"C\"}, \"source_sha256\": \"d41ae162630187a26ee6f1ca2a89e9e83e8cfe0130d5aa3d7eafc5351337b21f\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl\": \"ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh\": \"50c937c62df5095151dd766dcbd8bc2058e24a93ccefb6b5b601944a48cdadf4\", \"/opt/homebrew/Cellar/pcre2/10.49/lib/libpcre2-32.0.dylib\": \"ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9\", \"/opt/homebrew/opt/pcre2/lib/libpcre2-32.0.dylib\": \"ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9\"}}",
+      "started_at": "2026-10-12T17:48:18.584426+00:00",
+      "workload_n": 25000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 333.146645875,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 5216,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+      "stdout_bytes": 254166745,
+      "stdout_sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+      "validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T17:53:52.154805+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 56,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining-owner/attempts/056-fasta-apl-compact.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 718,
+        "pgid": 718,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+          "--cc",
+          "1",
+          "-f",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/fasta.compact.apl",
+          "--",
+          "25000000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining-owner/attempts/056-fasta-apl-compact.supervisor.json",
+      "sample": 1,
+      "attempt_number": 56,
+      "continuation_manifest_sha256": "affba5b243da43d1a15c28e5364741828e4f684bb1b43d15d81ad720b28ef39f"
+    },
+    {
+      "key": "fasta:mech-control-for-apl-medium-v3",
+      "id": "mech-control-fasta-for-apl-medium-v3",
+      "benchmark": "fasta",
+      "language": "mech",
+      "source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating",
+        "25000000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"37c24e617689fbbec6221ff4c107d9ea35f18eb62ed7387286bfa7d6224a92e4\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602\", \"support\": {\"../../hosts/gpu/src/control/compiler.rs\": \"b0d992df5b4c67a6dd1cb2a12b82f7f90e9dc845c46f13ca81a9aceb18ff3286\", \"fasta/fasta-optimized.mec\": \"b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602\", \"fasta/fasta.mec\": \"5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066\", \"work-audit/20261009/timings.json\": \"9c85e39d8d72357ee9f0867cdebb0968eba37f3577d013d3d21f661027abc33a\"}}",
+      "started_at": "2026-10-12T17:59:12.572533+00:00",
+      "workload_n": 25000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.586863042,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 254166745,
+      "stdout_sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+      "validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T17:59:13.562147+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 57,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining-owner/attempts/057-mech-control-fasta-for-apl-medium-v3.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 4281,
+        "pgid": 4281,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating",
+          "25000000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining-owner/attempts/057-mech-control-fasta-for-apl-medium-v3.supervisor.json",
+      "sample": 1,
+      "attempt_number": 57,
+      "continuation_manifest_sha256": "affba5b243da43d1a15c28e5364741828e4f684bb1b43d15d81ad720b28ef39f"
+    },
+    {
+      "key": "fasta:fasta-apl-affine-hoisted-optimized-v3",
+      "id": "fasta-apl-affine-hoisted-optimized-v3",
+      "benchmark": "fasta",
+      "language": "apl",
+      "source_sha256": "48002bf2a99dea328634775e7b26fcb2c57be38aa596e01675c671181548d43b",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/sources/fasta.optimized.apl"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh\", \"--cc\", \"8\", \"-f\", \"{source}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011\", \"environment\": {\"LC_ALL\": \"C\"}, \"source_sha256\": \"48002bf2a99dea328634775e7b26fcb2c57be38aa596e01675c671181548d43b\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl\": \"ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh\": \"50c937c62df5095151dd766dcbd8bc2058e24a93ccefb6b5b601944a48cdadf4\", \"/opt/homebrew/Cellar/pcre2/10.49/lib/libpcre2-32.0.dylib\": \"ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9\", \"/opt/homebrew/opt/pcre2/lib/libpcre2-32.0.dylib\": \"ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9\"}}",
+      "started_at": "2026-10-12T17:59:19.559567+00:00",
+      "workload_n": 25000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.039554333,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "VALUE ERROR+\n      /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/sources/fasta.optimized.apl\n                                                                                                                                            ^\n\nWARNING: File pipe-to_client still open - closing it\n",
+      "stdout_bytes": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "error": "('fasta', 0, 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', (254166745, '3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa'))",
+      "error_type": "OutputValidationError",
+      "stdout_prefix": "",
+      "finished_at": "2026-10-12T17:59:19.801789+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 58,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining-owner/attempts/058-fasta-apl-affine-hoisted-optimized-v3.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 4388,
+        "pgid": 4388,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+          "--cc",
+          "8",
+          "-f",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/sources/fasta.optimized.apl"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": false,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": false,
+        "complete_output_bytes_and_hash": false,
+        "pins_unchanged": true
+      },
+      "qualified": false,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining-owner/attempts/058-fasta-apl-affine-hoisted-optimized-v3.supervisor.json",
+      "sample": 1,
+      "attempt_number": 58,
+      "continuation_manifest_sha256": "affba5b243da43d1a15c28e5364741828e4f684bb1b43d15d81ad720b28ef39f"
     }
   ],
   "discarded": [],
-  "completed_benchmarks": [],
+  "completed_benchmarks": [
+    "spectralnorm",
+    "mandelbrot",
+    "revcomp",
+    "regexredux",
+    "pidigits"
+  ],
   "benchmark_order": [
     "regexredux",
     "revcomp",
@@ -7515,7 +9070,7 @@
     }
   },
   "machine": "Apple M3",
-  "updated_at": "2026-10-11T22:25:31.929797+00:00",
+  "updated_at": "2026-10-12T17:59:14.168504+00:00",
   "historical_attempts": [
     {
       "key": "regexredux:mech-control-for-apl",

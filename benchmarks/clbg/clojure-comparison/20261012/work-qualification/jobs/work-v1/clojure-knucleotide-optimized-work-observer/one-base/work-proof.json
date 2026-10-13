@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "flags": {
+    "all_seven_actual_maps": true,
+    "all_windows_and_complete_inventories": true,
+    "actual_growth_observed": false,
+    "private_workers_and_same_map_handoff": true
+  },
+  "actual_ordered_trace": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-knucleotide-optimized-work-observer/one-base/actual-work.jsonl",
+  "actual_ordered_trace_sha256": "07120f46080f771677893acd0742424478722a757702fc31b94c7cb8e72fa64e",
+  "native_fd_evidence": null,
+  "source_sha256": "6c20eb1581757c5b614d875abc0e9d020d73fac2e1a1ee9d7ce76350a4ccbdf2",
+  "original_scored_source_sha256": "8555e3d807bedda93681f29b301bc5968cc13b44491bb0b5fc09ff5a7ef253ec"
+}

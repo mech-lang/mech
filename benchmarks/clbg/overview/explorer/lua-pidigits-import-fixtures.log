@@ -1,0 +1,26 @@
+test_actual_producer_metadata_accepted (test_lua_pidigits_study_data.FullValidationTests.test_actual_producer_metadata_accepted) ... ok
+test_additional_provenance_preserved (test_lua_pidigits_study_data.FullValidationTests.test_additional_provenance_preserved) ... ok
+test_bare_output_summary_rejected (test_lua_pidigits_study_data.FullValidationTests.test_bare_output_summary_rejected) ... ok
+test_boolean_full_proof_required (test_lua_pidigits_study_data.FullValidationTests.test_boolean_full_proof_required) ... ok
+test_boolean_reference_match_required (test_lua_pidigits_study_data.FullValidationTests.test_boolean_reference_match_required) ... ok
+test_boolean_variant (test_lua_pidigits_study_data.FullValidationTests.test_boolean_variant) ... ok
+test_every_required_field_is_required (test_lua_pidigits_study_data.FullValidationTests.test_every_required_field_is_required) ... ok
+test_full_proof_required (test_lua_pidigits_study_data.FullValidationTests.test_full_proof_required) ... ok
+test_noninteger_n_rejected (test_lua_pidigits_study_data.FullValidationTests.test_noninteger_n_rejected) ... ok
+test_optional_noncanonical_flag_rejected (test_lua_pidigits_study_data.FullValidationTests.test_optional_noncanonical_flag_rejected) ... ok
+test_optional_probe_exclusion_flag_rejected (test_lua_pidigits_study_data.FullValidationTests.test_optional_probe_exclusion_flag_rejected) ... ok
+test_original_source_proof_cannot_replace_counted_copy (test_lua_pidigits_study_data.FullValidationTests.test_original_source_proof_cannot_replace_counted_copy) ... ok
+test_reference_match_required (test_lua_pidigits_study_data.FullValidationTests.test_reference_match_required) ... ok
+test_small_probe_rejected (test_lua_pidigits_study_data.FullValidationTests.test_small_probe_rejected) ... ok
+test_unexpanded_command_n (test_lua_pidigits_study_data.FullValidationTests.test_unexpanded_command_n) ... ok
+test_wrong_command_n (test_lua_pidigits_study_data.FullValidationTests.test_wrong_command_n) ... ok
+test_wrong_output_hash (test_lua_pidigits_study_data.FullValidationTests.test_wrong_output_hash) ... ok
+test_wrong_output_size (test_lua_pidigits_study_data.FullValidationTests.test_wrong_output_size) ... ok
+test_wrong_runtime_command (test_lua_pidigits_study_data.FullValidationTests.test_wrong_runtime_command) ... ok
+test_wrong_source_command (test_lua_pidigits_study_data.FullValidationTests.test_wrong_source_command) ... ok
+test_wrong_variant (test_lua_pidigits_study_data.FullValidationTests.test_wrong_variant) ... ok
+
+----------------------------------------------------------------------
+Ran 21 tests in 0.000s
+
+OK

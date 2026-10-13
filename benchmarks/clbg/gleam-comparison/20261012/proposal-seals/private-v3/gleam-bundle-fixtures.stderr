@@ -1,0 +1,32 @@
+test_changed_missing_or_nonboolean_old_record_is_rejected (test_guarded_prepare.AdditiveRepair.test_changed_missing_or_nonboolean_old_record_is_rejected) ... ok
+test_exact_old_compact_tree_records_are_retained_without_mutation (test_guarded_prepare.AdditiveRepair.test_exact_old_compact_tree_records_are_retained_without_mutation) ... ok
+test_exact_six_grouping_pairs_change_only_the_five_reviewed_sources (test_guarded_prepare.AdditiveRepair.test_exact_six_grouping_pairs_change_only_the_five_reviewed_sources) ... ERROR
+test_saved_fingerprint_projection_is_exact_and_runtime_pins_stay_separate (test_guarded_prepare.AdditiveRepair.test_saved_fingerprint_projection_is_exact_and_runtime_pins_stay_separate) ... ok
+test_archive_traversal_and_links_cannot_become_compiler_inputs (test_guarded_prepare.CandidatePreparation.test_archive_traversal_and_links_cannot_become_compiler_inputs) ... ok
+test_complete_authored_inventory_and_explicit_beam_command (test_guarded_prepare.CandidatePreparation.test_complete_authored_inventory_and_explicit_beam_command) ... ok
+test_hex_inner_checksum_and_exact_outer_inventory_are_required (test_guarded_prepare.CandidatePreparation.test_hex_inner_checksum_and_exact_outer_inventory_are_required) ... ok
+test_missing_form_foreign_source_and_ffi_module_collision_are_rejected (test_guarded_prepare.CandidatePreparation.test_missing_form_foreign_source_and_ffi_module_collision_are_rejected) ... ok
+test_preheader_input_is_declared_and_reference_ignores_preamble (test_guarded_prepare.CandidatePreparation.test_preheader_input_is_declared_and_reference_ignores_preamble) ... ok
+
+======================================================================
+ERROR: test_exact_six_grouping_pairs_change_only_the_five_reviewed_sources (test_guarded_prepare.AdditiveRepair.test_exact_six_grouping_pairs_change_only_the_five_reviewed_sources)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/revisions/private-v3/test_guarded_prepare.py", line 123, in test_exact_six_grouping_pairs_change_only_the_five_reviewed_sources
+    proof_reuse.validate_repairs(preparation)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/revisions/private-v3/proof_reuse.py", line 57, in validate_repairs
+    assert (REVISION/'sources'/relative).read_text()==before
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/lib/python3.14/pathlib/__init__.py", line 787, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/lib/python3.14/pathlib/__init__.py", line 771, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/revisions/private-v3/sources/binarytrees/optimized.gleam'
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.032s
+
+FAILED (errors=1)

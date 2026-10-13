@@ -1,0 +1,20 @@
+   Compiling mech-gpu v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/compile-input-v3/.build/strict/workspace/hosts/gpu)
+error[E0433]: cannot find module or crate `resident` in this scope
+    --> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/compile-input-v3/.build/strict/workspace/hosts/gpu/src/sequence/mod.rs:60:38
+     |
+  60 | pub fn run_algebraic_conformance() { resident::run_algebraic_conformance(); }
+     |                                      ^^^^^^^^ use of unresolved module or unlinked crate `resident`
+     |
+note: module `crate::sequence::runtime::resident` exists but is inaccessible
+    --> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/compile-input-v3/.build/strict/workspace/hosts/gpu/src/sequence/runtime.rs:1794:1
+     |
+1794 | mod resident;
+     | ^^^^^^^^^^^^^ not accessible
+help: to make use of source file /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/compile-input-v3/.build/strict/workspace/hosts/gpu/src/sequence/resident.rs, use `mod resident` in this file to declare the module
+    -->  /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/compile-input-v3/.build/strict/workspace/hosts/gpu/src/lib.rs:3:1
+     |
+   3 + mod resident;
+     |
+
+For more information about this error, try `rustc --explain E0433`.
+error: could not compile `mech-gpu` (lib) due to 1 previous error

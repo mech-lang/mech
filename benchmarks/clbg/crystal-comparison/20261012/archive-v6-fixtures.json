@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "tests_run": 6,
+  "failures": 0,
+  "errors": 0,
+  "native_probes": 0,
+  "actual_signals_sent": 0,
+  "source_revision": "input-label-archive-filter-v6",
+  "never_chart_eligible": true,
+  "original112probes_reexecuted": false,
+  "prior_fixture_methods_reexecuted": false,
+  "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/test_archive_v6.py": "6404a286f332a8ed6d8304ab0aa13d431f961e887ec11f5bb29a5894ccd4c98f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/guarded_prepare_v6.py": "b57269013951665f03545e62a0298bc3716a023f308229f684afc8316ee52dda",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/proof_reuse_v6.py": "fff8f7702f2099dd713b554899df9ffd568f6ade078cb35712cd6905138c5df1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/ARCHIVE_FILTER_V6.md": "8c4e6c0a8a324ebcc44d54decdfe0588dccc80588d5e79f6b875298ba508d293",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/guarded_prepare_v3.py": "de7bcbb690d5300527826323090a1a4cad12bbf2d8096051b6a54a7dbcc1b061",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/proof_reuse_v3.py": "c559582c32df7d5dc12819b2a962062a2d23533060eb5280e82893baa278ddfb",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/input-v3-fixtures.json": "c642aeb23999b0977407ae24189534ba56d7517c833f8dc7208d7d4184b3d15d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/metadata-failures/archive-v5-seal-002/link-diagnostic.json": "9f3573ae27c53dc7e92618f9c1d7cc7a85477f4d86ed83522916c249a7251864",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/archive-v6-fixtures.log": "7b9478b7e0ea6240e843c90b3236c21ab1496e29546fea6e1cf5734f62e73166"
+  }
+}

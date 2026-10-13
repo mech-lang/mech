@@ -1,0 +1,168 @@
+test_explicit_dispatch_and_crystal_stays_unsupported (test_foreign_future_mask.FutureMaskFixtures.test_explicit_dispatch_and_crystal_stays_unsupported) ... ok
+test_nim_backtick_identifier_keeps_header_position (test_foreign_future_mask.FutureMaskFixtures.test_nim_backtick_identifier_keeps_header_position) ... ok
+test_nim_char_and_numeric_suffix_are_distinct (test_foreign_future_mask.FutureMaskFixtures.test_nim_char_and_numeric_suffix_are_distinct) ... ok
+test_nim_custom_literal_prefix_requires_review (test_foreign_future_mask.FutureMaskFixtures.test_nim_custom_literal_prefix_requires_review) ... ok
+test_nim_generalized_raw_string_doubled_quote (test_foreign_future_mask.FutureMaskFixtures.test_nim_generalized_raw_string_doubled_quote) ... ok
+test_nim_line_comments_preserve_crlf (test_foreign_future_mask.FutureMaskFixtures.test_nim_line_comments_preserve_crlf) ... ok
+test_nim_multiline_triple_string_keeps_rows (test_foreign_future_mask.FutureMaskFixtures.test_nim_multiline_triple_string_keeps_rows) ... ok
+test_nim_nested_comment_is_opaque (test_foreign_future_mask.FutureMaskFixtures.test_nim_nested_comment_is_opaque) ... ok
+test_nim_pragma_is_retained_as_pending_evidence (test_foreign_future_mask.FutureMaskFixtures.test_nim_pragma_is_retained_as_pending_evidence) ... ok
+test_nim_pragma_quote_does_not_close_pragma (test_foreign_future_mask.FutureMaskFixtures.test_nim_pragma_quote_does_not_close_pragma) ... ok
+test_nim_regular_escaped_quote (test_foreign_future_mask.FutureMaskFixtures.test_nim_regular_escaped_quote) ... ok
+test_nim_unclosed_comment_is_gated (test_foreign_future_mask.FutureMaskFixtures.test_nim_unclosed_comment_is_gated) ... ok
+test_nim_unclosed_quote_keeps_following_line (test_foreign_future_mask.FutureMaskFixtures.test_nim_unclosed_quote_keeps_following_line) ... ok
+test_pony_character_and_apostrophe_identifier (test_foreign_future_mask.FutureMaskFixtures.test_pony_character_and_apostrophe_identifier) ... ok
+test_pony_identifier_apostrophe_is_not_character (test_foreign_future_mask.FutureMaskFixtures.test_pony_identifier_apostrophe_is_not_character) ... ok
+test_pony_nested_comment_and_line_comment (test_foreign_future_mask.FutureMaskFixtures.test_pony_nested_comment_and_line_comment) ... ok
+test_pony_partial_capability_and_recover_remain_visible (test_foreign_future_mask.FutureMaskFixtures.test_pony_partial_capability_and_recover_remain_visible) ... ok
+test_pony_string_comment_marker_is_literal (test_foreign_future_mask.FutureMaskFixtures.test_pony_string_comment_marker_is_literal) ... ok
+test_pony_triple_string_preserves_rows (test_foreign_future_mask.FutureMaskFixtures.test_pony_triple_string_preserves_rows) ... ok
+test_pony_unclosed_comment_is_gated (test_foreign_future_mask.FutureMaskFixtures.test_pony_unclosed_comment_is_gated) ... ok
+test_attached_meaningful_pragmas_are_independent (test_foreign_nim.NimFixtures.test_attached_meaningful_pragmas_are_independent) ... ok
+test_case_patterns_belong_to_branch_headers (test_foreign_nim.NimFixtures.test_case_patterns_belong_to_branch_headers) ... ok
+test_codegen_and_custom_pragmas_remain_gated (test_foreign_nim.NimFixtures.test_codegen_and_custom_pragmas_remain_gated) ... ok
+test_comparison_operators_are_not_assignments (test_foreign_nim.NimFixtures.test_comparison_operators_are_not_assignments) ... ok
+test_control_headers_and_body_bindings (test_foreign_nim.NimFixtures.test_control_headers_and_body_bindings) ... ok
+test_declaration_sections_are_structural (test_foreign_nim.NimFixtures.test_declaration_sections_are_structural) ... ok
+test_explicit_callback_retains_header_and_body (test_foreign_nim.NimFixtures.test_explicit_callback_retains_header_and_body) ... ok
+test_generic_type_and_constructor_data_do_not_expand (test_foreign_nim.NimFixtures.test_generic_type_and_constructor_data_do_not_expand) ... ok
+test_imperative_procedure_body_is_not_composition (test_foreign_nim.NimFixtures.test_imperative_procedure_body_is_not_composition) ... ok
+test_independent_initialized_and_uninitialized_names (test_foreign_nim.NimFixtures.test_independent_initialized_and_uninitialized_names) ... ok
+test_layout_has_no_imputed_closers (test_foreign_nim.NimFixtures.test_layout_has_no_imputed_closers) ... ok
+test_literal_data_wrapping_is_preserved (test_foreign_nim.NimFixtures.test_literal_data_wrapping_is_preserved) ... ok
+test_named_object_type_fields_are_independent (test_foreign_nim.NimFixtures.test_named_object_type_fields_are_independent) ... ok
+test_named_tuple_type_has_field_owners (test_foreign_nim.NimFixtures.test_named_tuple_type_has_field_owners) ... ok
+test_nested_comments_strings_chars_and_numeric_suffixes (test_foreign_nim.NimFixtures.test_nested_comments_strings_chars_and_numeric_suffixes) ... ok
+test_procedure_formal_groups_are_not_fields (test_foreign_nim.NimFixtures.test_procedure_formal_groups_are_not_fields) ... ok
+test_pure_named_procedure_is_composition (test_foreign_nim.NimFixtures.test_pure_named_procedure_is_composition) ... ok
+test_quoted_identifiers_and_raw_literals_preserve_positions (test_foreign_nim.NimFixtures.test_quoted_identifiers_and_raw_literals_preserve_positions) ... ok
+test_standalone_meaningful_pragma_is_retained (test_foreign_nim.NimFixtures.test_standalone_meaningful_pragma_is_retained) ... ok
+test_tuple_binding_is_one_explicit_producer (test_foreign_nim.NimFixtures.test_tuple_binding_is_one_explicit_producer) ... ok
+test_unknown_macro_template_and_extended_type_are_gated (test_foreign_nim.NimFixtures.test_unknown_macro_template_and_extended_type_are_gated) ... ok
+test_unqualified_lexical_forms_remain_gated (test_foreign_nim.NimFixtures.test_unqualified_lexical_forms_remain_gated) ... ok
+test_value_conditional_operand_is_not_statement_header (test_foreign_nim.NimFixtures.test_value_conditional_operand_is_not_statement_header) ... ok
+test_value_only_if_and_case_procedures (test_foreign_nim.NimFixtures.test_value_only_if_and_case_procedures) ... ok
+test_wrapped_named_header_and_formal_defaults (test_foreign_nim.NimFixtures.test_wrapped_named_header_and_formal_defaults) ... ok
+test_begin_open_zero_preserves_mixed_operand_work_and_written_end (test_foreign_crystal.CrystalProposalFixtures.test_begin_open_zero_preserves_mixed_operand_work_and_written_end) ... ok
+test_braced_callback_explicit_header_body_written_close (test_foreign_crystal.CrystalProposalFixtures.test_braced_callback_explicit_header_body_written_close) ... ok
+test_case_imperative_raise_not_collapsed_as_value_expression (test_foreign_crystal.CrystalProposalFixtures.test_case_imperative_raise_not_collapsed_as_value_expression) ... ok
+test_constructor_instance_formals_protected_no_generated_assignments (test_foreign_crystal.CrystalProposalFixtures.test_constructor_instance_formals_protected_no_generated_assignments) ... ok
+test_controls_comparison_and_condition_assignment_stay_header (test_foreign_crystal.CrystalProposalFixtures.test_controls_comparison_and_condition_assignment_stay_header) ... ok
+test_destructured_callback_formals_structural_not_bindings (test_foreign_crystal.CrystalProposalFixtures.test_destructured_callback_formals_structural_not_bindings) ... ok
+test_do_callback_explicit_header_body_written_close (test_foreign_crystal.CrystalProposalFixtures.test_do_callback_explicit_header_body_written_close) ... ok
+test_escaped_quotes_characters_do_not_open_scopes (test_foreign_crystal.CrystalProposalFixtures.test_escaped_quotes_characters_do_not_open_scopes) ... ok
+test_expression_lambda_without_exec_block_and_explicit_lambda_differ (test_foreign_crystal.CrystalProposalFixtures.test_expression_lambda_without_exec_block_and_explicit_lambda_differ) ... ok
+test_ffi_prototypes_default_formals_one_each_lib_close_written (test_foreign_crystal.CrystalProposalFixtures.test_ffi_prototypes_default_formals_one_each_lib_close_written) ... ok
+test_floor_division_is_not_comment_and_slash_division_not_regex (test_foreign_crystal.CrystalProposalFixtures.test_floor_division_is_not_comment_and_slash_division_not_regex) ... ok
+test_hash_tuple_and_named_arguments_are_data_not_blocks (test_foreign_crystal.CrystalProposalFixtures.test_hash_tuple_and_named_arguments_are_data_not_blocks) ... ok
+test_if_elsif_else_packed_and_expanded (test_foreign_crystal.CrystalProposalFixtures.test_if_elsif_else_packed_and_expanded) ... ok
+test_imperative_method_separate_body_statements_packed_expanded (test_foreign_crystal.CrystalProposalFixtures.test_imperative_method_separate_body_statements_packed_expanded) ... ok
+test_interpolation_independent_work_and_control_are_gated (test_foreign_crystal.CrystalProposalFixtures.test_interpolation_independent_work_and_control_are_gated) ... ok
+test_literal_and_constructor_wrapping_preserved (test_foreign_crystal.CrystalProposalFixtures.test_literal_and_constructor_wrapping_preserved) ... ok
+test_macro_body_and_delimiters_are_not_hidden (test_foreign_crystal.CrystalProposalFixtures.test_macro_body_and_delimiters_are_not_hidden) ... ok
+test_mask_exact_positions_bom_crlf_comments_and_literals (test_foreign_crystal.CrystalProposalFixtures.test_mask_exact_positions_bom_crlf_comments_and_literals) ... ok
+test_member_end_is_not_keyword_close (test_foreign_crystal.CrystalProposalFixtures.test_member_end_is_not_keyword_close) ... ok
+test_nested_callback_resets_outer_argument_data_ownership (test_foreign_crystal.CrystalProposalFixtures.test_nested_callback_resets_outer_argument_data_ownership) ... ok
+test_other_languages_are_not_aliased (test_foreign_crystal.CrystalProposalFixtures.test_other_languages_are_not_aliased) ... ok
+test_percent_heredoc_and_annotations_are_retained_and_gated (test_foreign_crystal.CrystalProposalFixtures.test_percent_heredoc_and_annotations_are_retained_and_gated) ... ok
+test_postfix_controls_header_plus_written_action (test_foreign_crystal.CrystalProposalFixtures.test_postfix_controls_header_plus_written_action) ... FAIL
+test_property_generic_commas_and_initializer_chains_distinct (test_foreign_crystal.CrystalProposalFixtures.test_property_generic_commas_and_initializer_chains_distinct) ... FAIL
+test_real_following_callback_composition_requires_review (test_foreign_crystal.CrystalProposalFixtures.test_real_following_callback_composition_requires_review) ... ok
+test_regex_literals_have_their_own_prefix_class_and_escape_owners (test_foreign_crystal.CrystalProposalFixtures.test_regex_literals_have_their_own_prefix_class_and_escape_owners) ... ok
+test_setter_name_equals_not_body_assignment (test_foreign_crystal.CrystalProposalFixtures.test_setter_name_equals_not_body_assignment) ... ok
+test_simple_interpolation_and_nested_scalar_literal_remain_composed (test_foreign_crystal.CrystalProposalFixtures.test_simple_interpolation_and_nested_scalar_literal_remain_composed) ... ok
+test_tuple_swap_single_producer_and_chained_bindings_expand (test_foreign_crystal.CrystalProposalFixtures.test_tuple_swap_single_producer_and_chained_bindings_expand) ... ok
+test_unclosed_literal_and_interpolation_are_gated (test_foreign_crystal.CrystalProposalFixtures.test_unclosed_literal_and_interpolation_are_gated) ... ok
+test_unknown_or_unclosed_owners_require_review (test_foreign_crystal.CrystalProposalFixtures.test_unknown_or_unclosed_owners_require_review) ... ok
+test_wrapped_method_formals_defaults_and_return_type_one_header (test_foreign_crystal.CrystalProposalFixtures.test_wrapped_method_formals_defaults_and_return_type_one_header) ... ok
+test_written_properties_independent_names_no_generated_accessors (test_foreign_crystal.CrystalProposalFixtures.test_written_properties_independent_names_no_generated_accessors) ... ok
+test_capabilities_partial_markers_and_formals_are_structural (test_foreign_pony.PonyFixtures.test_capabilities_partial_markers_and_formals_are_structural) ... ok
+test_control_nested_in_method_keeps_bodies (test_foreign_pony.PonyFixtures.test_control_nested_in_method_keeps_bodies) ... ok
+test_data_wrapping_is_preserved (test_foreign_pony.PonyFixtures.test_data_wrapping_is_preserved) ... ok
+test_embedded_imperative_recover_keeps_outer_binding (test_foreign_pony.PonyFixtures.test_embedded_imperative_recover_keeps_outer_binding) ... ok
+test_expression_only_anonymous_lambda_is_composition (test_foreign_pony.PonyFixtures.test_expression_only_anonymous_lambda_is_composition) ... ok
+test_ffi_declaration_is_source_not_generated_body (test_foreign_pony.PonyFixtures.test_ffi_declaration_is_source_not_generated_body) ... ok
+test_for_iteration_patterns_are_header_owned (test_foreign_pony.PonyFixtures.test_for_iteration_patterns_are_header_owned) ... ok
+test_imperative_match_arms_and_written_close (test_foreign_pony.PonyFixtures.test_imperative_match_arms_and_written_close) ... ok
+test_imperative_method_exposes_locals_and_tail (test_foreign_pony.PonyFixtures.test_imperative_method_exposes_locals_and_tail) ... ok
+test_imperative_recover_exposes_header_body_and_end (test_foreign_pony.PonyFixtures.test_imperative_recover_exposes_header_body_and_end) ... ok
+test_imperative_try_header_and_written_end (test_foreign_pony.PonyFixtures.test_imperative_try_header_and_written_end) ... ok
+test_independent_constructor_statements (test_foreign_pony.PonyFixtures.test_independent_constructor_statements) ... ok
+test_mixed_error_value_controls_remain_gated (test_foreign_pony.PonyFixtures.test_mixed_error_value_controls_remain_gated) ... ok
+test_nested_comments_literals_and_apostrophe_names (test_foreign_pony.PonyFixtures.test_nested_comments_literals_and_apostrophe_names) ... ok
+test_numeric_operators_and_partial_reference_are_not_bindings (test_foreign_pony.PonyFixtures.test_numeric_operators_and_partial_reference_are_not_bindings) ... ok
+test_pure_match_patterns_are_not_local_bindings (test_foreign_pony.PonyFixtures.test_pure_match_patterns_are_not_local_bindings) ... ok
+test_pure_method_is_one_composition (test_foreign_pony.PonyFixtures.test_pure_method_is_one_composition) ... ok
+test_pure_partial_try_value_is_composition (test_foreign_pony.PonyFixtures.test_pure_partial_try_value_is_composition) ... ok
+test_pure_recover_constructor_is_one_composition (test_foreign_pony.PonyFixtures.test_pure_recover_constructor_is_one_composition) ... ok
+test_receiver_composition_keeps_written_wrapping (test_foreign_pony.PonyFixtures.test_receiver_composition_keeps_written_wrapping) ... ok
+test_receiving_binding_and_reset_are_two_independent_writes (test_foreign_pony.PonyFixtures.test_receiving_binding_and_reset_are_two_independent_writes) ... ok
+test_type_and_member_layout_have_no_imputed_end (test_foreign_pony.PonyFixtures.test_type_and_member_layout_have_no_imputed_end) ... ok
+test_union_tuple_and_generic_data_are_structural (test_foreign_pony.PonyFixtures.test_union_tuple_and_generic_data_are_structural) ... ok
+test_unknown_type_annotation_and_control_forms_remain_gated (test_foreign_pony.PonyFixtures.test_unknown_type_annotation_and_control_forms_remain_gated) ... ok
+test_value_if_operand_is_one_outer_binding (test_foreign_pony.PonyFixtures.test_value_if_operand_is_one_outer_binding) ... ok
+test_where_named_arguments_are_not_assignments (test_foreign_pony.PonyFixtures.test_where_named_arguments_are_not_assignments) ... ok
+test_written_control_end_and_branches (test_foreign_pony.PonyFixtures.test_written_control_end_and_branches) ... ok
+test_absent_and_incomplete_studies_never_call_validator (test_pending_minima.PendingMinimumPoolFixtures.test_absent_and_incomplete_studies_never_call_validator) ... ok
+test_all_four_move_exact_candidate_without_rewriting_producer_data (test_pending_minima.PendingMinimumPoolFixtures.test_all_four_move_exact_candidate_without_rewriting_producer_data) ... ok
+test_complete_reconciliation_uses_independent_adapter_and_exact_manifest_pin (test_pending_minima.PendingMinimumPoolFixtures.test_complete_reconciliation_uses_independent_adapter_and_exact_manifest_pin) ... ok
+test_fresh_control_remains_archived_without_becoming_a_candidate_or_relabel (test_pending_minima.PendingMinimumPoolFixtures.test_fresh_control_remains_archived_without_becoming_a_candidate_or_relabel) ... ok
+test_measured_copy_is_only_counted_source_and_original_is_provenance (test_pending_minima.PendingMinimumPoolFixtures.test_measured_copy_is_only_counted_source_and_original_is_provenance) ... ok
+test_pin_failure_stops_before_independent_validator (test_pending_minima.PendingMinimumPoolFixtures.test_pin_failure_stops_before_independent_validator) ... ok
+test_reject_changed_source_missing_pending_short_samples_or_producer_loc (test_pending_minima.PendingMinimumPoolFixtures.test_reject_changed_source_missing_pending_short_samples_or_producer_loc) ... ok
+test_reject_missing_extra_wrong_profile_or_control_without_pool_mutation (test_pending_minima.PendingMinimumPoolFixtures.test_reject_missing_extra_wrong_profile_or_control_without_pool_mutation) ... ok
+test_accept_all_four_exact_whole_output_oracles_without_mutation (test_pending_minima_records.PendingMinimumRecords.test_accept_all_four_exact_whole_output_oracles_without_mutation) ... ok
+test_archive_real_environment_exclusion_without_relabel_or_score (test_pending_minima_records.PendingMinimumRecords.test_archive_real_environment_exclusion_without_relabel_or_score) ... ok
+test_reject_changed_original_raw_execution_record (test_pending_minima_records.PendingMinimumRecords.test_reject_changed_original_raw_execution_record) ... ok
+test_reject_command_runtime_flags_and_fingerprint (test_pending_minima_records.PendingMinimumRecords.test_reject_command_runtime_flags_and_fingerprint) ... ok
+test_reject_fake_environment_retry_and_nonenvironment_failure (test_pending_minima_records.PendingMinimumRecords.test_reject_fake_environment_retry_and_nonenvironment_failure) ... ok
+test_reject_incomplete_or_active_or_terminal_failure (test_pending_minima_records.PendingMinimumRecords.test_reject_incomplete_or_active_or_terminal_failure) ... ok
+test_reject_incomplete_wrong_or_self_declared_output (test_pending_minima_records.PendingMinimumRecords.test_reject_incomplete_wrong_or_self_declared_output) ... ok
+test_reject_manifest_digest_and_changed_source_pin (test_pending_minima_records.PendingMinimumRecords.test_reject_manifest_digest_and_changed_source_pin) ... ok
+test_reject_missing_extra_and_falsified_summary_samples (test_pending_minima_records.PendingMinimumRecords.test_reject_missing_extra_and_falsified_summary_samples) ... ok
+test_reject_missing_or_duplicate_profile_and_order (test_pending_minima_records.PendingMinimumRecords.test_reject_missing_or_duplicate_profile_and_order) ... ok
+test_reject_nan_zero_boolean_and_infinite_seconds (test_pending_minima_records.PendingMinimumRecords.test_reject_nan_zero_boolean_and_infinite_seconds) ... ok
+test_reject_native_registration_mutex_and_remaining_children (test_pending_minima_records.PendingMinimumRecords.test_reject_native_registration_mutex_and_remaining_children) ... ok
+test_reject_resource_monitor_and_late_wrapper_failure (test_pending_minima_records.PendingMinimumRecords.test_reject_resource_monitor_and_late_wrapper_failure) ... ok
+test_reject_sampler_exit_and_missing_true_raw_gates (test_pending_minima_records.PendingMinimumRecords.test_reject_sampler_exit_and_missing_true_raw_gates) ... ok
+test_reject_scaled_size_and_probe_flags (test_pending_minima_records.PendingMinimumRecords.test_reject_scaled_size_and_probe_flags) ... ok
+test_reject_third_environment_failure_and_changed_producer_loc (test_pending_minima_records.PendingMinimumRecords.test_reject_third_environment_failure_and_changed_producer_loc) ... ok
+
+======================================================================
+FAIL: test_postfix_controls_header_plus_written_action (test_foreign_crystal.CrystalProposalFixtures.test_postfix_controls_header_plus_written_action)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/future-minima-fixtures-01/snapshot/test_foreign_crystal.py", line 156, in test_postfix_controls_header_plus_written_action
+    self.assert_units('rows.each { |row| value=false if row <= 4 }',4)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/future-minima-fixtures-01/snapshot/test_foreign_crystal.py", line 15, in assert_units
+    self.assertEqual(metric['diagnostics'],[],metric['diagnostics'])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [{'kind': 'foreign-overlapping-owner-event[38 chars] 43}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'kind': 'foreign-overlapping-owner-events', 'offset': 42, 'line': 1, 'column': 43}
+
++ []
+- [{'column': 43,
+-   'kind': 'foreign-overlapping-owner-events',
+-   'line': 1,
+-   'offset': 42}] : [{'kind': 'foreign-overlapping-owner-events', 'offset': 42, 'line': 1, 'column': 43}]
+
+======================================================================
+FAIL: test_property_generic_commas_and_initializer_chains_distinct (test_foreign_crystal.CrystalProposalFixtures.test_property_generic_commas_and_initializer_chains_distinct)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/future-minima-fixtures-01/snapshot/test_foreign_crystal.py", line 82, in test_property_generic_commas_and_initializer_chains_distinct
+    self.assert_gate('property {x, y}', 'foreign-crystal-property-declaration-review')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/future-minima-fixtures-01/snapshot/test_foreign_crystal.py", line 23, in assert_gate
+    self.assertIn(kind,{item['kind'] for item in metric['diagnostics']})
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'foreign-crystal-property-declaration-review' not found in set()
+
+----------------------------------------------------------------------
+Ran 129 tests in 0.042s
+
+FAILED (failures=2)

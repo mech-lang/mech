@@ -1,0 +1,23 @@
+{
+  "command": [
+    "/usr/sbin/lsof",
+    "-n",
+    "-P",
+    "-a",
+    "-p",
+    "30667",
+    "-d",
+    "64",
+    "-FpcfnDi"
+  ],
+  "native_pid": 30667,
+  "native_pgid": 30667,
+  "inherited_common_mutex": true,
+  "timeout_seconds": 5,
+  "preparation_only": true,
+  "owned_observer_pid": 30668,
+  "owned_observer_reaped": true,
+  "exit_status": 0,
+  "remaining_group": [],
+  "cleanup_errors": []
+}

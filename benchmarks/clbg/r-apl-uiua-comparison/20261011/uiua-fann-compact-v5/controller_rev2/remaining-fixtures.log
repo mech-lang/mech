@@ -1,0 +1,13 @@
+test_all_fatal_qualification_gates_reject (__main__.Resume.test_all_fatal_qualification_gates_reject) ... ok
+test_complete_oracles_preserve_nbody_numeric_validation (__main__.Resume.test_complete_oracles_preserve_nbody_numeric_validation) ... ok
+test_completion_metadata_preserves_older_failures (__main__.Resume.test_completion_metadata_preserves_older_failures) ... ok
+test_existing_round_order_must_match (__main__.Resume.test_existing_round_order_must_match) ... ok
+test_integrity_failure_is_retained_without_source_failure (__main__.Resume.test_integrity_failure_is_retained_without_source_failure) ... ok
+test_qualified_resume_preserves_old_sample_and_attempt (__main__.Resume.test_qualified_resume_preserves_old_sample_and_attempt) ... ok
+test_real_own_timeout_is_retained_without_a_sample (__main__.Resume.test_real_own_timeout_is_retained_without_a_sample) ... ok
+test_remaining_stages_exclude_uiua_and_alias_launches (__main__.Resume.test_remaining_stages_exclude_uiua_and_alias_launches) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.013s
+
+OK

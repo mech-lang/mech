@@ -1,0 +1,48 @@
+WAIT common mutex: Nim exact full-study manifests
+{
+  "index": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/studies/full-v6/index.json",
+  "sha256": "462bfa79e8fdd4900b6c4b575b7645c25675ac81f0161ad229d1941241eb9923",
+  "benchmarks": {
+    "regexredux": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/studies/full-v6/regexredux/manifest.json",
+      "sha256": "a137d2b0bce57a5933c22fd95e504828e083ed54981216e5e0d10d54812726bb"
+    },
+    "revcomp": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/studies/full-v6/revcomp/manifest.json",
+      "sha256": "7224719109f03e2c418cacb954ef375ffbac5b3969b3d030a40becf510823a52"
+    },
+    "pidigits": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/studies/full-v6/pidigits/manifest.json",
+      "sha256": "e72290e1c0e932fecfe335b413768a123d5f6b097a9613283ff873aa5fd9282e"
+    },
+    "spectralnorm": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/studies/full-v6/spectralnorm/manifest.json",
+      "sha256": "5baef8355d1378960fc8ae66924ed0634ce682175e8697b1438223e6a916c2f3"
+    },
+    "mandelbrot": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/studies/full-v6/mandelbrot/manifest.json",
+      "sha256": "84a82106b2add316aaa771ecaf889c5804dc9ec0524710e9b694c8dcc4cb896d"
+    },
+    "fasta": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/studies/full-v6/fasta/manifest.json",
+      "sha256": "a3f7f8763272943e56e7de0e0e9ebfbae6ec3cac15c879b034d77c71c6063ab1"
+    },
+    "knucleotide": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/studies/full-v6/knucleotide/manifest.json",
+      "sha256": "fd7bffc958565f7c3807521e1ddd76a0abdd63635c83af7b73cf5e936f2978ee"
+    },
+    "binarytrees": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/studies/full-v6/binarytrees/manifest.json",
+      "sha256": "33ee4ff22fffdca0fd63bf8aa3b175f6efecbc092ee0e5f6a54eb5d9391e12e7"
+    },
+    "nbody": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/studies/full-v6/nbody/manifest.json",
+      "sha256": "8abf2cb8381d188c29126776a448da61993fb28507644ec4abdec4845cfbd1b0"
+    },
+    "fannkuchredux": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/studies/full-v6/fannkuchredux/manifest.json",
+      "sha256": "5c747620a7ca65e460cf0a074595ee2a5b1283252f2ba7b69db9c4399579b685"
+    }
+  },
+  "full_processes": 90
+}

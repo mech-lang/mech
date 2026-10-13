@@ -1,0 +1,54 @@
+{
+  "status": "passed",
+  "benchmark": "knucleotide",
+  "variant": "compact",
+  "sequence_length": 10021,
+  "complete_maps": [
+    {
+      "k": 1,
+      "distinct_keys": 4,
+      "windows": 10021
+    },
+    {
+      "k": 2,
+      "distinct_keys": 16,
+      "windows": 10020
+    },
+    {
+      "k": 3,
+      "distinct_keys": 64,
+      "windows": 10019
+    },
+    {
+      "k": 4,
+      "distinct_keys": 256,
+      "windows": 10018
+    },
+    {
+      "k": 6,
+      "distinct_keys": 3705,
+      "windows": 10016
+    },
+    {
+      "k": 12,
+      "distinct_keys": 10010,
+      "windows": 10010
+    },
+    {
+      "k": 18,
+      "distinct_keys": 10004,
+      "windows": 10004
+    }
+  ],
+  "all_seven_maps_reconciled": true,
+  "all_overlapping_windows": true,
+  "first_two_maps_included": true,
+  "stdout_unchanged": true,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "full_performance_run": false,
+  "case": "arbitrary-widths",
+  "scored_source_sha256": "8abd2d63e128fec9f01095885e90891d90103614d6b2336d2fe4a6e9cf938de3",
+  "trace_source_sha256": "abc555e70a2743c90797edf68e375e896c113729b3e09c7a0cb72320da635bd9",
+  "attempt": 7
+}

@@ -1,0 +1,2 @@
+WAIT common mutex: V full-study manifest knucleotide
+{"manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/studies/knucleotide/full-study/manifest.json", "sha256": "495a6fb5623f550323426fa2070ba5e2b0d025c56655e54b8567a0e40830284e", "profiles": ["v-knucleotide-compact-input-v2", "v-knucleotide-optimized-input-v2", "mech-aot-control"], "full_processes": 9, "report_only": true}

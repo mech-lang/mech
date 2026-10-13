@@ -1,0 +1,11 @@
+{
+  "status": "failed-terminal-evidence-retained",
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pony-grammar-v2/jobs/grammar-v2-fixtures-v1/terminal-error.json": "8b9ae2e6e91a2ddc0afa74d9d992e240b3a04b9a3bae352f2994c4c0e4efd4f9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pony-grammar-v2/jobs/grammar-v2-fixtures-v1/terminal-error.log": "61d17c4b59027bb9cd95d925b509fe05ccc3292bb0b92b731ee79c0bc2852121"
+  },
+  "exclusive_mutex_held": true,
+  "common_timing_mutex": "/tmp/mech-clbg-timing.lock",
+  "canonical_LOC_admitted": false,
+  "chart_admission": false
+}

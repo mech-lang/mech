@@ -1,0 +1,12 @@
+{
+  "pid": 26874,
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/guarded_prepare_v5.py",
+    "--seal",
+    "--proposal-file",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/proposals/private-v5.json"
+  ]
+}

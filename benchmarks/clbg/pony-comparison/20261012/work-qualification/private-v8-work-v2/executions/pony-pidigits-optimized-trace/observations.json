@@ -1,0 +1,28 @@
+{
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "competing_compilers": [],
+  "power_changes": [],
+  "monitor_errors": [],
+  "resource_monitor_errors": [],
+  "resource_violation": null,
+  "peak_process_group_rss_kib": 0,
+  "native": {
+    "pid": 26270,
+    "pgid": 26270,
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v2/bin/pony-pidigits-optimized-trace/pony-pidigits-optimized-trace",
+      "97",
+      "--ponymaxthreads",
+      "8"
+    ],
+    "inherited_common_mutex": true,
+    "observer_registered_after_owned_active_journal": true
+  }
+}

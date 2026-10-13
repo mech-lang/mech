@@ -1,0 +1,1030 @@
+{
+  "schema_version": 1,
+  "status": "static-source-review-proposal-only",
+  "scope": "Only all unknown-c-declaration-type-review flags from immutable boundary-audit-07; no other source or normalized metric is certified.",
+  "frozen_audit": "jobs/boundary-audit-07/candidate-audit.json",
+  "frozen_audit_created_at": "2026-10-12T15:56:34.353613+00:00",
+  "no_execution": {
+    "tests": false,
+    "normalizer_imports": false,
+    "lexer_execution": false,
+    "hashes": false,
+    "builds": false,
+    "timing": false,
+    "source_mutation": false,
+    "chart_admission": false
+  },
+  "summary": {
+    "flagged_diagnostic_registration_count": 25,
+    "distinct_source_sha_count": 11,
+    "distinct_declaration_site_count": 14,
+    "candidate_registration_count": 18,
+    "source_local_typedef_site_count": 8,
+    "external_imported_type_site_count": 6,
+    "unique_source_unit_increment": 25,
+    "registration_weighted_unit_increment": 39
+  },
+  "sources": [
+    {
+      "source_sha256": "730e4c677c1913d48d81535890070c6ca04b9768fc5edccb7600d1d251ea15ea",
+      "source_sha_basis": "Copied from immutable job07; no fresh hash performed by this static review.",
+      "source_paths": [
+        "binarytrees/upstream/binarytrees-gcc-1.c"
+      ],
+      "language": "c",
+      "candidate_registration_keys": [
+        "binarytrees:binarytrees-gcc-1-gcc",
+        "binarytrees:binarytrees-gcc-1-llvm"
+      ],
+      "candidate_registration_count": 2,
+      "flagged_diagnostic_registration_count": 2,
+      "distinct_sites": [
+        {
+          "line": 74,
+          "type_name": "treeNode",
+          "declarators": [
+            "*stretchTree",
+            "*longLivedTree",
+            "*tempTree"
+          ],
+          "required_units": 3,
+          "baseline_site_units": 1,
+          "required_unit_increment": 2,
+          "type_origin": "source-local-typedef",
+          "decision": "independent-declaration-bindings",
+          "reason": "Each comma-separated declarator introduces a separate variable; this is neither a tuple producer nor a comma expression.",
+          "source_text": "    treeNode   *stretchTree, *longLivedTree, *tempTree;",
+          "type_evidence": [
+            {
+              "line": 18,
+              "text": "typedef struct tn {"
+            },
+            {
+              "line": 19,
+              "text": "    struct tn*    left;"
+            },
+            {
+              "line": 20,
+              "text": "    struct tn*    right;"
+            },
+            {
+              "line": 21,
+              "text": "} treeNode;"
+            }
+          ],
+          "related_expressions": [],
+          "frozen_diagnostic_offsets": [
+            1383
+          ],
+          "frozen_line_expansion": null
+        }
+      ],
+      "frozen_physical_loc": 90,
+      "frozen_normalized_loc": 89,
+      "required_source_unit_increment": 2,
+      "scope_only_proposed_loc": 91,
+      "other_frozen_diagnostics": []
+    },
+    {
+      "source_sha256": "d7a13e4f3a7c50af0ef2efc8ef382d78b788e67385c0f4f09169849cb1b6fad2",
+      "source_sha_basis": "Copied from immutable job07; no fresh hash performed by this static review.",
+      "source_paths": [
+        "binarytrees/upstream/binarytrees-gcc-5.c"
+      ],
+      "language": "c",
+      "candidate_registration_keys": [
+        "binarytrees:binarytrees-gcc-5-gcc",
+        "binarytrees:binarytrees-gcc-5-llvm"
+      ],
+      "candidate_registration_count": 2,
+      "flagged_diagnostic_registration_count": 2,
+      "distinct_sites": [
+        {
+          "line": 90,
+          "type_name": "node",
+          "declarators": [
+            "*stretch",
+            "*longlived"
+          ],
+          "required_units": 2,
+          "baseline_site_units": 1,
+          "required_unit_increment": 1,
+          "type_origin": "source-local-typedef",
+          "decision": "independent-declaration-bindings",
+          "reason": "Each comma-separated declarator introduces a separate variable; this is neither a tuple producer nor a comma expression.",
+          "source_text": "   node *stretch, *longlived;",
+          "type_evidence": [
+            {
+              "line": 13,
+              "text": "typedef struct node {"
+            },
+            {
+              "line": 14,
+              "text": "   struct node *left, *right;"
+            },
+            {
+              "line": 15,
+              "text": "} node;"
+            }
+          ],
+          "related_expressions": [],
+          "frozen_diagnostic_offsets": [
+            1487
+          ],
+          "frozen_line_expansion": null
+        }
+      ],
+      "frozen_physical_loc": 113,
+      "frozen_normalized_loc": 120,
+      "required_source_unit_increment": 1,
+      "scope_only_proposed_loc": 121,
+      "other_frozen_diagnostics": []
+    },
+    {
+      "source_sha256": "4c96f8a019b9b1e2425123a243405046f8d86e030f256796574fdf6bfd0e8c07",
+      "source_sha_basis": "Copied from immutable job07; no fresh hash performed by this static review.",
+      "source_paths": [
+        "fannkuchredux/upstream/fannkuchredux-gcc-3.c"
+      ],
+      "language": "c",
+      "candidate_registration_keys": [
+        "fannkuchredux:fannkuchredux-gcc-3-gcc",
+        "fannkuchredux:fannkuchredux-gcc-3-llvm"
+      ],
+      "candidate_registration_count": 2,
+      "flagged_diagnostic_registration_count": 4,
+      "distinct_sites": [
+        {
+          "line": 17,
+          "type_name": "elem",
+          "declarators": [
+            "s[16]",
+            "t[16]"
+          ],
+          "required_units": 2,
+          "baseline_site_units": 1,
+          "required_unit_increment": 1,
+          "type_origin": "source-local-typedef",
+          "decision": "independent-declaration-bindings",
+          "reason": "Each comma-separated declarator introduces a separate variable; this is neither a tuple producer nor a comma expression.",
+          "source_text": "elem s[16], t[16];",
+          "type_evidence": [
+            {
+              "line": 15,
+              "text": "typedef int elem;"
+            }
+          ],
+          "related_expressions": [],
+          "frozen_diagnostic_offsets": [
+            364
+          ],
+          "frozen_line_expansion": null
+        },
+        {
+          "line": 27,
+          "type_name": "elem",
+          "declarators": [
+            "*x",
+            "*y",
+            "c"
+          ],
+          "required_units": 3,
+          "baseline_site_units": 1,
+          "required_unit_increment": 2,
+          "type_origin": "source-local-typedef",
+          "decision": "independent-declaration-bindings",
+          "reason": "Each comma-separated declarator introduces a separate variable; this is neither a tuple producer nor a comma expression.",
+          "source_text": "   register elem *x, *y, c;",
+          "type_evidence": [
+            {
+              "line": 15,
+              "text": "typedef int elem;"
+            }
+          ],
+          "related_expressions": [
+            {
+              "line": 29,
+              "text": "   for (x = t, y = s, i = max_n; i--; )"
+            },
+            {
+              "line": 33,
+              "text": "      for (x = t, y = t + t[0]; x < y; )"
+            },
+            {
+              "line": 34,
+              "text": "         c = *x, *x++ = *y, *y-- = c;"
+            }
+          ],
+          "frozen_diagnostic_offsets": [
+            477
+          ],
+          "frozen_line_expansion": null
+        }
+      ],
+      "frozen_physical_loc": 68,
+      "frozen_normalized_loc": 71,
+      "required_source_unit_increment": 3,
+      "scope_only_proposed_loc": 74,
+      "other_frozen_diagnostics": []
+    },
+    {
+      "source_sha256": "fccf786c37f0ad3939f77727cacc2ce629aed85b6e0963eeab5ae8cb4c12d06f",
+      "source_sha_basis": "Copied from immutable job07; no fresh hash performed by this static review.",
+      "source_paths": [
+        "fannkuchredux/upstream/fannkuchredux-gpp-3.cpp"
+      ],
+      "language": "cpp",
+      "candidate_registration_keys": [
+        "fannkuchredux:fannkuchredux-gpp-3-gcc",
+        "fannkuchredux:fannkuchredux-gpp-3-llvm"
+      ],
+      "candidate_registration_count": 2,
+      "flagged_diagnostic_registration_count": 2,
+      "distinct_sites": [
+        {
+          "line": 43,
+          "type_name": "int_t",
+          "declarators": [
+            "perm[16]",
+            "tperm[16]",
+            "cnt[16]={0}"
+          ],
+          "required_units": 3,
+          "baseline_site_units": 1,
+          "required_unit_increment": 2,
+          "type_origin": "source-local-typedef",
+          "decision": "independent-declaration-bindings",
+          "reason": "Each comma-separated declarator introduces a separate variable; this is neither a tuple producer nor a comma expression.",
+          "source_text": "   int_t perm[16],tperm[16],cnt[16]={0};",
+          "type_evidence": [
+            {
+              "line": 10,
+              "text": "typedef unsigned char int_t;"
+            }
+          ],
+          "related_expressions": [
+            {
+              "line": 45,
+              "text": "   std::generate(perm,perm+n,[&i](){ return ++i; });"
+            },
+            {
+              "line": 58,
+              "text": "   }while(++permcount,next_permutation(perm,n,cnt));"
+            }
+          ],
+          "frozen_diagnostic_offsets": [
+            684
+          ],
+          "frozen_line_expansion": null
+        }
+      ],
+      "frozen_physical_loc": 59,
+      "frozen_normalized_loc": 61,
+      "required_source_unit_increment": 2,
+      "scope_only_proposed_loc": 63,
+      "other_frozen_diagnostics": []
+    },
+    {
+      "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+      "source_sha_basis": "Copied from immutable job07; no fresh hash performed by this static review.",
+      "source_paths": [
+        "nbody/upstream/nbody-gcc-3.c"
+      ],
+      "language": "c",
+      "candidate_registration_keys": [
+        "nbody:nbody-gcc-3-gcc-fastmath",
+        "nbody:nbody-gcc-3-gcc-native",
+        "nbody:nbody-gcc-3-llvm-fastmath",
+        "nbody:nbody-gcc-3-llvm-native"
+      ],
+      "candidate_registration_count": 4,
+      "flagged_diagnostic_registration_count": 8,
+      "distinct_sites": [
+        {
+          "line": 23,
+          "type_name": "planet",
+          "declarators": [
+            "*a",
+            "*b"
+          ],
+          "required_units": 2,
+          "baseline_site_units": 1,
+          "required_unit_increment": 1,
+          "type_origin": "source-local-typedef",
+          "decision": "independent-declaration-bindings",
+          "reason": "Each comma-separated declarator introduces a separate variable; this is neither a tuple producer nor a comma expression.",
+          "source_text": "   register planet *a, *b;",
+          "type_evidence": [
+            {
+              "line": 18,
+              "text": "typedef struct planet { double x[3], v[3], mass; } planet;"
+            }
+          ],
+          "related_expressions": [
+            {
+              "line": 27,
+              "text": "      for (a = bodies, i = 0; i < nbodies; a++, i++) {"
+            },
+            {
+              "line": 28,
+              "text": "         for (b = a + 1, j = i + 1; j < nbodies; b++, j++) {"
+            },
+            {
+              "line": 46,
+              "text": "      for (a = bodies, i = 0; i < nbodies; i++, a++) {"
+            }
+          ],
+          "frozen_diagnostic_offsets": [
+            535
+          ],
+          "frozen_line_expansion": null
+        },
+        {
+          "line": 58,
+          "type_name": "planet",
+          "declarators": [
+            "*a",
+            "*b"
+          ],
+          "required_units": 2,
+          "baseline_site_units": 1,
+          "required_unit_increment": 1,
+          "type_origin": "source-local-typedef",
+          "decision": "independent-declaration-bindings",
+          "reason": "Each comma-separated declarator introduces a separate variable; this is neither a tuple producer nor a comma expression.",
+          "source_text": "   planet *a, *b;",
+          "type_evidence": [
+            {
+              "line": 18,
+              "text": "typedef struct planet { double x[3], v[3], mass; } planet;"
+            }
+          ],
+          "related_expressions": [
+            {
+              "line": 61,
+              "text": "   for (i = 0, a = bodies; i < nbodies; a++, i++) {"
+            },
+            {
+              "line": 64,
+              "text": "      for (j = i + 1, b = a + 1; j < nbodies; b++, j++) {"
+            }
+          ],
+          "frozen_diagnostic_offsets": [
+            1483
+          ],
+          "frozen_line_expansion": null
+        }
+      ],
+      "frozen_physical_loc": 107,
+      "frozen_normalized_loc": 115,
+      "required_source_unit_increment": 2,
+      "scope_only_proposed_loc": 117,
+      "other_frozen_diagnostics": [
+        {
+          "kind": "canonical-unrecognized-block-review",
+          "offset": 2054,
+          "message": "Possible executable brace was classified as data; review its grammar.",
+          "line": 80,
+          "column": 26,
+          "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+          "key": "nbody:nbody-gcc-3-gcc-fastmath"
+        },
+        {
+          "kind": "canonical-standalone-brace-context-review",
+          "offset": 2059,
+          "message": "Standalone brace lacks an unambiguous literal or executable header.",
+          "line": 81,
+          "column": 4,
+          "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+          "key": "nbody:nbody-gcc-3-gcc-fastmath"
+        },
+        {
+          "kind": "canonical-standalone-brace-context-review",
+          "offset": 2079,
+          "message": "Standalone brace lacks an unambiguous literal or executable header.",
+          "line": 82,
+          "column": 7,
+          "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+          "key": "nbody:nbody-gcc-3-gcc-fastmath"
+        },
+        {
+          "kind": "canonical-standalone-brace-context-review",
+          "offset": 2154,
+          "message": "Standalone brace lacks an unambiguous literal or executable header.",
+          "line": 86,
+          "column": 7,
+          "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+          "key": "nbody:nbody-gcc-3-gcc-fastmath"
+        },
+        {
+          "kind": "canonical-standalone-brace-context-review",
+          "offset": 2447,
+          "message": "Standalone brace lacks an unambiguous literal or executable header.",
+          "line": 94,
+          "column": 7,
+          "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+          "key": "nbody:nbody-gcc-3-gcc-fastmath"
+        },
+        {
+          "kind": "canonical-standalone-brace-context-review",
+          "offset": 2739,
+          "message": "Standalone brace lacks an unambiguous literal or executable header.",
+          "line": 102,
+          "column": 7,
+          "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+          "key": "nbody:nbody-gcc-3-gcc-fastmath"
+        },
+        {
+          "kind": "canonical-standalone-brace-context-review",
+          "offset": 3033,
+          "message": "Standalone brace lacks an unambiguous literal or executable header.",
+          "line": 110,
+          "column": 7,
+          "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+          "key": "nbody:nbody-gcc-3-gcc-fastmath"
+        },
+        {
+          "kind": "executable-preprocessor-macro-review",
+          "offset": 351,
+          "line": 16,
+          "column": 1,
+          "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+          "key": "nbody:nbody-gcc-3-gcc-fastmath"
+        },
+        {
+          "kind": "canonical-unrecognized-block-review",
+          "offset": 2054,
+          "message": "Possible executable brace was classified as data; review its grammar.",
+          "line": 80,
+          "column": 26,
+          "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+          "key": "nbody:nbody-gcc-3-gcc-native"
+        },
+        {
+          "kind": "canonical-standalone-brace-context-review",
+          "offset": 2059,
+          "message": "Standalone brace lacks an unambiguous literal or executable header.",
+          "line": 81,
+          "column": 4,
+          "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+          "key": "nbody:nbody-gcc-3-gcc-native"
+        },
+        {
+          "kind": "canonical-standalone-brace-context-review",
+          "offset": 2079,
+          "message": "Standalone brace lacks an unambiguous literal or executable header.",
+          "line": 82,
+          "column": 7,
+          "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+          "key": "nbody:nbody-gcc-3-gcc-native"
+        },
+        {
+          "kind": "canonical-standalone-brace-context-review",
+          "offset": 2154,
+          "message": "Standalone brace lacks an unambiguous literal or executable header.",
+          "line": 86,
+          "column": 7,
+          "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+          "key": "nbody:nbody-gcc-3-gcc-native"
+        },
+        {
+          "kind": "canonical-standalone-brace-context-review",
+          "offset": 2447,
+          "message": "Standalone brace lacks an unambiguous literal or executable header.",
+          "line": 94,
+          "column": 7,
+          "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+          "key": "nbody:nbody-gcc-3-gcc-native"
+        },
+        {
+          "kind": "canonical-standalone-brace-context-review",
+          "offset": 2739,
+          "message": "Standalone brace lacks an unambiguous literal or executable header.",
+          "line": 102,
+          "column": 7,
+          "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+          "key": "nbody:nbody-gcc-3-gcc-native"
+        },
+        {
+          "kind": "canonical-standalone-brace-context-review",
+          "offset": 3033,
+          "message": "Standalone brace lacks an unambiguous literal or executable header.",
+          "line": 110,
+          "column": 7,
+          "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+          "key": "nbody:nbody-gcc-3-gcc-native"
+        },
+        {
+          "kind": "executable-preprocessor-macro-review",
+          "offset": 351,
+          "line": 16,
+          "column": 1,
+          "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+          "key": "nbody:nbody-gcc-3-gcc-native"
+        },
+        {
+          "kind": "canonical-unrecognized-block-review",
+          "offset": 2054,
+          "message": "Possible executable brace was classified as data; review its grammar.",
+          "line": 80,
+          "column": 26,
+          "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+          "key": "nbody:nbody-gcc-3-llvm-fastmath"
+        },
+        {
+          "kind": "canonical-standalone-brace-context-review",
+          "offset": 2059,
+          "message": "Standalone brace lacks an unambiguous literal or executable header.",
+          "line": 81,
+          "column": 4,
+          "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+          "key": "nbody:nbody-gcc-3-llvm-fastmath"
+        },
+        {
+          "kind": "canonical-standalone-brace-context-review",
+          "offset": 2079,
+          "message": "Standalone brace lacks an unambiguous literal or executable header.",
+          "line": 82,
+          "column": 7,
+          "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+          "key": "nbody:nbody-gcc-3-llvm-fastmath"
+        },
+        {
+          "kind": "canonical-standalone-brace-context-review",
+          "offset": 2154,
+          "message": "Standalone brace lacks an unambiguous literal or executable header.",
+          "line": 86,
+          "column": 7,
+          "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+          "key": "nbody:nbody-gcc-3-llvm-fastmath"
+        },
+        {
+          "kind": "canonical-standalone-brace-context-review",
+          "offset": 2447,
+          "message": "Standalone brace lacks an unambiguous literal or executable header.",
+          "line": 94,
+          "column": 7,
+          "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+          "key": "nbody:nbody-gcc-3-llvm-fastmath"
+        },
+        {
+          "kind": "canonical-standalone-brace-context-review",
+          "offset": 2739,
+          "message": "Standalone brace lacks an unambiguous literal or executable header.",
+          "line": 102,
+          "column": 7,
+          "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+          "key": "nbody:nbody-gcc-3-llvm-fastmath"
+        },
+        {
+          "kind": "canonical-standalone-brace-context-review",
+          "offset": 3033,
+          "message": "Standalone brace lacks an unambiguous literal or executable header.",
+          "line": 110,
+          "column": 7,
+          "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+          "key": "nbody:nbody-gcc-3-llvm-fastmath"
+        },
+        {
+          "kind": "executable-preprocessor-macro-review",
+          "offset": 351,
+          "line": 16,
+          "column": 1,
+          "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+          "key": "nbody:nbody-gcc-3-llvm-fastmath"
+        },
+        {
+          "kind": "canonical-unrecognized-block-review",
+          "offset": 2054,
+          "message": "Possible executable brace was classified as data; review its grammar.",
+          "line": 80,
+          "column": 26,
+          "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+          "key": "nbody:nbody-gcc-3-llvm-native"
+        },
+        {
+          "kind": "canonical-standalone-brace-context-review",
+          "offset": 2059,
+          "message": "Standalone brace lacks an unambiguous literal or executable header.",
+          "line": 81,
+          "column": 4,
+          "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+          "key": "nbody:nbody-gcc-3-llvm-native"
+        },
+        {
+          "kind": "canonical-standalone-brace-context-review",
+          "offset": 2079,
+          "message": "Standalone brace lacks an unambiguous literal or executable header.",
+          "line": 82,
+          "column": 7,
+          "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+          "key": "nbody:nbody-gcc-3-llvm-native"
+        },
+        {
+          "kind": "canonical-standalone-brace-context-review",
+          "offset": 2154,
+          "message": "Standalone brace lacks an unambiguous literal or executable header.",
+          "line": 86,
+          "column": 7,
+          "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+          "key": "nbody:nbody-gcc-3-llvm-native"
+        },
+        {
+          "kind": "canonical-standalone-brace-context-review",
+          "offset": 2447,
+          "message": "Standalone brace lacks an unambiguous literal or executable header.",
+          "line": 94,
+          "column": 7,
+          "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+          "key": "nbody:nbody-gcc-3-llvm-native"
+        },
+        {
+          "kind": "canonical-standalone-brace-context-review",
+          "offset": 2739,
+          "message": "Standalone brace lacks an unambiguous literal or executable header.",
+          "line": 102,
+          "column": 7,
+          "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+          "key": "nbody:nbody-gcc-3-llvm-native"
+        },
+        {
+          "kind": "canonical-standalone-brace-context-review",
+          "offset": 3033,
+          "message": "Standalone brace lacks an unambiguous literal or executable header.",
+          "line": 110,
+          "column": 7,
+          "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+          "key": "nbody:nbody-gcc-3-llvm-native"
+        },
+        {
+          "kind": "executable-preprocessor-macro-review",
+          "offset": 351,
+          "line": 16,
+          "column": 1,
+          "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+          "key": "nbody:nbody-gcc-3-llvm-native"
+        }
+      ]
+    },
+    {
+      "source_sha256": "f719dddd30aad201aa3ce385b80d48ef3befce29b22c3a12a5aa7e7d743f948e",
+      "source_sha_basis": "Copied from immutable job07; no fresh hash performed by this static review.",
+      "source_paths": [
+        "pidigits/upstream/pidigits-gcc-1.c"
+      ],
+      "language": "c",
+      "candidate_registration_keys": [
+        "pidigits:pidigits-gcc-1"
+      ],
+      "candidate_registration_count": 1,
+      "flagged_diagnostic_registration_count": 2,
+      "distinct_sites": [
+        {
+          "line": 11,
+          "type_name": "mpz_t",
+          "declarators": [
+            "tmp1",
+            "tmp2",
+            "acc",
+            "den",
+            "num"
+          ],
+          "required_units": 5,
+          "baseline_site_units": 1,
+          "required_unit_increment": 4,
+          "type_origin": "external-imported-type",
+          "decision": "independent-declaration-bindings",
+          "reason": "Each comma-separated declarator introduces a separate variable; this is neither a tuple producer nor a comma expression.",
+          "source_text": "mpz_t tmp1, tmp2, acc, den, num;",
+          "type_evidence": [
+            {
+              "line": 9,
+              "text": "#include <gmp.h>"
+            }
+          ],
+          "related_expressions": [],
+          "frozen_diagnostic_offsets": [
+            197
+          ],
+          "frozen_line_expansion": null
+        },
+        {
+          "line": 39,
+          "type_name": "ui",
+          "declarators": [
+            "d",
+            "k",
+            "i"
+          ],
+          "required_units": 3,
+          "baseline_site_units": 1,
+          "required_unit_increment": 2,
+          "type_origin": "source-local-typedef",
+          "decision": "independent-declaration-bindings",
+          "reason": "Each comma-separated declarator introduces a separate variable; this is neither a tuple producer nor a comma expression.",
+          "source_text": "   ui d, k, i;",
+          "type_evidence": [
+            {
+              "line": 12,
+              "text": "typedef unsigned int ui;"
+            }
+          ],
+          "related_expressions": [
+            {
+              "line": 49,
+              "text": "   for (i = k = 0; i < n;) {"
+            }
+          ],
+          "frozen_diagnostic_offsets": [
+            807
+          ],
+          "frozen_line_expansion": null
+        }
+      ],
+      "frozen_physical_loc": 45,
+      "frozen_normalized_loc": 45,
+      "required_source_unit_increment": 6,
+      "scope_only_proposed_loc": 51,
+      "other_frozen_diagnostics": []
+    },
+    {
+      "source_sha256": "0371afc1c531d64ff6b4b132f5d8b39599f8d406d3d3e2d01b879adae67d3969",
+      "source_sha_basis": "Copied from immutable job07; no fresh hash performed by this static review.",
+      "source_paths": [
+        "pidigits/upstream/pidigits-gcc-2.c"
+      ],
+      "language": "c",
+      "candidate_registration_keys": [
+        "pidigits:pidigits-gcc-2"
+      ],
+      "candidate_registration_count": 1,
+      "flagged_diagnostic_registration_count": 1,
+      "distinct_sites": [
+        {
+          "line": 17,
+          "type_name": "mpz_t",
+          "declarators": [
+            "n1",
+            "n2",
+            "d",
+            "u",
+            "v",
+            "w"
+          ],
+          "required_units": 6,
+          "baseline_site_units": 1,
+          "required_unit_increment": 5,
+          "type_origin": "external-imported-type",
+          "decision": "independent-declaration-bindings",
+          "reason": "Each comma-separated declarator introduces a separate variable; this is neither a tuple producer nor a comma expression.",
+          "source_text": "mpz_t n1, n2, d, u, v, w;",
+          "type_evidence": [
+            {
+              "line": 15,
+              "text": "#include <gmp.h>"
+            }
+          ],
+          "related_expressions": [],
+          "frozen_diagnostic_offsets": [
+            400
+          ],
+          "frozen_line_expansion": null
+        }
+      ],
+      "frozen_physical_loc": 50,
+      "frozen_normalized_loc": 48,
+      "required_source_unit_increment": 5,
+      "scope_only_proposed_loc": 53,
+      "other_frozen_diagnostics": []
+    },
+    {
+      "source_sha256": "e9ea172b053a24a2fc804a0232af6b242b1fbfedc143500a66355446bb251d98",
+      "source_sha_basis": "Copied from immutable job07; no fresh hash performed by this static review.",
+      "source_paths": [
+        "pidigits/upstream/pidigits-gpp-4.cpp"
+      ],
+      "language": "cpp",
+      "candidate_registration_keys": [
+        "pidigits:pidigits-gpp-4"
+      ],
+      "candidate_registration_count": 1,
+      "flagged_diagnostic_registration_count": 1,
+      "distinct_sites": [
+        {
+          "line": 29,
+          "type_name": "mpz_class",
+          "declarators": [
+            "tmp0",
+            "tmp1"
+          ],
+          "required_units": 2,
+          "baseline_site_units": 1,
+          "required_unit_increment": 1,
+          "type_origin": "external-imported-type",
+          "decision": "independent-declaration-bindings",
+          "reason": "Each comma-separated declarator introduces a separate variable; this is neither a tuple producer nor a comma expression.",
+          "source_text": "        static mpz_class tmp0, tmp1;",
+          "type_evidence": [
+            {
+              "line": 7,
+              "text": "#include <gmpxx.h>"
+            }
+          ],
+          "related_expressions": [],
+          "frozen_diagnostic_offsets": [
+            508
+          ],
+          "frozen_line_expansion": null
+        }
+      ],
+      "frozen_physical_loc": 50,
+      "frozen_normalized_loc": 53,
+      "required_source_unit_increment": 1,
+      "scope_only_proposed_loc": 54,
+      "other_frozen_diagnostics": []
+    },
+    {
+      "source_sha256": "88c02cebb5ded9d1031368a7fbc934180ee39396402d3728f941190880d8f6d5",
+      "source_sha_basis": "Copied from immutable job07; no fresh hash performed by this static review.",
+      "source_paths": [
+        "regexredux/upstream/regexredux-gpp-1.cpp"
+      ],
+      "language": "cpp",
+      "candidate_registration_keys": [
+        "regexredux:regexredux-gpp-1"
+      ],
+      "candidate_registration_count": 1,
+      "flagged_diagnostic_registration_count": 1,
+      "distinct_sites": [
+        {
+          "line": 20,
+          "type_name": "string",
+          "declarators": [
+            "str",
+            "out"
+          ],
+          "required_units": 2,
+          "baseline_site_units": 1,
+          "required_unit_increment": 1,
+          "type_origin": "external-imported-type",
+          "decision": "independent-declaration-bindings",
+          "reason": "Each comma-separated declarator introduces a separate variable; this is neither a tuple producer nor a comma expression.",
+          "source_text": "    string str, out;",
+          "type_evidence": [
+            {
+              "line": 10,
+              "text": "#include <iostream>"
+            },
+            {
+              "line": 14,
+              "text": "using namespace std;"
+            }
+          ],
+          "related_expressions": [],
+          "frozen_diagnostic_offsets": [
+            370
+          ],
+          "frozen_line_expansion": null
+        }
+      ],
+      "frozen_physical_loc": 57,
+      "frozen_normalized_loc": 56,
+      "required_source_unit_increment": 1,
+      "scope_only_proposed_loc": 57,
+      "other_frozen_diagnostics": []
+    },
+    {
+      "source_sha256": "5981c1ef43ec151f52a84fa2652ec4119382ed6c7cf8d8e8cab248545cd16183",
+      "source_sha_basis": "Copied from immutable job07; no fresh hash performed by this static review.",
+      "source_paths": [
+        "regexredux/upstream/regexredux-gpp-2.cpp"
+      ],
+      "language": "cpp",
+      "candidate_registration_keys": [
+        "regexredux:regexredux-gpp-2"
+      ],
+      "candidate_registration_count": 1,
+      "flagged_diagnostic_registration_count": 1,
+      "distinct_sites": [
+        {
+          "line": 20,
+          "type_name": "string",
+          "declarators": [
+            "str",
+            "out"
+          ],
+          "required_units": 2,
+          "baseline_site_units": 1,
+          "required_unit_increment": 1,
+          "type_origin": "external-imported-type",
+          "decision": "independent-declaration-bindings",
+          "reason": "Each comma-separated declarator introduces a separate variable; this is neither a tuple producer nor a comma expression.",
+          "source_text": "    string str, out;",
+          "type_evidence": [
+            {
+              "line": 10,
+              "text": "#include <iostream>"
+            },
+            {
+              "line": 14,
+              "text": "using namespace std;"
+            }
+          ],
+          "related_expressions": [],
+          "frozen_diagnostic_offsets": [
+            356
+          ],
+          "frozen_line_expansion": null
+        }
+      ],
+      "frozen_physical_loc": 63,
+      "frozen_normalized_loc": 62,
+      "required_source_unit_increment": 1,
+      "scope_only_proposed_loc": 63,
+      "other_frozen_diagnostics": []
+    },
+    {
+      "source_sha256": "5a7096dbafe2cba77b27212b94f07b55396a06012c6498c0a8a9b945945dac51",
+      "source_sha_basis": "Copied from immutable job07; no fresh hash performed by this static review.",
+      "source_paths": [
+        "regexredux/upstream/regexredux-gpp-3.cpp"
+      ],
+      "language": "cpp",
+      "candidate_registration_keys": [
+        "regexredux:regexredux-gpp-3"
+      ],
+      "candidate_registration_count": 1,
+      "flagged_diagnostic_registration_count": 1,
+      "distinct_sites": [
+        {
+          "line": 21,
+          "type_name": "string",
+          "declarators": [
+            "str",
+            "out"
+          ],
+          "required_units": 2,
+          "baseline_site_units": 1,
+          "required_unit_increment": 1,
+          "type_origin": "external-imported-type",
+          "decision": "independent-declaration-bindings",
+          "reason": "Each comma-separated declarator introduces a separate variable; this is neither a tuple producer nor a comma expression.",
+          "source_text": "    string str, out;",
+          "type_evidence": [
+            {
+              "line": 11,
+              "text": "#include <iostream>"
+            },
+            {
+              "line": 14,
+              "text": "using namespace std;"
+            }
+          ],
+          "related_expressions": [],
+          "frozen_diagnostic_offsets": [
+            445
+          ],
+          "frozen_line_expansion": null
+        }
+      ],
+      "frozen_physical_loc": 71,
+      "frozen_normalized_loc": 68,
+      "required_source_unit_increment": 1,
+      "scope_only_proposed_loc": 69,
+      "other_frozen_diagnostics": []
+    }
+  ],
+  "external_type_evidence": [
+    {
+      "type_name": "mpz_t",
+      "header": "/opt/homebrew/include/gmp.h",
+      "line": 165,
+      "definition": "typedef __mpz_struct mpz_t[1];",
+      "proof_kind": "static local header read",
+      "limitation": "Header bytes/version not hashed or matched to original timing build; supplies semantic type evidence only."
+    },
+    {
+      "type_name": "mpz_class",
+      "header": "/opt/homebrew/include/gmpxx.h",
+      "line": 1757,
+      "definition": "typedef __gmp_expr<mpz_t, mpz_t> mpz_class;",
+      "proof_kind": "static local header read",
+      "limitation": "Header bytes/version not hashed or matched to original timing build; supplies semantic type evidence only."
+    },
+    {
+      "type_name": "std::string",
+      "header": "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/string",
+      "line": 505,
+      "definition": "typedef basic_string<char>    string;",
+      "proof_kind": "static local header read",
+      "limitation": "The viewed standard-library header is not pinned to the original timing build; source includes iostream and imports namespace std. Supplies semantic type evidence only."
+    }
+  ],
+  "required_next_steps": [
+    "Parent review of exact declaration decisions and bounded lexical type ownership pathway.",
+    "Immutable guarded fixture qualification of local typedef grammar, shadowing/order/scope rejection, imported type evidence, and declaration/comma-expression contrasts.",
+    "Re-read and verify exact source SHA bindings under the common timing mutex before any overlay.",
+    "Replay complete measured source pool under the common timing mutex and retain every unrelated diagnostic.",
+    "No chart admission from this source review or from scope-only proposed totals."
+  ]
+}

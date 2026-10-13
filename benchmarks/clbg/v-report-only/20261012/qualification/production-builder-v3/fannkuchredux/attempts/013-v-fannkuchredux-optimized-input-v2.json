@@ -1,0 +1,73 @@
+{
+  "key": "fannkuchredux:v-fannkuchredux-optimized-input-v2",
+  "id": "v-fannkuchredux-optimized-input-v2",
+  "benchmark": "fannkuchredux",
+  "language": "v",
+  "source_sha256": "b109deea791eb821cd1b38183b68f03a1ce4d210cce5484e5ba9b19276db652f",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualification/production-builder-v3/fannkuchredux/v-fannkuchredux-optimized-input-v2/program",
+    "3"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012",
+  "runtime_environment": {
+    "LC_ALL": "C",
+    "OMP_NUM_THREADS": "8",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1",
+    "RAYON_NUM_THREADS": "8"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"a29d8bbde67403662ca986cde4425cd9addf0ef4b63d67e43bf7b7922c1bf5c6\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualification/production-builder-v3/fannkuchredux/v-fannkuchredux-optimized-input-v2/program\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"b109deea791eb821cd1b38183b68f03a1ce4d210cce5484e5ba9b19276db652f\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/.build-sdk-v1/toolchain/v/v\": \"d3c86b7326e62990d1eb77247b68ea2914a834e5fe9444f981cfbc3863cb4ac1\"}}",
+  "started_at": "2026-10-13T01:35:25.702803+00:00",
+  "workload_n": 3,
+  "full_workload": false,
+  "timeout_seconds": 300,
+  "maximum_rss_mib": 8192,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.01294825,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 21,
+  "stdout_sha256": "773fd4dac2ff800cc6f45e905bbdcc6ae1016192af8bd4ab802cd33740e3c6d3",
+  "validation": {
+    "bytes": 21,
+    "sha256": "773fd4dac2ff800cc6f45e905bbdcc6ae1016192af8bd4ab802cd33740e3c6d3",
+    "reference_match": true,
+    "bounded_independent_oracle": true,
+    "tolerance": null
+  },
+  "finished_at": "2026-10-13T01:35:25.930149+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true,
+  "round": 0,
+  "attempt": 13,
+  "sampler_wait_status": 0,
+  "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualification/production-builder-v3/fannkuchredux/attempts/013-v-fannkuchredux-optimized-input-v2.json",
+  "supervised_native_group": {
+    "type": "native-group-started",
+    "pid": 14399,
+    "pgid": 14399,
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualification/production-builder-v3/fannkuchredux/v-fannkuchredux-optimized-input-v2/program",
+      "3"
+    ],
+    "inherited_common_mutex": true
+  },
+  "supervisor_remaining_members": [],
+  "fatal_qualification_fields": [],
+  "qualified": true,
+  "retryable_environment_only": false
+}

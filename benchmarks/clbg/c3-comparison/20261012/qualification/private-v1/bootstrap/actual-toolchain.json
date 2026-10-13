@@ -1,0 +1,11 @@
+{
+  "compiler": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3/c3c",
+  "compiler_sha256": "fab6cec3f4f9768684f3f92f58e4aba194b6ba729c46b02373f4e552658f9afd",
+  "compiler_version": "C3 Compiler Version:       0.8.5\nInstalled directory:       /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3\nGit Hash:                  640091d3303a393f9651d644063b837fc19d05f1\nBackends:                  LLVM\nLLVM version:              23.1.2\nLLVM default target:       arm64-apple-darwin25.6.0\n",
+  "bundled_llvm_version": "23.1.2",
+  "explicit_backend": "llvm",
+  "explicit_target": "macos-aarch64",
+  "linker": "/opt/homebrew/Cellar/llvm@22/22.1.8/bin/clang-22",
+  "sdk": "/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk",
+  "compiler_host_image_review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v1/bootstrap/images/dependency-review.json"
+}

@@ -1,0 +1,156 @@
+{
+  "status": "exact-text-observer-edits-awaiting-root-review",
+  "profile": "clojure-knucleotide-optimized",
+  "scored_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-knucleotide-optimized/sources/clbg/knucleotide/optimized.clj",
+  "scored_source_sha256": "8555e3d807bedda93681f29b301bc5968cc13b44491bb0b5fc09ff5a7ef253ec",
+  "scored_helper": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-knucleotide-optimized/support/clbg/support.clj",
+  "scored_helper_sha256": "ae37ffdcbfe8d1fa34632e1151d4098b5747f71ce2ad074d326043be3d289446",
+  "original_compiled_input_inventory": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/builds/clojure-knucleotide-optimized/compiler-input-inventory.json",
+  "original_compiled_input_inventory_sha256": "a135902abf8144a42aae621182564d505811fb1a353e5ddb81a8c26e659085c3",
+  "original_compiled_artifacts": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-knucleotide-optimized/clbg/support$jobs$fn$reify__145.class": "27d41e24c0219cc4d2dc3d52058db2ebbe55a1d888f4cb8fceb22bc5fe39c46e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-knucleotide-optimized/clbg/support$jobs.class": "9f86cf015761d0333ea6a4c9a26dd7b73b14eeec6afec2da2120dacf545f94c2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-knucleotide-optimized/clbg/support$jobs$fn__144.class": "97eba2881cf370ead0f932634baf3be4cb3601652939667f4e35944f1aa93dce",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-knucleotide-optimized/clbg/support$printf.class": "1458604caa86b8cdfcbebb0acffe175e9c83fd4d671b9ec561ed1d9401aa9d59",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-knucleotide-optimized/clbg/support$input_text.class": "578f14470aca2707ed2d9d44880db92b7c7df59c4f47091f645b680acd88e840",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-knucleotide-optimized/clbg/support__init.class": "4547a02ecbf914586f64a4438ee9a46687c4f325b9e4741258133358021b4b45",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-knucleotide-optimized/clbg/support$argument.class": "ce407506fc463f2f8b87c96b4d22d5236996eac56a1c681c5cdbc4e538d1c209",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-knucleotide-optimized/clbg/support$jobs$fn__148.class": "0dfff75cc6ef5d57857a5c84f6e5819fb1ad6e5fdd1674fcb4ad4c373ddc20f0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-knucleotide-optimized/clbg/support$fn__138.class": "9ee7fe1fa8d4faee5fef20b10d2ff99872294e174e15a3ba1ffd363ff6577531",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-knucleotide-optimized/clbg/support$loading__6812__auto____136.class": "5d8afa8fc8a32cb0bffe4a5eadb45fcd15493b7506303c83be19871c7a0b646c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-knucleotide-optimized/clbg/knucleotide/optimized$third_record.class": "c06a8a07bf5b4e4fe77c3251ca29d3902ed5c89480744af280bed505313070ac",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-knucleotide-optimized/clbg/knucleotide/optimized$_main$fn__184$fn__185.class": "b2b9ce8c39e026d21909298642198a57d42e57fc46f3309de1b0608e335e8f51",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-knucleotide-optimized/clbg/knucleotide/optimized$frequencies$fn__163.class": "3aaf62a9cf059915b97eb572140030359d6cfef500845824310158494df9e797",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-knucleotide-optimized/clbg/knucleotide/optimized$_main$fn__184.class": "91a00a992b1cfe81975202a22e67dfa9ac466e4fd18501e19dfdc4bf7fdc6f7e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-knucleotide-optimized/clbg/knucleotide/optimized$_main$fn__199.class": "c1cdbd3e3a218ad1d32b60d7e4756f72df1e4d6b544672d2d463e7f15699b2ca",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-knucleotide-optimized/clbg/knucleotide/optimized$fn__153.class": "4b183a88e77c6dc66394c725b589940b2a69dd9a553a33433ba1d83dce17d6f0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-knucleotide-optimized/clbg/knucleotide/optimized$_main$fn__204.class": "b4a22dafdac1b937608692ddf849a50690527c70dc0e691ef27607b06550ead2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-knucleotide-optimized/clbg/knucleotide/optimized$code.class": "13963eff83a9c9e911824245a2e5001555e2cf7c98a2ffdd19dd2050b0bd42e2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-knucleotide-optimized/clbg/knucleotide/optimized$loading__6812__auto____151.class": "7a205401d12fddc0afacfbe45fbefd5883530bf53a4ec0018cfada127a92ea0d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-knucleotide-optimized/clbg/knucleotide/optimized$decode.class": "8a571aab01e08f50656b36d4c49d170f7f6692cecaf2e024a193050af98fe9ad",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-knucleotide-optimized/clbg/knucleotide/optimized$_main.class": "efb05585403c6968244d0e9eccb9bd9459cd7b46443b234560406e6f46ba2e48",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-knucleotide-optimized/clbg/knucleotide/optimized$histogram.class": "5a81ad50c367382a849ab9b2e0adab401c14ab5aab7660ea6b2e826cd024e746",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-knucleotide-optimized/clbg/knucleotide/optimized$frequencies.class": "85f6449006bd4ee8a4641f00ea86e9da6907553d80215e1ddb01cbf6148d6118",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-knucleotide-optimized/clbg/knucleotide/optimized.class": "cc7970505dedfed3e6d8be5e0f4630bce63e9246e4e949ed3c7280994c4c8a49",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-knucleotide-optimized/clbg/knucleotide/optimized$frequencies$fn__170.class": "1d1af4e341fa1939e7f2078ed388c7e431b478b84ccd8cc8ddbd70f9186b942f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-knucleotide-optimized/clbg/knucleotide/optimized__init.class": "117d24b32c85e705aa08b63c0ef31f4b7303e020ab10b16413ed7e5b8d7dcb12"
+  },
+  "main_edits": [
+    {
+      "role": "separate-observer-main-namespace",
+      "original": "(ns clbg.knucleotide.optimized\n",
+      "observed": "(ns clbg.knucleotideobserver.optimized\n",
+      "expected_occurrences": 1
+    },
+    {
+      "role": "separate-observer-helper-binding",
+      "original": "[clbg.support :as s]",
+      "observed": "[clbg.work.support :as s]",
+      "expected_occurrences": 1
+    },
+    {
+      "role": "observer-import",
+      "original": "(:require ",
+      "observed": "(:require [clbg.work.observer :as o] ",
+      "expected_occurrences": 1
+    },
+    {
+      "role": "observed-return-wrapper-name",
+      "original": "(defn histogram [^String sequence width]",
+      "observed": "(defn histogram-raw [^String sequence width]",
+      "expected_occurrences": 1
+    },
+    {
+      "role": "actual-private-HashMap-construction",
+      "original": "(HashMap.)",
+      "observed": "(o/map-start (HashMap.) sequence width)",
+      "expected_occurrences": 1
+    },
+    {
+      "role": "every-actual-overlapping-HashMap-write",
+      "original": "(.put table next-key (inc (long (.getOrDefault table next-key 0))))",
+      "observed": "(o/map-write table next-key (- (inc position) width) width (fn [] (.put table next-key (inc (long (.getOrDefault table next-key 0))))))",
+      "expected_occurrences": 1
+    },
+    {
+      "role": "actual-joined-seven-map-parent-receipt",
+      "original": "tables (s/jobs (mapv (fn [width] #(histogram sequence width)) widths))",
+      "observed": "tables (o/maps-received (s/jobs (mapv (fn [width] #(histogram sequence width)) widths)))",
+      "expected_occurrences": 1
+    },
+    {
+      "role": "actual-persistent-or-HashMap-return-inventory",
+      "original": "(defn frequencies ",
+      "observed": "(defn histogram [sequence width]\n  (o/map-return (histogram-raw sequence width) sequence width))\n(defn frequencies ",
+      "expected_occurrences": 1
+    },
+    {
+      "role": "bounded-observer-main-wrapper",
+      "original": "(defn -main [& arguments]",
+      "observed": "(defn run-scored [& arguments]",
+      "expected_occurrences": 1
+    },
+    {
+      "role": "flush-actual-observation-evidence-after-original-main",
+      "original": "",
+      "observed": "\n(defn -main [& arguments]\n  (try (apply run-scored arguments) (finally (o/finish))))\n",
+      "appended_once": true
+    }
+  ],
+  "support_edits": [
+    {
+      "role": "separate-observer-helper-namespace",
+      "original": "(ns clbg.support\n",
+      "observed": "(ns clbg.work.support\n  (:require [clbg.work.observer :as o])\n",
+      "expected_occurrences": 1
+    },
+    {
+      "role": "actual-task-index",
+      "original": "(fn [function]",
+      "observed": "(fn [worker function]",
+      "expected_occurrences": 1
+    },
+    {
+      "role": "actual-task-owner-binding",
+      "original": "(call [_] (function))",
+      "observed": "(call [_] (o/with-worker worker function))",
+      "expected_occurrences": 1
+    },
+    {
+      "role": "actual-task-index-sequence",
+      "original": "                          functions)]",
+      "observed": "                          (range (count functions)) functions)]",
+      "expected_occurrences": 1
+    },
+    {
+      "role": "actual-future-get-and-join-observation",
+      "original": "(mapv #(.get %) futures)",
+      "observed": "(o/join-values futures (mapv #(.get %) futures))",
+      "expected_occurrences": 1
+    }
+  ],
+  "observer_source_bundle": [
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/packages/clojure-knucleotide-optimized/sources/clbg/knucleotideobserver/optimized.clj",
+      "sha256": "6c20eb1581757c5b614d875abc0e9d020d73fac2e1a1ee9d7ce76350a4ccbdf2",
+      "role": "observed-application"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/packages/clojure-knucleotide-optimized/support/clbg/work/support.clj",
+      "sha256": "b0e34f0bd6ae4b8a07e3043ce79299bfcdaa8c219985b952f231a95b09dcb92a",
+      "role": "observed-application-helper"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/packages/clojure-knucleotide-optimized/support/clbg/work/observer.clj",
+      "sha256": "f69fc293d88e050b175e40f62f43dcbd4d80b01a68034d886fa6177745cd5365",
+      "role": "generic-object-and-operand-observer"
+    }
+  ],
+  "original_tree_creator_checker_invoked": false,
+  "original_tree_creator_checker_copy_removed": false,
+  "original_tree_compiled_namespace": null,
+  "observer_command_only_extra_flags": [
+    "--add-opens=java.base/java.util=ALL-UNNAMED"
+  ],
+  "scored_command_unchanged": true
+}

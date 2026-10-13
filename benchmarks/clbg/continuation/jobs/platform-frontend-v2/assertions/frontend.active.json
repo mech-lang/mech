@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+    "--test",
+    "--test-reporter=tap",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-frontend-v2/snapshot/continuation/platform-filter-proposal-v2/test_platform.mjs"
+  ],
+  "started_at": "2026-10-13T02:08:33.294758+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 29150,
+  "identity": {
+    "pid": 29150,
+    "process_listing": "Mon Oct 12 22:08:33 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node --test --test-reporter=tap /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-frontend-v2/snapshot/continuation/platform-filter-proposal-v2/test_platform.mjs"
+  }
+}

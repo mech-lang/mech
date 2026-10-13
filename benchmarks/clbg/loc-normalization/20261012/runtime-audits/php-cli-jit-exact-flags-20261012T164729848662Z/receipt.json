@@ -1,0 +1,116 @@
+{
+  "status": "queried-exact-flags",
+  "created_at": "2026-10-12T16:47:30.629232+00:00",
+  "command": [
+    "/opt/homebrew/Cellar/php/8.5.11/bin/php",
+    "-n",
+    "-d",
+    "memory_limit=-1",
+    "-d",
+    "opcache.enable_cli=1",
+    "-d",
+    "opcache.jit_buffer_size=64M",
+    "-d",
+    "opcache.jit=tracing",
+    "-d",
+    "short_open_tag=1",
+    "-r",
+    "\n$status = function_exists('opcache_get_status') ? opcache_get_status(false) : null;\n$directives = [];\nforeach (['opcache.enable_cli','opcache.jit_buffer_size','opcache.jit','extension_dir','short_open_tag','memory_limit'] as $key) {\n    $directives[$key] = ini_get($key);\n}\necho json_encode([\n    'version' => PHP_VERSION,\n    'loaded_zend_extensions' => get_loaded_extensions(true),\n    'opcache_module_loaded' => extension_loaded('Zend OPcache'),\n    'opcache_status' => $status,\n    'ini_directives' => $directives,\n    'loaded_ini_file' => php_ini_loaded_file(),\n    'scanned_ini_files' => php_ini_scanned_files(),\n], JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR), \"\\n\";\n"
+  ],
+  "native_identity": {
+    "pid": 82740,
+    "process_listing": "Mon Oct 12 12:47:29 2026     /opt/homebrew/Cellar/php/8.5.11/bin/php -n -d memory_limit=-1 -d opcache.enable_cli=1 -d opcache.jit_buffer_size=64M -d opcache.jit=tracing -d short_open_tag=1 -r \\012$status = function_exists('opcache_get_status') ? opcache_get_status(false) : null;\\012$directives = [];\\012foreach (['opcache.enable_cli','opcache.jit_buffer_size','opcache.jit','extension_dir','short_open_tag','memory_limit'] as $key) {\\012    $directives[$key] = ini_get($key);\\012}\\012echo json_encode([\\012    'version' => PHP_VERSION,\\012    'loaded_zend_extensions' => get_loaded_extensions(true),\\012    'opcache_module_loaded' => extension_loaded('Zend OPcache'),\\012    'opcache_status' => $status,\\012    'ini_directives' => $directives,\\012    'loaded_ini_file' => php_ini_loaded_file(),\\012    'scanned_ini_files' => php_ini_scanned_files(),\\012], JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR), \"\\n\";\\012"
+  },
+  "runtime_sha256": "f8848966f5c44297449ee1fd00a5c2512f33c3858ce5f5194be14658ded73f31",
+  "config": {
+    "version": "8.5.11",
+    "loaded_zend_extensions": [
+      "Zend OPcache"
+    ],
+    "opcache_module_loaded": true,
+    "opcache_status": {
+      "opcache_enabled": true,
+      "cache_full": false,
+      "restart_pending": false,
+      "restart_in_progress": false,
+      "memory_usage": {
+        "used_memory": 9274568,
+        "free_memory": 124943160,
+        "wasted_memory": 0,
+        "current_wasted_percentage": 0
+      },
+      "interned_strings_usage": {
+        "buffer_size": 8388608,
+        "used_memory": 2598168,
+        "free_memory": 5790440,
+        "number_of_strings": 10482
+      },
+      "opcache_statistics": {
+        "num_cached_scripts": 0,
+        "num_cached_keys": 0,
+        "max_cached_keys": 16229,
+        "hits": 0,
+        "start_time": 1791823650,
+        "last_restart_time": 0,
+        "oom_restarts": 0,
+        "hash_restarts": 0,
+        "manual_restarts": 0,
+        "misses": 0,
+        "blacklist_misses": 0,
+        "blacklist_miss_ratio": 0,
+        "opcache_hit_rate": 0
+      },
+      "jit": {
+        "enabled": true,
+        "on": true,
+        "kind": 5,
+        "opt_level": 4,
+        "opt_flags": 6,
+        "buffer_size": 67108848,
+        "buffer_free": 67105256
+      }
+    },
+    "ini_directives": {
+      "opcache.enable_cli": "1",
+      "opcache.jit_buffer_size": "64M",
+      "opcache.jit": "tracing",
+      "extension_dir": "/opt/homebrew/Cellar/php/8.5.11/lib/php/20250925",
+      "short_open_tag": "1",
+      "memory_limit": "-1"
+    },
+    "loaded_ini_file": false,
+    "scanned_ini_files": false
+  },
+  "tracing_jit_actually_enabled": true,
+  "exact_existing_run_flags": [
+    "-n",
+    "-d",
+    "memory_limit=-1",
+    "-d",
+    "opcache.enable_cli=1",
+    "-d",
+    "opcache.jit_buffer_size=64M",
+    "-d",
+    "opcache.jit=tracing",
+    "-d",
+    "short_open_tag=1"
+  ],
+  "available_opcache_libraries": [],
+  "pins": {
+    "/opt/homebrew/Cellar/php/8.5.11/bin/php": "f8848966f5c44297449ee1fd00a5c2512f33c3858ce5f5194be14658ded73f31",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/guarded_prepare.py": "1d46e9661c90bffebfbb55bdca48369b10be4f710fc200de0a729772e7263da2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending_minima_study.py": "01e4c5adf928b021319c318c721f385a1d5c2b483163740013acd6024cd48610",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/preparation-fixtures.json": "d78044f97a7efbae49efbc22b7fe221ac987dd060f6fc6a5dbfb0f98d3fb5bde",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining_owner.py": "55581d56609803243b3be264e6a2e37229be06789c22788bbf8cdb6ff6828544",
+    "/private/tmp/mech-php-exact-jit-config-20261012.py": "366d107708d9cf00b341313b5a1b3e2858629a60172be6188fda8c821816998c"
+  },
+  "reused_ownership_fixture_count": 12,
+  "ownership_fixtures_rerun": false,
+  "benchmark_processes": 0,
+  "timing_samples": 0,
+  "prior_results_changed": false,
+  "chart_admission": false,
+  "diagnostic_processes": 1,
+  "inherited_common_mutex": true,
+  "no_automatic_retry": true
+}

@@ -1,0 +1,1125 @@
+{
+  "status": "passed",
+  "created_at": "2026-10-12T14:26:51.415412+00:00",
+  "dataset": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/dist/data.json",
+  "site_dataset": "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/dist/data.json",
+  "dataset_sha256": "65bfa4d833f61fff69b16eb3c917e4fcd1eb21d5788bbbeed7e09e9f2382d32f",
+  "site_dataset_sha256": "65bfa4d833f61fff69b16eb3c917e4fcd1eb21d5788bbbeed7e09e9f2382d32f",
+  "source_or_report_mutations": false,
+  "data_admission": false,
+  "git_or_publication": false,
+  "common_mutex": "/tmp/mech-clbg-timing.lock",
+  "workload_count": 10,
+  "runtime_count": 46,
+  "endpoint_program_count": 723,
+  "policy": "Actual selected measured source coverage only, requiring at least three positive samples and no explicit required-work/chart exclusion. Complete independent studies not yet imported remain separate evidence.",
+  "rows": [
+    {
+      "language": "c",
+      "label": "C (GCC + LLVM)",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "chapel",
+      "label": "Chapel",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "cpp",
+      "label": "C++ (GCC + LLVM)",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "go",
+      "label": "Go",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "java",
+      "label": "Java",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "julia",
+      "label": "Julia",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "mech",
+      "label": "Mech (AOT)",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "mech-jit",
+      "label": "Mech (JIT)",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "mech-resident",
+      "label": "Mech (interpreted)",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "rust",
+      "label": "Rust",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "python",
+      "label": "Python (CPython)",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "ruby",
+      "label": "Ruby (YJIT)",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "perl",
+      "label": "Perl",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "luajit",
+      "label": "LuaJIT",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "javascript",
+      "label": "JavaScript (V8)",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "php",
+      "label": "PHP",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "lua",
+      "label": "Lua (interpreted)",
+      "covered": 9,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux"
+      ],
+      "missing": [
+        {
+          "benchmark": "pidigits",
+          "selected_record": {},
+          "explicit_exclusions": []
+        }
+      ]
+    },
+    {
+      "language": "bqn",
+      "label": "BQN (CBQN)",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "k",
+      "label": "K (Growler)",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "mojo",
+      "label": "Mojo",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "futhark",
+      "label": "Futhark",
+      "covered": 9,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": [
+        {
+          "benchmark": "binarytrees",
+          "selected_record": {},
+          "explicit_exclusions": [
+            {
+              "key": "binarytrees:futhark-allocation-gap",
+              "benchmark": "binarytrees",
+              "language": "futhark",
+              "reason": "The array representation constructs and traverses all node values, but omits the required per-node heap/library-pool allocations. Futhark 0.27.1 has flattened array values and no recursive heap-reference data model or outgoing C allocator calls. A native tree executor would violate the language-source rule."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "language": "swift",
+      "label": "Swift",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "haskell",
+      "label": "Haskell",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "ocaml",
+      "label": "OCaml",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "matlab",
+      "label": "MATLAB",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "erlang",
+      "label": "Erlang",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "lisp",
+      "label": "Common Lisp (SBCL)",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "racket",
+      "label": "Racket",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "zig",
+      "label": "Zig",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "odin",
+      "label": "Odin",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "roc",
+      "label": "Roc",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "elm",
+      "label": "Elm",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "csharp",
+      "label": "C# (JIT)",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "csharp-aot",
+      "label": "C# (AOT)",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "fsharp",
+      "label": "F# (JIT)",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "fsharp-aot",
+      "label": "F# (AOT)",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "ada",
+      "label": "Ada",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "pascal",
+      "label": "Pascal",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "fortran",
+      "label": "Fortran",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "dart",
+      "label": "Dart (AOT)",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "dart-jit",
+      "label": "Dart (JIT)",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "smalltalk",
+      "label": "Smalltalk (Pharo)",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "d",
+      "label": "D",
+      "covered": 10,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": []
+    },
+    {
+      "language": "r",
+      "label": "R",
+      "covered": 7,
+      "required": 10,
+      "coverage": [
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fasta",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": [
+        {
+          "benchmark": "nbody",
+          "selected_record": {},
+          "explicit_exclusions": []
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "selected_record": {},
+          "explicit_exclusions": []
+        },
+        {
+          "benchmark": "binarytrees",
+          "selected_record": {},
+          "explicit_exclusions": []
+        }
+      ]
+    },
+    {
+      "language": "apl",
+      "label": "APL (GNU APL)",
+      "covered": 4,
+      "required": 10,
+      "coverage": [
+        "spectralnorm",
+        "revcomp",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": [
+        {
+          "benchmark": "nbody",
+          "selected_record": {},
+          "explicit_exclusions": []
+        },
+        {
+          "benchmark": "mandelbrot",
+          "selected_record": {},
+          "explicit_exclusions": []
+        },
+        {
+          "benchmark": "knucleotide",
+          "selected_record": {},
+          "explicit_exclusions": []
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "selected_record": {},
+          "explicit_exclusions": []
+        },
+        {
+          "benchmark": "fasta",
+          "selected_record": {},
+          "explicit_exclusions": []
+        },
+        {
+          "benchmark": "binarytrees",
+          "selected_record": {},
+          "explicit_exclusions": []
+        }
+      ]
+    },
+    {
+      "language": "uiua",
+      "label": "Uiua",
+      "covered": 7,
+      "required": 10,
+      "coverage": [
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fasta",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": [
+        {
+          "benchmark": "nbody",
+          "selected_record": {},
+          "explicit_exclusions": []
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "selected_record": {},
+          "explicit_exclusions": []
+        },
+        {
+          "benchmark": "binarytrees",
+          "selected_record": {},
+          "explicit_exclusions": []
+        }
+      ]
+    }
+  ],
+  "incomplete": [
+    {
+      "language": "lua",
+      "label": "Lua (interpreted)",
+      "covered": 9,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "binarytrees",
+        "regexredux"
+      ],
+      "missing": [
+        {
+          "benchmark": "pidigits",
+          "selected_record": {},
+          "explicit_exclusions": []
+        }
+      ]
+    },
+    {
+      "language": "futhark",
+      "label": "Futhark",
+      "covered": 9,
+      "required": 10,
+      "coverage": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fannkuchredux",
+        "fasta",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": [
+        {
+          "benchmark": "binarytrees",
+          "selected_record": {},
+          "explicit_exclusions": [
+            {
+              "key": "binarytrees:futhark-allocation-gap",
+              "benchmark": "binarytrees",
+              "language": "futhark",
+              "reason": "The array representation constructs and traverses all node values, but omits the required per-node heap/library-pool allocations. Futhark 0.27.1 has flattened array values and no recursive heap-reference data model or outgoing C allocator calls. A native tree executor would violate the language-source rule."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "language": "r",
+      "label": "R",
+      "covered": 7,
+      "required": 10,
+      "coverage": [
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fasta",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": [
+        {
+          "benchmark": "nbody",
+          "selected_record": {},
+          "explicit_exclusions": []
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "selected_record": {},
+          "explicit_exclusions": []
+        },
+        {
+          "benchmark": "binarytrees",
+          "selected_record": {},
+          "explicit_exclusions": []
+        }
+      ]
+    },
+    {
+      "language": "apl",
+      "label": "APL (GNU APL)",
+      "covered": 4,
+      "required": 10,
+      "coverage": [
+        "spectralnorm",
+        "revcomp",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": [
+        {
+          "benchmark": "nbody",
+          "selected_record": {},
+          "explicit_exclusions": []
+        },
+        {
+          "benchmark": "mandelbrot",
+          "selected_record": {},
+          "explicit_exclusions": []
+        },
+        {
+          "benchmark": "knucleotide",
+          "selected_record": {},
+          "explicit_exclusions": []
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "selected_record": {},
+          "explicit_exclusions": []
+        },
+        {
+          "benchmark": "fasta",
+          "selected_record": {},
+          "explicit_exclusions": []
+        },
+        {
+          "benchmark": "binarytrees",
+          "selected_record": {},
+          "explicit_exclusions": []
+        }
+      ]
+    },
+    {
+      "language": "uiua",
+      "label": "Uiua",
+      "covered": 7,
+      "required": 10,
+      "coverage": [
+        "mandelbrot",
+        "knucleotide",
+        "spectralnorm",
+        "revcomp",
+        "fasta",
+        "regexredux",
+        "pidigits"
+      ],
+      "missing": [
+        {
+          "benchmark": "nbody",
+          "selected_record": {},
+          "explicit_exclusions": []
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "selected_record": {},
+          "explicit_exclusions": []
+        },
+        {
+          "benchmark": "binarytrees",
+          "selected_record": {},
+          "explicit_exclusions": []
+        }
+      ]
+    }
+  ]
+}

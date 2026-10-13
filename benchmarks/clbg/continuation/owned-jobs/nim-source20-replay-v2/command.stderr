@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/nim-source-replay-v1/qualify_replay.py", line 354, in <module>
+    if __name__ == '__main__': main()
+                               ~~~~^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/nim-source-replay-v1/qualify_replay.py", line 351, in main
+    run(args)
+    ~~~^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/nim-source-replay-v1/qualify_replay.py", line 312, in run
+    qualifier,guard,harness,report,reuse = qualified(pins)
+                                           ~~~~~~~~~^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/nim-source-replay-v1/qualify_replay.py", line 179, in qualified
+    assert Path(sys.modules[name].__file__).resolve() == path and sha(path) == pins[str(path)]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

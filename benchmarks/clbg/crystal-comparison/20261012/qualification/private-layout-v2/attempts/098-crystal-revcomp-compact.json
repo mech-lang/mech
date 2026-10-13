@@ -1,0 +1,54 @@
+{
+  "key": "revcomp:crystal-revcomp-compact",
+  "id": "crystal-revcomp-compact",
+  "benchmark": "revcomp",
+  "language": "crystal",
+  "source_sha256": "cbe34ee540760ef13fd9a1c98e752f0d7df3bd7ab014bcf30893b703e0599edf",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-revcomp-compact",
+    "1000"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012",
+  "runtime_environment": {
+    "LC_ALL": "C",
+    "CRYSTAL_WORKERS": "8",
+    "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"716a576b350949d75f794688550e9df4e36a74934cf31468e6bbfa4fa4b9b05d\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-revcomp-compact\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012\", \"environment\": {\"CRYSTAL_WORKERS\": \"8\", \"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"cbe34ee540760ef13fd9a1c98e752f0d7df3bd7ab014bcf30893b703e0599edf\", \"support\": {}}",
+  "started_at": "2026-10-12T17:15:53.932293+00:00",
+  "workload_n": 1000,
+  "full_workload": false,
+  "timeout_seconds": 300,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.013281458,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 0,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "validation": {
+    "reference_match": true,
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "finished_at": "2026-10-12T17:15:54.130958+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true
+}

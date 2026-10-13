@@ -1,0 +1,66 @@
+test_c_compound_literals_are_data (test_normalizer.NormalizationFixtures.test_c_compound_literals_are_data) ... ok
+test_c_for_header_semicolons_are_structural (test_normalizer.NormalizationFixtures.test_c_for_header_semicolons_are_structural) ... ok
+test_c_multiple_declaration_bindings (test_normalizer.NormalizationFixtures.test_c_multiple_declaration_bindings) ... ok
+test_c_nested_assignment_is_executable (test_normalizer.NormalizationFixtures.test_c_nested_assignment_is_executable) ... ok
+test_comments_and_strings_do_not_add_units (test_normalizer.NormalizationFixtures.test_comments_and_strings_do_not_add_units) ... FAIL
+test_declarator_cleanup_with_newline_and_spaces (test_normalizer.NormalizationFixtures.test_declarator_cleanup_with_newline_and_spaces) ... ok
+test_existing_closing_lines_are_retained (test_normalizer.NormalizationFixtures.test_existing_closing_lines_are_retained) ... ok
+test_function_and_combined_branches (test_normalizer.NormalizationFixtures.test_function_and_combined_branches) ... ok
+test_go_multi_return_and_independent_initializers (test_normalizer.NormalizationFixtures.test_go_multi_return_and_independent_initializers) ... ok
+test_inline_and_expanded_control_spellings_agree (test_normalizer.NormalizationFixtures.test_inline_and_expanded_control_spellings_agree) ... ok
+test_js_declarations_and_object_destructuring (test_normalizer.NormalizationFixtures.test_js_declarations_and_object_destructuring) ... ok
+test_julia_comment_like_literal_and_adjoint (test_normalizer.NormalizationFixtures.test_julia_comment_like_literal_and_adjoint) ... ok
+test_julia_keyword_arguments_are_structural (test_normalizer.NormalizationFixtures.test_julia_keyword_arguments_are_structural) ... FAIL
+test_julia_matrix_rows_are_structural (test_normalizer.NormalizationFixtures.test_julia_matrix_rows_are_structural) ... ok
+test_julia_nested_comments (test_normalizer.NormalizationFixtures.test_julia_nested_comments) ... ok
+test_known_julia_comment_and_chains (test_normalizer.NormalizationFixtures.test_known_julia_comment_and_chains) ... ok
+test_known_legacy_lua_source (test_normalizer.NormalizationFixtures.test_known_legacy_lua_source) ... ok
+test_known_r_nbody_physical_and_canonical_agree (test_normalizer.NormalizationFixtures.test_known_r_nbody_physical_and_canonical_agree) ... ok
+test_lua_multiple_independent_locals (test_normalizer.NormalizationFixtures.test_lua_multiple_independent_locals) ... ok
+test_lua_single_producer_is_destructuring (test_normalizer.NormalizationFixtures.test_lua_single_producer_is_destructuring) ... ok
+test_mask_preserves_offsets_and_crlf (test_normalizer.NormalizationFixtures.test_mask_preserves_offsets_and_crlf) ... ok
+test_mech_expression_and_explicit_block_functions (test_normalizer.NormalizationFixtures.test_mech_expression_and_explicit_block_functions) ... ok
+test_mixed_statements_and_chained_bindings (test_normalizer.NormalizationFixtures.test_mixed_statements_and_chained_bindings) ... ok
+test_python_chains_and_tuple_destructuring (test_normalizer.NormalizationFixtures.test_python_chains_and_tuple_destructuring) ... ok
+test_python_keyword_arguments_are_structural (test_normalizer.NormalizationFixtures.test_python_keyword_arguments_are_structural) ... ok
+test_r_bindings_and_named_arguments (test_normalizer.NormalizationFixtures.test_r_bindings_and_named_arguments) ... ok
+test_rust_array_semicolon_is_structural (test_normalizer.NormalizationFixtures.test_rust_array_semicolon_is_structural) ... ok
+test_rust_destructuring_is_one_binding (test_normalizer.NormalizationFixtures.test_rust_destructuring_is_one_binding) ... ok
+test_semantic_compiler_pragma_retained (test_normalizer.NormalizationFixtures.test_semantic_compiler_pragma_retained) ... ok
+test_typed_rust_and_go_bodies_remain_executable (test_normalizer.NormalizationFixtures.test_typed_rust_and_go_bodies_remain_executable) ... ok
+test_candidate_proposal_cannot_be_admitted (test_legacy_loc_data.LegacyLOCAdmissionFixtures.test_candidate_proposal_cannot_be_admitted) ... ok
+test_changed_reviewed_snapshot_is_rejected (test_legacy_loc_data.LegacyLOCAdmissionFixtures.test_changed_reviewed_snapshot_is_rejected) ... ok
+test_changed_source_bytes_are_rejected (test_legacy_loc_data.LegacyLOCAdmissionFixtures.test_changed_source_bytes_are_rejected) ... ok
+test_complete_pool_can_choose_previously_unplotted_compact_winner (test_legacy_loc_data.LegacyLOCAdmissionFixtures.test_complete_pool_can_choose_previously_unplotted_compact_winner) ... ok
+test_full_output_qualification_is_required (test_legacy_loc_data.LegacyLOCAdmissionFixtures.test_full_output_qualification_is_required) ... ok
+test_incomplete_pool_or_pending_winner_blocks_admission (test_legacy_loc_data.LegacyLOCAdmissionFixtures.test_incomplete_pool_or_pending_winner_blocks_admission) ... ok
+test_new_required_work_exclusion_is_not_readmitted (test_legacy_loc_data.LegacyLOCAdmissionFixtures.test_new_required_work_exclusion_is_not_readmitted) ... ok
+
+======================================================================
+FAIL: test_comments_and_strings_do_not_add_units (test_normalizer.NormalizationFixtures.test_comments_and_strings_do_not_add_units)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-01/snapshot/test_normalizer.py", line 88, in test_comments_and_strings_do_not_add_units
+    self.count('x="a=1;b=2"; // x=y=1;', "c", 1)
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-01/snapshot/test_normalizer.py", line 12, in count
+    self.assertEqual(row["normalized_loc"], expected, row)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 3 != 1 : {'rule_version': 'canonical-source-units-20261012-approved-rule-v2', 'physical_loc': 1, 'normalized_loc': 3, 'expansions': [{'line': 1, 'extra_lines': 2, 'units': 3, 'original': 'x="a=1;b=2"; // x=y=1;', 'events': [{'start_column': 1, 'end_column': 13, 'units': 1, 'assignments': [{'column': 2, 'operator': '='}], 'declaration_bindings': 0, 'reason': 'independent-statement-and-chained-bindings'}, {'start_column': 13, 'end_column': 23, 'units': 2, 'assignments': [{'column': 18, 'operator': '='}, {'column': 20, 'operator': '='}], 'declaration_bindings': 0, 'reason': 'independent-statement-and-chained-bindings'}], 'canonical_events': [], 'reason': 'Canonical header/open/close units and independent body bindings; retain literal wrapping.'}], 'diagnostics': [], 'canonical_events': [], 'review_status': 'candidate-parser-pass'}
+
+======================================================================
+FAIL: test_julia_keyword_arguments_are_structural (test_normalizer.NormalizationFixtures.test_julia_keyword_arguments_are_structural)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-01/snapshot/test_normalizer.py", line 54, in test_julia_keyword_arguments_are_structural
+    self.count("sort!(x; rev=true, by=f)", "julia", 1)
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-01/snapshot/test_normalizer.py", line 12, in count
+    self.assertEqual(row["normalized_loc"], expected, row)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 3 != 1 : {'rule_version': 'canonical-source-units-20261012-approved-rule-v2', 'physical_loc': 1, 'normalized_loc': 3, 'expansions': [{'line': 1, 'extra_lines': 2, 'units': 3, 'original': 'sort!(x; rev=true, by=f)', 'events': [{'start_column': 1, 'end_column': 9, 'units': 1, 'assignments': [], 'declaration_bindings': 0, 'reason': 'independent-statement-and-chained-bindings'}, {'start_column': 9, 'end_column': 25, 'units': 2, 'assignments': [{'column': 13, 'operator': '='}, {'column': 22, 'operator': '='}], 'declaration_bindings': 0, 'reason': 'independent-statement-and-chained-bindings'}], 'canonical_events': [], 'reason': 'Canonical header/open/close units and independent body bindings; retain literal wrapping.'}], 'diagnostics': [{'kind': 'parenthesized-semicolon-review', 'offset': 7, 'line': 1, 'column': 8}], 'canonical_events': [], 'review_status': 'needs-review'}
+
+----------------------------------------------------------------------
+Ran 37 tests in 0.119s
+
+FAILED (failures=2)

@@ -1,0 +1,10 @@
+test_archive_traversal_and_links_cannot_become_compiler_inputs (test_guarded_prepare.CandidatePreparation.test_archive_traversal_and_links_cannot_become_compiler_inputs) ... ok
+test_complete_authored_inventory_and_explicit_beam_command (test_guarded_prepare.CandidatePreparation.test_complete_authored_inventory_and_explicit_beam_command) ... ok
+test_hex_inner_checksum_and_exact_outer_inventory_are_required (test_guarded_prepare.CandidatePreparation.test_hex_inner_checksum_and_exact_outer_inventory_are_required) ... ok
+test_missing_form_foreign_source_and_ffi_module_collision_are_rejected (test_guarded_prepare.CandidatePreparation.test_missing_form_foreign_source_and_ffi_module_collision_are_rejected) ... ok
+test_preheader_input_is_declared_and_reference_ignores_preamble (test_guarded_prepare.CandidatePreparation.test_preheader_input_is_declared_and_reference_ignores_preamble) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.028s
+
+OK

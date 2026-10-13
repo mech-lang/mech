@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-13T12:00:33.842282+00:00",
+  "command": [
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+    "-B",
+    "-u",
+    "benchmarks/clbg/clojure-comparison/20261012/revisions/work-full-v1/seal_full_studies.py",
+    "--qualified-file",
+    "benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/report.json",
+    "--qualified-sha256",
+    "69bf7cdb025759e6d10cb8c1ae1c189839e253ced9aca50e4f9cc1e838d36d79",
+    "--work-file",
+    "benchmarks/clbg/clojure-comparison/20261012/work-qualification/qualified/work-v1-reviewed-v2/report.json",
+    "--work-sha256",
+    "7e0029f49eacaad3bfd4a3a24e339dccf46ee757ae5ca6db6b062be0bc9b7ebf",
+    "--study-revision",
+    "full-v1"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "common_mutex_owned_by_target_command": true,
+  "qualification_granted": false,
+  "automatic_retry": false
+}

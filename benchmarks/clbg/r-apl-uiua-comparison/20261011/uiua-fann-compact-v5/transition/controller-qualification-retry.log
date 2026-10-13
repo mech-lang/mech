@@ -1,0 +1,42 @@
+Waiting for common mutex for mocked fixtures then controller plan sealing.
+test_active_never_signals (__main__.Safety.test_active_never_signals) ... ok
+test_identity_change_is_fatal (__main__.Safety.test_identity_change_is_fatal) ... ok
+test_incomplete_nbody_never_signals (__main__.Safety.test_incomplete_nbody_never_signals) ... ok
+test_native_child_never_signals (__main__.Safety.test_native_child_never_signals) ... ok
+test_nbody_monitor_failure_is_rejected (__main__.Safety.test_nbody_monitor_failure_is_rejected) ... ok
+test_old_uiua_fann_attempt_is_rejected (__main__.Safety.test_old_uiua_fann_attempt_is_rejected) ... ok
+test_settles_final_save_then_rereads_fresh_bytes (__main__.Safety.test_settles_final_save_then_rereads_fresh_bytes) ... ok
+test_success_targets_recorded_python_pid_only (__main__.Safety.test_success_targets_recorded_python_pid_only) ... {
+  "status": "maintenance-complete-new-owner-awaiting-review",
+  "finished_at": "2026-10-12T04:45:23.691113+00:00",
+  "plan_sha256": "d8d0d3fc07ad1d16f49075026da5e6755bb12ca96a29b60bd7fd9e45b29c9bc2",
+  "boundary": {
+    "observed_at": "2026-10-12T04:45:23.690688+00:00",
+    "last_stage_log_line": "WAIT LOCK 1 old-fann",
+    "stage_descendants": [],
+    "report_sha256": {
+      "r": "a6e54189fa978c477e5243a5d3a65496645d6ec5a41e0eb067531288c9ef87c4",
+      "uiua": "2de828ab4bf042dc5375190c1b13b43af0ecef3b3ae418adcb52f671d18535e1",
+      "apl": "c9f28d9fe60599994bcb2541e7ae031fdef3fdb0859c06e11e1447ebb38b6093"
+    }
+  },
+  "stage_exit_status": 130,
+  "signal": "SIGINT to waiting Python stage owner only",
+  "native_processes_signalled": false,
+  "benchmarks_launched": false,
+  "revision_directory": "mock additive revision"
+}
+ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.016s
+
+OK
+
+{
+  "plan": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/transition/plan.json",
+  "sha256": "d6fadeb1a65b11ac247ace2baa373953b990a41caf1f9044bc250e42bf7c9485",
+  "controller": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/transition/controller.py",
+  "controller_sha256": "f3d0506b2c2daa8a9910af7f192a27d290faee683ce70176f76959e694919bb4"
+}
+Fixture receipt SHA 1a5293124f1bbf11eda486e2003eb433fd8456e28a7177f2d7e8d00a1267c023

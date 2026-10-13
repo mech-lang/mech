@@ -1,0 +1,30 @@
+WAIT LOCK: V preparation production-builder-v3 knucleotide
+BUILD v-knucleotide-compact-input-v2
+BUILD v-knucleotide-optimized-input-v2
+PROBE v-knucleotide-compact-input-v2 ties-and-stop
+PROBE v-knucleotide-compact-input-v2 one-base
+PROBE v-knucleotide-compact-input-v2 empty
+PROBE v-knucleotide-compact-input-v2 missing
+PROBE v-knucleotide-compact-input-v2 crlf-comment-eof
+PROBE v-knucleotide-compact-input-v2 embedded-header-comment
+PROBE v-knucleotide-compact-input-v2 arbitrary-widths
+PROBE v-knucleotide-compact-input-v2 empty-comments
+PROBE v-knucleotide-compact-input-v2 no-final-newline
+PROBE v-knucleotide-compact-input-v2 unterminated-target-header
+PROBE v-knucleotide-compact-input-v2 exact-token-tab-cr
+PROBE v-knucleotide-compact-input-v2 comment-vertical-tab
+PROBE v-knucleotide-compact-input-v2 complete-multirecord-beyond-buffer
+PROBE v-knucleotide-optimized-input-v2 ties-and-stop
+PROBE v-knucleotide-optimized-input-v2 one-base
+PROBE v-knucleotide-optimized-input-v2 empty
+PROBE v-knucleotide-optimized-input-v2 missing
+PROBE v-knucleotide-optimized-input-v2 crlf-comment-eof
+PROBE v-knucleotide-optimized-input-v2 embedded-header-comment
+PROBE v-knucleotide-optimized-input-v2 arbitrary-widths
+PROBE v-knucleotide-optimized-input-v2 empty-comments
+PROBE v-knucleotide-optimized-input-v2 no-final-newline
+PROBE v-knucleotide-optimized-input-v2 unterminated-target-header
+PROBE v-knucleotide-optimized-input-v2 exact-token-tab-cr
+PROBE v-knucleotide-optimized-input-v2 comment-vertical-tab
+PROBE v-knucleotide-optimized-input-v2 complete-multirecord-beyond-buffer
+PASS BOUNDED OUTPUTS knucleotide 28

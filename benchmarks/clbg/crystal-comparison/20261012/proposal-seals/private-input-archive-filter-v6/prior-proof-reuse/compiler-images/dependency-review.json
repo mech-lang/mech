@@ -1,0 +1,47 @@
+{
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/bin/crystal",
+  "architectures": [
+    "x86_64",
+    "arm64"
+  ],
+  "dependencies": [
+    {
+      "install_name": "/usr/lib/libSystem.B.dylib",
+      "scope": "OS-system-image-not-hashed"
+    },
+    {
+      "install_name": "/usr/lib/libc++.1.dylib",
+      "scope": "OS-system-image-not-hashed"
+    },
+    {
+      "install_name": "/usr/lib/libiconv.2.dylib",
+      "scope": "OS-system-image-not-hashed"
+    },
+    {
+      "install_name": "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+      "scope": "OS-system-image-not-hashed"
+    },
+    {
+      "install_name": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/bin/crystal",
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/bin/crystal",
+      "lookup_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/bin/crystal",
+      "sha256": "e88aa24910acea22d392300b87ae811d419c991e019623a9725b9e0fc942b020"
+    },
+    {
+      "install_name": "/usr/lib/libSystem.B.dylib",
+      "scope": "OS-system-image-not-hashed"
+    },
+    {
+      "install_name": "/usr/lib/libc++.1.dylib",
+      "scope": "OS-system-image-not-hashed"
+    },
+    {
+      "install_name": "/usr/lib/libiconv.2.dylib",
+      "scope": "OS-system-image-not-hashed"
+    },
+    {
+      "install_name": "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+      "scope": "OS-system-image-not-hashed"
+    }
+  ]
+}

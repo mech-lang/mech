@@ -1,0 +1,15 @@
+test_cleanup_failure_is_fatal_and_waits (test_guarded_prepare_v2.OwnershipChecks.test_cleanup_failure_is_fatal_and_waits) ... ok
+test_identity_failure_cleans_known_child (test_guarded_prepare_v2.OwnershipChecks.test_identity_failure_cleans_known_child) ... ok
+test_journal_failure_cleans_known_child (test_guarded_prepare_v2.OwnershipChecks.test_journal_failure_cleans_known_child) ... ok
+test_orphan_compiler_child_is_fatal (test_guarded_prepare_v2.OwnershipChecks.test_orphan_compiler_child_is_fatal) ... ok
+test_popen_failure_has_no_foreign_cleanup (test_guarded_prepare_v2.OwnershipChecks.test_popen_failure_has_no_foreign_cleanup) ... ok
+test_timeout_preserves_complete_drained_output (test_guarded_prepare_v2.OwnershipChecks.test_timeout_preserves_complete_drained_output) ... ok
+test_absent_input_key_is_removed_on_failure (test_guarded_prepare_v2.ProbeRestorationChecks.test_absent_input_key_is_removed_on_failure) ... ok
+test_parent_failure_archives_actual_sampler_bytes (test_guarded_prepare_v2.ProbeRestorationChecks.test_parent_failure_archives_actual_sampler_bytes) ... ok
+test_setup_failure_restores_present_state (test_guarded_prepare_v2.ProbeRestorationChecks.test_setup_failure_restores_present_state) ... ok
+test_trace_failure_archives_and_stops (test_guarded_prepare_v2.ProbeRestorationChecks.test_trace_failure_archives_and_stops) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.008s
+
+OK

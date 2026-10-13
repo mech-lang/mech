@@ -1,0 +1,9 @@
+test_added_forms_choose_actual_fast_and_small_and_preserve_observations (test_publication_endpoints_v1.PublicationEndpoints.test_added_forms_choose_actual_fast_and_small_and_preserve_observations) ... ok
+test_late_invalid_group_is_transactional (test_publication_endpoints_v1.PublicationEndpoints.test_late_invalid_group_is_transactional) ... ok
+test_one_source_can_own_both_endpoints_and_stable_ties_remain_stable (test_publication_endpoints_v1.PublicationEndpoints.test_one_source_can_own_both_endpoints_and_stable_ties_remain_stable) ... ok
+test_source_only_small_remains_without_invented_time_or_complete_suite (test_publication_endpoints_v1.PublicationEndpoints.test_source_only_small_remains_without_invented_time_or_complete_suite) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.002s
+
+OK

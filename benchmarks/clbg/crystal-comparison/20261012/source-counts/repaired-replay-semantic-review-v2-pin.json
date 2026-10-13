@@ -1,0 +1,10 @@
+{
+  "status": "reviewed-content-pins-awaiting-overlay-seal",
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/source-counts/repaired-replay-semantic-review-v2.json": "3087d38fe95ab7d9cc1340291d361448367b8995f43da744124a5af8362303f0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/source-counts/seal_overlay_v2.py": "8a6f6bf77fb0f96cba312ddcdf8df7590b0cf4a75e404352943a86255707c3ce",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/source-counts/OVERLAY_V2_REVIEW.md": "b97af79e25e02917d9c4cca18cf7d6dde9786a56b6b9f508df103b79d2b024b9"
+  },
+  "exclusive_common_timing_mutex_held": true,
+  "chart_admission": false
+}

@@ -1,0 +1,126 @@
+{
+  "pid": 30544,
+  "started_at": "2026-10-11T22:21:06.290234+00:00",
+  "source_audits": {
+    "r": "d76be20504617addb9efd5915bf7074877e727e3a49ccbd36585b4be5c763af3",
+    "uiua": "82b15648d0c49c6393a0eec1efb441f1ee11237ceae4a8f41ca854c0b7ee0860",
+    "apl": "9b26c06182bb97b4d3e26d70d9edd6e5ec78e57f1b59a77a91874869c9e83936"
+  },
+  "report_ownership": [
+    "r",
+    "uiua",
+    "apl"
+  ],
+  "orphan_identity": {
+    "pid": 25078,
+    "started": "Sun Oct 11 17:58:35 2026",
+    "command": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl --silent --noCIN --noCONT --noColor --noSV --cc 1 -f /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/mandelbrot.compact.apl -- 16000"
+  },
+  "status": "waiting-for-orphan",
+  "stages": [],
+  "coverage": {
+    "r": {
+      "report_status": "partial",
+      "qualified_benchmarks": [
+        "mandelbrot",
+        "spectralnorm",
+        "fasta",
+        "revcomp",
+        "regexredux",
+        "pidigits"
+      ],
+      "qualified_count": 6,
+      "selected_sources_or_controls_pending": [
+        "nbody:nbody-r-compact",
+        "nbody:nbody-r-optimized",
+        "nbody:mech-control-for-r",
+        "binarytrees:binarytrees-r-compact",
+        "binarytrees:binarytrees-r-optimized",
+        "binarytrees:mech-control-for-r",
+        "knucleotide:knucleotide-r-compact",
+        "knucleotide:knucleotide-r-optimized",
+        "knucleotide:mech-control-for-r",
+        "fannkuchredux:fannkuchredux-r-array-compact",
+        "fannkuchredux:fannkuchredux-r-array-batched",
+        "fannkuchredux:mech-control-for-r"
+      ],
+      "actual_full_failures": [],
+      "active": null
+    },
+    "uiua": {
+      "report_status": "partial",
+      "qualified_benchmarks": [
+        "fasta",
+        "revcomp",
+        "regexredux",
+        "pidigits",
+        "spectralnorm",
+        "mandelbrot"
+      ],
+      "qualified_count": 6,
+      "selected_sources_or_controls_pending": [
+        "binarytrees:binarytrees-uiua-compact",
+        "binarytrees:binarytrees-uiua-optimized",
+        "binarytrees:mech-control-for-uiua",
+        "knucleotide:knucleotide-uiua-compact-v3",
+        "knucleotide:knucleotide-uiua-bounded-optimized-v3",
+        "knucleotide:knucleotide-uiua-native-group-optimized-v3",
+        "knucleotide:mech-control-for-uiua-medium-v3",
+        "fannkuchredux:fannkuchredux-uiua-native-indices-compact-v2",
+        "fannkuchredux:fannkuchredux-uiua-native-flat-gather-optimized-v2",
+        "fannkuchredux:mech-control-for-uiua-medium-v3",
+        "nbody:nbody-uiua-native-denominator-compact-v3",
+        "nbody:nbody-uiua-native-denominator-optimized-v3",
+        "nbody:mech-control-for-uiua-medium-v3"
+      ],
+      "actual_full_failures": [],
+      "active": null
+    },
+    "apl": {
+      "report_status": "running",
+      "qualified_benchmarks": [
+        "spectralnorm",
+        "revcomp",
+        "regexredux",
+        "pidigits"
+      ],
+      "qualified_count": 4,
+      "selected_sources_or_controls_pending": [
+        "mandelbrot:mandelbrot-apl-compact",
+        "mandelbrot:mandelbrot-apl-active-v2-compact",
+        "mandelbrot:mandelbrot-apl-active-v2-optimized",
+        "mandelbrot:mech-control-for-apl-medium-v3",
+        "fannkuchredux:fannkuchredux-apl-compact",
+        "fannkuchredux:fannkuchredux-apl-optimized",
+        "fannkuchredux:mech-control-for-apl",
+        "fasta:fasta-apl-compact",
+        "fasta:fasta-apl-affine-hoisted-optimized-v3",
+        "fasta:mech-control-for-apl-medium-v3",
+        "binarytrees:binarytrees-apl-compact",
+        "binarytrees:binarytrees-apl-optimized",
+        "binarytrees:mech-control-for-apl",
+        "knucleotide:knucleotide-apl-v2-compact",
+        "knucleotide:knucleotide-apl-v2-optimized",
+        "knucleotide:mech-control-for-apl",
+        "nbody:nbody-apl-compact-canonical-v2",
+        "nbody:nbody-apl-optimized-canonical-v2",
+        "nbody:mech-control-for-apl-medium-v3"
+      ],
+      "actual_full_failures": [
+        "revcomp:revcomp-apl-compact",
+        "revcomp:revcomp-apl-optimized",
+        "regexredux:regexredux-apl-compact",
+        "regexredux:regexredux-apl-optimized"
+      ],
+      "active": {
+        "key": "mandelbrot:mandelbrot-apl-compact",
+        "sample": 1,
+        "started_at": "2026-10-11T21:58:35.045310+00:00",
+        "timeout_seconds": 14400,
+        "planning_safety_factor": null,
+        "planning_probe_n": null
+      }
+    }
+  },
+  "protocol": "Unchanged frozen run.py; three real full samples and fresh controls; shared mutex; planning only for scheduling."
+}

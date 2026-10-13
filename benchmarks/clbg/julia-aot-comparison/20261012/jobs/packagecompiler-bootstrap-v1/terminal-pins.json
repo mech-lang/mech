@@ -1,0 +1,18 @@
+{
+  "terminal_status": "failed",
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/packagecompiler-bootstrap-v1/failure.log": "2b9ee11c6fa098f628dd7b5306cbd9e5a5ddb3d2d674db17a25e48e2910ddb0a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/packagecompiler-bootstrap-v1/report.json": "cb007a363341b936eab96fbd3c10fd50b5f50f7f19f121150a661607d3d1b6e7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/packagecompiler-bootstrap-v1/installation/packagecompiler-install.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/packagecompiler-bootstrap-v1/installation/packagecompiler-install.active.json": "2de6227382c409dc715b69e4c2aacce011a958335ad1818bf4107c42f5d17ffe",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/packagecompiler-bootstrap-v1/installation/packagecompiler-install.stderr": "835d0517a30edb8dbbe309bbd49b9f998dfe520a655b0977edf5813f0d2416a2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/packagecompiler-bootstrap-v1/installation/packagecompiler-install.json": "3c82ee2f1ddb2778917d87aba3689bb19dbfa6dad8f0c75be0304595d48762c7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/packagecompiler-bootstrap-v1/version/julia-version.active.json": "c360b618153c86c458782576eac9e467c4b62a800f5b7fb90bbcd2f8192d6756",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/packagecompiler-bootstrap-v1/version/julia-version.json": "102d95a95dcaf0caf30b5ccca961f4c3fe45fc3d708f92e362d30e9935a788fa",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/packagecompiler-bootstrap-v1/version/julia-version.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/packagecompiler-bootstrap-v1/version/julia-version.stdout": "04240e3266a6a8feac8048b9d913ffbe14505ffcec1e738418179c1250bd98b3"
+  },
+  "runtime_aot_proven": false,
+  "chart_admission": false,
+  "automatic_retry": false
+}

@@ -1,0 +1,29 @@
+{
+  "queued_at": "2026-10-12T21:29:03.185471+00:00",
+  "mutex": "/tmp/mech-clbg-timing.lock",
+  "frozen_sources": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-proposal-v1/c3_mask.py",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-proposal-v1/foreign_c3.py",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-proposal-v1/test_foreign_c3.py",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-proposal-v1/REVIEW.md",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-18/snapshot/foreign_core.py",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-18/snapshot/canonical.py"
+  ],
+  "snapshot_files": [
+    "c3_mask.py",
+    "foreign_c3.py",
+    "test_foreign_c3.py",
+    "REVIEW.md",
+    "foreign_core.py",
+    "canonical.py"
+  ],
+  "frozen_worker_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-proposal-v1/queue_fixtures.py",
+  "dependency_root": "/private/tmp/mech-clbg-compact-libs",
+  "expected_pygments_version": "2.19.2",
+  "expected_fixture_methods": 16,
+  "python_executable": "/opt/homebrew/opt/python@3.14/bin/python3.14",
+  "python_version": "3.14.8 (main, Sep 30 2026, 17:55:09) [Clang 21.0.0 (clang-2100.3.34.2)]",
+  "automatic_retry": false,
+  "source_counting_started": false,
+  "chart_admitted": false
+}

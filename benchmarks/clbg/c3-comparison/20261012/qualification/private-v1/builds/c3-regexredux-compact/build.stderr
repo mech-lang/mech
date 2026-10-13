@@ -1,0 +1,7 @@
+ 21: {
+ 22:     int error = 0;
+ 23:     usz offset = 0;
+ 24:     void* code = pcre2::compile(pattern, libc::strlen(pattern), 0, &error, &offset, null);
+                                                           ^^^^^^^
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v1/source-snapshot/sources/regexredux/compact.c3:24:55: error: Implicitly casting 'char*' to 'ZString' is not permitted, but you may do an explicit cast by placing '(ZString)' before the expression.
+

@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/usr/bin/otool",
+    "-L",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v3/bin/nim-spectralnorm-optimized"
+  ],
+  "started_at": "2026-10-12T17:42:47.717748+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 98760,
+  "identity": {
+    "pid": 98760,
+    "process_listing": "Mon Oct 12 13:42:47 2026     /Library/Developer/CommandLineTools/usr/bin/otool -L /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v3/bin/nim-spectralnorm-optimized"
+  }
+}

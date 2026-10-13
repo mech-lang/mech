@@ -1,0 +1,65 @@
+{
+  "key": "knucleotide:clojure-knucleotide-compact",
+  "id": "clojure-knucleotide-compact",
+  "benchmark": "knucleotide",
+  "language": "clojure",
+  "source_sha256": "f889c7f46906831717c246584fe9c88a6007edd55b05527fd54efbb9a233ee41",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/jdk/jdk-25.0.4.1+1/Contents/Home/bin/java",
+    "-XX:ActiveProcessorCount=8",
+    "-Xms64m",
+    "-Xmx8g",
+    "-XX:+UseG1GC",
+    "-cp",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-knucleotide-compact:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/clojure-1.12.6.jar:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/spec.alpha-0.5.238.jar:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/core.specs.alpha-0.4.74.jar",
+    "clbg.knucleotide.compact",
+    "1000"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012",
+  "runtime_environment": {
+    "LC_ALL": "C",
+    "LANG": "C",
+    "JAVA_HOME": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/jdk/jdk-25.0.4.1+1/Contents/Home",
+    "CLASSPATH": "",
+    "JAVA_TOOL_OPTIONS": "",
+    "JDK_JAVA_OPTIONS": "",
+    "_JAVA_OPTIONS": "",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"83c9c5310d044e7c4262432854eb1bc5f49763d7c1e9971777a646c91b96c06d\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/jdk/jdk-25.0.4.1+1/Contents/Home/bin/java\", \"-XX:ActiveProcessorCount=8\", \"-Xms64m\", \"-Xmx8g\", \"-XX:+UseG1GC\", \"-cp\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/classes/clojure-knucleotide-compact:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/clojure-1.12.6.jar:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/spec.alpha-0.5.238.jar:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/core.specs.alpha-0.4.74.jar\", \"clbg.knucleotide.compact\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012\", \"environment\": {\"CLASSPATH\": \"\", \"JAVA_HOME\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/jdk/jdk-25.0.4.1+1/Contents/Home\", \"JAVA_TOOL_OPTIONS\": \"\", \"JDK_JAVA_OPTIONS\": \"\", \"LANG\": \"C\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\", \"_JAVA_OPTIONS\": \"\"}, \"source_sha256\": \"f889c7f46906831717c246584fe9c88a6007edd55b05527fd54efbb9a233ee41\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-knucleotide-compact/sources/clbg/knucleotide/compact.clj\": \"f889c7f46906831717c246584fe9c88a6007edd55b05527fd54efbb9a233ee41\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v2/packages/clojure-knucleotide-compact/support/clbg/support.clj\": \"ae37ffdcbfe8d1fa34632e1151d4098b5747f71ce2ad074d326043be3d289446\"}}",
+  "started_at": "2026-10-13T01:48:57.846555+00:00",
+  "workload_n": 1000,
+  "full_workload": false,
+  "timeout_seconds": 120,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.230475875,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "NOTE: Picked up JDK_JAVA_OPTIONS: \nPicked up JAVA_TOOL_OPTIONS: \nPicked up _JAVA_OPTIONS: \n",
+  "stdout_bytes": 180,
+  "stdout_sha256": "440e19750a6674f9e29bd927eb0ae295da65d8c9110964959d0638a52e27a16c",
+  "validation": {
+    "reference_match": true,
+    "bytes": 180,
+    "sha256": "440e19750a6674f9e29bd927eb0ae295da65d8c9110964959d0638a52e27a16c"
+  },
+  "finished_at": "2026-10-13T01:48:58.276257+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true
+}

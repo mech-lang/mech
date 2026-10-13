@@ -1,0 +1,262 @@
+{
+  "status": "historical-failure-preserved-not-reused",
+  "root_reported_previous_cohort_pid": 61707,
+  "root_reported_previous_cohort_status": "Stopped",
+  "failed_source_id": "v-regexredux-compact",
+  "actual_failed_probe": "canonical regexredux small input",
+  "observed_input_length": 22,
+  "failure_cause": "POSIX os.get_raw_stdin uses one C getline, not an entire-input read.",
+  "original_source_profiles": "profiles.json",
+  "preserved_original_profile_inventory": "history/parent-profiles.json",
+  "original_failed_qualification": "qualification/production-sdk-v1",
+  "original_failed_artifacts_mutated": false,
+  "original_sources_mutated": false,
+  "root_reported_prior_full_v_timings": 0,
+  "old_ids_reused": false,
+  "changes": [
+    {
+      "id": "v-nbody-optimized-input-v2",
+      "historical_id": "v-nbody-optimized",
+      "benchmark": "nbody",
+      "variant": "optimized",
+      "parent_source": "sources/nbody/optimized.v",
+      "source": "revisions/input-v2/sources/nbody/optimized.v",
+      "source_bytes_changed": false,
+      "changes": [
+        "Exact unchanged parent source bytes; no source adaptation."
+      ]
+    },
+    {
+      "id": "v-nbody-compact-input-v2",
+      "historical_id": "v-nbody-compact",
+      "benchmark": "nbody",
+      "variant": "compact",
+      "parent_source": "sources/nbody/compact.v",
+      "source": "revisions/input-v2/sources/nbody/compact.v",
+      "source_bytes_changed": false,
+      "changes": [
+        "Exact unchanged parent source bytes; no source adaptation."
+      ]
+    },
+    {
+      "id": "v-mandelbrot-compact-input-v2",
+      "historical_id": "v-mandelbrot-compact",
+      "benchmark": "mandelbrot",
+      "variant": "compact",
+      "parent_source": "sources/mandelbrot/compact.v",
+      "source": "revisions/input-v2/sources/mandelbrot/compact.v",
+      "source_bytes_changed": false,
+      "changes": [
+        "Exact unchanged parent source bytes; no source adaptation."
+      ]
+    },
+    {
+      "id": "v-mandelbrot-optimized-input-v2",
+      "historical_id": "v-mandelbrot-optimized",
+      "benchmark": "mandelbrot",
+      "variant": "optimized",
+      "parent_source": "sources/mandelbrot/optimized.v",
+      "source": "revisions/input-v2/sources/mandelbrot/optimized.v",
+      "source_bytes_changed": false,
+      "changes": [
+        "Exact unchanged parent source bytes; no source adaptation."
+      ]
+    },
+    {
+      "id": "v-spectralnorm-compact-input-v2",
+      "historical_id": "v-spectralnorm-compact",
+      "benchmark": "spectralnorm",
+      "variant": "compact",
+      "parent_source": "sources/spectralnorm/compact.v",
+      "source": "revisions/input-v2/sources/spectralnorm/compact.v",
+      "source_bytes_changed": false,
+      "changes": [
+        "Exact unchanged parent source bytes; no source adaptation."
+      ]
+    },
+    {
+      "id": "v-spectralnorm-optimized-input-v2",
+      "historical_id": "v-spectralnorm-optimized",
+      "benchmark": "spectralnorm",
+      "variant": "optimized",
+      "parent_source": "sources/spectralnorm/optimized.v",
+      "source": "revisions/input-v2/sources/spectralnorm/optimized.v",
+      "source_bytes_changed": false,
+      "changes": [
+        "Exact unchanged parent source bytes; no source adaptation."
+      ]
+    },
+    {
+      "id": "v-binarytrees-compact-input-v2",
+      "historical_id": "v-binarytrees-compact",
+      "benchmark": "binarytrees",
+      "variant": "compact",
+      "parent_source": "sources/binarytrees/compact.v",
+      "source": "revisions/input-v2/sources/binarytrees/compact.v",
+      "source_bytes_changed": false,
+      "changes": [
+        "Exact unchanged parent source bytes; no source adaptation."
+      ]
+    },
+    {
+      "id": "v-binarytrees-optimized-input-v2",
+      "historical_id": "v-binarytrees-optimized",
+      "benchmark": "binarytrees",
+      "variant": "optimized",
+      "parent_source": "sources/binarytrees/optimized.v",
+      "source": "revisions/input-v2/sources/binarytrees/optimized.v",
+      "source_bytes_changed": false,
+      "changes": [
+        "Exact unchanged parent source bytes; no source adaptation."
+      ]
+    },
+    {
+      "id": "v-fannkuchredux-compact-input-v2",
+      "historical_id": "v-fannkuchredux-compact",
+      "benchmark": "fannkuchredux",
+      "variant": "compact",
+      "parent_source": "sources/fannkuchredux/compact.v",
+      "source": "revisions/input-v2/sources/fannkuchredux/compact.v",
+      "source_bytes_changed": false,
+      "changes": [
+        "Exact unchanged parent source bytes; no source adaptation."
+      ]
+    },
+    {
+      "id": "v-fannkuchredux-optimized-input-v2",
+      "historical_id": "v-fannkuchredux-optimized",
+      "benchmark": "fannkuchredux",
+      "variant": "optimized",
+      "parent_source": "sources/fannkuchredux/optimized.v",
+      "source": "revisions/input-v2/sources/fannkuchredux/optimized.v",
+      "source_bytes_changed": false,
+      "changes": [
+        "Exact unchanged parent source bytes; no source adaptation."
+      ]
+    },
+    {
+      "id": "v-pidigits-compact-input-v2",
+      "historical_id": "v-pidigits-compact",
+      "benchmark": "pidigits",
+      "variant": "compact",
+      "parent_source": "sources/pidigits/compact.v",
+      "source": "revisions/input-v2/sources/pidigits/compact.v",
+      "source_bytes_changed": false,
+      "changes": [
+        "Exact unchanged parent source bytes; no source adaptation."
+      ]
+    },
+    {
+      "id": "v-pidigits-optimized-input-v2",
+      "historical_id": "v-pidigits-optimized",
+      "benchmark": "pidigits",
+      "variant": "optimized",
+      "parent_source": "sources/pidigits/optimized.v",
+      "source": "revisions/input-v2/sources/pidigits/optimized.v",
+      "source_bytes_changed": false,
+      "changes": [
+        "Exact unchanged parent source bytes; no source adaptation."
+      ]
+    },
+    {
+      "id": "v-fasta-compact-input-v2",
+      "historical_id": "v-fasta-compact",
+      "benchmark": "fasta",
+      "variant": "compact",
+      "parent_source": "sources/fasta/compact.v",
+      "source": "revisions/input-v2/sources/fasta/compact.v",
+      "source_bytes_changed": false,
+      "changes": [
+        "Exact unchanged parent source bytes; no source adaptation."
+      ]
+    },
+    {
+      "id": "v-fasta-optimized-input-v2",
+      "historical_id": "v-fasta-optimized",
+      "benchmark": "fasta",
+      "variant": "optimized",
+      "parent_source": "sources/fasta/optimized.v",
+      "source": "revisions/input-v2/sources/fasta/optimized.v",
+      "source_bytes_changed": false,
+      "changes": [
+        "Exact unchanged parent source bytes; no source adaptation."
+      ]
+    },
+    {
+      "id": "v-revcomp-compact-input-v2",
+      "historical_id": "v-revcomp-compact",
+      "benchmark": "revcomp",
+      "variant": "compact",
+      "parent_source": "sources/revcomp/compact.v",
+      "source": "revisions/input-v2/sources/revcomp/compact.v",
+      "source_bytes_changed": true,
+      "changes": [
+        "Read all stdin bytes with standard io.read_all until EOF; keep existing String/byte representation."
+      ]
+    },
+    {
+      "id": "v-revcomp-optimized-input-v2",
+      "historical_id": "v-revcomp-optimized",
+      "benchmark": "revcomp",
+      "variant": "optimized",
+      "parent_source": "sources/revcomp/optimized.v",
+      "source": "revisions/input-v2/sources/revcomp/optimized.v",
+      "source_bytes_changed": true,
+      "changes": [
+        "Read all stdin bytes with standard io.read_all until EOF; keep existing String/byte representation.",
+        "Byte parser treats CR, LF and CRLF as record/comment boundaries; complement/reversal/wrapping are unchanged."
+      ]
+    },
+    {
+      "id": "v-knucleotide-compact-input-v2",
+      "historical_id": "v-knucleotide-compact",
+      "benchmark": "knucleotide",
+      "variant": "compact",
+      "parent_source": "sources/knucleotide/compact.v",
+      "source": "revisions/input-v2/sources/knucleotide/compact.v",
+      "source_bytes_changed": true,
+      "changes": [
+        "Read all stdin bytes with standard io.read_all until EOF; keep existing String/byte representation."
+      ]
+    },
+    {
+      "id": "v-knucleotide-optimized-input-v2",
+      "historical_id": "v-knucleotide-optimized",
+      "benchmark": "knucleotide",
+      "variant": "optimized",
+      "parent_source": "sources/knucleotide/optimized.v",
+      "source": "revisions/input-v2/sources/knucleotide/optimized.v",
+      "source_bytes_changed": true,
+      "changes": [
+        "Read all stdin bytes with standard io.read_all until EOF; keep existing String/byte representation."
+      ]
+    },
+    {
+      "id": "v-regexredux-compact-input-v2",
+      "historical_id": "v-regexredux-compact",
+      "benchmark": "regexredux",
+      "variant": "compact",
+      "parent_source": "sources/regexredux/compact.v",
+      "source": "revisions/input-v2/sources/regexredux/compact.v",
+      "source_bytes_changed": true,
+      "changes": [
+        "Read all stdin bytes with standard io.read_all until EOF; keep existing String/byte representation.",
+        "Header cleanup explicitly excludes newline instead of relying on dot behavior: (>[^\\n]*\\n)|(\\n)."
+      ]
+    },
+    {
+      "id": "v-regexredux-optimized-input-v2",
+      "historical_id": "v-regexredux-optimized",
+      "benchmark": "regexredux",
+      "variant": "optimized",
+      "parent_source": "sources/regexredux/optimized.v",
+      "source": "revisions/input-v2/sources/regexredux/optimized.v",
+      "source_bytes_changed": true,
+      "changes": [
+        "Read all stdin bytes with standard io.read_all until EOF; keep existing String/byte representation.",
+        "Header cleanup explicitly excludes newline instead of relying on dot behavior: (>[^\\n]*\\n)|(\\n)."
+      ]
+    }
+  ],
+  "hash_status": "Root seals exact parent/new sources and original failed evidence under the common mutex; no author-side hash sweep."
+}

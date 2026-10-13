@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/usr/bin/lipo",
+    "-archs",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v3/bin/pony-pidigits-compact/pony-pidigits-compact"
+  ],
+  "started_at": "2026-10-12T17:16:57.088898+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 91957,
+  "identity": {
+    "pid": 91957,
+    "process_listing": "Mon Oct 12 13:16:57 2026     (lipo)"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-12T17:16:57.098639+00:00",
+  "final_exit_status": 0
+}

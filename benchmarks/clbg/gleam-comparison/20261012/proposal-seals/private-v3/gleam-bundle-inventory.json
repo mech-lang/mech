@@ -1,0 +1,39 @@
+{
+  "status": "failed",
+  "expected_test_ids": [
+    "test_guarded_prepare.CandidatePreparation.test_preheader_input_is_declared_and_reference_ignores_preamble",
+    "test_guarded_prepare.CandidatePreparation.test_complete_authored_inventory_and_explicit_beam_command",
+    "test_guarded_prepare.CandidatePreparation.test_missing_form_foreign_source_and_ffi_module_collision_are_rejected",
+    "test_guarded_prepare.CandidatePreparation.test_hex_inner_checksum_and_exact_outer_inventory_are_required",
+    "test_guarded_prepare.CandidatePreparation.test_archive_traversal_and_links_cannot_become_compiler_inputs",
+    "test_guarded_prepare.AdditiveRepair.test_exact_old_compact_tree_records_are_retained_without_mutation",
+    "test_guarded_prepare.AdditiveRepair.test_changed_missing_or_nonboolean_old_record_is_rejected",
+    "test_guarded_prepare.AdditiveRepair.test_exact_six_grouping_pairs_change_only_the_five_reviewed_sources",
+    "test_guarded_prepare.AdditiveRepair.test_saved_fingerprint_projection_is_exact_and_runtime_pins_stay_separate"
+  ],
+  "tests_run": 9,
+  "discovered_tests": 9,
+  "actual_test_ids": [
+    "test_guarded_prepare.AdditiveRepair.test_changed_missing_or_nonboolean_old_record_is_rejected",
+    "test_guarded_prepare.AdditiveRepair.test_exact_old_compact_tree_records_are_retained_without_mutation",
+    "test_guarded_prepare.AdditiveRepair.test_exact_six_grouping_pairs_change_only_the_five_reviewed_sources",
+    "test_guarded_prepare.AdditiveRepair.test_saved_fingerprint_projection_is_exact_and_runtime_pins_stay_separate",
+    "test_guarded_prepare.CandidatePreparation.test_archive_traversal_and_links_cannot_become_compiler_inputs",
+    "test_guarded_prepare.CandidatePreparation.test_complete_authored_inventory_and_explicit_beam_command",
+    "test_guarded_prepare.CandidatePreparation.test_hex_inner_checksum_and_exact_outer_inventory_are_required",
+    "test_guarded_prepare.CandidatePreparation.test_missing_form_foreign_source_and_ffi_module_collision_are_rejected",
+    "test_guarded_prepare.CandidatePreparation.test_preheader_input_is_declared_and_reference_ignores_preamble"
+  ],
+  "successful": false,
+  "skipped": [],
+  "errors": [
+    [
+      "test_guarded_prepare.AdditiveRepair.test_exact_six_grouping_pairs_change_only_the_five_reviewed_sources",
+      "Traceback (most recent call last):\n  File \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/revisions/private-v3/test_guarded_prepare.py\", line 123, in test_exact_six_grouping_pairs_change_only_the_five_reviewed_sources\n    proof_reuse.validate_repairs(preparation)\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^\n  File \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/revisions/private-v3/proof_reuse.py\", line 57, in validate_repairs\n    assert (REVISION/'sources'/relative).read_text()==before\n           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/lib/python3.14/pathlib/__init__.py\", line 787, in read_text\n    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:\n         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/lib/python3.14/pathlib/__init__.py\", line 771, in open\n    return io.open(self, mode, buffering, encoding, errors, newline)\n           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/revisions/private-v3/sources/binarytrees/optimized.gleam'\n"
+    ]
+  ],
+  "failures": [],
+  "expected_failures": [],
+  "unexpected_successes": [],
+  "inventory_error": "AssertionError"
+}

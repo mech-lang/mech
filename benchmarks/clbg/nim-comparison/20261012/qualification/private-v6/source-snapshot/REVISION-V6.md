@@ -1,0 +1,9 @@
+# Additive Nim v6 diagnostic repair
+
+Preserve private-v5 proposal/report/build/raw bytes. All three actual primitive probes passed; compilation then stopped at the reserved unscored ORC variable name `distinct`. Rename only its three identifier occurrences to `threadIds`; preserve every counted production source and all twenty exact production binaries/154 bounded cases. The failed ORC compiler receipt/stderr/source remains pinned.
+
+Reuse the actual three successful primitive records by explicit prior origin, original attempt IDs/raw/supervisor/source/binary/compiler-version/archive/compatibility/runtime/output pins. Do not copy them into the new local attempts list. New v6 performs exactly21 source-work probes (ORC1/maps6/Pi14), producing24 proof entries including three retained private-v5 entries. Reuse the exact private-v5 compiler/dependency trees verified against their publisher/commit archives and the two existing GMP union pragma moves; no redownload or primitive recompile.
+
+Owned subprocess cleanup copies the already reviewed C3 bounded service: five-second reap/drain, safe fallback restricted to the still-live owned new PGID/leader, preserved actual output and all cleanup errors journaled. Exact23 meaningful ownership/old-reuse/new-primitive fixture IDs require actual discovery/start receipts and zero skips/errors/failures. All fixture bytes are pinned. Sealing/run/hash/archive verification/fixture/native operations hold the common mutex and inherit it into children. No full processes or chart admission authorized by this packet.
+
+Candidate only. Root static review precedes metadata --seal; exact actual digest review precedes --run. Subsequent tree/full pipeline is separate additive work-full-v2, with original scored generated C/ARM64 allocation proof and null LOC pending independently qualified overlay.

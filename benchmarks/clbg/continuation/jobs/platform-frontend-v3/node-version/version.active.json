@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+    "--version"
+  ],
+  "started_at": "2026-10-13T07:25:09.940113+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 15,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 93162,
+  "identity": {
+    "pid": 93162,
+    "process_listing": "Tue Oct 13 03:25:09 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node --version"
+  }
+}

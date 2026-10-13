@@ -1,0 +1,53 @@
+{
+  "key": "knucleotide:nim-knucleotide-optimized",
+  "id": "nim-knucleotide-optimized",
+  "benchmark": "knucleotide",
+  "language": "nim",
+  "source_sha256": "9b5a250702745e4ade2bd0488444aa6a4c393c198da57be7fedd7bd8b04732a8",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v4/bin/nim-knucleotide-optimized",
+    "1000"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012",
+  "runtime_environment": {
+    "LC_ALL": "C",
+    "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre/8.45/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"cddd4d69cd7935cf804fcff7c295a3ba80b6d2faaee03c7762c1adad8a8bafad\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v4/bin/nim-knucleotide-optimized\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre/8.45/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"9b5a250702745e4ade2bd0488444aa6a4c393c198da57be7fedd7bd8b04732a8\", \"support\": {}}",
+  "started_at": "2026-10-12T19:32:11.406370+00:00",
+  "workload_n": 1000,
+  "full_workload": false,
+  "timeout_seconds": 120,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.01647225,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 126,
+  "stdout_sha256": "ee9f7a7ec3053c9fbd8dbd27889682be64d2fd6d1e4354295a1395cac916c6ed",
+  "validation": {
+    "reference_match": true,
+    "bytes": 126,
+    "sha256": "ee9f7a7ec3053c9fbd8dbd27889682be64d2fd6d1e4354295a1395cac916c6ed"
+  },
+  "finished_at": "2026-10-12T19:32:11.652214+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true
+}

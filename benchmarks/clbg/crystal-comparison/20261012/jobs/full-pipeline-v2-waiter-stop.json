@@ -1,0 +1,9 @@
+{
+  "status": "owned-pre-lock-metadata-fixture-interrupted",
+  "pid": 32529,
+  "identity": "Mon Oct 12 16:33:59 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python benchmarks/clbg/crystal-comparison/20261012/studies/pipeline/test_full_study.py",
+  "signal": "SIGINT",
+  "native_children_observed": [],
+  "reason": "Root safety review requires literal inherited-mutex/exact-command and cleanup gates before isolating source failure. Preserve old imported pipeline and use additive v2.",
+  "original_source_files_modified": false
+}

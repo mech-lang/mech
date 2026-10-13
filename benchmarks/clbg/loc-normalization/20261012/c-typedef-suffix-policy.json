@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "status": "approved-policy-not-executed-or-admitted",
+  "source": "Root policy relayed by /root/loc_policy_audit to /root/loc_policy_audit/legacy_source_review during the 2026-10-12 source review",
+  "relayed_instruction": "Root approved typedef aggregate header complete including FIRST attached alias; single Alias suffix 0 after brace close 1. Additional aliases each +1 independent unit beyond primary. Actual struct Node{...}instance; type header + independent instance binding not hidden. Unknown ownership gated; packed/expanded fixtures needed.",
+  "rules": {
+    "proven_typedef_aggregate_primary_alias_suffix_units": 0,
+    "each_additional_proven_typedef_alias_units": 1,
+    "written_executable_aggregate_closing_brace_units": 1,
+    "ordinary_instance_tail_is_not_an_alias_suffix": true,
+    "unknown_suffix_ownership_requires_review": true
+  },
+  "implementation_proposal": "c_type_environment.py:classify_alias_suffixes",
+  "fixture_proposal": "test_c_type_environment.py",
+  "baseline_limitation": "c-typedef-source-review.json scope-only proposals reconcile the 14 original flagged declaration sites without adjusting the job07 baseline. Its typedef aggregate tails and unrelated diagnostics are not certified.",
+  "execution": {
+    "executed": false,
+    "source_hashes_verified_fresh": false,
+    "chart_admitted": false
+  }
+}

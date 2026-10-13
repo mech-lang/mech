@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/explicit-f64-v5/.build/strict/target/release/mech-algebraic-conformance"
+  ],
+  "started_at": "2026-10-12T23:13:41.462232+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 120,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 78397,
+  "identity": {
+    "pid": 78397,
+    "process_listing": "Mon Oct 12 19:13:41 2026     /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/explicit-f64-v5/.build/strict/target/release/mech-algebraic-conformance"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-12T23:13:41.718114+00:00",
+  "final_exit_status": 0
+}

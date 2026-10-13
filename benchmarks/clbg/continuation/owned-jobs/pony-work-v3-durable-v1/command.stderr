@@ -1,0 +1,19 @@
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/work-full-v3/work_qualify.py", line 363, in <module>
+    main()
+    ~~~~^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/work-full-v3/work_qualify.py", line 360, in main
+    run(args.revision, args.manifest_sha256)
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/work-full-v3/work_qualify.py", line 297, in run
+    preparation.owned_command(guard, harness, command, environment, output / 'builds' / identifier, lock.fileno(), 600, 'trace-build')
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/work-full-v3/preparation_service.py", line 19, in <lambda>
+    facade.owned_command = lambda g, h, cmd, env, out, fd, timeout, name, **kwargs: service.owned_command(
+                                                                                    ~~~~~~~~~~~~~~~~~~~~~^
+        original, g, h, cmd, env, out, fd, timeout, name, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/work-full-v3/owned_service_work_v2.py", line 75, in owned_command
+    assert process.returncode == 0, ('Owned command failed', name, process.returncode)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('Owned command failed', 'trace-build', 255)

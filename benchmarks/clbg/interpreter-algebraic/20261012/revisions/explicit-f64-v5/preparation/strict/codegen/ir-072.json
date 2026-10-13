@@ -1,0 +1,21 @@
+{
+  "command": [
+    "/opt/homebrew/Cellar/llvm@22/22.1.8/bin/llvm-dis",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/explicit-f64-v5/.build/strict/target/release/deps/mech_gpu-dd36dceef9d03986.mech_gpu.95792a8dd43e214b-cgu.10.rcgu.thin-lto-after-internalize.bc",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/explicit-f64-v5/.build/strict/target/release/deps/mech_gpu-dd36dceef9d03986.mech_gpu.95792a8dd43e214b-cgu.10.rcgu.thin-lto-after-internalize.ll"
+  ],
+  "started_at": "2026-10-12T23:12:54.092532+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 120,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 78108,
+  "identity": {
+    "pid": 78108,
+    "process_listing": "Mon Oct 12 19:12:54 2026     /opt/homebrew/Cellar/llvm@22/22.1.8/bin/llvm-dis /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/explicit-f64-v5/.build/strict/target/release/deps/mech_gpu-dd36dceef9d03986.mech_gpu.95792a8dd43e214b-cgu.10.rcgu.thin-lto-after-internalize.bc -o /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/explicit-f64-v5/.build/strict/target/release/deps/mech_gpu-dd36dceef9d03986.mech_gpu.95792a8dd43e214b-cgu.10.rcgu.thin-lto-after-internalize.ll"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-12T23:12:54.148438+00:00",
+  "final_exit_status": 0
+}

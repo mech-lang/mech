@@ -1,0 +1,548 @@
+{
+  "status": "complete",
+  "created_at": "2026-10-12T17:35:53.210755+00:00",
+  "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/fannkuchredux/full-study/manifest.json",
+  "manifest_sha256": "3e67337e67df5dceb76ce647a709a37839aa5a010c2fe8c0a368338efb94026a",
+  "supervisor": {
+    "pid": 92438,
+    "process_listing": "Mon Oct 12 13:18:03 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3 -B -u benchmarks/clbg/loc-normalization/20261012/pending_minima_study.py --run --benchmark fannkuchredux --manifest-sha256 3e67337e67df5dceb76ce647a709a37839aa5a010c2fe8c0a368338efb94026a"
+  },
+  "orders": [
+    {
+      "round": 1,
+      "profiles": [
+        "fannkuchredux-php-8",
+        "mech-aot-control"
+      ]
+    },
+    {
+      "round": 2,
+      "profiles": [
+        "mech-aot-control",
+        "fannkuchredux-php-8"
+      ]
+    },
+    {
+      "round": 3,
+      "profiles": [
+        "fannkuchredux-php-8",
+        "mech-aot-control"
+      ]
+    }
+  ],
+  "attempts": [
+    {
+      "key": "fannkuchredux:fannkuchredux-php-8",
+      "id": "fannkuchredux-php-8",
+      "benchmark": "fannkuchredux",
+      "language": "php",
+      "source_sha256": "7931a305151ebb9d4b54ec3729931622806334296557c2153637c2ea9315b1c4",
+      "command": [
+        "/opt/homebrew/Cellar/php/8.5.11/bin/php",
+        "-n",
+        "-d",
+        "memory_limit=-1",
+        "-d",
+        "opcache.enable_cli=1",
+        "-d",
+        "opcache.jit_buffer_size=64M",
+        "-d",
+        "opcache.jit=tracing",
+        "-d",
+        "short_open_tag=1",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/fannkuchredux/qualification-v1/fannkuchredux-php-8.php",
+        "12"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "8",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "8"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/opt/homebrew/Cellar/php/8.5.11/bin/php\", \"-n\", \"-d\", \"memory_limit=-1\", \"-d\", \"opcache.enable_cli=1\", \"-d\", \"opcache.jit_buffer_size=64M\", \"-d\", \"opcache.jit=tracing\", \"-d\", \"short_open_tag=1\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"7931a305151ebb9d4b54ec3729931622806334296557c2153637c2ea9315b1c4\", \"support\": {\"/opt/homebrew/Cellar/php/8.5.11/bin/php\": \"f8848966f5c44297449ee1fd00a5c2512f33c3858ce5f5194be14658ded73f31\"}}",
+      "started_at": "2026-10-12T17:57:10.264480+00:00",
+      "workload_n": 12,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 8192,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 119.659725708,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 29280,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 29,
+      "stdout_sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+      "validation": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T17:59:10.123314+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 1,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/fannkuchredux/full-study/attempts/001-fannkuchredux-php-8.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 3815,
+        "pgid": 3815,
+        "command": [
+          "/opt/homebrew/Cellar/php/8.5.11/bin/php",
+          "-n",
+          "-d",
+          "memory_limit=-1",
+          "-d",
+          "opcache.enable_cli=1",
+          "-d",
+          "opcache.jit_buffer_size=64M",
+          "-d",
+          "opcache.jit=tracing",
+          "-d",
+          "short_open_tag=1",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/fannkuchredux/qualification-v1/fannkuchredux-php-8.php",
+          "12"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "fatal_qualification_fields": [],
+      "qualified": true,
+      "retryable_environment_only": false,
+      "environment_attempt": 1
+    },
+    {
+      "key": "fannkuchredux:loc-minimum-study:mech-control",
+      "id": "mech-aot-control",
+      "benchmark": "fannkuchredux",
+      "language": "mech",
+      "source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after",
+        "12"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"3d3599f1f174915251d6323592ea81bf3dc7ca57f0f07b8f310cd6825393e004\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe\", \"support\": {\"fannkuchredux/fannkuchredux-even.mec\": \"b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe\", \"fannkuchredux/fannkuchredux.mec\": \"0a5bee0d62631abf4f200489ddf9044c9b238f0c2dcd6a074c60ec93c90fdb8f\"}}",
+      "started_at": "2026-10-12T17:59:16.883081+00:00",
+      "workload_n": 12,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 8192,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 1.76059325,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 1840,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 29,
+      "stdout_sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+      "validation": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T17:59:18.879969+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 2,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/fannkuchredux/full-study/attempts/002-mech-aot-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 4366,
+        "pgid": 4366,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after",
+          "12"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "fatal_qualification_fields": [],
+      "qualified": true,
+      "retryable_environment_only": false,
+      "environment_attempt": 1
+    },
+    {
+      "key": "fannkuchredux:loc-minimum-study:mech-control",
+      "id": "mech-aot-control",
+      "benchmark": "fannkuchredux",
+      "language": "mech",
+      "source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after",
+        "12"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"3d3599f1f174915251d6323592ea81bf3dc7ca57f0f07b8f310cd6825393e004\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe\", \"support\": {\"fannkuchredux/fannkuchredux-even.mec\": \"b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe\", \"fannkuchredux/fannkuchredux.mec\": \"0a5bee0d62631abf4f200489ddf9044c9b238f0c2dcd6a074c60ec93c90fdb8f\"}}",
+      "started_at": "2026-10-12T17:59:25.378981+00:00",
+      "workload_n": 12,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 8192,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 1.733728708,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 1840,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 29,
+      "stdout_sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+      "validation": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T17:59:27.322167+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 3,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/fannkuchredux/full-study/attempts/003-mech-aot-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 4489,
+        "pgid": 4489,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after",
+          "12"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "fatal_qualification_fields": [],
+      "qualified": true,
+      "retryable_environment_only": false,
+      "environment_attempt": 1
+    },
+    {
+      "key": "fannkuchredux:fannkuchredux-php-8",
+      "id": "fannkuchredux-php-8",
+      "benchmark": "fannkuchredux",
+      "language": "php",
+      "source_sha256": "7931a305151ebb9d4b54ec3729931622806334296557c2153637c2ea9315b1c4",
+      "command": [
+        "/opt/homebrew/Cellar/php/8.5.11/bin/php",
+        "-n",
+        "-d",
+        "memory_limit=-1",
+        "-d",
+        "opcache.enable_cli=1",
+        "-d",
+        "opcache.jit_buffer_size=64M",
+        "-d",
+        "opcache.jit=tracing",
+        "-d",
+        "short_open_tag=1",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/fannkuchredux/qualification-v1/fannkuchredux-php-8.php",
+        "12"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "8",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "8"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/opt/homebrew/Cellar/php/8.5.11/bin/php\", \"-n\", \"-d\", \"memory_limit=-1\", \"-d\", \"opcache.enable_cli=1\", \"-d\", \"opcache.jit_buffer_size=64M\", \"-d\", \"opcache.jit=tracing\", \"-d\", \"short_open_tag=1\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"7931a305151ebb9d4b54ec3729931622806334296557c2153637c2ea9315b1c4\", \"support\": {\"/opt/homebrew/Cellar/php/8.5.11/bin/php\": \"f8848966f5c44297449ee1fd00a5c2512f33c3858ce5f5194be14658ded73f31\"}}",
+      "started_at": "2026-10-12T18:02:17.755112+00:00",
+      "workload_n": 12,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 8192,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 119.275326083,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 29280,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 29,
+      "stdout_sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+      "validation": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T18:04:17.232263+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 4,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/fannkuchredux/full-study/attempts/004-fannkuchredux-php-8.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 5060,
+        "pgid": 5060,
+        "command": [
+          "/opt/homebrew/Cellar/php/8.5.11/bin/php",
+          "-n",
+          "-d",
+          "memory_limit=-1",
+          "-d",
+          "opcache.enable_cli=1",
+          "-d",
+          "opcache.jit_buffer_size=64M",
+          "-d",
+          "opcache.jit=tracing",
+          "-d",
+          "short_open_tag=1",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/fannkuchredux/qualification-v1/fannkuchredux-php-8.php",
+          "12"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "fatal_qualification_fields": [],
+      "qualified": true,
+      "retryable_environment_only": false,
+      "environment_attempt": 1
+    },
+    {
+      "key": "fannkuchredux:fannkuchredux-php-8",
+      "id": "fannkuchredux-php-8",
+      "benchmark": "fannkuchredux",
+      "language": "php",
+      "source_sha256": "7931a305151ebb9d4b54ec3729931622806334296557c2153637c2ea9315b1c4",
+      "command": [
+        "/opt/homebrew/Cellar/php/8.5.11/bin/php",
+        "-n",
+        "-d",
+        "memory_limit=-1",
+        "-d",
+        "opcache.enable_cli=1",
+        "-d",
+        "opcache.jit_buffer_size=64M",
+        "-d",
+        "opcache.jit=tracing",
+        "-d",
+        "short_open_tag=1",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/fannkuchredux/qualification-v1/fannkuchredux-php-8.php",
+        "12"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "8",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "8"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/opt/homebrew/Cellar/php/8.5.11/bin/php\", \"-n\", \"-d\", \"memory_limit=-1\", \"-d\", \"opcache.enable_cli=1\", \"-d\", \"opcache.jit_buffer_size=64M\", \"-d\", \"opcache.jit=tracing\", \"-d\", \"short_open_tag=1\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"7931a305151ebb9d4b54ec3729931622806334296557c2153637c2ea9315b1c4\", \"support\": {\"/opt/homebrew/Cellar/php/8.5.11/bin/php\": \"f8848966f5c44297449ee1fd00a5c2512f33c3858ce5f5194be14658ded73f31\"}}",
+      "started_at": "2026-10-12T18:07:10.793583+00:00",
+      "workload_n": 12,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 8192,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 119.279029667,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 29296,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 29,
+      "stdout_sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+      "validation": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T18:09:10.270707+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 5,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/fannkuchredux/full-study/attempts/005-fannkuchredux-php-8.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 5966,
+        "pgid": 5966,
+        "command": [
+          "/opt/homebrew/Cellar/php/8.5.11/bin/php",
+          "-n",
+          "-d",
+          "memory_limit=-1",
+          "-d",
+          "opcache.enable_cli=1",
+          "-d",
+          "opcache.jit_buffer_size=64M",
+          "-d",
+          "opcache.jit=tracing",
+          "-d",
+          "short_open_tag=1",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/fannkuchredux/qualification-v1/fannkuchredux-php-8.php",
+          "12"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "fatal_qualification_fields": [],
+      "qualified": true,
+      "retryable_environment_only": false,
+      "environment_attempt": 1
+    },
+    {
+      "key": "fannkuchredux:loc-minimum-study:mech-control",
+      "id": "mech-aot-control",
+      "benchmark": "fannkuchredux",
+      "language": "mech",
+      "source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after",
+        "12"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"3d3599f1f174915251d6323592ea81bf3dc7ca57f0f07b8f310cd6825393e004\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe\", \"support\": {\"fannkuchredux/fannkuchredux-even.mec\": \"b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe\", \"fannkuchredux/fannkuchredux.mec\": \"0a5bee0d62631abf4f200489ddf9044c9b238f0c2dcd6a074c60ec93c90fdb8f\"}}",
+      "started_at": "2026-10-12T18:09:13.113635+00:00",
+      "workload_n": 12,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 8192,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 1.707638583,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 1840,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 29,
+      "stdout_sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+      "validation": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T18:09:15.020282+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 6,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/fannkuchredux/full-study/attempts/006-mech-aot-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 6267,
+        "pgid": 6267,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after",
+          "12"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "fatal_qualification_fields": [],
+      "qualified": true,
+      "retryable_environment_only": false,
+      "environment_attempt": 1
+    }
+  ],
+  "active": null,
+  "profiles": {
+    "fannkuchredux-php-8": {
+      "loc": null,
+      "role": "New listed compact candidate after canonical LOC reselection",
+      "samples_seconds": [
+        119.659725708,
+        119.275326083,
+        119.279029667
+      ],
+      "median_seconds": 119.279029667,
+      "sample_stdev_seconds": 0.22087185721878588
+    },
+    "mech-aot-control": {
+      "loc": null,
+      "role": "Fresh current Mech AOT fastest-source control",
+      "samples_seconds": [
+        1.76059325,
+        1.733728708,
+        1.707638583
+      ],
+      "median_seconds": 1.733728708,
+      "sample_stdev_seconds": 0.026478277249052946
+    }
+  },
+  "finished_at": "2026-10-12T18:09:15.103174+00:00",
+  "pins_unchanged_at_end": true
+}

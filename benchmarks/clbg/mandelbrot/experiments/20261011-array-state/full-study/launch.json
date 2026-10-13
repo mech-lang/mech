@@ -1,0 +1,9 @@
+{
+  "pid": 47652,
+  "identity": {
+    "pid": 47652,
+    "process_listing": "Sun Oct 11 19:51:01 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/full_study.py --run --manifest-sha256 a8f8d3069a25ffe47ab1bec2e6922108570432baeb5b467fc17d4a44734f55a9"
+  },
+  "manifest_sha256": "a8f8d3069a25ffe47ab1bec2e6922108570432baeb5b467fc17d4a44734f55a9",
+  "launched_at": "2026-10-11T23:51:01.699001+00:00"
+}

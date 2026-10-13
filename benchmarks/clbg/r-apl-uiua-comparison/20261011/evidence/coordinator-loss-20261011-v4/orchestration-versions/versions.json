@@ -1,0 +1,31 @@
+{
+  "frozen_at": "2026-10-11T22:28:34.836208+00:00",
+  "policy": "No further edits to active supervise_v4.py. Future orchestration changes must use a separately reviewed v5 file before any restart. Trials continue uninterrupted.",
+  "active_orchestration_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/supervise_v4.py",
+  "active_orchestration_sha256": "d944986c8393f7a80ec0bfb9cef4a7b7a438501583bc806f346779ea7e78487d",
+  "active_source_last_modified_at": "2026-10-11T22:26:51.273786+00:00",
+  "launch": {
+    "at": "2026-10-11T22:25:31.786817+00:00",
+    "supervisor_pid": 31810,
+    "snapshot_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/coordinator-loss-20261011-v4/orchestration-versions/v4-launch-reconstructed.py",
+    "sha256": "d27ca2faa1f287f05562e07a943bb3e884aa894b9e4ccbf23b3883b99b985977",
+    "snapshot_provenance": "Reconstructed after launch by reversing exactly the recorded post-launch safety patch; not captured directly at launch.",
+    "actual_running_in_memory_roles": [
+      "Supervisor PID31810",
+      "Current knucleotide-r-uiua stage PID31820"
+    ],
+    "limitation": "No direct access to process memory was used; version identity follows launch time and the single known subsequent file patch."
+  },
+  "safety_version": {
+    "snapshot_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/coordinator-loss-20261011-v4/orchestration-versions/v4-loaded-safety.py",
+    "sha256": "d944986c8393f7a80ec0bfb9cef4a7b7a438501583bc806f346779ea7e78487d",
+    "provenance": "Exact copy of current supervise_v4.py after the only post-launch patch.",
+    "load_scope": "Subsequent stage child processes load this safety version from the frozen active path. Existing supervisor and current stage continue their launch version in memory.",
+    "safety_delta": [
+      "All-language active-record rejection before future stage dispatch.",
+      "All fixed audit hashes verified during every future stage locked report initialization."
+    ]
+  },
+  "frozen_run_py_unchanged": true,
+  "source_audits_unchanged": true
+}

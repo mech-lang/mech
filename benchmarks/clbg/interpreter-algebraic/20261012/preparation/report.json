@@ -1,0 +1,20 @@
+{
+  "status": "stopped-unqualified",
+  "variants": [
+    {
+      "variant": "strict",
+      "status": "building",
+      "started_at": "2026-10-12T18:44:47.311879+00:00"
+    }
+  ],
+  "attempts": [],
+  "active": null,
+  "proposal_sha256": "a3354b41609710a22aeacb24ba3d5d4c66803b0acae92cfa065472d1f5912317",
+  "full_performance_runs": 0,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "no_automatic_retry": true,
+  "error": "('Owned command failed', 'compiler', 101)",
+  "error_type": "AssertionError",
+  "finished_at": "2026-10-12T18:46:24.603193+00:00"
+}

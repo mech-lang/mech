@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/private/tmp/mech-clbg-julia/julia-1.13.1/bin/julia",
+    "--version"
+  ],
+  "started_at": "2026-10-13T02:14:11.670622+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 30368,
+  "identity": {
+    "pid": 30368,
+    "process_listing": "Mon Oct 12 22:14:11 2026     /private/tmp/mech-clbg-julia/julia-1.13.1/bin/julia --version"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-13T02:14:12.148393+00:00",
+  "final_exit_status": 0
+}

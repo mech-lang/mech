@@ -1,0 +1,19 @@
+{
+  "pid": 66560,
+  "parent_pid": 42755,
+  "pgid": 66560,
+  "initial_wait_status": 4479,
+  "stopped_before_exec": true,
+  "target_executable": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/canary",
+  "arguments": [
+    "41",
+    "--julia-args",
+    "--compile=no",
+    "--threads=8,0",
+    "--startup-file=no",
+    "--history-file=no",
+    "-O3"
+  ],
+  "common_mutex_fd": 64,
+  "parent_retains_POSIX_child_ownership": true
+}

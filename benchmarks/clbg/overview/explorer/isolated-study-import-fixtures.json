@@ -1,0 +1,17 @@
+{
+  "status": "passed",
+  "at": "2026-10-12T04:28:00.990318+00:00",
+  "cases": 27,
+  "failures": 0,
+  "errors": 0,
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/isolated_study_data.py": "54f78787784d737cfa339ca5e8ea2e24401c5ead49f4b1a153abd7311efd84e4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/uiua_fann_study_data.py": "5b9259f3cd9fd7c3d7111682559fa247e4d53af84e8e781ebe5880214cf40b3a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/test_isolated_study_data.py": "911edc658b89794adb7e288bfe65760095c727264161d2edc1d5a2bf18c46cf7"
+  },
+  "log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/isolated-study-import-fixtures.log",
+  "log_sha256": "d671128b22b2e8d2af71e281a28f1cb29ff2ba5a425781075c4090c7736d249d",
+  "actual_full_study_reconciliation": "pending complete raw9 Fann records; fixture success does not admit any live samples",
+  "no_timing_or_data_mutations": true,
+  "shared_mutex": "/tmp/mech-clbg-timing.lock"
+}

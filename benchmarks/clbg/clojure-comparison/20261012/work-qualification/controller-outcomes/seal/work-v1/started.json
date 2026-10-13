@@ -1,0 +1,33 @@
+{
+  "operation": "seal",
+  "revision": "work-v1",
+  "actual_argv": [
+    "benchmarks/clbg/clojure-comparison/20261012/revisions/work-full-v1/qualify_work.py",
+    "--seal",
+    "--qualified-file",
+    "benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/report.json",
+    "--qualified-sha256",
+    "69bf7cdb025759e6d10cb8c1ae1c189839e253ced9aca50e4f9cc1e838d36d79",
+    "--proposal-file",
+    "benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposals/work-v1.json",
+    "--revision",
+    "work-v1"
+  ],
+  "held_common_descriptor": 4,
+  "common_mutex": "/tmp/mech-clbg-timing.lock",
+  "exact_controller_source_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/revisions/work-full-v1/qualify_work.py": "5f7de095821e2ffd5d7b34e6d2123b38244f6b5cbd6b82a6468ce3c00c9db6eb",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/revisions/work-full-v1/observer.clj": "f69fc293d88e050b175e40f62f43dcbd4d80b01a68034d886fa6177745cd5365",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/revisions/work-full-v1/instrument_sources.py": "1674a0fbc805bd4ef8a893be6843e5b7fdf26f30709414955844d1dd987ab5b0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/revisions/work-full-v1/native_fd_observer.py": "2f216ddbde73ccfb69f49fdaedb8ba622062b48b0f57f7ba64dfaf96ce3a4613",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/revisions/work-full-v1/work_proofs.py": "a75e9f9fdc9a5e1a70273ff32ba7d82ed550066647d5424df192462cb95d903f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/revisions/work-full-v1/test_work_proofs.py": "ebee213fb81c4775d8fef05f913195cf2b6793254ad8074a123843d797b9d80b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/revisions/work-full-v1/work_fixture_runner.py": "7cda204b35f48ea8be9140e54de25073c8ff17c5b808b6cf1b8a630853b00e48",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/revisions/work-full-v1/test_native_fd_observer.py": "98418fda7dce0d0fd8f9a8670edc1770054d2ac293edc5760eb9672cf8b3a5ec",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/revisions/work-full-v1/full_study.py": "d5c9bad54e48c9bbfd5f490e06718df3d3622c5ab6914b89ff1beaa0966d01a5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/revisions/work-full-v1/seal_full_studies.py": "7c2827629b54f3b6ad24dcdb3678c09fd050e2d70b256ed438418be57432c22d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/revisions/work-full-v1/test_full_study.py": "79b0e19fae3da11f04c73c98e945334bd47905ab314e1fef5b17fddb42ad2061",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/revisions/work-full-v1/REVIEW.md": "b107b9ce6dd8f4b5faa0695d8c43283f6ee7b7b4db4dfb12c8ab8ab377c344e9"
+  },
+  "full_performance_runs": 0
+}

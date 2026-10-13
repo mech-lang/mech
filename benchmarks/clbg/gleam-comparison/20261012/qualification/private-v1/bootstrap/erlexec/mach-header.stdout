@@ -1,0 +1,4 @@
+/opt/homebrew/Cellar/erlang/29.1.1_2/lib/erlang/erts-17.1/bin/erlexec:
+Mach header
+      magic  cputype cpusubtype  caps    filetype ncmds sizeofcmds      flags
+MH_MAGIC_64    ARM64        ALL  0x00     EXECUTE    18       1528   NOUNDEFS DYLDLINK TWOLEVEL PIE

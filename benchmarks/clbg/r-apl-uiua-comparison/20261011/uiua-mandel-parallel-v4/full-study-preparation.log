@@ -1,0 +1,7 @@
+{
+  "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/full-study/manifest.json",
+  "sha256": "d286d36a47de8eda58a8999c6d4c00c498308eda09ad8de89a7ea616b495d1a6",
+  "runner": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/full_study.py",
+  "runner_sha256": "7a48690bef2f36375c72619f8c74170735273804d089dafb55e6813189613fe5",
+  "status": "prepared-awaiting-root-review"
+}

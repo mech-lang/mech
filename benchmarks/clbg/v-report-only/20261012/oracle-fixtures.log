@@ -1,0 +1,21 @@
+WAIT LOCK: V bounded-oracle fixtures
+LOCKED: V bounded-oracle fixtures
+test_canonical_fannkuch (__main__.ReferenceChecks.test_canonical_fannkuch) ... ok
+test_canonical_fasta (__main__.ReferenceChecks.test_canonical_fasta) ... ok
+test_canonical_mandelbrot (__main__.ReferenceChecks.test_canonical_mandelbrot) ... ok
+test_canonical_nbody (__main__.ReferenceChecks.test_canonical_nbody) ... ok
+test_canonical_nucleotides (__main__.ReferenceChecks.test_canonical_nucleotides) ... ok
+test_canonical_regex (__main__.ReferenceChecks.test_canonical_regex) ... ok
+test_canonical_reverse_complement (__main__.ReferenceChecks.test_canonical_reverse_complement) ... ok
+test_canonical_trees (__main__.ReferenceChecks.test_canonical_trees) ... ok
+test_mandelbrot_odd_width_tail (__main__.ReferenceChecks.test_mandelbrot_odd_width_tail) ... ok
+test_nucleotide_maps_include_every_width (__main__.ReferenceChecks.test_nucleotide_maps_include_every_width) ... ok
+test_pi_partial_and_zero (__main__.ReferenceChecks.test_pi_partial_and_zero) ... ok
+test_reverse_complement_all_ambiguity_symbols (__main__.ReferenceChecks.test_reverse_complement_all_ambiguity_symbols) ... ok
+test_signed_fannkuch_two (__main__.ReferenceChecks.test_signed_fannkuch_two) ... ok
+test_spectral_scalar (__main__.ReferenceChecks.test_spectral_scalar) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 0.072s
+
+OK

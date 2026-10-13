@@ -1,0 +1,350 @@
+{
+  "status": "unqualified-proposal",
+  "language": "pony",
+  "version": "0.74.0",
+  "compiler_source_commit": "95ad18015d04f4414d0fd4f469ed6b2e9b9b9e73",
+  "compiler_asset": "ponyc-arm64-apple-darwin.tar.gz",
+  "compiler_asset_sha256": "02a20dce1c283da67966a57c58093e87981eb896e0cddefdcafe949ff17870ad",
+  "published_release_year": 2015,
+  "git_hub_linguist_color": null,
+  "categories": [
+    "native-aot",
+    "static",
+    "object",
+    "actor",
+    "reference-capabilities"
+  ],
+  "source_plan": "PLAN.md",
+  "provenance": "PROVENANCE.md",
+  "profiles": [
+    {
+      "id": "pony-regexredux-compact",
+      "benchmark": "regexredux",
+      "variant": "compact",
+      "source": "sources/regexredux/compact/main.pony",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_actors": 1,
+      "runtime_arguments": [
+        "--ponymaxthreads",
+        "8"
+      ],
+      "application_helpers": [],
+      "general_library_support": [
+        "ponylang/regex@589eb008db250aab17d4c073a41c5562ac5b8dc7"
+      ],
+      "workload_helpers_counted": true,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-regexredux-optimized",
+      "benchmark": "regexredux",
+      "variant": "optimized",
+      "source": "sources/regexredux/optimized/main.pony",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_actors": 8,
+      "runtime_arguments": [
+        "--ponymaxthreads",
+        "8"
+      ],
+      "application_helpers": [],
+      "general_library_support": [
+        "ponylang/regex@589eb008db250aab17d4c073a41c5562ac5b8dc7"
+      ],
+      "workload_helpers_counted": true,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-revcomp-compact",
+      "benchmark": "revcomp",
+      "variant": "compact",
+      "source": "sources/revcomp/compact/main.pony",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_actors": 1,
+      "runtime_arguments": [
+        "--ponymaxthreads",
+        "8"
+      ],
+      "application_helpers": [],
+      "general_library_support": [],
+      "workload_helpers_counted": true,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-revcomp-optimized",
+      "benchmark": "revcomp",
+      "variant": "optimized",
+      "source": "sources/revcomp/optimized/main.pony",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_actors": 1,
+      "runtime_arguments": [
+        "--ponymaxthreads",
+        "8"
+      ],
+      "application_helpers": [],
+      "general_library_support": [],
+      "workload_helpers_counted": true,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-pidigits-compact",
+      "benchmark": "pidigits",
+      "variant": "compact",
+      "source": "sources/pidigits/compact/main.pony",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_actors": 1,
+      "runtime_arguments": [
+        "--ponymaxthreads",
+        "8"
+      ],
+      "application_helpers": [],
+      "general_library_support": [
+        "tadashi9e/gmp4pony@b14db4ba347f6a2b840f135e1602e19f85625c39"
+      ],
+      "workload_helpers_counted": true,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-pidigits-optimized",
+      "benchmark": "pidigits",
+      "variant": "optimized",
+      "source": "sources/pidigits/optimized/main.pony",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_actors": 1,
+      "runtime_arguments": [
+        "--ponymaxthreads",
+        "8"
+      ],
+      "application_helpers": [],
+      "general_library_support": [
+        "tadashi9e/gmp4pony@b14db4ba347f6a2b840f135e1602e19f85625c39"
+      ],
+      "workload_helpers_counted": true,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-spectralnorm-compact",
+      "benchmark": "spectralnorm",
+      "variant": "compact",
+      "source": "sources/spectralnorm/compact/main.pony",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_actors": 1,
+      "runtime_arguments": [
+        "--ponymaxthreads",
+        "8"
+      ],
+      "application_helpers": [],
+      "general_library_support": [],
+      "workload_helpers_counted": true,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-spectralnorm-optimized",
+      "benchmark": "spectralnorm",
+      "variant": "optimized",
+      "source": "sources/spectralnorm/optimized/main.pony",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_actors": 8,
+      "runtime_arguments": [
+        "--ponymaxthreads",
+        "8"
+      ],
+      "application_helpers": [],
+      "general_library_support": [],
+      "workload_helpers_counted": true,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-mandelbrot-compact",
+      "benchmark": "mandelbrot",
+      "variant": "compact",
+      "source": "sources/mandelbrot/compact/main.pony",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_actors": 1,
+      "runtime_arguments": [
+        "--ponymaxthreads",
+        "8"
+      ],
+      "application_helpers": [],
+      "general_library_support": [],
+      "workload_helpers_counted": true,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-mandelbrot-optimized",
+      "benchmark": "mandelbrot",
+      "variant": "optimized",
+      "source": "sources/mandelbrot/optimized/main.pony",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_actors": 8,
+      "runtime_arguments": [
+        "--ponymaxthreads",
+        "8"
+      ],
+      "application_helpers": [],
+      "general_library_support": [],
+      "workload_helpers_counted": true,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-fasta-compact",
+      "benchmark": "fasta",
+      "variant": "compact",
+      "source": "sources/fasta/compact/main.pony",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_actors": 1,
+      "runtime_arguments": [
+        "--ponymaxthreads",
+        "8"
+      ],
+      "application_helpers": [],
+      "general_library_support": [],
+      "workload_helpers_counted": true,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-fasta-optimized",
+      "benchmark": "fasta",
+      "variant": "optimized",
+      "source": "sources/fasta/optimized/main.pony",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_actors": 1,
+      "runtime_arguments": [
+        "--ponymaxthreads",
+        "8"
+      ],
+      "application_helpers": [],
+      "general_library_support": [],
+      "workload_helpers_counted": true,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-knucleotide-compact",
+      "benchmark": "knucleotide",
+      "variant": "compact",
+      "source": "sources/knucleotide/compact/main.pony",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_actors": 1,
+      "runtime_arguments": [
+        "--ponymaxthreads",
+        "8"
+      ],
+      "application_helpers": [],
+      "general_library_support": [],
+      "workload_helpers_counted": true,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-knucleotide-optimized",
+      "benchmark": "knucleotide",
+      "variant": "optimized",
+      "source": "sources/knucleotide/optimized/main.pony",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_actors": 7,
+      "runtime_arguments": [
+        "--ponymaxthreads",
+        "8"
+      ],
+      "application_helpers": [],
+      "general_library_support": [],
+      "workload_helpers_counted": true,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-binarytrees-compact",
+      "benchmark": "binarytrees",
+      "variant": "compact",
+      "source": "sources/binarytrees/compact/main.pony",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_actors": 1,
+      "runtime_arguments": [
+        "--ponymaxthreads",
+        "8"
+      ],
+      "application_helpers": [],
+      "general_library_support": [],
+      "workload_helpers_counted": true,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-binarytrees-optimized",
+      "benchmark": "binarytrees",
+      "variant": "optimized",
+      "source": "sources/binarytrees/optimized/main.pony",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_actors": 8,
+      "runtime_arguments": [
+        "--ponymaxthreads",
+        "8"
+      ],
+      "application_helpers": [],
+      "general_library_support": [],
+      "workload_helpers_counted": true,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-nbody-compact",
+      "benchmark": "nbody",
+      "variant": "compact",
+      "source": "sources/nbody/compact/main.pony",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_actors": 1,
+      "runtime_arguments": [
+        "--ponymaxthreads",
+        "8"
+      ],
+      "application_helpers": [],
+      "general_library_support": [],
+      "workload_helpers_counted": true,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-nbody-optimized",
+      "benchmark": "nbody",
+      "variant": "optimized",
+      "source": "sources/nbody/optimized/main.pony",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_actors": 1,
+      "runtime_arguments": [
+        "--ponymaxthreads",
+        "8"
+      ],
+      "application_helpers": [],
+      "general_library_support": [],
+      "workload_helpers_counted": true,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-fannkuchredux-compact",
+      "benchmark": "fannkuchredux",
+      "variant": "compact",
+      "source": "sources/fannkuchredux/compact/main.pony",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_actors": 1,
+      "runtime_arguments": [
+        "--ponymaxthreads",
+        "8"
+      ],
+      "application_helpers": [],
+      "general_library_support": [],
+      "workload_helpers_counted": true,
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-fannkuchredux-optimized",
+      "benchmark": "fannkuchredux",
+      "variant": "optimized",
+      "source": "sources/fannkuchredux/optimized/main.pony",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_actors": 8,
+      "runtime_arguments": [
+        "--ponymaxthreads",
+        "8"
+      ],
+      "application_helpers": [],
+      "general_library_support": [],
+      "workload_helpers_counted": true,
+      "eligible_for_chart": false
+    }
+  ],
+  "full_timings_authorized": false
+}

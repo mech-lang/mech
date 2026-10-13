@@ -1,0 +1,9 @@
+{
+  "pid": 17798,
+  "identity": {
+    "pid": 17798,
+    "process_listing": "Mon Oct 12 15:44:14 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/apl-argv-v1/continuation.py --run --manifest-sha256 cfc246e46aa4e67db659dae89009259d5d9188381b007f486b0266cc973ed1b8"
+  },
+  "manifest_sha256": "cfc246e46aa4e67db659dae89009259d5d9188381b007f486b0266cc973ed1b8",
+  "launched_at": "2026-10-12T19:44:14.655177+00:00"
+}

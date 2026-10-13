@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/opt/homebrew/Cellar/ruby/4.0.7/bin/ruby",
+    "--version"
+  ],
+  "started_at": "2026-10-12T16:47:27.900960+00:00",
+  "inherited_common_mutex": true,
+  "pid": 82651,
+  "identity": {
+    "pid": 82651,
+    "process_listing": "Mon Oct 12 12:47:27 2026     /opt/homebrew/Cellar/ruby/4.0.7/bin/ruby --version"
+  },
+  "returncode": 0,
+  "finished_at": "2026-10-12T16:47:28.093252+00:00"
+}

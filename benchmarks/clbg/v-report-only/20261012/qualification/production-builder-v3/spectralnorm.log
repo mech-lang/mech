@@ -1,0 +1,16 @@
+WAIT LOCK: V preparation production-builder-v3 spectralnorm
+BUILD v-spectralnorm-compact-input-v2
+BUILD v-spectralnorm-optimized-input-v2
+PROBE v-spectralnorm-compact-input-v2 size-1
+PROBE v-spectralnorm-compact-input-v2 size-2
+PROBE v-spectralnorm-compact-input-v2 size-3
+PROBE v-spectralnorm-compact-input-v2 size-5
+PROBE v-spectralnorm-compact-input-v2 size-9
+PROBE v-spectralnorm-compact-input-v2 size-100
+PROBE v-spectralnorm-optimized-input-v2 size-1
+PROBE v-spectralnorm-optimized-input-v2 size-2
+PROBE v-spectralnorm-optimized-input-v2 size-3
+PROBE v-spectralnorm-optimized-input-v2 size-5
+PROBE v-spectralnorm-optimized-input-v2 size-9
+PROBE v-spectralnorm-optimized-input-v2 size-100
+PASS BOUNDED OUTPUTS spectralnorm 14

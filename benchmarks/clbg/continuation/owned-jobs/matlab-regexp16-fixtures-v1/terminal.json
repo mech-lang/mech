@@ -1,0 +1,20 @@
+{
+  "status": "command-exited-zero-awaiting-report-review",
+  "started_at": "2026-10-13T12:02:19.080590+00:00",
+  "worker_identity": {
+    "pid": 1287,
+    "listing": "1287     1 Tue Oct 13 08:02:19 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/matlab-regexp16-fixtures-v1 --lease-fd 3 --go-fd 4"
+  },
+  "actual_command_started": true,
+  "exit_code": 0,
+  "qualification_granted": false,
+  "automatic_retry": false,
+  "command_pid": 1297,
+  "command_identity": {
+    "pid": 1297,
+    "listing": "1297  1287 Tue Oct 13 08:02:19 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/matlab-regexp-grammar-v1/qualify_replay.py --revision fixtures16-restored-v1 --stage fixtures --packet-pins /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/matlab-regexp-reviewed-digests-v1/reviewed-packet.json --packet-pins-sha256 4222852c3ac28554da174a176f2984bc887c990a3c7c3ef553367c7699dbfe57"
+  },
+  "command_identity_observation_missing": false,
+  "finished_at": "2026-10-13T12:03:34.799792+00:00",
+  "stop_signals": []
+}

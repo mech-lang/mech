@@ -1,0 +1,26 @@
+{
+  "status": "passed",
+  "actual_common_mutex_held": true,
+  "inherited_common_mutex": true,
+  "suite": "directory-init",
+  "expected_ids": [
+    "test_directory_init_v8.DirectoryInitialization.test_fresh_nested_build_root_reaches_owned_compile_boundary"
+  ],
+  "discovered_ids": [
+    "test_directory_init_v8.DirectoryInitialization.test_fresh_nested_build_root_reaches_owned_compile_boundary"
+  ],
+  "started_ids": [
+    "test_directory_init_v8.DirectoryInitialization.test_fresh_nested_build_root_reaches_owned_compile_boundary"
+  ],
+  "expected_count": 1,
+  "tests_run": 1,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "expected_failures": 0,
+  "unexpected_successes": 0,
+  "raw_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/proposal-seals/private-v8/fixtures/directory-init/directory-init.log",
+  "raw_log_sha256": "0246706da2cbc4c58de3b2b43ccf94f1808ea637f56069391ee508b3c5d52ca1",
+  "native_probes": 0,
+  "chart_admission": false
+}

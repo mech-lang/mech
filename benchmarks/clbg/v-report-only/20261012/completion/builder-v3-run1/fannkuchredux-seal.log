@@ -1,0 +1,2 @@
+WAIT common mutex: V full-study manifest fannkuchredux
+{"manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/studies/fannkuchredux/full-study/manifest.json", "sha256": "f48716e9903d56f1aec2f469f88f5465817b833cdca33a82010f6d30adaae600", "profiles": ["v-fannkuchredux-compact-input-v2", "v-fannkuchredux-optimized-input-v2", "mech-aot-control"], "full_processes": 9, "report_only": true}

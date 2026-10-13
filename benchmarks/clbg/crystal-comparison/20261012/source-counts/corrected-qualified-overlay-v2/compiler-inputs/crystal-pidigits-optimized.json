@@ -1,0 +1,47 @@
+{
+  "status": "qualified-exact-authored-compiler-inputs",
+  "profile": "crystal-pidigits-optimized",
+  "source_sha256": "69ee8e46548eb3996393772df89a6a7a856e9f8f70560259a3b53af8bfb8a5ff",
+  "binary_sha256": "2edefd676f30911bb8105115c10e17a8e487f6b12eba1c3f9571eba08c17d428",
+  "files": [
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-input-archive-filter-v6/source-snapshot/sources/pidigits/optimized.cr",
+      "sha256": "69ee8e46548eb3996393772df89a6a7a856e9f8f70560259a3b53af8bfb8a5ff"
+    }
+  ],
+  "actual_build_receipt": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-input-archive-filter-v6/builds/crystal-pidigits-optimized/build.json",
+    "sha256": "9082af8294584f745f506169ec3edb30d9061870fc54f7d68afe2167cb624ebd"
+  },
+  "actual_build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/bin/crystal",
+    "build",
+    "--release",
+    "--no-debug",
+    "--no-color",
+    "--error-trace",
+    "--mcpu",
+    "native",
+    "--threads",
+    "1",
+    "--link-flags",
+    "-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk -mmacosx-version-min=14.4 -L /opt/homebrew/Cellar/gmp/6.3.0/lib -L /opt/homebrew/Cellar/pcre2/10.49/lib -L /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-input-archive-filter-v6/bin/crystal-pidigits-optimized",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-input-archive-filter-v6/source-snapshot/sources/pidigits/optimized.cr"
+  ],
+  "qualified_preparation": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-input-archive-filter-v6/report.json",
+    "sha256": "1b1f4ae9b39a9ee17e66204095f7532718f299f318e6cde3d9def2c1cd761372"
+  },
+  "source_role_review": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/source-counts/repaired-replay-semantic-review-v2.json",
+    "sha256": "3087d38fe95ab7d9cc1340291d361448367b8995f43da744124a5af8362303f0",
+    "review_identity": "crystal-repaired-replay-source-review-v2:crystal-pidigits-optimized",
+    "disposition": "Vendor big declaration and both real quotient/extraction branches retain written units; scalar arithmetic and formatting arguments stay composed with no synthetic type/library statements."
+  },
+  "counted_source_alias": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/sources/pidigits/optimized.cr",
+  "alias_bytes_equal": true,
+  "vendor_inputs": "Pinned Crystal standard library/compiler/native dependencies; no local authored helper is compiled",
+  "source_inventory_is_derived_from_actual_compiler_receipt": true
+}

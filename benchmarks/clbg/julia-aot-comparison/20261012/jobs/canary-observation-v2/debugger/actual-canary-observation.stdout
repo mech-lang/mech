@@ -1,0 +1,2 @@
+(lldb) command script import /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/snapshot/observe_lldb.py
+(lldb) script observe_lldb.observe(lldb.debugger, '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v2/request.json')

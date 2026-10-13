@@ -1,0 +1,41 @@
+{
+  "status": "failed-fixtures",
+  "tests_run": 147,
+  "failures": 2,
+  "errors": 0,
+  "common_timing_mutex": "/tmp/mech-clbg-timing.lock",
+  "exclusive_mutex_held": true,
+  "python_executable": "/opt/homebrew/opt/python@3.14/bin/python3.14",
+  "python_version": "3.14.8 (main, Sep 30 2026, 17:55:09) [Clang 21.0.0 (clang-2100.3.34.2)]",
+  "pygments_version": "2.19.2",
+  "pygments_module": "/private/tmp/mech-clbg-compact-libs/pygments/__init__.py",
+  "pygments_module_sha256": "ff7513f3a4c6a47b96f057a4759f2e2e2744647d4d86670b88ecb628a34f0ade",
+  "frozen_module_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/braced-value-fixtures-01/snapshot/audit.py": "8a4e3a3f58179641c839834646234a200c9cb3e486cb7835281abe94d15a64e3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/braced-value-fixtures-01/snapshot/canonical.py": "f6abf329872869a459fcc65ae9601e443955609bb34d3ead9a2043f9e76ac6f6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/braced-value-fixtures-01/snapshot/comparisons.py": "849575cef5487937ab741f4a64418ed25faa4018b0322cea9fa59ed8e4dbf462",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/braced-value-fixtures-01/snapshot/foreign_braced.py": "28ee4eae4aeac7ecbd770378d71ba2ee9043669b491987ca1a9eee45dc3b8f91",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/braced-value-fixtures-01/snapshot/foreign_core.py": "62a79d27740647f5f4918c3f29df6ba977e72f61777f8cf3f431e0ec66ba5be5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/braced-value-fixtures-01/snapshot/lexical.py": "0e911ec6544821ae42d40f115963d163f58f72097a3746a991dc203940348111",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/braced-value-fixtures-01/snapshot/normalizer.py": "c2e8320bb6348acd96423086ca51b1292dd128f576804c199fac24d6c9857d7c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/braced-value-fixtures-01/snapshot/pools.py": "8dc5a3da1281c0d4863b4d708478a579d1aa3eb3ef9bbb842cdc831881e6c37c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/braced-value-fixtures-01/snapshot/prior_array_loc.py": "e574536fa6430bb47df94ba0b2c6d20925af39ac13afabf6835cbebcd7b39ca7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/braced-value-fixtures-01/snapshot/test_foreign_braced.py": "2ec241da8ac070eac68582c8f65cfcc1386b175cb6f9009707f8f779b5a45bdc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/braced-value-fixtures-01/snapshot/test_normalizer.py": "8299680ed2581ad1ceb5b8bf76ad4f386bd2f63cd081285f26b34bc27aeb671d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/braced-value-fixtures-01/snapshot/test_value_forms.py": "547724799ed9c1ae79b380ce956139309c17d0e15c2f4fe360b57bca5c2e9490",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/braced-value-fixtures-01/snapshot/test_zig_odin.py": "314a7cf0e0136909700aaedee07de89c934e35bffce82baf0316c3f37e48b29c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/braced-value-fixtures-01/snapshot/value_forms.py": "0e506caa30e342586bea6d3a878f5b7698a211f38585675d12b18bf66265c7fe",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/braced-value-fixtures-01/snapshot/zig_odin.py": "1f74380877a5a5f1daf8c225d3d507818f627ecda2afab7f069168b89d173335"
+  },
+  "suites": [
+    "test_normalizer",
+    "test_foreign_braced",
+    "test_zig_odin",
+    "test_value_forms"
+  ],
+  "benchmark_processes_started": 0,
+  "source_pool_audit_started": false,
+  "chart_admitted": false,
+  "automatic_retry": false,
+  "completed_at": "2026-10-12T16:36:28.418623+00:00"
+}

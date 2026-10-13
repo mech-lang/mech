@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/usr/bin/otool",
+    "-L",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v6/bin/orc-join-parent-destruction"
+  ],
+  "started_at": "2026-10-13T01:03:10.949324+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 3098,
+  "identity": {
+    "pid": 3098,
+    "process_listing": "Mon Oct 12 21:03:10 2026     /Library/Developer/CommandLineTools/usr/bin/otool -L /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v6/bin/orc-join-parent-destruction"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-13T01:03:10.973265+00:00",
+  "final_exit_status": 0
+}

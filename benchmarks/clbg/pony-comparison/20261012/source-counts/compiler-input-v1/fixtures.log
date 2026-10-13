@@ -1,0 +1,13 @@
+test_available_but_unloaded_search_package_does_not_enter_bundle (test_loc_inputs.InventoryAndOverlay.test_available_but_unloaded_search_package_does_not_enter_bundle) ... ok
+test_changed_build_or_binary_identity_and_mutex_gate_stop (test_loc_inputs.InventoryAndOverlay.test_changed_build_or_binary_identity_and_mutex_gate_stop) ... ok
+test_diagnostic_disposition_cannot_override_or_waive_an_unknown_owner (test_loc_inputs.InventoryAndOverlay.test_diagnostic_disposition_cannot_override_or_waive_an_unknown_owner) ... ok
+test_entire_loaded_authored_package_is_inventoried (test_loc_inputs.InventoryAndOverlay.test_entire_loaded_authored_package_is_inventoried) ... ok
+test_package_records_keep_both_streams_and_reject_duplicates (test_loc_inputs.InventoryAndOverlay.test_package_records_keep_both_streams_and_reject_duplicates) ... ok
+test_partial_cohort_and_boolean_counts_cannot_create_overlay (test_loc_inputs.InventoryAndOverlay.test_partial_cohort_and_boolean_counts_cannot_create_overlay) ... ok
+test_unknown_loaded_package_is_never_a_vendor_exception (test_loc_inputs.InventoryAndOverlay.test_unknown_loaded_package_is_never_a_vendor_exception) ... ok
+test_unpinned_extra_authored_file_stops_inventory (test_loc_inputs.InventoryAndOverlay.test_unpinned_extra_authored_file_stops_inventory) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.026s
+
+OK

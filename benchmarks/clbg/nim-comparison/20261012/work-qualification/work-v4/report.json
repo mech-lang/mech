@@ -1,0 +1,24 @@
+{
+  "status": "stopped-unqualified",
+  "started_at": "2026-10-13T04:59:01.644085+00:00",
+  "attempts": [],
+  "active": null,
+  "prerequisite": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/qualification/private-v7/report.json",
+  "prerequisite_sha256": "6fb529f349ffaa8694d87a79c906ec86b84ecae2a23f5a7ab63a04f43a3f07da",
+  "full_performance_runs": 0,
+  "chart_admission": false,
+  "no_automatic_retry": true,
+  "qualification_revision": "private-v7",
+  "source_reviews": [],
+  "tree_proofs": [],
+  "preserved_failed_work_qualification": {
+    "report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/work-qualification/work-v3/report.json",
+    "report_sha256": "cf6084b9b4fa09195386d96ab0144fa9fa32f3d890ad861b3601e76ccfaef347",
+    "original_fixture_methods": 12,
+    "failed_record_promoted_to_passed": false,
+    "prior_native_tree_probes": 0
+  },
+  "finished_at": "2026-10-13T04:59:01.990875+00:00",
+  "error": "('Owned command failed', 'work-fixtures', 1)",
+  "error_type": "AssertionError"
+}

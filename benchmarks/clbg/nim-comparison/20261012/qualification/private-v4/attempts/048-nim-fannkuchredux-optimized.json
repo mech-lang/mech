@@ -1,0 +1,53 @@
+{
+  "key": "fannkuchredux:nim-fannkuchredux-optimized",
+  "id": "nim-fannkuchredux-optimized",
+  "benchmark": "fannkuchredux",
+  "language": "nim",
+  "source_sha256": "8fc3d7d48313f9d311232cc088e62796db6a21ef1fcfde4faec3d20ff070f053",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v4/bin/nim-fannkuchredux-optimized",
+    "8"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012",
+  "runtime_environment": {
+    "LC_ALL": "C",
+    "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre/8.45/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"7627084befaff4d82dfc3e0bf03315bfe1b6666a1d81e51cc82688ac3ba53ee7\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v4/bin/nim-fannkuchredux-optimized\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre/8.45/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"8fc3d7d48313f9d311232cc088e62796db6a21ef1fcfde4faec3d20ff070f053\", \"support\": {}}",
+  "started_at": "2026-10-12T19:36:22.671682+00:00",
+  "workload_n": 8,
+  "full_workload": false,
+  "timeout_seconds": 120,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.007817541,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 25,
+  "stdout_sha256": "66af13d659e1cb5687f27dd8a463a9ce871df7faf2c76f122fe80d1f75ffd3ed",
+  "validation": {
+    "reference_match": true,
+    "bytes": 25,
+    "sha256": "66af13d659e1cb5687f27dd8a463a9ce871df7faf2c76f122fe80d1f75ffd3ed"
+  },
+  "finished_at": "2026-10-12T19:36:22.883889+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true
+}

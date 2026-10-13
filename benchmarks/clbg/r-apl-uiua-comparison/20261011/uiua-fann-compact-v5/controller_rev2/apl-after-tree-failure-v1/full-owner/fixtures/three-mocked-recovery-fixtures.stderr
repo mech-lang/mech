@@ -1,0 +1,8 @@
+test_already_measured_or_failed_selected_source_and_alias_duplication_cannot_recover (test_controller.RecoveryChecks.test_already_measured_or_failed_selected_source_and_alias_duplication_cannot_recover) ... ok
+test_exact_typed_failure_isolation_rejects_each_safety_and_inventory_corruption (test_controller.RecoveryChecks.test_exact_typed_failure_isolation_rejects_each_safety_and_inventory_corruption) ... ok
+test_failed_tree_and_all75_original_records_remain_unchanged_in_additive_seed (test_controller.RecoveryChecks.test_failed_tree_and_all75_original_records_remain_unchanged_in_additive_seed) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.001s
+
+OK

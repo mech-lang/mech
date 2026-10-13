@@ -1,0 +1,22 @@
+{
+  "command": [
+    "/usr/sbin/lsof",
+    "-nP",
+    "-a",
+    "-p",
+    "12325",
+    "-d",
+    "64",
+    "-FpfDin"
+  ],
+  "started_at": "2026-10-12T19:13:23.062262+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 5,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 12332,
+  "identity": {
+    "pid": 12332,
+    "process_listing": "Mon Oct 12 15:13:23 2026     /usr/sbin/lsof -nP -a -p 12325 -d 64 -FpfDin"
+  }
+}

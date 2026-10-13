@@ -1,0 +1,17 @@
+{
+  "terminal_status": "canary-library-built-awaiting-native-coverage-and-observer-calibration",
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-library-v1/report.json": "60ee3dc93ddce14e4e74755440d3b4b25fdf7d49209a3db4142283fd543a9aa5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-library-v1/link/direct-c-launcher.json": "496c51c08508ace1ab0909d941296ab9b9ba1cdbd6576a744836bf4d9ba4667a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-library-v1/link/direct-c-launcher.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-library-v1/link/direct-c-launcher.active.json": "5e7b07ef62e08d3d754cae5bf7369ce115c23a6fa59b296a4861c93ae9fe2c00",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-library-v1/link/direct-c-launcher.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-library-v1/build/create-library.json": "51cb3382ddccf4cd0fed0ef9b9eeeb73721033236d6a22103aa5104ed16efca3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-library-v1/build/create-library.active.json": "bd8a0cee4b2d4836de1702ec20bbb9b8f0e5ffc3d982b9fda8960c665236192f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-library-v1/build/create-library.stderr": "5240b14c0ebcf8e24b7415c218a7beb84366449e977f14ba37e661e68459b90f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-library-v1/build/create-library.stdout": "eaf9aa7c1da3f85c293277e03c30a445a746fd39c15b5fad17ce3f742b11d423"
+  },
+  "runtime_aot_proven": false,
+  "chart_admission": false,
+  "automatic_retry": false
+}

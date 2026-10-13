@@ -1,0 +1,39 @@
+test_ambiguous_expression_and_compile_time_forms_are_gated (test_vlang.VlangNormalizationFixtures.test_ambiguous_expression_and_compile_time_forms_are_gated) ... ok
+test_block_callback_function_packing (test_vlang.VlangNormalizationFixtures.test_block_callback_function_packing) ... ok
+test_declarations_do_not_get_literal_packing_discount (test_vlang.VlangNormalizationFixtures.test_declarations_do_not_get_literal_packing_discount) ... ok
+test_defer_block_packing (test_vlang.VlangNormalizationFixtures.test_defer_block_packing) ... ok
+test_for_header_separators_are_structural (test_vlang.VlangNormalizationFixtures.test_for_header_separators_are_structural) ... FAIL
+test_imperative_branches (test_vlang.VlangNormalizationFixtures.test_imperative_branches) ... ok
+test_imperative_or_handler_packing (test_vlang.VlangNormalizationFixtures.test_imperative_or_handler_packing) ... ok
+test_independent_bindings_and_multi_return (test_vlang.VlangNormalizationFixtures.test_independent_bindings_and_multi_return) ... ok
+test_interpolation_and_nested_quotes_are_masked (test_vlang.VlangNormalizationFixtures.test_interpolation_and_nested_quotes_are_masked) ... ok
+test_literal_offset_and_crlf_preservation (test_vlang.VlangNormalizationFixtures.test_literal_offset_and_crlf_preservation) ... ok
+test_meaningful_compiler_pragmas_are_not_packing_discounts (test_vlang.VlangNormalizationFixtures.test_meaningful_compiler_pragmas_are_not_packing_discounts) ... ok
+test_named_function_packing (test_vlang.VlangNormalizationFixtures.test_named_function_packing) ... ok
+test_nested_comments_and_literal_separators (test_vlang.VlangNormalizationFixtures.test_nested_comments_and_literal_separators) ... ok
+test_typed_literals_remain_data (test_vlang.VlangNormalizationFixtures.test_typed_literals_remain_data) ... ok
+test_value_fallback_and_unsafe_are_composition (test_vlang.VlangNormalizationFixtures.test_value_fallback_and_unsafe_are_composition) ... ok
+test_value_if_is_one_composed_binding (test_vlang.VlangNormalizationFixtures.test_value_if_is_one_composed_binding) ... ok
+test_verilog_alias_is_rejected (test_vlang.VlangNormalizationFixtures.test_verilog_alias_is_rejected) ... ok
+
+======================================================================
+FAIL: test_for_header_separators_are_structural (test_vlang.VlangNormalizationFixtures.test_for_header_separators_are_structural)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/vlang-fixtures-01/snapshot/test_vlang.py", line 28, in test_for_header_separators_are_structural
+    self.equivalent('for i:=0;i<n;i++ { a+=i }',
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                    'for i:=0;i<n;i++\n{\n a+=i\n}',3)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/vlang-fixtures-01/snapshot/test_vlang.py", line 21, in equivalent
+    self.count(expanded,expected)
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/vlang-fixtures-01/snapshot/test_vlang.py", line 14, in count
+    self.assertEqual(result['normalized_loc'],expected,result)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 6 != 3 : {'rule_version': 'canonical-source-units-20261012-approved-rule-v2-vlang-report-only-proposal-1', 'language': 'vlang', 'physical_loc': 4, 'normalized_loc': 6, 'expansions': [{'line': 1, 'original': 'for i:=0;i<n;i++', 'physical_units': 1, 'normalized_units': 3, 'extra_lines': 2, 'canonical_events': [], 'statement_events': [{'start_column': 1, 'end_column': 10, 'units': 1, 'assignments': [{'column': 6, 'operator': ':='}], 'reason': 'independent-statement-and-chained-bindings'}, {'start_column': 10, 'end_column': 14, 'units': 1, 'assignments': [], 'reason': 'independent-statement-and-chained-bindings'}, {'start_column': 14, 'end_column': 18, 'units': 1, 'assignments': [], 'reason': 'independent-statement-and-chained-bindings'}]}], 'canonical_events': [], 'diagnostics': [{'kind': 'canonical-standalone-brace-context-review', 'offset': 17, 'message': 'Standalone brace lacks an unambiguous literal or executable header.'}], 'review_status': 'needs-review', 'chart_pool_eligible': False, 'scope': 'V report-only source normalization proposal'}
+
+----------------------------------------------------------------------
+Ran 17 tests in 0.005s
+
+FAILED (failures=1)

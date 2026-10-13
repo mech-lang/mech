@@ -1,0 +1,22 @@
+WAIT LOCK: guarded private Nim preparation private-v5
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/guarded_prepare_v5.py", line 577, in <module>
+    main()
+    ~~~~^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/guarded_prepare_v5.py", line 573, in main
+    run(args.proposal_sha256, args.revision, args.proposal_file)
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/guarded_prepare_v5.py", line 540, in run
+    proofs = source_proofs.run(guard, harness, proposal, snapshot, build, compiler, toolchain,
+                              bigint, gmp_wrapper, sdk, environment, pins, lock.fileno(), report)
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/source_proofs_v5.py", line 218, in run
+    row = build_proof(name, text, asan)
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/source_proofs_v5.py", line 199, in build_proof
+    preparation.owned_command(guard, harness, command, environment,
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              output / name, lock_fd, 180, 'build')
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/guarded_prepare_v5.py", line 173, in owned_command
+    assert process.returncode == 0, ('Owned command failed', name, process.returncode)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('Owned command failed', 'build', 1)

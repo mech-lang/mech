@@ -1,0 +1,67 @@
+{
+  "key": "mandelbrot:loc-minimum-study:mech-control",
+  "id": "mech-aot-control",
+  "benchmark": "mandelbrot",
+  "language": "mech",
+  "source_sha256": "baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+    "16000",
+    "8"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "runtime_environment": {},
+  "execution_fingerprint": "{\"binary_sha256\": \"42a54ae5ab8902a4b71d031f3744a1da23c1da1fa26af6943fa3b77475691d8f\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma\", \"{n}\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde\", \"support\": {}}",
+  "started_at": "2026-10-12T17:59:14.235612+00:00",
+  "workload_n": 16000,
+  "full_workload": true,
+  "timeout_seconds": 14400,
+  "maximum_rss_mib": 8192,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.462794625,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 32000015,
+  "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+  "validation": {
+    "bytes": 32000015,
+    "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+    "reference_match": true
+  },
+  "finished_at": "2026-10-12T17:59:14.928982+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true,
+  "round": 1,
+  "attempt": 2,
+  "sampler_wait_status": 0,
+  "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/full-study/attempts/002-mech-aot-control.json",
+  "supervised_native_group": {
+    "type": "native-group-started",
+    "pid": 4301,
+    "pgid": 4301,
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+      "16000",
+      "8"
+    ],
+    "inherited_common_mutex": true
+  },
+  "supervisor_remaining_members": [],
+  "fatal_qualification_fields": [],
+  "qualified": true,
+  "retryable_environment_only": false
+}

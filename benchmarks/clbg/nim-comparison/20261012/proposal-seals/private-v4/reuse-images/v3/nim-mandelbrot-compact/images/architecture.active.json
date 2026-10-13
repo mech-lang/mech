@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/usr/bin/lipo",
+    "-archs",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v3/bin/nim-mandelbrot-compact"
+  ],
+  "started_at": "2026-10-12T18:46:36.819474+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 9248,
+  "identity": {
+    "pid": 9248,
+    "process_listing": "Mon Oct 12 14:46:36 2026     /usr/bin/lipo -archs /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v3/bin/nim-mandelbrot-compact"
+  }
+}

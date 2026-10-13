@@ -1,0 +1,32 @@
+{
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v1/compiler/gleam",
+  "architectures": [
+    "arm64"
+  ],
+  "dependencies": [
+    {
+      "install_name": "/usr/lib/libSystem.B.dylib",
+      "scope": "OS-image-not-hashed"
+    },
+    {
+      "install_name": "/usr/lib/libobjc.A.dylib",
+      "scope": "OS-image-not-hashed"
+    },
+    {
+      "install_name": "/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation",
+      "scope": "OS-image-not-hashed"
+    },
+    {
+      "install_name": "/System/Library/Frameworks/Security.framework/Versions/A/Security",
+      "scope": "OS-image-not-hashed"
+    },
+    {
+      "install_name": "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+      "scope": "OS-image-not-hashed"
+    },
+    {
+      "install_name": "/usr/lib/libiconv.2.dylib",
+      "scope": "OS-image-not-hashed"
+    }
+  ]
+}

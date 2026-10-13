@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/usr/bin/otool",
+    "-L",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/bin/pony-binarytrees-compact-precedence-v4/pony-binarytrees-compact-precedence-v4"
+  ],
+  "started_at": "2026-10-12T22:46:17.678311+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 70559,
+  "identity": {
+    "pid": 70559,
+    "process_listing": "Mon Oct 12 18:46:17 2026     /Library/Developer/CommandLineTools/usr/bin/otool -L /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/bin/pony-binarytrees-compact-precedence-v4/pony-binarytrees-compact-precedence-v4"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-12T22:46:17.700958+00:00",
+  "final_exit_status": 0
+}

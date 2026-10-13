@@ -1,0 +1,71 @@
+{
+  "key": "binarytrees:v-binarytrees-compact-input-v2",
+  "id": "v-binarytrees-compact-input-v2",
+  "benchmark": "binarytrees",
+  "language": "v",
+  "source_sha256": "24b173a1d2f978f2e89d6deb6a40e3c3e564b2684071ec070ab899916d7faa86",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualification/production-builder-v3/binarytrees/v-binarytrees-compact-input-v2/program",
+    "21"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012",
+  "runtime_environment": {
+    "LC_ALL": "C",
+    "OMP_NUM_THREADS": "8",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1",
+    "RAYON_NUM_THREADS": "8"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"da1a0dea4ba1cd01ecf74779b5fa907a7c5e98d9baeac66aa213779afb39b4c4\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualification/production-builder-v3/binarytrees/v-binarytrees-compact-input-v2/program\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"24b173a1d2f978f2e89d6deb6a40e3c3e564b2684071ec070ab899916d7faa86\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/.build-sdk-v1/toolchain/v/v\": \"d3c86b7326e62990d1eb77247b68ea2914a834e5fe9444f981cfbc3863cb4ac1\"}}",
+  "started_at": "2026-10-13T05:11:18.770821+00:00",
+  "workload_n": 21,
+  "full_workload": true,
+  "timeout_seconds": 14400,
+  "maximum_rss_mib": 8192,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 6.152344917,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 433888,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 455,
+  "stdout_sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+  "validation": {
+    "bytes": 455,
+    "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+    "reference_match": true
+  },
+  "finished_at": "2026-10-13T05:11:25.124770+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true,
+  "round": 1,
+  "attempt": 1,
+  "sampler_wait_status": 0,
+  "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/studies/binarytrees/full-study/attempts/001-v-binarytrees-compact-input-v2.json",
+  "supervised_native_group": {
+    "type": "native-group-started",
+    "pid": 68619,
+    "pgid": 68619,
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualification/production-builder-v3/binarytrees/v-binarytrees-compact-input-v2/program",
+      "21"
+    ],
+    "inherited_common_mutex": true
+  },
+  "supervisor_remaining_members": [],
+  "fatal_qualification_fields": [],
+  "qualified": true,
+  "retryable_environment_only": false
+}

@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+    "-B",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/apl-argv-v1/test_continuation.py"
+  ],
+  "started_at": "2026-10-12T19:12:52.623707+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 12075,
+  "identity": {
+    "pid": 12075,
+    "process_listing": "Mon Oct 12 15:12:52 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3 -B /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/apl-argv-v1/test_continuation.py"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-12T19:12:52.680846+00:00",
+  "final_exit_status": 0
+}

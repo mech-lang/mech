@@ -1,0 +1,7 @@
+qualification/production-input-v2/pidigits/v-pidigits-optimized-input-v2/program.v:38:7: error: method `strings.Builder.free` must be called from an `unsafe` block
+   36 |     unsafe {
+   37 |         defer {
+   38 |             sb.free()
+      |                ~~~~~~
+   39 |         }
+   40 |     }

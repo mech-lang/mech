@@ -1,11 +1,10 @@
 {
-  "updated_at": "2026-10-13T06:35:17.988786+00:00",
+  "updated_at": "2026-10-13T06:58:12.789039+00:00",
   "goal_status": "active",
   "objective": "Finish remaining full benchmark tests; publish complete Nim/Crystal/Pony/C3/Gleam/Clojure suites with qualified source LOC and provenance; add Julia AOT measurements across existing Julia workloads/forms; add actual-platform filter including JVM, BEAM and .NET. V remains report-only, absent from visualization data.; add Prolog to the published language list after complete qualification.",
   "worktree": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
   "branch": "codex/clbg-native-benchmarks",
   "timing_mutex": "/tmp/mech-clbg-timing.lock",
-  "live_processes": "  PID  PPID  ELAPSED      TIME  %CPU    RSS STAT COMMAND\n17798     1 02:41:15   0:22.38   0.0  25824 Ss   /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/apl-argv-v1/continuation.py --run --manifest-sha256 cfc246e46aa4e67db659dae89009259d5d9188381b007f486b0266cc973ed1b8\n20372  1058 02:30:22   0:03.50   0.0  45440 Ss   /tmp/mech-nbody-plot-runtime/bin/python3 -B -u prepare_builder_v3_cohort.py --revision production-builder-v3\n28471  1058 02:07:22   0:01.68   0.0  29664 Ss   /tmp/mech-nbody-plot-runtime/bin/python3 -B -u complete_builder_v3.py\n43896     1 01:04:38   0:00.51   0.0  26976 Ss   /tmp/mech-nbody-plot-runtime/bin/python3 -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/full_study.py --run --benchmark revcomp --manifest-sha256 1d8e74257bac07f674e017c12b83ee9a3d62cb7f14fc51abd585d91790ac347d\n44477 44442 01:03:14  63:13.52 100.0  73120 Rs   /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl --silent --noCIN --noCONT --noColor --noSV --cc 1 -f /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-knucleotide-v2/sources/knucleotide.compact.apl\n44492  1058 01:03:06   0:00.02   0.0  20304 Ss   /tmp/mech-nbody-plot-runtime/bin/python3 -B -u guarded_prepare_v4.py --prepare --proposal-sha256 4e4e45bc06660b891ed1fbbd0b0d09a1ff744513a0a6af0a4d9720cedfa3487b\n44652  1058 01:02:43   0:00.06   0.0  30608 Ss   /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u benchmarks/clbg/crystal-comparison/20261012/guarded_prepare_v6.py --run --proposal-file benchmarks/clbg/crystal-comparison/20261012/proposals/private-input-archive-filter-v6.json --proposal-sha256 1c319443c3948709eeadc05526ad3244d785c0ce99cc724c8a6a025868b5ac1c --revision private-input-archive-filter-v6\n44704  1058 01:02:33   0:00.04   0.0  22912 Ss   /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u benchmarks/clbg/crystal-comparison/20261012/source-counts/replay_sources.py --fixture-receipt benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-18/fixture-receipt.json --output benchmarks/clbg/crystal-comparison/20261012/source-counts/boundary-audit-18-source-proposals-v1.json\n45366  1058    59:49   0:00.03   0.0  22560 Ss   /tmp/mech-nbody-plot-runtime/bin/python3 -B -u reconcile_full_v2.py --benchmark regexredux --output reconciliation/regexredux-three-full-samples-v2.json\n45394     1    59:48   0:00.06   0.0  30464 Ss   /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/guarded_prepare_v6.py --run --proposal-file /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/proposals/private-v6.json --proposal-sha256 ecf8bf803cfae8860309447db518174fc4d991f10bfc5d38cc77c8fb8e246cde --revision private-v6\n45441     1    59:44   0:00.06   0.0  30320 Ss   /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u -B /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/guarded_prepare_v5.py --run --proposal-file /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/proposals/private-v5.json --proposal-sha256 90cb7f87e43ae7f54d68501eab1daebdede78d856ce5564a8b9077a0c5ac57aa --revision private-v5\n46330     1    56:26   0:00.04   0.0  21504 Ss   /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-proposal-v1/jobs/fixtures-v1/worker.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-proposal-v1/jobs/fixtures-v1\n47063     1    54:00   0:00.07   0.0  20704 Ss   /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/work-full-v1/await_qualification.py --job /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/jobs/private-v6-work-seal\n56954     1    24:42   0:00.04   0.0  21744 Ss   /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-19/worker.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-19\n57083     1    24:22   0:00.06   0.0  30384 Ss   /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u -B /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/private-v1/guarded_prepare.py --seal --proposal-file /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/proposals/private-v1.json\n57320  1058    22:49   0:00.04   0.0  23008 Ss   /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u review_pending_minima_v1.py --output pending-minima-source-reconciliation-v1.json\n62772  1058    01:41   0:00.05   0.0  28480 Ss   /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/controller.py --seal\n",
   "latest_serialization_audit": {
     "checked_at": "2026-10-13T02:27:15.414288+00:00",
     "native_pid": 32462,
@@ -472,7 +471,9 @@
     "notes_checkpoint": "Committed and pushed to origin; exact remote branch SHA verified.",
     "benchmark_serialization": "APL fannkuch full sample two is running; no concurrent timed benchmark observed.",
     "notes_checkpoint_commit": "7c24bde2ef490c80edafa5751762c87279094d77",
-    "notes_checkpoint_remote_verified": true
+    "notes_checkpoint_remote_verified": true,
+    "recovery_source_checkpoint_commit": "363b4ffb20e895a7ce92bade44d38e9c3e58dd3d",
+    "recovery_source_checkpoint_remote_verified": true
   },
   "latest_continuation_addendum": {
     "completed": {
@@ -483,7 +484,25 @@
       "Julia_nbody_library_pilot": "Actual exit0 library built, runtime/noJIT/state/native-coverage qualification pending.",
       "Julia_observer_v2": "Actual owned LLDB timeout300s; failure preserved, diagnose before additive attempt.",
       "Pony_work_metadata": "Actual sealed manifest00a83167f0d63f3f7ce0664096b70c841b2cd4fb77a34bc05ce2be8f71005df5;four fresh traces not yet launched.",
-      "Native_platform_fixture_v1": "Actualfour exact fixture IDs passed, frontendv3 not yet launched."
+      "Native_platform_fixture_v1": "Actualfour exact fixture IDs passed, frontendv3 not yet launched.",
+      "Nim_input6_fixtures": {
+        "status": "passed-source-input-fixtures-awaiting-root-review",
+        "actual_methods": 6,
+        "actual_outcomes": 0,
+        "terminal_status": "completed-fixture-only",
+        "receipt": "benchmarks/clbg/loc-normalization/20261012/nim-source-replay-v1/jobs/fixtures-v1/fixture-receipt.json",
+        "saved_receipt_sha256": "aec967282855da29084de8d445b6f8311c42f3c1be5963f162078e1f167e2e52",
+        "source_replay_not_yet_run": true
+      },
+      "Gleam_source_resolution34": {
+        "status": "passed-awaiting-root-source-review",
+        "actual_methods": 34,
+        "actual_outcomes": 0,
+        "finished_at": "2026-10-13T05:11:10.668558+00:00",
+        "receipt": "benchmarks/clbg/loc-normalization/20261012/gleam-proposal-v2/jobs/fixtures-v2/fixture-receipt.json",
+        "saved_receipt_sha256": "247610098f0151f75d4f6432369101664d2f2acddf6dbb716f9a041a4a048733",
+        "source_replay_not_yet_run": true
+      }
     },
     "dependency_failure": "Pony grammar33 and C3 source replay stopped before fixtures/counts because exact temporary Pygments missing. Exact-byte restoration source reviewed and queued; preserve failed packets, use unique additive revisions only after actual successful restoration.",
     "source_only_next": [
@@ -510,7 +529,7 @@
     "exact_Pygments_restoration": 18356,
     "Git_inventory": 9828
   },
-  "historical_foreground_sessions_status": "All handles disappeared and their foreground coordinator PIDs exited across conversation transition; do not poll or restart by session ID. Actual APL sampler/native survive separately.",
+  "historical_foreground_sessions_status": "Session handles expired and no prior foreground coordinators remain. Distinguish completed saved receipts from interrupted waiters per job; do not infer failure from an unknown session handle.",
   "durable_jobs": {
     "apl-sample84-kqueue-observer-v1": {
       "launch": "benchmarks/clbg/continuation/owned-jobs/apl-sample84-kqueue-observer-v1/launch.json",
@@ -564,6 +583,11 @@
       "worker_pid": 81464,
       "status": "durable-job-launched",
       "command_pid": 81470
+    },
+    "v-trees-remaining-eight-v1": {
+      "launch": "benchmarks/clbg/continuation/owned-jobs/v-trees-remaining-eight-v1/launch.json",
+      "worker_pid": 87184,
+      "status": "durable-job-launched"
     }
   },
   "prolog_addition": {
@@ -575,5 +599,17 @@
     "measured_route": "Planned native bytecode VM/QLF startup-inclusive; not application native AOT/JIT.",
     "publication_required_language_count": 7,
     "whole_six_source_adapters_need_extension_after_Prolog_actual_evidence": true
-  }
+  },
+  "V_tree_continuation": {
+    "original_qualified_full_sample_seconds": 6.152344917,
+    "preserved_original_attempts": 1,
+    "fresh_missing_attempts": 8,
+    "original_manifest_sha256": "8180cecca83fd5c6c48d19cdb613dd530bdeb2047962e80c6cd03c5eb77d88f3",
+    "source": "benchmarks/clbg/v-report-only/20261012/continue_binarytrees_v1.py",
+    "durable_launch": "benchmarks/clbg/continuation/owned-jobs/v-trees-remaining-eight-v1/launch.json",
+    "status": "queued-common-mutex",
+    "never_chart_eligible": true
+  },
+  "historical_live_processes": "  PID  PPID  ELAPSED      TIME  %CPU    RSS STAT COMMAND\n17798     1 02:41:15   0:22.38   0.0  25824 Ss   /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/apl-argv-v1/continuation.py --run --manifest-sha256 cfc246e46aa4e67db659dae89009259d5d9188381b007f486b0266cc973ed1b8\n20372  1058 02:30:22   0:03.50   0.0  45440 Ss   /tmp/mech-nbody-plot-runtime/bin/python3 -B -u prepare_builder_v3_cohort.py --revision production-builder-v3\n28471  1058 02:07:22   0:01.68   0.0  29664 Ss   /tmp/mech-nbody-plot-runtime/bin/python3 -B -u complete_builder_v3.py\n43896     1 01:04:38   0:00.51   0.0  26976 Ss   /tmp/mech-nbody-plot-runtime/bin/python3 -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/full_study.py --run --benchmark revcomp --manifest-sha256 1d8e74257bac07f674e017c12b83ee9a3d62cb7f14fc51abd585d91790ac347d\n44477 44442 01:03:14  63:13.52 100.0  73120 Rs   /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl --silent --noCIN --noCONT --noColor --noSV --cc 1 -f /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-knucleotide-v2/sources/knucleotide.compact.apl\n44492  1058 01:03:06   0:00.02   0.0  20304 Ss   /tmp/mech-nbody-plot-runtime/bin/python3 -B -u guarded_prepare_v4.py --prepare --proposal-sha256 4e4e45bc06660b891ed1fbbd0b0d09a1ff744513a0a6af0a4d9720cedfa3487b\n44652  1058 01:02:43   0:00.06   0.0  30608 Ss   /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u benchmarks/clbg/crystal-comparison/20261012/guarded_prepare_v6.py --run --proposal-file benchmarks/clbg/crystal-comparison/20261012/proposals/private-input-archive-filter-v6.json --proposal-sha256 1c319443c3948709eeadc05526ad3244d785c0ce99cc724c8a6a025868b5ac1c --revision private-input-archive-filter-v6\n44704  1058 01:02:33   0:00.04   0.0  22912 Ss   /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u benchmarks/clbg/crystal-comparison/20261012/source-counts/replay_sources.py --fixture-receipt benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-18/fixture-receipt.json --output benchmarks/clbg/crystal-comparison/20261012/source-counts/boundary-audit-18-source-proposals-v1.json\n45366  1058    59:49   0:00.03   0.0  22560 Ss   /tmp/mech-nbody-plot-runtime/bin/python3 -B -u reconcile_full_v2.py --benchmark regexredux --output reconciliation/regexredux-three-full-samples-v2.json\n45394     1    59:48   0:00.06   0.0  30464 Ss   /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/guarded_prepare_v6.py --run --proposal-file /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/proposals/private-v6.json --proposal-sha256 ecf8bf803cfae8860309447db518174fc4d991f10bfc5d38cc77c8fb8e246cde --revision private-v6\n45441     1    59:44   0:00.06   0.0  30320 Ss   /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u -B /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/guarded_prepare_v5.py --run --proposal-file /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/proposals/private-v5.json --proposal-sha256 90cb7f87e43ae7f54d68501eab1daebdede78d856ce5564a8b9077a0c5ac57aa --revision private-v5\n46330     1    56:26   0:00.04   0.0  21504 Ss   /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-proposal-v1/jobs/fixtures-v1/worker.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-proposal-v1/jobs/fixtures-v1\n47063     1    54:00   0:00.07   0.0  20704 Ss   /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/work-full-v1/await_qualification.py --job /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/jobs/private-v6-work-seal\n56954     1    24:42   0:00.04   0.0  21744 Ss   /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-19/worker.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-19\n57083     1    24:22   0:00.06   0.0  30384 Ss   /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u -B /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/private-v1/guarded_prepare.py --seal --proposal-file /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/proposals/private-v1.json\n57320  1058    22:49   0:00.04   0.0  23008 Ss   /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u review_pending_minima_v1.py --output pending-minima-source-reconciliation-v1.json\n62772  1058    01:41   0:00.05   0.0  28480 Ss   /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/controller.py --seal\n",
+  "live_processes": "See latest_live_native_observation and durable_jobs; old raw process listing retained as historical_live_processes."
 }

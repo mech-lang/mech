@@ -1,0 +1,168 @@
+{
+  "status": "symbol-availability-inventory-awaiting-route-and-loaded-address-review",
+  "started_at": "2026-10-13T01:18:26.133002+00:00",
+  "common_timing_mutex": "/tmp/mech-clbg-timing.lock",
+  "exclusive_mutex_held": true,
+  "mutex_inode": 79859134,
+  "actual_julia_processes": 0,
+  "builds": 0,
+  "benchmark_runs": 0,
+  "runtime_aot_proven": false,
+  "chart_admission": false,
+  "automatic_retry": false,
+  "loaded_image_addresses_resolved": false,
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/proposals/private-v2.json": "aacefa87b453aafa39ae30b3cb8a78324b5ad7dceb28dad9a7c1f8ffa35990f1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/private-v1/guarded_prepare.py": "78b9f2870e0627b2aa6cc87ddcbd9ba54c1581ef7f28392f1859b79509dff9d4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/inspect_runtime_symbols_v1.py": "c14f63cc10b0e0be5287bce6ed80509a12f442885d3e95038c7c78649228e83c",
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/bin/python3.14": "e401ac7a95cda75dee34a0cfe1e4faf0a6df1a501cf67887f177fb78cd4eb60a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining_owner.py": "55581d56609803243b3be264e6a2e37229be06789c22788bbf8cdb6ff6828544",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run.py": "5b2a038cfae4112e9e2eee79c3cd57ccc6a1521812828c47bf28986d6a8e139b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/prepare.py": "27fcf050ed21db40e747f2e8801ca6f227d82f1ea98f8592bba7b10a768109e5",
+    "/usr/bin/xcrun": "b3f741e4a6af192170bbb662221163e730870944b8ad29bfac455241789b8152",
+    "/usr/bin/lipo": "3e7d30871a9740446f33a907b14d28f10ebe6d4e1c146a4c0788308f573a6609",
+    "/usr/bin/otool": "3e7d30871a9740446f33a907b14d28f10ebe6d4e1c146a4c0788308f573a6609",
+    "/Library/Developer/CommandLineTools/usr/bin/nm": "780e38d4b5453d3857806f30dd148112105455bf1ab11f5520954378ee1facb1",
+    "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/libjulia.1.13.1.dylib": "459753693d70784e22bf5b7a88013b78116bbe8037af129aa49fe7be55e31289",
+    "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-internal.1.13.1.dylib": "aaf25ba7ac705b5e0d564e6942da9d158bf59cf387fa9d5dca097a254764d816",
+    "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-codegen.1.13.1.dylib": "030b316273f4b3c0ecf285e866a0a9653f37471f57e3d51be7476154f6aa9781",
+    "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/sys.dylib": "d70323d971242ed1a9b417e2683bbf5d81f6c525cc7207610354c6ed54a1b1e9"
+  },
+  "images": [
+    {
+      "image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/libjulia.1.13.1.dylib",
+      "sha256": "459753693d70784e22bf5b7a88013b78116bbe8037af129aa49fe7be55e31289",
+      "raw_symbols": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbols-v1/images/libjulia.1.13.1/symbols.stdout",
+      "raw_symbols_sha256": "e2e8fa392d913212432dd1bf24a1708874eeecf0121f037ef1c09cf73e0f9033"
+    },
+    {
+      "image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-internal.1.13.1.dylib",
+      "sha256": "aaf25ba7ac705b5e0d564e6942da9d158bf59cf387fa9d5dca097a254764d816",
+      "raw_symbols": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbols-v1/images/libjulia-internal.1.13.1/symbols.stdout",
+      "raw_symbols_sha256": "93926dcd6ba80d9bd4b7eb4ccc51149472f8b3d2468660693c6659c971e6a3e6"
+    },
+    {
+      "image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-codegen.1.13.1.dylib",
+      "sha256": "030b316273f4b3c0ecf285e866a0a9653f37471f57e3d51be7476154f6aa9781",
+      "raw_symbols": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbols-v1/images/libjulia-codegen.1.13.1/symbols.stdout",
+      "raw_symbols_sha256": "14dad26f4b982206c3c3a9a6a07cb4d033a71058e9d2ef1850deccde4aca25da"
+    },
+    {
+      "image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/sys.dylib",
+      "sha256": "d70323d971242ed1a9b417e2683bbf5d81f6c525cc7207610354c6ed54a1b1e9",
+      "raw_symbols": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbols-v1/images/sys/symbols.stdout",
+      "raw_symbols_sha256": "1033181b9d215a1c04d7190ddb9dbb91d773ddeb613d78255382b0cb713a183f"
+    }
+  ],
+  "hooks": {
+    "jl_fptr_interpret_call": [
+      {
+        "image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-internal.1.13.1.dylib",
+        "image_sha256": "aaf25ba7ac705b5e0d564e6942da9d158bf59cf387fa9d5dca097a254764d816",
+        "linkage_name": "_jl_fptr_interpret_call",
+        "nm_type": "t",
+        "file_symbol_value": "000000000003f1f8",
+        "raw_line": "000000000003f1f8 t _jl_fptr_interpret_call",
+        "source_route_review_pending": true
+      }
+    ],
+    "jl_interpret_opaque_closure": [
+      {
+        "image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-internal.1.13.1.dylib",
+        "image_sha256": "aaf25ba7ac705b5e0d564e6942da9d158bf59cf387fa9d5dca097a254764d816",
+        "linkage_name": "_jl_interpret_opaque_closure",
+        "nm_type": "t",
+        "file_symbol_value": "000000000003fe10",
+        "raw_line": "000000000003fe10 t _jl_interpret_opaque_closure",
+        "source_route_review_pending": true
+      }
+    ],
+    "jl_interpret_toplevel_thunk": [
+      {
+        "image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-internal.1.13.1.dylib",
+        "image_sha256": "aaf25ba7ac705b5e0d564e6942da9d158bf59cf387fa9d5dca097a254764d816",
+        "linkage_name": "_jl_interpret_toplevel_thunk",
+        "nm_type": "t",
+        "file_symbol_value": "0000000000040054",
+        "raw_line": "0000000000040054 t _jl_interpret_toplevel_thunk",
+        "source_route_review_pending": true
+      }
+    ],
+    "jl_interpret_toplevel_expr_in": [
+      {
+        "image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-internal.1.13.1.dylib",
+        "image_sha256": "aaf25ba7ac705b5e0d564e6942da9d158bf59cf387fa9d5dca097a254764d816",
+        "linkage_name": "_jl_interpret_toplevel_expr_in",
+        "nm_type": "t",
+        "file_symbol_value": "000000000004018c",
+        "raw_line": "000000000004018c t _jl_interpret_toplevel_expr_in",
+        "source_route_review_pending": true
+      }
+    ],
+    "jl_emit_codeinst_to_jit": [
+      {
+        "image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/libjulia.1.13.1.dylib",
+        "image_sha256": "459753693d70784e22bf5b7a88013b78116bbe8037af129aa49fe7be55e31289",
+        "linkage_name": "_jl_emit_codeinst_to_jit",
+        "nm_type": "T",
+        "file_symbol_value": "00000000000026d8",
+        "raw_line": "00000000000026d8 T _jl_emit_codeinst_to_jit",
+        "source_route_review_pending": true
+      }
+    ],
+    "jl_generate_fptr_for_unspecialized": [
+      {
+        "image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/libjulia.1.13.1.dylib",
+        "image_sha256": "459753693d70784e22bf5b7a88013b78116bbe8037af129aa49fe7be55e31289",
+        "linkage_name": "_jl_generate_fptr_for_unspecialized",
+        "nm_type": "T",
+        "file_symbol_value": "0000000000002798",
+        "raw_line": "0000000000002798 T _jl_generate_fptr_for_unspecialized",
+        "source_route_review_pending": true
+      }
+    ],
+    "jl_jit_abi_converter_impl": [
+      {
+        "image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-codegen.1.13.1.dylib",
+        "image_sha256": "030b316273f4b3c0ecf285e866a0a9653f37471f57e3d51be7476154f6aa9781",
+        "linkage_name": "_jl_jit_abi_converter_impl",
+        "nm_type": "T",
+        "file_symbol_value": "0000000000088a2c",
+        "raw_line": "0000000000088a2c T _jl_jit_abi_converter_impl",
+        "source_route_review_pending": true
+      }
+    ],
+    "JuliaOJIT::addModule": [
+      {
+        "image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-codegen.1.13.1.dylib",
+        "image_sha256": "030b316273f4b3c0ecf285e866a0a9653f37471f57e3d51be7476154f6aa9781",
+        "linkage_name": "__ZN9JuliaOJIT9addModuleEN4llvm3orc16ThreadSafeModuleE",
+        "nm_type": "t",
+        "file_symbol_value": "0000000000089654",
+        "raw_line": "0000000000089654 t __ZN9JuliaOJIT9addModuleEN4llvm3orc16ThreadSafeModuleE",
+        "source_route_review_pending": true
+      },
+      {
+        "image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-codegen.1.13.1.dylib",
+        "image_sha256": "030b316273f4b3c0ecf285e866a0a9653f37471f57e3d51be7476154f6aa9781",
+        "linkage_name": "__ZN9JuliaOJIT9addModuleEN4llvm3orc16ThreadSafeModuleE.cold.1",
+        "nm_type": "t",
+        "file_symbol_value": "000000000011f984",
+        "raw_line": "000000000011f984 t __ZN9JuliaOJIT9addModuleEN4llvm3orc16ThreadSafeModuleE.cold.1",
+        "source_route_review_pending": true
+      }
+    ]
+  },
+  "unavailable_hooks": [],
+  "pins_unchanged_at_end": true,
+  "actual_inspection_tools": "xcrun/nm/lipo/otool",
+  "runtime_version": "directory/version-labelled only; actual stored version receipt review pending",
+  "required_next": [
+    "tagged route and mangled overload review",
+    "actual loaded image/address resolution",
+    "observer installed before initialization across all threads",
+    "missing-native canary rejection",
+    "actual library/module-context and source coverage review"
+  ],
+  "finished_at": "2026-10-13T01:18:28.219546+00:00"
+}

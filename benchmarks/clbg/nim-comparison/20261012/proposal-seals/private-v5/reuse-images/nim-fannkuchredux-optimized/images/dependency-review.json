@@ -1,0 +1,24 @@
+{
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v4/bin/nim-fannkuchredux-optimized",
+  "architectures": [
+    "arm64"
+  ],
+  "dependencies": [
+    {
+      "install_name": "/opt/homebrew/opt/pcre/lib/libpcre.1.dylib",
+      "lookup_path": "/opt/homebrew/opt/pcre/lib/libpcre.1.dylib",
+      "path": "/opt/homebrew/Cellar/pcre/8.45/lib/libpcre.1.dylib",
+      "sha256": "fa6189ca7f9be97b18a9868806c8dfa5ff655c61f8985f6810f25bb6ae9acd10"
+    },
+    {
+      "install_name": "/opt/homebrew/opt/gmp/lib/libgmp.10.dylib",
+      "lookup_path": "/opt/homebrew/opt/gmp/lib/libgmp.10.dylib",
+      "path": "/opt/homebrew/Cellar/gmp/6.3.0/lib/libgmp.10.dylib",
+      "sha256": "571ffb9eb5b5110cda32f62197c1f039e5627d66524ba47bb0774eca184532b9"
+    },
+    {
+      "install_name": "/usr/lib/libSystem.B.dylib",
+      "scope": "OS-image-not-hashed"
+    }
+  ]
+}

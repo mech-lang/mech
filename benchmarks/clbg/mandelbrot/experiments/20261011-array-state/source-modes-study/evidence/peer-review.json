@@ -1,0 +1,42 @@
+{
+  "status": "approved",
+  "received_at": "2026-10-12T03:47:13.458291+00:00",
+  "reviewer": "/root/application_state_fix",
+  "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+  "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/full-study/manifest.json",
+  "manifest_sha256": "fbffba7b5674e889ac9e5088bbb2e2d8499df41f5d9b4c677be38d831091680f",
+  "runner_sha256": "9f046b2d6bf1c1ae104271d242817aa334cccb7f57913b86d32243fefdfa185d",
+  "compiler_manifest_sha256": "ac5758cd755a4e2d964ac89c67d3bb95a3bf99618bbb667100a1fef745163698",
+  "qualification_sha256": "d11303df3ccb908fbd35accb79d8b667e3d4aea3c3dfa69902a392591c037c79",
+  "driver_sha256": "9e8d1360d80a6570327329b6eef2cee905b6972bd3f7909e51185f3913694dbc",
+  "independently_verified_pin_count": 1642,
+  "verification": {
+    "compiler_source_lineage_unchanged": true,
+    "application_source_sha256": "433e116691eed736b3152d42f51b0a642b46d52a39f07e8f97e5d4aa83f58031",
+    "sources": {
+      "11": "4e4b881e9c2368ba9ddfcbd2b8df49f78e6fd759833b26e7a10374b432de7b3a",
+      "16": "baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde"
+    },
+    "source_flags": {
+      "11": [
+        "--scalar"
+      ],
+      "16": [
+        "--fp-contract-loop"
+      ]
+    },
+    "worker_cap": 8,
+    "exact_small_pbms": 96,
+    "never_chart_n65_supervisor_probes": 6,
+    "timing_fixtures": 6,
+    "profiles": 6,
+    "samples_per_profile": 3,
+    "full_size": 16000,
+    "unchanged_same_source_aot_controls": true,
+    "native_pgid_mutex_cleanup_resource_output_gates": true,
+    "jit_and_aot_timing": "whole-process elapsed",
+    "interpreted_timing": "loaded kernel_seconds including PBM write/flush; preparation and wall retained",
+    "old_mode_samples_aliased": false
+  },
+  "raw_approval_message": "APPROVED after one independent locked verification: exact source-mode manifest SHA fbffba7b5674e889ac9e5088bbb2e2d8499df41f5d9b4c677be38d831091680f. All1642 pins match; runner9f046b2d6bf1c1ae104271d242817aa334cccb7f57913b86d32243fefdfa185d; compiler-manifestac5758cd755a4e2d964ac89c67d3bb95a3bf99618bbb667100a1fef745163698; qualificationd11303df3ccb908fbd35accb79d8b667e3d4aea3c3dfa69902a392591c037c79; driver9e8d1360d80a6570327329b6eef2cee905b6972bd3f7909e51185f3913694dbc. Verified application433repair, unchanged exact11/16sources and same-source AOT controls,96exactPBMs/six N65 sampler gates/six timing fixtures, eight-worker environment, three actual N16000 per six profiles, JIT/AOT wall versus interpreted kernel with prepare/wall retained, full output gates, and no old-mode aliases/samples. Root reconfirmed conditional launch authorization; you may use the existing guarded --detach command with exactly fbffba7b... and send root durable supervisor/launch/log/report receipts."
+}

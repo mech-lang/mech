@@ -1,0 +1,60 @@
+{
+  "key": "spectralnorm:mech-algebraic-strict",
+  "id": "mech-algebraic-strict",
+  "benchmark": "spectralnorm",
+  "language": "mech",
+  "source_sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/explicit-f64-v5/.build/strict/target/release/mech-interpreter-integrated",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/sources/spectralnorm-four-functions.mec",
+    "resident",
+    "7"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "runtime_environment": {
+    "MECH_NUMERIC_UNROLL": "4",
+    "MECH_NUMERIC_ROWS": "4",
+    "MECH_NUMERIC_INDUCTION": "0",
+    "MECH_ARRAY_GRAIN": "8",
+    "MECH_SEQUENCE_PARTITIONS": "8",
+    "RAYON_NUM_THREADS": "8",
+    "LC_ALL": "C",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"c6d8d20cb3e6395b2abc32ea3cb74bc6b4f6d4303bf4fead54500c99674c1c4b\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/explicit-f64-v5/.build/strict/target/release/mech-interpreter-integrated\", \"{source}\", \"resident\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"LC_ALL\": \"C\", \"MECH_ARRAY_GRAIN\": \"8\", \"MECH_NUMERIC_INDUCTION\": \"0\", \"MECH_NUMERIC_ROWS\": \"4\", \"MECH_NUMERIC_UNROLL\": \"4\", \"MECH_SEQUENCE_PARTITIONS\": \"8\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290\", \"support\": {}}",
+  "started_at": "2026-10-12T23:14:41.056554+00:00",
+  "workload_n": 7,
+  "full_workload": false,
+  "timeout_seconds": 120,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.132187,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 12,
+  "stdout_sha256": "b4e151e797c3627d7630290b0fedbd4a6f5baf398e9e620ac3074170939a6409",
+  "validation": {
+    "reference_match": true,
+    "bytes": 12,
+    "sha256": "b4e151e797c3627d7630290b0fedbd4a6f5baf398e9e620ac3074170939a6409"
+  },
+  "finished_at": "2026-10-12T23:14:41.408118+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true
+}

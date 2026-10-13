@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/Library/Developer/CommandLineTools/usr/bin/nm",
+    "-a",
+    "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/libjulia.1.13.1.dylib"
+  ],
+  "started_at": "2026-10-13T01:18:26.463107+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 60,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 10128,
+  "identity": {
+    "pid": 10128,
+    "process_listing": "Mon Oct 12 21:18:26 2026     /Library/Developer/CommandLineTools/usr/bin/nm -a /private/tmp/mech-clbg-julia/julia-1.13.1/lib/libjulia.1.13.1.dylib"
+  }
+}

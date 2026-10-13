@@ -1,0 +1,10 @@
+Building builtin -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v3/release/0.74.0-95ad180/packages/builtin
+Building /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v3/source-snapshot/sources/knucleotide/compact -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v3/source-snapshot/sources/knucleotide/compact
+Error:
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v3/source-snapshot/sources/knucleotide/compact/main.pony:80:70: Operator precedence is not supported. Parentheses required.
+    _last = if sequence.size() >= width then sequence.size() - width + 1 else 0 end
+                                                                     ^
+Error:
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v3/source-snapshot/sources/knucleotide/compact/main.pony:156:52: Operator precedence is not supported. Parentheses required.
+        let percentage = 100.0 * entry.count.f64() / total.f64()
+                                                   ^

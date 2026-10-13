@@ -20,6 +20,9 @@ All helpers are counted application source. The general runtime array
 operations are unmodified. There is no native benchmark kernel, analytic
 interior test, input cache, approximate floating point, or skipped requested
 pixel. The application operates on one row at a time with linear storage.
+This source draft is pending validation. Its final evidence, source audit and
+manifest are replaced atomically while the validator holds the shared lock;
+no completed candidate metadata is published before all checks pass.
 
 Preparation and bounded validation are isolated in this directory. Every
 executable probe and independent reference calculation must acquire

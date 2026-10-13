@@ -1,0 +1,14 @@
+test_import_preserves_old_source_samples_and_selects_only_new_profiles (test_mandelbrot_modes_data.AdmissionTests.test_import_preserves_old_source_samples_and_selects_only_new_profiles) ... ok
+test_loaded_timer_cannot_replace_fresh_jit_elapsed (test_mandelbrot_modes_data.AdmissionTests.test_loaded_timer_cannot_replace_fresh_jit_elapsed) ... ok
+test_missing_duplicate_and_forged_summary_are_rejected (test_mandelbrot_modes_data.AdmissionTests.test_missing_duplicate_and_forged_summary_are_rejected) ... ok
+test_missing_duplicate_forged_and_impossible_timing_records_fail (test_mandelbrot_modes_data.AdmissionTests.test_missing_duplicate_forged_and_impossible_timing_records_fail) ... ok
+test_resident_preparation_cannot_be_added_to_score (test_mandelbrot_modes_data.AdmissionTests.test_resident_preparation_cannot_be_added_to_score) ... ok
+test_resource_output_status_and_cleanup_flags_do_not_admit_failure (test_mandelbrot_modes_data.AdmissionTests.test_resource_output_status_and_cleanup_flags_do_not_admit_failure) ... ok
+test_running_study_contributes_no_provenance_or_samples (test_mandelbrot_modes_data.AdmissionTests.test_running_study_contributes_no_provenance_or_samples) ... ok
+test_scores_reconcile_with_mode_boundary_and_complete_rounds (test_mandelbrot_modes_data.AdmissionTests.test_scores_reconcile_with_mode_boundary_and_complete_rounds) ... ok
+test_work_limit_and_old_source_cannot_be_consistently_relabelled (test_mandelbrot_modes_data.AdmissionTests.test_work_limit_and_old_source_cannot_be_consistently_relabelled) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.031s
+
+OK

@@ -1,0 +1,48 @@
+WAIT common mutex: Clojure exact work-qualified full manifests
+{
+  "index": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/studies/full-v1/index.json",
+  "sha256": "7391f432d86a78b0995a1895ff828930642c2eb82f4dbcb36ef86fe97c75b6fd",
+  "benchmarks": {
+    "regexredux": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/studies/full-v1/regexredux/manifest.json",
+      "sha256": "95cb3fc33951312600da7afeee6bd9ac43f7f502a847b32b0eb743d7127e5669"
+    },
+    "revcomp": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/studies/full-v1/revcomp/manifest.json",
+      "sha256": "6c5f98c2d709c8b731086d6a678b2a331c66e5cc08110aefb846eff2a03dd5ca"
+    },
+    "pidigits": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/studies/full-v1/pidigits/manifest.json",
+      "sha256": "589071893e979dd07545c036b4e03827ab3705794292d213b3883c490b4ce2a9"
+    },
+    "spectralnorm": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/studies/full-v1/spectralnorm/manifest.json",
+      "sha256": "640fe44d539f27c11c395b387d37c98cea1ac83de6e125ca0a9382255a964cb7"
+    },
+    "mandelbrot": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/studies/full-v1/mandelbrot/manifest.json",
+      "sha256": "c1c58cca1a5816e89c8b3d857d4322193567e3582be238593005c101150f987b"
+    },
+    "fasta": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/studies/full-v1/fasta/manifest.json",
+      "sha256": "131c6d048da05832eaa53fedb3b467b57eb6e6bbe5b25d2838b0c9a8e85ff572"
+    },
+    "knucleotide": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/studies/full-v1/knucleotide/manifest.json",
+      "sha256": "d574e81368d72793262e7439cb15a3de0fadfd4c971d26a40ea0ff781c3674a2"
+    },
+    "binarytrees": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/studies/full-v1/binarytrees/manifest.json",
+      "sha256": "ad97d7846ee7afd64ea07205c112035fe2552a8f59ac1b8bd7c591ea160b2703"
+    },
+    "nbody": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/studies/full-v1/nbody/manifest.json",
+      "sha256": "371d638cf283a8a9dc448fc6a106e0f7fdc794acd51d239ec643d3b564e8d75d"
+    },
+    "fannkuchredux": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/studies/full-v1/fannkuchredux/manifest.json",
+      "sha256": "8e4d9e1a552a961dd4fd4545c736b8a14c6b253d7b44f1d88575bed52e3fc874"
+    }
+  },
+  "full_processes": 90
+}

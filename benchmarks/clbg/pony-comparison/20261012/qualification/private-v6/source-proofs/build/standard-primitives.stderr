@@ -1,0 +1,48 @@
+Building builtin -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/builtin
+Building /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v6/source-snapshot/support/standard_primitives -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v6/source-snapshot/support/standard_primitives
+Building collections -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/collections
+Building pony_test -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/pony_test
+Building random -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/random
+Building time -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/time
+Building collections/persistent -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/collections/persistent
+Building itertools -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/itertools
+Building files -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/files
+Building buffered -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/buffered
+Building term -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/term
+Building promises -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/promises
+Building strings -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/strings
+Building constrained_types -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/constrained_types
+Building signals -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/signals
+Building capsicum -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/capsicum
+Building format -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/release/0.74.0-95ad180/packages/format
+Building gmp -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/gmp4pony/gmp4pony-b14db4ba347f6a2b840f135e1602e19f85625c39/gmp
+Building ponytest -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v6/source-snapshot/support-v2/ponytest
+Building regex -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/regex/regex-589eb008db250aab17d4c073a41c5562ac5b8dc7/regex
+Error:
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v6/source-snapshot/support/standard_primitives/main.pony:80:33: argument not assignable to parameter
+      let second = tags.replace(first, "|" where global = true)?
+                                ^
+    Info:
+    /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v6/source-snapshot/support/standard_primitives/main.pony:80:33: argument type is String iso
+          let second = tags.replace(first, "|" where global = true)?
+                                    ^
+    /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/regex/regex-589eb008db250aab17d4c073a41c5562ac5b8dc7/regex/regex.pony:129:5: parameter type requires (String val^ | Array[U8 val] val^)
+        subject: ByteSeq,
+        ^
+    /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/regex/regex-589eb008db250aab17d4c073a41c5562ac5b8dc7/regex/regex.pony:128:48: String iso is not a subtype of String val^: iso is not a subcap of val^
+      fun replace[A: (Seq[U8] iso & ByteSeq iso) = String iso](
+                                                   ^
+    /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/regex/regex-589eb008db250aab17d4c073a41c5562ac5b8dc7/regex/regex.pony:128:55: this would be possible if the subcap were more ephemeral. Perhaps you meant to consume this variable
+      fun replace[A: (Seq[U8] iso & ByteSeq iso) = String iso](
+                                                          ^
+    /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/regex/regex-589eb008db250aab17d4c073a41c5562ac5b8dc7/regex/regex.pony:128:48: String iso is not a subtype of Array[U8 val] val^
+      fun replace[A: (Seq[U8] iso & ByteSeq iso) = String iso](
+                                                   ^
+    /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/regex/regex-589eb008db250aab17d4c073a41c5562ac5b8dc7/regex/regex.pony:128:48: String iso is not a subtype of any element of (String val^ | Array[U8 val] val^)
+      fun replace[A: (Seq[U8] iso & ByteSeq iso) = String iso](
+                                                   ^
+Error:
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v6/source-snapshot/support/standard_primitives/main.pony:81:10: cannot infer type of second
+
+      if second != "t||" then error end
+         ^

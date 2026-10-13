@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/usr/bin/otool",
+    "-L",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v3/release/0.74.0-95ad180/bin/ponyc"
+  ],
+  "started_at": "2026-10-12T17:16:54.305523+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 91937,
+  "identity": {
+    "pid": 91937,
+    "process_listing": "Mon Oct 12 13:16:54 2026     /Library/Developer/CommandLineTools/usr/bin/otool -L /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v3/release/0.74.0-95ad180/bin/ponyc"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-12T17:16:54.330289+00:00",
+  "final_exit_status": 0
+}

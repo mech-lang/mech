@@ -1,0 +1,1306 @@
+{
+  "status": "complete",
+  "started_at": "2026-10-12T23:36:41.358706+00:00",
+  "benchmark": "knucleotide",
+  "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/knucleotide/manifest.json",
+  "manifest_sha256": "c98c61c4487b3419fcf528554c8dfd7a0c0145c6fb0e9230350f831a80cd4a9b",
+  "sample_count": 3,
+  "profiles": {
+    "crystal-knucleotide-compact": {
+      "id": "crystal-knucleotide-compact",
+      "benchmark": "knucleotide",
+      "variant": "compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/source-snapshot/sources/knucleotide/compact.cr",
+      "status": "authored-unbuilt-unqualified",
+      "source_sha256": "62ce2f52527642f1570c822233e13794011a05f3c9784fd13f5bd2b257448a99",
+      "loc": null,
+      "canonical_loc_status": "pending common normalization audit",
+      "upstream_provenance": {
+        "repository": "https://github.com/kostya/crystal-benchmarks-game",
+        "commit": "aaf7bd44118889605943df3200b7c9b0c6af6510",
+        "path": "knucleotide/knucleotide.cr",
+        "kind": "locally-adapted-published-algorithm; original remains immutable"
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "required_work_review": "pending bounded native qualification and independent traces",
+        "required_work": {
+          "growable_maps": 7,
+          "widths": [
+            1,
+            2,
+            3,
+            4,
+            6,
+            12,
+            18
+          ],
+          "all_overlapping_windows": true,
+          "first_two_are_maps": true,
+          "three_record_only": true,
+          "comments_cr_lf_eof": true
+        }
+      },
+      "required_work": {
+        "growable_maps": 7,
+        "widths": [
+          1,
+          2,
+          3,
+          4,
+          6,
+          12,
+          18
+        ],
+        "all_overlapping_windows": true,
+        "first_two_are_maps": true,
+        "three_record_only": true,
+        "comments_cr_lf_eof": true
+      },
+      "maximum_workers": 1,
+      "technique": "Seven full growable string-key maps, all windows including 1/2; exact target parser and deterministic frequencies.",
+      "compiler_flags": [
+        "--release",
+        "--no-debug",
+        "--mcpu",
+        "native"
+      ],
+      "timing_samples": [],
+      "chart_eligible": false,
+      "key": "knucleotide:crystal-knucleotide-compact",
+      "language": "crystal",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-knucleotide-compact",
+      "binary_sha256": "ff86aa2891a00c0013dec8c3d1ca4d414812641b86dc47388c28937deef0ec9a",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-knucleotide-compact",
+        "{n}"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012",
+      "runtime_environment": {
+        "CRYSTAL_WORKERS": "8",
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "qualification_origin": "exact-unchanged-layout-v2-binary-and-records",
+      "prior_bounded_records": [
+        {
+          "case": "arbitrary-widths",
+          "prior_attempt": 111,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/111-crystal-knucleotide-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/111-crystal-knucleotide-compact.supervisor.json",
+          "stdout_sha256": "78e220a584e4ea619d9ca9b6feff7354cd4950c018b840ffd5f74287117dd930"
+        },
+        {
+          "case": "crlf-comment-eof",
+          "prior_attempt": 109,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/109-crystal-knucleotide-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/109-crystal-knucleotide-compact.supervisor.json",
+          "stdout_sha256": "ee9f7a7ec3053c9fbd8dbd27889682be64d2fd6d1e4354295a1395cac916c6ed"
+        },
+        {
+          "case": "embedded-header-comment",
+          "prior_attempt": 110,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/110-crystal-knucleotide-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/110-crystal-knucleotide-compact.supervisor.json",
+          "stdout_sha256": "04324f010a0d6307b059dc1ce2e4cba03d304f9fa9c24f505c672a1e0dc68d19"
+        },
+        {
+          "case": "empty",
+          "prior_attempt": 107,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/107-crystal-knucleotide-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/107-crystal-knucleotide-compact.supervisor.json",
+          "stdout_sha256": "8c9dbdafde27be96f0413a3be0497ccc04c7c54bbfcddf106b1fa39ed7a1682b"
+        },
+        {
+          "case": "header-eof",
+          "prior_attempt": 112,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/112-crystal-knucleotide-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/112-crystal-knucleotide-compact.supervisor.json",
+          "stdout_sha256": "8c9dbdafde27be96f0413a3be0497ccc04c7c54bbfcddf106b1fa39ed7a1682b"
+        },
+        {
+          "case": "missing",
+          "prior_attempt": 108,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/108-crystal-knucleotide-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/108-crystal-knucleotide-compact.supervisor.json",
+          "stdout_sha256": "8c9dbdafde27be96f0413a3be0497ccc04c7c54bbfcddf106b1fa39ed7a1682b"
+        },
+        {
+          "case": "one-base",
+          "prior_attempt": 106,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/106-crystal-knucleotide-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/106-crystal-knucleotide-compact.supervisor.json",
+          "stdout_sha256": "2f77c6365af9b12e590731f5b7f46f45d295fe12a59487dd0f2cd85ab84b15e4"
+        },
+        {
+          "case": "ties-and-stop",
+          "prior_attempt": 105,
+          "raw_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/105-crystal-knucleotide-compact.json",
+          "supervisor_result": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/attempts/105-crystal-knucleotide-compact.supervisor.json",
+          "stdout_sha256": "9de07a431d2c38e34d24a86542d28efb5badc944dee1abfe1c8830bd0aa82ae7"
+        }
+      ],
+      "new_native_cases": 3,
+      "producer_loc": null,
+      "loc_status": "pending separate immutable canonical LOC overlay",
+      "eligible_for_chart": false,
+      "chart_admission": false,
+      "role": "Qualified complete Crystal compact application",
+      "required_work_review": {
+        "status": "passed",
+        "method": "Complete source review plus independent bounded outputs and actual primitive/map/division/node traces",
+        "source_sha256": "62ce2f52527642f1570c822233e13794011a05f3c9784fd13f5bd2b257448a99",
+        "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/pipeline-v2/REQUIRED_WORK_REVIEW.md",
+        "qualification": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-input-archive-filter-v6/report.json"
+      },
+      "samples_seconds": [
+        24.877064166,
+        24.62756675,
+        24.807230625
+      ],
+      "sample_validation": [
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        }
+      ],
+      "attempts": [
+        1,
+        6,
+        8
+      ],
+      "measurement_status": "measured",
+      "median_seconds": 24.807230625,
+      "sample_stdev_seconds": 0.12871466636148574,
+      "time_x_mech": 46.520844534189415,
+      "matched_mech_control": "mech-aot-control",
+      "matched_mech_source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139"
+    },
+    "crystal-knucleotide-optimized": {
+      "id": "crystal-knucleotide-optimized",
+      "benchmark": "knucleotide",
+      "variant": "optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-input-archive-filter-v6/source-snapshot/sources/knucleotide/optimized.cr",
+      "status": "authored-unbuilt-unqualified",
+      "source_sha256": "6bd73c739483d4b0ebe50490e2a13264a1395fd2cfe9979ae2e5e229d255e6ca",
+      "loc": null,
+      "canonical_loc_status": "pending common normalization audit",
+      "upstream_provenance": {
+        "repository": "https://github.com/kostya/crystal-benchmarks-game",
+        "commit": "aaf7bd44118889605943df3200b7c9b0c6af6510",
+        "path": "knucleotide/knucleotide.cr",
+        "kind": "locally-adapted-published-algorithm; original remains immutable"
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "required_work_review": "pending bounded native qualification and independent traces",
+        "required_work": {
+          "growable_maps": 7,
+          "widths": [
+            1,
+            2,
+            3,
+            4,
+            6,
+            12,
+            18
+          ],
+          "all_overlapping_windows": true,
+          "first_two_are_maps": true,
+          "three_record_only": true,
+          "comments_cr_lf_eof": true
+        }
+      },
+      "required_work": {
+        "growable_maps": 7,
+        "widths": [
+          1,
+          2,
+          3,
+          4,
+          6,
+          12,
+          18
+        ],
+        "all_overlapping_windows": true,
+        "first_two_are_maps": true,
+        "three_record_only": true,
+        "comments_cr_lf_eof": true
+      },
+      "maximum_workers": 7,
+      "technique": "Seven ordinary growable rolling packed-key maps in capped standard fibers, all retained through parent output.",
+      "compiler_flags": [
+        "--release",
+        "--no-debug",
+        "--mcpu",
+        "native"
+      ],
+      "timing_samples": [],
+      "chart_eligible": false,
+      "key": "knucleotide:crystal-knucleotide-optimized",
+      "language": "crystal",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-input-archive-filter-v6/bin/crystal-knucleotide-optimized",
+      "binary_sha256": "dd2adb0f098685521a95397f78bf98dde3fbf49dce241ea2d877e3570efa1700",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-input-archive-filter-v6/bin/crystal-knucleotide-optimized",
+        "{n}"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "CRYSTAL_WORKERS": "8",
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "qualification_origin": "fresh-input-label-archive-filter-v6-build",
+      "new_native_cases": 11,
+      "producer_loc": null,
+      "loc_status": "pending separate immutable canonical LOC overlay",
+      "eligible_for_chart": false,
+      "chart_admission": false,
+      "role": "Qualified complete Crystal optimized application",
+      "required_work_review": {
+        "status": "passed",
+        "method": "Complete source review plus independent bounded outputs and actual primitive/map/division/node traces",
+        "source_sha256": "6bd73c739483d4b0ebe50490e2a13264a1395fd2cfe9979ae2e5e229d255e6ca",
+        "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/pipeline-v2/REQUIRED_WORK_REVIEW.md",
+        "qualification": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-input-archive-filter-v6/report.json"
+      },
+      "samples_seconds": [
+        3.619816834,
+        3.325530958,
+        3.324217875
+      ],
+      "sample_validation": [
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        }
+      ],
+      "attempts": [
+        2,
+        4,
+        9
+      ],
+      "measurement_status": "measured",
+      "median_seconds": 3.325530958,
+      "sample_stdev_seconds": 0.17028634979642177,
+      "time_x_mech": 6.236347419402926,
+      "matched_mech_control": "mech-aot-control",
+      "matched_mech_source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139"
+    },
+    "mech-aot-control": {
+      "id": "mech-aot-control",
+      "key": "knucleotide:crystal-full-study:mech-control",
+      "benchmark": "knucleotide",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide-compact.mec",
+      "source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-after",
+      "binary_sha256": "4a5abef421bcb5298edde84a61771bd540adb6da76a8310b1279766ab9d553cc",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-after"
+      ],
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4",
+        "MECH_SEQUENCE_NARROW": "1",
+        "MECH_SEQUENCE_PROFILE": "0",
+        "MECH_SEQUENCE_STD_MAP": "1"
+      },
+      "loc": null,
+      "published_chart_key": "knucleotide:mech-compact-final-std1-simd0-p4",
+      "previous_seconds": 0.51382825,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "All overlapping keys at all seven lengths perform a library hash-table entry lookup/update. No query-only search or indexed-count substitute. The runtime checks each merged histogram total against its window count.",
+        "full_work": {
+          "three_sequence_length": 125000000,
+          "window_lengths": [
+            1,
+            2,
+            3,
+            4,
+            6,
+            12,
+            18
+          ],
+          "hash_table_window_updates": 874999961
+        },
+        "evidence": [
+          {
+            "path": "knucleotide/knucleotide-compact.mec",
+            "sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139"
+          },
+          {
+            "path": "../../hosts/gpu/src/sequence/counts.rs",
+            "sha256": "a443af64d67364bf5862ea5372a3fb9315386cb0a6e0af4b1b96fd557fe2b171"
+          },
+          {
+            "path": "../../hosts/gpu/src/sequence/runtime.rs",
+            "sha256": "6614befd92d05ab1c2b9a24de63095836a653d2f2dc6fad632225298015050b4"
+          },
+          {
+            "path": "array-comparison/all-20261009/investigation/confirmation.json",
+            "sha256": "64f93e330f498a5f134d4bf25e785426a3c5bf8f583990f9d3d35e2ee4a13d73"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/knucleotide.html",
+        "native_benchmark_kernel": false
+      },
+      "control_for": "r",
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "producer_loc": 17,
+      "loc_status": "pending canonical count overlay",
+      "maximum_workers": 8,
+      "role": "Fresh unchanged current fastest Mech AOT source control",
+      "samples_seconds": [
+        0.533540917,
+        0.504753958,
+        0.533249791
+      ],
+      "sample_validation": [
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        }
+      ],
+      "attempts": [
+        3,
+        5,
+        7
+      ],
+      "measurement_status": "measured",
+      "median_seconds": 0.533249791,
+      "sample_stdev_seconds": 0.016536758354140653,
+      "time_x_mech": 1.0,
+      "matched_mech_control": "mech-aot-control",
+      "matched_mech_source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139"
+    }
+  },
+  "orders": [
+    {
+      "round": 1,
+      "profiles": [
+        "crystal-knucleotide-compact",
+        "crystal-knucleotide-optimized",
+        "mech-aot-control"
+      ]
+    },
+    {
+      "round": 2,
+      "profiles": [
+        "crystal-knucleotide-optimized",
+        "mech-aot-control",
+        "crystal-knucleotide-compact"
+      ]
+    },
+    {
+      "round": 3,
+      "profiles": [
+        "mech-aot-control",
+        "crystal-knucleotide-compact",
+        "crystal-knucleotide-optimized"
+      ]
+    }
+  ],
+  "attempts": [
+    {
+      "key": "knucleotide:crystal-knucleotide-compact",
+      "id": "crystal-knucleotide-compact",
+      "benchmark": "knucleotide",
+      "language": "crystal",
+      "source_sha256": "62ce2f52527642f1570c822233e13794011a05f3c9784fd13f5bd2b257448a99",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-knucleotide-compact",
+        "25000000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012",
+      "runtime_environment": {
+        "CRYSTAL_WORKERS": "8",
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"ff86aa2891a00c0013dec8c3d1ca4d414812641b86dc47388c28937deef0ec9a\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-knucleotide-compact\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012\", \"environment\": {\"CRYSTAL_WORKERS\": \"8\", \"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"62ce2f52527642f1570c822233e13794011a05f3c9784fd13f5bd2b257448a99\", \"support\": {}}",
+      "started_at": "2026-10-13T00:45:54.600342+00:00",
+      "workload_n": 25000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 24.877064166,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 1056304,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 259,
+      "stdout_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+      "validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T00:46:19.671497+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 1,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/knucleotide/attempts/001-crystal-knucleotide-compact.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 97712,
+        "pgid": 97712,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-knucleotide-compact",
+          "25000000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/knucleotide/attempts/001-crystal-knucleotide-compact.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "knucleotide:crystal-knucleotide-optimized",
+      "id": "crystal-knucleotide-optimized",
+      "benchmark": "knucleotide",
+      "language": "crystal",
+      "source_sha256": "6bd73c739483d4b0ebe50490e2a13264a1395fd2cfe9979ae2e5e229d255e6ca",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-input-archive-filter-v6/bin/crystal-knucleotide-optimized",
+        "25000000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "CRYSTAL_WORKERS": "8",
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"dd2adb0f098685521a95397f78bf98dde3fbf49dce241ea2d877e3570efa1700\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-input-archive-filter-v6/bin/crystal-knucleotide-optimized\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012\", \"environment\": {\"CRYSTAL_WORKERS\": \"8\", \"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"6bd73c739483d4b0ebe50490e2a13264a1395fd2cfe9979ae2e5e229d255e6ca\", \"support\": {}}",
+      "started_at": "2026-10-13T00:48:56.152872+00:00",
+      "workload_n": 25000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 3.619816834,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 994816,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 259,
+      "stdout_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+      "validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T00:48:59.975100+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 2,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/knucleotide/attempts/002-crystal-knucleotide-optimized.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 99054,
+        "pgid": 99054,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-input-archive-filter-v6/bin/crystal-knucleotide-optimized",
+          "25000000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/knucleotide/attempts/002-crystal-knucleotide-optimized.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "knucleotide:crystal-full-study:mech-control",
+      "id": "mech-aot-control",
+      "benchmark": "knucleotide",
+      "language": "mech",
+      "source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-after"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4",
+        "MECH_SEQUENCE_NARROW": "1",
+        "MECH_SEQUENCE_PROFILE": "0",
+        "MECH_SEQUENCE_STD_MAP": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"4a5abef421bcb5298edde84a61771bd540adb6da76a8310b1279766ab9d553cc\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-after\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"MECH_SEQUENCE_NARROW\": \"1\", \"MECH_SEQUENCE_PARTITIONS\": \"4\", \"MECH_SEQUENCE_PROFILE\": \"0\", \"MECH_SEQUENCE_STD_MAP\": \"1\"}, \"source_sha256\": \"3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139\", \"support\": {\"../../hosts/gpu/src/sequence/counts.rs\": \"a443af64d67364bf5862ea5372a3fb9315386cb0a6e0af4b1b96fd557fe2b171\", \"../../hosts/gpu/src/sequence/runtime.rs\": \"6614befd92d05ab1c2b9a24de63095836a653d2f2dc6fad632225298015050b4\", \"array-comparison/all-20261009/investigation/confirmation.json\": \"64f93e330f498a5f134d4bf25e785426a3c5bf8f583990f9d3d35e2ee4a13d73\", \"knucleotide/knucleotide-compact.mec\": \"3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139\"}}",
+      "started_at": "2026-10-13T01:02:39.274777+00:00",
+      "workload_n": 25000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.533540917,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 259,
+      "stdout_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+      "validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T01:02:40.022078+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 3,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/knucleotide/attempts/003-mech-aot-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 2997,
+        "pgid": 2997,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-after"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/knucleotide/attempts/003-mech-aot-control.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "knucleotide:crystal-knucleotide-optimized",
+      "id": "crystal-knucleotide-optimized",
+      "benchmark": "knucleotide",
+      "language": "crystal",
+      "source_sha256": "6bd73c739483d4b0ebe50490e2a13264a1395fd2cfe9979ae2e5e229d255e6ca",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-input-archive-filter-v6/bin/crystal-knucleotide-optimized",
+        "25000000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "CRYSTAL_WORKERS": "8",
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"dd2adb0f098685521a95397f78bf98dde3fbf49dce241ea2d877e3570efa1700\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-input-archive-filter-v6/bin/crystal-knucleotide-optimized\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012\", \"environment\": {\"CRYSTAL_WORKERS\": \"8\", \"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"6bd73c739483d4b0ebe50490e2a13264a1395fd2cfe9979ae2e5e229d255e6ca\", \"support\": {}}",
+      "started_at": "2026-10-13T01:17:27.827815+00:00",
+      "workload_n": 25000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 3.325530958,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 994832,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 259,
+      "stdout_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+      "validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T01:17:31.367571+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 4,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/knucleotide/attempts/004-crystal-knucleotide-optimized.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 9695,
+        "pgid": 9695,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-input-archive-filter-v6/bin/crystal-knucleotide-optimized",
+          "25000000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/knucleotide/attempts/004-crystal-knucleotide-optimized.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "knucleotide:crystal-full-study:mech-control",
+      "id": "mech-aot-control",
+      "benchmark": "knucleotide",
+      "language": "mech",
+      "source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-after"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4",
+        "MECH_SEQUENCE_NARROW": "1",
+        "MECH_SEQUENCE_PROFILE": "0",
+        "MECH_SEQUENCE_STD_MAP": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"4a5abef421bcb5298edde84a61771bd540adb6da76a8310b1279766ab9d553cc\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-after\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"MECH_SEQUENCE_NARROW\": \"1\", \"MECH_SEQUENCE_PARTITIONS\": \"4\", \"MECH_SEQUENCE_PROFILE\": \"0\", \"MECH_SEQUENCE_STD_MAP\": \"1\"}, \"source_sha256\": \"3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139\", \"support\": {\"../../hosts/gpu/src/sequence/counts.rs\": \"a443af64d67364bf5862ea5372a3fb9315386cb0a6e0af4b1b96fd557fe2b171\", \"../../hosts/gpu/src/sequence/runtime.rs\": \"6614befd92d05ab1c2b9a24de63095836a653d2f2dc6fad632225298015050b4\", \"array-comparison/all-20261009/investigation/confirmation.json\": \"64f93e330f498a5f134d4bf25e785426a3c5bf8f583990f9d3d35e2ee4a13d73\", \"knucleotide/knucleotide-compact.mec\": \"3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139\"}}",
+      "started_at": "2026-10-13T01:18:24.548512+00:00",
+      "workload_n": 25000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.504753958,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 259,
+      "stdout_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+      "validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T01:18:25.243879+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 5,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/knucleotide/attempts/005-mech-aot-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 10105,
+        "pgid": 10105,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-after"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/knucleotide/attempts/005-mech-aot-control.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "knucleotide:crystal-knucleotide-compact",
+      "id": "crystal-knucleotide-compact",
+      "benchmark": "knucleotide",
+      "language": "crystal",
+      "source_sha256": "62ce2f52527642f1570c822233e13794011a05f3c9784fd13f5bd2b257448a99",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-knucleotide-compact",
+        "25000000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012",
+      "runtime_environment": {
+        "CRYSTAL_WORKERS": "8",
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"ff86aa2891a00c0013dec8c3d1ca4d414812641b86dc47388c28937deef0ec9a\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-knucleotide-compact\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012\", \"environment\": {\"CRYSTAL_WORKERS\": \"8\", \"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"62ce2f52527642f1570c822233e13794011a05f3c9784fd13f5bd2b257448a99\", \"support\": {}}",
+      "started_at": "2026-10-13T01:21:18.097425+00:00",
+      "workload_n": 25000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 24.62756675,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 1056304,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 259,
+      "stdout_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+      "validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T01:21:42.946922+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 6,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/knucleotide/attempts/006-crystal-knucleotide-compact.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 10993,
+        "pgid": 10993,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-knucleotide-compact",
+          "25000000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/knucleotide/attempts/006-crystal-knucleotide-compact.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "knucleotide:crystal-full-study:mech-control",
+      "id": "mech-aot-control",
+      "benchmark": "knucleotide",
+      "language": "mech",
+      "source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-after"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4",
+        "MECH_SEQUENCE_NARROW": "1",
+        "MECH_SEQUENCE_PROFILE": "0",
+        "MECH_SEQUENCE_STD_MAP": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"4a5abef421bcb5298edde84a61771bd540adb6da76a8310b1279766ab9d553cc\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-after\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"MECH_SEQUENCE_NARROW\": \"1\", \"MECH_SEQUENCE_PARTITIONS\": \"4\", \"MECH_SEQUENCE_PROFILE\": \"0\", \"MECH_SEQUENCE_STD_MAP\": \"1\"}, \"source_sha256\": \"3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139\", \"support\": {\"../../hosts/gpu/src/sequence/counts.rs\": \"a443af64d67364bf5862ea5372a3fb9315386cb0a6e0af4b1b96fd557fe2b171\", \"../../hosts/gpu/src/sequence/runtime.rs\": \"6614befd92d05ab1c2b9a24de63095836a653d2f2dc6fad632225298015050b4\", \"array-comparison/all-20261009/investigation/confirmation.json\": \"64f93e330f498a5f134d4bf25e785426a3c5bf8f583990f9d3d35e2ee4a13d73\", \"knucleotide/knucleotide-compact.mec\": \"3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139\"}}",
+      "started_at": "2026-10-13T01:23:51.168840+00:00",
+      "workload_n": 25000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.533249791,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 259,
+      "stdout_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+      "validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T01:23:51.915912+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 7,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/knucleotide/attempts/007-mech-aot-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 11412,
+        "pgid": 11412,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-after"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/knucleotide/attempts/007-mech-aot-control.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "knucleotide:crystal-knucleotide-compact",
+      "id": "crystal-knucleotide-compact",
+      "benchmark": "knucleotide",
+      "language": "crystal",
+      "source_sha256": "62ce2f52527642f1570c822233e13794011a05f3c9784fd13f5bd2b257448a99",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-knucleotide-compact",
+        "25000000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012",
+      "runtime_environment": {
+        "CRYSTAL_WORKERS": "8",
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib",
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"ff86aa2891a00c0013dec8c3d1ca4d414812641b86dc47388c28937deef0ec9a\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-knucleotide-compact\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012\", \"environment\": {\"CRYSTAL_WORKERS\": \"8\", \"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"62ce2f52527642f1570c822233e13794011a05f3c9784fd13f5bd2b257448a99\", \"support\": {}}",
+      "started_at": "2026-10-13T01:26:33.787780+00:00",
+      "workload_n": 25000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 24.807230625,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 1056304,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 259,
+      "stdout_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+      "validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T01:26:58.811306+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 8,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/knucleotide/attempts/008-crystal-knucleotide-compact.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 12308,
+        "pgid": 12308,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-knucleotide-compact",
+          "25000000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/knucleotide/attempts/008-crystal-knucleotide-compact.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "knucleotide:crystal-knucleotide-optimized",
+      "id": "crystal-knucleotide-optimized",
+      "benchmark": "knucleotide",
+      "language": "crystal",
+      "source_sha256": "6bd73c739483d4b0ebe50490e2a13264a1395fd2cfe9979ae2e5e229d255e6ca",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-input-archive-filter-v6/bin/crystal-knucleotide-optimized",
+        "25000000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "CRYSTAL_WORKERS": "8",
+        "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"dd2adb0f098685521a95397f78bf98dde3fbf49dce241ea2d877e3570efa1700\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-input-archive-filter-v6/bin/crystal-knucleotide-optimized\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012\", \"environment\": {\"CRYSTAL_WORKERS\": \"8\", \"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"6bd73c739483d4b0ebe50490e2a13264a1395fd2cfe9979ae2e5e229d255e6ca\", \"support\": {}}",
+      "started_at": "2026-10-13T01:34:36.172558+00:00",
+      "workload_n": 25000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 3.324217875,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 994832,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 259,
+      "stdout_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+      "validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T01:34:39.708015+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 9,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/knucleotide/attempts/009-crystal-knucleotide-optimized.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 13999,
+        "pgid": 13999,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-input-archive-filter-v6/bin/crystal-knucleotide-optimized",
+          "25000000"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/studies/full-v1/knucleotide/attempts/009-crystal-knucleotide-optimized.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    }
+  ],
+  "active": null,
+  "supervisor": {
+    "pid": 74642,
+    "process_listing": "Mon Oct 12 19:01:53 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u benchmarks/clbg/crystal-comparison/20261012/studies/pipeline-v2/full_study.py --run --benchmark knucleotide --revision full-v1 --manifest-sha256 c98c61c4487b3419fcf528554c8dfd7a0c0145c6fb0e9230350f831a80cd4a9b"
+  },
+  "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+  "full_workload_n": 25000000,
+  "chart_admission": false,
+  "no_automatic_retry": true,
+  "canonical_LOC_status": "pending separate immutable count overlay",
+  "finished_at": "2026-10-13T01:35:57.462935+00:00",
+  "pins_unchanged_at_end": true
+}

@@ -1,0 +1,24 @@
+WAIT LOCK: V preparation production-builder-v3 pidigits
+BUILD v-pidigits-compact-input-v2
+BUILD v-pidigits-optimized-builder-v3
+PROBE v-pidigits-compact-input-v2 size-0
+PROBE v-pidigits-compact-input-v2 size-1
+PROBE v-pidigits-compact-input-v2 size-9
+PROBE v-pidigits-compact-input-v2 size-10
+PROBE v-pidigits-compact-input-v2 size-11
+PROBE v-pidigits-compact-input-v2 size-20
+PROBE v-pidigits-compact-input-v2 size-21
+PROBE v-pidigits-compact-input-v2 size-27
+PROBE v-pidigits-compact-input-v2 size-30
+PROBE v-pidigits-compact-input-v2 size-97
+PROBE v-pidigits-optimized-builder-v3 size-0
+PROBE v-pidigits-optimized-builder-v3 size-1
+PROBE v-pidigits-optimized-builder-v3 size-9
+PROBE v-pidigits-optimized-builder-v3 size-10
+PROBE v-pidigits-optimized-builder-v3 size-11
+PROBE v-pidigits-optimized-builder-v3 size-20
+PROBE v-pidigits-optimized-builder-v3 size-21
+PROBE v-pidigits-optimized-builder-v3 size-27
+PROBE v-pidigits-optimized-builder-v3 size-30
+PROBE v-pidigits-optimized-builder-v3 size-97
+PASS BOUNDED OUTPUTS pidigits 22

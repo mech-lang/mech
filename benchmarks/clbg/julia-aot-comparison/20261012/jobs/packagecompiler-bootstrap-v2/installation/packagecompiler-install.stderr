@@ -1,0 +1,58 @@
+  Activating new project at `~/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/packagecompiler-bootstrap-v2/project`
+  Installing known registries into `~/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/packagecompiler-bootstrap-v2/depot`
+       Added `General` registry to ~/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/packagecompiler-bootstrap-v2/depot/registries
+   Resolving package versions...
+   Installed PackageCompiler ──── v2.4.3
+   Installed RelocatableFolders ─ v1.0.1
+   Installed Scratch ──────────── v1.3.0
+   Installed Glob ─────────────── v1.5.0
+    Updating `~/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/packagecompiler-bootstrap-v2/project/Project.toml`
+  [9b87118b] + PackageCompiler v2.4.3
+    Updating `~/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/packagecompiler-bootstrap-v2/project/Manifest.toml`
+  [c27321d9] + Glob v1.5.0
+  [9b87118b] + PackageCompiler v2.4.3
+  [05181044] + RelocatableFolders v1.0.1
+  [6c6a2e73] + Scratch v1.3.0
+  [0dad84c5] + ArgTools v1.1.2
+  [56f22d72] + Artifacts v1.11.0
+  [2a0f44e3] + Base64 v1.11.0
+  [ade2ca70] + Dates v1.11.0
+  [f43a241f] + Downloads v1.7.0
+  [7b1f6079] + FileWatching v1.11.0
+  [ac6e5ff7] + JuliaSyntaxHighlighting v1.12.0
+  [4af54fe1] + LazyArtifacts v1.11.0
+  [b27032c2] + LibCURL v1.0.0
+  [76f85450] + LibGit2 v1.11.0
+  [8f399da3] + Libdl v1.11.0
+  [56ddb016] + Logging v1.11.0
+  [d6f4376e] + Markdown v1.11.0
+  [ca575930] + NetworkOptions v1.3.0
+  [44cfe95a] + Pkg v1.13.0
+  [de0858da] + Printf v1.11.0
+  [9a3f8284] + Random v1.11.0
+  [ea8e919c] + SHA v1.0.0
+  [f489334b] + StyledStrings v1.11.0
+  [fa267f1f] + TOML v1.0.3
+  [a4e569a6] + Tar v1.10.0
+  [cf7118a7] + UUIDs v1.11.0
+  [4ec0a83e] + Unicode v1.11.0
+  [e66e0078] + CompilerSupportLibraries_jll v1.5.5+2
+  [deac9b47] + LibCURL_jll v8.18.0+1
+  [e37daf67] + LibGit2_jll v1.9.1+0
+  [29816b5a] + LibSSH2_jll v1.11.104+0
+  [14a3606d] + MozillaCACerts_jll v2026.8.13
+  [458c3c95] + OpenSSL_jll v3.5.6+0
+  [efcefdf7] + PCRE2_jll v10.46.0+0
+  [83775a58] + Zlib_jll v1.3.1+2
+  [3161d3a3] + Zstd_jll v1.5.7+1
+  [8e850ede] + nghttp2_jll v1.67.1+0
+  [3f19e933] + p7zip_jll v17.8.2+0
+Precompiling packages...
+   0.2 s  ✓ Glob
+   0.2 s  ✓ CompilerSupportLibraries_jll
+   0.2 s  ✓ Unicode
+   0.2 s  ✓ Scratch
+   0.4 s  ✓ LazyArtifacts
+   0.4 s  ✓ RelocatableFolders
+   1.2 s  ✓ PackageCompiler
+  7 dependencies successfully precompiled in 3 seconds. 26 already precompiled.

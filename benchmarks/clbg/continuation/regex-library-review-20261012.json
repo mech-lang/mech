@@ -1,0 +1,51 @@
+{
+  "status": "source-inspection-complete-semantic-correction-pending",
+  "evidence_kind": "read-only source inspection; no new native test, hashing, normalization or timing",
+  "benchmark_specification": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/regexredux.html",
+  "library_policy": "General built-in or third-party regex engines are permitted. The application must specify and perform the prescribed counts and ordered substitutions. Results measure the complete application and its selected engine, not isolated compiler speed.",
+  "implementations": {
+    "mech": {
+      "application_source": "benchmarks/clbg/regexredux/regexredux.mec",
+      "library": "Rust regex::bytes",
+      "matching_source": "hosts/gpu/src/sequence/runtime.rs:1301",
+      "application_matching_engine_authored_in_mech": false,
+      "counting_case_policy": "case-sensitive: RegexBuilder uses unicode(false), without case_insensitive(true)"
+    },
+    "matlab": {
+      "application_sources": [
+        "benchmarks/clbg/matlab-comparison/20261010/sources/regexredux_compact.m:11",
+        "benchmarks/clbg/matlab-comparison/20261010/sources/regexredux_optimized.m:13"
+      ],
+      "library": "MATLAB built-in regexpi and regexprep",
+      "vendor_engine_implementation_or_version_verified": false,
+      "application_matching_engine_authored_in_matlab": false,
+      "counting_case_policy": "case-insensitive: regexpi",
+      "saved_canonical_output_checks": "Prior preserved measurement records report passing canonical output checks; no checks were rerun during this inspection."
+    },
+    "rust_upstream_example": {
+      "source": "benchmarks/clbg/regexredux/upstream/regexredux-rust-5.rs",
+      "library": "Rust regex::bytes::Regex"
+    },
+    "c_upstream_example": {
+      "source": "benchmarks/clbg/regexredux/upstream/regexredux-gcc-2.c",
+      "library": "PCRE"
+    },
+    "c3_candidate": {
+      "application_sources": [
+        "benchmarks/clbg/c3-comparison/20261012/sources/regexredux/compact.c3",
+        "benchmarks/clbg/c3-comparison/20261012/sources/regexredux/optimized.c3"
+      ],
+      "library": "generic PCRE2 8-bit compile/match API",
+      "authored_work": "Patterns, non-overlapping search/count loops, replacement span assembly, ordered substitutions, threading, I/O and generic ABI glue",
+      "qualification_status": "authored, unbuilt and unqualified"
+    }
+  },
+  "semantic_followup": {
+    "finding": "MATLAB counting ignores case while Mech and the inspected canonical upstream implementations match case. This can differ for arbitrary mixed-case inputs even when canonical output checks pass.",
+    "required_correction": "Preserve the existing MATLAB sources and measurements. Author additive regex sources using case-sensitive regexp; verify a mixed-case counterexample and the complete prescribed work, then obtain new bounded and full measurements tied to the new exact sources before admitting replacement rows.",
+    "proposed_counterexample": "FASTA record containing agggtaaa followed by AGGGTAAA; case-sensitive first-pattern count is 1, case-insensitive count is 2. This is a predicted semantic counterexample, not a claimed executed test.",
+    "new_test_executed": false,
+    "old_source_or_measurement_modified": false,
+    "chart_or_site_modified": false
+  }
+}

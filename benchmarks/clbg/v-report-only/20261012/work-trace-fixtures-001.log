@@ -1,0 +1,29 @@
+WAIT LOCK: V bounded work-trace fixtures
+LOCKED: V bounded work-trace fixtures
+test_all_actual_source_anchor_copies (__main__.SourceTraceChecks.test_all_actual_source_anchor_copies) ... ok
+test_all_pi_source_orders (__main__.SourceTraceChecks.test_all_pi_source_orders) ... ok
+test_anchor_does_not_consume_blank_line (__main__.SourceTraceChecks.test_anchor_does_not_consume_blank_line) ... ok
+test_duplicate_key_rejected (__main__.SourceTraceChecks.test_duplicate_key_rejected) ... ok
+test_empty_maps_and_stdout (__main__.SourceTraceChecks.test_empty_maps_and_stdout) ... ok
+test_extra_division_after_final_digit_rejected (__main__.SourceTraceChecks.test_extra_division_after_final_digit_rejected) ... ok
+test_invalid_or_unowned_mutex_descriptor_rejected (__main__.SourceTraceChecks.test_invalid_or_unowned_mutex_descriptor_rejected) ... ok
+test_missing_length_one_table_rejected (__main__.SourceTraceChecks.test_missing_length_one_table_rejected) ... ok
+test_missing_or_duplicate_anchor_rejected (__main__.SourceTraceChecks.test_missing_or_duplicate_anchor_rejected) ... ok
+test_missing_or_reordered_second_extract_rejected (__main__.SourceTraceChecks.test_missing_or_reordered_second_extract_rejected) ... ok
+test_nucleotide_stdout_change_rejected (__main__.SourceTraceChecks.test_nucleotide_stdout_change_rejected) ... ok
+test_partial_or_duplicated_end_rejected (__main__.SourceTraceChecks.test_partial_or_duplicated_end_rejected) ... ok
+test_pi_padding_count_and_complete_stdout_rejected (__main__.SourceTraceChecks.test_pi_padding_count_and_complete_stdout_rejected) ... ok
+test_reader_only_accepts_space_tab_end_and_cr_lf (__main__.SourceTraceChecks.test_reader_only_accepts_space_tab_end_and_cr_lf) ... ok
+test_reinstrumentation_rejected (__main__.SourceTraceChecks.test_reinstrumentation_rejected) ... ok
+test_seven_compact_maps_comments_crlf_eof (__main__.SourceTraceChecks.test_seven_compact_maps_comments_crlf_eof) ... ok
+test_seven_packed_maps_reconcile (__main__.SourceTraceChecks.test_seven_packed_maps_reconcile) ... ok
+test_skipped_or_wrong_acceptance_rejected (__main__.SourceTraceChecks.test_skipped_or_wrong_acceptance_rejected) ... ok
+test_wrong_denominator_or_quotient_rejected (__main__.SourceTraceChecks.test_wrong_denominator_or_quotient_rejected) ... ok
+test_wrong_map_window_total_rejected (__main__.SourceTraceChecks.test_wrong_map_window_total_rejected) ... ok
+test_wrong_packed_high_bits_rejected (__main__.SourceTraceChecks.test_wrong_packed_high_bits_rejected) ... ok
+test_zero_digit_trace (__main__.SourceTraceChecks.test_zero_digit_trace) ... ok
+
+----------------------------------------------------------------------
+Ran 22 tests in 0.006s
+
+OK

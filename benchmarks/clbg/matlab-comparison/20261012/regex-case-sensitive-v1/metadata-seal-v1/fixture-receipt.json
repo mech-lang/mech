@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "tests_run": 3,
+  "expected_tests": [
+    "matlab_case_controller_fixtures.CandidateMocks.test_attempt_failure_preserves_raw_and_restores_overrides",
+    "matlab_case_controller_fixtures.CandidateMocks.test_observer_restores_exact_original_functions",
+    "matlab_case_controller_fixtures.CandidateMocks.test_owned_observer_timeout_cleans_only_known_mock_groups"
+  ],
+  "actual_started_ids": [
+    "matlab_case_controller_fixtures.CandidateMocks.test_attempt_failure_preserves_raw_and_restores_overrides",
+    "matlab_case_controller_fixtures.CandidateMocks.test_observer_restores_exact_original_functions",
+    "matlab_case_controller_fixtures.CandidateMocks.test_owned_observer_timeout_cleans_only_known_mock_groups"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "expected_failures": 0,
+  "unexpected_successes": 0,
+  "skipped": 0,
+  "actual_native_subjects": 0,
+  "actual_signals_sent": 0,
+  "common_timing_mutex": "/tmp/mech-clbg-timing.lock",
+  "exclusive_mutex_held": true,
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/controller.py": "ec10f226a18859e5e52a2d129b867f2568884a2bbe9b9e2c6d0f5e2f8643f3ee",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/test_controller.py": "7ef1e4dc22aead6ea1fe0fab0eea4354bf494dd7bd98ee91082f46b64ba215e2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/metadata-seal-v1/fixtures.log": "922dfe1efa4ea9d16f335a275c682036a9ba164f74fae68a94fe7fe37b3dd670"
+  }
+}

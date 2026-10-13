@@ -1,0 +1,453 @@
+{
+  "status": "read-only-existing-endpoint-metadata-awaiting-locked-pins",
+  "chart_admission": false,
+  "runtime": "/tmp/mech-clbg-julia/julia-1.13.1/bin/julia",
+  "expected_workload_roles": 20,
+  "expected_distinct_sources": 17,
+  "roles": [
+    {
+      "benchmark": "nbody",
+      "variant": "compact",
+      "existing_program": "nbody:nbody-julia-5",
+      "report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "source_report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "expected_report_sha256": "f0318ba0df5bb95cd694c399bf6e9b62387500762b2a6c19dfa5738e71316def",
+      "sources": [
+        {
+          "path": "nbody/upstream/nbody-julia-5.jl",
+          "sha256": "2def3e7e9910b46cd522b81041e04bbcede2481f69684b683bea605bef598a54"
+        }
+      ],
+      "existing_jit_samples": [
+        1.640688292,
+        1.645195541,
+        1.642435958
+      ],
+      "existing_jit_execution_preserved": true,
+      "aot_adapter_required": null,
+      "aot_qualified": false
+    },
+    {
+      "benchmark": "nbody",
+      "variant": "optimized",
+      "existing_program": "nbody:nbody-julia-5",
+      "report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "source_report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "expected_report_sha256": "f0318ba0df5bb95cd694c399bf6e9b62387500762b2a6c19dfa5738e71316def",
+      "sources": [
+        {
+          "path": "nbody/upstream/nbody-julia-5.jl",
+          "sha256": "2def3e7e9910b46cd522b81041e04bbcede2481f69684b683bea605bef598a54"
+        }
+      ],
+      "existing_jit_samples": [
+        1.640688292,
+        1.645195541,
+        1.642435958
+      ],
+      "existing_jit_execution_preserved": true,
+      "aot_adapter_required": null,
+      "aot_qualified": false
+    },
+    {
+      "benchmark": "mandelbrot",
+      "variant": "compact",
+      "existing_program": "mandelbrot:mandelbrot-julia-1",
+      "report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "source_report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "expected_report_sha256": "f0318ba0df5bb95cd694c399bf6e9b62387500762b2a6c19dfa5738e71316def",
+      "sources": [
+        {
+          "path": "mandelbrot/upstream/mandelbrot-julia-1.jl",
+          "sha256": "7d2aeb13fa35638ea106683ca8a8ed80ea0ba8842da3860cc7b61a61ef911b34"
+        }
+      ],
+      "existing_jit_samples": [
+        10.804143458,
+        10.970712459,
+        10.697488541
+      ],
+      "existing_jit_execution_preserved": true,
+      "aot_adapter_required": null,
+      "aot_qualified": false
+    },
+    {
+      "benchmark": "mandelbrot",
+      "variant": "optimized",
+      "existing_program": "mandelbrot:mandelbrot-julia-7",
+      "report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "source_report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "expected_report_sha256": "f0318ba0df5bb95cd694c399bf6e9b62387500762b2a6c19dfa5738e71316def",
+      "sources": [
+        {
+          "path": "mandelbrot/upstream/mandelbrot-julia-7.jl",
+          "sha256": "e0eeaf849574af7fb568f48670b99274dc4c50a9f95333760e880e93177aabd4"
+        }
+      ],
+      "existing_jit_samples": [
+        0.728558916,
+        0.566924833,
+        0.56363525
+      ],
+      "existing_jit_execution_preserved": true,
+      "aot_adapter_required": null,
+      "aot_qualified": false
+    },
+    {
+      "benchmark": "knucleotide",
+      "variant": "compact",
+      "existing_program": "knucleotide:knucleotide-julia-1",
+      "report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "source_report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "expected_report_sha256": "f0318ba0df5bb95cd694c399bf6e9b62387500762b2a6c19dfa5738e71316def",
+      "sources": [
+        {
+          "path": "knucleotide/upstream/knucleotide-julia-1.jl",
+          "sha256": "3d63180251f491b4512e26b42569b170266a0a80797103311ee0a9d0a6fd1f84"
+        }
+      ],
+      "existing_jit_samples": [
+        36.637815417,
+        36.778137375,
+        36.868968709
+      ],
+      "existing_jit_execution_preserved": true,
+      "aot_adapter_required": null,
+      "aot_qualified": false
+    },
+    {
+      "benchmark": "knucleotide",
+      "variant": "optimized",
+      "existing_program": "knucleotide:knucleotide-julia-6",
+      "report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "source_report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "expected_report_sha256": "f0318ba0df5bb95cd694c399bf6e9b62387500762b2a6c19dfa5738e71316def",
+      "sources": [
+        {
+          "path": "knucleotide/upstream/knucleotide-julia-6.jl",
+          "sha256": "01d7ad1232e03023a948b959a473e53424d13454e8fbc371a1a05346cf93e58d"
+        }
+      ],
+      "existing_jit_samples": [
+        1.580006417,
+        1.597850708,
+        1.618463083
+      ],
+      "existing_jit_execution_preserved": true,
+      "aot_adapter_required": null,
+      "aot_qualified": false
+    },
+    {
+      "benchmark": "spectralnorm",
+      "variant": "compact",
+      "existing_program": "spectralnorm:spectralnorm-julia-4",
+      "report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "source_report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "expected_report_sha256": "f0318ba0df5bb95cd694c399bf6e9b62387500762b2a6c19dfa5738e71316def",
+      "sources": [
+        {
+          "path": "spectralnorm/upstream/spectralnorm-julia-4.jl",
+          "sha256": "9756c242275d4f05f8b60c69300ec9699b3dacd6548bde55440b4cb7d7af4d8f"
+        }
+      ],
+      "existing_jit_samples": [
+        0.361662584,
+        0.349881833,
+        0.334939041
+      ],
+      "existing_jit_execution_preserved": true,
+      "aot_adapter_required": null,
+      "aot_qualified": false
+    },
+    {
+      "benchmark": "spectralnorm",
+      "variant": "optimized",
+      "existing_program": "spectralnorm:spectralnorm-julia-4",
+      "report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "source_report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "expected_report_sha256": "f0318ba0df5bb95cd694c399bf6e9b62387500762b2a6c19dfa5738e71316def",
+      "sources": [
+        {
+          "path": "spectralnorm/upstream/spectralnorm-julia-4.jl",
+          "sha256": "9756c242275d4f05f8b60c69300ec9699b3dacd6548bde55440b4cb7d7af4d8f"
+        }
+      ],
+      "existing_jit_samples": [
+        0.361662584,
+        0.349881833,
+        0.334939041
+      ],
+      "existing_jit_execution_preserved": true,
+      "aot_adapter_required": null,
+      "aot_qualified": false
+    },
+    {
+      "benchmark": "revcomp",
+      "variant": "compact",
+      "existing_program": "revcomp:revcomp-julia-9",
+      "report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "source_report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "expected_report_sha256": "f0318ba0df5bb95cd694c399bf6e9b62387500762b2a6c19dfa5738e71316def",
+      "sources": [
+        {
+          "path": "revcomp/upstream/revcomp-julia-9.jl",
+          "sha256": "42f38b5bafca02b91b498f1dae92710d231fa51691c6a11bd18a9aa1458f8742"
+        }
+      ],
+      "existing_jit_samples": [
+        0.287480625,
+        0.290526041,
+        0.284689083
+      ],
+      "existing_jit_execution_preserved": true,
+      "aot_adapter_required": null,
+      "aot_qualified": false
+    },
+    {
+      "benchmark": "revcomp",
+      "variant": "optimized",
+      "existing_program": "revcomp:revcomp-julia-7",
+      "report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "source_report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "expected_report_sha256": "f0318ba0df5bb95cd694c399bf6e9b62387500762b2a6c19dfa5738e71316def",
+      "sources": [
+        {
+          "path": "revcomp/upstream/revcomp-julia-7.jl",
+          "sha256": "4161692fd806f0a0169d7d63f385d5dfec6c2fa89d1d16f34b101ebd52a5b03d"
+        }
+      ],
+      "existing_jit_samples": [
+        0.280015542,
+        0.283163375,
+        0.286333209
+      ],
+      "existing_jit_execution_preserved": true,
+      "aot_adapter_required": null,
+      "aot_qualified": false
+    },
+    {
+      "benchmark": "fannkuchredux",
+      "variant": "compact",
+      "existing_program": "fannkuchredux:fannkuchredux-julia-1",
+      "report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "source_report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "expected_report_sha256": "f0318ba0df5bb95cd694c399bf6e9b62387500762b2a6c19dfa5738e71316def",
+      "sources": [
+        {
+          "path": "fannkuchredux/upstream/fannkuchredux-julia-1.jl",
+          "sha256": "98dbee45fe7940783aec1dcc18579f6cda293963d77dc522e55720cd218e0a01"
+        }
+      ],
+      "existing_jit_samples": [
+        16.897532042,
+        16.93216975,
+        16.930200291
+      ],
+      "existing_jit_execution_preserved": true,
+      "aot_adapter_required": null,
+      "aot_qualified": false
+    },
+    {
+      "benchmark": "fannkuchredux",
+      "variant": "optimized",
+      "existing_program": "fannkuchredux:fannkuchredux-julia-2",
+      "report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "source_report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "expected_report_sha256": "f0318ba0df5bb95cd694c399bf6e9b62387500762b2a6c19dfa5738e71316def",
+      "sources": [
+        {
+          "path": "fannkuchredux/upstream/fannkuchredux-julia-2.jl",
+          "sha256": "b7f7248fb1aac401c04d5a7823fbcd8578069646d68610e9a56ce59447295571"
+        }
+      ],
+      "existing_jit_samples": [
+        2.9514915,
+        3.007239,
+        2.950913625
+      ],
+      "existing_jit_execution_preserved": true,
+      "aot_adapter_required": null,
+      "aot_qualified": false
+    },
+    {
+      "benchmark": "fasta",
+      "variant": "compact",
+      "existing_program": "fasta:fasta-julia-3",
+      "report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "source_report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "expected_report_sha256": "f0318ba0df5bb95cd694c399bf6e9b62387500762b2a6c19dfa5738e71316def",
+      "sources": [
+        {
+          "path": "fasta/upstream/fasta-julia-3.jl",
+          "sha256": "36cf3ba1ad4bf76978c051ad9883ef2f7cdba444858e8b626fbc8c304a8734fd"
+        }
+      ],
+      "existing_jit_samples": [
+        4.057375166,
+        4.057447334,
+        4.0427235
+      ],
+      "existing_jit_execution_preserved": true,
+      "aot_adapter_required": null,
+      "aot_qualified": false
+    },
+    {
+      "benchmark": "fasta",
+      "variant": "optimized",
+      "existing_program": "fasta:fasta-julia-3",
+      "report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "source_report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "expected_report_sha256": "f0318ba0df5bb95cd694c399bf6e9b62387500762b2a6c19dfa5738e71316def",
+      "sources": [
+        {
+          "path": "fasta/upstream/fasta-julia-3.jl",
+          "sha256": "36cf3ba1ad4bf76978c051ad9883ef2f7cdba444858e8b626fbc8c304a8734fd"
+        }
+      ],
+      "existing_jit_samples": [
+        4.057375166,
+        4.057447334,
+        4.0427235
+      ],
+      "existing_jit_execution_preserved": true,
+      "aot_adapter_required": null,
+      "aot_qualified": false
+    },
+    {
+      "benchmark": "binarytrees",
+      "variant": "compact",
+      "existing_program": "binarytrees:binarytrees-julia-4",
+      "report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "source_report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "expected_report_sha256": "f0318ba0df5bb95cd694c399bf6e9b62387500762b2a6c19dfa5738e71316def",
+      "sources": [
+        {
+          "path": "binarytrees/upstream/binarytrees-julia-4.jl",
+          "sha256": "569cf0d66e3ee557e1d45e8d2442ac8688275c6a4542d502b4d561ddbf4c0a6f"
+        }
+      ],
+      "existing_jit_samples": [
+        3.13758375,
+        3.112063583,
+        3.14094375
+      ],
+      "existing_jit_execution_preserved": true,
+      "aot_adapter_required": null,
+      "aot_qualified": false
+    },
+    {
+      "benchmark": "binarytrees",
+      "variant": "optimized",
+      "existing_program": "binarytrees:binarytrees-julia-3",
+      "report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "source_report": "retime/results/apple-m3-ac-normal-20261008.json",
+      "expected_report_sha256": "f0318ba0df5bb95cd694c399bf6e9b62387500762b2a6c19dfa5738e71316def",
+      "sources": [
+        {
+          "path": "binarytrees/upstream/binarytrees-julia-3.jl",
+          "sha256": "5c3482ad38f73265c4b5016f325cb7eec632cb44deae8a6df5d10f55141ce5a2"
+        }
+      ],
+      "existing_jit_samples": [
+        2.095779042,
+        1.956226375,
+        2.085797291
+      ],
+      "existing_jit_execution_preserved": true,
+      "aot_adapter_required": null,
+      "aot_qualified": false
+    },
+    {
+      "benchmark": "regexredux",
+      "variant": "compact",
+      "existing_program": "regexredux:regexredux-julia-1",
+      "report": "regexredux/results/apple-m3-ac-normal-20261009.json",
+      "source_report": "regexredux/results/apple-m3-ac-normal-20261009.json",
+      "expected_report_sha256": "656d00e73b15a28a273718440aaaabee5d52c53c9ce4e842bd3f6bb52f09e603",
+      "sources": [
+        {
+          "path": "regexredux/upstream/regexredux-julia-1.jl",
+          "sha256": "ce90bc34b0051a8066573aad6c1c4f98c34561262b0fdab7b756c55fb8e10195"
+        }
+      ],
+      "existing_jit_samples": [
+        2.945937,
+        2.954281875,
+        2.957936584
+      ],
+      "existing_jit_execution_preserved": true,
+      "aot_adapter_required": null,
+      "aot_qualified": false
+    },
+    {
+      "benchmark": "regexredux",
+      "variant": "optimized",
+      "existing_program": "regexredux:regexredux-julia-3",
+      "report": "regexredux/results/apple-m3-ac-normal-20261009.json",
+      "source_report": "regexredux/results/apple-m3-ac-normal-20261009.json",
+      "expected_report_sha256": "656d00e73b15a28a273718440aaaabee5d52c53c9ce4e842bd3f6bb52f09e603",
+      "sources": [
+        {
+          "path": "regexredux/upstream/regexredux-julia-3.jl",
+          "sha256": "cf0f7188913b4d48f4d15491abf610d6f3cc5d37684a03871a136a87ea26fff2"
+        }
+      ],
+      "existing_jit_samples": [
+        1.830817458,
+        1.764936083,
+        1.764657458
+      ],
+      "existing_jit_execution_preserved": true,
+      "aot_adapter_required": null,
+      "aot_qualified": false
+    },
+    {
+      "benchmark": "pidigits",
+      "variant": "compact",
+      "existing_program": "pidigits:pidigits-julia-4",
+      "report": "pidigits/results/apple-m3-ac-normal-20261009.json",
+      "source_report": "pidigits/results/apple-m3-ac-normal-20261009.json",
+      "expected_report_sha256": "8cb4fe825e100a7d2db9bbb92f1526de024b1c0c0eb62fca86d5e2c5387e073e",
+      "sources": [
+        {
+          "path": "pidigits/upstream/pidigits-julia-4.jl",
+          "sha256": "0a8261dfa1c8798be1f25b6688cb0f4a4f8508e5679221ad299862b624cc4307"
+        }
+      ],
+      "existing_jit_samples": [
+        0.904167083,
+        0.902621583,
+        0.898357792
+      ],
+      "existing_jit_execution_preserved": true,
+      "aot_adapter_required": null,
+      "aot_qualified": false
+    },
+    {
+      "benchmark": "pidigits",
+      "variant": "optimized",
+      "existing_program": "pidigits:pidigits-julia-3",
+      "report": "remaining-conformance/signed-division-confirmation.json",
+      "source_report": "remaining-conformance/signed-division-confirmation.json",
+      "expected_report_sha256": "9100536b54d5afef70a51121db3b40bb646fe560f63e007939ed27bb2d7f24bf",
+      "sources": [
+        {
+          "path": "pidigits/upstream/pidigits-julia-3.jl",
+          "sha256": "d9552c519b2a965e9a092c3658460bf8c6e3402dbcd169a498bcff678014da04"
+        }
+      ],
+      "existing_jit_samples": [
+        0.399957042,
+        0.397526583,
+        0.399330292,
+        0.400046,
+        0.3998565,
+        0.402663833,
+        0.404838875
+      ],
+      "existing_jit_execution_preserved": true,
+      "aot_adapter_required": null,
+      "aot_qualified": false
+    }
+  ]
+}

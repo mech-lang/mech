@@ -1,0 +1,688 @@
+{
+  "schema_version": 1,
+  "status": "static-explicit-initializer-proposal-not-executed-not-admitted",
+  "frozen_evidence": "jobs/boundary-audit-15/candidate-audit.json",
+  "approved_policy": "policy-explicit-initialization-20261012.json",
+  "scope": "Saved measured C++ constructor signatures and bounded exact member/constructor text only. No source bytes, original report or frozen jobs edited; SHA values copied, never recomputed. Python source syntax-only compile performed without module execution/import. No tests, normalization, lexer, hashes, build or job execution by reviewer.",
+  "inventory": {
+    "measured_cpp_source_identities_in_saved_pool": 37,
+    "reviewed_distinct_source_sha": 9,
+    "reviewed_ctor_sites": 12,
+    "reviewed_measured_candidate_registrations": 24,
+    "all_written_semantic_missing_member_units_distinct_source": 34,
+    "all_written_semantic_missing_member_units_registration_weighted": 88,
+    "bounded_eligible_ctor_sites": 8,
+    "bounded_eligible_missing_units_distinct_source": 25,
+    "bounded_eligible_missing_units_registration_weighted": 66
+  },
+  "api": "classify_cpp_initializers(cleaned, language, contexts, type_environment, *, declaration_resolver) -> events/owners/evidence/diagnostics/context_overrides/executable_regions/suppress_canonical_spans/proposal_only",
+  "new_helper": "cpp_initializers.py",
+  "new_unit_fixtures": "test_cpp_initializers.py",
+  "unit_fixture_methods": 24,
+  "parent_integration_fixtures": "test_cpp_initializer_integration.py",
+  "parent_integration_fixture_methods_at_static_review": 7,
+  "integration_contract": [
+    "Classify original masked text with exact source-local class/struct entries and direct-member declaration resolver.",
+    "Apply exact owner-frame overrides before value/field classification.",
+    "Make only constructor prefix/open/close opaque before canonical scanning. Body bindings and nested owners remain visible.",
+    "Apply overrides after opaque scope-map pass, inserting missing constructor code frame before newer nested argument/data/control frames.",
+    "Append proved constructor/member/open/close events, executable region and owner evidence.",
+    "Do not blanket-drop type/environment diagnostics or same-name type-call/function shadows."
+  ],
+  "remaining_gates": [
+    "Template/dependent or conditional source class/constructor headers.",
+    "Unknown, inherited/base, static, delegating, duplicate or expired member/type ownership.",
+    "Written effects, updates, sequences or executable callback work inside initializer arguments/formals.",
+    "Any multiline initializer argument group requires exact literal/data wrapping proof; until then it has cpp-wrapped-initializer-data-review and contributes no accepted owner events.",
+    "Unresolved field type provenance, including Random std::vector<IUB>& i and LFT ulong k in this bounded resolver contract."
+  ],
+  "sources": [
+    {
+      "source_sha256_from_job15": "7c8ff3d053e191ed2c68129b57f6483233a9c22baaabcb6ec7c25c4b8a251983",
+      "source_identity": "7c8ff3d053e191ed2c68129b57f6483233a9c22baaabcb6ec7c25c4b8a251983:cpp",
+      "path_from_job15": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/upstream/binarytrees-gpp-1.cpp",
+      "baseline_source_proposed_loc": 71,
+      "measured_candidate_registration_keys": [
+        "binarytrees:binarytrees-gpp-1-gcc",
+        "binarytrees:binarytrees-gpp-1-llvm"
+      ],
+      "measured_registration_count": 2,
+      "constructors": [
+        {
+          "line": 22,
+          "source_text": "   Node() : l(0),r(0) {}",
+          "bounded_context": [
+            {
+              "line": 20,
+              "text": "struct Node {"
+            },
+            {
+              "line": 21,
+              "text": "   Node *l,*r;"
+            },
+            {
+              "line": 22,
+              "text": "   Node() : l(0),r(0) {}"
+            },
+            {
+              "line": 23,
+              "text": "   Node(Node *l,Node *r) : l(l),r(r) {}"
+            },
+            {
+              "line": 24,
+              "text": "   int check() const"
+            }
+          ],
+          "explicit_members": [
+            "l",
+            "r"
+          ],
+          "baseline_ctor_units_from_job15": 2,
+          "approved_semantic_units": 4,
+          "missing_member_units": 2,
+          "owner_decision": "bounded-source-owner",
+          "qualification_status": "Unexecuted proposal; full source and fixtures require new common-mutex job."
+        },
+        {
+          "line": 23,
+          "source_text": "   Node(Node *l,Node *r) : l(l),r(r) {}",
+          "bounded_context": [
+            {
+              "line": 21,
+              "text": "   Node *l,*r;"
+            },
+            {
+              "line": 22,
+              "text": "   Node() : l(0),r(0) {}"
+            },
+            {
+              "line": 23,
+              "text": "   Node(Node *l,Node *r) : l(l),r(r) {}"
+            },
+            {
+              "line": 24,
+              "text": "   int check() const"
+            },
+            {
+              "line": 25,
+              "text": "   {"
+            }
+          ],
+          "explicit_members": [
+            "l",
+            "r"
+          ],
+          "baseline_ctor_units_from_job15": 2,
+          "approved_semantic_units": 4,
+          "missing_member_units": 2,
+          "owner_decision": "bounded-source-owner",
+          "qualification_status": "Unexecuted proposal; full source and fixtures require new common-mutex job."
+        }
+      ]
+    },
+    {
+      "source_sha256_from_job15": "88d980126647637c117f57cd6ab07218fc6ce6e3ed8800828b89f36972c2736c",
+      "source_identity": "88d980126647637c117f57cd6ab07218fc6ce6e3ed8800828b89f36972c2736c:cpp",
+      "path_from_job15": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/upstream/binarytrees-gpp-2.cpp",
+      "baseline_source_proposed_loc": 53,
+      "measured_candidate_registration_keys": [
+        "binarytrees:binarytrees-gpp-2-gcc",
+        "binarytrees:binarytrees-gpp-2-llvm"
+      ],
+      "measured_registration_count": 2,
+      "constructors": [
+        {
+          "line": 15,
+          "source_text": "  Node() : l(0), r(0) {}",
+          "bounded_context": [
+            {
+              "line": 13,
+              "text": "struct Node {"
+            },
+            {
+              "line": 14,
+              "text": "  Node *l, *r;"
+            },
+            {
+              "line": 15,
+              "text": "  Node() : l(0), r(0) {}"
+            },
+            {
+              "line": 16,
+              "text": "  Node(Node *l2, Node *r2) : l(l2), r(r2) {}"
+            },
+            {
+              "line": 17,
+              "text": "  ~Node() { delete l; delete r; }"
+            }
+          ],
+          "explicit_members": [
+            "l",
+            "r"
+          ],
+          "baseline_ctor_units_from_job15": 2,
+          "approved_semantic_units": 4,
+          "missing_member_units": 2,
+          "owner_decision": "bounded-source-owner",
+          "qualification_status": "Unexecuted proposal; full source and fixtures require new common-mutex job."
+        },
+        {
+          "line": 16,
+          "source_text": "  Node(Node *l2, Node *r2) : l(l2), r(r2) {}",
+          "bounded_context": [
+            {
+              "line": 14,
+              "text": "  Node *l, *r;"
+            },
+            {
+              "line": 15,
+              "text": "  Node() : l(0), r(0) {}"
+            },
+            {
+              "line": 16,
+              "text": "  Node(Node *l2, Node *r2) : l(l2), r(r2) {}"
+            },
+            {
+              "line": 17,
+              "text": "  ~Node() { delete l; delete r; }"
+            },
+            {
+              "line": 18,
+              "text": "  int check() const {"
+            }
+          ],
+          "explicit_members": [
+            "l",
+            "r"
+          ],
+          "baseline_ctor_units_from_job15": 2,
+          "approved_semantic_units": 4,
+          "missing_member_units": 2,
+          "owner_decision": "bounded-source-owner",
+          "qualification_status": "Unexecuted proposal; full source and fixtures require new common-mutex job."
+        }
+      ]
+    },
+    {
+      "source_sha256_from_job15": "90f5f496693e27c210bb9d29e84409c219c3c33ccd151910b07aaace9596d471",
+      "source_identity": "90f5f496693e27c210bb9d29e84409c219c3c33ccd151910b07aaace9596d471:cpp",
+      "path_from_job15": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-gpp-5.cpp",
+      "baseline_source_proposed_loc": 133,
+      "measured_candidate_registration_keys": [
+        "nbody:nbody-gpp-5-gcc-fastmath",
+        "nbody:nbody-gpp-5-gcc-native",
+        "nbody:nbody-gpp-5-llvm-fastmath",
+        "nbody:nbody-gpp-5-llvm-native"
+      ],
+      "measured_registration_count": 4,
+      "constructors": [
+        {
+          "line": 22,
+          "source_text": "  constexpr vec3(double x, double y, double z) : x{x}, y{y}, z{z} {}",
+          "bounded_context": [
+            {
+              "line": 20,
+              "text": "  double x = 0, y = 0, z = 0, __pad = 0;"
+            },
+            {
+              "line": 21,
+              "text": "  constexpr vec3() {}"
+            },
+            {
+              "line": 22,
+              "text": "  constexpr vec3(double x, double y, double z) : x{x}, y{y}, z{z} {}"
+            },
+            {
+              "line": 23,
+              "text": ""
+            },
+            {
+              "line": 24,
+              "text": "  constexpr vec3 operator+(vec3 const &other) const {"
+            }
+          ],
+          "explicit_members": [
+            "x",
+            "y",
+            "z"
+          ],
+          "baseline_ctor_units_from_job15": 2,
+          "approved_semantic_units": 5,
+          "missing_member_units": 3,
+          "owner_decision": "bounded-source-owner",
+          "qualification_status": "Unexecuted proposal; full source and fixtures require new common-mutex job."
+        }
+      ]
+    },
+    {
+      "source_sha256_from_job15": "b22f8afa7e51850fefdbbf7bf094e630a72a6e9b65f99eff9744f144f18488c3",
+      "source_identity": "b22f8afa7e51850fefdbbf7bf094e630a72a6e9b65f99eff9744f144f18488c3:cpp",
+      "path_from_job15": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-gpp-3.cpp",
+      "baseline_source_proposed_loc": 152,
+      "measured_candidate_registration_keys": [
+        "nbody:nbody-gpp-3-gcc-fastmath",
+        "nbody:nbody-gpp-3-gcc-native",
+        "nbody:nbody-gpp-3-llvm-fastmath",
+        "nbody:nbody-gpp-3-llvm-native"
+      ],
+      "measured_registration_count": 4,
+      "constructors": [
+        {
+          "line": 19,
+          "source_text": "        Body():x(0.0),y(0.0),z(0.0),vx(0.0),vy(0.0),vz(0.0),mass(0.0){}    ",
+          "bounded_context": [
+            {
+              "line": 17,
+              "text": "        double x, y, z, vx, vy, vz, mass;"
+            },
+            {
+              "line": 18,
+              "text": "    "
+            },
+            {
+              "line": 19,
+              "text": "        Body():x(0.0),y(0.0),z(0.0),vx(0.0),vy(0.0),vz(0.0),mass(0.0){}    "
+            },
+            {
+              "line": 20,
+              "text": "    "
+            },
+            {
+              "line": 21,
+              "text": "        static Body planetJupiter(){"
+            }
+          ],
+          "explicit_members": [
+            "x",
+            "y",
+            "z",
+            "vx",
+            "vy",
+            "vz",
+            "mass"
+          ],
+          "baseline_ctor_units_from_job15": 2,
+          "approved_semantic_units": 9,
+          "missing_member_units": 7,
+          "owner_decision": "bounded-source-owner",
+          "qualification_status": "Unexecuted proposal; full source and fixtures require new common-mutex job."
+        }
+      ]
+    },
+    {
+      "source_sha256_from_job15": "56a0ea5221ad0a75efe9819f2a9d31e6d30bef69e1320b522fe82b1d724e4dca",
+      "source_identity": "56a0ea5221ad0a75efe9819f2a9d31e6d30bef69e1320b522fe82b1d724e4dca:cpp",
+      "path_from_job15": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/upstream/fasta-gpp-1.cpp",
+      "baseline_source_proposed_loc": 113,
+      "measured_candidate_registration_keys": [
+        "fasta:fasta-gpp-1-gcc",
+        "fasta:fasta-gpp-1-llvm"
+      ],
+      "measured_registration_count": 2,
+      "constructors": [
+        {
+          "line": 75,
+          "source_text": "   Repeat(const char* alu):i(0),size(strlen(alu)),alu(alu){}",
+          "bounded_context": [
+            {
+              "line": 73,
+              "text": ""
+            },
+            {
+              "line": 74,
+              "text": "struct Repeat{"
+            },
+            {
+              "line": 75,
+              "text": "   Repeat(const char* alu):i(0),size(strlen(alu)),alu(alu){}"
+            },
+            {
+              "line": 76,
+              "text": "   char operator()()"
+            },
+            {
+              "line": 77,
+              "text": "   { "
+            }
+          ],
+          "explicit_members": [
+            "i",
+            "size",
+            "alu"
+          ],
+          "baseline_ctor_units_from_job15": 2,
+          "approved_semantic_units": 5,
+          "missing_member_units": 3,
+          "owner_decision": "bounded-source-owner",
+          "qualification_status": "Unexecuted proposal; full source and fixtures require new common-mutex job."
+        },
+        {
+          "line": 86,
+          "source_text": "   Random(std::vector<IUB>& i):i(i){}",
+          "bounded_context": [
+            {
+              "line": 84,
+              "text": ""
+            },
+            {
+              "line": 85,
+              "text": "struct Random{"
+            },
+            {
+              "line": 86,
+              "text": "   Random(std::vector<IUB>& i):i(i){}"
+            },
+            {
+              "line": 87,
+              "text": "   char operator()()"
+            },
+            {
+              "line": 88,
+              "text": "   {"
+            }
+          ],
+          "explicit_members": [
+            "i"
+          ],
+          "baseline_ctor_units_from_job15": 2,
+          "approved_semantic_units": 3,
+          "missing_member_units": 1,
+          "owner_decision": "gate-unproved-template-member-type",
+          "qualification_status": "Unexecuted proposal; full source and fixtures require new common-mutex job."
+        }
+      ]
+    },
+    {
+      "source_sha256_from_job15": "e9ea172b053a24a2fc804a0232af6b242b1fbfedc143500a66355446bb251d98",
+      "source_identity": "e9ea172b053a24a2fc804a0232af6b242b1fbfedc143500a66355446bb251d98:cpp",
+      "path_from_job15": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-gpp-4.cpp",
+      "baseline_source_proposed_loc": 54,
+      "measured_candidate_registration_keys": [
+        "pidigits:pidigits-gpp-4"
+      ],
+      "measured_registration_count": 1,
+      "constructors": [
+        {
+          "line": 19,
+          "source_text": "    LFT() : q(1), r(0), t(1), k(0){};",
+          "bounded_context": [
+            {
+              "line": 17,
+              "text": ""
+            },
+            {
+              "line": 18,
+              "text": "public:"
+            },
+            {
+              "line": 19,
+              "text": "    LFT() : q(1), r(0), t(1), k(0){};"
+            },
+            {
+              "line": 20,
+              "text": ""
+            },
+            {
+              "line": 21,
+              "text": "    void next() {"
+            }
+          ],
+          "explicit_members": [
+            "q",
+            "r",
+            "t",
+            "k"
+          ],
+          "baseline_ctor_units_from_job15": 2,
+          "approved_semantic_units": 6,
+          "missing_member_units": 4,
+          "owner_decision": "bounded-source-owner",
+          "qualification_status": "Unexecuted proposal; full source and fixtures require new common-mutex job."
+        }
+      ]
+    },
+    {
+      "source_sha256_from_job15": "19f5486a8f52883e43f773b2ed13edc058ea3075c8c25d03f20e3d2923ace642",
+      "source_identity": "19f5486a8f52883e43f773b2ed13edc058ea3075c8c25d03f20e3d2923ace642:cpp",
+      "path_from_job15": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-gpp-5.cpp",
+      "baseline_source_proposed_loc": 106,
+      "measured_candidate_registration_keys": [
+        "pidigits:pidigits-gpp-5"
+      ],
+      "measured_registration_count": 1,
+      "constructors": [
+        {
+          "line": 74,
+          "source_text": "  LFT() noexcept : q(1), r(0), t(1), k(0) {}",
+          "bounded_context": [
+            {
+              "line": 72,
+              "text": ""
+            },
+            {
+              "line": 73,
+              "text": " public:"
+            },
+            {
+              "line": 74,
+              "text": "  LFT() noexcept : q(1), r(0), t(1), k(0) {}"
+            },
+            {
+              "line": 75,
+              "text": ""
+            },
+            {
+              "line": 76,
+              "text": "  void next() noexcept {"
+            }
+          ],
+          "explicit_members": [
+            "q",
+            "r",
+            "t",
+            "k"
+          ],
+          "baseline_ctor_units_from_job15": 2,
+          "approved_semantic_units": 6,
+          "missing_member_units": 4,
+          "owner_decision": "gate-unproved-ulong-member-type",
+          "qualification_status": "Unexecuted proposal; full source and fixtures require new common-mutex job."
+        }
+      ]
+    },
+    {
+      "source_sha256_from_job15": "e451db2fe8fbc6ea8cbd04805e8bdc6a3e7778f1f64052d8f3cb5aa85e5448d3",
+      "source_identity": "e451db2fe8fbc6ea8cbd04805e8bdc6a3e7778f1f64052d8f3cb5aa85e5448d3:cpp",
+      "path_from_job15": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-gpp-1.cpp",
+      "baseline_source_proposed_loc": 199,
+      "measured_candidate_registration_keys": [
+        "nbody:nbody-gpp-1-gcc-fastmath",
+        "nbody:nbody-gpp-1-gcc-native",
+        "nbody:nbody-gpp-1-llvm-fastmath",
+        "nbody:nbody-gpp-1-llvm-native"
+      ],
+      "measured_registration_count": 4,
+      "constructors": [
+        {
+          "line": 27,
+          "source_text": "  tuple(const head& a,const tail& b):fst(a),snd(b){}",
+          "bounded_context": [
+            {
+              "line": 25,
+              "text": "  tail snd;"
+            },
+            {
+              "line": 26,
+              "text": " "
+            },
+            {
+              "line": 27,
+              "text": "  tuple(const head& a,const tail& b):fst(a),snd(b){}"
+            },
+            {
+              "line": 28,
+              "text": "  tuple() = delete;"
+            },
+            {
+              "line": 29,
+              "text": "};"
+            }
+          ],
+          "explicit_members": [
+            "fst",
+            "snd"
+          ],
+          "baseline_ctor_units_from_job15": 2,
+          "approved_semantic_units": 4,
+          "missing_member_units": 2,
+          "owner_decision": "gate-template-dependent-class-owner",
+          "qualification_status": "Unexecuted proposal; full source and fixtures require new common-mutex job."
+        }
+      ]
+    },
+    {
+      "source_sha256_from_job15": "38b69a7d86681bd080b5d3ebff0fb10c847598910f41569ce3188d8aba94808f",
+      "source_identity": "38b69a7d86681bd080b5d3ebff0fb10c847598910f41569ce3188d8aba94808f:cpp",
+      "path_from_job15": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-gpp-6.cpp",
+      "baseline_source_proposed_loc": 200,
+      "measured_candidate_registration_keys": [
+        "nbody:nbody-gpp-6-gcc-fastmath",
+        "nbody:nbody-gpp-6-gcc-native",
+        "nbody:nbody-gpp-6-llvm-fastmath",
+        "nbody:nbody-gpp-6-llvm-native"
+      ],
+      "measured_registration_count": 4,
+      "constructors": [
+        {
+          "line": 28,
+          "source_text": "  tuple(const head& a,const tail& b):fst(a),snd(b){}",
+          "bounded_context": [
+            {
+              "line": 26,
+              "text": "  tail snd;"
+            },
+            {
+              "line": 27,
+              "text": " "
+            },
+            {
+              "line": 28,
+              "text": "  tuple(const head& a,const tail& b):fst(a),snd(b){}"
+            },
+            {
+              "line": 29,
+              "text": "  tuple() = delete;"
+            },
+            {
+              "line": 30,
+              "text": "};"
+            }
+          ],
+          "explicit_members": [
+            "fst",
+            "snd"
+          ],
+          "baseline_ctor_units_from_job15": 2,
+          "approved_semantic_units": 4,
+          "missing_member_units": 2,
+          "owner_decision": "gate-template-dependent-class-owner",
+          "qualification_status": "Unexecuted proposal; full source and fixtures require new common-mutex job."
+        }
+      ]
+    }
+  ],
+  "ordinary_function_shadow_roles": [
+    {
+      "source_sha256_from_job15": "88d980126647637c117f57cd6ab07218fc6ce6e3ed8800828b89f36972c2736c",
+      "kind": "cpp-named-type-function-shadow-owner-review",
+      "offset": 518,
+      "line": 26,
+      "name": "Node",
+      "source_text": "  if (d == 0) return new Node();",
+      "decision": "new-type-operand-grammar-parent-owned",
+      "reason": "These offsets are outside the proved constructor definition spans. Only the parent new-Type grammar change can discharge immediately adjacent unqualified new Node operands; ordinary temporary/other calls remain separately reviewed."
+    },
+    {
+      "source_sha256_from_job15": "88d980126647637c117f57cd6ab07218fc6ce6e3ed8800828b89f36972c2736c",
+      "kind": "cpp-named-type-function-shadow-owner-review",
+      "offset": 539,
+      "line": 27,
+      "name": "Node",
+      "source_text": "  return new Node(make(d-1), make(d-1));",
+      "decision": "new-type-operand-grammar-parent-owned",
+      "reason": "These offsets are outside the proved constructor definition spans. Only the parent new-Type grammar change can discharge immediately adjacent unqualified new Node operands; ordinary temporary/other calls remain separately reviewed."
+    },
+    {
+      "source_sha256_from_job15": "b22f8afa7e51850fefdbbf7bf094e630a72a6e9b65f99eff9744f144f18488c3",
+      "kind": "cpp-named-type-function-shadow-owner-review",
+      "offset": 2968,
+      "line": 88,
+      "name": "NBodySystem",
+      "source_text": "        NBodySystem():numBodies(5) {            ",
+      "decision": "retain-separate-ordinary-type-call-review",
+      "reason": "These offsets are outside the proved constructor definition spans. Only the parent new-Type grammar change can discharge immediately adjacent unqualified new Node operands; ordinary temporary/other calls remain separately reviewed."
+    },
+    {
+      "source_sha256_from_job15": "56a0ea5221ad0a75efe9819f2a9d31e6d30bef69e1320b522fe82b1d724e4dca",
+      "kind": "cpp-named-type-function-shadow-owner-review",
+      "offset": 2554,
+      "line": 131,
+      "name": "Repeat",
+      "source_text": "   make(\"ONE\", \"Homo sapiens alu\", n*2,Repeat(alu));",
+      "decision": "retain-separate-ordinary-type-call-review",
+      "reason": "These offsets are outside the proved constructor definition spans. Only the parent new-Type grammar change can discharge immediately adjacent unqualified new Node operands; ordinary temporary/other calls remain separately reviewed."
+    },
+    {
+      "source_sha256_from_job15": "56a0ea5221ad0a75efe9819f2a9d31e6d30bef69e1320b522fe82b1d724e4dca",
+      "kind": "cpp-named-type-function-shadow-owner-review",
+      "offset": 2611,
+      "line": 132,
+      "name": "Random",
+      "source_text": "   make(\"TWO\", \"IUB ambiguity codes\", n*3, Random(iub));",
+      "decision": "retain-separate-ordinary-type-call-review",
+      "reason": "These offsets are outside the proved constructor definition spans. Only the parent new-Type grammar change can discharge immediately adjacent unqualified new Node operands; ordinary temporary/other calls remain separately reviewed."
+    },
+    {
+      "source_sha256_from_job15": "56a0ea5221ad0a75efe9819f2a9d31e6d30bef69e1320b522fe82b1d724e4dca",
+      "kind": "cpp-named-type-function-shadow-owner-review",
+      "offset": 2673,
+      "line": 133,
+      "name": "Random",
+      "source_text": "   make(\"THREE\", \"Homo sapiens frequency\", n*5, Random(homosapiens));",
+      "decision": "retain-separate-ordinary-type-call-review",
+      "reason": "These offsets are outside the proved constructor definition spans. Only the parent new-Type grammar change can discharge immediately adjacent unqualified new Node operands; ordinary temporary/other calls remain separately reviewed."
+    },
+    {
+      "source_sha256_from_job15": "e9ea172b053a24a2fc804a0232af6b242b1fbfedc143500a66355446bb251d98",
+      "kind": "cpp-named-type-function-shadow-owner-review",
+      "offset": 307,
+      "line": 19,
+      "name": "LFT",
+      "source_text": "    LFT() : q(1), r(0), t(1), k(0){};",
+      "decision": "retain-separate-ordinary-type-call-review",
+      "reason": "These offsets are outside the proved constructor definition spans. Only the parent new-Type grammar change can discharge immediately adjacent unqualified new Node operands; ordinary temporary/other calls remain separately reviewed."
+    },
+    {
+      "source_sha256_from_job15": "19f5486a8f52883e43f773b2ed13edc058ea3075c8c25d03f20e3d2923ace642",
+      "kind": "cpp-named-type-function-shadow-owner-review",
+      "offset": 1599,
+      "line": 74,
+      "name": "LFT",
+      "source_text": "  LFT() noexcept : q(1), r(0), t(1), k(0) {}",
+      "decision": "retain-separate-ordinary-type-call-review",
+      "reason": "These offsets are outside the proved constructor definition spans. Only the parent new-Type grammar change can discharge immediately adjacent unqualified new Node operands; ordinary temporary/other calls remain separately reviewed."
+    },
+    {
+      "source_sha256_from_job15": "19f5486a8f52883e43f773b2ed13edc058ea3075c8c25d03f20e3d2923ace642",
+      "kind": "cpp-named-type-function-shadow-owner-review",
+      "offset": 2171,
+      "line": 102,
+      "name": "Context",
+      "source_text": "  auto context = Context();",
+      "decision": "retain-separate-ordinary-type-call-review",
+      "reason": "These offsets are outside the proved constructor definition spans. Only the parent new-Type grammar change can discharge immediately adjacent unqualified new Node operands; ordinary temporary/other calls remain separately reviewed."
+    }
+  ],
+  "discharge_policy": "Constructor ownership permits replacing only exact proved prefix/open/close canonical surface events by construction, rather than deleting generic diagnostics. Formal type/value/lifetime gates remain until their own proof. Later new Node type calls are outside constructor spans and are handled solely by the separately owned new-Type operand grammar repair; direct Repeat/Random temporary constructions remain reviewed.",
+  "admission": "No source/chart certification. Root must freeze dependency/fixture/policy/review artifacts and execute full source reconciliation under common mutex."
+}

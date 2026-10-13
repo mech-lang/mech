@@ -1,0 +1,14 @@
+WAIT LOCK: V preparation production-input-v2 pidigits
+BUILD v-pidigits-compact-input-v2
+BUILD v-pidigits-optimized-input-v2
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/prepare_input_v2.py", line 206, in <module>
+    main()
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/prepare_input_v2.py", line 202, in main
+    prepare(args)
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/prepare_input_v2.py", line 155, in prepare
+    command_build(module, harness, command, environment, profile_directory, lock.fileno())
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/prepare.py", line 89, in command_build
+    assert process.returncode == 0, ('V build failed; diagnostics retained', directory)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('V build failed; diagnostics retained', PosixPath('/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualification/production-input-v2/pidigits/v-pidigits-optimized-input-v2'))

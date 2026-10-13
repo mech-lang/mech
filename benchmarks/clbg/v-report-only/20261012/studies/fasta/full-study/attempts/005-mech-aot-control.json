@@ -1,0 +1,65 @@
+{
+  "key": "fasta:v-builder-v3-study:mech-control",
+  "id": "mech-aot-control",
+  "benchmark": "fasta",
+  "language": "mech",
+  "source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating",
+    "25000000"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "runtime_environment": {},
+  "execution_fingerprint": "{\"binary_sha256\": \"37c24e617689fbbec6221ff4c107d9ea35f18eb62ed7387286bfa7d6224a92e4\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602\", \"support\": {\"../../hosts/gpu/src/control/compiler.rs\": \"b0d992df5b4c67a6dd1cb2a12b82f7f90e9dc845c46f13ca81a9aceb18ff3286\", \"fasta/fasta-optimized.mec\": \"b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602\", \"fasta/fasta.mec\": \"5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066\", \"work-audit/20261009/timings.json\": \"9c85e39d8d72357ee9f0867cdebb0968eba37f3577d013d3d21f661027abc33a\"}}",
+  "started_at": "2026-10-13T01:39:07.904644+00:00",
+  "workload_n": 25000000,
+  "full_workload": true,
+  "timeout_seconds": 14400,
+  "maximum_rss_mib": 8192,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.638545583,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 254166745,
+  "stdout_sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+  "validation": {
+    "bytes": 254166745,
+    "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+    "reference_match": true
+  },
+  "finished_at": "2026-10-13T01:39:09.004055+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true,
+  "round": 2,
+  "attempt": 5,
+  "sampler_wait_status": 0,
+  "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/studies/fasta/full-study/attempts/005-mech-aot-control.json",
+  "supervised_native_group": {
+    "type": "native-group-started",
+    "pid": 15999,
+    "pgid": 15999,
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating",
+      "25000000"
+    ],
+    "inherited_common_mutex": true
+  },
+  "supervisor_remaining_members": [],
+  "fatal_qualification_fields": [],
+  "qualified": true,
+  "retryable_environment_only": false
+}

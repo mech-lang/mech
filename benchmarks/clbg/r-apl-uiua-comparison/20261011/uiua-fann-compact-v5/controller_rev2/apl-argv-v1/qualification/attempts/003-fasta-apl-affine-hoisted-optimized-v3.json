@@ -1,0 +1,54 @@
+{
+  "key": "fasta:fasta-apl-affine-hoisted-optimized-v3",
+  "id": "fasta-apl-affine-hoisted-optimized-v3",
+  "benchmark": "fasta",
+  "language": "apl",
+  "source_sha256": "48002bf2a99dea328634775e7b26fcb2c57be38aa596e01675c671181548d43b",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+    "--cc",
+    "8",
+    "-f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/sources/fasta.optimized.apl",
+    "--",
+    "2"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+  "runtime_environment": {
+    "LC_ALL": "C"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh\", \"--cc\", \"8\", \"-f\", \"{source}\", \"--\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011\", \"environment\": {\"LC_ALL\": \"C\"}, \"source_sha256\": \"48002bf2a99dea328634775e7b26fcb2c57be38aa596e01675c671181548d43b\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl\": \"ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh\": \"50c937c62df5095151dd766dcbd8bc2058e24a93ccefb6b5b601944a48cdadf4\", \"/opt/homebrew/Cellar/pcre2/10.49/lib/libpcre2-32.0.dylib\": \"ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9\", \"/opt/homebrew/opt/pcre2/lib/libpcre2-32.0.dylib\": \"ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9\"}}",
+  "started_at": "2026-10-12T19:12:59.456067+00:00",
+  "workload_n": 2,
+  "full_workload": false,
+  "timeout_seconds": 120,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.107745541,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+  "stdout_bytes": 100,
+  "stdout_sha256": "6a88bbb8e503afd1f389eff7440feceb134b1f525ccfdd93459a9043c5955ac0",
+  "validation": {
+    "reference_match": true,
+    "bytes": 100,
+    "sha256": "6a88bbb8e503afd1f389eff7440feceb134b1f525ccfdd93459a9043c5955ac0"
+  },
+  "finished_at": "2026-10-12T19:12:59.755149+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true
+}

@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/usr/bin/xcrun",
+    "--find",
+    "lldb"
+  ],
+  "started_at": "2026-10-13T04:59:22.935269+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 66548,
+  "identity": {
+    "pid": 66548,
+    "process_listing": "Tue Oct 13 00:59:22 2026     /usr/bin/xcrun --find lldb"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-13T04:59:23.016061+00:00",
+  "final_exit_status": 0
+}

@@ -1,0 +1,6 @@
+C3 Compiler Version:       0.8.5
+Installed directory:       /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v1/c3/c3
+Git Hash:                  640091d3303a393f9651d644063b837fc19d05f1
+Backends:                  LLVM
+LLVM version:              23.1.2
+LLVM default target:       arm64-apple-darwin25.6.0

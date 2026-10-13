@@ -1,0 +1,13 @@
+test_exact_native_path_and_external_library_priority (test_layout_v2.LayoutChecks.test_exact_native_path_and_external_library_priority) ... ok
+test_missing_embedded_compiler_has_no_wrapper_fallback (test_layout_v2.LayoutChecks.test_missing_embedded_compiler_has_no_wrapper_fallback) ... ok
+test_missing_gc_rejected_without_installation (test_layout_v2.LayoutChecks.test_missing_gc_rejected_without_installation) ... ok
+test_missing_prelude_rejected (test_layout_v2.LayoutChecks.test_missing_prelude_rejected) ... ok
+test_previous_proved_guard_functions_are_exact_text (test_layout_v2.LayoutChecks.test_previous_proved_guard_functions_are_exact_text) ... ok
+test_shell_embedded_or_non_native_payload_rejected (test_layout_v2.LayoutChecks.test_shell_embedded_or_non_native_payload_rejected) ... ok
+test_unexpected_outer_launcher_rejected (test_layout_v2.LayoutChecks.test_unexpected_outer_launcher_rejected) ... ok
+test_unknown_version_root_rejected (test_layout_v2.LayoutChecks.test_unknown_version_root_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.026s
+
+OK

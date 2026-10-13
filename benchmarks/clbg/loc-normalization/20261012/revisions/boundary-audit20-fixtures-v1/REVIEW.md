@@ -1,0 +1,10 @@
+# Additive boundary audit20 fixture-only repair
+
+Audit19 remains immutable: actual982 fixture invocations,981 passes and one helper assertion failure before the C++ adapter was called; zero audit/native/benchmark/publication actions. Copy all108 exact frozen source/dependency/provenance inputs as prerequisite and candidate snapshots. Only test_cpp_direct_counter_adapter.py changes: add an explicitly opt-in intentionally_structural_boundary helper flag, allow its actual preceding control-header opening parenthesis, and invoke the unchanged production adapter directly in that one negative fixture. Its expected cpp-direct-structural-statement-owner-review assertion is retained. Production adapter already rejects actual structural context before evaluating boundary proof; no production adapter/normalizer/counter changes.
+
+Expected982 complete IDs are the original executed fixture-log IDs in expected-test-ids.json. Direct run controller validates all original snapshot pins, exact copy bytes, exact permitted test text transform, actual prior failed receipt/state/log and original dependency/runtime identity while holding the common benchmark mutex. It checks discovery before execution, retains actual started IDs, complete raw log and fixture result, and rejects every missing/duplicate/unknown test, skip, expected failure or unexpected success. Full108 snapshot and controller/inventory/dependency/raw/receipt bytes are pinned. No source-pool audit, normalization of scored source, new language counts, benchmark/native/compiler, retry or publication is authorized by this fixture-only packet.
+
+Proposed command after root source review, from the LOC cohort:
+/opt/homebrew/opt/python@3.14/bin/python3.14 -B revisions/boundary-audit20-fixtures-v1/guarded_fixtures.py --run --output jobs/boundary-audit-20-fixtures-v1
+
+Candidate unexecuted. Later canonical source-pool audit/count work is separately reviewed after actual successful982/zero-skip receipt; this packet cannot admit chart LOC.

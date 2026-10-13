@@ -1,0 +1,99 @@
+{
+  "status": "diagnostic-only-no-source-or-runtime-change",
+  "python": "3.12.14 (main, Aug 25 2026, 13:50:33) [Clang 22.1.3 ]",
+  "archive": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/crystal-1.21.1-1-darwin-universal.tar.gz",
+  "symlinks": 19,
+  "mismatches": [
+    {
+      "member": "crystal-1.21.1-1/src/lib_c/x86_64-linux-gnu/c/linux",
+      "archive_linkname": "crystal-1.21.1-1./../linux",
+      "extracted_linkname": "linux",
+      "normpath_linkname": "linux",
+      "matches_normpath": true,
+      "data_filter_error": "[Errno 62] Too many levels of symbolic links: '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/src/lib_c/x86_64-linux-gnu/c/linux'",
+      "data_filter_error_type": "OSError"
+    },
+    {
+      "member": "crystal-1.21.1-1/src/lib_c/aarch64-linux-musl/c/linux",
+      "archive_linkname": "crystal-1.21.1-1./../linux",
+      "extracted_linkname": "linux",
+      "normpath_linkname": "linux",
+      "matches_normpath": true,
+      "data_filter_error": "[Errno 62] Too many levels of symbolic links: '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/src/lib_c/aarch64-linux-musl/c/linux'",
+      "data_filter_error_type": "OSError"
+    },
+    {
+      "member": "crystal-1.21.1-1/src/lib_c/x86_64-linux-musl/c/linux",
+      "archive_linkname": "crystal-1.21.1-1./../linux",
+      "extracted_linkname": "linux",
+      "normpath_linkname": "linux",
+      "matches_normpath": true,
+      "data_filter_error": "[Errno 62] Too many levels of symbolic links: '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/src/lib_c/x86_64-linux-musl/c/linux'",
+      "data_filter_error_type": "OSError"
+    },
+    {
+      "member": "crystal-1.21.1-1/src/lib_c/aarch64-linux-gnu/c/linux",
+      "archive_linkname": "crystal-1.21.1-1./../linux",
+      "extracted_linkname": "linux",
+      "normpath_linkname": "linux",
+      "matches_normpath": true,
+      "data_filter_error": "[Errno 62] Too many levels of symbolic links: '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/src/lib_c/aarch64-linux-gnu/c/linux'",
+      "data_filter_error_type": "OSError"
+    },
+    {
+      "member": "crystal-1.21.1-1/src/lib_c/i386-linux-musl/c/linux",
+      "archive_linkname": "crystal-1.21.1-1./../linux",
+      "extracted_linkname": "linux",
+      "normpath_linkname": "linux",
+      "matches_normpath": true,
+      "data_filter_error": "[Errno 62] Too many levels of symbolic links: '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/src/lib_c/i386-linux-musl/c/linux'",
+      "data_filter_error_type": "OSError"
+    },
+    {
+      "member": "crystal-1.21.1-1/src/lib_c/i386-linux-gnu/c/linux",
+      "archive_linkname": "crystal-1.21.1-1./../linux",
+      "extracted_linkname": "linux",
+      "normpath_linkname": "linux",
+      "matches_normpath": true,
+      "data_filter_error": "[Errno 62] Too many levels of symbolic links: '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/src/lib_c/i386-linux-gnu/c/linux'",
+      "data_filter_error_type": "OSError"
+    },
+    {
+      "member": "crystal-1.21.1-1/src/lib_c/arm-linux-gnueabihf/c/linux",
+      "archive_linkname": "crystal-1.21.1-1./../linux",
+      "extracted_linkname": "linux",
+      "normpath_linkname": "linux",
+      "matches_normpath": true,
+      "data_filter_error": "[Errno 62] Too many levels of symbolic links: '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/src/lib_c/arm-linux-gnueabihf/c/linux'",
+      "data_filter_error_type": "OSError"
+    },
+    {
+      "member": "crystal-1.21.1-1/src/lib_c/aarch64-linux-android/c/linux",
+      "archive_linkname": "crystal-1.21.1-1./../linux",
+      "extracted_linkname": "linux",
+      "normpath_linkname": "linux",
+      "matches_normpath": true,
+      "data_filter_error": "[Errno 62] Too many levels of symbolic links: '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/src/lib_c/aarch64-linux-android/c/linux'",
+      "data_filter_error_type": "OSError"
+    }
+  ],
+  "native_benchmark_runs": 0,
+  "new_compiler_runs": 0,
+  "full_performance_runs": 0,
+  "previous_diagnostic_script": "/tmp/mech-crystal-archive-link-diagnostic-v5.py",
+  "previous_diagnostic_had_no_completed_receipt": true,
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/crystal-1.21.1-1-darwin-universal.tar.gz": "ba34fa7fb8bc8b951f12d17e12f69c9d7ccce38900caa4b8a17f1b4f29d37605",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/guarded_prepare_v5.py": "c21fef40570daf39df9c31498dbebebf19cb7c291ac613984d8b31b31286b2a7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/proof_reuse_v4.py": "cee6e6f8969fd0ae04ee2e7c91d55be4087ca7a340c3db8da78deafb6b2d3cc3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/archive-v5-fixtures.json": "280be2b8f1a8525b1406c02eae65818a93f56b6347ec7ca38817658eff5e7fc0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/archive-v5-fixtures.log": "f27e8cc5948e4c05781a680eefb5606b9f7cfd19538eeb179cfc7a7bde104b3c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/proposal-seals/private-input-archive-fixture-v5/sdk-path.json": "1350e541bf168c5f5c20ff3951fff94031127b41aa0da45897c0bafdf1d70dbd",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/guarded_prepare_v2.py": "295e6e12f19f056477ffdd2a2e4dae799efd17241d7c5dcc2b58cd39a1afe099",
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/tarfile.py": "41a9f1930e5285455b4b0db2b9394247cce312c3fa1ef586a58e66c0100668d5",
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12": "ac60cfe0268614638d0ffa35f3b0284fc7b3a11482723793455e17eeb278509e",
+    "/tmp/mech-crystal-archive-link-diagnostic-v5-002.py": "db941141f2205cde104f8fe7b15bcefbabdeface3fb5bde740ed4ecbc798d1c2",
+    "/tmp/mech-crystal-archive-link-diagnostic-v5.py": "ce922cf5e9865e30d26debbe75507898151a19036ee59a792c05638df26edee3"
+  },
+  "tarfile_filtered_attributes_source": "def _get_filtered_attrs(member, dest_path, for_data=True):\n    new_attrs = {}\n    name = member.name\n    dest_path = os.path.realpath(dest_path, strict=os.path.ALLOW_MISSING)\n    # Strip leading / (tar's directory separator) from filenames.\n    # Include os.sep (target OS directory separator) as well.\n    if name.startswith(('/', os.sep)):\n        name = new_attrs['name'] = member.path.lstrip('/' + os.sep)\n    if os.path.isabs(name):\n        # Path is absolute even after stripping.\n        # For example, 'C:/foo' on Windows.\n        raise AbsolutePathError(member)\n    # Ensure we stay in the destination\n    target_path = os.path.realpath(os.path.join(dest_path, name),\n                                   strict=os.path.ALLOW_MISSING)\n    if os.path.commonpath([target_path, dest_path]) != dest_path:\n        raise OutsideDestinationError(member, target_path)\n    # Limit permissions (no high bits, and go-w)\n    mode = member.mode\n    if mode is not None:\n        # Strip high bits & group/other write bits\n        mode = mode & 0o755\n        if for_data:\n            # For data, handle permissions & file types\n            if member.isreg() or member.islnk():\n                if not mode & 0o100:\n                    # Clear executable bits if not executable by user\n                    mode &= ~0o111\n                # Ensure owner can read & write\n                mode |= 0o600\n            elif member.isdir() or member.issym():\n                # Ignore mode for directories & symlinks\n                mode = None\n            else:\n                # Reject special files\n                raise SpecialFileError(member)\n        if mode != member.mode:\n            new_attrs['mode'] = mode\n    if for_data:\n        # Ignore ownership for 'data'\n        if member.uid is not None:\n            new_attrs['uid'] = None\n        if member.gid is not None:\n            new_attrs['gid'] = None\n        if member.uname is not None:\n            new_attrs['uname'] = None\n        if member.gname is not None:\n            new_attrs['gname'] = None\n        # Check link destination for 'data'\n        if member.islnk() or member.issym():\n            if os.path.isabs(member.linkname):\n                raise AbsoluteLinkError(member)\n            # A link member that resolves to the destination directory itself\n            # would replace it with a (sym)link, redirecting the destination\n            # for all subsequent members.\n            if target_path == dest_path:\n                raise OutsideDestinationError(member, target_path)\n            normalized = os.path.normpath(member.linkname)\n            if normalized != member.linkname:\n                new_attrs['linkname'] = normalized\n            if member.issym():\n                # The symlink is created at `name` with trailing separators\n                # stripped, so its target is relative to the directory\n                # containing that path.\n                link_dir = os.path.dirname(name.rstrip('/' + os.sep))\n                target_path = os.path.join(dest_path, link_dir, normalized)\n            else:\n                target_path = os.path.join(dest_path, normalized)\n            target_path = os.path.realpath(target_path,\n                                           strict=os.path.ALLOW_MISSING)\n            if os.path.commonpath([target_path, dest_path]) != dest_path:\n                raise LinkOutsideDestinationError(member, target_path)\n    return new_attrs\n"
+}

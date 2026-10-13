@@ -1,0 +1,56 @@
+{
+  "status": "native-preparation-authorized-and-queued",
+  "reviewed_proposal": "proposals/private-input-archive-filter-v6.json",
+  "reviewed_proposal_sha256": "1c319443c3948709eeadc05526ad3244d785c0ce99cc724c8a6a025868b5ac1c",
+  "root_review_received": true,
+  "exact_prior_proof": "proposal-seals/private-input-archive-filter-v6/prior-proof-reuse.json",
+  "exact_prior_proof_sha256": "c0dafdf0fc2442bb848a0757f0191a77a63706f9e387dd4110d921b1d3493c2f",
+  "prior_bounded_cases_reused": 112,
+  "fresh_profile_builds_required": 5,
+  "fresh_bounded_output_cases_required": 44,
+  "preparation": {
+    "pid": 44652,
+    "exec_session": 51913,
+    "revision": "private-input-archive-filter-v6",
+    "status": "waiting-on-common-mutex",
+    "command": [
+      "python3", "-u", "guarded_prepare_v6.py", "--run",
+      "--proposal-file", "proposals/private-input-archive-filter-v6.json",
+      "--proposal-sha256", "1c319443c3948709eeadc05526ad3244d785c0ce99cc724c8a6a025868b5ac1c",
+      "--revision", "private-input-archive-filter-v6"
+    ]
+  },
+  "full_pipeline_fixture": {
+    "status": "passed",
+    "tests_run": 7,
+    "native_probes": 0,
+    "actual_signals_sent": 0,
+    "receipt": "studies/pipeline-v2/full-study-fixtures.json",
+    "runner_sha256": "d502055be13fda6cc9a0cd7352ca416d7b4628c8258aee1d02fca47fbeaa9410",
+    "sealer_sha256": "5cc24d37b1b03e81ebb193d0f7622dab0e78035ec184584377da43166f5c08e0"
+  },
+  "source_count_replay": {
+    "pid": 44704,
+    "exec_session": 65331,
+    "status": "waiting-on-common-mutex",
+    "fixture_receipt": "../../loc-normalization/20261012/jobs/boundary-audit-18/fixture-receipt.json",
+    "fixture_tests_passed": 672,
+    "script": "source-counts/replay_sources.py",
+    "output": "source-counts/boundary-audit-18-source-proposals-v1.json",
+    "canonical_LOC_admitted": false
+  },
+  "shared_mutex": "/tmp/mech-clbg-timing.lock",
+  "last_observed_live_timing_pid": 44477,
+  "full_studies_started": 0,
+  "next_after_native_qualification": [
+    "python3", "studies/pipeline-v2/seal_full_studies.py",
+    "--qualified-revision", "private-input-archive-filter-v6",
+    "--study-revision", "full-v1"
+  ],
+  "full_index_review_required_before_native_full_launch": true,
+  "source_failures_remain_unscored": true,
+  "integrity_errors_stop_without_retry": true,
+  "immutable_evidence_preserved": true,
+  "git_commits_created": 0,
+  "charts_or_publication_modified": false
+}

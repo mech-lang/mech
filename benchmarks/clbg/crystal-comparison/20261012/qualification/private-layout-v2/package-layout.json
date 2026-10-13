@@ -1,0 +1,16 @@
+{
+  "status": "selected-exact-reviewed-layout-v2",
+  "compiler": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/bin/crystal",
+  "source_root": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/src",
+  "shell_wrapper": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/bin/crystal",
+  "shell_wrapper_executed": false,
+  "library_search_order": [
+    "/opt/homebrew/Cellar/gmp/6.3.0/lib",
+    "/opt/homebrew/Cellar/pcre2/10.49/lib",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib"
+  ],
+  "compiler_architecture": "Actual guarded lipo ARM64 gate remains required below.",
+  "original_stopped_v1_report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-v1/report.json",
+  "release_archive_sha256": "ba34fa7fb8bc8b951f12d17e12f69c9d7ccce38900caa4b8a17f1b4f29d37605",
+  "full_processes_authorized": 0
+}

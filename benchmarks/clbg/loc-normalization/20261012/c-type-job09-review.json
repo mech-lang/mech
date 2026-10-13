@@ -1,0 +1,4124 @@
+{
+  "schema_version": 1,
+  "status": "static-source-review-only-unqualified",
+  "scope": "Measured candidate registrations with the four C/C++ type diagnostic kinds in immutable boundary-audit-09. Pending/unmeasured source dictionary flags are not a blanket certificate.",
+  "frozen_audit": "jobs/boundary-audit-09/candidate-audit.json",
+  "frozen_audit_created_at": "2026-10-12T17:48:17.533069+00:00",
+  "frozen_tool_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-09/snapshot/audit.py": "aa2c6361f1ea9a9e3146486f4e5f274828a6b4653a71614942e4e6822475e699",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-09/snapshot/normalizer.py": "20b07700da644137889e925295b3db50532bbdf4cc9a8b4abc5a741f366ada7b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-09/snapshot/lexical.py": "9e2839b1a49aeb572915c6eab50da2df9ef0e6ea819cb476be5a9ab2f063d7c8",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-09/snapshot/canonical.py": "4568ecaa00623b18de165d228f37752c973db58e9254f5b587e1b820bbbe56da",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-09/snapshot/pools.py": "8dc5a3da1281c0d4863b4d708478a579d1aa3eb3ef9bbb842cdc831881e6c37c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-09/snapshot/comparisons.py": "849575cef5487937ab741f4a64418ed25faa4018b0322cea9fa59ed8e4dbf462",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-09/snapshot/prior_array_loc.py": "e574536fa6430bb47df94ba0b2c6d20925af39ac13afabf6835cbebcd7b39ca7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-09/snapshot/apl_closer_approved.py": "ce4105718918b70c7476bc36112106facd8dd3c9e7b9e0609381ed34244a7061",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-09/snapshot/value_forms.py": "0e506caa30e342586bea6d3a878f5b7698a211f38585675d12b18bf66265c7fe",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-09/snapshot/foreign_dispatch.py": "cdde127784cce0562e5fbaa446ffd3ef60612cb21c21f002bef9cd8848b43cf1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-09/snapshot/c_type_environment.py": "a2a32ab92962a39332be36b9862bdf039079e9d2c39adf8f4c3953b36bf21c36",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-09/snapshot/record_fields.py": "3889a0e888ba965ac0dcbceb1ae625f5c9f107ca28a064574b308ebb71b5bc63",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-09/snapshot/foreign_core.py": "62a79d27740647f5f4918c3f29df6ba977e72f61777f8cf3f431e0ec66ba5be5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-09/snapshot/foreign_braced.py": "35946ae885efefe355dfedf220c81701c33ffbec007f48e983b9cbf7d92de17d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-09/snapshot/zig_odin.py": "1f74380877a5a5f1daf8c225d3d507818f627ecda2afab7f069168b89d173335",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-09/snapshot/foreign_keyword.py": "3a7d0ddbfe0fa4a5ea9730804a8eb09d5e2f6d92478bc603f51f43427e56f665",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-09/snapshot/foreign_layout.py": "f4b2c94078881f3797d0b8774d498d2894848fb11e9d6af2485a0ed88dd939f9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-09/snapshot/foreign_smalltalk.py": "8b91cde14e297c0767a932277c058b39ca81a73ef92ef82d6f23deca1aacfb44"
+  },
+  "summary": {
+    "distinct_source_sha_count": 34,
+    "candidate_registration_count": 82,
+    "endpoint_relevant_source_count": 18,
+    "distinct_site_count": 79,
+    "diagnostic_registration_count": 207,
+    "diagnostic_registration_counts": {
+      "c-typedef-declarator-owner-review": 103,
+      "possible-packed-declaration-type-owner-review": 59,
+      "c-aggregate-suffix-owner-review": 5,
+      "c-aggregate-instance-suffix-review": 40
+    },
+    "distinct_site_counts": {
+      "c-typedef-declarator-owner-review": 36,
+      "possible-packed-declaration-type-owner-review": 31,
+      "c-aggregate-suffix-owner-review": 2,
+      "c-aggregate-instance-suffix-review": 10
+    },
+    "category_site_counts": {
+      "parent-drafted-native-integer-alias-contract": 13,
+      "posix-off-type-import-evidence-pending": 1,
+      "cpp-named-aggregate-type-owner": 9,
+      "ordinary-initializer-operators-false-gate": 2,
+      "explicit-memory-resource-qualified-type-alias": 2,
+      "cpp-qualified-or-template-type-alias": 8,
+      "ordinary-aggregate-instance-suffix": 12,
+      "cpp-dependent-member-template-type-alias": 2,
+      "explicit-pbds-template-type-alias": 2,
+      "standard-qualified-size-type-alias": 4,
+      "imported-template-and-constructor-declarators": 2,
+      "cpp-template-formal-and-pack-type-alias": 4,
+      "standard-size-type-import-contract": 6,
+      "explicit-pcre2-size-contract": 3,
+      "explicit-boost-template-type-alias": 4,
+      "nonendpoint-transitive-integer-import-evidence-pending": 2,
+      "parent-drafted-gnu-attribute-alias-owner": 1,
+      "cpp-source-aggregate-array-type-alias": 1,
+      "standard-library-nested-type-contract": 1
+    },
+    "explicit_site_only_unique_source_increment": 22,
+    "explicit_site_only_registration_weighted_increment": 38
+  },
+  "sources": [
+    {
+      "source_sha256": "634ee9a5c4b637e22f29c9f09f7ac7ea0479cbf22c649abfe3266d603633abbe",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "binarytrees/upstream/binarytrees-gcc-2.c",
+      "language": "c",
+      "candidate_registration_keys": [
+        "binarytrees:binarytrees-gcc-2-gcc",
+        "binarytrees:binarytrees-gcc-2-llvm"
+      ],
+      "candidate_registration_count": 2,
+      "endpoint_roles": [
+        {
+          "key": "binarytrees:binarytrees-gcc-2-gcc",
+          "roles": [
+            "fastest_key",
+            "smallest_key",
+            "previous_fastest_key"
+          ]
+        }
+      ],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": true,
+      "all_include_evidence": [
+        {
+          "line": 7,
+          "text": "#include <stdint.h>"
+        },
+        {
+          "line": 8,
+          "text": "#include <stdlib.h>"
+        },
+        {
+          "line": 9,
+          "text": "#include <stdio.h>"
+        },
+        {
+          "line": 10,
+          "text": "#include <apr_pools.h>"
+        }
+      ],
+      "type_owner_header_evidence": [],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 371,
+          "line": 13,
+          "column": 1,
+          "source_line": "typedef intptr_t intnative_t;",
+          "frozen_diagnostic_source_text": "typedef intptr_t intnative_t;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "parent-drafted-native-integer-alias-contract"
+        }
+      ],
+      "flagged_diagnostic_registration_count": 2,
+      "frozen_normalized_loc": 70,
+      "explicit_site_only_proposed_unit_increment": 0,
+      "scope_only_proposed_loc": 70,
+      "whole_source_certificate": false
+    },
+    {
+      "source_sha256": "d9a532975e0a08590d711ae1335c6a976889af19589d234220333b84b97fe8ab",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "binarytrees/upstream/binarytrees-gcc-3.c",
+      "language": "c",
+      "candidate_registration_keys": [
+        "binarytrees:binarytrees-gcc-3-gcc",
+        "binarytrees:binarytrees-gcc-3-llvm"
+      ],
+      "candidate_registration_count": 2,
+      "endpoint_roles": [
+        {
+          "key": "binarytrees:binarytrees-gcc-3-gcc",
+          "roles": [
+            "previous_smallest_key"
+          ]
+        }
+      ],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": true,
+      "all_include_evidence": [
+        {
+          "line": 11,
+          "text": "#include <stdint.h>"
+        },
+        {
+          "line": 12,
+          "text": "#include <stdlib.h>"
+        },
+        {
+          "line": 13,
+          "text": "#include <stdio.h>"
+        },
+        {
+          "line": 16,
+          "text": "#include <apr_pools.h>"
+        }
+      ],
+      "type_owner_header_evidence": [],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 392,
+          "line": 15,
+          "column": 1,
+          "source_line": "typedef off_t off64_t; // This is needed to keep APR happy on 32 bit systems.",
+          "frozen_diagnostic_source_text": "typedef off_t off64_t;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "posix-off-type-import-evidence-pending"
+        },
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 562,
+          "line": 19,
+          "column": 1,
+          "source_line": "typedef intptr_t intnative_t;",
+          "frozen_diagnostic_source_text": "typedef intptr_t intnative_t;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "parent-drafted-native-integer-alias-contract"
+        },
+        {
+          "diagnostic_kind": "possible-packed-declaration-type-owner-review",
+          "offset": 4130,
+          "line": 105,
+          "column": 1,
+          "source_line": "      intnative_t i=1, total_Trees_Checksum=0;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 2,
+          "frozen_expansion": {
+            "line": 105,
+            "extra_lines": 1,
+            "units": 2,
+            "original": "      intnative_t i=1, total_Trees_Checksum=0;",
+            "events": [
+              {
+                "start_column": 1,
+                "end_column": 47,
+                "units": 2,
+                "assignments": [
+                  {
+                    "column": 20,
+                    "operator": "="
+                  },
+                  {
+                    "column": 44,
+                    "operator": "="
+                  }
+                ],
+                "declaration_bindings": 0,
+                "reason": "independent-statement-and-chained-bindings"
+              }
+            ],
+            "canonical_events": [],
+            "reason": "Canonical header/open/close units and independent body bindings; retain literal wrapping."
+          },
+          "review_required_before_admission": true,
+          "declarators": [
+            "i",
+            "total_Trees_Checksum"
+          ],
+          "required_declaration_units": 2,
+          "required_site_unit_increment": 0,
+          "category": "parent-drafted-native-integer-alias-contract",
+          "decision": "Independent initialized variables; parent already added exact intptr/uintptr import contracts. Current two assignment units already match the declaration count."
+        }
+      ],
+      "flagged_diagnostic_registration_count": 6,
+      "frozen_normalized_loc": 74,
+      "explicit_site_only_proposed_unit_increment": 0,
+      "scope_only_proposed_loc": 74,
+      "whole_source_certificate": false
+    },
+    {
+      "source_sha256": "88d980126647637c117f57cd6ab07218fc6ce6e3ed8800828b89f36972c2736c",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "binarytrees/upstream/binarytrees-gpp-2.cpp",
+      "language": "cpp",
+      "candidate_registration_keys": [
+        "binarytrees:binarytrees-gpp-2-gcc",
+        "binarytrees:binarytrees-gpp-2-llvm"
+      ],
+      "candidate_registration_count": 2,
+      "endpoint_roles": [
+        {
+          "key": "binarytrees:binarytrees-gpp-2-gcc",
+          "roles": [
+            "smallest_key",
+            "previous_smallest_key"
+          ]
+        }
+      ],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": true,
+      "all_include_evidence": [
+        {
+          "line": 9,
+          "text": "#include <stdio.h>"
+        },
+        {
+          "line": 10,
+          "text": "#include <stdlib.h>"
+        },
+        {
+          "line": 11,
+          "text": "#include <iostream>"
+        }
+      ],
+      "type_owner_header_evidence": [
+        {
+          "line": 13,
+          "text": "struct Node {"
+        }
+      ],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "possible-packed-declaration-type-owner-review",
+          "offset": 257,
+          "line": 14,
+          "column": 1,
+          "source_line": "  Node *l, *r;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "declarators": [
+            "l",
+            "r"
+          ],
+          "required_declaration_units": 2,
+          "required_site_unit_increment": 1,
+          "category": "cpp-named-aggregate-type-owner",
+          "decision": "Independent fields; named C++ aggregate header proves type before its body and later uses.",
+          "type_owner_evidence": [
+            {
+              "line": 13,
+              "text": "struct Node {"
+            }
+          ]
+        },
+        {
+          "diagnostic_kind": "possible-packed-declaration-type-owner-review",
+          "offset": 998,
+          "line": 46,
+          "column": 1,
+          "source_line": "    int iterations = 1 << (max_depth - d + min_depth), c=0;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 2,
+          "frozen_expansion": {
+            "line": 46,
+            "extra_lines": 1,
+            "units": 2,
+            "original": "    int iterations = 1 << (max_depth - d + min_depth), c=0;",
+            "events": [
+              {
+                "start_column": 1,
+                "end_column": 60,
+                "units": 2,
+                "assignments": [
+                  {
+                    "column": 20,
+                    "operator": "="
+                  },
+                  {
+                    "column": 57,
+                    "operator": "="
+                  }
+                ],
+                "declaration_bindings": 0,
+                "reason": "independent-statement-and-chained-bindings"
+              }
+            ],
+            "canonical_events": [],
+            "reason": "Canonical header/open/close units and independent body bindings; retain literal wrapping."
+          },
+          "review_required_before_admission": true,
+          "declarators": [
+            "iterations",
+            "c"
+          ],
+          "required_declaration_units": 2,
+          "required_site_unit_increment": 0,
+          "category": "ordinary-initializer-operators-false-gate",
+          "decision": "Proven builtin declarations; shift << or member -> inside RHS is an ordinary operator. Keep independent assignment count; remove no diagnostics without a qualified grammar repair."
+        }
+      ],
+      "flagged_diagnostic_registration_count": 4,
+      "frozen_normalized_loc": 52,
+      "explicit_site_only_proposed_unit_increment": 1,
+      "scope_only_proposed_loc": 53,
+      "whole_source_certificate": false
+    },
+    {
+      "source_sha256": "7b1167dff0d8385bd459a066db6a6d3d7bc91bf0ec0cd765e339b6dc8f495a13",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "binarytrees/upstream/binarytrees-gpp-7.cpp",
+      "language": "cpp",
+      "candidate_registration_keys": [
+        "binarytrees:binarytrees-gpp-7-gcc"
+      ],
+      "candidate_registration_count": 1,
+      "endpoint_roles": [
+        {
+          "key": "binarytrees:binarytrees-gpp-7-gcc",
+          "roles": [
+            "fastest_key",
+            "previous_fastest_key"
+          ]
+        }
+      ],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": true,
+      "all_include_evidence": [
+        {
+          "line": 14,
+          "text": "#include <algorithm>"
+        },
+        {
+          "line": 15,
+          "text": "#include <execution>"
+        },
+        {
+          "line": 16,
+          "text": "#include <iostream>"
+        },
+        {
+          "line": 17,
+          "text": "#include <memory_resource>"
+        },
+        {
+          "line": 18,
+          "text": "#include <numeric>"
+        },
+        {
+          "line": 19,
+          "text": "#include <boost/iterator/counting_iterator.hpp>"
+        }
+      ],
+      "type_owner_header_evidence": [
+        {
+          "line": 23,
+          "text": "struct Node {"
+        }
+      ],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 547,
+          "line": 21,
+          "column": 1,
+          "source_line": "using MemoryPool = std::pmr::monotonic_buffer_resource;",
+          "frozen_diagnostic_source_text": "using MemoryPool = std::pmr::monotonic_buffer_resource;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "explicit-memory-resource-qualified-type-alias"
+        },
+        {
+          "diagnostic_kind": "possible-packed-declaration-type-owner-review",
+          "offset": 618,
+          "line": 24,
+          "column": 1,
+          "source_line": "    Node *l, *r;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "declarators": [
+            "l",
+            "r"
+          ],
+          "required_declaration_units": 2,
+          "required_site_unit_increment": 1,
+          "category": "cpp-named-aggregate-type-owner",
+          "decision": "Independent fields; named C++ aggregate header proves type before its body and later uses.",
+          "type_owner_evidence": [
+            {
+              "line": 23,
+              "text": "struct Node {"
+            }
+          ]
+        }
+      ],
+      "flagged_diagnostic_registration_count": 2,
+      "frozen_normalized_loc": 68,
+      "explicit_site_only_proposed_unit_increment": 1,
+      "scope_only_proposed_loc": 69,
+      "whole_source_certificate": false
+    },
+    {
+      "source_sha256": "1c716c1a16aeac98da6fb7ac6c80429d0d54f6573dc8d6efca11fee3b39d3b05",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "fannkuchredux/upstream/fannkuchredux-gcc-5.c",
+      "language": "c",
+      "candidate_registration_keys": [
+        "fannkuchredux:fannkuchredux-gcc-5-gcc",
+        "fannkuchredux:fannkuchredux-gcc-5-llvm"
+      ],
+      "candidate_registration_count": 2,
+      "endpoint_roles": [
+        {
+          "key": "fannkuchredux:fannkuchredux-gcc-5-gcc",
+          "roles": [
+            "fastest_key",
+            "previous_fastest_key"
+          ]
+        }
+      ],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": true,
+      "all_include_evidence": [
+        {
+          "line": 18,
+          "text": "#include <stdint.h>"
+        },
+        {
+          "line": 19,
+          "text": "#include <stdlib.h>"
+        },
+        {
+          "line": 20,
+          "text": "#include <stdio.h>"
+        }
+      ],
+      "type_owner_header_evidence": [],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 1069,
+          "line": 23,
+          "column": 1,
+          "source_line": "typedef intptr_t intnative_t;",
+          "frozen_diagnostic_source_text": "typedef intptr_t intnative_t;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "parent-drafted-native-integer-alias-contract"
+        },
+        {
+          "diagnostic_kind": "possible-packed-declaration-type-owner-review",
+          "offset": 1884,
+          "line": 44,
+          "column": 1,
+          "source_line": "   intnative_t maximum_Flip_Count=0, checksum=0;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 2,
+          "frozen_expansion": {
+            "line": 44,
+            "extra_lines": 1,
+            "units": 2,
+            "original": "   intnative_t maximum_Flip_Count=0, checksum=0;",
+            "events": [
+              {
+                "start_column": 1,
+                "end_column": 49,
+                "units": 2,
+                "assignments": [
+                  {
+                    "column": 34,
+                    "operator": "="
+                  },
+                  {
+                    "column": 46,
+                    "operator": "="
+                  }
+                ],
+                "declaration_bindings": 0,
+                "reason": "independent-statement-and-chained-bindings"
+              }
+            ],
+            "canonical_events": [],
+            "reason": "Canonical header/open/close units and independent body bindings; retain literal wrapping."
+          },
+          "review_required_before_admission": true,
+          "declarators": [
+            "maximum_Flip_Count",
+            "checksum"
+          ],
+          "required_declaration_units": 2,
+          "required_site_unit_increment": 0,
+          "category": "parent-drafted-native-integer-alias-contract",
+          "decision": "Independent initialized variables; parent already added exact intptr/uintptr import contracts. Current two assignment units already match the declaration count."
+        },
+        {
+          "diagnostic_kind": "possible-packed-declaration-type-owner-review",
+          "offset": 4598,
+          "line": 108,
+          "column": 1,
+          "source_line": "                  intnative_t low_Index=1, high_Index=first_Value-1;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 2,
+          "frozen_expansion": {
+            "line": 108,
+            "extra_lines": 1,
+            "units": 2,
+            "original": "                  intnative_t low_Index=1, high_Index=first_Value-1;",
+            "events": [
+              {
+                "start_column": 1,
+                "end_column": 69,
+                "units": 2,
+                "assignments": [
+                  {
+                    "column": 40,
+                    "operator": "="
+                  },
+                  {
+                    "column": 54,
+                    "operator": "="
+                  }
+                ],
+                "declaration_bindings": 0,
+                "reason": "independent-statement-and-chained-bindings"
+              }
+            ],
+            "canonical_events": [],
+            "reason": "Canonical header/open/close units and independent body bindings; retain literal wrapping."
+          },
+          "review_required_before_admission": true,
+          "declarators": [
+            "low_Index",
+            "high_Index"
+          ],
+          "required_declaration_units": 2,
+          "required_site_unit_increment": 0,
+          "category": "parent-drafted-native-integer-alias-contract",
+          "decision": "Independent initialized variables; parent already added exact intptr/uintptr import contracts. Current two assignment units already match the declaration count."
+        }
+      ],
+      "flagged_diagnostic_registration_count": 6,
+      "frozen_normalized_loc": 86,
+      "explicit_site_only_proposed_unit_increment": 0,
+      "scope_only_proposed_loc": 86,
+      "whole_source_certificate": false
+    },
+    {
+      "source_sha256": "25e2d15a0c436f814254ede1bc87342428f28636f6168634db88b63243a15105",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "knucleotide/upstream/knucleotide-gcc-1.c",
+      "language": "c",
+      "candidate_registration_keys": [
+        "knucleotide:knucleotide-gcc-1-gcc-fastmath",
+        "knucleotide:knucleotide-gcc-1-gcc-native",
+        "knucleotide:knucleotide-gcc-1-llvm-fastmath",
+        "knucleotide:knucleotide-gcc-1-llvm-native"
+      ],
+      "candidate_registration_count": 4,
+      "endpoint_roles": [
+        {
+          "key": "knucleotide:knucleotide-gcc-1-gcc-native",
+          "roles": [
+            "fastest_key",
+            "smallest_key",
+            "previous_fastest_key",
+            "previous_smallest_key"
+          ]
+        }
+      ],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": true,
+      "all_include_evidence": [
+        {
+          "line": 10,
+          "text": "#include <stdint.h>"
+        },
+        {
+          "line": 11,
+          "text": "#include <stdlib.h>"
+        },
+        {
+          "line": 12,
+          "text": "#include <stdio.h>"
+        },
+        {
+          "line": 13,
+          "text": "#include <string.h>"
+        },
+        {
+          "line": 15,
+          "text": "#include <khash.h>"
+        }
+      ],
+      "type_owner_header_evidence": [],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 893,
+          "line": 27,
+          "column": 1,
+          "source_line": "typedef intptr_t intnative_t;",
+          "frozen_diagnostic_source_text": "typedef intptr_t intnative_t;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "parent-drafted-native-integer-alias-contract"
+        },
+        {
+          "diagnostic_kind": "possible-packed-declaration-type-owner-review",
+          "offset": 3614,
+          "line": 100,
+          "column": 1,
+          "source_line": "\tintnative_t elements_Array_Size=kh_size(hash_Table), i=0;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 2,
+          "frozen_expansion": {
+            "line": 100,
+            "extra_lines": 1,
+            "units": 2,
+            "original": "\tintnative_t elements_Array_Size=kh_size(hash_Table), i=0;",
+            "events": [
+              {
+                "start_column": 1,
+                "end_column": 59,
+                "units": 2,
+                "assignments": [
+                  {
+                    "column": 33,
+                    "operator": "="
+                  },
+                  {
+                    "column": 56,
+                    "operator": "="
+                  }
+                ],
+                "declaration_bindings": 0,
+                "reason": "independent-statement-and-chained-bindings"
+              }
+            ],
+            "canonical_events": [],
+            "reason": "Canonical header/open/close units and independent body bindings; retain literal wrapping."
+          },
+          "review_required_before_admission": true,
+          "declarators": [
+            "elements_Array_Size",
+            "i"
+          ],
+          "required_declaration_units": 2,
+          "required_site_unit_increment": 0,
+          "category": "parent-drafted-native-integer-alias-contract",
+          "decision": "Independent initialized variables; parent already added exact intptr/uintptr import contracts. Current two assignment units already match the declaration count."
+        }
+      ],
+      "flagged_diagnostic_registration_count": 8,
+      "frozen_normalized_loc": 131,
+      "explicit_site_only_proposed_unit_increment": 0,
+      "scope_only_proposed_loc": 131,
+      "whole_source_certificate": false
+    },
+    {
+      "source_sha256": "c94acf6723457fd9b23258bfd8890af9553dcbe7491640b17c6592dddb56b0ac",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "knucleotide/upstream/knucleotide-gpp-2.cpp",
+      "language": "cpp",
+      "candidate_registration_keys": [
+        "knucleotide:knucleotide-gpp-2-gcc-fastmath",
+        "knucleotide:knucleotide-gpp-2-gcc-native",
+        "knucleotide:knucleotide-gpp-2-llvm-fastmath",
+        "knucleotide:knucleotide-gpp-2-llvm-native"
+      ],
+      "candidate_registration_count": 4,
+      "endpoint_roles": [
+        {
+          "key": "knucleotide:knucleotide-gpp-2-llvm-fastmath",
+          "roles": [
+            "fastest_key",
+            "previous_fastest_key"
+          ]
+        }
+      ],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": true,
+      "all_include_evidence": [
+        {
+          "line": 31,
+          "text": "#include <iostream>"
+        },
+        {
+          "line": 32,
+          "text": "#include <iomanip>"
+        },
+        {
+          "line": 33,
+          "text": "#include <cstdint>"
+        },
+        {
+          "line": 34,
+          "text": "#include <string>"
+        },
+        {
+          "line": 35,
+          "text": "#include <algorithm>"
+        },
+        {
+          "line": 36,
+          "text": "#include <map>"
+        },
+        {
+          "line": 37,
+          "text": "#include <thread>"
+        },
+        {
+          "line": 38,
+          "text": "#include <type_traits>"
+        },
+        {
+          "line": 39,
+          "text": "#include <cstring>"
+        },
+        {
+          "line": 40,
+          "text": "#include <vector>"
+        },
+        {
+          "line": 41,
+          "text": "#include <cassert>"
+        },
+        {
+          "line": 42,
+          "text": "#include <ext/pb_ds/assoc_container.hpp>"
+        }
+      ],
+      "type_owner_header_evidence": [
+        {
+          "line": 58,
+          "text": "template <size_t size>"
+        },
+        {
+          "line": 120,
+          "text": "template <size_t size, typename K = Key<size> >"
+        },
+        {
+          "line": 123,
+          "text": "template <size_t size>"
+        },
+        {
+          "line": 149,
+          "text": "template <size_t size>"
+        },
+        {
+          "line": 173,
+          "text": "template <unsigned size>"
+        },
+        {
+          "line": 188,
+          "text": "template <unsigned size>"
+        }
+      ],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 1640,
+          "line": 48,
+          "column": 5,
+          "source_line": "    using Data = std::vector<unsigned char>;",
+          "frozen_diagnostic_source_text": "using Data = std::vector<unsigned char>;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "cpp-qualified-or-template-type-alias"
+        },
+        {
+          "diagnostic_kind": "c-aggregate-suffix-owner-review",
+          "offset": 1857,
+          "line": 56,
+          "column": 2,
+          "source_line": "} const cfg;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 2,
+          "frozen_expansion": {
+            "line": 56,
+            "extra_lines": 1,
+            "units": 2,
+            "original": "} const cfg;",
+            "events": [
+              {
+                "start_column": 2,
+                "end_column": 13,
+                "units": 1,
+                "assignments": [],
+                "declaration_bindings": 0,
+                "reason": "independent-statement-and-chained-bindings"
+              }
+            ],
+            "canonical_events": [
+              {
+                "kind": "close",
+                "start": 1856,
+                "end": 1857,
+                "units": 1,
+                "scope": "braced"
+              }
+            ],
+            "reason": "Canonical header/open/close units and independent body bindings; retain literal wrapping."
+          },
+          "review_required_before_admission": true,
+          "category": "ordinary-aggregate-instance-suffix",
+          "decision": "Written closing brace1 plus independent object instance1; post-close const or bounded empty initializer braces are still instance syntax, never typedef alias syntax.",
+          "required_closer_units": 1,
+          "required_instance_units": 1,
+          "required_combined_line_units": 2,
+          "required_site_unit_increment": 0,
+          "instance_names": [
+            "cfg"
+          ]
+        },
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 2030,
+          "line": 63,
+          "column": 5,
+          "source_line": "    using Data = typename std::conditional<size<=16, uint32_t, uint64_t>::type;",
+          "frozen_diagnostic_source_text": "using Data = typename std::conditional<size<=16, uint32_t, uint64_t>::type;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "cpp-dependent-member-template-type-alias"
+        },
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 3577,
+          "line": 121,
+          "column": 1,
+          "source_line": "using HashTable = __gnu_pbds::cc_hash_table<K, unsigned, typename K::Hash>;",
+          "frozen_diagnostic_source_text": "using HashTable = __gnu_pbds::cc_hash_table<K, unsigned, typename K::Hash>;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "explicit-pbds-template-type-alias"
+        }
+      ],
+      "flagged_diagnostic_registration_count": 16,
+      "frozen_normalized_loc": 146,
+      "explicit_site_only_proposed_unit_increment": 0,
+      "scope_only_proposed_loc": 146,
+      "whole_source_certificate": false
+    },
+    {
+      "source_sha256": "0c8bcfcbd20e0328896ef50863d61cb3a109920d6ad3d7f17057c28d23122ca4",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "mandelbrot/upstream/mandelbrot-gcc-9.c",
+      "language": "c",
+      "candidate_registration_keys": [
+        "mandelbrot:mandelbrot-gcc-9-gcc-fastmath",
+        "mandelbrot:mandelbrot-gcc-9-gcc-native",
+        "mandelbrot:mandelbrot-gcc-9-llvm-fastmath",
+        "mandelbrot:mandelbrot-gcc-9-llvm-fastmath-nofma",
+        "mandelbrot:mandelbrot-gcc-9-llvm-native"
+      ],
+      "candidate_registration_count": 5,
+      "endpoint_roles": [
+        {
+          "key": "mandelbrot:mandelbrot-gcc-9-llvm-fastmath",
+          "roles": [
+            "fastest_key",
+            "smallest_key",
+            "previous_fastest_key"
+          ]
+        }
+      ],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": true,
+      "all_include_evidence": [
+        {
+          "line": 12,
+          "text": "#include <stdint.h>"
+        },
+        {
+          "line": 13,
+          "text": "#include <stdlib.h>"
+        },
+        {
+          "line": 14,
+          "text": "#include <stdio.h>"
+        }
+      ],
+      "type_owner_header_evidence": [],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 527,
+          "line": 17,
+          "column": 1,
+          "source_line": "typedef intptr_t intnative_t;",
+          "frozen_diagnostic_source_text": "typedef intptr_t intnative_t;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "parent-drafted-native-integer-alias-contract"
+        }
+      ],
+      "flagged_diagnostic_registration_count": 5,
+      "frozen_normalized_loc": 52,
+      "explicit_site_only_proposed_unit_increment": 0,
+      "scope_only_proposed_loc": 52,
+      "whole_source_certificate": false
+    },
+    {
+      "source_sha256": "af0e64a414419638053cabf22b1b47326746ced617657e74297dbc43e8e251b6",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "mandelbrot/upstream/mandelbrot-gpp-0.cpp",
+      "language": "cpp",
+      "candidate_registration_keys": [
+        "mandelbrot:mandelbrot-gpp-0-gcc-fastmath",
+        "mandelbrot:mandelbrot-gpp-0-gcc-native",
+        "mandelbrot:mandelbrot-gpp-0-llvm-native"
+      ],
+      "candidate_registration_count": 3,
+      "endpoint_roles": [
+        {
+          "key": "mandelbrot:mandelbrot-gpp-0-gcc-fastmath",
+          "roles": [
+            "fastest_key",
+            "previous_fastest_key"
+          ]
+        }
+      ],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": true,
+      "all_include_evidence": [
+        {
+          "line": 11,
+          "text": "#include <string>"
+        },
+        {
+          "line": 12,
+          "text": "#include <iostream>"
+        },
+        {
+          "line": 13,
+          "text": "#include <vector>"
+        },
+        {
+          "line": 14,
+          "text": "#include <complex>"
+        },
+        {
+          "line": 15,
+          "text": "#include <algorithm>"
+        },
+        {
+          "line": 16,
+          "text": "#include <thread>"
+        },
+        {
+          "line": 17,
+          "text": "#include <climits>"
+        },
+        {
+          "line": 18,
+          "text": "#include <version>"
+        },
+        {
+          "line": 19,
+          "text": "#include <array>"
+        }
+      ],
+      "type_owner_header_evidence": [
+        {
+          "line": 133,
+          "text": "template<typename NUMBER_TYPE>"
+        },
+        {
+          "line": 197,
+          "text": "template <typename NUMBER_TYPE>"
+        },
+        {
+          "line": 232,
+          "text": "template <typename NUMBER_TYPE, class Functor>"
+        },
+        {
+          "line": 285,
+          "text": "template <typename NUMBER_TYPE>"
+        }
+      ],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 760,
+          "line": 27,
+          "column": 5,
+          "source_line": "    using Size=std::size_t;",
+          "frozen_diagnostic_source_text": "using Size=std::size_t;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "standard-qualified-size-type-alias"
+        },
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 4444,
+          "line": 138,
+          "column": 5,
+          "source_line": "    using NumericArray = std::array<NUMBER_TYPE, SIZE>;",
+          "frozen_diagnostic_source_text": "using NumericArray = std::array<NUMBER_TYPE, SIZE>;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "cpp-qualified-or-template-type-alias"
+        },
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 6771,
+          "line": 200,
+          "column": 5,
+          "source_line": "    using Size = std::size_t;",
+          "frozen_diagnostic_source_text": "using Size = std::size_t;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "standard-qualified-size-type-alias"
+        },
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 8240,
+          "line": 235,
+          "column": 5,
+          "source_line": "    using VComplex = VectorizedComplex<NUMBER_TYPE>;",
+          "frozen_diagnostic_source_text": "using VComplex = VectorizedComplex<NUMBER_TYPE>;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "cpp-qualified-or-template-type-alias"
+        },
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 8293,
+          "line": 236,
+          "column": 5,
+          "source_line": "    using Line = typename PortableBinaryBitmap::Line;",
+          "frozen_diagnostic_source_text": "using Line = typename PortableBinaryBitmap::Line;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "cpp-dependent-member-template-type-alias"
+        },
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 8347,
+          "line": 237,
+          "column": 5,
+          "source_line": "    using Size = std::size_t;",
+          "frozen_diagnostic_source_text": "using Size = std::size_t;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "standard-qualified-size-type-alias"
+        },
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 10447,
+          "line": 288,
+          "column": 5,
+          "source_line": "    using VComplex = VectorizedComplex<NUMBER_TYPE>;",
+          "frozen_diagnostic_source_text": "using VComplex = VectorizedComplex<NUMBER_TYPE>;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "cpp-qualified-or-template-type-alias"
+        },
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 10500,
+          "line": 289,
+          "column": 5,
+          "source_line": "    using Size = std::size_t;",
+          "frozen_diagnostic_source_text": "using Size = std::size_t;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "standard-qualified-size-type-alias"
+        },
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 12074,
+          "line": 330,
+          "column": 5,
+          "source_line": "    using ComplexNumber = std::complex<NumberType>;",
+          "frozen_diagnostic_source_text": "using ComplexNumber = std::complex<NumberType>;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "cpp-qualified-or-template-type-alias"
+        },
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 12126,
+          "line": 331,
+          "column": 5,
+          "source_line": "    using MandelbrotCalculator = ComplexPlaneCalculator<NumberType,",
+          "frozen_diagnostic_source_text": "using MandelbrotCalculator = ComplexPlaneCalculator<NumberType,\n            MandelbrotFunction<NumberType>>;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "cpp-qualified-or-template-type-alias"
+        }
+      ],
+      "flagged_diagnostic_registration_count": 30,
+      "frozen_normalized_loc": 319,
+      "explicit_site_only_proposed_unit_increment": 0,
+      "scope_only_proposed_loc": 319,
+      "whole_source_certificate": false
+    },
+    {
+      "source_sha256": "f09c079e5d619a9797ebc81dea60407f21f176ca76bdc0e0c7f7281b273008ac",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "mandelbrot/upstream/mandelbrot-gpp-3.cpp",
+      "language": "cpp",
+      "candidate_registration_keys": [
+        "mandelbrot:mandelbrot-gpp-3-gcc-fastmath",
+        "mandelbrot:mandelbrot-gpp-3-gcc-native",
+        "mandelbrot:mandelbrot-gpp-3-llvm-fastmath",
+        "mandelbrot:mandelbrot-gpp-3-llvm-fastmath-nofma",
+        "mandelbrot:mandelbrot-gpp-3-llvm-native"
+      ],
+      "candidate_registration_count": 5,
+      "endpoint_roles": [
+        {
+          "key": "mandelbrot:mandelbrot-gpp-3-gcc-fastmath",
+          "roles": [
+            "smallest_key",
+            "previous_smallest_key"
+          ]
+        }
+      ],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": true,
+      "all_include_evidence": [
+        {
+          "line": 7,
+          "text": "#include <stdio.h>"
+        },
+        {
+          "line": 8,
+          "text": "#include <stdlib.h>"
+        },
+        {
+          "line": 9,
+          "text": "#include<iostream>"
+        },
+        {
+          "line": 10,
+          "text": "#include<complex>"
+        }
+      ],
+      "type_owner_header_evidence": [],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "possible-packed-declaration-type-owner-review",
+          "offset": 547,
+          "line": 26,
+          "column": 1,
+          "source_line": "       std::complex<double> Z(0,0),C(2*(double)x/n - 1.5, 2*(double)y/n - 1.0);",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "declarators": [
+            "Z",
+            "C"
+          ],
+          "required_declaration_units": 2,
+          "required_site_unit_increment": 1,
+          "category": "imported-template-and-constructor-declarators",
+          "decision": "Independent directly constructed variables; protect constructor argument/data commas and prove template type plus namespace/header ownership."
+        }
+      ],
+      "flagged_diagnostic_registration_count": 5,
+      "frozen_normalized_loc": 31,
+      "explicit_site_only_proposed_unit_increment": 1,
+      "scope_only_proposed_loc": 32,
+      "whole_source_certificate": false
+    },
+    {
+      "source_sha256": "38b69a7d86681bd080b5d3ebff0fb10c847598910f41569ce3188d8aba94808f",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "nbody/upstream/nbody-gpp-6.cpp",
+      "language": "cpp",
+      "candidate_registration_keys": [
+        "nbody:nbody-gpp-6-gcc-fastmath",
+        "nbody:nbody-gpp-6-gcc-native",
+        "nbody:nbody-gpp-6-llvm-fastmath",
+        "nbody:nbody-gpp-6-llvm-native"
+      ],
+      "candidate_registration_count": 4,
+      "endpoint_roles": [
+        {
+          "key": "nbody:nbody-gpp-6-llvm-native",
+          "roles": [
+            "fastest_key",
+            "previous_fastest_key"
+          ]
+        }
+      ],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": true,
+      "all_include_evidence": [
+        {
+          "line": 10,
+          "text": "#include <stdio.h>"
+        },
+        {
+          "line": 11,
+          "text": "#include <stdlib.h>"
+        },
+        {
+          "line": 12,
+          "text": "#include <math.h>"
+        }
+      ],
+      "type_owner_header_evidence": [
+        {
+          "line": 17,
+          "text": "template< typename ...  > struct tuple{};"
+        },
+        {
+          "line": 19,
+          "text": "template<typename H, typename... T>"
+        },
+        {
+          "line": 36,
+          "text": "template<class H, class...T> tuple<H,T...> construct_tuple(H h, T... a)"
+        },
+        {
+          "line": 42,
+          "text": "template<class OP> void FOREACH(OP,tuple<>){}"
+        },
+        {
+          "line": 43,
+          "text": "template<typename OP,class ...T> void FOREACH(OP& op,tuple<T...>& t)"
+        },
+        {
+          "line": 49,
+          "text": "template<class OP> void FOR(OP,tuple<>){}"
+        },
+        {
+          "line": 51,
+          "text": "template<typename OP, class ...T> void FOR(OP& op,tuple<T...>& t)"
+        },
+        {
+          "line": 126,
+          "text": "      template<class T2> void operator()(T2& b2)"
+        },
+        {
+          "line": 145,
+          "text": "    template<class T> void operator()(T& bodies)"
+        },
+        {
+          "line": 155,
+          "text": "    template<class T> void operator()(T& body) "
+        },
+        {
+          "line": 163,
+          "text": "  template<class T> void operator()(T& bodies)"
+        },
+        {
+          "line": 175,
+          "text": "    template<class T> struct foreach_block"
+        },
+        {
+          "line": 178,
+          "text": "      template<class T2> void operator()(T2& b2)"
+        },
+        {
+          "line": 189,
+          "text": "    template<class T> void operator()(T& bodies)"
+        },
+        {
+          "line": 199,
+          "text": "  template<class T> double operator()(T& bodies)"
+        },
+        {
+          "line": 214,
+          "text": "    template<class T> void operator()(T& body) "
+        },
+        {
+          "line": 222,
+          "text": "  template<class T> void operator()(T& bodies)"
+        }
+      ],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 371,
+          "line": 22,
+          "column": 3,
+          "source_line": "  typedef H head;",
+          "frozen_diagnostic_source_text": "typedef H head;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "cpp-template-formal-and-pack-type-alias"
+        },
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 389,
+          "line": 23,
+          "column": 3,
+          "source_line": "  typedef tuple<T...> tail;",
+          "frozen_diagnostic_source_text": "typedef tuple<T...> tail;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "cpp-template-formal-and-pack-type-alias"
+        },
+        {
+          "diagnostic_kind": "c-aggregate-instance-suffix-review",
+          "offset": 3201,
+          "line": 150,
+          "column": 4,
+          "source_line": "  }for_block;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 2,
+          "frozen_expansion": {
+            "line": 150,
+            "extra_lines": 1,
+            "units": 2,
+            "original": "  }for_block;",
+            "events": [
+              {
+                "start_column": 4,
+                "end_column": 14,
+                "units": 1,
+                "assignments": [],
+                "declaration_bindings": 0,
+                "reason": "independent-statement-and-chained-bindings"
+              }
+            ],
+            "canonical_events": [
+              {
+                "kind": "close",
+                "start": 3200,
+                "end": 3201,
+                "units": 1,
+                "scope": "braced"
+              }
+            ],
+            "reason": "Canonical header/open/close units and independent body bindings; retain literal wrapping."
+          },
+          "review_required_before_admission": true,
+          "category": "ordinary-aggregate-instance-suffix",
+          "decision": "Written closing brace1 plus independent object instance1; post-close const or bounded empty initializer braces are still instance syntax, never typedef alias syntax.",
+          "required_closer_units": 1,
+          "required_instance_units": 1,
+          "required_combined_line_units": 2,
+          "required_site_unit_increment": 0,
+          "instance_names": [
+            "for_block"
+          ]
+        },
+        {
+          "diagnostic_kind": "c-aggregate-instance-suffix-review",
+          "offset": 3380,
+          "line": 161,
+          "column": 4,
+          "source_line": "  }foreach_block;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 2,
+          "frozen_expansion": {
+            "line": 161,
+            "extra_lines": 1,
+            "units": 2,
+            "original": "  }foreach_block;",
+            "events": [
+              {
+                "start_column": 4,
+                "end_column": 18,
+                "units": 1,
+                "assignments": [],
+                "declaration_bindings": 0,
+                "reason": "independent-statement-and-chained-bindings"
+              }
+            ],
+            "canonical_events": [
+              {
+                "kind": "close",
+                "start": 3379,
+                "end": 3380,
+                "units": 1,
+                "scope": "braced"
+              }
+            ],
+            "reason": "Canonical header/open/close units and independent body bindings; retain literal wrapping."
+          },
+          "review_required_before_admission": true,
+          "category": "ordinary-aggregate-instance-suffix",
+          "decision": "Written closing brace1 plus independent object instance1; post-close const or bounded empty initializer braces are still instance syntax, never typedef alias syntax.",
+          "required_closer_units": 1,
+          "required_instance_units": 1,
+          "required_combined_line_units": 2,
+          "required_site_unit_increment": 0,
+          "instance_names": [
+            "foreach_block"
+          ]
+        },
+        {
+          "diagnostic_kind": "c-aggregate-instance-suffix-review",
+          "offset": 3519,
+          "line": 169,
+          "column": 2,
+          "source_line": "}advance;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 2,
+          "frozen_expansion": {
+            "line": 169,
+            "extra_lines": 1,
+            "units": 2,
+            "original": "}advance;",
+            "events": [
+              {
+                "start_column": 2,
+                "end_column": 10,
+                "units": 1,
+                "assignments": [],
+                "declaration_bindings": 0,
+                "reason": "independent-statement-and-chained-bindings"
+              }
+            ],
+            "canonical_events": [
+              {
+                "kind": "close",
+                "start": 3518,
+                "end": 3519,
+                "units": 1,
+                "scope": "braced"
+              }
+            ],
+            "reason": "Canonical header/open/close units and independent body bindings; retain literal wrapping."
+          },
+          "review_required_before_admission": true,
+          "category": "ordinary-aggregate-instance-suffix",
+          "decision": "Written closing brace1 plus independent object instance1; post-close const or bounded empty initializer braces are still instance syntax, never typedef alias syntax.",
+          "required_closer_units": 1,
+          "required_instance_units": 1,
+          "required_combined_line_units": 2,
+          "required_site_unit_increment": 0,
+          "instance_names": [
+            "advance"
+          ]
+        },
+        {
+          "diagnostic_kind": "c-aggregate-instance-suffix-review",
+          "offset": 4341,
+          "line": 207,
+          "column": 2,
+          "source_line": "}energy;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 2,
+          "frozen_expansion": {
+            "line": 207,
+            "extra_lines": 1,
+            "units": 2,
+            "original": "}energy;",
+            "events": [
+              {
+                "start_column": 2,
+                "end_column": 9,
+                "units": 1,
+                "assignments": [],
+                "declaration_bindings": 0,
+                "reason": "independent-statement-and-chained-bindings"
+              }
+            ],
+            "canonical_events": [
+              {
+                "kind": "close",
+                "start": 4340,
+                "end": 4341,
+                "units": 1,
+                "scope": "braced"
+              }
+            ],
+            "reason": "Canonical header/open/close units and independent body bindings; retain literal wrapping."
+          },
+          "review_required_before_admission": true,
+          "category": "ordinary-aggregate-instance-suffix",
+          "decision": "Written closing brace1 plus independent object instance1; post-close const or bounded empty initializer braces are still instance syntax, never typedef alias syntax.",
+          "required_closer_units": 1,
+          "required_instance_units": 1,
+          "required_combined_line_units": 2,
+          "required_site_unit_increment": 0,
+          "instance_names": [
+            "energy"
+          ]
+        },
+        {
+          "diagnostic_kind": "c-aggregate-instance-suffix-review",
+          "offset": 4859,
+          "line": 233,
+          "column": 2,
+          "source_line": "}offset;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 2,
+          "frozen_expansion": {
+            "line": 233,
+            "extra_lines": 1,
+            "units": 2,
+            "original": "}offset;",
+            "events": [
+              {
+                "start_column": 2,
+                "end_column": 9,
+                "units": 1,
+                "assignments": [],
+                "declaration_bindings": 0,
+                "reason": "independent-statement-and-chained-bindings"
+              }
+            ],
+            "canonical_events": [
+              {
+                "kind": "close",
+                "start": 4858,
+                "end": 4859,
+                "units": 1,
+                "scope": "braced"
+              }
+            ],
+            "reason": "Canonical header/open/close units and independent body bindings; retain literal wrapping."
+          },
+          "review_required_before_admission": true,
+          "category": "ordinary-aggregate-instance-suffix",
+          "decision": "Written closing brace1 plus independent object instance1; post-close const or bounded empty initializer braces are still instance syntax, never typedef alias syntax.",
+          "required_closer_units": 1,
+          "required_instance_units": 1,
+          "required_combined_line_units": 2,
+          "required_site_unit_increment": 0,
+          "instance_names": [
+            "offset"
+          ]
+        }
+      ],
+      "flagged_diagnostic_registration_count": 28,
+      "frozen_normalized_loc": 200,
+      "explicit_site_only_proposed_unit_increment": 0,
+      "scope_only_proposed_loc": 200,
+      "whole_source_certificate": false
+    },
+    {
+      "source_sha256": "19f5486a8f52883e43f773b2ed13edc058ea3075c8c25d03f20e3d2923ace642",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "pidigits/upstream/pidigits-gpp-5.cpp",
+      "language": "cpp",
+      "candidate_registration_keys": [
+        "pidigits:pidigits-gpp-5"
+      ],
+      "candidate_registration_count": 1,
+      "endpoint_roles": [
+        {
+          "key": "pidigits:pidigits-gpp-5",
+          "roles": [
+            "fastest_key",
+            "previous_fastest_key"
+          ]
+        }
+      ],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": true,
+      "all_include_evidence": [
+        {
+          "line": 7,
+          "text": "#include <cinttypes>"
+        },
+        {
+          "line": 8,
+          "text": "#include <iostream>"
+        },
+        {
+          "line": 10,
+          "text": "#include \"gmp.h\""
+        }
+      ],
+      "type_owner_header_evidence": [
+        {
+          "line": 12,
+          "text": "struct Mpz {"
+        }
+      ],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "possible-packed-declaration-type-owner-review",
+          "offset": 1506,
+          "line": 63,
+          "column": 1,
+          "source_line": "  Mpz tmp1, tmp2;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "declarators": [
+            "tmp1",
+            "tmp2"
+          ],
+          "required_declaration_units": 2,
+          "required_site_unit_increment": 1,
+          "category": "cpp-named-aggregate-type-owner",
+          "decision": "Independent fields; named C++ aggregate header proves type before its body and later uses.",
+          "type_owner_evidence": [
+            {
+              "line": 12,
+              "text": "struct Mpz {"
+            }
+          ]
+        }
+      ],
+      "flagged_diagnostic_registration_count": 1,
+      "frozen_normalized_loc": 105,
+      "explicit_site_only_proposed_unit_increment": 1,
+      "scope_only_proposed_loc": 106,
+      "whole_source_certificate": false
+    },
+    {
+      "source_sha256": "eac8ab538739b2344ab1253b8b0f7c04525b0af135281c0f39d6d67568997562",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "regexredux/upstream/regexredux-gcc-2.c",
+      "language": "c",
+      "candidate_registration_keys": [
+        "regexredux:regexredux-gcc-2"
+      ],
+      "candidate_registration_count": 1,
+      "endpoint_roles": [
+        {
+          "key": "regexredux:regexredux-gcc-2",
+          "roles": [
+            "smallest_key",
+            "previous_smallest_key"
+          ]
+        }
+      ],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": true,
+      "all_include_evidence": [
+        {
+          "line": 10,
+          "text": "#include <stdio.h>"
+        },
+        {
+          "line": 11,
+          "text": "#include <string.h>"
+        },
+        {
+          "line": 12,
+          "text": "#include <stdlib.h>"
+        },
+        {
+          "line": 13,
+          "text": "#include <pcre.h>"
+        }
+      ],
+      "type_owner_header_evidence": [],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "possible-packed-declaration-type-owner-review",
+          "offset": 357,
+          "line": 18,
+          "column": 1,
+          "source_line": "  size_t size, len;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "declarators": [
+            "size",
+            "len"
+          ],
+          "required_declaration_units": 2,
+          "required_site_unit_increment": 1,
+          "category": "standard-size-type-import-contract",
+          "decision": "Independent fields/locals; actual stdio/stdlib/string headers supply size_t, not an unconditional primitive spelling."
+        },
+        {
+          "diagnostic_kind": "possible-packed-declaration-type-owner-review",
+          "offset": 2872,
+          "line": 114,
+          "column": 1,
+          "source_line": "  size_t ilen, clen, slen;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "declarators": [
+            "ilen",
+            "clen",
+            "slen"
+          ],
+          "required_declaration_units": 3,
+          "required_site_unit_increment": 2,
+          "category": "standard-size-type-import-contract",
+          "decision": "Independent fields/locals; actual stdio/stdlib/string headers supply size_t, not an unconditional primitive spelling."
+        }
+      ],
+      "flagged_diagnostic_registration_count": 2,
+      "frozen_normalized_loc": 109,
+      "explicit_site_only_proposed_unit_increment": 3,
+      "scope_only_proposed_loc": 112,
+      "whole_source_certificate": false
+    },
+    {
+      "source_sha256": "297865dbe9b65218f5fbcc5324d63b015109a1c40d57a505a692644f19f4c1d4",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "regexredux/upstream/regexredux-gcc-5.c",
+      "language": "c",
+      "candidate_registration_keys": [
+        "regexredux:regexredux-gcc-5"
+      ],
+      "candidate_registration_count": 1,
+      "endpoint_roles": [
+        {
+          "key": "regexredux:regexredux-gcc-5",
+          "roles": [
+            "fastest_key",
+            "previous_fastest_key"
+          ]
+        }
+      ],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": true,
+      "all_include_evidence": [
+        {
+          "line": 7,
+          "text": "#include <stdlib.h>"
+        },
+        {
+          "line": 8,
+          "text": "#include <stdio.h>"
+        },
+        {
+          "line": 9,
+          "text": "#include <string.h>"
+        },
+        {
+          "line": 12,
+          "text": "#include \"pcre2.h\""
+        }
+      ],
+      "type_owner_header_evidence": [],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "possible-packed-declaration-type-owner-review",
+          "offset": 324,
+          "line": 16,
+          "column": 1,
+          "source_line": "    PCRE2_SIZE capacity, size;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "declarators": [
+            "capacity",
+            "size"
+          ],
+          "required_declaration_units": 2,
+          "required_site_unit_increment": 1,
+          "category": "explicit-pcre2-size-contract",
+          "decision": "Independent field/local declarations; exact pcre2 include and its documented PCRE2_SIZE macro type require a narrow header contract."
+        },
+        {
+          "diagnostic_kind": "possible-packed-declaration-type-owner-review",
+          "offset": 739,
+          "line": 27,
+          "column": 1,
+          "source_line": "    PCRE2_SIZE erroroffset, pos=0;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "declarators": [
+            "erroroffset",
+            "pos"
+          ],
+          "required_declaration_units": 2,
+          "required_site_unit_increment": 1,
+          "category": "explicit-pcre2-size-contract",
+          "decision": "Independent field/local declarations; exact pcre2 include and its documented PCRE2_SIZE macro type require a narrow header contract."
+        },
+        {
+          "diagnostic_kind": "possible-packed-declaration-type-owner-review",
+          "offset": 6927,
+          "line": 177,
+          "column": 1,
+          "source_line": "            PCRE2_SIZE erroroffset, pos=0;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "declarators": [
+            "erroroffset",
+            "pos"
+          ],
+          "required_declaration_units": 2,
+          "required_site_unit_increment": 1,
+          "category": "explicit-pcre2-size-contract",
+          "decision": "Independent field/local declarations; exact pcre2 include and its documented PCRE2_SIZE macro type require a narrow header contract."
+        }
+      ],
+      "flagged_diagnostic_registration_count": 3,
+      "frozen_normalized_loc": 115,
+      "explicit_site_only_proposed_unit_increment": 3,
+      "scope_only_proposed_loc": 118,
+      "whole_source_certificate": false
+    },
+    {
+      "source_sha256": "b16bb102330f3ca0e1fafe134a4242a7a02aced49992006f5695beba262e9626",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "revcomp/upstream/revcomp-gcc-5.c",
+      "language": "c",
+      "candidate_registration_keys": [
+        "revcomp:revcomp-gcc-5-gcc",
+        "revcomp:revcomp-gcc-5-llvm"
+      ],
+      "candidate_registration_count": 2,
+      "endpoint_roles": [
+        {
+          "key": "revcomp:revcomp-gcc-5-llvm",
+          "roles": [
+            "smallest_key",
+            "previous_smallest_key"
+          ]
+        }
+      ],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": true,
+      "all_include_evidence": [
+        {
+          "line": 9,
+          "text": "#include <sched.h>"
+        },
+        {
+          "line": 10,
+          "text": "#include <stdio.h>"
+        },
+        {
+          "line": 11,
+          "text": "#include <stdlib.h>"
+        },
+        {
+          "line": 12,
+          "text": "#include <ctype.h>"
+        },
+        {
+          "line": 13,
+          "text": "#include <unistd.h>"
+        },
+        {
+          "line": 14,
+          "text": "#include <string.h>"
+        }
+      ],
+      "type_owner_header_evidence": [],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "possible-packed-declaration-type-owner-review",
+          "offset": 928,
+          "line": 47,
+          "column": 1,
+          "source_line": "   size_t buflen = 8 * 1024, len, end = 0;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 2,
+          "frozen_expansion": {
+            "line": 47,
+            "extra_lines": 1,
+            "units": 2,
+            "original": "   size_t buflen = 8 * 1024, len, end = 0;",
+            "events": [
+              {
+                "start_column": 1,
+                "end_column": 43,
+                "units": 2,
+                "assignments": [
+                  {
+                    "column": 18,
+                    "operator": "="
+                  },
+                  {
+                    "column": 39,
+                    "operator": "="
+                  }
+                ],
+                "declaration_bindings": 0,
+                "reason": "independent-statement-and-chained-bindings"
+              }
+            ],
+            "canonical_events": [],
+            "reason": "Canonical header/open/close units and independent body bindings; retain literal wrapping."
+          },
+          "review_required_before_admission": true,
+          "declarators": [
+            "buflen",
+            "len",
+            "end"
+          ],
+          "required_declaration_units": 3,
+          "required_site_unit_increment": 1,
+          "category": "standard-size-type-import-contract",
+          "decision": "Independent fields/locals; actual stdio/stdlib/string headers supply size_t, not an unconditional primitive spelling."
+        }
+      ],
+      "flagged_diagnostic_registration_count": 2,
+      "frozen_normalized_loc": 60,
+      "explicit_site_only_proposed_unit_increment": 1,
+      "scope_only_proposed_loc": 61,
+      "whole_source_certificate": false
+    },
+    {
+      "source_sha256": "9740fe7114b7ca49c41df7da23601bc418dee48d5fda8fd2c43c7f2e260298ef",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "revcomp/upstream/revcomp-gcc-9.c",
+      "language": "c",
+      "candidate_registration_keys": [
+        "revcomp:revcomp-gcc-9-gcc",
+        "revcomp:revcomp-gcc-9-llvm"
+      ],
+      "candidate_registration_count": 2,
+      "endpoint_roles": [
+        {
+          "key": "revcomp:revcomp-gcc-9-llvm",
+          "roles": [
+            "fastest_key",
+            "previous_fastest_key"
+          ]
+        }
+      ],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": true,
+      "all_include_evidence": [
+        {
+          "line": 70,
+          "text": "#include <stdint.h>"
+        },
+        {
+          "line": 71,
+          "text": "#include <pthread.h>"
+        },
+        {
+          "line": 72,
+          "text": "#include <stdio.h>"
+        },
+        {
+          "line": 73,
+          "text": "#include <unistd.h>"
+        },
+        {
+          "line": 74,
+          "text": "#include <stdlib.h>"
+        },
+        {
+          "line": 75,
+          "text": "#include <string.h>"
+        }
+      ],
+      "type_owner_header_evidence": [],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 4222,
+          "line": 78,
+          "column": 1,
+          "source_line": "typedef uintptr_t uintnative_t;",
+          "frozen_diagnostic_source_text": "typedef uintptr_t uintnative_t;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "parent-drafted-native-integer-alias-contract"
+        },
+        {
+          "diagnostic_kind": "possible-packed-declaration-type-owner-review",
+          "offset": 17598,
+          "line": 376,
+          "column": 1,
+          "source_line": "\tuintnative_t sequence_Capacity=READ_SIZE, sequence_Size=0;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 2,
+          "frozen_expansion": {
+            "line": 376,
+            "extra_lines": 1,
+            "units": 2,
+            "original": "\tuintnative_t sequence_Capacity=READ_SIZE, sequence_Size=0;",
+            "events": [
+              {
+                "start_column": 1,
+                "end_column": 60,
+                "units": 2,
+                "assignments": [
+                  {
+                    "column": 32,
+                    "operator": "="
+                  },
+                  {
+                    "column": 57,
+                    "operator": "="
+                  }
+                ],
+                "declaration_bindings": 0,
+                "reason": "independent-statement-and-chained-bindings"
+              }
+            ],
+            "canonical_events": [],
+            "reason": "Canonical header/open/close units and independent body bindings; retain literal wrapping."
+          },
+          "review_required_before_admission": true,
+          "declarators": [
+            "sequence_Capacity",
+            "sequence_Size"
+          ],
+          "required_declaration_units": 2,
+          "required_site_unit_increment": 0,
+          "category": "parent-drafted-native-integer-alias-contract",
+          "decision": "Independent initialized variables; parent already added exact intptr/uintptr import contracts. Current two assignment units already match the declaration count."
+        }
+      ],
+      "flagged_diagnostic_registration_count": 4,
+      "frozen_normalized_loc": 140,
+      "explicit_site_only_proposed_unit_increment": 0,
+      "scope_only_proposed_loc": 140,
+      "whole_source_certificate": false
+    },
+    {
+      "source_sha256": "8236e57d753b5b200b45c91e3e7c9e858d6b323a32fc1405b6c77401f9fdb053",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "revcomp/upstream/revcomp-gpp-6.cpp",
+      "language": "cpp",
+      "candidate_registration_keys": [
+        "revcomp:revcomp-gpp-6-gcc"
+      ],
+      "candidate_registration_count": 1,
+      "endpoint_roles": [
+        {
+          "key": "revcomp:revcomp-gpp-6-gcc",
+          "roles": [
+            "fastest_key",
+            "previous_fastest_key"
+          ]
+        }
+      ],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": true,
+      "all_include_evidence": [
+        {
+          "line": 6,
+          "text": "#include <cstdint>"
+        },
+        {
+          "line": 7,
+          "text": "#include <cstdio>"
+        },
+        {
+          "line": 8,
+          "text": "#include <iostream>"
+        },
+        {
+          "line": 9,
+          "text": "#include <atomic>"
+        },
+        {
+          "line": 10,
+          "text": "#include <vector>"
+        },
+        {
+          "line": 11,
+          "text": "#include <algorithm>"
+        },
+        {
+          "line": 12,
+          "text": "#include <string>"
+        },
+        {
+          "line": 13,
+          "text": "#include <mutex>"
+        },
+        {
+          "line": 14,
+          "text": "#include <thread>"
+        },
+        {
+          "line": 15,
+          "text": "#include <list>"
+        },
+        {
+          "line": 16,
+          "text": "#include <condition_variable>"
+        }
+      ],
+      "type_owner_header_evidence": [
+        {
+          "line": 189,
+          "text": "template<typename T>"
+        },
+        {
+          "line": 195,
+          "text": "template <typename T>"
+        }
+      ],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "c-aggregate-suffix-owner-review",
+          "offset": 2053,
+          "line": 50,
+          "column": 2,
+          "source_line": "} complement_functor{};",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 2,
+          "frozen_expansion": {
+            "line": 50,
+            "extra_lines": 1,
+            "units": 2,
+            "original": "} complement_functor{};",
+            "events": [
+              {
+                "start_column": 2,
+                "end_column": 24,
+                "units": 1,
+                "assignments": [],
+                "declaration_bindings": 0,
+                "reason": "independent-statement-and-chained-bindings"
+              }
+            ],
+            "canonical_events": [
+              {
+                "kind": "close",
+                "start": 2052,
+                "end": 2053,
+                "units": 1,
+                "scope": "braced"
+              }
+            ],
+            "reason": "Canonical header/open/close units and independent body bindings; retain literal wrapping."
+          },
+          "review_required_before_admission": true,
+          "category": "ordinary-aggregate-instance-suffix",
+          "decision": "Written closing brace1 plus independent object instance1; post-close const or bounded empty initializer braces are still instance syntax, never typedef alias syntax.",
+          "required_closer_units": 1,
+          "required_instance_units": 1,
+          "required_combined_line_units": 2,
+          "required_site_unit_increment": 0,
+          "instance_names": [
+            "complement_functor"
+          ]
+        }
+      ],
+      "flagged_diagnostic_registration_count": 1,
+      "frozen_normalized_loc": 183,
+      "explicit_site_only_proposed_unit_increment": 0,
+      "scope_only_proposed_loc": 183,
+      "whole_source_certificate": false
+    },
+    {
+      "source_sha256": "2842f77e9fcbdb31f4b722005348c76735b52671ccd99794f2cb780484b127e2",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "spectralnorm/upstream/spectralnorm-gpp-1.cpp",
+      "language": "cpp",
+      "candidate_registration_keys": [
+        "spectralnorm:spectralnorm-gpp-1-gcc-fastmath",
+        "spectralnorm:spectralnorm-gpp-1-gcc-native",
+        "spectralnorm:spectralnorm-gpp-1-llvm-fastmath",
+        "spectralnorm:spectralnorm-gpp-1-llvm-native"
+      ],
+      "candidate_registration_count": 4,
+      "endpoint_roles": [
+        {
+          "key": "spectralnorm:spectralnorm-gpp-1-llvm-fastmath",
+          "roles": [
+            "fastest_key",
+            "smallest_key",
+            "previous_fastest_key",
+            "previous_smallest_key"
+          ]
+        }
+      ],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": true,
+      "all_include_evidence": [
+        {
+          "line": 9,
+          "text": "#include <stdio.h>"
+        },
+        {
+          "line": 10,
+          "text": "#include <stdlib.h>"
+        },
+        {
+          "line": 11,
+          "text": "#include <cmath>"
+        },
+        {
+          "line": 12,
+          "text": "#include <vector>"
+        },
+        {
+          "line": 13,
+          "text": "#include <iostream>"
+        },
+        {
+          "line": 14,
+          "text": "#include <iomanip>"
+        }
+      ],
+      "type_owner_header_evidence": [],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "possible-packed-declaration-type-owner-review",
+          "offset": 1017,
+          "line": 38,
+          "column": 1,
+          "source_line": "  vector<double> u(N), v(N);",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "declarators": [
+            "u",
+            "v"
+          ],
+          "required_declaration_units": 2,
+          "required_site_unit_increment": 1,
+          "category": "imported-template-and-constructor-declarators",
+          "decision": "Independent directly constructed variables; protect constructor argument/data commas and prove template type plus namespace/header ownership."
+        }
+      ],
+      "flagged_diagnostic_registration_count": 4,
+      "frozen_normalized_loc": 43,
+      "explicit_site_only_proposed_unit_increment": 1,
+      "scope_only_proposed_loc": 44,
+      "whole_source_certificate": false
+    },
+    {
+      "source_sha256": "7c8ff3d053e191ed2c68129b57f6483233a9c22baaabcb6ec7c25c4b8a251983",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "binarytrees/upstream/binarytrees-gpp-1.cpp",
+      "language": "cpp",
+      "candidate_registration_keys": [
+        "binarytrees:binarytrees-gpp-1-gcc",
+        "binarytrees:binarytrees-gpp-1-llvm"
+      ],
+      "candidate_registration_count": 2,
+      "endpoint_roles": [],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": false,
+      "all_include_evidence": [
+        {
+          "line": 11,
+          "text": "#include <iostream>"
+        },
+        {
+          "line": 12,
+          "text": "#include <algorithm>"
+        },
+        {
+          "line": 13,
+          "text": "#include <future>"
+        },
+        {
+          "line": 14,
+          "text": "#include <vector>"
+        },
+        {
+          "line": 16,
+          "text": "#include <boost/pool/object_pool.hpp>"
+        }
+      ],
+      "type_owner_header_evidence": [
+        {
+          "line": 20,
+          "text": "struct Node {"
+        }
+      ],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "possible-packed-declaration-type-owner-review",
+          "offset": 395,
+          "line": 21,
+          "column": 1,
+          "source_line": "   Node *l,*r;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "declarators": [
+            "l",
+            "r"
+          ],
+          "required_declaration_units": 2,
+          "required_site_unit_increment": 1,
+          "category": "cpp-named-aggregate-type-owner",
+          "decision": "Independent fields; named C++ aggregate header proves type before its body and later uses.",
+          "type_owner_evidence": [
+            {
+              "line": 20,
+              "text": "struct Node {"
+            }
+          ]
+        },
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 589,
+          "line": 32,
+          "column": 1,
+          "source_line": "using Node_pool = boost::object_pool<Node>;",
+          "frozen_diagnostic_source_text": "using Node_pool = boost::object_pool<Node>;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "explicit-boost-template-type-alias"
+        }
+      ],
+      "flagged_diagnostic_registration_count": 4,
+      "frozen_normalized_loc": 70,
+      "explicit_site_only_proposed_unit_increment": 1,
+      "scope_only_proposed_loc": 71,
+      "whole_source_certificate": false
+    },
+    {
+      "source_sha256": "e59e23e9ff9d72d129d4fbfacad16efdffb3207ca8a7f3a5b7b2c348623f6727",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "binarytrees/upstream/binarytrees-gpp-3.cpp",
+      "language": "cpp",
+      "candidate_registration_keys": [
+        "binarytrees:binarytrees-gpp-3-gcc",
+        "binarytrees:binarytrees-gpp-3-llvm"
+      ],
+      "candidate_registration_count": 2,
+      "endpoint_roles": [],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": false,
+      "all_include_evidence": [
+        {
+          "line": 12,
+          "text": "#include <iostream>"
+        },
+        {
+          "line": 13,
+          "text": "#include <stdlib.h>"
+        },
+        {
+          "line": 14,
+          "text": "#include <stdio.h>"
+        },
+        {
+          "line": 15,
+          "text": "#include <thread>"
+        },
+        {
+          "line": 16,
+          "text": "#include <mutex>"
+        },
+        {
+          "line": 17,
+          "text": "#include <vector>"
+        },
+        {
+          "line": 19,
+          "text": "#include <boost/pool/object_pool.hpp>"
+        }
+      ],
+      "type_owner_header_evidence": [
+        {
+          "line": 25,
+          "text": "struct Node"
+        }
+      ],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "possible-packed-declaration-type-owner-review",
+          "offset": 548,
+          "line": 27,
+          "column": 1,
+          "source_line": "   Node *l, *r;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "declarators": [
+            "l",
+            "r"
+          ],
+          "required_declaration_units": 2,
+          "required_site_unit_increment": 1,
+          "category": "cpp-named-aggregate-type-owner",
+          "decision": "Independent fields; named C++ aggregate header proves type before its body and later uses.",
+          "type_owner_evidence": [
+            {
+              "line": 25,
+              "text": "struct Node"
+            }
+          ]
+        },
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 764,
+          "line": 42,
+          "column": 1,
+          "source_line": "typedef boost::object_pool<Node> NodePool;",
+          "frozen_diagnostic_source_text": "typedef boost::object_pool<Node> NodePool;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "explicit-boost-template-type-alias"
+        }
+      ],
+      "flagged_diagnostic_registration_count": 4,
+      "frozen_normalized_loc": 77,
+      "explicit_site_only_proposed_unit_increment": 1,
+      "scope_only_proposed_loc": 78,
+      "whole_source_certificate": false
+    },
+    {
+      "source_sha256": "b023347b019e25d1254343d5fbc5d7d8c4ceb51f600d090172deccf9b618f734",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "binarytrees/upstream/binarytrees-gpp-4.cpp",
+      "language": "cpp",
+      "candidate_registration_keys": [
+        "binarytrees:binarytrees-gpp-4-gcc",
+        "binarytrees:binarytrees-gpp-4-llvm"
+      ],
+      "candidate_registration_count": 2,
+      "endpoint_roles": [],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": false,
+      "all_include_evidence": [
+        {
+          "line": 13,
+          "text": "#include <iostream>"
+        },
+        {
+          "line": 14,
+          "text": "#include <stdlib.h>"
+        },
+        {
+          "line": 15,
+          "text": "#include <stdio.h>"
+        },
+        {
+          "line": 16,
+          "text": "#include <omp.h>"
+        },
+        {
+          "line": 18,
+          "text": "#include <boost/pool/object_pool.hpp>"
+        }
+      ],
+      "type_owner_header_evidence": [
+        {
+          "line": 24,
+          "text": "struct Node "
+        }
+      ],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "possible-packed-declaration-type-owner-review",
+          "offset": 504,
+          "line": 26,
+          "column": 1,
+          "source_line": "    Node *l, *r;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "declarators": [
+            "l",
+            "r"
+          ],
+          "required_declaration_units": 2,
+          "required_site_unit_increment": 1,
+          "category": "cpp-named-aggregate-type-owner",
+          "decision": "Independent fields; named C++ aggregate header proves type before its body and later uses.",
+          "type_owner_evidence": [
+            {
+              "line": 24,
+              "text": "struct Node "
+            }
+          ]
+        },
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 596,
+          "line": 31,
+          "column": 1,
+          "source_line": "typedef boost::object_pool<Node> NodePool;",
+          "frozen_diagnostic_source_text": "typedef boost::object_pool<Node> NodePool;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "explicit-boost-template-type-alias"
+        }
+      ],
+      "flagged_diagnostic_registration_count": 4,
+      "frozen_normalized_loc": 60,
+      "explicit_site_only_proposed_unit_increment": 1,
+      "scope_only_proposed_loc": 61,
+      "whole_source_certificate": false
+    },
+    {
+      "source_sha256": "df5a211f8338cbdbc6b213382993d7b63b33b86344ff551b099e7a680598ffce",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "binarytrees/upstream/binarytrees-gpp-5.cpp",
+      "language": "cpp",
+      "candidate_registration_keys": [
+        "binarytrees:binarytrees-gpp-5-gcc",
+        "binarytrees:binarytrees-gpp-5-llvm"
+      ],
+      "candidate_registration_count": 2,
+      "endpoint_roles": [],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": false,
+      "all_include_evidence": [
+        {
+          "line": 13,
+          "text": "#include <atomic>"
+        },
+        {
+          "line": 14,
+          "text": "#include <numeric>"
+        },
+        {
+          "line": 15,
+          "text": "#include <algorithm>"
+        },
+        {
+          "line": 16,
+          "text": "#include <functional>"
+        },
+        {
+          "line": 17,
+          "text": "#include <iostream>"
+        },
+        {
+          "line": 18,
+          "text": "#include <memory_resource>"
+        },
+        {
+          "line": 19,
+          "text": "#include <thread>"
+        }
+      ],
+      "type_owner_header_evidence": [
+        {
+          "line": 23,
+          "text": "struct Node"
+        }
+      ],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 504,
+          "line": 21,
+          "column": 1,
+          "source_line": "using MemoryPool = std::pmr::monotonic_buffer_resource;",
+          "frozen_diagnostic_source_text": "using MemoryPool = std::pmr::monotonic_buffer_resource;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "explicit-memory-resource-qualified-type-alias"
+        },
+        {
+          "diagnostic_kind": "possible-packed-declaration-type-owner-review",
+          "offset": 575,
+          "line": 25,
+          "column": 1,
+          "source_line": "    Node *l, *r;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "declarators": [
+            "l",
+            "r"
+          ],
+          "required_declaration_units": 2,
+          "required_site_unit_increment": 1,
+          "category": "cpp-named-aggregate-type-owner",
+          "decision": "Independent fields; named C++ aggregate header proves type before its body and later uses.",
+          "type_owner_evidence": [
+            {
+              "line": 23,
+              "text": "struct Node"
+            }
+          ]
+        }
+      ],
+      "flagged_diagnostic_registration_count": 4,
+      "frozen_normalized_loc": 72,
+      "explicit_site_only_proposed_unit_increment": 1,
+      "scope_only_proposed_loc": 73,
+      "whole_source_certificate": false
+    },
+    {
+      "source_sha256": "0cf19324d00c58cc32a4782e7dc553249c65665e322d2b0d90be2d5cc9da3e2d",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "binarytrees/upstream/binarytrees-gpp-6.cpp",
+      "language": "cpp",
+      "candidate_registration_keys": [
+        "binarytrees:binarytrees-gpp-6-gcc",
+        "binarytrees:binarytrees-gpp-6-llvm"
+      ],
+      "candidate_registration_count": 2,
+      "endpoint_roles": [],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": false,
+      "all_include_evidence": [
+        {
+          "line": 11,
+          "text": "#include <iostream>"
+        },
+        {
+          "line": 12,
+          "text": "#include <stdlib.h>"
+        },
+        {
+          "line": 13,
+          "text": "#include <stdio.h>"
+        },
+        {
+          "line": 14,
+          "text": "#include <omp.h>"
+        },
+        {
+          "line": 16,
+          "text": "#include <boost/pool/object_pool.hpp>"
+        }
+      ],
+      "type_owner_header_evidence": [
+        {
+          "line": 22,
+          "text": "struct Node "
+        }
+      ],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "possible-packed-declaration-type-owner-review",
+          "offset": 416,
+          "line": 24,
+          "column": 1,
+          "source_line": "    Node *l, *r;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "declarators": [
+            "l",
+            "r"
+          ],
+          "required_declaration_units": 2,
+          "required_site_unit_increment": 1,
+          "category": "cpp-named-aggregate-type-owner",
+          "decision": "Independent fields; named C++ aggregate header proves type before its body and later uses.",
+          "type_owner_evidence": [
+            {
+              "line": 22,
+              "text": "struct Node "
+            }
+          ]
+        },
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 646,
+          "line": 39,
+          "column": 1,
+          "source_line": "typedef boost::object_pool<Node> NodePool;",
+          "frozen_diagnostic_source_text": "typedef boost::object_pool<Node> NodePool;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "explicit-boost-template-type-alias"
+        }
+      ],
+      "flagged_diagnostic_registration_count": 4,
+      "frozen_normalized_loc": 68,
+      "explicit_site_only_proposed_unit_increment": 1,
+      "scope_only_proposed_loc": 69,
+      "whole_source_certificate": false
+    },
+    {
+      "source_sha256": "a56ed4a3ab6f6c79500d31969cbdf3dfcf9aeffa1fe5a3e083f2fe545c08b25b",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "binarytrees/upstream/binarytrees-gpp-9.cpp",
+      "language": "cpp",
+      "candidate_registration_keys": [
+        "binarytrees:binarytrees-gpp-9-gcc",
+        "binarytrees:binarytrees-gpp-9-llvm"
+      ],
+      "candidate_registration_count": 2,
+      "endpoint_roles": [],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": false,
+      "all_include_evidence": [
+        {
+          "line": 12,
+          "text": "#include <iostream>"
+        },
+        {
+          "line": 13,
+          "text": "#include <stdlib.h>"
+        },
+        {
+          "line": 14,
+          "text": "#include <stdio.h>"
+        },
+        {
+          "line": 15,
+          "text": "#include <apr_pools.h>"
+        }
+      ],
+      "type_owner_header_evidence": [
+        {
+          "line": 34,
+          "text": "struct Node "
+        }
+      ],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "possible-packed-declaration-type-owner-review",
+          "offset": 553,
+          "line": 36,
+          "column": 1,
+          "source_line": "    Node *l, *r;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "declarators": [
+            "l",
+            "r"
+          ],
+          "required_declaration_units": 2,
+          "required_site_unit_increment": 1,
+          "category": "cpp-named-aggregate-type-owner",
+          "decision": "Independent fields; named C++ aggregate header proves type before its body and later uses.",
+          "type_owner_evidence": [
+            {
+              "line": 34,
+              "text": "struct Node "
+            }
+          ]
+        }
+      ],
+      "flagged_diagnostic_registration_count": 2,
+      "frozen_normalized_loc": 86,
+      "explicit_site_only_proposed_unit_increment": 1,
+      "scope_only_proposed_loc": 87,
+      "whole_source_certificate": false
+    },
+    {
+      "source_sha256": "7c850c537cc609712f2081df5453322f97537218faf9e77f37fb70c3531882b7",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "fannkuchredux/upstream/fannkuchredux-gpp-5.cpp",
+      "language": "cpp",
+      "candidate_registration_keys": [
+        "fannkuchredux:fannkuchredux-gpp-5-gcc",
+        "fannkuchredux:fannkuchredux-gpp-5-llvm"
+      ],
+      "candidate_registration_count": 2,
+      "endpoint_roles": [],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": false,
+      "all_include_evidence": [
+        {
+          "line": 11,
+          "text": "#include <iostream>"
+        },
+        {
+          "line": 12,
+          "text": "#include <vector>"
+        },
+        {
+          "line": 13,
+          "text": "#include <algorithm>"
+        }
+      ],
+      "type_owner_header_evidence": [],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "possible-packed-declaration-type-owner-review",
+          "offset": 2767,
+          "line": 119,
+          "column": 1,
+          "source_line": "                int64_t low = 1, high = first - 1;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 2,
+          "frozen_expansion": {
+            "line": 119,
+            "extra_lines": 1,
+            "units": 2,
+            "original": "                int64_t low = 1, high = first - 1;",
+            "events": [
+              {
+                "start_column": 1,
+                "end_column": 51,
+                "units": 2,
+                "assignments": [
+                  {
+                    "column": 29,
+                    "operator": "="
+                  },
+                  {
+                    "column": 39,
+                    "operator": "="
+                  }
+                ],
+                "declaration_bindings": 0,
+                "reason": "independent-statement-and-chained-bindings"
+              }
+            ],
+            "canonical_events": [],
+            "reason": "Canonical header/open/close units and independent body bindings; retain literal wrapping."
+          },
+          "review_required_before_admission": true,
+          "declarators": [
+            "low",
+            "high"
+          ],
+          "required_declaration_units": 2,
+          "required_site_unit_increment": 0,
+          "category": "nonendpoint-transitive-integer-import-evidence-pending",
+          "decision": "Independent initialized integers; source has iostream/vector/algorithm rather than a direct cstdint/inttypes include. Keep import ownership gated until the actual transitive header environment is reviewed."
+        },
+        {
+          "diagnostic_kind": "possible-packed-declaration-type-owner-review",
+          "offset": 3798,
+          "line": 154,
+          "column": 1,
+          "source_line": "    int64_t maxFlips = 0, checksum = 0;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 2,
+          "frozen_expansion": {
+            "line": 154,
+            "extra_lines": 1,
+            "units": 2,
+            "original": "    int64_t maxFlips = 0, checksum = 0;",
+            "events": [
+              {
+                "start_column": 1,
+                "end_column": 40,
+                "units": 2,
+                "assignments": [
+                  {
+                    "column": 22,
+                    "operator": "="
+                  },
+                  {
+                    "column": 36,
+                    "operator": "="
+                  }
+                ],
+                "declaration_bindings": 0,
+                "reason": "independent-statement-and-chained-bindings"
+              }
+            ],
+            "canonical_events": [],
+            "reason": "Canonical header/open/close units and independent body bindings; retain literal wrapping."
+          },
+          "review_required_before_admission": true,
+          "declarators": [
+            "maxFlips",
+            "checksum"
+          ],
+          "required_declaration_units": 2,
+          "required_site_unit_increment": 0,
+          "category": "nonendpoint-transitive-integer-import-evidence-pending",
+          "decision": "Independent initialized integers; source has iostream/vector/algorithm rather than a direct cstdint/inttypes include. Keep import ownership gated until the actual transitive header environment is reviewed."
+        }
+      ],
+      "flagged_diagnostic_registration_count": 4,
+      "frozen_normalized_loc": 110,
+      "explicit_site_only_proposed_unit_increment": 0,
+      "scope_only_proposed_loc": 110,
+      "whole_source_certificate": false
+    },
+    {
+      "source_sha256": "f681de4594a73681f9674d40ff10192a40ac6a13a316996ae821861cb9d62531",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "knucleotide/upstream/knucleotide-gpp-1.cpp",
+      "language": "cpp",
+      "candidate_registration_keys": [
+        "knucleotide:knucleotide-gpp-1-gcc-fastmath",
+        "knucleotide:knucleotide-gpp-1-gcc-native",
+        "knucleotide:knucleotide-gpp-1-llvm-fastmath-nolto",
+        "knucleotide:knucleotide-gpp-1-llvm-native"
+      ],
+      "candidate_registration_count": 4,
+      "endpoint_roles": [],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": false,
+      "all_include_evidence": [
+        {
+          "line": 7,
+          "text": "#include <iostream>"
+        },
+        {
+          "line": 8,
+          "text": "#include <iomanip>"
+        },
+        {
+          "line": 9,
+          "text": "#include <cstdint>"
+        },
+        {
+          "line": 10,
+          "text": "#include <cstdio>"
+        },
+        {
+          "line": 11,
+          "text": "#include <string>"
+        },
+        {
+          "line": 12,
+          "text": "#include <cstring>"
+        },
+        {
+          "line": 13,
+          "text": "#include <algorithm>"
+        },
+        {
+          "line": 14,
+          "text": "#include <future>"
+        },
+        {
+          "line": 15,
+          "text": "#include <unistd.h>"
+        },
+        {
+          "line": 16,
+          "text": "#include <vector>"
+        },
+        {
+          "line": 17,
+          "text": "#include <ext/pb_ds/assoc_container.hpp>"
+        }
+      ],
+      "type_owner_header_evidence": [],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 2552,
+          "line": 109,
+          "column": 1,
+          "source_line": "typedef __gnu_pbds::cc_hash_table",
+          "frozen_diagnostic_source_text": "typedef __gnu_pbds::cc_hash_table\n<\n   RunningHash,\n   unsigned,\n   RunningHash::hash\n> HashMap;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "explicit-pbds-template-type-alias"
+        }
+      ],
+      "flagged_diagnostic_registration_count": 4,
+      "frozen_normalized_loc": 141,
+      "explicit_site_only_proposed_unit_increment": 0,
+      "scope_only_proposed_loc": 141,
+      "whole_source_certificate": false
+    },
+    {
+      "source_sha256": "3b59fb6d50e829972aaba9f66354fb488a84764c6a6e4da78c492680a4a95b39",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "mandelbrot/upstream/mandelbrot-gcc-5.c",
+      "language": "c",
+      "candidate_registration_keys": [
+        "mandelbrot:mandelbrot-gcc-5-gcc-fastmath",
+        "mandelbrot:mandelbrot-gcc-5-gcc-native",
+        "mandelbrot:mandelbrot-gcc-5-llvm-native"
+      ],
+      "candidate_registration_count": 3,
+      "endpoint_roles": [],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": false,
+      "all_include_evidence": [
+        {
+          "line": 10,
+          "text": "#include <stdio.h>"
+        },
+        {
+          "line": 11,
+          "text": "#include <stdlib.h>"
+        }
+      ],
+      "type_owner_header_evidence": [],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 321,
+          "line": 15,
+          "column": 1,
+          "source_line": "typedef double Vec __attribute__ ((vector_size(32)));",
+          "frozen_diagnostic_source_text": "typedef double Vec __attribute__ ((vector_size(32)));",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "parent-drafted-gnu-attribute-alias-owner"
+        }
+      ],
+      "flagged_diagnostic_registration_count": 3,
+      "frozen_normalized_loc": 67,
+      "explicit_site_only_proposed_unit_increment": 0,
+      "scope_only_proposed_loc": 67,
+      "whole_source_certificate": false
+    },
+    {
+      "source_sha256": "e451db2fe8fbc6ea8cbd04805e8bdc6a3e7778f1f64052d8f3cb5aa85e5448d3",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "nbody/upstream/nbody-gpp-1.cpp",
+      "language": "cpp",
+      "candidate_registration_keys": [
+        "nbody:nbody-gpp-1-gcc-fastmath",
+        "nbody:nbody-gpp-1-gcc-native",
+        "nbody:nbody-gpp-1-llvm-fastmath",
+        "nbody:nbody-gpp-1-llvm-native"
+      ],
+      "candidate_registration_count": 4,
+      "endpoint_roles": [],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": false,
+      "all_include_evidence": [
+        {
+          "line": 9,
+          "text": "#include <stdio.h>"
+        },
+        {
+          "line": 10,
+          "text": "#include <stdlib.h>"
+        },
+        {
+          "line": 11,
+          "text": "#include <math.h>"
+        }
+      ],
+      "type_owner_header_evidence": [
+        {
+          "line": 16,
+          "text": "template< typename ...  > struct tuple{};"
+        },
+        {
+          "line": 18,
+          "text": "template<typename H, typename... T>"
+        },
+        {
+          "line": 35,
+          "text": "template<class H, class...T> tuple<H,T...> construct_tuple(H h, T... a)"
+        },
+        {
+          "line": 41,
+          "text": "template<class OP> void FOREACH(OP,tuple<>){}"
+        },
+        {
+          "line": 42,
+          "text": "template<typename OP,class ...T> void FOREACH(OP& op,tuple<T...>& t)"
+        },
+        {
+          "line": 48,
+          "text": "template<class OP> void FOR(OP,tuple<>){}"
+        },
+        {
+          "line": 50,
+          "text": "template<typename OP, class ...T> void FOR(OP& op,tuple<T...>& t)"
+        },
+        {
+          "line": 125,
+          "text": "      template<class T2> void operator()(T2& b2)"
+        },
+        {
+          "line": 143,
+          "text": "    template<class T> void operator()(T& bodies)"
+        },
+        {
+          "line": 153,
+          "text": "    template<class T> void operator()(T& body) "
+        },
+        {
+          "line": 161,
+          "text": "  template<class T> void operator()(T& bodies)"
+        },
+        {
+          "line": 173,
+          "text": "    template<class T> struct foreach_block"
+        },
+        {
+          "line": 176,
+          "text": "      template<class T2> void operator()(T2& b2)"
+        },
+        {
+          "line": 187,
+          "text": "    template<class T> void operator()(T& bodies)"
+        },
+        {
+          "line": 197,
+          "text": "  template<class T> double operator()(T& bodies)"
+        },
+        {
+          "line": 212,
+          "text": "    template<class T> void operator()(T& body) "
+        },
+        {
+          "line": 220,
+          "text": "  template<class T> void operator()(T& bodies)"
+        }
+      ],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 327,
+          "line": 21,
+          "column": 3,
+          "source_line": "  typedef H head;",
+          "frozen_diagnostic_source_text": "typedef H head;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "cpp-template-formal-and-pack-type-alias"
+        },
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 345,
+          "line": 22,
+          "column": 3,
+          "source_line": "  typedef tuple<T...> tail;",
+          "frozen_diagnostic_source_text": "typedef tuple<T...> tail;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "cpp-template-formal-and-pack-type-alias"
+        },
+        {
+          "diagnostic_kind": "c-aggregate-instance-suffix-review",
+          "offset": 3129,
+          "line": 148,
+          "column": 4,
+          "source_line": "  }for_block;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 2,
+          "frozen_expansion": {
+            "line": 148,
+            "extra_lines": 1,
+            "units": 2,
+            "original": "  }for_block;",
+            "events": [
+              {
+                "start_column": 4,
+                "end_column": 14,
+                "units": 1,
+                "assignments": [],
+                "declaration_bindings": 0,
+                "reason": "independent-statement-and-chained-bindings"
+              }
+            ],
+            "canonical_events": [
+              {
+                "kind": "close",
+                "start": 3128,
+                "end": 3129,
+                "units": 1,
+                "scope": "braced"
+              }
+            ],
+            "reason": "Canonical header/open/close units and independent body bindings; retain literal wrapping."
+          },
+          "review_required_before_admission": true,
+          "category": "ordinary-aggregate-instance-suffix",
+          "decision": "Written closing brace1 plus independent object instance1; post-close const or bounded empty initializer braces are still instance syntax, never typedef alias syntax.",
+          "required_closer_units": 1,
+          "required_instance_units": 1,
+          "required_combined_line_units": 2,
+          "required_site_unit_increment": 0,
+          "instance_names": [
+            "for_block"
+          ]
+        },
+        {
+          "diagnostic_kind": "c-aggregate-instance-suffix-review",
+          "offset": 3308,
+          "line": 159,
+          "column": 4,
+          "source_line": "  }foreach_block;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 2,
+          "frozen_expansion": {
+            "line": 159,
+            "extra_lines": 1,
+            "units": 2,
+            "original": "  }foreach_block;",
+            "events": [
+              {
+                "start_column": 4,
+                "end_column": 18,
+                "units": 1,
+                "assignments": [],
+                "declaration_bindings": 0,
+                "reason": "independent-statement-and-chained-bindings"
+              }
+            ],
+            "canonical_events": [
+              {
+                "kind": "close",
+                "start": 3307,
+                "end": 3308,
+                "units": 1,
+                "scope": "braced"
+              }
+            ],
+            "reason": "Canonical header/open/close units and independent body bindings; retain literal wrapping."
+          },
+          "review_required_before_admission": true,
+          "category": "ordinary-aggregate-instance-suffix",
+          "decision": "Written closing brace1 plus independent object instance1; post-close const or bounded empty initializer braces are still instance syntax, never typedef alias syntax.",
+          "required_closer_units": 1,
+          "required_instance_units": 1,
+          "required_combined_line_units": 2,
+          "required_site_unit_increment": 0,
+          "instance_names": [
+            "foreach_block"
+          ]
+        },
+        {
+          "diagnostic_kind": "c-aggregate-instance-suffix-review",
+          "offset": 3447,
+          "line": 167,
+          "column": 2,
+          "source_line": "}advance;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 2,
+          "frozen_expansion": {
+            "line": 167,
+            "extra_lines": 1,
+            "units": 2,
+            "original": "}advance;",
+            "events": [
+              {
+                "start_column": 2,
+                "end_column": 10,
+                "units": 1,
+                "assignments": [],
+                "declaration_bindings": 0,
+                "reason": "independent-statement-and-chained-bindings"
+              }
+            ],
+            "canonical_events": [
+              {
+                "kind": "close",
+                "start": 3446,
+                "end": 3447,
+                "units": 1,
+                "scope": "braced"
+              }
+            ],
+            "reason": "Canonical header/open/close units and independent body bindings; retain literal wrapping."
+          },
+          "review_required_before_admission": true,
+          "category": "ordinary-aggregate-instance-suffix",
+          "decision": "Written closing brace1 plus independent object instance1; post-close const or bounded empty initializer braces are still instance syntax, never typedef alias syntax.",
+          "required_closer_units": 1,
+          "required_instance_units": 1,
+          "required_combined_line_units": 2,
+          "required_site_unit_increment": 0,
+          "instance_names": [
+            "advance"
+          ]
+        },
+        {
+          "diagnostic_kind": "c-aggregate-instance-suffix-review",
+          "offset": 4269,
+          "line": 205,
+          "column": 2,
+          "source_line": "}energy;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 2,
+          "frozen_expansion": {
+            "line": 205,
+            "extra_lines": 1,
+            "units": 2,
+            "original": "}energy;",
+            "events": [
+              {
+                "start_column": 2,
+                "end_column": 9,
+                "units": 1,
+                "assignments": [],
+                "declaration_bindings": 0,
+                "reason": "independent-statement-and-chained-bindings"
+              }
+            ],
+            "canonical_events": [
+              {
+                "kind": "close",
+                "start": 4268,
+                "end": 4269,
+                "units": 1,
+                "scope": "braced"
+              }
+            ],
+            "reason": "Canonical header/open/close units and independent body bindings; retain literal wrapping."
+          },
+          "review_required_before_admission": true,
+          "category": "ordinary-aggregate-instance-suffix",
+          "decision": "Written closing brace1 plus independent object instance1; post-close const or bounded empty initializer braces are still instance syntax, never typedef alias syntax.",
+          "required_closer_units": 1,
+          "required_instance_units": 1,
+          "required_combined_line_units": 2,
+          "required_site_unit_increment": 0,
+          "instance_names": [
+            "energy"
+          ]
+        },
+        {
+          "diagnostic_kind": "c-aggregate-instance-suffix-review",
+          "offset": 4787,
+          "line": 231,
+          "column": 2,
+          "source_line": "}offset;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 2,
+          "frozen_expansion": {
+            "line": 231,
+            "extra_lines": 1,
+            "units": 2,
+            "original": "}offset;",
+            "events": [
+              {
+                "start_column": 2,
+                "end_column": 9,
+                "units": 1,
+                "assignments": [],
+                "declaration_bindings": 0,
+                "reason": "independent-statement-and-chained-bindings"
+              }
+            ],
+            "canonical_events": [
+              {
+                "kind": "close",
+                "start": 4786,
+                "end": 4787,
+                "units": 1,
+                "scope": "braced"
+              }
+            ],
+            "reason": "Canonical header/open/close units and independent body bindings; retain literal wrapping."
+          },
+          "review_required_before_admission": true,
+          "category": "ordinary-aggregate-instance-suffix",
+          "decision": "Written closing brace1 plus independent object instance1; post-close const or bounded empty initializer braces are still instance syntax, never typedef alias syntax.",
+          "required_closer_units": 1,
+          "required_instance_units": 1,
+          "required_combined_line_units": 2,
+          "required_site_unit_increment": 0,
+          "instance_names": [
+            "offset"
+          ]
+        }
+      ],
+      "flagged_diagnostic_registration_count": 28,
+      "frozen_normalized_loc": 199,
+      "explicit_site_only_proposed_unit_increment": 0,
+      "scope_only_proposed_loc": 199,
+      "whole_source_certificate": false
+    },
+    {
+      "source_sha256": "43d9f1c283395d1010486542affe8d1f21baf26ac909e1c698583f90da86b48c",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "nbody/upstream/nbody-gpp-9.cpp",
+      "language": "cpp",
+      "candidate_registration_keys": [
+        "nbody:nbody-gpp-9-gcc-fastmath",
+        "nbody:nbody-gpp-9-gcc-native",
+        "nbody:nbody-gpp-9-llvm-fastmath",
+        "nbody:nbody-gpp-9-llvm-native"
+      ],
+      "candidate_registration_count": 4,
+      "endpoint_roles": [],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": false,
+      "all_include_evidence": [
+        {
+          "line": 8,
+          "text": "#include <cmath>"
+        },
+        {
+          "line": 9,
+          "text": "#include <cstdio>"
+        },
+        {
+          "line": 10,
+          "text": "#include <cstdlib>"
+        },
+        {
+          "line": 11,
+          "text": "#include <utility>"
+        }
+      ],
+      "type_owner_header_evidence": [
+        {
+          "line": 17,
+          "text": "template <auto start, auto stop, auto step = 1, class F>"
+        }
+      ],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 1135,
+          "line": 48,
+          "column": 1,
+          "source_line": "using System = Body[N_BODIES];",
+          "frozen_diagnostic_source_text": "using System = Body[N_BODIES];",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "cpp-source-aggregate-array-type-alias"
+        }
+      ],
+      "flagged_diagnostic_registration_count": 4,
+      "frozen_normalized_loc": 150,
+      "explicit_site_only_proposed_unit_increment": 0,
+      "scope_only_proposed_loc": 150,
+      "whole_source_certificate": false
+    },
+    {
+      "source_sha256": "20fbc37eaf600f916d489fd03efce75c425a1a300d1dc6e2bd8f0221fc5e781a",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "regexredux/upstream/regexredux-gcc-3.c",
+      "language": "c",
+      "candidate_registration_keys": [
+        "regexredux:regexredux-gcc-3"
+      ],
+      "candidate_registration_count": 1,
+      "endpoint_roles": [],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": false,
+      "all_include_evidence": [
+        {
+          "line": 11,
+          "text": "#include <stdio.h>"
+        },
+        {
+          "line": 12,
+          "text": "#include <string.h>"
+        },
+        {
+          "line": 13,
+          "text": "#include <stdlib.h>"
+        },
+        {
+          "line": 14,
+          "text": "#include <pcre.h>"
+        },
+        {
+          "line": 15,
+          "text": "#include <omp.h>"
+        }
+      ],
+      "type_owner_header_evidence": [],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "possible-packed-declaration-type-owner-review",
+          "offset": 413,
+          "line": 20,
+          "column": 1,
+          "source_line": "    size_t size, len;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "declarators": [
+            "size",
+            "len"
+          ],
+          "required_declaration_units": 2,
+          "required_site_unit_increment": 1,
+          "category": "standard-size-type-import-contract",
+          "decision": "Independent fields/locals; actual stdio/stdlib/string headers supply size_t, not an unconditional primitive spelling."
+        },
+        {
+          "diagnostic_kind": "possible-packed-declaration-type-owner-review",
+          "offset": 3254,
+          "line": 123,
+          "column": 1,
+          "source_line": "    size_t ilen, clen, slen;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "declarators": [
+            "ilen",
+            "clen",
+            "slen"
+          ],
+          "required_declaration_units": 3,
+          "required_site_unit_increment": 2,
+          "category": "standard-size-type-import-contract",
+          "decision": "Independent fields/locals; actual stdio/stdlib/string headers supply size_t, not an unconditional primitive spelling."
+        }
+      ],
+      "flagged_diagnostic_registration_count": 2,
+      "frozen_normalized_loc": 125,
+      "explicit_site_only_proposed_unit_increment": 3,
+      "scope_only_proposed_loc": 128,
+      "whole_source_certificate": false
+    },
+    {
+      "source_sha256": "5a7096dbafe2cba77b27212b94f07b55396a06012c6498c0a8a9b945945dac51",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "regexredux/upstream/regexredux-gpp-3.cpp",
+      "language": "cpp",
+      "candidate_registration_keys": [
+        "regexredux:regexredux-gpp-3"
+      ],
+      "candidate_registration_count": 1,
+      "endpoint_roles": [],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": false,
+      "all_include_evidence": [
+        {
+          "line": 9,
+          "text": "#include <boost/regex.hpp>"
+        },
+        {
+          "line": 10,
+          "text": "#include <cassert>"
+        },
+        {
+          "line": 11,
+          "text": "#include <iostream>"
+        },
+        {
+          "line": 12,
+          "text": "#include <cstdio>"
+        }
+      ],
+      "type_owner_header_evidence": [],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "possible-packed-declaration-type-owner-review",
+          "offset": 1790,
+          "line": 70,
+          "column": 1,
+          "source_line": "            std::string::const_iterator start = str.begin (), end = str.end (); ",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 2,
+          "frozen_expansion": {
+            "line": 70,
+            "extra_lines": 1,
+            "units": 2,
+            "original": "            std::string::const_iterator start = str.begin (), end = str.end (); ",
+            "events": [
+              {
+                "start_column": 1,
+                "end_column": 80,
+                "units": 2,
+                "assignments": [
+                  {
+                    "column": 47,
+                    "operator": "="
+                  },
+                  {
+                    "column": 67,
+                    "operator": "="
+                  }
+                ],
+                "declaration_bindings": 0,
+                "reason": "independent-statement-and-chained-bindings"
+              }
+            ],
+            "canonical_events": [],
+            "reason": "Canonical header/open/close units and independent body bindings; retain literal wrapping."
+          },
+          "review_required_before_admission": true,
+          "declarators": [
+            "start",
+            "end"
+          ],
+          "required_declaration_units": 2,
+          "required_site_unit_increment": 0,
+          "category": "standard-library-nested-type-contract",
+          "decision": "Two independently initialized iterators; a known string type needs a specifically proven const_iterator member type, not arbitrary qualified-member guessing."
+        }
+      ],
+      "flagged_diagnostic_registration_count": 1,
+      "frozen_normalized_loc": 69,
+      "explicit_site_only_proposed_unit_increment": 0,
+      "scope_only_proposed_loc": 69,
+      "whole_source_certificate": false
+    },
+    {
+      "source_sha256": "08166cada00044e451086fe5842c596ea1f3e99a4079c6ce5fa6dfc59f80e16f",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "regexredux/upstream/regexredux-gpp-6.cpp",
+      "language": "cpp",
+      "candidate_registration_keys": [
+        "regexredux:regexredux-gpp-6"
+      ],
+      "candidate_registration_count": 1,
+      "endpoint_roles": [],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": false,
+      "all_include_evidence": [
+        {
+          "line": 14,
+          "text": "#include <algorithm>"
+        },
+        {
+          "line": 15,
+          "text": "#include <boost/noncopyable.hpp>"
+        },
+        {
+          "line": 16,
+          "text": "#include <fstream>"
+        },
+        {
+          "line": 17,
+          "text": "#include <future>"
+        },
+        {
+          "line": 18,
+          "text": "#include <iostream>"
+        },
+        {
+          "line": 19,
+          "text": "#include <iterator>"
+        },
+        {
+          "line": 20,
+          "text": "#include <memory>"
+        },
+        {
+          "line": 21,
+          "text": "#include <sstream>"
+        },
+        {
+          "line": 22,
+          "text": "#include <vector>"
+        },
+        {
+          "line": 24,
+          "text": "#include <pcre2.h>"
+        }
+      ],
+      "type_owner_header_evidence": [
+        {
+          "line": 187,
+          "text": "    template <typename FUNCTOR>"
+        }
+      ],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 10555,
+          "line": 288,
+          "column": 1,
+          "source_line": "using regex_replace_spec = std::pair<const char* const, const char* const>;",
+          "frozen_diagnostic_source_text": "using regex_replace_spec = std::pair<const char* const, const char* const>;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "cpp-qualified-or-template-type-alias"
+        },
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 11566,
+          "line": 320,
+          "column": 1,
+          "source_line": "using counter_list = std::vector<size_t>;",
+          "frozen_diagnostic_source_text": "using counter_list = std::vector<size_t>;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "cpp-qualified-or-template-type-alias"
+        }
+      ],
+      "flagged_diagnostic_registration_count": 2,
+      "frozen_normalized_loc": 256,
+      "explicit_site_only_proposed_unit_increment": 0,
+      "scope_only_proposed_loc": 256,
+      "whole_source_certificate": false
+    },
+    {
+      "source_sha256": "71c5bc72d1478e869b80631e450a2d828ecd3f2f0303e9240a74a64f953ee072",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "revcomp/upstream/revcomp-gcc-2.c",
+      "language": "c",
+      "candidate_registration_keys": [
+        "revcomp:revcomp-gcc-2-gcc",
+        "revcomp:revcomp-gcc-2-llvm"
+      ],
+      "candidate_registration_count": 2,
+      "endpoint_roles": [],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": false,
+      "all_include_evidence": [
+        {
+          "line": 8,
+          "text": "#include <sched.h>"
+        },
+        {
+          "line": 9,
+          "text": "#include <stdio.h>"
+        },
+        {
+          "line": 10,
+          "text": "#include <stdlib.h>"
+        },
+        {
+          "line": 11,
+          "text": "#include <ctype.h>"
+        },
+        {
+          "line": 12,
+          "text": "#include <unistd.h>"
+        },
+        {
+          "line": 13,
+          "text": "#include <pthread.h>"
+        },
+        {
+          "line": 14,
+          "text": "#include <string.h>"
+        }
+      ],
+      "type_owner_header_evidence": [],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "possible-packed-declaration-type-owner-review",
+          "offset": 518,
+          "line": 28,
+          "column": 1,
+          "source_line": "   char *from = w->begin, *to = w->end;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 2,
+          "frozen_expansion": {
+            "line": 28,
+            "extra_lines": 1,
+            "units": 2,
+            "original": "   char *from = w->begin, *to = w->end;",
+            "events": [
+              {
+                "start_column": 1,
+                "end_column": 40,
+                "units": 2,
+                "assignments": [
+                  {
+                    "column": 15,
+                    "operator": "="
+                  },
+                  {
+                    "column": 31,
+                    "operator": "="
+                  }
+                ],
+                "declaration_bindings": 0,
+                "reason": "independent-statement-and-chained-bindings"
+              }
+            ],
+            "canonical_events": [],
+            "reason": "Canonical header/open/close units and independent body bindings; retain literal wrapping."
+          },
+          "review_required_before_admission": true,
+          "declarators": [
+            "from",
+            "to"
+          ],
+          "required_declaration_units": 2,
+          "required_site_unit_increment": 0,
+          "category": "ordinary-initializer-operators-false-gate",
+          "decision": "Proven builtin declarations; shift << or member -> inside RHS is an ordinary operator. Keep independent assignment count; remove no diagnostics without a qualified grammar repair."
+        },
+        {
+          "diagnostic_kind": "possible-packed-declaration-type-owner-review",
+          "offset": 1053,
+          "line": 57,
+          "column": 1,
+          "source_line": "   size_t buflen = 1024, len, end = 0;",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 2,
+          "frozen_expansion": {
+            "line": 57,
+            "extra_lines": 1,
+            "units": 2,
+            "original": "   size_t buflen = 1024, len, end = 0;",
+            "events": [
+              {
+                "start_column": 1,
+                "end_column": 39,
+                "units": 2,
+                "assignments": [
+                  {
+                    "column": 18,
+                    "operator": "="
+                  },
+                  {
+                    "column": 35,
+                    "operator": "="
+                  }
+                ],
+                "declaration_bindings": 0,
+                "reason": "independent-statement-and-chained-bindings"
+              }
+            ],
+            "canonical_events": [],
+            "reason": "Canonical header/open/close units and independent body bindings; retain literal wrapping."
+          },
+          "review_required_before_admission": true,
+          "declarators": [
+            "buflen",
+            "len",
+            "end"
+          ],
+          "required_declaration_units": 3,
+          "required_site_unit_increment": 1,
+          "category": "standard-size-type-import-contract",
+          "decision": "Independent fields/locals; actual stdio/stdlib/string headers supply size_t, not an unconditional primitive spelling."
+        }
+      ],
+      "flagged_diagnostic_registration_count": 4,
+      "frozen_normalized_loc": 81,
+      "explicit_site_only_proposed_unit_increment": 1,
+      "scope_only_proposed_loc": 82,
+      "whole_source_certificate": false
+    },
+    {
+      "source_sha256": "5b48bef2ebbd5d07701722fca4853ca31d949c9362b797770cb31dd7f6217b85",
+      "source_sha_basis": "Copied from immutable job09; no fresh hashing in this static pass.",
+      "source_path": "revcomp/upstream/revcomp-gcc-6.c",
+      "language": "c",
+      "candidate_registration_keys": [
+        "revcomp:revcomp-gcc-6-gcc",
+        "revcomp:revcomp-gcc-6-llvm"
+      ],
+      "candidate_registration_count": 2,
+      "endpoint_roles": [],
+      "endpoint_role_basis": "Frozen job09 proposal fastest/smallest and previous fastest/smallest keys.",
+      "endpoint_relevant": false,
+      "all_include_evidence": [
+        {
+          "line": 17,
+          "text": "#include <stdio.h>"
+        },
+        {
+          "line": 18,
+          "text": "#include <stdlib.h>"
+        },
+        {
+          "line": 19,
+          "text": "#include <string.h>"
+        },
+        {
+          "line": 20,
+          "text": "#include <stdint.h>"
+        }
+      ],
+      "type_owner_header_evidence": [],
+      "distinct_sites": [
+        {
+          "diagnostic_kind": "c-typedef-declarator-owner-review",
+          "offset": 748,
+          "line": 23,
+          "column": 1,
+          "source_line": "typedef intptr_t intnative_t;",
+          "frozen_diagnostic_source_text": "typedef intptr_t intnative_t;",
+          "baseline_line_units": 1,
+          "frozen_expansion": null,
+          "review_required_before_admission": true,
+          "required_written_alias_bindings": 1,
+          "required_site_unit_increment": null,
+          "decision": "Explicit type alias owner, not a runtime binding or executor. Whole wrapped/header/data unit ownership must be qualified independently before changing totals.",
+          "category": "parent-drafted-native-integer-alias-contract"
+        },
+        {
+          "diagnostic_kind": "possible-packed-declaration-type-owner-review",
+          "offset": 2581,
+          "line": 74,
+          "column": 1,
+          "source_line": "         intnative_t sequence_Capacity=READ_SIZE, sequence_Size=0",
+          "frozen_diagnostic_source_text": null,
+          "baseline_line_units": 2,
+          "frozen_expansion": {
+            "line": 74,
+            "extra_lines": 1,
+            "units": 2,
+            "original": "         intnative_t sequence_Capacity=READ_SIZE, sequence_Size=0",
+            "events": [
+              {
+                "start_column": 1,
+                "end_column": 67,
+                "units": 2,
+                "assignments": [
+                  {
+                    "column": 39,
+                    "operator": "="
+                  },
+                  {
+                    "column": 64,
+                    "operator": "="
+                  }
+                ],
+                "declaration_bindings": 0,
+                "reason": "independent-statement-and-chained-bindings"
+              }
+            ],
+            "canonical_events": [],
+            "reason": "Canonical header/open/close units and independent body bindings; retain literal wrapping."
+          },
+          "review_required_before_admission": true,
+          "declarators": [
+            "sequence_Capacity",
+            "sequence_Size"
+          ],
+          "required_declaration_units": 2,
+          "required_site_unit_increment": 0,
+          "category": "parent-drafted-native-integer-alias-contract",
+          "decision": "Independent initialized variables; parent already added exact intptr/uintptr import contracts. Current two assignment units already match the declaration count."
+        }
+      ],
+      "flagged_diagnostic_registration_count": 4,
+      "frozen_normalized_loc": 78,
+      "explicit_site_only_proposed_unit_increment": 0,
+      "scope_only_proposed_loc": 78,
+      "whole_source_certificate": false
+    }
+  ],
+  "external_semantic_evidence": [
+    {
+      "header": "/opt/homebrew/include/pcre2.h",
+      "line": 536,
+      "text": "#define PCRE2_SIZE            size_t",
+      "limitation": "Static header read only; unhashed and not bound to original measurement build."
+    },
+    {
+      "header": "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/stdlib.h",
+      "line": 74,
+      "text": "#include <sys/_types/_size_t.h>",
+      "limitation": "Static SDK header read only; unhashed and not bound to original measurement build."
+    },
+    {
+      "header": "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/string.h",
+      "line": 64,
+      "text": "#include <sys/_types/_size_t.h>",
+      "limitation": "Static SDK header read only; unhashed and not bound to original measurement build."
+    }
+  ],
+  "execution": {
+    "lexer_or_normalizer_imports": false,
+    "tests": false,
+    "hashes": false,
+    "builds": false,
+    "timing": false,
+    "shared_module_changes": false,
+    "source_changes": false,
+    "chart_admission": false
+  },
+  "limitations": [
+    "Alias binding count1 does not certify canonical span ownership across wrapped type arguments, template headers or meaningful attribute groups.",
+    "Explicit site-only increments concern reviewed packed declarations and instance suffixes; all unrelated diagnostics remain gated.",
+    "Parent already drafted compiler attribute and native integer contracts after job09; this receipt does not count their later changes.",
+    "Unknown CPP type identifiers, dependent templates, arbitrary library members and unreviewed transitive imports must remain gated until qualified generic pathways/source proofs exist.",
+    "Fresh source hashes and imports/normalization/tests must be verified under the common timing mutex before any replay/admission."
+  ]
+}

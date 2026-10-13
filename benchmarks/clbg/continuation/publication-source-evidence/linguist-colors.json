@@ -1,0 +1,87 @@
+{
+  "source_url": "https://api.github.com/repos/github-linguist/linguist/commits?path=lib/linguist/languages.yml&per_page=1",
+  "response": [
+    {
+      "sha": "538da05f034fa5c83bd81df128d144e208898da3",
+      "node_id": "C_kwDOABpTD9oAKDUzOGRhMDVmMDM0ZmE1YzgzYmQ4MWRmMTI4ZDE0NGUyMDg4OThkYTM",
+      "commit": {
+        "author": {
+          "name": "Bao Zhiyuan",
+          "email": "71200607+bzy-debug@users.noreply.github.com",
+          "date": "2026-09-21T08:29:18Z"
+        },
+        "committer": {
+          "name": "GitHub",
+          "email": "noreply@github.com",
+          "date": "2026-09-21T08:29:18Z"
+        },
+        "message": "Recognize moon.mod and moon.pkg as MoonBit Config (#8196)\n\n* Recognize moon.mod and moon.pkg as MoonBit Config\n\nAdd a separate data language for MoonBit module and package manifests,\nreusing source.moonbit for syntax highlighting. Cover filename detection,\nthe highlighting scope, and exclusion from default language statistics.\n\nBoth samples are copied unchanged from moonbitlang/async and individually\nlicensed under Apache-2.0:\n- moon.mod: https://github.com/moonbitlang/async/blob/a37e4658068eee4f684a770025e0dc4b9f1df69f/moon.mod\n- moon.pkg: https://github.com/moonbitlang/async/blob/a37e4658068eee4f684a770025e0dc4b9f1df69f/src/moon.pkg\n- License: https://github.com/moonbitlang/async/blob/a37e4658068eee4f684a770025e0dc4b9f1df69f/LICENSE\n\nUsage searches (exact filenames, excluding forks):\n- https://github.com/search?type=code&q=NOT+is%3Afork+path%3A%2F%28%5E%7C%5C%2F%29moon%5C.mod%24%2F\n- https://github.com/search?type=code&q=NOT+is%3Afork+path%3A%2F%28%5E%7C%5C%2F%29moon%5C.pkg%24%2F\n\n* Recognize MoonBit manifests using the existing language entry\n\nAdd moon.mod and moon.pkg as MoonBit filenames and move the unchanged samples into its filenames directory. Remove the separate data language, its generated grammar listing, and the redundant test; existing sample-based detection tests cover both filenames.\n\nValidation: 2043 tests, 0 failures, 0 errors, 1 skip. Classifier cross-validation passes with 14 errors at the allowed threshold.\n\n---------\n\nCo-authored-by: Bao Zhiyuan <baozhiyuan@idea.edu.cn>",
+        "tree": {
+          "sha": "97fce39af585599883086359836708c5126ea86e",
+          "url": "https://api.github.com/repos/github-linguist/linguist/git/trees/97fce39af585599883086359836708c5126ea86e"
+        },
+        "url": "https://api.github.com/repos/github-linguist/linguist/git/commits/538da05f034fa5c83bd81df128d144e208898da3",
+        "comment_count": 0,
+        "verification": {
+          "verified": true,
+          "reason": "valid",
+          "signature": "-----BEGIN PGP SIGNATURE-----\n\nwsFcBAABCAAQBQJqsOrsCRC1aQ7uu5UhlAAASj4QAK4Ap0nlznqZE6yfKpzESLRQ\ntPh8hWKyp2Imu6ggfCI3m1EuaQDfxZfobYKV3quLXYeFIPElTRwQIw4h5AvUYCG+\njORHFzUVTi96Zl4jhTfNan7sjPeeE99h4mSMG5FbxQxQt2YxVLrz4ZNf9brB4X/2\nanq7h/vevmnQ8viueFQRN9YjqDJOhY4v+2mUDLQe3gop+Zlb6MfxGmf83AN8GdOd\ntGzCA6SHx7mXW5JiW4BjYlkqnHBducbKMwOP5+6kT2HFYDaRv4m+TAJlk6b8bULr\nowSrpD1AhjhwmB1ezGvlfMYsUfdmbFb7cAXnlGhOHv4CLBQNiDo24ODPE2qfelEo\n24lTvZxLyHd5A+Bji5Ee3cS/GNxCJiNJ2hr/2kutPc4SrUvHs2HQ0E0vQBhGXqY1\ns48Es27VYYwQot/uNubynFL5q5ZbjUvvFT84EAX2HxVAFPe11GjyNh2Sip7ruosN\nwWuPuVNJgZ56dnyCqR43kuvMCnqmujN8POguDwlnCcMryNaAP4y6dWtBaUORHM70\n/diicwF/NU7NPdmkxYda+46GWLOfjsXPqEX24fc1tus+F4Amq/LmWXzONicUV/r6\nu0LWAMTPzpZi1cm7obqgsM2yu/aOUPogFDYKWcW92zeKw5KobMsi7XZ78pRgQKJs\nHxbkiehJNd3pFhcjUBZS\n=PnJL\n-----END PGP SIGNATURE-----\n",
+          "payload": "tree 97fce39af585599883086359836708c5126ea86e\nparent f9601f782dfc4837df5e88c33b5ccfccc85aa183\nauthor Bao Zhiyuan <71200607+bzy-debug@users.noreply.github.com> 1789979358 +0000\ncommitter GitHub <noreply@github.com> 1789979358 +0000\n\nRecognize moon.mod and moon.pkg as MoonBit Config (#8196)\n\n* Recognize moon.mod and moon.pkg as MoonBit Config\n\nAdd a separate data language for MoonBit module and package manifests,\nreusing source.moonbit for syntax highlighting. Cover filename detection,\nthe highlighting scope, and exclusion from default language statistics.\n\nBoth samples are copied unchanged from moonbitlang/async and individually\nlicensed under Apache-2.0:\n- moon.mod: https://github.com/moonbitlang/async/blob/a37e4658068eee4f684a770025e0dc4b9f1df69f/moon.mod\n- moon.pkg: https://github.com/moonbitlang/async/blob/a37e4658068eee4f684a770025e0dc4b9f1df69f/src/moon.pkg\n- License: https://github.com/moonbitlang/async/blob/a37e4658068eee4f684a770025e0dc4b9f1df69f/LICENSE\n\nUsage searches (exact filenames, excluding forks):\n- https://github.com/search?type=code&q=NOT+is%3Afork+path%3A%2F%28%5E%7C%5C%2F%29moon%5C.mod%24%2F\n- https://github.com/search?type=code&q=NOT+is%3Afork+path%3A%2F%28%5E%7C%5C%2F%29moon%5C.pkg%24%2F\n\n* Recognize MoonBit manifests using the existing language entry\n\nAdd moon.mod and moon.pkg as MoonBit filenames and move the unchanged samples into its filenames directory. Remove the separate data language, its generated grammar listing, and the redundant test; existing sample-based detection tests cover both filenames.\n\nValidation: 2043 tests, 0 failures, 0 errors, 1 skip. Classifier cross-validation passes with 14 errors at the allowed threshold.\n\n---------\n\nCo-authored-by: Bao Zhiyuan <baozhiyuan@idea.edu.cn>",
+          "verified_at": "2026-09-21T08:29:32Z"
+        }
+      },
+      "url": "https://api.github.com/repos/github-linguist/linguist/commits/538da05f034fa5c83bd81df128d144e208898da3",
+      "html_url": "https://github.com/github-linguist/linguist/commit/538da05f034fa5c83bd81df128d144e208898da3",
+      "comments_url": "https://api.github.com/repos/github-linguist/linguist/commits/538da05f034fa5c83bd81df128d144e208898da3/comments",
+      "author": {
+        "login": "bzy-debug",
+        "id": 71200607,
+        "node_id": "MDQ6VXNlcjcxMjAwNjA3",
+        "avatar_url": "https://avatars.githubusercontent.com/u/71200607?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/bzy-debug",
+        "html_url": "https://github.com/bzy-debug",
+        "followers_url": "https://api.github.com/users/bzy-debug/followers",
+        "following_url": "https://api.github.com/users/bzy-debug/following{/other_user}",
+        "gists_url": "https://api.github.com/users/bzy-debug/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/bzy-debug/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/bzy-debug/subscriptions",
+        "organizations_url": "https://api.github.com/users/bzy-debug/orgs",
+        "repos_url": "https://api.github.com/users/bzy-debug/repos",
+        "events_url": "https://api.github.com/users/bzy-debug/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/bzy-debug/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "web-flow",
+        "id": 19864447,
+        "node_id": "MDQ6VXNlcjE5ODY0NDQ3",
+        "avatar_url": "https://avatars.githubusercontent.com/u/19864447?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/web-flow",
+        "html_url": "https://github.com/web-flow",
+        "followers_url": "https://api.github.com/users/web-flow/followers",
+        "following_url": "https://api.github.com/users/web-flow/following{/other_user}",
+        "gists_url": "https://api.github.com/users/web-flow/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/web-flow/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/web-flow/subscriptions",
+        "organizations_url": "https://api.github.com/users/web-flow/orgs",
+        "repos_url": "https://api.github.com/users/web-flow/repos",
+        "events_url": "https://api.github.com/users/web-flow/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/web-flow/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "f9601f782dfc4837df5e88c33b5ccfccc85aa183",
+          "url": "https://api.github.com/repos/github-linguist/linguist/commits/f9601f782dfc4837df5e88c33b5ccfccc85aa183",
+          "html_url": "https://github.com/github-linguist/linguist/commit/f9601f782dfc4837df5e88c33b5ccfccc85aa183"
+        }
+      ]
+    }
+  ]
+}

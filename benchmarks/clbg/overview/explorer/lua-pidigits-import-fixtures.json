@@ -1,0 +1,26 @@
+{
+  "status": "passed",
+  "at": "2026-10-12T13:44:43.473982+00:00",
+  "cases": 21,
+  "required_field_subtests": 8,
+  "failures": 0,
+  "errors": 0,
+  "command": [
+    "/tmp/mech-nbody-plot-runtime/bin/python3",
+    "-m",
+    "unittest",
+    "-v",
+    "test_lua_pidigits_study_data"
+  ],
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/lua_pidigits_study_data.py": "3b7898d17a32a5289ee37af4176958b5ae4a063d96a0d438c4e173494744624a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/test_lua_pidigits_study_data.py": "2eca1c95e042c0ae1ca7298c2be37d9a6327ad8809a6cc2846252758d0f0d764",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/isolated_study_data.py": "54f78787784d737cfa339ca5e8ea2e24401c5ead49f4b1a153abd7311efd84e4"
+  },
+  "log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/lua-pidigits-import-fixtures.log",
+  "log_sha256": "733bf4628c856bd3a22fe255116b8bc2ca20e08747253b9fd02efe2d2bcd4600",
+  "scope": "New Lua producer full-validation metadata, canonical runtime/source/argument, N10000 and source variant checks only. Original unchanged27 helper/Fann fixtures were not repeated. No runtime or benchmark executed.",
+  "actual_complete_family_reconciliation": "Pending both complete18-record Lua/LuaJIT studies; this proof admits no data.",
+  "shared_mutex": "/tmp/mech-clbg-timing.lock",
+  "no_timing_or_data_mutations": true
+}

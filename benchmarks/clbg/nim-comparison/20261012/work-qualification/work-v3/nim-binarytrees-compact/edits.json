@@ -1,0 +1,33 @@
+{
+  "scored_source_sha256": "b18267a6d540e24c1db7aa002f2cc486f108e852c8d38bc3e0340a4ddcd5fabc",
+  "trace_source_sha256": "32852961cd30dbce6344dc922492c5813b13b6494f0de84bd21a579d01badf4b",
+  "changes": [
+    {
+      "before": "proc check(node: Node): int =\n",
+      "after": "proc auditTree(audit: File, node: Node, depth: int, kind: string, index: int) =\n  audit.writeLine(\"ROOT|\", kind, \"|\", depth, \"|\", index, \"|\", cast[uint](node))\n  var seen = initHashSet[uint]()\n  proc visit(current: Node) =\n    doAssert current != nil\n    let address = cast[uint](current)\n    doAssert address notin seen\n    seen.incl(address)\n    audit.writeLine(\"NODE|\", address, \"|\", cast[uint](current.left), \"|\", cast[uint](current.right))\n    if current.left != nil:\n      doAssert current.right != nil\n      visit(current.left)\n      visit(current.right)\n    else:\n      doAssert current.right == nil\n  visit(node)\n  audit.writeLine(\"TREE_END|\", seen.len)\n\nproc check(node: Node): int =\n"
+    },
+    {
+      "before": "let depth = max(6, parseInt(paramStr(1)))\n",
+      "after": "let audit = auditOpen(\"main\")\nlet depth = max(6, parseInt(paramStr(1)))\n"
+    },
+    {
+      "before": "  let stretch = make(depth + 1)\n",
+      "after": "  let stretch = make(depth + 1)\n  auditTree(audit, stretch, depth + 1, \"stretch\", -1)\n"
+    },
+    {
+      "before": "let longLived = make(depth)\n",
+      "after": "let longLived = make(depth)\nauditTree(audit, longLived, depth, \"long-open\", -1)\n"
+    },
+    {
+      "before": "echo \"long lived tree of depth \", depth, \"\\t check: \", check(longLived)\n",
+      "after": "auditTree(audit, longLived, depth, \"long-close\", -1)\necho \"long lived tree of depth \", depth, \"\\t check: \", check(longLived)\n"
+    },
+    {
+      "before": "    let tree = make(current)\n",
+      "after": "    let tree = make(current)\n    auditTree(audit, tree, current, \"iteration\", iteration)\n"
+    }
+  ],
+  "preserved_make_and_check": true,
+  "workload_helpers_replaced": false,
+  "observations": "Temporary integer addresses only; no retained Node references after observer returns"
+}

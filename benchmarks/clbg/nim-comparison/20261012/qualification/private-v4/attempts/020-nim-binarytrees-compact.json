@@ -1,0 +1,53 @@
+{
+  "key": "binarytrees:nim-binarytrees-compact",
+  "id": "nim-binarytrees-compact",
+  "benchmark": "binarytrees",
+  "language": "nim",
+  "source_sha256": "b18267a6d540e24c1db7aa002f2cc486f108e852c8d38bc3e0340a4ddcd5fabc",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v4/bin/nim-binarytrees-compact",
+    "9"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012",
+  "runtime_environment": {
+    "LC_ALL": "C",
+    "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre/8.45/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"3ae82952946c40977ee2167f67b54da9dd0c32f1e60e24d8d1c6d98c8e5dc33c\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v4/bin/nim-binarytrees-compact\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre/8.45/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"b18267a6d540e24c1db7aa002f2cc486f108e852c8d38bc3e0340a4ddcd5fabc\", \"support\": {}}",
+  "started_at": "2026-10-12T19:33:19.612023+00:00",
+  "workload_n": 9,
+  "full_workload": false,
+  "timeout_seconds": 120,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.015387083,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 185,
+  "stdout_sha256": "fc6ca49b3987467168c413810504d644350f21504f5a51ed658e9f879832ddaf",
+  "validation": {
+    "reference_match": true,
+    "bytes": 185,
+    "sha256": "fc6ca49b3987467168c413810504d644350f21504f5a51ed658e9f879832ddaf"
+  },
+  "finished_at": "2026-10-12T19:33:19.825394+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true
+}

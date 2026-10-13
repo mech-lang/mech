@@ -1,0 +1,80 @@
+Compiled from "compact.clj"
+public final class clbg.knucleotide.compact$histogram$fn__159 extends clojure.lang.AFunction {
+  java.lang.Object width;
+
+  java.lang.Object sequence;
+
+  java.lang.Object windows;
+
+  public static final java.lang.Object const__0;
+
+  public clbg.knucleotide.compact$histogram$fn__159(java.lang.Object, java.lang.Object, java.lang.Object);
+    Code:
+         0: aload_0
+         1: invokespecial #14                 // Method clojure/lang/AFunction."<init>":()V
+         4: aload_0
+         5: aload_1
+         6: putfield      #16                 // Field width:Ljava/lang/Object;
+         9: aload_0
+        10: aload_2
+        11: putfield      #18                 // Field sequence:Ljava/lang/Object;
+        14: aload_0
+        15: aload_3
+        16: putfield      #20                 // Field windows:Ljava/lang/Object;
+        19: return
+
+  public java.lang.Object invoke();
+    Code:
+         0: lconst_0
+         1: lstore_1
+         2: getstatic     #28                 // Field clojure/lang/PersistentHashMap.EMPTY:Lclojure/lang/PersistentHashMap;
+         5: invokestatic  #34                 // Method clojure/core$transient.invokeStatic:(Ljava/lang/Object;)Ljava/lang/Object;
+         8: astore_3
+         9: lload_1
+        10: aload_0
+        11: getfield      #20                 // Field windows:Ljava/lang/Object;
+        14: invokestatic  #40                 // Method clojure/lang/Util.equiv:(JLjava/lang/Object;)Z
+        17: ifeq          27
+        20: aload_3
+        21: aconst_null
+        22: astore_3
+        23: goto          86
+        26: athrow
+        27: aload_0
+        28: getfield      #18                 // Field sequence:Ljava/lang/Object;
+        31: checkcast     #42                 // class java/lang/String
+        34: lload_1
+        35: invokestatic  #48                 // Method clojure/lang/RT.intCast:(J)I
+        38: lload_1
+        39: aload_0
+        40: getfield      #16                 // Field width:Ljava/lang/Object;
+        43: invokestatic  #54                 // Method clojure/lang/Numbers.add:(JLjava/lang/Object;)Ljava/lang/Number;
+        46: invokestatic  #57                 // Method clojure/lang/RT.intCast:(Ljava/lang/Object;)I
+        49: invokevirtual #61                 // Method java/lang/String.substring:(II)Ljava/lang/String;
+        52: astore        4
+        54: lload_1
+        55: invokestatic  #65                 // Method clojure/lang/Numbers.inc:(J)J
+        58: aload_3
+        59: aload         4
+        61: aload_3
+        62: aconst_null
+        63: astore_3
+        64: aload         4
+        66: aconst_null
+        67: astore        4
+        69: getstatic     #68                 // Field const__0:Ljava/lang/Object;
+        72: invokestatic  #72                 // Method clojure/lang/RT.get:(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+        75: invokestatic  #75                 // Method clojure/lang/Numbers.inc:(Ljava/lang/Object;)Ljava/lang/Number;
+        78: invokestatic  #79                 // Method clojure/core$assoc_BANG_.invokeStatic:(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+        81: astore_3
+        82: lstore_1
+        83: goto          9
+        86: areturn
+
+  public static {};
+    Code:
+         0: lconst_0
+         1: invokestatic  #95                 // Method java/lang/Long.valueOf:(J)Ljava/lang/Long;
+         4: putstatic     #68                 // Field const__0:Ljava/lang/Object;
+         7: return
+}

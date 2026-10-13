@@ -1,0 +1,7 @@
+# Additive Nim source/work/full v2
+
+Consume private-v6: exact154 retained production outputs, three explicitly prior-origin primitive proofs and21 fresh ORC/maps/Pi proofs. Preserve v5/v1/full-controller-v2 inputs/evidence. Use exact v5 archive/version/compatibility-bound compiler trees recorded by v6 and new unscored output paths.
+
+Eight real tree cases preserve production creators/checks and original scored generated C/ARM64 proof. Correlate observed iteration labels with each own worker section/range; prove concurrently live churn graphs disjoint from retained long-lived graph, allowing released stretch address reuse. Reject all conditional/unconditional branch/return before actual scored allocation. Retain/pin complete actual trace/native stdout/sampler/supervisor/disassembly/compiler bytes before admission. Exact12 actual meaningful tree/controller fixture IDs require discovery/start receipts and zero skip/error/failure, using the common lock and bounded owned-child service.
+
+Full controller exact20 Boolean qualification gate and15 literal safe gates preserves genuine clean source output/time/RSS failures and continues independent forms/controls/workloads. Integrity/ownership/environment errors stop. Seal only after successful v6/work receipt; review exact index digest before launching90 fresh processes (ten benchmarks, compact/optimized/unchanged current Mech controls, three rotated rounds). Canonical LOC remains null until separate immutable qualified overlay. No chart publication/commits. No execution or queue at authoring.

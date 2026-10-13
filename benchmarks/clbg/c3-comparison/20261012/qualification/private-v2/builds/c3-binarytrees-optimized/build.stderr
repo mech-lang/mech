@@ -1,0 +1,7 @@
+ 83:         Job[8] jobs;
+ 84:         for (int worker = 0; worker < count; worker++)
+ 85:         {
+ 86:             jobs[worker] = { current, iterations * worker / count, iterations * (worker + 1) / count, 0 };
+                                                                                      ^^^^^^^^^^
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/sources/binarytrees/optimized.c3:86:82: error: This conversion requires an explicit cast to 'long', because the widening of the expression may be done in more than one way.
+

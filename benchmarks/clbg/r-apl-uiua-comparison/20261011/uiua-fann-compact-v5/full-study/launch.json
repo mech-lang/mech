@@ -1,0 +1,9 @@
+{
+  "pid": 83110,
+  "identity": {
+    "pid": 83110,
+    "process_listing": "Sun Oct 11 23:42:35 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/full_study.py --run --manifest-sha256 d8b6ad100671b3fef5ae46d90dcb36b044733b25ea8d65e3ba7a4589e5b62513"
+  },
+  "manifest_sha256": "d8b6ad100671b3fef5ae46d90dcb36b044733b25ea8d65e3ba7a4589e5b62513",
+  "launched_at": "2026-10-12T03:42:35.022407+00:00"
+}

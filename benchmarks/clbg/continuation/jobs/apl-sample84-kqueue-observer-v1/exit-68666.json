@@ -1,0 +1,14 @@
+{
+  "pid": 68666,
+  "observed_at": "2026-10-13T07:21:25.000113+00:00",
+  "raw_event": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/apl-sample84-kqueue-observer-v1/raw-event-0001.json",
+  "filter": -5,
+  "flags": 32821,
+  "fflags": 2214592512,
+  "kernel_wait_status": 0,
+  "exited_normally": true,
+  "exit_code": 0,
+  "signalled": false,
+  "signal_number": null,
+  "qualification_granted": false
+}

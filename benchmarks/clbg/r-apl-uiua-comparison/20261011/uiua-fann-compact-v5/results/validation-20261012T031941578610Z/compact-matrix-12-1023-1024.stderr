@@ -1,0 +1,4 @@
+Advice: Split this into multiple lines (heuristic: 68/60) 😠
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/results/validation-20261012T031941578610Z/compact-matrix-12-1023-1024.ua:6:1
+6 | Rotate      ← ↯⊃(⋅△)(⊏⊃(♭+⊃(⋅(×N⇡⧻))(+⊙(¤⇡N) ×⊃(¤<⊃⊢(⋅(⇡N)))(-⊃(⋅(¤⇡N))(◿⊃⊢(⊞+⊃(↘1)(⋅(⇡N)))))))(⋅♭))
+    ────────────────────────────────────────────────────────────────────────────────────────────────────

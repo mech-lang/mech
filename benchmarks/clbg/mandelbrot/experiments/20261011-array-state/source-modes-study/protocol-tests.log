@@ -1,0 +1,11 @@
+test_interpreted_scores_loaded_execution_and_retains_prepare_wall (__main__.TimingProtocolTests.test_interpreted_scores_loaded_execution_and_retains_prepare_wall) ... ok
+test_jit_retains_fresh_process_time (__main__.TimingProtocolTests.test_jit_retains_fresh_process_time) ... ok
+test_missing_or_duplicate_timing_record_is_fatal (__main__.TimingProtocolTests.test_missing_or_duplicate_timing_record_is_fatal) ... ok
+test_preparation_and_execution_must_fit_wall (__main__.TimingProtocolTests.test_preparation_and_execution_must_fit_wall) ... ok
+test_wall_must_be_finite_positive_and_mode_explicit (__main__.TimingProtocolTests.test_wall_must_be_finite_positive_and_mode_explicit) ... ok
+test_wrong_fields_or_nonfinite_negative_or_boolean_values_are_fatal (__main__.TimingProtocolTests.test_wrong_fields_or_nonfinite_negative_or_boolean_values_are_fatal) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.000s
+
+OK

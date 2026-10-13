@@ -1,0 +1,54 @@
+{
+  "key": "spectralnorm:crystal-spectralnorm-optimized",
+  "id": "crystal-spectralnorm-optimized",
+  "benchmark": "spectralnorm",
+  "language": "crystal",
+  "source_sha256": "3c382014542b4edb42b867a4a4010747536ffd213c1dc378aa4150894632d94b",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-spectralnorm-optimized",
+    "2"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012",
+  "runtime_environment": {
+    "LC_ALL": "C",
+    "CRYSTAL_WORKERS": "8",
+    "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"816802b9ac609cf1117bcd8c980377d14e23468784c463bcf35ac642d39d42e0\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-spectralnorm-optimized\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012\", \"environment\": {\"CRYSTAL_WORKERS\": \"8\", \"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"3c382014542b4edb42b867a4a4010747536ffd213c1dc378aa4150894632d94b\", \"support\": {}}",
+  "started_at": "2026-10-12T17:14:17.365533+00:00",
+  "workload_n": 2,
+  "full_workload": false,
+  "timeout_seconds": 300,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.01452275,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 12,
+  "stdout_sha256": "057ead07dbe9d60e50a916042eccaaa67142c9ba8bf863244bf9bc73ab499a36",
+  "validation": {
+    "reference_match": true,
+    "bytes": 12,
+    "sha256": "057ead07dbe9d60e50a916042eccaaa67142c9ba8bf863244bf9bc73ab499a36"
+  },
+  "finished_at": "2026-10-12T17:14:17.591737+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true
+}

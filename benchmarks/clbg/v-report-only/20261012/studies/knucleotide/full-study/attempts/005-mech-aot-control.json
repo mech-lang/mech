@@ -1,0 +1,68 @@
+{
+  "key": "knucleotide:v-builder-v3-study:mech-control",
+  "id": "mech-aot-control",
+  "benchmark": "knucleotide",
+  "language": "mech",
+  "source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-after"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "runtime_environment": {
+    "MECH_SEQUENCE_PARTITIONS": "4",
+    "MECH_SEQUENCE_NARROW": "1",
+    "MECH_SEQUENCE_PROFILE": "0",
+    "MECH_SEQUENCE_STD_MAP": "1"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"4a5abef421bcb5298edde84a61771bd540adb6da76a8310b1279766ab9d553cc\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-after\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"MECH_SEQUENCE_NARROW\": \"1\", \"MECH_SEQUENCE_PARTITIONS\": \"4\", \"MECH_SEQUENCE_PROFILE\": \"0\", \"MECH_SEQUENCE_STD_MAP\": \"1\"}, \"source_sha256\": \"3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139\", \"support\": {\"../../hosts/gpu/src/sequence/counts.rs\": \"a443af64d67364bf5862ea5372a3fb9315386cb0a6e0af4b1b96fd557fe2b171\", \"../../hosts/gpu/src/sequence/runtime.rs\": \"6614befd92d05ab1c2b9a24de63095836a653d2f2dc6fad632225298015050b4\", \"array-comparison/all-20261009/investigation/confirmation.json\": \"64f93e330f498a5f134d4bf25e785426a3c5bf8f583990f9d3d35e2ee4a13d73\", \"knucleotide/knucleotide-compact.mec\": \"3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139\"}}",
+  "started_at": "2026-10-13T01:40:19.506220+00:00",
+  "workload_n": 25000000,
+  "full_workload": true,
+  "timeout_seconds": 14400,
+  "maximum_rss_mib": 8192,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.590992208,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 259,
+  "stdout_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+  "validation": {
+    "bytes": 259,
+    "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+    "reference_match": true
+  },
+  "finished_at": "2026-10-13T01:40:20.263738+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true,
+  "round": 2,
+  "attempt": 5,
+  "sampler_wait_status": 0,
+  "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/studies/knucleotide/full-study/attempts/005-mech-aot-control.json",
+  "supervised_native_group": {
+    "type": "native-group-started",
+    "pid": 16444,
+    "pgid": 16444,
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-after"
+    ],
+    "inherited_common_mutex": true
+  },
+  "supervisor_remaining_members": [],
+  "fatal_qualification_fields": [],
+  "qualified": true,
+  "retryable_environment_only": false
+}

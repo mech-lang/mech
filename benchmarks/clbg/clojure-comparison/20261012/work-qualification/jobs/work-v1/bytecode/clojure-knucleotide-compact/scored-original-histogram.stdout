@@ -1,0 +1,52 @@
+Compiled from "compact.clj"
+public final class clbg.knucleotide.compact$histogram extends clojure.lang.AFunction {
+  public clbg.knucleotide.compact$histogram();
+    Code:
+         0: aload_0
+         1: invokespecial #9                  // Method clojure/lang/AFunction."<init>":()V
+         4: return
+
+  public static java.lang.Object invokeStatic(java.lang.Object, java.lang.Object);
+    Code:
+         0: lconst_0
+         1: aload_0
+         2: checkcast     #13                 // class java/lang/String
+         5: invokevirtual #17                 // Method java/lang/String.length:()I
+         8: i2l
+         9: aload_1
+        10: invokestatic  #23                 // Method clojure/lang/Numbers.minus:(JLjava/lang/Object;)Ljava/lang/Number;
+        13: invokestatic  #27                 // Method clojure/lang/Numbers.inc:(Ljava/lang/Object;)Ljava/lang/Number;
+        16: invokestatic  #31                 // Method clojure/lang/Numbers.max:(JLjava/lang/Object;)Ljava/lang/Object;
+        19: astore_2
+        20: new           #33                 // class clbg/knucleotide/compact$histogram$fn__159
+        23: dup
+        24: aload_1
+        25: aconst_null
+        26: astore_1
+        27: aload_0
+        28: aconst_null
+        29: astore_0
+        30: aload_2
+        31: aconst_null
+        32: astore_2
+        33: invokespecial #36                 // Method clbg/knucleotide/compact$histogram$fn__159."<init>":(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)V
+        36: checkcast     #38                 // class clojure/lang/IFn
+        39: invokeinterface #42,  1           // InterfaceMethod clojure/lang/IFn.invoke:()Ljava/lang/Object;
+        44: invokestatic  #47                 // Method clojure/core$persistent_BANG_.invokeStatic:(Ljava/lang/Object;)Ljava/lang/Object;
+        47: areturn
+
+  public java.lang.Object invoke(java.lang.Object, java.lang.Object);
+    Code:
+         0: aload_1
+         1: aconst_null
+         2: astore_1
+         3: aload_2
+         4: aconst_null
+         5: astore_2
+         6: invokestatic  #53                 // Method invokeStatic:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+         9: areturn
+
+  public static {};
+    Code:
+         0: return
+}

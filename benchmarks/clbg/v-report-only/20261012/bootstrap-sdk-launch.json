@@ -1,0 +1,15 @@
+{
+  "pid": 59763,
+  "identity": {
+    "pid": 59763,
+    "process_listing": "Mon Oct 12 10:40:14 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3 -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/bootstrap_sdk.py"
+  },
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/bootstrap_sdk.py"
+  ],
+  "launched_at": "2026-10-12T14:40:14.426084+00:00",
+  "report_only": true,
+  "never_chart_eligible": true
+}

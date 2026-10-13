@@ -1,0 +1,51 @@
+{
+  "key": "pidigits:actual-pi-compact",
+  "id": "actual-pi-compact",
+  "benchmark": "pidigits",
+  "language": "nim",
+  "source_sha256": "50af33f7f61f878a76f1babea6e1a606ad331711d9278cfe4d7f7cd5b8e643c4",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v7/bin/actual-pi-compact",
+    "11"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012",
+  "runtime_environment": {
+    "LC_ALL": "C",
+    "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre/8.45/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+    "MECH_NIM_WORK_TRACE": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/qualification/private-v7/source-proofs/actual-pi-compact/n-11/actual-divisions.trace"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"75f16dac776b3fc95428095d0e03ac3d666511ff3778d4da06b22d577d1a67ef\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v7/bin/actual-pi-compact\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre/8.45/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"MECH_NIM_WORK_TRACE\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/qualification/private-v7/source-proofs/actual-pi-compact/n-11/actual-divisions.trace\"}, \"source_sha256\": \"50af33f7f61f878a76f1babea6e1a606ad331711d9278cfe4d7f7cd5b8e643c4\", \"support\": {}}",
+  "started_at": "2026-10-13T01:30:58.363463+00:00",
+  "workload_n": 11,
+  "full_workload": false,
+  "timeout_seconds": 120,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.007675334,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 30,
+  "stdout_sha256": "3f56cea8613552803edb2a1c3e3fd88c5e38792cbdd6bba5079468c77d83dea0",
+  "validation": {
+    "reference_match": true,
+    "bytes": 30,
+    "sha256": "3f56cea8613552803edb2a1c3e3fd88c5e38792cbdd6bba5079468c77d83dea0"
+  },
+  "finished_at": "2026-10-13T01:30:58.546746+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true
+}

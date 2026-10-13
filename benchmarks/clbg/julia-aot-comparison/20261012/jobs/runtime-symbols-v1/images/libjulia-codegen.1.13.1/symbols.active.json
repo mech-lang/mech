@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/Library/Developer/CommandLineTools/usr/bin/nm",
+    "-a",
+    "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-codegen.1.13.1.dylib"
+  ],
+  "started_at": "2026-10-13T01:18:27.148878+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 60,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 10154,
+  "identity": {
+    "pid": 10154,
+    "process_listing": "Mon Oct 12 21:18:27 2026     /Library/Developer/CommandLineTools/usr/bin/nm -a /private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-codegen.1.13.1.dylib"
+  }
+}

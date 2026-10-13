@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "tests_run": 8,
+  "failures": 0,
+  "errors": 0,
+  "created_at": "2026-10-12T16:36:28.022275+00:00",
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/test_binarytrees_trace.py": "72725fe10e70b9dc4aaf18a47c6d141c648a1c8302879f98f84b34ddbccc442e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/binarytrees_trace.py": "26ce6eb3db77fa2a4acd003b3e10c075d290c58cb99178f36d3c02b204574af6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualify_binarytrees.py": "da69dffdcc5549048754de019d708fb51d822b34ac91435711858c5ae2d44c9f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/BINARYTREES_TRACE_PLAN.md": "d284ddc12ad5fb94cf23afd499c0545b8ad03c13fc16b82be1a446dbfe0ad8c4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/source_trace.py": "9ad024dc85c8609a4a70c48b4d1d96407a83805f07f3070c1615339da4efedc6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/full_study.py": "578a49d343fae3d6d67317594c6d820eb604556e8de5904b3d725706b15cc7c4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/revisions/input-v2/sources/binarytrees/compact.v": "24b173a1d2f978f2e89d6deb6a40e3c3e564b2684071ec070ab899916d7faa86",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/revisions/input-v2/sources/binarytrees/optimized.v": "09db869d799f7efa172e2a82ad604c075a269aed2811ba84441518a7fbaefbf8"
+  },
+  "pins_unchanged_at_end": true,
+  "native_probes": 0,
+  "full_performance_runs": 0,
+  "never_chart_eligible": true
+}

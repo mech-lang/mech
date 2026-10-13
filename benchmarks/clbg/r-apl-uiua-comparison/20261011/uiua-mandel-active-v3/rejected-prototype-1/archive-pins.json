@@ -1,0 +1,19 @@
+{
+  "status": "rejected-prototype",
+  "reason": "First n=1 output rejected as a boxed value; no successful candidate or measured result.",
+  "pins": {
+    "prepare_manifest.py": "e3cfe76d7c0362f30a7fa783c931b2c26c3230ba033b8579b0b8707e6847d17f",
+    "README.md": "fe83cc50b1bff07fa568672662e7cd8eed584615ecb2ca348f274bbf71d1addd",
+    "validate.py": "867df6dc41ab5c51b5125309b0fb9d769c99522feba7fa5f6ff4c7b244bb5130",
+    "manifest.json": "e80df184ac8245687b7a93a7b727e406e38c14917881e2e4cd891549efdb2762",
+    "prepare.py": "477c7ba72cc696a13275099dc26d581141ff85abbbdf54f070ba94adaca15179",
+    "results/validation.log": "36d0a78eced39692bf4356345c77e0fdd5d7dc576dc6555f0a2b45272acd9028",
+    "results/source-audit.json": "7f0739140d35a5725c242e09cbae0d40819030441d58481510875a3b61686652",
+    "results/instrumented.ua": "2c597a46e6ea0b5f6a92b6a56ba381fbe6813732aea6f679e50921c3f0881f01",
+    "results/validation.json": "498143dd864f71918315dd8cabcf0f885299688f14fa51aa90eefd7368e73ecc",
+    "results/output-1.stdout": "d4a32cd03b3f1505b9c4f1c75fa6486fca66966838ac6cf05116f187d0b67f26",
+    "results/output-1.stderr": "341cc316850b2727f4c7cc405b6e31f4dac701aa326b6365ac63b60cb461629b",
+    "results/validation-wait-only.log": "df10a33746f69883b89b9c7bc39ac4c2e1de52cc948f715cfe0edc3b20149f88",
+    "sources/fast.ua": "5388b822fbd264f6c6f2f30029905c29e4fca909d5eaf23be1120fed4683374f"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "key": "regexredux:matlab-case:mech-control",
+  "id": "mech-aot-control",
+  "benchmark": "regexredux",
+  "language": "mech",
+  "source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "runtime_environment": {
+    "MECH_SEQUENCE_ASYNC": "1",
+    "MECH_SEQUENCE_BUFFER_REUSE": "1"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"026fa8c40c7d425282349c20a8cb155db271f2b7f4fdfefc1699408adcee0eef\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"MECH_SEQUENCE_ASYNC\": \"1\", \"MECH_SEQUENCE_BUFFER_REUSE\": \"1\"}, \"source_sha256\": \"69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d\", \"support\": {\"regexredux/regexredux.mec\": \"69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d\"}}",
+  "started_at": "2026-10-12T23:37:29.839054+00:00",
+  "workload_n": 1000,
+  "full_workload": false,
+  "timeout_seconds": 14400,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.011709667,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 251,
+  "stdout_sha256": "f081054482d3004e3643f41a3e11674f4c63c7c33fc830773b743138667a7aba",
+  "validation": {
+    "reference_match": true,
+    "bytes": 251,
+    "sha256": "f081054482d3004e3643f41a3e11674f4c63c7c33fc830773b743138667a7aba"
+  },
+  "finished_at": "2026-10-12T23:37:30.056699+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true
+}

@@ -1,0 +1,65 @@
+{
+  "key": "pidigits:lua-study:mech-small-control",
+  "id": "mech-small-control",
+  "benchmark": "pidigits",
+  "language": "mech",
+  "source_sha256": "db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-compact-signed-after",
+    "10000"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "runtime_environment": {},
+  "execution_fingerprint": "{\"binary_sha256\": \"53d91c7a51c126d660129311ee7c011ff6d30ce629adea543ca7136683fbb336\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-compact-signed-after\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1\", \"support\": {}}",
+  "started_at": "2026-10-12T07:04:18.035806+00:00",
+  "workload_n": 10000,
+  "full_workload": true,
+  "timeout_seconds": 300,
+  "maximum_rss_mib": 2048,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.408467125,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 16893,
+  "stdout_sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+  "validation": {
+    "bytes": 16893,
+    "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+    "reference_match": true
+  },
+  "finished_at": "2026-10-12T07:04:18.638089+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true,
+  "round": 2,
+  "attempt": 11,
+  "sampler_wait_status": 0,
+  "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/full-study/attempts/011-mech-small-control.json",
+  "supervised_native_group": {
+    "type": "native-group-started",
+    "pid": 8839,
+    "pgid": 8839,
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-compact-signed-after",
+      "10000"
+    ],
+    "inherited_common_mutex": true
+  },
+  "supervisor_remaining_members": [],
+  "fatal_qualification_fields": [],
+  "qualified": true,
+  "retryable_environment_only": false
+}

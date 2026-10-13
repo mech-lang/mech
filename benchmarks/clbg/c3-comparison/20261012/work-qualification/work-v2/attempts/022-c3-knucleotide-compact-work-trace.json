@@ -1,0 +1,54 @@
+{
+  "key": "knucleotide:c3-knucleotide-compact",
+  "id": "c3-knucleotide-compact-work-trace",
+  "benchmark": "knucleotide",
+  "language": "c3",
+  "source_sha256": "d78868d3c745796491b2427de1ede1711bc7b6bef025d13bcc140d7439594a6b",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v3/source-work/work-v2/c3-knucleotide-compact/observed",
+    "1000"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012",
+  "runtime_environment": {
+    "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+    "LC_ALL": "C",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1",
+    "CLBG_TRACE": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/work-qualification/work-v2/c3-knucleotide-compact-work-trace/complete-maps-header-eof/trace"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"96e0d708f9a06536e196a66d26525ce443fd315f5e105bc56a961ed254ce58e8\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v3/source-work/work-v2/c3-knucleotide-compact/observed\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012\", \"environment\": {\"CLBG_TRACE\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/work-qualification/work-v2/c3-knucleotide-compact-work-trace/complete-maps-header-eof/trace\", \"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"d78868d3c745796491b2427de1ede1711bc7b6bef025d13bcc140d7439594a6b\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v3/source-work/work-v2/c3-knucleotide-compact/observed.c3\": \"d78868d3c745796491b2427de1ede1711bc7b6bef025d13bcc140d7439594a6b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/qualification/private-v2/source-snapshot/support/buffer.c3\": \"1975203b07f2cdd300b86536e6726883dfa917935d4bcbd1070db4a25bf3f564\"}}",
+  "started_at": "2026-10-13T02:11:34.964763+00:00",
+  "workload_n": 1000,
+  "full_workload": false,
+  "timeout_seconds": 120,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.007872792,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 60,
+  "stdout_sha256": "8c9dbdafde27be96f0413a3be0497ccc04c7c54bbfcddf106b1fa39ed7a1682b",
+  "validation": {
+    "reference_match": true,
+    "bytes": 60,
+    "sha256": "8c9dbdafde27be96f0413a3be0497ccc04c7c54bbfcddf106b1fa39ed7a1682b"
+  },
+  "finished_at": "2026-10-13T02:11:35.138332+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true
+}

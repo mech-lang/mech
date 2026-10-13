@@ -1,0 +1,66 @@
+{
+  "status": "compiled-exact-authored-input-inventory",
+  "profile": "gleam-mandelbrot-compact",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-mandelbrot-compact/src/benchmark.gleam",
+  "source_sha256": "f75a7d8d007c49573b1b155109c68d2e43e1d528b36eb34e0a4605e00ab22021",
+  "source_bundle": [
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-mandelbrot-compact/src/benchmark.gleam",
+      "sha256": "f75a7d8d007c49573b1b155109c68d2e43e1d528b36eb34e0a4605e00ab22021",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/qualification/private-v4/source-snapshot/sources/mandelbrot/compact.gleam",
+      "role": "application"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-mandelbrot-compact/src/clbg_io.gleam",
+      "sha256": "34c68812594ab7472e7a2318e0ce22b8eae5b176465ce4dc85a19021d197a6eb",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/qualification/private-v4/source-snapshot/support/clbg_io.gleam",
+      "role": "application-helper"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-mandelbrot-compact/src/clbg_io_ffi.erl",
+      "sha256": "c4c84235a88dcc32e07619e4eb66281fa913cf9d0f699207e14c08eafa892c39",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/qualification/private-v4/source-snapshot/support/clbg_io_ffi.erl",
+      "role": "application-helper"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-mandelbrot-compact/src/clbg_runner.erl",
+      "sha256": "ba95e660c20543288d70602f8788b5cab5666a6e5a05b5a0e8d51315210e1190",
+      "origin": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/qualification/private-v4/source-snapshot/support/clbg_runner.erl",
+      "role": "application-helper"
+    }
+  ],
+  "compiler": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v1/compiler/gleam",
+  "compiler_sha256": "fa41094adf67780a3078bb494bb8c7b1ab0bc586752c97adacde9d6cab4cc9e0",
+  "build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v1/compiler/gleam",
+    "compile-package",
+    "--target",
+    "erlang",
+    "--no-dev",
+    "--package",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-mandelbrot-compact",
+    "--out",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-mandelbrot-compact",
+    "--lib",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v1/libraries"
+  ],
+  "compiled_artifacts": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-mandelbrot-compact/ebin/clbg_io_ffi.beam": "e8deb798df202b5e0e2eb5367f7b9181e1789cec373c4ba0cc0088f36c29acc0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-mandelbrot-compact/ebin/benchmark.beam": "544a2749983c79965287732c8902c48c4afe5f09567d685d44547372aa64085c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-mandelbrot-compact/ebin/clbg_io.beam": "260e1c12672ae36cf17783d1076079b0102742191ca2682faf5c0e706748b0c9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-mandelbrot-compact/ebin/benchmark.app": "90320f21c0af3672c9dfef37138f0da63395d941d6d8f99b67636022e894addf",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-mandelbrot-compact/ebin/clbg_runner.beam": "450d5d9f1d438cd2869c46cbc7877773a7a23144601b8784fe4bbed642823562",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-mandelbrot-compact/_gleam_artefacts/benchmark.abstr": "b3175713473759339abd36c75358f5ec2a9590d0d32564a6f34df220e10d08c4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-mandelbrot-compact/_gleam_artefacts/benchmark.cache_meta": "38291e3ef23994e8fc58a0151a3942346d628e724d0257cb1cb9d92d3edec79d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-mandelbrot-compact/_gleam_artefacts/clbg_io.cache": "133dfc45d618bcb32b5e9d424c981bdf1b8015a699c1b96ab2c9130510b297c0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-mandelbrot-compact/_gleam_artefacts/benchmark.cache": "0fb5ce745234b0ce116921c408c33108ac7d07719130c6a7d771accc40502d7b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-mandelbrot-compact/_gleam_artefacts/clbg_io.cache_meta": "7cbcbcebe36656743833d2a555b0b2f8283740afcf21c27713160aa4dda81159",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-mandelbrot-compact/_gleam_artefacts/clbg_io.abstr": "2c42618f11468ee8e896bbe98ac82ab1dac137918cbbff4ebde6421c3cf61731",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-mandelbrot-compact/_gleam_artefacts/clbg_io_ffi.erl": "c4c84235a88dcc32e07619e4eb66281fa913cf9d0f699207e14c08eafa892c39",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-mandelbrot-compact/_gleam_artefacts/clbg_runner.erl": "ba95e660c20543288d70602f8788b5cab5666a6e5a05b5a0e8d51315210e1190"
+  },
+  "runtime_classpath": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-mandelbrot-compact/ebin",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v1/libraries/gleam_stdlib/ebin"
+  ]
+}

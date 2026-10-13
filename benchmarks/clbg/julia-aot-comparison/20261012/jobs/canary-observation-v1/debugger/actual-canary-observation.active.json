@@ -1,0 +1,23 @@
+{
+  "command": [
+    "/Library/Developer/CommandLineTools/usr/bin/lldb",
+    "--no-lldbinit",
+    "--batch",
+    "-o",
+    "command script import /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/snapshot/observe_lldb.py",
+    "-o",
+    "script observe_lldb.observe(lldb.debugger, '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/request.json')",
+    "-o",
+    "quit"
+  ],
+  "started_at": "2026-10-13T02:43:26.127166+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 300,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 37324,
+  "identity": {
+    "pid": 37324,
+    "process_listing": "Mon Oct 12 22:43:26 2026     /Library/Developer/CommandLineTools/usr/bin/lldb --no-lldbinit --batch -o command script import /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/snapshot/observe_lldb.py -o script observe_lldb.observe(lldb.debugger, '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/request.json') -o quit"
+  }
+}

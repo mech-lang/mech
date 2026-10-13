@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-13T11:58:36.587822+00:00",
+  "command": [
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+    "-B",
+    "-u",
+    "revisions/work-full-v3/launch_all.py",
+    "--revision",
+    "full-v1",
+    "--index-sha256",
+    "05ed934ffd9e81136b0a8bd802aff4adda31e8f6f364df345dc2141f57deeece"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012",
+  "common_mutex_owned_by_target_command": true,
+  "qualification_granted": false,
+  "automatic_retry": false
+}

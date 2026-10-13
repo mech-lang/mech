@@ -1,0 +1,33 @@
+{
+  "status": "stopped",
+  "supervisor": {
+    "pid": 17798,
+    "process_listing": "Mon Oct 12 15:44:14 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/apl-argv-v1/continuation.py --run --manifest-sha256 cfc246e46aa4e67db659dae89009259d5d9188381b007f486b0266cc973ed1b8"
+  },
+  "manifest_sha256": "cfc246e46aa4e67db659dae89009259d5d9188381b007f486b0266cc973ed1b8",
+  "stages": [
+    {
+      "language": "apl",
+      "benchmark": "fasta",
+      "started_at": "2026-10-12T19:45:07.554705+00:00",
+      "status": "complete",
+      "finished_at": "2026-10-12T20:01:17.207075+00:00"
+    },
+    {
+      "language": "apl",
+      "benchmark": "knucleotide",
+      "started_at": "2026-10-12T20:01:17.207452+00:00",
+      "status": "complete",
+      "finished_at": "2026-10-13T01:02:18.371431+00:00"
+    },
+    {
+      "language": "apl",
+      "benchmark": "binarytrees",
+      "started_at": "2026-10-13T01:02:18.372154+00:00"
+    }
+  ],
+  "started_at": "2026-10-12T19:45:07.554266+00:00",
+  "error": "Remaining actual sample failed qualification; evidence retained and no retry",
+  "error_type": "RuntimeError",
+  "finished_at": "2026-10-13T01:15:30.548544+00:00"
+}

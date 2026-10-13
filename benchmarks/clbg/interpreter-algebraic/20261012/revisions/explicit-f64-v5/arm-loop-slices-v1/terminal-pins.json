@@ -1,0 +1,11 @@
+{
+  "status": "exact-scoped-ARM-slices-awaiting-independent-loop-review",
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/explicit-f64-v5/arm-loop-slices-v1/report.json": "b7c746ea8b34d8d6a2e13d6594823eb1a11f426785d71026d980ebeed3890495",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/explicit-f64-v5/arm-loop-slices-v1/broad.asm": "5fda84cd91f7ae8414696360f44996647fef4955248ee4882aa34053381187c9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/explicit-f64-v5/arm-loop-slices-v1/reduction.asm": "ce7de878a202e587e507e4ce0daa8ad4682d295ca993b253d0d464d381e8ed04",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/explicit-f64-v5/arm-loop-slices-v1/strict.asm": "028fdd79225ff8023795e574cb58f3479843bcb666002409b0d272efff29f34f"
+  },
+  "exclusive_common_timing_mutex_held": true,
+  "chart_admission": false
+}

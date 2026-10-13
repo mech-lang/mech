@@ -1,0 +1,1189 @@
+{
+  "status": "complete",
+  "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/studies/full-v1/regexredux/manifest.json",
+  "manifest_sha256": "8e35f8f769c5d751348245b9a614c0ada15c62265d721b3d89abe7bc203ee443",
+  "profiles": {
+    "matlab-case-compact": {
+      "key": "regexredux:matlab-case-compact",
+      "id": "matlab-case-compact",
+      "benchmark": "regexredux",
+      "language": "matlab",
+      "profile": "compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/sources/regexredux_compact.m",
+      "source_sha256": "d41b8687b3661174be4b7c58014f0cfaaf331f6a11024135cc5dc8a561bced99",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/regexredux.html",
+      "source_provenance": "Local MATLAB implementation of the official required algorithm; no published MATLAB timing or source ranking is claimed.",
+      "local_adaptation": true,
+      "command": [
+        "/bin/sh",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/matlab-stdin.sh",
+        "/Applications/MATLAB_R2026b.app/bin/matlab",
+        "-licmode",
+        "onlinelicensing",
+        "-nodisplay",
+        "-sd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/sources",
+        "-batch",
+        "regexredux_compact()"
+      ],
+      "runtime_environment": {
+        "MATLAB_JAVA": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home",
+        "LC_ALL": "C",
+        "MATLABPATH": ""
+      },
+      "variant": "compact",
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1",
+      "loc": null,
+      "producer_loc": null,
+      "binary": "/bin/sh",
+      "binary_sha256": "e4d71aa95be0725c351e9d1d273d35ccdb0a8bdb31a57927c8738431b89788f5",
+      "maximum_workers": 8,
+      "support": {
+        "/Applications/MATLAB_R2026b.app/bin/matlab": "6410f261f4a31011ef767412a3541f94e1900cec158951a5e400a6cd776d710f",
+        "/Applications/MATLAB_R2026b.app/bin/maca64/MATLAB": "ed2d96026421bb1f5d0deed46b1cfefa6011e8f5e7eef678675abe64ae0df764",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/matlab-stdin.sh": "a517cc4d3838fc6a44c8075fa044701a2f87aa8d9169cd19d67718ae6effb084",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home/lib/server/libjvm.dylib": "c0c9cc842a9d33857be8262157d19ee9c1e15caf99a9bde784033b351b5dd117",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home/lib/modules": "384c6a1944553e693145640a486fd1c46382904b8512586f6a7926f27715a743"
+      },
+      "required_work_review": {
+        "status": "passed",
+        "source_sha256": "d41b8687b3661174be4b7c58014f0cfaaf331f6a11024135cc5dc8a561bced99",
+        "qualification": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/qualification-v1/report.json",
+        "method": "Exact source copy review plus full bounded byte outputs and explicit native MATLAB mutex/runtime evidence"
+      },
+      "samples_seconds": [
+        17.644398125,
+        14.853161459,
+        14.785282
+      ],
+      "sample_validation": [
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        }
+      ],
+      "attempts": [
+        1,
+        6,
+        8
+      ],
+      "measurement_status": "measured",
+      "median_seconds": 14.853161459,
+      "sample_stdev_seconds": 1.6314694175707534
+    },
+    "matlab-case-optimized": {
+      "key": "regexredux:matlab-case-optimized",
+      "id": "matlab-case-optimized",
+      "benchmark": "regexredux",
+      "language": "matlab",
+      "profile": "optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/sources/regexredux_optimized.m",
+      "source_sha256": "0a59dbb911fd4e4aaa0aac8edd7380c8d5c834f4f0f3338337850b7ee3ee0846",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/regexredux.html",
+      "source_provenance": "Local MATLAB implementation of the official required algorithm; no published MATLAB timing or source ranking is claimed.",
+      "local_adaptation": true,
+      "command": [
+        "/bin/sh",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/matlab-stdin.sh",
+        "/Applications/MATLAB_R2026b.app/bin/matlab",
+        "-licmode",
+        "onlinelicensing",
+        "-nodisplay",
+        "-sd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/sources",
+        "-batch",
+        "regexredux_optimized()"
+      ],
+      "runtime_environment": {
+        "MATLAB_JAVA": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home",
+        "LC_ALL": "C",
+        "MATLABPATH": ""
+      },
+      "variant": "optimized",
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1",
+      "loc": null,
+      "producer_loc": null,
+      "binary": "/bin/sh",
+      "binary_sha256": "e4d71aa95be0725c351e9d1d273d35ccdb0a8bdb31a57927c8738431b89788f5",
+      "maximum_workers": 8,
+      "support": {
+        "/Applications/MATLAB_R2026b.app/bin/matlab": "6410f261f4a31011ef767412a3541f94e1900cec158951a5e400a6cd776d710f",
+        "/Applications/MATLAB_R2026b.app/bin/maca64/MATLAB": "ed2d96026421bb1f5d0deed46b1cfefa6011e8f5e7eef678675abe64ae0df764",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/matlab-stdin.sh": "a517cc4d3838fc6a44c8075fa044701a2f87aa8d9169cd19d67718ae6effb084",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home/lib/server/libjvm.dylib": "c0c9cc842a9d33857be8262157d19ee9c1e15caf99a9bde784033b351b5dd117",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home/lib/modules": "384c6a1944553e693145640a486fd1c46382904b8512586f6a7926f27715a743"
+      },
+      "required_work_review": {
+        "status": "passed",
+        "source_sha256": "0a59dbb911fd4e4aaa0aac8edd7380c8d5c834f4f0f3338337850b7ee3ee0846",
+        "qualification": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/qualification-v1/report.json",
+        "method": "Exact source copy review plus full bounded byte outputs and explicit native MATLAB mutex/runtime evidence"
+      },
+      "samples_seconds": [
+        14.901873791,
+        14.965484375,
+        14.720709792
+      ],
+      "sample_validation": [
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        }
+      ],
+      "attempts": [
+        2,
+        4,
+        9
+      ],
+      "measurement_status": "measured",
+      "median_seconds": 14.901873791,
+      "sample_stdev_seconds": 0.12700478823868422
+    },
+    "mech-aot-control": {
+      "id": "mech-aot-control",
+      "key": "regexredux:matlab-case:mech-control",
+      "benchmark": "regexredux",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/regexredux.mec",
+      "source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after",
+      "binary_sha256": "026fa8c40c7d425282349c20a8cb155db271f2b7f4fdfefc1699408adcee0eef",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after"
+      ],
+      "runtime_environment": {
+        "MECH_SEQUENCE_ASYNC": "1",
+        "MECH_SEQUENCE_BUFFER_REUSE": "1"
+      },
+      "loc": null,
+      "published_chart_key": "regexredux:mech-regex-final-reuse-signed",
+      "previous_seconds": 0.489611584,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "Nine independent regex counts, each using its prescribed pattern, and five ordered regex substitutions. The general regex library handles each operation; there is no combined-pattern benchmark matcher.",
+        "full_work": {
+          "input_bytes": 50833411,
+          "count_patterns": 9,
+          "ordered_substitutions": 5
+        },
+        "evidence": [
+          {
+            "path": "regexredux/regexredux.mec",
+            "sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/regexredux.html",
+        "native_benchmark_kernel": false
+      },
+      "control_for": "r",
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "producer_loc": 24,
+      "maximum_workers": 8,
+      "samples_seconds": [
+        0.504140041,
+        0.502656125,
+        0.497510375
+      ],
+      "sample_validation": [
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        }
+      ],
+      "attempts": [
+        3,
+        5,
+        7
+      ],
+      "measurement_status": "measured",
+      "median_seconds": 0.502656125,
+      "sample_stdev_seconds": 0.003479301199693019
+    }
+  },
+  "orders": [
+    {
+      "round": 1,
+      "profiles": [
+        "matlab-case-compact",
+        "matlab-case-optimized",
+        "mech-aot-control"
+      ]
+    },
+    {
+      "round": 2,
+      "profiles": [
+        "matlab-case-optimized",
+        "mech-aot-control",
+        "matlab-case-compact"
+      ]
+    },
+    {
+      "round": 3,
+      "profiles": [
+        "mech-aot-control",
+        "matlab-case-compact",
+        "matlab-case-optimized"
+      ]
+    }
+  ],
+  "attempts": [
+    {
+      "key": "regexredux:matlab-case-compact",
+      "id": "matlab-case-compact",
+      "benchmark": "regexredux",
+      "language": "matlab",
+      "source_sha256": "d41b8687b3661174be4b7c58014f0cfaaf331f6a11024135cc5dc8a561bced99",
+      "command": [
+        "/bin/sh",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/matlab-stdin.sh",
+        "/Applications/MATLAB_R2026b.app/bin/matlab",
+        "-licmode",
+        "onlinelicensing",
+        "-nodisplay",
+        "-sd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/sources",
+        "-batch",
+        "regexredux_compact()"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1",
+      "runtime_environment": {
+        "MATLAB_JAVA": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home",
+        "LC_ALL": "C",
+        "MATLABPATH": ""
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"e4d71aa95be0725c351e9d1d273d35ccdb0a8bdb31a57927c8738431b89788f5\", \"command\": [\"/bin/sh\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/matlab-stdin.sh\", \"/Applications/MATLAB_R2026b.app/bin/matlab\", \"-licmode\", \"onlinelicensing\", \"-nodisplay\", \"-sd\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/sources\", \"-batch\", \"regexredux_compact()\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1\", \"environment\": {\"LC_ALL\": \"C\", \"MATLABPATH\": \"\", \"MATLAB_JAVA\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home\"}, \"source_sha256\": \"d41b8687b3661174be4b7c58014f0cfaaf331f6a11024135cc5dc8a561bced99\", \"support\": {}}",
+      "started_at": "2026-10-13T01:13:37.003351+00:00",
+      "workload_n": 5000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 17.644398125,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 1410208,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 298,
+      "stdout_sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+      "validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T01:13:54.860263+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 1,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/studies/full-v1/regexredux/attempts/001-matlab-case-compact.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 7790,
+        "pgid": 7790,
+        "command": [
+          "/bin/sh",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/matlab-stdin.sh",
+          "/Applications/MATLAB_R2026b.app/bin/matlab",
+          "-licmode",
+          "onlinelicensing",
+          "-nodisplay",
+          "-sd",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/sources",
+          "-batch",
+          "regexredux_compact()"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/studies/full-v1/regexredux/attempts/001-matlab-case-compact.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "regexredux:matlab-case-optimized",
+      "id": "matlab-case-optimized",
+      "benchmark": "regexredux",
+      "language": "matlab",
+      "source_sha256": "0a59dbb911fd4e4aaa0aac8edd7380c8d5c834f4f0f3338337850b7ee3ee0846",
+      "command": [
+        "/bin/sh",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/matlab-stdin.sh",
+        "/Applications/MATLAB_R2026b.app/bin/matlab",
+        "-licmode",
+        "onlinelicensing",
+        "-nodisplay",
+        "-sd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/sources",
+        "-batch",
+        "regexredux_optimized()"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1",
+      "runtime_environment": {
+        "MATLAB_JAVA": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home",
+        "LC_ALL": "C",
+        "MATLABPATH": ""
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"e4d71aa95be0725c351e9d1d273d35ccdb0a8bdb31a57927c8738431b89788f5\", \"command\": [\"/bin/sh\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/matlab-stdin.sh\", \"/Applications/MATLAB_R2026b.app/bin/matlab\", \"-licmode\", \"onlinelicensing\", \"-nodisplay\", \"-sd\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/sources\", \"-batch\", \"regexredux_optimized()\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1\", \"environment\": {\"LC_ALL\": \"C\", \"MATLABPATH\": \"\", \"MATLAB_JAVA\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home\"}, \"source_sha256\": \"0a59dbb911fd4e4aaa0aac8edd7380c8d5c834f4f0f3338337850b7ee3ee0846\", \"support\": {}}",
+      "started_at": "2026-10-13T01:13:55.623669+00:00",
+      "workload_n": 5000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 14.901873791,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 1400896,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 298,
+      "stdout_sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+      "validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T01:14:10.744582+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 2,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/studies/full-v1/regexredux/attempts/002-matlab-case-optimized.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 7989,
+        "pgid": 7989,
+        "command": [
+          "/bin/sh",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/matlab-stdin.sh",
+          "/Applications/MATLAB_R2026b.app/bin/matlab",
+          "-licmode",
+          "onlinelicensing",
+          "-nodisplay",
+          "-sd",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/sources",
+          "-batch",
+          "regexredux_optimized()"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/studies/full-v1/regexredux/attempts/002-matlab-case-optimized.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "regexredux:matlab-case:mech-control",
+      "id": "mech-aot-control",
+      "benchmark": "regexredux",
+      "language": "mech",
+      "source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "MECH_SEQUENCE_ASYNC": "1",
+        "MECH_SEQUENCE_BUFFER_REUSE": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"026fa8c40c7d425282349c20a8cb155db271f2b7f4fdfefc1699408adcee0eef\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"MECH_SEQUENCE_ASYNC\": \"1\", \"MECH_SEQUENCE_BUFFER_REUSE\": \"1\"}, \"source_sha256\": \"69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d\", \"support\": {\"regexredux/regexredux.mec\": \"69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d\"}}",
+      "started_at": "2026-10-13T01:14:11.504605+00:00",
+      "workload_n": 5000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.504140041,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 298,
+      "stdout_sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+      "validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T01:14:12.223158+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 3,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/studies/full-v1/regexredux/attempts/003-mech-aot-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 8109,
+        "pgid": 8109,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/studies/full-v1/regexredux/attempts/003-mech-aot-control.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "regexredux:matlab-case-optimized",
+      "id": "matlab-case-optimized",
+      "benchmark": "regexredux",
+      "language": "matlab",
+      "source_sha256": "0a59dbb911fd4e4aaa0aac8edd7380c8d5c834f4f0f3338337850b7ee3ee0846",
+      "command": [
+        "/bin/sh",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/matlab-stdin.sh",
+        "/Applications/MATLAB_R2026b.app/bin/matlab",
+        "-licmode",
+        "onlinelicensing",
+        "-nodisplay",
+        "-sd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/sources",
+        "-batch",
+        "regexredux_optimized()"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1",
+      "runtime_environment": {
+        "MATLAB_JAVA": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home",
+        "LC_ALL": "C",
+        "MATLABPATH": ""
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"e4d71aa95be0725c351e9d1d273d35ccdb0a8bdb31a57927c8738431b89788f5\", \"command\": [\"/bin/sh\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/matlab-stdin.sh\", \"/Applications/MATLAB_R2026b.app/bin/matlab\", \"-licmode\", \"onlinelicensing\", \"-nodisplay\", \"-sd\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/sources\", \"-batch\", \"regexredux_optimized()\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1\", \"environment\": {\"LC_ALL\": \"C\", \"MATLABPATH\": \"\", \"MATLAB_JAVA\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home\"}, \"source_sha256\": \"0a59dbb911fd4e4aaa0aac8edd7380c8d5c834f4f0f3338337850b7ee3ee0846\", \"support\": {}}",
+      "started_at": "2026-10-13T01:14:12.974850+00:00",
+      "workload_n": 5000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 14.965484375,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 1099664,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 298,
+      "stdout_sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+      "validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T01:14:28.152887+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 4,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/studies/full-v1/regexredux/attempts/004-matlab-case-optimized.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 8129,
+        "pgid": 8129,
+        "command": [
+          "/bin/sh",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/matlab-stdin.sh",
+          "/Applications/MATLAB_R2026b.app/bin/matlab",
+          "-licmode",
+          "onlinelicensing",
+          "-nodisplay",
+          "-sd",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/sources",
+          "-batch",
+          "regexredux_optimized()"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/studies/full-v1/regexredux/attempts/004-matlab-case-optimized.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "regexredux:matlab-case:mech-control",
+      "id": "mech-aot-control",
+      "benchmark": "regexredux",
+      "language": "mech",
+      "source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "MECH_SEQUENCE_ASYNC": "1",
+        "MECH_SEQUENCE_BUFFER_REUSE": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"026fa8c40c7d425282349c20a8cb155db271f2b7f4fdfefc1699408adcee0eef\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"MECH_SEQUENCE_ASYNC\": \"1\", \"MECH_SEQUENCE_BUFFER_REUSE\": \"1\"}, \"source_sha256\": \"69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d\", \"support\": {\"regexredux/regexredux.mec\": \"69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d\"}}",
+      "started_at": "2026-10-13T01:14:28.912464+00:00",
+      "workload_n": 5000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.502656125,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 298,
+      "stdout_sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+      "validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T01:14:29.614711+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 5,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/studies/full-v1/regexredux/attempts/005-mech-aot-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 8231,
+        "pgid": 8231,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/studies/full-v1/regexredux/attempts/005-mech-aot-control.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "regexredux:matlab-case-compact",
+      "id": "matlab-case-compact",
+      "benchmark": "regexredux",
+      "language": "matlab",
+      "source_sha256": "d41b8687b3661174be4b7c58014f0cfaaf331f6a11024135cc5dc8a561bced99",
+      "command": [
+        "/bin/sh",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/matlab-stdin.sh",
+        "/Applications/MATLAB_R2026b.app/bin/matlab",
+        "-licmode",
+        "onlinelicensing",
+        "-nodisplay",
+        "-sd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/sources",
+        "-batch",
+        "regexredux_compact()"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1",
+      "runtime_environment": {
+        "MATLAB_JAVA": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home",
+        "LC_ALL": "C",
+        "MATLABPATH": ""
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"e4d71aa95be0725c351e9d1d273d35ccdb0a8bdb31a57927c8738431b89788f5\", \"command\": [\"/bin/sh\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/matlab-stdin.sh\", \"/Applications/MATLAB_R2026b.app/bin/matlab\", \"-licmode\", \"onlinelicensing\", \"-nodisplay\", \"-sd\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/sources\", \"-batch\", \"regexredux_compact()\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1\", \"environment\": {\"LC_ALL\": \"C\", \"MATLABPATH\": \"\", \"MATLAB_JAVA\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home\"}, \"source_sha256\": \"d41b8687b3661174be4b7c58014f0cfaaf331f6a11024135cc5dc8a561bced99\", \"support\": {}}",
+      "started_at": "2026-10-13T01:14:30.371353+00:00",
+      "workload_n": 5000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 14.853161459,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 1592672,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 298,
+      "stdout_sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+      "validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T01:14:45.443454+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 6,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/studies/full-v1/regexredux/attempts/006-matlab-case-compact.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 8265,
+        "pgid": 8265,
+        "command": [
+          "/bin/sh",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/matlab-stdin.sh",
+          "/Applications/MATLAB_R2026b.app/bin/matlab",
+          "-licmode",
+          "onlinelicensing",
+          "-nodisplay",
+          "-sd",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/sources",
+          "-batch",
+          "regexredux_compact()"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/studies/full-v1/regexredux/attempts/006-matlab-case-compact.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "regexredux:matlab-case:mech-control",
+      "id": "mech-aot-control",
+      "benchmark": "regexredux",
+      "language": "mech",
+      "source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "MECH_SEQUENCE_ASYNC": "1",
+        "MECH_SEQUENCE_BUFFER_REUSE": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"026fa8c40c7d425282349c20a8cb155db271f2b7f4fdfefc1699408adcee0eef\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"MECH_SEQUENCE_ASYNC\": \"1\", \"MECH_SEQUENCE_BUFFER_REUSE\": \"1\"}, \"source_sha256\": \"69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d\", \"support\": {\"regexredux/regexredux.mec\": \"69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d\"}}",
+      "started_at": "2026-10-13T01:14:46.201082+00:00",
+      "workload_n": 5000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.497510375,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 298,
+      "stdout_sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+      "validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T01:14:46.897766+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 7,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/studies/full-v1/regexredux/attempts/007-mech-aot-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 8427,
+        "pgid": 8427,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/studies/full-v1/regexredux/attempts/007-mech-aot-control.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "regexredux:matlab-case-compact",
+      "id": "matlab-case-compact",
+      "benchmark": "regexredux",
+      "language": "matlab",
+      "source_sha256": "d41b8687b3661174be4b7c58014f0cfaaf331f6a11024135cc5dc8a561bced99",
+      "command": [
+        "/bin/sh",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/matlab-stdin.sh",
+        "/Applications/MATLAB_R2026b.app/bin/matlab",
+        "-licmode",
+        "onlinelicensing",
+        "-nodisplay",
+        "-sd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/sources",
+        "-batch",
+        "regexredux_compact()"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1",
+      "runtime_environment": {
+        "MATLAB_JAVA": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home",
+        "LC_ALL": "C",
+        "MATLABPATH": ""
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"e4d71aa95be0725c351e9d1d273d35ccdb0a8bdb31a57927c8738431b89788f5\", \"command\": [\"/bin/sh\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/matlab-stdin.sh\", \"/Applications/MATLAB_R2026b.app/bin/matlab\", \"-licmode\", \"onlinelicensing\", \"-nodisplay\", \"-sd\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/sources\", \"-batch\", \"regexredux_compact()\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1\", \"environment\": {\"LC_ALL\": \"C\", \"MATLABPATH\": \"\", \"MATLAB_JAVA\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home\"}, \"source_sha256\": \"d41b8687b3661174be4b7c58014f0cfaaf331f6a11024135cc5dc8a561bced99\", \"support\": {}}",
+      "started_at": "2026-10-13T01:14:47.653332+00:00",
+      "workload_n": 5000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 14.785282,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 1289488,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 298,
+      "stdout_sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+      "validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T01:15:02.645821+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 8,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/studies/full-v1/regexredux/attempts/008-matlab-case-compact.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 8448,
+        "pgid": 8448,
+        "command": [
+          "/bin/sh",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/matlab-stdin.sh",
+          "/Applications/MATLAB_R2026b.app/bin/matlab",
+          "-licmode",
+          "onlinelicensing",
+          "-nodisplay",
+          "-sd",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/sources",
+          "-batch",
+          "regexredux_compact()"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/studies/full-v1/regexredux/attempts/008-matlab-case-compact.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    },
+    {
+      "key": "regexredux:matlab-case-optimized",
+      "id": "matlab-case-optimized",
+      "benchmark": "regexredux",
+      "language": "matlab",
+      "source_sha256": "0a59dbb911fd4e4aaa0aac8edd7380c8d5c834f4f0f3338337850b7ee3ee0846",
+      "command": [
+        "/bin/sh",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/matlab-stdin.sh",
+        "/Applications/MATLAB_R2026b.app/bin/matlab",
+        "-licmode",
+        "onlinelicensing",
+        "-nodisplay",
+        "-sd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/sources",
+        "-batch",
+        "regexredux_optimized()"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1",
+      "runtime_environment": {
+        "MATLAB_JAVA": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home",
+        "LC_ALL": "C",
+        "MATLABPATH": ""
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"e4d71aa95be0725c351e9d1d273d35ccdb0a8bdb31a57927c8738431b89788f5\", \"command\": [\"/bin/sh\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/matlab-stdin.sh\", \"/Applications/MATLAB_R2026b.app/bin/matlab\", \"-licmode\", \"onlinelicensing\", \"-nodisplay\", \"-sd\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/sources\", \"-batch\", \"regexredux_optimized()\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1\", \"environment\": {\"LC_ALL\": \"C\", \"MATLABPATH\": \"\", \"MATLAB_JAVA\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home\"}, \"source_sha256\": \"0a59dbb911fd4e4aaa0aac8edd7380c8d5c834f4f0f3338337850b7ee3ee0846\", \"support\": {}}",
+      "started_at": "2026-10-13T01:15:03.401738+00:00",
+      "workload_n": 5000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 14.720709792,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 1096304,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 298,
+      "stdout_sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+      "validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-13T01:15:18.328061+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 9,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/studies/full-v1/regexredux/attempts/009-matlab-case-optimized.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 8563,
+        "pgid": 8563,
+        "command": [
+          "/bin/sh",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/matlab-stdin.sh",
+          "/Applications/MATLAB_R2026b.app/bin/matlab",
+          "-licmode",
+          "onlinelicensing",
+          "-nodisplay",
+          "-sd",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/sources",
+          "-batch",
+          "regexredux_optimized()"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_inherited_common_mutex": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_wrapper_integrity_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true,
+      "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/studies/full-v1/regexredux/attempts/009-matlab-case-optimized.supervisor.json",
+      "full_performance_run": true,
+      "chart_admission": false
+    }
+  ],
+  "active": null,
+  "skipped_failed_profile_slots": [],
+  "started_at": "2026-10-13T01:13:36.731884+00:00",
+  "chart_admission": false,
+  "no_automatic_retry": true,
+  "pins_unchanged_at_end": true,
+  "finished_at": "2026-10-13T01:15:19.019114+00:00"
+}

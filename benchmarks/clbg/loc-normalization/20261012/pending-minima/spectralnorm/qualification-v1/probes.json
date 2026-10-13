@@ -1,0 +1,969 @@
+{
+  "status": "bounded-outputs-passed",
+  "benchmark": "spectralnorm",
+  "created_at": "2026-10-12T16:47:24.995563+00:00",
+  "attempts": [
+    {
+      "key": "spectralnorm:spectralnorm-node-7",
+      "id": "spectralnorm-node-7",
+      "benchmark": "spectralnorm",
+      "language": "javascript",
+      "source_sha256": "2dea06681168ffa46990b461ef7468f38afeb3fd955d8b3078d8918b1c5afd4a",
+      "command": [
+        "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/spectralnorm-node-7.js",
+        "100"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "8",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "8"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"2dea06681168ffa46990b461ef7468f38afeb3fd955d8b3078d8918b1c5afd4a\", \"support\": {\"/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node\": \"27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1\"}}",
+      "started_at": "2026-10-12T16:47:25.285583+00:00",
+      "workload_n": 100,
+      "full_workload": false,
+      "timeout_seconds": 300,
+      "maximum_rss_mib": 8192,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.044505208,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 12,
+      "stdout_sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+      "validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T16:47:25.534425+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 0,
+      "attempt": 1,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/attempts/001-spectralnorm-node-7.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 82551,
+        "pgid": 82551,
+        "command": [
+          "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/spectralnorm-node-7.js",
+          "100"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "fatal_qualification_fields": [],
+      "qualified": true,
+      "retryable_environment_only": false,
+      "case": "canonical-small",
+      "preparation_only": true,
+      "never_chart_eligible": true,
+      "full_performance_run": false,
+      "input_file": null
+    },
+    {
+      "key": "spectralnorm:spectralnorm-node-7",
+      "id": "spectralnorm-node-7",
+      "benchmark": "spectralnorm",
+      "language": "javascript",
+      "source_sha256": "2dea06681168ffa46990b461ef7468f38afeb3fd955d8b3078d8918b1c5afd4a",
+      "command": [
+        "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/spectralnorm-node-7.js",
+        "1"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "8",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "8"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"2dea06681168ffa46990b461ef7468f38afeb3fd955d8b3078d8918b1c5afd4a\", \"support\": {\"/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node\": \"27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1\"}}",
+      "started_at": "2026-10-12T16:47:25.712046+00:00",
+      "workload_n": 1,
+      "full_workload": false,
+      "timeout_seconds": 300,
+      "maximum_rss_mib": 8192,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.03394675,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 12,
+      "stdout_sha256": "90ef14b959beca18ba75fbb936c693828ea88b6d5735c6a685559ee80601bd59",
+      "validation": {
+        "bytes": 12,
+        "sha256": "90ef14b959beca18ba75fbb936c693828ea88b6d5735c6a685559ee80601bd59",
+        "reference_match": true,
+        "bounded_independent_oracle": true,
+        "tolerance": null
+      },
+      "finished_at": "2026-10-12T16:47:25.952008+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 0,
+      "attempt": 2,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/attempts/002-spectralnorm-node-7.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 82568,
+        "pgid": 82568,
+        "command": [
+          "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/spectralnorm-node-7.js",
+          "1"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "fatal_qualification_fields": [],
+      "qualified": true,
+      "retryable_environment_only": false,
+      "case": "size-1",
+      "preparation_only": true,
+      "never_chart_eligible": true,
+      "full_performance_run": false,
+      "input_file": null
+    },
+    {
+      "key": "spectralnorm:spectralnorm-node-7",
+      "id": "spectralnorm-node-7",
+      "benchmark": "spectralnorm",
+      "language": "javascript",
+      "source_sha256": "2dea06681168ffa46990b461ef7468f38afeb3fd955d8b3078d8918b1c5afd4a",
+      "command": [
+        "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/spectralnorm-node-7.js",
+        "2"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "8",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "8"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"2dea06681168ffa46990b461ef7468f38afeb3fd955d8b3078d8918b1c5afd4a\", \"support\": {\"/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node\": \"27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1\"}}",
+      "started_at": "2026-10-12T16:47:26.129425+00:00",
+      "workload_n": 2,
+      "full_workload": false,
+      "timeout_seconds": 300,
+      "maximum_rss_mib": 8192,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.034725084,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 12,
+      "stdout_sha256": "057ead07dbe9d60e50a916042eccaaa67142c9ba8bf863244bf9bc73ab499a36",
+      "validation": {
+        "bytes": 12,
+        "sha256": "057ead07dbe9d60e50a916042eccaaa67142c9ba8bf863244bf9bc73ab499a36",
+        "reference_match": true,
+        "bounded_independent_oracle": true,
+        "tolerance": null
+      },
+      "finished_at": "2026-10-12T16:47:26.371109+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 0,
+      "attempt": 3,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/attempts/003-spectralnorm-node-7.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 82585,
+        "pgid": 82585,
+        "command": [
+          "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/spectralnorm-node-7.js",
+          "2"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "fatal_qualification_fields": [],
+      "qualified": true,
+      "retryable_environment_only": false,
+      "case": "size-2",
+      "preparation_only": true,
+      "never_chart_eligible": true,
+      "full_performance_run": false,
+      "input_file": null
+    },
+    {
+      "key": "spectralnorm:spectralnorm-node-7",
+      "id": "spectralnorm-node-7",
+      "benchmark": "spectralnorm",
+      "language": "javascript",
+      "source_sha256": "2dea06681168ffa46990b461ef7468f38afeb3fd955d8b3078d8918b1c5afd4a",
+      "command": [
+        "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/spectralnorm-node-7.js",
+        "3"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "8",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "8"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"2dea06681168ffa46990b461ef7468f38afeb3fd955d8b3078d8918b1c5afd4a\", \"support\": {\"/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node\": \"27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1\"}}",
+      "started_at": "2026-10-12T16:47:26.550227+00:00",
+      "workload_n": 3,
+      "full_workload": false,
+      "timeout_seconds": 300,
+      "maximum_rss_mib": 8192,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.032289417,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 12,
+      "stdout_sha256": "5fc9125d807dd627a9f3f0d9e2a45f183d08cbbc200ac5b2f81a2fde90bdff1a",
+      "validation": {
+        "bytes": 12,
+        "sha256": "5fc9125d807dd627a9f3f0d9e2a45f183d08cbbc200ac5b2f81a2fde90bdff1a",
+        "reference_match": true,
+        "bounded_independent_oracle": true,
+        "tolerance": null
+      },
+      "finished_at": "2026-10-12T16:47:26.783147+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 0,
+      "attempt": 4,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/attempts/004-spectralnorm-node-7.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 82602,
+        "pgid": 82602,
+        "command": [
+          "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/spectralnorm-node-7.js",
+          "3"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "fatal_qualification_fields": [],
+      "qualified": true,
+      "retryable_environment_only": false,
+      "case": "size-3",
+      "preparation_only": true,
+      "never_chart_eligible": true,
+      "full_performance_run": false,
+      "input_file": null
+    },
+    {
+      "key": "spectralnorm:spectralnorm-node-7",
+      "id": "spectralnorm-node-7",
+      "benchmark": "spectralnorm",
+      "language": "javascript",
+      "source_sha256": "2dea06681168ffa46990b461ef7468f38afeb3fd955d8b3078d8918b1c5afd4a",
+      "command": [
+        "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/spectralnorm-node-7.js",
+        "5"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "8",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "8"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"2dea06681168ffa46990b461ef7468f38afeb3fd955d8b3078d8918b1c5afd4a\", \"support\": {\"/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node\": \"27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1\"}}",
+      "started_at": "2026-10-12T16:47:26.959095+00:00",
+      "workload_n": 5,
+      "full_workload": false,
+      "timeout_seconds": 300,
+      "maximum_rss_mib": 8192,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.034278417,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 12,
+      "stdout_sha256": "9718ce59aa9b65d76d565495ea85d11576413c0ff63aaef51756f692f1ae6db9",
+      "validation": {
+        "bytes": 12,
+        "sha256": "9718ce59aa9b65d76d565495ea85d11576413c0ff63aaef51756f692f1ae6db9",
+        "reference_match": true,
+        "bounded_independent_oracle": true,
+        "tolerance": null
+      },
+      "finished_at": "2026-10-12T16:47:27.189036+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 0,
+      "attempt": 5,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/attempts/005-spectralnorm-node-7.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 82619,
+        "pgid": 82619,
+        "command": [
+          "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/spectralnorm-node-7.js",
+          "5"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "fatal_qualification_fields": [],
+      "qualified": true,
+      "retryable_environment_only": false,
+      "case": "size-5",
+      "preparation_only": true,
+      "never_chart_eligible": true,
+      "full_performance_run": false,
+      "input_file": null
+    },
+    {
+      "key": "spectralnorm:spectralnorm-node-7",
+      "id": "spectralnorm-node-7",
+      "benchmark": "spectralnorm",
+      "language": "javascript",
+      "source_sha256": "2dea06681168ffa46990b461ef7468f38afeb3fd955d8b3078d8918b1c5afd4a",
+      "command": [
+        "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/spectralnorm-node-7.js",
+        "9"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "8",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "8"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"2dea06681168ffa46990b461ef7468f38afeb3fd955d8b3078d8918b1c5afd4a\", \"support\": {\"/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node\": \"27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1\"}}",
+      "started_at": "2026-10-12T16:47:27.367217+00:00",
+      "workload_n": 9,
+      "full_workload": false,
+      "timeout_seconds": 300,
+      "maximum_rss_mib": 8192,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.033690917,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 12,
+      "stdout_sha256": "5da74e54c86bbfab8ae988dbfa6f00f292a3361df7fb33011d3e5fe683f42fd4",
+      "validation": {
+        "bytes": 12,
+        "sha256": "5da74e54c86bbfab8ae988dbfa6f00f292a3361df7fb33011d3e5fe683f42fd4",
+        "reference_match": true,
+        "bounded_independent_oracle": true,
+        "tolerance": null
+      },
+      "finished_at": "2026-10-12T16:47:27.601196+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 0,
+      "attempt": 6,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/attempts/006-spectralnorm-node-7.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 82636,
+        "pgid": 82636,
+        "command": [
+          "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/spectralnorm-node-7.js",
+          "9"
+        ],
+        "inherited_common_mutex": true
+      },
+      "supervisor_remaining_members": [],
+      "fatal_qualification_fields": [],
+      "qualified": true,
+      "retryable_environment_only": false,
+      "case": "size-9",
+      "preparation_only": true,
+      "never_chart_eligible": true,
+      "full_performance_run": false,
+      "input_file": null
+    }
+  ],
+  "active": null,
+  "full_performance_runs": 0,
+  "chart_admitted": false,
+  "profile": {
+    "id": "spectralnorm-node-7",
+    "key": "spectralnorm:spectralnorm-node-7",
+    "benchmark": "spectralnorm",
+    "language": "javascript",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/spectralnorm-node-7.js",
+    "source_sha256": "2dea06681168ffa46990b461ef7468f38afeb3fd955d8b3078d8918b1c5afd4a",
+    "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/compact/upstream/spectralnorm-node-7.js",
+    "command": [
+      "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/spectralnorm-node-7.js",
+      "{n}"
+    ],
+    "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg",
+    "runtime_environment": {
+      "LC_ALL": "C",
+      "OMP_NUM_THREADS": "8",
+      "OPENBLAS_NUM_THREADS": "1",
+      "VECLIB_MAXIMUM_THREADS": "1",
+      "RAYON_NUM_THREADS": "8"
+    },
+    "maximum_workers": 1,
+    "loc": null,
+    "proposed_canonical_loc": 45,
+    "loc_status": "pending final pool/source review",
+    "role": "New listed compact candidate after canonical LOC reselection",
+    "algorithm": {
+      "strict": true,
+      "native_benchmark_kernel": false,
+      "reason": "Forty fresh implicit coefficient products; no coefficient matrix or iteration-result cache."
+    },
+    "publication_status": "pending qualification, all three full samples and count review",
+    "runtime": {
+      "path": "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "sha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+      "version": "v24.19.0"
+    },
+    "small_validation": {
+      "bytes": 12,
+      "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+      "reference_match": true
+    },
+    "adversarial_validation": [
+      {
+        "key": "spectralnorm:spectralnorm-node-7",
+        "id": "spectralnorm-node-7",
+        "benchmark": "spectralnorm",
+        "language": "javascript",
+        "source_sha256": "2dea06681168ffa46990b461ef7468f38afeb3fd955d8b3078d8918b1c5afd4a",
+        "command": [
+          "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/spectralnorm-node-7.js",
+          "1"
+        ],
+        "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg",
+        "runtime_environment": {
+          "LC_ALL": "C",
+          "OMP_NUM_THREADS": "8",
+          "OPENBLAS_NUM_THREADS": "1",
+          "VECLIB_MAXIMUM_THREADS": "1",
+          "RAYON_NUM_THREADS": "8"
+        },
+        "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"2dea06681168ffa46990b461ef7468f38afeb3fd955d8b3078d8918b1c5afd4a\", \"support\": {\"/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node\": \"27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1\"}}",
+        "started_at": "2026-10-12T16:47:25.712046+00:00",
+        "workload_n": 1,
+        "full_workload": false,
+        "timeout_seconds": 300,
+        "maximum_rss_mib": 8192,
+        "power_at_start": {
+          "source": "AC Power",
+          "low_power_mode": 0
+        },
+        "seconds": 0.03394675,
+        "exit_status": 0,
+        "remaining_group_members": [],
+        "competing_compilers": [],
+        "power_changes": [],
+        "power_at_end": {
+          "source": "AC Power",
+          "low_power_mode": 0
+        },
+        "monitor_errors": [],
+        "peak_process_group_rss_kib": 0,
+        "resource_violation": null,
+        "resource_monitor_errors": [],
+        "stderr": "",
+        "stdout_bytes": 12,
+        "stdout_sha256": "90ef14b959beca18ba75fbb936c693828ea88b6d5735c6a685559ee80601bd59",
+        "validation": {
+          "bytes": 12,
+          "sha256": "90ef14b959beca18ba75fbb936c693828ea88b6d5735c6a685559ee80601bd59",
+          "reference_match": true,
+          "bounded_independent_oracle": true,
+          "tolerance": null
+        },
+        "finished_at": "2026-10-12T16:47:25.952008+00:00",
+        "valid_environment": true,
+        "pins_unchanged_at_end": true,
+        "round": 0,
+        "attempt": 2,
+        "sampler_wait_status": 0,
+        "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/attempts/002-spectralnorm-node-7.json",
+        "supervised_native_group": {
+          "type": "native-group-started",
+          "pid": 82568,
+          "pgid": 82568,
+          "command": [
+            "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/spectralnorm-node-7.js",
+            "1"
+          ],
+          "inherited_common_mutex": true
+        },
+        "supervisor_remaining_members": [],
+        "fatal_qualification_fields": [],
+        "qualified": true,
+        "retryable_environment_only": false,
+        "case": "size-1",
+        "preparation_only": true,
+        "never_chart_eligible": true,
+        "full_performance_run": false,
+        "input_file": null
+      },
+      {
+        "key": "spectralnorm:spectralnorm-node-7",
+        "id": "spectralnorm-node-7",
+        "benchmark": "spectralnorm",
+        "language": "javascript",
+        "source_sha256": "2dea06681168ffa46990b461ef7468f38afeb3fd955d8b3078d8918b1c5afd4a",
+        "command": [
+          "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/spectralnorm-node-7.js",
+          "2"
+        ],
+        "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg",
+        "runtime_environment": {
+          "LC_ALL": "C",
+          "OMP_NUM_THREADS": "8",
+          "OPENBLAS_NUM_THREADS": "1",
+          "VECLIB_MAXIMUM_THREADS": "1",
+          "RAYON_NUM_THREADS": "8"
+        },
+        "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"2dea06681168ffa46990b461ef7468f38afeb3fd955d8b3078d8918b1c5afd4a\", \"support\": {\"/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node\": \"27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1\"}}",
+        "started_at": "2026-10-12T16:47:26.129425+00:00",
+        "workload_n": 2,
+        "full_workload": false,
+        "timeout_seconds": 300,
+        "maximum_rss_mib": 8192,
+        "power_at_start": {
+          "source": "AC Power",
+          "low_power_mode": 0
+        },
+        "seconds": 0.034725084,
+        "exit_status": 0,
+        "remaining_group_members": [],
+        "competing_compilers": [],
+        "power_changes": [],
+        "power_at_end": {
+          "source": "AC Power",
+          "low_power_mode": 0
+        },
+        "monitor_errors": [],
+        "peak_process_group_rss_kib": 0,
+        "resource_violation": null,
+        "resource_monitor_errors": [],
+        "stderr": "",
+        "stdout_bytes": 12,
+        "stdout_sha256": "057ead07dbe9d60e50a916042eccaaa67142c9ba8bf863244bf9bc73ab499a36",
+        "validation": {
+          "bytes": 12,
+          "sha256": "057ead07dbe9d60e50a916042eccaaa67142c9ba8bf863244bf9bc73ab499a36",
+          "reference_match": true,
+          "bounded_independent_oracle": true,
+          "tolerance": null
+        },
+        "finished_at": "2026-10-12T16:47:26.371109+00:00",
+        "valid_environment": true,
+        "pins_unchanged_at_end": true,
+        "round": 0,
+        "attempt": 3,
+        "sampler_wait_status": 0,
+        "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/attempts/003-spectralnorm-node-7.json",
+        "supervised_native_group": {
+          "type": "native-group-started",
+          "pid": 82585,
+          "pgid": 82585,
+          "command": [
+            "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/spectralnorm-node-7.js",
+            "2"
+          ],
+          "inherited_common_mutex": true
+        },
+        "supervisor_remaining_members": [],
+        "fatal_qualification_fields": [],
+        "qualified": true,
+        "retryable_environment_only": false,
+        "case": "size-2",
+        "preparation_only": true,
+        "never_chart_eligible": true,
+        "full_performance_run": false,
+        "input_file": null
+      },
+      {
+        "key": "spectralnorm:spectralnorm-node-7",
+        "id": "spectralnorm-node-7",
+        "benchmark": "spectralnorm",
+        "language": "javascript",
+        "source_sha256": "2dea06681168ffa46990b461ef7468f38afeb3fd955d8b3078d8918b1c5afd4a",
+        "command": [
+          "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/spectralnorm-node-7.js",
+          "3"
+        ],
+        "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg",
+        "runtime_environment": {
+          "LC_ALL": "C",
+          "OMP_NUM_THREADS": "8",
+          "OPENBLAS_NUM_THREADS": "1",
+          "VECLIB_MAXIMUM_THREADS": "1",
+          "RAYON_NUM_THREADS": "8"
+        },
+        "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"2dea06681168ffa46990b461ef7468f38afeb3fd955d8b3078d8918b1c5afd4a\", \"support\": {\"/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node\": \"27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1\"}}",
+        "started_at": "2026-10-12T16:47:26.550227+00:00",
+        "workload_n": 3,
+        "full_workload": false,
+        "timeout_seconds": 300,
+        "maximum_rss_mib": 8192,
+        "power_at_start": {
+          "source": "AC Power",
+          "low_power_mode": 0
+        },
+        "seconds": 0.032289417,
+        "exit_status": 0,
+        "remaining_group_members": [],
+        "competing_compilers": [],
+        "power_changes": [],
+        "power_at_end": {
+          "source": "AC Power",
+          "low_power_mode": 0
+        },
+        "monitor_errors": [],
+        "peak_process_group_rss_kib": 0,
+        "resource_violation": null,
+        "resource_monitor_errors": [],
+        "stderr": "",
+        "stdout_bytes": 12,
+        "stdout_sha256": "5fc9125d807dd627a9f3f0d9e2a45f183d08cbbc200ac5b2f81a2fde90bdff1a",
+        "validation": {
+          "bytes": 12,
+          "sha256": "5fc9125d807dd627a9f3f0d9e2a45f183d08cbbc200ac5b2f81a2fde90bdff1a",
+          "reference_match": true,
+          "bounded_independent_oracle": true,
+          "tolerance": null
+        },
+        "finished_at": "2026-10-12T16:47:26.783147+00:00",
+        "valid_environment": true,
+        "pins_unchanged_at_end": true,
+        "round": 0,
+        "attempt": 4,
+        "sampler_wait_status": 0,
+        "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/attempts/004-spectralnorm-node-7.json",
+        "supervised_native_group": {
+          "type": "native-group-started",
+          "pid": 82602,
+          "pgid": 82602,
+          "command": [
+            "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/spectralnorm-node-7.js",
+            "3"
+          ],
+          "inherited_common_mutex": true
+        },
+        "supervisor_remaining_members": [],
+        "fatal_qualification_fields": [],
+        "qualified": true,
+        "retryable_environment_only": false,
+        "case": "size-3",
+        "preparation_only": true,
+        "never_chart_eligible": true,
+        "full_performance_run": false,
+        "input_file": null
+      },
+      {
+        "key": "spectralnorm:spectralnorm-node-7",
+        "id": "spectralnorm-node-7",
+        "benchmark": "spectralnorm",
+        "language": "javascript",
+        "source_sha256": "2dea06681168ffa46990b461ef7468f38afeb3fd955d8b3078d8918b1c5afd4a",
+        "command": [
+          "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/spectralnorm-node-7.js",
+          "5"
+        ],
+        "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg",
+        "runtime_environment": {
+          "LC_ALL": "C",
+          "OMP_NUM_THREADS": "8",
+          "OPENBLAS_NUM_THREADS": "1",
+          "VECLIB_MAXIMUM_THREADS": "1",
+          "RAYON_NUM_THREADS": "8"
+        },
+        "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"2dea06681168ffa46990b461ef7468f38afeb3fd955d8b3078d8918b1c5afd4a\", \"support\": {\"/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node\": \"27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1\"}}",
+        "started_at": "2026-10-12T16:47:26.959095+00:00",
+        "workload_n": 5,
+        "full_workload": false,
+        "timeout_seconds": 300,
+        "maximum_rss_mib": 8192,
+        "power_at_start": {
+          "source": "AC Power",
+          "low_power_mode": 0
+        },
+        "seconds": 0.034278417,
+        "exit_status": 0,
+        "remaining_group_members": [],
+        "competing_compilers": [],
+        "power_changes": [],
+        "power_at_end": {
+          "source": "AC Power",
+          "low_power_mode": 0
+        },
+        "monitor_errors": [],
+        "peak_process_group_rss_kib": 0,
+        "resource_violation": null,
+        "resource_monitor_errors": [],
+        "stderr": "",
+        "stdout_bytes": 12,
+        "stdout_sha256": "9718ce59aa9b65d76d565495ea85d11576413c0ff63aaef51756f692f1ae6db9",
+        "validation": {
+          "bytes": 12,
+          "sha256": "9718ce59aa9b65d76d565495ea85d11576413c0ff63aaef51756f692f1ae6db9",
+          "reference_match": true,
+          "bounded_independent_oracle": true,
+          "tolerance": null
+        },
+        "finished_at": "2026-10-12T16:47:27.189036+00:00",
+        "valid_environment": true,
+        "pins_unchanged_at_end": true,
+        "round": 0,
+        "attempt": 5,
+        "sampler_wait_status": 0,
+        "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/attempts/005-spectralnorm-node-7.json",
+        "supervised_native_group": {
+          "type": "native-group-started",
+          "pid": 82619,
+          "pgid": 82619,
+          "command": [
+            "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/spectralnorm-node-7.js",
+            "5"
+          ],
+          "inherited_common_mutex": true
+        },
+        "supervisor_remaining_members": [],
+        "fatal_qualification_fields": [],
+        "qualified": true,
+        "retryable_environment_only": false,
+        "case": "size-5",
+        "preparation_only": true,
+        "never_chart_eligible": true,
+        "full_performance_run": false,
+        "input_file": null
+      },
+      {
+        "key": "spectralnorm:spectralnorm-node-7",
+        "id": "spectralnorm-node-7",
+        "benchmark": "spectralnorm",
+        "language": "javascript",
+        "source_sha256": "2dea06681168ffa46990b461ef7468f38afeb3fd955d8b3078d8918b1c5afd4a",
+        "command": [
+          "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/spectralnorm-node-7.js",
+          "9"
+        ],
+        "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg",
+        "runtime_environment": {
+          "LC_ALL": "C",
+          "OMP_NUM_THREADS": "8",
+          "OPENBLAS_NUM_THREADS": "1",
+          "VECLIB_MAXIMUM_THREADS": "1",
+          "RAYON_NUM_THREADS": "8"
+        },
+        "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"2dea06681168ffa46990b461ef7468f38afeb3fd955d8b3078d8918b1c5afd4a\", \"support\": {\"/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node\": \"27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1\"}}",
+        "started_at": "2026-10-12T16:47:27.367217+00:00",
+        "workload_n": 9,
+        "full_workload": false,
+        "timeout_seconds": 300,
+        "maximum_rss_mib": 8192,
+        "power_at_start": {
+          "source": "AC Power",
+          "low_power_mode": 0
+        },
+        "seconds": 0.033690917,
+        "exit_status": 0,
+        "remaining_group_members": [],
+        "competing_compilers": [],
+        "power_changes": [],
+        "power_at_end": {
+          "source": "AC Power",
+          "low_power_mode": 0
+        },
+        "monitor_errors": [],
+        "peak_process_group_rss_kib": 0,
+        "resource_violation": null,
+        "resource_monitor_errors": [],
+        "stderr": "",
+        "stdout_bytes": 12,
+        "stdout_sha256": "5da74e54c86bbfab8ae988dbfa6f00f292a3361df7fb33011d3e5fe683f42fd4",
+        "validation": {
+          "bytes": 12,
+          "sha256": "5da74e54c86bbfab8ae988dbfa6f00f292a3361df7fb33011d3e5fe683f42fd4",
+          "reference_match": true,
+          "bounded_independent_oracle": true,
+          "tolerance": null
+        },
+        "finished_at": "2026-10-12T16:47:27.601196+00:00",
+        "valid_environment": true,
+        "pins_unchanged_at_end": true,
+        "round": 0,
+        "attempt": 6,
+        "sampler_wait_status": 0,
+        "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/attempts/006-spectralnorm-node-7.json",
+        "supervised_native_group": {
+          "type": "native-group-started",
+          "pid": 82636,
+          "pgid": 82636,
+          "command": [
+            "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/spectralnorm-node-7.js",
+            "9"
+          ],
+          "inherited_common_mutex": true
+        },
+        "supervisor_remaining_members": [],
+        "fatal_qualification_fields": [],
+        "qualified": true,
+        "retryable_environment_only": false,
+        "case": "size-9",
+        "preparation_only": true,
+        "never_chart_eligible": true,
+        "full_performance_run": false,
+        "input_file": null
+      }
+    ],
+    "required_work_review": {
+      "status": "passed",
+      "method": "Root source review plus canonical and independent bounded outputs",
+      "source_sha256": "2dea06681168ffa46990b461ef7468f38afeb3fd955d8b3078d8918b1c5afd4a",
+      "contract": "Forty fresh implicit coefficient products; no coefficient matrix or iteration-result cache."
+    }
+  },
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/test_references.py": "b0df8d06db76af743cfd345e30cef4fb9d8700d451ee69b6bd620aed40198fa0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/references.py": "962e34002982a48d172762a9d43c81976ee09d7b9371d14eb7be7dc8f85d69eb",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/full_study.py": "578a49d343fae3d6d67317594c6d820eb604556e8de5904b3d725706b15cc7c4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/full_study.py": "7a48690bef2f36375c72619f8c74170735273804d089dafb55e6813189613fe5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run.py": "5b2a038cfae4112e9e2eee79c3cd57ccc6a1521812828c47bf28986d6a8e139b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/test_prepare.py": "cdbf617d9d77b37c17639c85b6bf3db012fd888335bf4735a3c81b29c8a54851",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/prepare.py": "edf9b67813968d35dbb208ce6935aa83b66066cb91a722e5fd1145261d97951a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/test_cleanup.py": "fc4f7c76831ed674ed84005d0952b1a6c76ec945760bec365b106e56277ea64f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/prepare_cohort.py": "d4c26a05012f608f94c3c15c8db3173a2fd7fcbfa1667f4bab1c2f25d8a9a1d2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/test_minimum_launch.py": "6f4aa94de9c1e0bf4a65a5bd153c5ec03931474f03f1d66fa710625239678f64",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending_minima_study.py": "01e4c5adf928b021319c318c721f385a1d5c2b483163740013acd6024cd48610",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/compact/upstream/spectralnorm-node-7.js": "2dea06681168ffa46990b461ef7468f38afeb3fd955d8b3078d8918b1c5afd4a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/spectralnorm-node-7.js": "2dea06681168ffa46990b461ef7468f38afeb3fd955d8b3078d8918b1c5afd4a",
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/compact/manifest.json": "2181a2060b8660084bec003054e22740a21f64cbe6317e60eaffdfeff1106b35",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/prepare.py": "27fcf050ed21db40e747f2e8801ca6f227d82f1ea98f8592bba7b10a768109e5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/compact/run.py": "6926e288a7b9b59b030c9226227df967aa1d92b3e395789467706e2241d987ae",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/run.py": "e907f71b3fdf8fc6f65adc76aab6dfc424811875388c14f0eb2f31e14e9cffcf",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/all-20261009/run.py": "8b7f1b408fb5838dc6adc2404bcfa6146e48e770e602fbe78255454f3cacb8c7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/oracle-fixtures.json": "e80cf4279af209cb28cb14fb43b242a4d1cec8429274636d38ed15f34e700efe",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/preparation-fixtures.json": "f06283e1642585198a4a2a27b49388a8b3aa789fe1c209d90d525ed6ae993c6f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/cleanup-fixtures.json": "505100c316b7fe1cd9d25882e72f7c96bbd0576dc46857d4a16a19d3acc9e9ff",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/minimum-launch-fixtures.json": "6b64b428aeffbf9be92af228726c939adf012e6240c1de6f26e7494a361d1745",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/source-audit-r.json": "d76be20504617addb9efd5915bf7074877e727e3a49ccbd36585b4be5c763af3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/sources/spectralnorm-four-functions.mec": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions": "18e1664f3374fd80f356e4b2f496a3d6add7534854930a82d7037e9306358e69"
+  },
+  "pins_unchanged_at_end": true,
+  "finished_at": "2026-10-12T16:47:27.780005+00:00"
+}

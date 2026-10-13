@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/usr/bin/lipo",
+    "-archs",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v3/bin/pony-spectralnorm-optimized/pony-spectralnorm-optimized"
+  ],
+  "started_at": "2026-10-12T17:19:16.337703+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 92859,
+  "identity": {
+    "pid": 92859,
+    "process_listing": "Mon Oct 12 13:19:16 2026     /Library/Developer/CommandLineTools/usr/bin/lipo -archs /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v3/bin/pony-spectralnorm-optimized/pony-spectralnorm-optimized"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-12T17:19:16.355251+00:00",
+  "final_exit_status": 0
+}

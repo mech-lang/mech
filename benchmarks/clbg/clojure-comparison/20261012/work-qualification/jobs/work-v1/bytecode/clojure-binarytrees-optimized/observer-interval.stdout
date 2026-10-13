@@ -1,0 +1,108 @@
+Compiled from "optimized.clj"
+public final class clbg.binarytreesobserver.optimized$interval extends clojure.lang.AFunction {
+  public static final clojure.lang.Var const__5;
+
+  public clbg.binarytreesobserver.optimized$interval();
+    Code:
+         0: aload_0
+         1: invokespecial #9                  // Method clojure/lang/AFunction."<init>":()V
+         4: return
+
+  public static java.lang.Object invokeStatic(java.lang.Object, java.lang.Object, java.lang.Object);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: aload_2
+         3: invokestatic  #15                 // Method clbg/work/observer$start_interval.invokeStatic:(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+         6: pop
+         7: aload_1
+         8: astore_3
+         9: lconst_0
+        10: invokestatic  #21                 // Method clojure/lang/RT.box:(J)Ljava/lang/Number;
+        13: astore        4
+        15: aload_3
+        16: aload_2
+        17: invokestatic  #27                 // Method clojure/lang/Util.equiv:(Ljava/lang/Object;Ljava/lang/Object;)Z
+        20: ifeq          32
+        23: aload         4
+        25: aconst_null
+        26: astore        4
+        28: goto          72
+        31: athrow
+        32: aload_3
+        33: invokestatic  #33                 // Method clojure/lang/Numbers.inc:(Ljava/lang/Object;)Ljava/lang/Number;
+        36: aload         4
+        38: aconst_null
+        39: astore        4
+        41: aload_0
+        42: invokestatic  #38                 // Method clbg/binarytrees/optimized$make_tree.invokeStatic:(Ljava/lang/Object;)Ljava/lang/Object;
+        45: aload_0
+        46: ldc           #40                 // String temporary
+        48: aload_3
+        49: aconst_null
+        50: astore_3
+        51: getstatic     #44                 // Field const__5:Lclojure/lang/Var;
+        54: invokevirtual #50                 // Method clojure/lang/Var.getRawRoot:()Ljava/lang/Object;
+        57: invokestatic  #55                 // Method clbg/work/observer$tree_root.invokeStatic:(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+        60: invokestatic  #58                 // Method clbg/binarytrees/optimized$check_tree.invokeStatic:(Ljava/lang/Object;)Ljava/lang/Object;
+        63: invokestatic  #62                 // Method clojure/lang/Numbers.add:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Number;
+        66: astore        4
+        68: astore_3
+        69: goto          15
+        72: astore        5
+        74: aload_0
+        75: aconst_null
+        76: astore_0
+        77: aload_1
+        78: aconst_null
+        79: astore_1
+        80: aload_2
+        81: aconst_null
+        82: astore_2
+        83: invokestatic  #68                 // Method clbg/work/observer$end_interval.invokeStatic:(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+        86: pop
+        87: goto          108
+        90: astore        6
+        92: aload_0
+        93: aconst_null
+        94: astore_0
+        95: aload_1
+        96: aconst_null
+        97: astore_1
+        98: aload_2
+        99: aconst_null
+       100: astore_2
+       101: invokestatic  #68                 // Method clbg/work/observer$end_interval.invokeStatic:(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+       104: pop
+       105: aload         6
+       107: athrow
+       108: aload         5
+       110: areturn
+      Exception table:
+         from    to  target type
+             7    31    90   any
+            32    74    90   any
+
+  public java.lang.Object invoke(java.lang.Object, java.lang.Object, java.lang.Object);
+    Code:
+         0: aload_1
+         1: aconst_null
+         2: astore_1
+         3: aload_2
+         4: aconst_null
+         5: astore_2
+         6: aload_3
+         7: aconst_null
+         8: astore_3
+         9: invokestatic  #79                 // Method invokeStatic:(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+        12: areturn
+
+  public static {};
+    Code:
+         0: ldc           #82                 // String clbg.binarytrees.optimized
+         2: ldc           #84                 // String check-tree
+         4: invokestatic  #88                 // Method clojure/lang/RT.var:(Ljava/lang/String;Ljava/lang/String;)Lclojure/lang/Var;
+         7: checkcast     #46                 // class clojure/lang/Var
+        10: putstatic     #44                 // Field const__5:Lclojure/lang/Var;
+        13: return
+}

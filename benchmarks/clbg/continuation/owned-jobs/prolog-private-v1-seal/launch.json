@@ -1,0 +1,22 @@
+{
+  "status": "durable-job-launched",
+  "launched_at": "2026-10-13T07:20:02.358536+00:00",
+  "job": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/prolog-private-v1-seal",
+  "worker_identity": {
+    "pid": 89702,
+    "listing": "89702 89701 Tue Oct 13 03:20:02 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/prolog-private-v1-seal --lease-fd 3 --go-fd 4"
+  },
+  "command": [
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+    "-B",
+    "-u",
+    "drafts/private-v1/guarded_prepare.py",
+    "--seal",
+    "--service-proposal-sha256",
+    "43438603d675472393050d05928e488a20f16040493935aca676007fc0ada050"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013",
+  "detached_session": true,
+  "automatic_retry": false,
+  "qualification_granted": false
+}

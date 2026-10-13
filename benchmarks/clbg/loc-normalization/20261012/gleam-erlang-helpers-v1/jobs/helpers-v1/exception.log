@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/gleam-erlang-helpers-v1/qualify_helpers.py", line 103, in run
+    guard = qualifier.preparation.load_guard(); harness = guard.load_harness()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'guarded_prepare' has no attribute 'load_guard'

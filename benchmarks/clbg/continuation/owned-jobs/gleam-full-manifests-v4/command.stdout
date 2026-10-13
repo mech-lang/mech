@@ -1,0 +1,48 @@
+WAIT common mutex: Gleam exact full-study manifests
+{
+  "index": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/studies/full-v4/index.json",
+  "sha256": "d5eff42c8f88733af92a8e597b3e02c2b3e8212b24b827b17a494cfabd54497b",
+  "benchmarks": {
+    "regexredux": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/studies/full-v4/regexredux/manifest.json",
+      "sha256": "5953626e0ebe2701de94fbd829d5314eea1b2bd1d75249115b4afdb5ddf4ad50"
+    },
+    "revcomp": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/studies/full-v4/revcomp/manifest.json",
+      "sha256": "e98cb1bca100a0b87a9d1d2e4cf4c0686396387c0b93bc6abafc1705807692d8"
+    },
+    "pidigits": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/studies/full-v4/pidigits/manifest.json",
+      "sha256": "4ce2fe6862ed7782fb79e47acb3645f48c1069d62135eca7a6f851bfb98dbb59"
+    },
+    "spectralnorm": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/studies/full-v4/spectralnorm/manifest.json",
+      "sha256": "145c68087aad5c63bc19defac6a708c39ee9f3ed989380e794d24060a614b61e"
+    },
+    "mandelbrot": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/studies/full-v4/mandelbrot/manifest.json",
+      "sha256": "c0ef6686710ccdb8e705178780cd35484f5ca7738070a9620c51c51746926188"
+    },
+    "fasta": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/studies/full-v4/fasta/manifest.json",
+      "sha256": "865327b75f420c7088b1b922cb030ee4703a34212bff388d3f26daf703b5183e"
+    },
+    "knucleotide": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/studies/full-v4/knucleotide/manifest.json",
+      "sha256": "588bf64ae55d80743748bd759f4ae2a726f9a2d2a4708639e7eeb317a50d59ec"
+    },
+    "binarytrees": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/studies/full-v4/binarytrees/manifest.json",
+      "sha256": "88fbc26b7897548fdcb0663ba7b7eb26fc569ffdce98fdb32c9803b86d0b6818"
+    },
+    "nbody": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/studies/full-v4/nbody/manifest.json",
+      "sha256": "23a8185fffe37443213998ec61a0e3baa788f19323441842ee3bf4d2599e0d62"
+    },
+    "fannkuchredux": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/studies/full-v4/fannkuchredux/manifest.json",
+      "sha256": "3272b5b6daede15dbe02bc69fc2c269acc7a84b13cc86a07691b060e3cfef642"
+    }
+  },
+  "full_processes": 90
+}

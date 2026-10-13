@@ -1,0 +1,9 @@
+error: Syntax error
+   ┌─ /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v1/packages/gleam-binarytrees-optimized/src/benchmark.gleam:38:31
+   │
+38 │       let last = iterations * (index + 1) / count
+   │                               ^ This parenthesis cannot be understood here
+
+Hint: To group expressions in Gleam, use "{" and "}"; tuples are created
+with `#(` and `)`.
+

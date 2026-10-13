@@ -1,0 +1,20 @@
+{
+  "pid": 45441,
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-u",
+    "-B",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/guarded_prepare_v5.py",
+    "--run",
+    "--proposal-file",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/proposals/private-v5.json",
+    "--proposal-sha256",
+    "90cb7f87e43ae7f54d68501eab1daebdede78d856ce5564a8b9077a0c5ac57aa",
+    "--revision",
+    "private-v5"
+  ],
+  "log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/proposal-seals/private-v5-run.log",
+  "launched_at": "2026-10-12T21:25:45.281354+00:00",
+  "common_mutex": "/tmp/mech-clbg-timing.lock",
+  "approved_proposal_sha256": "90cb7f87e43ae7f54d68501eab1daebdede78d856ce5564a8b9077a0c5ac57aa"
+}

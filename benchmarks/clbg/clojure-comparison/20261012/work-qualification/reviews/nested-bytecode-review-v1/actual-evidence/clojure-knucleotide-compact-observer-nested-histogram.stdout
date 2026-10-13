@@ -1,0 +1,84 @@
+Compiled from "compact.clj"
+public final class clbg.knucleotideobserver.compact$histogram_raw$fn__250 extends clojure.lang.AFunction {
+  java.lang.Object sequence;
+
+  java.lang.Object windows;
+
+  java.lang.Object width;
+
+  public clbg.knucleotideobserver.compact$histogram_raw$fn__250(java.lang.Object, java.lang.Object, java.lang.Object);
+    Code:
+         0: aload_0
+         1: invokespecial #14                 // Method clojure/lang/AFunction."<init>":()V
+         4: aload_0
+         5: aload_1
+         6: putfield      #16                 // Field sequence:Ljava/lang/Object;
+         9: aload_0
+        10: aload_2
+        11: putfield      #18                 // Field windows:Ljava/lang/Object;
+        14: aload_0
+        15: aload_3
+        16: putfield      #20                 // Field width:Ljava/lang/Object;
+        19: return
+
+  public java.lang.Object invoke();
+    Code:
+         0: lconst_0
+         1: lstore_1
+         2: getstatic     #28                 // Field clojure/lang/PersistentHashMap.EMPTY:Lclojure/lang/PersistentHashMap;
+         5: invokestatic  #34                 // Method clojure/core$transient.invokeStatic:(Ljava/lang/Object;)Ljava/lang/Object;
+         8: aload_0
+         9: getfield      #16                 // Field sequence:Ljava/lang/Object;
+        12: aload_0
+        13: getfield      #20                 // Field width:Ljava/lang/Object;
+        16: invokestatic  #39                 // Method clbg/work/observer$map_start.invokeStatic:(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+        19: astore_3
+        20: lload_1
+        21: aload_0
+        22: getfield      #18                 // Field windows:Ljava/lang/Object;
+        25: invokestatic  #45                 // Method clojure/lang/Util.equiv:(JLjava/lang/Object;)Z
+        28: ifeq          38
+        31: aload_3
+        32: aconst_null
+        33: astore_3
+        34: goto          103
+        37: athrow
+        38: aload_0
+        39: getfield      #16                 // Field sequence:Ljava/lang/Object;
+        42: checkcast     #47                 // class java/lang/String
+        45: lload_1
+        46: invokestatic  #53                 // Method clojure/lang/RT.intCast:(J)I
+        49: lload_1
+        50: aload_0
+        51: getfield      #20                 // Field width:Ljava/lang/Object;
+        54: invokestatic  #59                 // Method clojure/lang/Numbers.add:(JLjava/lang/Object;)Ljava/lang/Number;
+        57: invokestatic  #62                 // Method clojure/lang/RT.intCast:(Ljava/lang/Object;)I
+        60: invokevirtual #66                 // Method java/lang/String.substring:(II)Ljava/lang/String;
+        63: astore        4
+        65: lload_1
+        66: invokestatic  #70                 // Method clojure/lang/Numbers.inc:(J)J
+        69: aload_3
+        70: aload         4
+        72: lload_1
+        73: invokestatic  #74                 // Method clojure/lang/Numbers.num:(J)Ljava/lang/Number;
+        76: aload_0
+        77: getfield      #20                 // Field width:Ljava/lang/Object;
+        80: new           #76                 // class clbg/knucleotideobserver/compact$histogram_raw$fn__250$fn__251
+        83: dup
+        84: aload_3
+        85: aconst_null
+        86: astore_3
+        87: aload         4
+        89: aconst_null
+        90: astore        4
+        92: invokespecial #79                 // Method clbg/knucleotideobserver/compact$histogram_raw$fn__250$fn__251."<init>":(Ljava/lang/Object;Ljava/lang/Object;)V
+        95: invokestatic  #84                 // Method clbg/work/observer$map_write.invokeStatic:(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+        98: astore_3
+        99: lstore_1
+       100: goto          20
+       103: areturn
+
+  public static {};
+    Code:
+         0: return
+}

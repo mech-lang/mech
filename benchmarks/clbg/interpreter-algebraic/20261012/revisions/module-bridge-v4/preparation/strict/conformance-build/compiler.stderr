@@ -1,0 +1,3 @@
+   Compiling mech-gpu v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/module-bridge-v4/.build/strict/workspace/hosts/gpu)
+   Compiling mech-interpreter-integration v0.0.0 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/module-bridge-v4/.build/strict/workspace/benchmarks/clbg/interpreter-integration/20261011/driver)
+    Finished `release` profile [optimized] target(s) in 23.46s

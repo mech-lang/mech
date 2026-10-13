@@ -1,0 +1,17 @@
+test_changed_retained_root_rejected (test_tree_work.ActualGraphFixtures.test_changed_retained_root_rejected) ... ok
+test_concurrently_live_churn_graph_is_disjoint_from_retained_graph (test_tree_work.ActualGraphFixtures.test_concurrently_live_churn_graph_is_disjoint_from_retained_graph) ... ok
+test_final_scored_creator_requires_real_allocation_and_both_children (test_tree_work.ActualGraphFixtures.test_final_scored_creator_requires_real_allocation_and_both_children) ... ok
+test_instrumentation_retains_original_creators_checks_and_observes_before_check (test_tree_work.ActualGraphFixtures.test_instrumentation_retains_original_creators_checks_and_observes_before_check) ... ok
+test_minimum_odd_and_uneven_depth_shapes (test_tree_work.ActualGraphFixtures.test_minimum_odd_and_uneven_depth_shapes) ... ok
+test_missing_duplicate_and_reused_node_addresses_rejected (test_tree_work.ActualGraphFixtures.test_missing_duplicate_and_reused_node_addresses_rejected) ... ok
+test_overlapping_worker_ranges_and_missing_joins_rejected (test_tree_work.ActualGraphFixtures.test_overlapping_worker_ranges_and_missing_joins_rejected) ... ok
+test_worker_iteration_labels_must_match_their_own_section (test_tree_work.ActualGraphFixtures.test_worker_iteration_labels_must_match_their_own_section) ... ok
+test_every_ownership_environment_workload_or_pin_gate_is_literal_true (test_full_study.FailureIsolation.test_every_ownership_environment_workload_or_pin_gate_is_literal_true) ... ok
+test_exact_twenty_key_inventory_and_boolean_types_are_required (test_full_study.FailureIsolation.test_exact_twenty_key_inventory_and_boolean_types_are_required) ... ok
+test_frozen_guard_rejection_is_never_relabelled_source_failure (test_full_study.FailureIsolation.test_frozen_guard_rejection_is_never_relabelled_source_failure) ... ok
+test_guard_admitted_runtime_output_or_resource_failure_can_continue_other_profiles (test_full_study.FailureIsolation.test_guard_admitted_runtime_output_or_resource_failure_can_continue_other_profiles) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 0.170s
+
+OK

@@ -1,0 +1,275 @@
+{
+  "status": "passed-exact-source-semantic-LOC-review",
+  "language": "crystal",
+  "review_identity": "crystal-repaired-replay-source-review-v2",
+  "replay_sha256": "a255d719b1d78b19d10654daea28a3dd95bb45e74df4f6481ac162d06cd8877c",
+  "fixture_sha256": "9b76503c1344a09689c0bf12456bdf89661897fee5fd721d7e53ba84248b86f4",
+  "complete_authored_source_bundles": true,
+  "unresolved": [],
+  "review_basis": "Complete original source/work review and independent Pony all20 brace-owner review; actual repaired36-fixture replay retains all19 unchanged ownership/event inventories and changes only the optimized Fann tuple false header/close. Canonical values are transcribed from that actual replay, never estimates. Actual compiler-input/binary/source-alias binding remains separately mandatory in the guarded overlay sealer.",
+  "profiles": {
+    "crystal-nbody-compact": {
+      "status": "passed",
+      "review_identity": "crystal-repaired-replay-source-review-v2:crystal-nbody-compact",
+      "source_sha256": "b2fc0082ebd9b48b79d63c8ff59e8221d9eaebe1bb934af5847fc93bb7933fde",
+      "counted_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/sources/nbody/compact.cr",
+      "physical_loc": 52,
+      "canonical_loc": 56,
+      "unresolved": [],
+      "compiled_input_roles": [
+        "application"
+      ],
+      "ownership_disposition": "Numeric body arrays and displacement StaticArray are data; method/loop/callback bodies and independent momentum, coordinate and velocity assignments retain owners."
+    },
+    "crystal-nbody-optimized": {
+      "status": "passed",
+      "review_identity": "crystal-repaired-replay-source-review-v2:crystal-nbody-optimized",
+      "source_sha256": "b2648c9eefd4ebf27917e9ec485b9411832d14132ab7c3437449d8f2e9ce3888",
+      "counted_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/sources/nbody/optimized.cr",
+      "physical_loc": 134,
+      "canonical_loc": 134,
+      "unresolved": [],
+      "compiled_input_roles": [
+        "application"
+      ],
+      "ownership_disposition": "Body constructor/property and method declarations retain written owners; body constants are data, and pair/delta/magnitude/integration work remains in distinct written loops and updates."
+    },
+    "crystal-mandelbrot-compact": {
+      "status": "passed",
+      "review_identity": "crystal-repaired-replay-source-review-v2:crystal-mandelbrot-compact",
+      "source_sha256": "ed4fb0e6a53fe8db69431935011d8de7677430ff0091c7a56e2a40e36cdd3e1c",
+      "counted_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/sources/mandelbrot/compact.cr",
+      "physical_loc": 31,
+      "canonical_loc": 32,
+      "unresolved": [],
+      "compiled_input_roles": [
+        "application"
+      ],
+      "ownership_disposition": "Written pixel/iteration controls and byte accumulation remain executable; packed independent assignments expand, while numeric argument and output literal wrapping stays structural."
+    },
+    "crystal-mandelbrot-optimized": {
+      "status": "passed",
+      "review_identity": "crystal-repaired-replay-source-review-v2:crystal-mandelbrot-optimized",
+      "source_sha256": "5671d8d0a8bf31b80d4e6c8539d430d38e47d4ddff91a5558fe9b687d8de363f",
+      "counted_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/sources/mandelbrot/optimized.cr",
+      "physical_loc": 50,
+      "canonical_loc": 66,
+      "unresolved": [],
+      "compiled_input_roles": [
+        "application"
+      ],
+      "ownership_disposition": "Worker/row/pixel iteration and actual callback bodies retain header/body/close; tuple/channel values and buffer data are structural, with independent bindings/updates expanded."
+    },
+    "crystal-spectralnorm-compact": {
+      "status": "passed",
+      "review_identity": "crystal-repaired-replay-source-review-v2:crystal-spectralnorm-compact",
+      "source_sha256": "a593cbb5ca6524d6d30d920f76dca21e9637a7904aa9f761e962c5ba7468ad99",
+      "counted_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/sources/spectralnorm/compact.cr",
+      "physical_loc": 26,
+      "canonical_loc": 27,
+      "unresolved": [],
+      "compiled_input_roles": [
+        "application"
+      ],
+      "ownership_disposition": "Matrix denominator and multiply/transpose recurrence retain actual method/control/body owners; array constructors and scalar argument composition remain data/value expressions."
+    },
+    "crystal-spectralnorm-optimized": {
+      "status": "passed",
+      "review_identity": "crystal-repaired-replay-source-review-v2:crystal-spectralnorm-optimized",
+      "source_sha256": "3c382014542b4edb42b867a4a4010747536ffd213c1dc378aa4150894632d94b",
+      "counted_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/sources/spectralnorm/optimized.cr",
+      "physical_loc": 55,
+      "canonical_loc": 60,
+      "unresolved": [],
+      "compiled_input_roles": [
+        "application"
+      ],
+      "ownership_disposition": "Partition worker callbacks and written reduction/iteration work retain owners; arrays and channel payloads remain data, with packed independent state bindings charged separately."
+    },
+    "crystal-binarytrees-compact": {
+      "status": "passed",
+      "review_identity": "crystal-repaired-replay-source-review-v2:crystal-binarytrees-compact",
+      "source_sha256": "b220cf0277dbe40aff0e4e348b5a1830054dbc18d0bff1f8abaf47eb447f1dc3",
+      "counted_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/sources/binarytrees/compact.cr",
+      "physical_loc": 30,
+      "canonical_loc": 32,
+      "unresolved": [],
+      "compiled_input_roles": [
+        "application"
+      ],
+      "ownership_disposition": "Node creation/check methods, recursive branch and each depth/iteration callback retain written owners; tuple/data delimiters and method parameters introduce no generated statements."
+    },
+    "crystal-binarytrees-optimized": {
+      "status": "passed",
+      "review_identity": "crystal-repaired-replay-source-review-v2:crystal-binarytrees-optimized",
+      "source_sha256": "b5220f56d68307540873582eb4a41379445c196d33e6e7a40b81e1207a5843f2",
+      "counted_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/sources/binarytrees/optimized.cr",
+      "physical_loc": 45,
+      "canonical_loc": 53,
+      "unresolved": [],
+      "compiled_input_roles": [
+        "application"
+      ],
+      "ownership_disposition": "Written worker partitions, dynamic tree methods, checks and retention read retain distinct executable owners; channel result tuples are data and packed independent bindings expand."
+    },
+    "crystal-fannkuchredux-compact": {
+      "status": "passed",
+      "review_identity": "crystal-repaired-replay-source-review-v2:crystal-fannkuchredux-compact",
+      "source_sha256": "0a7eebec4367e0855e166286640564c3367fd8108db71e34ad1f3b02cabd6db6",
+      "counted_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/sources/fannkuchredux/compact.cr",
+      "physical_loc": 44,
+      "canonical_loc": 53,
+      "unresolved": [],
+      "compiled_input_roles": [
+        "application"
+      ],
+      "ownership_disposition": "Permutation/flip controls, swaps and chained cntr=count update retain independent owners; compact returned tuple is data, including its written postfix control."
+    },
+    "crystal-fannkuchredux-optimized": {
+      "status": "passed",
+      "review_identity": "crystal-repaired-replay-source-review-v2:crystal-fannkuchredux-optimized",
+      "source_sha256": "7dd38850ef149e9c47ef4e15dcaf34fba6168a252b77b55fe9ca852d63a0e0b3",
+      "counted_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/sources/fannkuchredux/optimized.cr",
+      "physical_loc": 68,
+      "canonical_loc": 80,
+      "unresolved": [],
+      "compiled_input_roles": [
+        "application"
+      ],
+      "ownership_disposition": "Actual replay removes only false callback header1310-1311/close1328-1329 around line43 {checksum, maximum}, reducing82 to80. It is the rank_range tuple result after written end, not a callback. All real StaticArray/times/each/do/worker callbacks and flip/update bodies remain independently owned."
+    },
+    "crystal-fasta-compact": {
+      "status": "passed",
+      "review_identity": "crystal-repaired-replay-source-review-v2:crystal-fasta-compact",
+      "source_sha256": "fb5a254a6c357a5541e3f6d0c405b1e4fabab002adb34e357012e593e30fdc7c",
+      "counted_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/sources/fasta/compact.cr",
+      "physical_loc": 69,
+      "canonical_loc": 74,
+      "unresolved": [],
+      "compiled_input_roles": [
+        "application"
+      ],
+      "ownership_disposition": "Probability tables and tuples are data; written random/cumulative/repeat/output loops and table[k]=prob+=p chained state retain executable owners."
+    },
+    "crystal-fasta-optimized": {
+      "status": "passed",
+      "review_identity": "crystal-repaired-replay-source-review-v2:crystal-fasta-optimized",
+      "source_sha256": "6c1af560fa57eb8d2211d01090c44de3f925a667fc760cf969f88962a047f209",
+      "counted_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/sources/fasta/optimized.cr",
+      "physical_loc": 107,
+      "canonical_loc": 110,
+      "unresolved": [],
+      "compiled_input_roles": [
+        "application"
+      ],
+      "ownership_disposition": "String.new/do and byte-fill callbacks retain written header/body/close; their {m,m} buffer-length tuple and probability tuples remain data. RNG, cumulative and buffered output methods retain actual work."
+    },
+    "crystal-revcomp-compact": {
+      "status": "passed",
+      "review_identity": "crystal-repaired-replay-source-review-v2:crystal-revcomp-compact",
+      "source_sha256": "cbe34ee540760ef13fd9a1c98e752f0d7df3bd7ab014bcf30893b703e0599edf",
+      "counted_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/sources/revcomp/compact.cr",
+      "physical_loc": 18,
+      "canonical_loc": 23,
+      "unresolved": [],
+      "compiled_input_roles": [
+        "application"
+      ],
+      "ownership_disposition": "Written record/input/mapping/output callbacks and packed controls retain owners; complement table/literal character data does not become executable blocks."
+    },
+    "crystal-revcomp-optimized": {
+      "status": "passed",
+      "review_identity": "crystal-repaired-replay-source-review-v2:crystal-revcomp-optimized",
+      "source_sha256": "d2559b94e50d2c1bcee57803f822d376cd688c47024dd8d34f3d87488c234581",
+      "counted_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/sources/revcomp/optimized.cr",
+      "physical_loc": 60,
+      "canonical_loc": 70,
+      "unresolved": [],
+      "compiled_input_roles": [
+        "application"
+      ],
+      "ownership_disposition": "Record/range/buffer/output methods and worker callbacks retain all written effects; complement lookup/buffer and channel tuples remain data with independent state updates charged."
+    },
+    "crystal-knucleotide-compact": {
+      "status": "passed",
+      "review_identity": "crystal-repaired-replay-source-review-v2:crystal-knucleotide-compact",
+      "source_sha256": "62ce2f52527642f1570c822233e13794011a05f3c9784fd13f5bd2b257448a99",
+      "counted_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/sources/knucleotide/compact.cr",
+      "physical_loc": 34,
+      "canonical_loc": 42,
+      "unresolved": [],
+      "compiled_input_roles": [
+        "application"
+      ],
+      "ownership_disposition": "All histogram map-write and sort_by projection callbacks have written executable owners; seven-width/query data is structural, and actual window/header/output controls stay independently charged."
+    },
+    "crystal-knucleotide-optimized": {
+      "status": "passed",
+      "review_identity": "crystal-repaired-replay-source-review-v2:crystal-knucleotide-optimized",
+      "source_sha256": "6bd73c739483d4b0ebe50490e2a13264a1395fd2cfe9979ae2e5e229d255e6ca",
+      "counted_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/sources/knucleotide/optimized.cr",
+      "physical_loc": 71,
+      "canonical_loc": 89,
+      "unresolved": [],
+      "compiled_input_roles": [
+        "application"
+      ],
+      "ownership_disposition": "Private growing-map window updates, decode, worker/channel handoff and ordered output callbacks retain body owners; query/result tuples and projection data are structural."
+    },
+    "crystal-regexredux-compact": {
+      "status": "passed",
+      "review_identity": "crystal-repaired-replay-source-review-v2:crystal-regexredux-compact",
+      "source_sha256": "6d82ab4ea92a705d0b2959996c29feef76b36ca7321c74a7f5bfdc7d4c1b196c",
+      "counted_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/sources/regexredux/compact.cr",
+      "physical_loc": 37,
+      "canonical_loc": 41,
+      "unresolved": [],
+      "compiled_input_roles": [
+        "application"
+      ],
+      "ownership_disposition": "Regex literals and ordered substitution tuples remain data; written pattern-count and replacement/output callbacks retain executable header/body/close."
+    },
+    "crystal-regexredux-optimized": {
+      "status": "passed",
+      "review_identity": "crystal-repaired-replay-source-review-v2:crystal-regexredux-optimized",
+      "source_sha256": "36d759ccb7c40f7b18927381b6a9a427eae0cd333e50f434c4bba0f43c59bbe6",
+      "counted_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/sources/regexredux/optimized.cr",
+      "physical_loc": 50,
+      "canonical_loc": 56,
+      "unresolved": [],
+      "compiled_input_roles": [
+        "application"
+      ],
+      "ownership_disposition": "Regex/substitution tables and done.send tuple are data; real match loop, worker spawn/times/each projection and ordered replacement callbacks retain complete written effects."
+    },
+    "crystal-pidigits-compact": {
+      "status": "passed",
+      "review_identity": "crystal-repaired-replay-source-review-v2:crystal-pidigits-compact",
+      "source_sha256": "10a661763c5991cc979ee498afa6f3e9a202e094fc8889b1216543bd5c17a537",
+      "counted_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/sources/pidigits/compact.cr",
+      "physical_loc": 31,
+      "canonical_loc": 31,
+      "unresolved": [],
+      "compiled_input_roles": [
+        "application"
+      ],
+      "ownership_disposition": "Vendor big require is one declaration; both actual divisions, accepted/rejected extraction branches and written digit/output recurrence retain independent owners without generated library-body units."
+    },
+    "crystal-pidigits-optimized": {
+      "status": "passed",
+      "review_identity": "crystal-repaired-replay-source-review-v2:crystal-pidigits-optimized",
+      "source_sha256": "69ee8e46548eb3996393772df89a6a7a856e9f8f70560259a3b53af8bfb8a5ff",
+      "counted_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/sources/pidigits/optimized.cr",
+      "physical_loc": 31,
+      "canonical_loc": 31,
+      "unresolved": [],
+      "compiled_input_roles": [
+        "application"
+      ],
+      "ownership_disposition": "Vendor big declaration and both real quotient/extraction branches retain written units; scalar arithmetic and formatting arguments stay composed with no synthetic type/library statements."
+    }
+  },
+  "canonical_overlay_sealed": false,
+  "chart_admission": false,
+  "original_source_report_timings_mutated": false
+}

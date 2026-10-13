@@ -1,0 +1,1455 @@
+{
+  "status": "four-compact-sources-reviewed-and-reconciled-awaiting-publication",
+  "reviewed_sources": {
+    "mandelbrot": {
+      "key": "mandelbrot:mandelbrot-lua-2",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/mandelbrot-lua-2.lua",
+      "source_sha256": "16eacf7585991619923c8add0aa9ae0c1327aa2b5f31764208fcf27a5d52f249",
+      "physical_loc": 32,
+      "normalized_loc": 40,
+      "count_reason": "Four multiple bindings split into their actual independent local writes. The packed padding loop has header/body/end. Local numeric and/or selection supplies a scalar loop bound without hidden body statements or calls.",
+      "required_work_review": "All requested pixels execute the prescribed binary64 recurrence and escape predicate for at most fifty iterations. Only output padding is handled separately, with zero final PBM padding bits. No analytic interior or periodicity shortcut.",
+      "samples_seconds": [
+        145.5002955,
+        145.519285542,
+        145.374189625
+      ],
+      "median_seconds": 145.5002955,
+      "fresh_mech_control": {
+        "id": "mech-aot-control",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec",
+        "source_sha256": "baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde",
+        "loc": null,
+        "simd": true,
+        "loop_fma": true,
+        "executable": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+        "emission": {
+          "command": [
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/.build/arrow-mutations-current/mech-clbg-mandelbrot-compiled",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec",
+            "emit-cranelift-simd",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma.c",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma.o",
+            "--source-program",
+            "--fp-contract-loop"
+          ],
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "link": {
+          "command": [
+            "/opt/homebrew/opt/llvm@22/bin/clang-22",
+            "-O3",
+            "-mcpu=native",
+            "-ffp-contract=off",
+            "-isysroot",
+            "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma.c",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma.o",
+            "-lm",
+            "-pthread",
+            "-o",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma"
+          ],
+          "returncode": 0,
+          "stdout": "",
+          "stderr": "ld: warning: no platform load command found in '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma.o', assuming: macOS\n"
+        },
+        "generated_c_sha256": "0d442a69533edc4868567f8f10762f2e706e8851aab56f8c7d92d3b1d4dabfe1",
+        "native_object_sha256": "41ad4bedd5f8baf3093a0b2e65dfbf60e4638f0bb5d177d2f9f39c1a9e3f6843",
+        "object_inspection": {
+          "_mech_map_bits": {
+            "instructions": 219,
+            "mnemonics": {
+              "and": 8,
+              "b": 1,
+              "b.ne": 1,
+              "cmp": 1,
+              "csel": 1,
+              "dup.2d": 2,
+              "fadd": 1,
+              "fadd.2d": 40,
+              "fcmge.2d": 4,
+              "fcmp": 1,
+              "fdiv": 1,
+              "fmla.2d": 24,
+              "fmls.2d": 20,
+              "fmov": 8,
+              "fmov.2d": 2,
+              "fmul": 1,
+              "fmul.2d": 24,
+              "fsub": 1,
+              "fsub.2d": 4,
+              "ldr": 10,
+              "mov": 3,
+              "mov.16b": 31,
+              "mov.d": 12,
+              "movi.16b": 1,
+              "movi.2s": 1,
+              "orn": 1,
+              "orr": 14,
+              "ret": 1
+            },
+            "memory_instructions": [
+              {
+                "address": 0,
+                "mnemonic": "ldr",
+                "operands": "d5, [x0]"
+              },
+              {
+                "address": 4,
+                "mnemonic": "ldr",
+                "operands": "d23, [x0, #0x8]"
+              },
+              {
+                "address": 8,
+                "mnemonic": "ldr",
+                "operands": "d6, [x0, #0x10]"
+              },
+              {
+                "address": 12,
+                "mnemonic": "ldr",
+                "operands": "d22, [x0, #0x18]"
+              },
+              {
+                "address": 16,
+                "mnemonic": "ldr",
+                "operands": "d7, [x0, #0x20]"
+              },
+              {
+                "address": 20,
+                "mnemonic": "ldr",
+                "operands": "d20, [x0, #0x28]"
+              },
+              {
+                "address": 24,
+                "mnemonic": "ldr",
+                "operands": "d17, [x0, #0x30]"
+              },
+              {
+                "address": 28,
+                "mnemonic": "ldr",
+                "operands": "d19, [x0, #0x38]"
+              },
+              {
+                "address": 32,
+                "mnemonic": "ldr",
+                "operands": "d18, [x0, #0x40]"
+              },
+              {
+                "address": 36,
+                "mnemonic": "ldr",
+                "operands": "d25, [x0, #0x48]"
+              }
+            ]
+          },
+          "_mech_grid_row": {
+            "instructions": 65,
+            "mnemonics": {
+              "add": 9,
+              "and": 1,
+              "b": 1,
+              "b.eq": 1,
+              "b.hs": 1,
+              "bl": 1,
+              "cmp": 3,
+              "csel": 1,
+              "ldp": 3,
+              "lsl": 1,
+              "lsr": 1,
+              "mov": 13,
+              "pacibsp": 1,
+              "retab": 1,
+              "stp": 3,
+              "strb": 1,
+              "stur": 10,
+              "sub": 3,
+              "ucvtf": 10
+            },
+            "memory_instructions": [
+              {
+                "address": 880,
+                "mnemonic": "stp",
+                "operands": "x29, x30, [sp, #-0x10]!"
+              },
+              {
+                "address": 888,
+                "mnemonic": "stp",
+                "operands": "x21, x22, [sp, #-0x10]!"
+              },
+              {
+                "address": 892,
+                "mnemonic": "stp",
+                "operands": "x19, x20, [sp, #-0x10]!"
+              },
+              {
+                "address": 912,
+                "mnemonic": "stur",
+                "operands": "d0, [sp]"
+              },
+              {
+                "address": 920,
+                "mnemonic": "stur",
+                "operands": "d0, [sp, #0x48]"
+              },
+              {
+                "address": 944,
+                "mnemonic": "stur",
+                "operands": "d0, [sp, #0x8]"
+              },
+              {
+                "address": 956,
+                "mnemonic": "stur",
+                "operands": "d0, [sp, #0x10]"
+              },
+              {
+                "address": 968,
+                "mnemonic": "stur",
+                "operands": "d0, [sp, #0x18]"
+              },
+              {
+                "address": 980,
+                "mnemonic": "stur",
+                "operands": "d0, [sp, #0x20]"
+              },
+              {
+                "address": 992,
+                "mnemonic": "stur",
+                "operands": "d0, [sp, #0x28]"
+              },
+              {
+                "address": 1004,
+                "mnemonic": "stur",
+                "operands": "d0, [sp, #0x30]"
+              },
+              {
+                "address": 1016,
+                "mnemonic": "stur",
+                "operands": "d0, [sp, #0x38]"
+              },
+              {
+                "address": 1028,
+                "mnemonic": "stur",
+                "operands": "d0, [sp, #0x40]"
+              },
+              {
+                "address": 1088,
+                "mnemonic": "strb",
+                "operands": "w0, [x2, x1]"
+              },
+              {
+                "address": 1120,
+                "mnemonic": "ldp",
+                "operands": "x19, x20, [sp], #0x10"
+              },
+              {
+                "address": 1124,
+                "mnemonic": "ldp",
+                "operands": "x21, x22, [sp], #0x10"
+              },
+              {
+                "address": 1128,
+                "mnemonic": "ldp",
+                "operands": "x29, x30, [sp], #0x10"
+              }
+            ]
+          }
+        },
+        "binary_sha256": "42a54ae5ab8902a4b71d031f3744a1da23c1da1fa26af6943fa3b77475691d8f",
+        "key": "mandelbrot:loc-minimum-study:mech-control",
+        "benchmark": "mandelbrot",
+        "language": "mech",
+        "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+          "{n}",
+          "8"
+        ],
+        "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+        "runtime_environment": {},
+        "state_layout": "2x8 numeric state plus scalar iteration",
+        "role": "Fresh current Mech AOT fastest-source control",
+        "mode": "aot-control",
+        "timing_boundary": "Fresh-process elapsed including startup, complete PBM output and shutdown; unchanged canonical-source AOT binary from the completed array-state study.",
+        "maximum_workers": 8,
+        "producer_loc": 16,
+        "loc_status": "pending canonical count overlay",
+        "samples_seconds": [
+          0.462794625,
+          0.468848459,
+          0.442126667
+        ],
+        "median_seconds": 0.462794625,
+        "sample_stdev_seconds": 0.014011112028675589,
+        "sample_validation": [
+          {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          }
+        ],
+        "sample_execution_metadata": [
+          {
+            "key": "mandelbrot:loc-minimum-study:mech-control",
+            "id": "mech-aot-control",
+            "benchmark": "mandelbrot",
+            "language": "mech",
+            "source_sha256": "baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde",
+            "command": [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+              "16000",
+              "8"
+            ],
+            "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+            "runtime_environment": {},
+            "execution_fingerprint": "{\"binary_sha256\": \"42a54ae5ab8902a4b71d031f3744a1da23c1da1fa26af6943fa3b77475691d8f\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma\", \"{n}\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde\", \"support\": {}}",
+            "started_at": "2026-10-12T17:59:14.235612+00:00",
+            "workload_n": 16000,
+            "full_workload": true,
+            "timeout_seconds": 14400,
+            "maximum_rss_mib": 8192,
+            "power_at_start": {
+              "source": "AC Power",
+              "low_power_mode": 0
+            },
+            "seconds": 0.462794625,
+            "exit_status": 0,
+            "remaining_group_members": [],
+            "competing_compilers": [],
+            "power_changes": [],
+            "power_at_end": {
+              "source": "AC Power",
+              "low_power_mode": 0
+            },
+            "monitor_errors": [],
+            "peak_process_group_rss_kib": 0,
+            "resource_violation": null,
+            "resource_monitor_errors": [],
+            "stderr": "",
+            "stdout_bytes": 32000015,
+            "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "validation": {
+              "bytes": 32000015,
+              "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+              "reference_match": true
+            },
+            "finished_at": "2026-10-12T17:59:14.928982+00:00",
+            "valid_environment": true,
+            "pins_unchanged_at_end": true,
+            "round": 1,
+            "attempt": 2,
+            "sampler_wait_status": 0,
+            "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/full-study/attempts/002-mech-aot-control.json",
+            "supervised_native_group": {
+              "type": "native-group-started",
+              "pid": 4301,
+              "pgid": 4301,
+              "command": [
+                "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+                "16000",
+                "8"
+              ],
+              "inherited_common_mutex": true
+            },
+            "supervisor_remaining_members": [],
+            "fatal_qualification_fields": [],
+            "qualified": true,
+            "retryable_environment_only": false,
+            "environment_attempt": 1
+          },
+          {
+            "key": "mandelbrot:loc-minimum-study:mech-control",
+            "id": "mech-aot-control",
+            "benchmark": "mandelbrot",
+            "language": "mech",
+            "source_sha256": "baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde",
+            "command": [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+              "16000",
+              "8"
+            ],
+            "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+            "runtime_environment": {},
+            "execution_fingerprint": "{\"binary_sha256\": \"42a54ae5ab8902a4b71d031f3744a1da23c1da1fa26af6943fa3b77475691d8f\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma\", \"{n}\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde\", \"support\": {}}",
+            "started_at": "2026-10-12T17:59:20.474239+00:00",
+            "workload_n": 16000,
+            "full_workload": true,
+            "timeout_seconds": 14400,
+            "maximum_rss_mib": 8192,
+            "power_at_start": {
+              "source": "AC Power",
+              "low_power_mode": 0
+            },
+            "seconds": 0.468848459,
+            "exit_status": 0,
+            "remaining_group_members": [],
+            "competing_compilers": [],
+            "power_changes": [],
+            "power_at_end": {
+              "source": "AC Power",
+              "low_power_mode": 0
+            },
+            "monitor_errors": [],
+            "peak_process_group_rss_kib": 0,
+            "resource_violation": null,
+            "resource_monitor_errors": [],
+            "stderr": "",
+            "stdout_bytes": 32000015,
+            "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "validation": {
+              "bytes": 32000015,
+              "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+              "reference_match": true
+            },
+            "finished_at": "2026-10-12T17:59:21.171642+00:00",
+            "valid_environment": true,
+            "pins_unchanged_at_end": true,
+            "round": 2,
+            "attempt": 3,
+            "sampler_wait_status": 0,
+            "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/full-study/attempts/003-mech-aot-control.json",
+            "supervised_native_group": {
+              "type": "native-group-started",
+              "pid": 4411,
+              "pgid": 4411,
+              "command": [
+                "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+                "16000",
+                "8"
+              ],
+              "inherited_common_mutex": true
+            },
+            "supervisor_remaining_members": [],
+            "fatal_qualification_fields": [],
+            "qualified": true,
+            "retryable_environment_only": false,
+            "environment_attempt": 1
+          },
+          {
+            "key": "mandelbrot:loc-minimum-study:mech-control",
+            "id": "mech-aot-control",
+            "benchmark": "mandelbrot",
+            "language": "mech",
+            "source_sha256": "baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde",
+            "command": [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+              "16000",
+              "8"
+            ],
+            "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+            "runtime_environment": {},
+            "execution_fingerprint": "{\"binary_sha256\": \"42a54ae5ab8902a4b71d031f3744a1da23c1da1fa26af6943fa3b77475691d8f\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma\", \"{n}\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde\", \"support\": {}}",
+            "started_at": "2026-10-12T18:09:10.417938+00:00",
+            "workload_n": 16000,
+            "full_workload": true,
+            "timeout_seconds": 14400,
+            "maximum_rss_mib": 8192,
+            "power_at_start": {
+              "source": "AC Power",
+              "low_power_mode": 0
+            },
+            "seconds": 0.442126667,
+            "exit_status": 0,
+            "remaining_group_members": [],
+            "competing_compilers": [],
+            "power_changes": [],
+            "power_at_end": {
+              "source": "AC Power",
+              "low_power_mode": 0
+            },
+            "monitor_errors": [],
+            "peak_process_group_rss_kib": 0,
+            "resource_violation": null,
+            "resource_monitor_errors": [],
+            "stderr": "",
+            "stdout_bytes": 32000015,
+            "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "validation": {
+              "bytes": 32000015,
+              "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+              "reference_match": true
+            },
+            "finished_at": "2026-10-12T18:09:11.084865+00:00",
+            "valid_environment": true,
+            "pins_unchanged_at_end": true,
+            "round": 3,
+            "attempt": 6,
+            "sampler_wait_status": 0,
+            "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/full-study/attempts/006-mech-aot-control.json",
+            "supervised_native_group": {
+              "type": "native-group-started",
+              "pid": 6189,
+              "pgid": 6189,
+              "command": [
+                "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+                "16000",
+                "8"
+              ],
+              "inherited_common_mutex": true
+            },
+            "supervisor_remaining_members": [],
+            "fatal_qualification_fields": [],
+            "qualified": true,
+            "retryable_environment_only": false,
+            "environment_attempt": 1
+          }
+        ]
+      },
+      "discarded_environment_records": 0,
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/full-study/manifest.json",
+      "manifest_sha256": "97ea9ced57da4f707222dc898b7f9a9cc03bb505d5f89ee865754bad850f7861",
+      "report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/full-study/report.json",
+      "report_sha256": "bc483f9e594c0d5a514b5a7f5864a6a6f040c1e11e81ba2bc6ff40e605261efc"
+    },
+    "spectralnorm": {
+      "key": "spectralnorm:spectralnorm-node-7",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/spectralnorm-node-7.js",
+      "source_sha256": "2dea06681168ffa46990b461ef7468f38afeb3fd955d8b3078d8918b1c5afd4a",
+      "physical_loc": 45,
+      "normalized_loc": 45,
+      "count_reason": "Every written application unit is already on its own line. SharedArrayBuffer and typed-array constructor arguments are data/call structure, with no hidden callback or multiple binding. Opening braces share their counted headers; each written closing brace counts.",
+      "required_work_review": "Four coefficient/multiply/transpose/composition functions perform forty fresh N-by-N implicit products across ten iterations. Each coefficient is recomputed from indices; only ordinary vector storage is retained.",
+      "samples_seconds": [
+        1.601863875,
+        1.593748959,
+        1.598465875
+      ],
+      "median_seconds": 1.598465875,
+      "fresh_mech_control": {
+        "id": "mech-aot-control",
+        "key": "spectralnorm:loc-minimum-study:mech-control",
+        "benchmark": "spectralnorm",
+        "language": "mech",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/sources/spectralnorm-four-functions.mec",
+        "source_sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290",
+        "source_url": "https://mech-lang.org",
+        "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions",
+        "binary_sha256": "18e1664f3374fd80f356e4b2f496a3d6add7534854930a82d7037e9306358e69",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions",
+          "{n}"
+        ],
+        "runtime_environment": {},
+        "loc": null,
+        "published_chart_key": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8",
+        "previous_seconds": 0.086075292,
+        "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+        "algorithm": {
+          "strict": true,
+          "status": "corrected",
+          "reason": "Four source functions: coefficient, apply, apply-transpose, and step. Twenty power-method applications execute forty matrix-vector products. Coefficients are computed by emitted Mech arithmetic; no stored matrix or answer shortcut.",
+          "full_work": {
+            "n": 5500,
+            "power_applications": 20,
+            "matrix_vector_products": 40,
+            "weighted_contributions": 1210000000
+          },
+          "evidence": [
+            {
+              "path": "work-audit/20261009/sources/spectralnorm-four-functions.mec",
+              "sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290"
+            },
+            {
+              "path": "work-audit/20261009/timings.json",
+              "sha256": "9c85e39d8d72357ee9f0867cdebb0968eba37f3577d013d3d21f661027abc33a"
+            }
+          ],
+          "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/spectralnorm.html",
+          "native_benchmark_kernel": false
+        },
+        "control_for": "r",
+        "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+        "role": "Fresh current Mech AOT fastest-source control",
+        "maximum_workers": 8,
+        "producer_loc": 12,
+        "loc_status": "pending canonical count overlay",
+        "samples_seconds": [
+          0.091221708,
+          0.088301209,
+          0.091765542
+        ],
+        "median_seconds": 0.091221708,
+        "sample_stdev_seconds": 0.0018630920966431928,
+        "sample_validation": [
+          {
+            "bytes": 12,
+            "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+            "reference_match": true
+          },
+          {
+            "bytes": 12,
+            "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+            "reference_match": true
+          },
+          {
+            "bytes": 12,
+            "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+            "reference_match": true
+          }
+        ],
+        "sample_execution_metadata": [
+          {
+            "key": "spectralnorm:loc-minimum-study:mech-control",
+            "id": "mech-aot-control",
+            "benchmark": "spectralnorm",
+            "language": "mech",
+            "source_sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290",
+            "command": [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions",
+              "5500"
+            ],
+            "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+            "runtime_environment": {},
+            "execution_fingerprint": "{\"binary_sha256\": \"18e1664f3374fd80f356e4b2f496a3d6add7534854930a82d7037e9306358e69\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290\", \"support\": {\"work-audit/20261009/sources/spectralnorm-four-functions.mec\": \"eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290\", \"work-audit/20261009/timings.json\": \"9c85e39d8d72357ee9f0867cdebb0968eba37f3577d013d3d21f661027abc33a\"}}",
+            "started_at": "2026-10-12T17:59:15.171222+00:00",
+            "workload_n": 5500,
+            "full_workload": true,
+            "timeout_seconds": 14400,
+            "maximum_rss_mib": 8192,
+            "power_at_start": {
+              "source": "AC Power",
+              "low_power_mode": 0
+            },
+            "seconds": 0.091221708,
+            "exit_status": 0,
+            "remaining_group_members": [],
+            "competing_compilers": [],
+            "power_changes": [],
+            "power_at_end": {
+              "source": "AC Power",
+              "low_power_mode": 0
+            },
+            "monitor_errors": [],
+            "peak_process_group_rss_kib": 0,
+            "resource_violation": null,
+            "resource_monitor_errors": [],
+            "stderr": "",
+            "stdout_bytes": 12,
+            "stdout_sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+            "validation": {
+              "bytes": 12,
+              "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+              "reference_match": true
+            },
+            "finished_at": "2026-10-12T17:59:15.447583+00:00",
+            "valid_environment": true,
+            "pins_unchanged_at_end": true,
+            "round": 1,
+            "attempt": 2,
+            "sampler_wait_status": 0,
+            "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/full-study/attempts/002-mech-aot-control.json",
+            "supervised_native_group": {
+              "type": "native-group-started",
+              "pid": 4321,
+              "pgid": 4321,
+              "command": [
+                "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions",
+                "5500"
+              ],
+              "inherited_common_mutex": true
+            },
+            "supervisor_remaining_members": [],
+            "fatal_qualification_fields": [],
+            "qualified": true,
+            "retryable_environment_only": false,
+            "environment_attempt": 1
+          },
+          {
+            "key": "spectralnorm:loc-minimum-study:mech-control",
+            "id": "mech-aot-control",
+            "benchmark": "spectralnorm",
+            "language": "mech",
+            "source_sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290",
+            "command": [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions",
+              "5500"
+            ],
+            "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+            "runtime_environment": {},
+            "execution_fingerprint": "{\"binary_sha256\": \"18e1664f3374fd80f356e4b2f496a3d6add7534854930a82d7037e9306358e69\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290\", \"support\": {\"work-audit/20261009/sources/spectralnorm-four-functions.mec\": \"eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290\", \"work-audit/20261009/timings.json\": \"9c85e39d8d72357ee9f0867cdebb0968eba37f3577d013d3d21f661027abc33a\"}}",
+            "started_at": "2026-10-12T17:59:21.413686+00:00",
+            "workload_n": 5500,
+            "full_workload": true,
+            "timeout_seconds": 14400,
+            "maximum_rss_mib": 8192,
+            "power_at_start": {
+              "source": "AC Power",
+              "low_power_mode": 0
+            },
+            "seconds": 0.088301209,
+            "exit_status": 0,
+            "remaining_group_members": [],
+            "competing_compilers": [],
+            "power_changes": [],
+            "power_at_end": {
+              "source": "AC Power",
+              "low_power_mode": 0
+            },
+            "monitor_errors": [],
+            "peak_process_group_rss_kib": 0,
+            "resource_violation": null,
+            "resource_monitor_errors": [],
+            "stderr": "",
+            "stdout_bytes": 12,
+            "stdout_sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+            "validation": {
+              "bytes": 12,
+              "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+              "reference_match": true
+            },
+            "finished_at": "2026-10-12T17:59:21.696360+00:00",
+            "valid_environment": true,
+            "pins_unchanged_at_end": true,
+            "round": 2,
+            "attempt": 3,
+            "sampler_wait_status": 0,
+            "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/full-study/attempts/003-mech-aot-control.json",
+            "supervised_native_group": {
+              "type": "native-group-started",
+              "pid": 4433,
+              "pgid": 4433,
+              "command": [
+                "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions",
+                "5500"
+              ],
+              "inherited_common_mutex": true
+            },
+            "supervisor_remaining_members": [],
+            "fatal_qualification_fields": [],
+            "qualified": true,
+            "retryable_environment_only": false,
+            "environment_attempt": 1
+          },
+          {
+            "key": "spectralnorm:loc-minimum-study:mech-control",
+            "id": "mech-aot-control",
+            "benchmark": "spectralnorm",
+            "language": "mech",
+            "source_sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290",
+            "command": [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions",
+              "5500"
+            ],
+            "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+            "runtime_environment": {},
+            "execution_fingerprint": "{\"binary_sha256\": \"18e1664f3374fd80f356e4b2f496a3d6add7534854930a82d7037e9306358e69\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290\", \"support\": {\"work-audit/20261009/sources/spectralnorm-four-functions.mec\": \"eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290\", \"work-audit/20261009/timings.json\": \"9c85e39d8d72357ee9f0867cdebb0968eba37f3577d013d3d21f661027abc33a\"}}",
+            "started_at": "2026-10-12T18:09:11.325524+00:00",
+            "workload_n": 5500,
+            "full_workload": true,
+            "timeout_seconds": 14400,
+            "maximum_rss_mib": 8192,
+            "power_at_start": {
+              "source": "AC Power",
+              "low_power_mode": 0
+            },
+            "seconds": 0.091765542,
+            "exit_status": 0,
+            "remaining_group_members": [],
+            "competing_compilers": [],
+            "power_changes": [],
+            "power_at_end": {
+              "source": "AC Power",
+              "low_power_mode": 0
+            },
+            "monitor_errors": [],
+            "peak_process_group_rss_kib": 0,
+            "resource_violation": null,
+            "resource_monitor_errors": [],
+            "stderr": "",
+            "stdout_bytes": 12,
+            "stdout_sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+            "validation": {
+              "bytes": 12,
+              "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+              "reference_match": true
+            },
+            "finished_at": "2026-10-12T18:09:11.617506+00:00",
+            "valid_environment": true,
+            "pins_unchanged_at_end": true,
+            "round": 3,
+            "attempt": 6,
+            "sampler_wait_status": 0,
+            "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/full-study/attempts/006-mech-aot-control.json",
+            "supervised_native_group": {
+              "type": "native-group-started",
+              "pid": 6210,
+              "pgid": 6210,
+              "command": [
+                "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions",
+                "5500"
+              ],
+              "inherited_common_mutex": true
+            },
+            "supervisor_remaining_members": [],
+            "fatal_qualification_fields": [],
+            "qualified": true,
+            "retryable_environment_only": false,
+            "environment_attempt": 1
+          }
+        ]
+      },
+      "discarded_environment_records": 0,
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/full-study/manifest.json",
+      "manifest_sha256": "679a1874d1948b800dd9f5292099b15238a2079fb47eaad32d8a08b3ab501104",
+      "report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/full-study/report.json",
+      "report_sha256": "88feb962a5bfc94a6b8e90768610039111ff0f6f9f5dc8693281cfd5fb0a8c35"
+    },
+    "binarytrees": {
+      "key": "binarytrees:binarytrees-ruby-2",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/binarytrees/qualification-v1/binarytrees-ruby-2.rb",
+      "source_sha256": "d75c541ff893ccfb5b5fa399010bc60c7f14f51d1077a0f983502ffe60f05f6c",
+      "physical_loc": 28,
+      "normalized_loc": 30,
+      "count_reason": "Each postfix if contributes its actual conditional header and return body. All other written function/loop headers, bodies and end tokens retain one source unit; formal and call arguments do not become independent statements.",
+      "required_work_review": "Every constructor call returns a new two-slot Array, including leaves; both recursive children are built. Recursive checks consume the actual graph. The stretch root is released before the long-lived root is allocated; that root remains referenced through all prescribed temporary tree iterations and is checked last.",
+      "samples_seconds": [
+        22.040462458,
+        21.973348875,
+        22.079144208
+      ],
+      "median_seconds": 22.040462458,
+      "fresh_mech_control": {
+        "id": "mech-aot-control",
+        "key": "binarytrees:loc-minimum-study:mech-control",
+        "benchmark": "binarytrees",
+        "language": "mech",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/binarytrees-parallel.mec",
+        "source_sha256": "61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f",
+        "source_url": "https://mech-lang.org",
+        "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/binarytrees/mech-binarytrees-parallel-after",
+        "binary_sha256": "b8f1e30861f6003c10fcbd2b3e58c355d6158068621523fc870bfc292677deb0",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/binarytrees/mech-binarytrees-parallel-after",
+          "{n}"
+        ],
+        "runtime_environment": {},
+        "loc": null,
+        "published_chart_key": "binarytrees:mech-binarytrees-parallel",
+        "previous_seconds": 0.394411208,
+        "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+        "algorithm": {
+          "strict": true,
+          "status": "reviewed-library-pool",
+          "reason": "Full bottom-up construction and traversal of distinct ordinary nodes, including equally allocated leaves. Uses the general core library memory pool through memory/with-arena and memory/with-frame. This allocation strategy must be disclosed; it is not a default-GC comparison.",
+          "allocation_policy": "General core library pool; distinct 16-byte node slots; per-tree frame release.",
+          "full_work": {
+            "maximum_depth": 21,
+            "nodes_constructed_and_walked": 613766494
+          },
+          "evidence": [
+            {
+              "path": "binarytrees/binarytrees-parallel.mec",
+              "sha256": "61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f"
+            },
+            {
+              "path": "../../hosts/gpu/src/control/runtime.rs",
+              "sha256": "50d009170e52995741c36499b8495e3f86b10a4cb2631c5743d0dc654852cf9b"
+            },
+            {
+              "path": "../../src/core/src/memory_runtime/allocation.rs",
+              "sha256": "03ee3168f16162eceb19eade748e8581d07542677b7cb2d502aea691ea8a1e5c"
+            },
+            {
+              "path": "binarytrees/results/conformance.json",
+              "sha256": "51e08678c94b9ebedc0bab0d7c3c91f2fcb017f24201f763e8743dab5ef0316c"
+            },
+            {
+              "path": "binarytrees/results/records-conformance.json",
+              "sha256": "5f67bd19fa6734b401ea00f8d2a577bcfda6108510c45c513da6b5b04ca5ce51"
+            }
+          ],
+          "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/binarytrees.html",
+          "native_benchmark_kernel": false
+        },
+        "control_for": "r",
+        "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+        "role": "Fresh current Mech AOT fastest-source control",
+        "maximum_workers": 8,
+        "producer_loc": 26,
+        "loc_status": "pending canonical count overlay",
+        "samples_seconds": [
+          0.443395334,
+          0.409042709,
+          0.407354709
+        ],
+        "median_seconds": 0.409042709,
+        "sample_stdev_seconds": 0.020338300645093434,
+        "sample_validation": [
+          {
+            "bytes": 455,
+            "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+            "reference_match": true
+          },
+          {
+            "bytes": 455,
+            "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+            "reference_match": true
+          },
+          {
+            "bytes": 455,
+            "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+            "reference_match": true
+          }
+        ],
+        "sample_execution_metadata": [
+          {
+            "key": "binarytrees:loc-minimum-study:mech-control",
+            "id": "mech-aot-control",
+            "benchmark": "binarytrees",
+            "language": "mech",
+            "source_sha256": "61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f",
+            "command": [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/binarytrees/mech-binarytrees-parallel-after",
+              "21"
+            ],
+            "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+            "runtime_environment": {},
+            "execution_fingerprint": "{\"binary_sha256\": \"b8f1e30861f6003c10fcbd2b3e58c355d6158068621523fc870bfc292677deb0\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/binarytrees/mech-binarytrees-parallel-after\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f\", \"support\": {\"../../hosts/gpu/src/control/runtime.rs\": \"50d009170e52995741c36499b8495e3f86b10a4cb2631c5743d0dc654852cf9b\", \"../../src/core/src/memory_runtime/allocation.rs\": \"03ee3168f16162eceb19eade748e8581d07542677b7cb2d502aea691ea8a1e5c\", \"binarytrees/binarytrees-parallel.mec\": \"61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f\", \"binarytrees/results/conformance.json\": \"51e08678c94b9ebedc0bab0d7c3c91f2fcb017f24201f763e8743dab5ef0316c\", \"binarytrees/results/records-conformance.json\": \"5f67bd19fa6734b401ea00f8d2a577bcfda6108510c45c513da6b5b04ca5ce51\"}}",
+            "started_at": "2026-10-12T17:59:15.614097+00:00",
+            "workload_n": 21,
+            "full_workload": true,
+            "timeout_seconds": 14400,
+            "maximum_rss_mib": 8192,
+            "power_at_start": {
+              "source": "AC Power",
+              "low_power_mode": 0
+            },
+            "seconds": 0.443395334,
+            "exit_status": 0,
+            "remaining_group_members": [],
+            "competing_compilers": [],
+            "power_changes": [],
+            "power_at_end": {
+              "source": "AC Power",
+              "low_power_mode": 0
+            },
+            "monitor_errors": [],
+            "peak_process_group_rss_kib": 0,
+            "resource_violation": null,
+            "resource_monitor_errors": [],
+            "stderr": "",
+            "stdout_bytes": 455,
+            "stdout_sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+            "validation": {
+              "bytes": 455,
+              "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+              "reference_match": true
+            },
+            "finished_at": "2026-10-12T17:59:16.250991+00:00",
+            "valid_environment": true,
+            "pins_unchanged_at_end": true,
+            "round": 1,
+            "attempt": 2,
+            "sampler_wait_status": 0,
+            "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/binarytrees/full-study/attempts/002-mech-aot-control.json",
+            "supervised_native_group": {
+              "type": "native-group-started",
+              "pid": 4343,
+              "pgid": 4343,
+              "command": [
+                "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/binarytrees/mech-binarytrees-parallel-after",
+                "21"
+              ],
+              "inherited_common_mutex": true
+            },
+            "supervisor_remaining_members": [],
+            "fatal_qualification_fields": [],
+            "qualified": true,
+            "retryable_environment_only": false,
+            "environment_attempt": 1
+          },
+          {
+            "key": "binarytrees:loc-minimum-study:mech-control",
+            "id": "mech-aot-control",
+            "benchmark": "binarytrees",
+            "language": "mech",
+            "source_sha256": "61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f",
+            "command": [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/binarytrees/mech-binarytrees-parallel-after",
+              "21"
+            ],
+            "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+            "runtime_environment": {},
+            "execution_fingerprint": "{\"binary_sha256\": \"b8f1e30861f6003c10fcbd2b3e58c355d6158068621523fc870bfc292677deb0\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/binarytrees/mech-binarytrees-parallel-after\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f\", \"support\": {\"../../hosts/gpu/src/control/runtime.rs\": \"50d009170e52995741c36499b8495e3f86b10a4cb2631c5743d0dc654852cf9b\", \"../../src/core/src/memory_runtime/allocation.rs\": \"03ee3168f16162eceb19eade748e8581d07542677b7cb2d502aea691ea8a1e5c\", \"binarytrees/binarytrees-parallel.mec\": \"61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f\", \"binarytrees/results/conformance.json\": \"51e08678c94b9ebedc0bab0d7c3c91f2fcb017f24201f763e8743dab5ef0316c\", \"binarytrees/results/records-conformance.json\": \"5f67bd19fa6734b401ea00f8d2a577bcfda6108510c45c513da6b5b04ca5ce51\"}}",
+            "started_at": "2026-10-12T17:59:21.886196+00:00",
+            "workload_n": 21,
+            "full_workload": true,
+            "timeout_seconds": 14400,
+            "maximum_rss_mib": 8192,
+            "power_at_start": {
+              "source": "AC Power",
+              "low_power_mode": 0
+            },
+            "seconds": 0.409042709,
+            "exit_status": 0,
+            "remaining_group_members": [],
+            "competing_compilers": [],
+            "power_changes": [],
+            "power_at_end": {
+              "source": "AC Power",
+              "low_power_mode": 0
+            },
+            "monitor_errors": [],
+            "peak_process_group_rss_kib": 0,
+            "resource_violation": null,
+            "resource_monitor_errors": [],
+            "stderr": "",
+            "stdout_bytes": 455,
+            "stdout_sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+            "validation": {
+              "bytes": 455,
+              "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+              "reference_match": true
+            },
+            "finished_at": "2026-10-12T17:59:22.503445+00:00",
+            "valid_environment": true,
+            "pins_unchanged_at_end": true,
+            "round": 2,
+            "attempt": 3,
+            "sampler_wait_status": 0,
+            "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/binarytrees/full-study/attempts/003-mech-aot-control.json",
+            "supervised_native_group": {
+              "type": "native-group-started",
+              "pid": 4453,
+              "pgid": 4453,
+              "command": [
+                "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/binarytrees/mech-binarytrees-parallel-after",
+                "21"
+              ],
+              "inherited_common_mutex": true
+            },
+            "supervisor_remaining_members": [],
+            "fatal_qualification_fields": [],
+            "qualified": true,
+            "retryable_environment_only": false,
+            "environment_attempt": 1
+          },
+          {
+            "key": "binarytrees:loc-minimum-study:mech-control",
+            "id": "mech-aot-control",
+            "benchmark": "binarytrees",
+            "language": "mech",
+            "source_sha256": "61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f",
+            "command": [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/binarytrees/mech-binarytrees-parallel-after",
+              "21"
+            ],
+            "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+            "runtime_environment": {},
+            "execution_fingerprint": "{\"binary_sha256\": \"b8f1e30861f6003c10fcbd2b3e58c355d6158068621523fc870bfc292677deb0\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/binarytrees/mech-binarytrees-parallel-after\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f\", \"support\": {\"../../hosts/gpu/src/control/runtime.rs\": \"50d009170e52995741c36499b8495e3f86b10a4cb2631c5743d0dc654852cf9b\", \"../../src/core/src/memory_runtime/allocation.rs\": \"03ee3168f16162eceb19eade748e8581d07542677b7cb2d502aea691ea8a1e5c\", \"binarytrees/binarytrees-parallel.mec\": \"61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f\", \"binarytrees/results/conformance.json\": \"51e08678c94b9ebedc0bab0d7c3c91f2fcb017f24201f763e8743dab5ef0316c\", \"binarytrees/results/records-conformance.json\": \"5f67bd19fa6734b401ea00f8d2a577bcfda6108510c45c513da6b5b04ca5ce51\"}}",
+            "started_at": "2026-10-12T18:09:11.892121+00:00",
+            "workload_n": 21,
+            "full_workload": true,
+            "timeout_seconds": 14400,
+            "maximum_rss_mib": 8192,
+            "power_at_start": {
+              "source": "AC Power",
+              "low_power_mode": 0
+            },
+            "seconds": 0.407354709,
+            "exit_status": 0,
+            "remaining_group_members": [],
+            "competing_compilers": [],
+            "power_changes": [],
+            "power_at_end": {
+              "source": "AC Power",
+              "low_power_mode": 0
+            },
+            "monitor_errors": [],
+            "peak_process_group_rss_kib": 0,
+            "resource_violation": null,
+            "resource_monitor_errors": [],
+            "stderr": "",
+            "stdout_bytes": 455,
+            "stdout_sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+            "validation": {
+              "bytes": 455,
+              "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+              "reference_match": true
+            },
+            "finished_at": "2026-10-12T18:09:12.499197+00:00",
+            "valid_environment": true,
+            "pins_unchanged_at_end": true,
+            "round": 3,
+            "attempt": 6,
+            "sampler_wait_status": 0,
+            "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/binarytrees/full-study/attempts/006-mech-aot-control.json",
+            "supervised_native_group": {
+              "type": "native-group-started",
+              "pid": 6233,
+              "pgid": 6233,
+              "command": [
+                "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/binarytrees/mech-binarytrees-parallel-after",
+                "21"
+              ],
+              "inherited_common_mutex": true
+            },
+            "supervisor_remaining_members": [],
+            "fatal_qualification_fields": [],
+            "qualified": true,
+            "retryable_environment_only": false,
+            "environment_attempt": 1
+          }
+        ]
+      },
+      "discarded_environment_records": 0,
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/binarytrees/full-study/manifest.json",
+      "manifest_sha256": "dd0a83144f83dea6de4b9533a1627543a16675161bbc67a341a155bdda31c86d",
+      "report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/binarytrees/full-study/report.json",
+      "report_sha256": "7bfc0203952ecff7d9fe8c517158b44c2b29905499d7e9438d88e83bdcae0fe9"
+    },
+    "fannkuchredux": {
+      "key": "fannkuchredux:fannkuchredux-php-8",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/fannkuchredux/qualification-v1/fannkuchredux-php-8.php",
+      "source_sha256": "7931a305151ebb9d4b54ec3729931622806334296557c2153637c2ea9315b1c4",
+      "physical_loc": 49,
+      "normalized_loc": 71,
+      "count_reason": "The seven chained writes count separately; packed loops/branches expose their real headers, statements and written closers; the swap has three writes. Array literals, loop-header clauses and printf arguments are structural within their owners.",
+      "required_work_review": "The carry/rotation generator visits every permutation in canonical order, copies the actual permutation, reverses actual prefixes until the first value is zero, and accumulates global rank parity checksum and maximum flips. No cached flips or permutation results.",
+      "samples_seconds": [
+        119.659725708,
+        119.275326083,
+        119.279029667
+      ],
+      "median_seconds": 119.279029667,
+      "fresh_mech_control": {
+        "id": "mech-aot-control",
+        "key": "fannkuchredux:loc-minimum-study:mech-control",
+        "benchmark": "fannkuchredux",
+        "language": "mech",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux-even.mec",
+        "source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe",
+        "source_url": "https://mech-lang.org",
+        "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after",
+        "binary_sha256": "3d3599f1f174915251d6323592ea81bf3dc7ca57f0f07b8f310cd6825393e004",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after",
+          "{n}"
+        ],
+        "runtime_environment": {},
+        "loc": null,
+        "published_chart_key": "fannkuchredux:mech-fannkuch-even",
+        "previous_seconds": 1.702457333,
+        "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+        "algorithm": {
+          "strict": true,
+          "status": "reviewed",
+          "reason": "The Mech program enumerates all factorial permutations in the required factoradic order, performs actual prefix flips, and reduces the alternating checksum and maximum. Parallel ranges cover the full permutation domain.",
+          "full_work": {
+            "n": 12,
+            "permutations": 479001600
+          },
+          "evidence": [
+            {
+              "path": "fannkuchredux/fannkuchredux.mec",
+              "sha256": "0a5bee0d62631abf4f200489ddf9044c9b238f0c2dcd6a074c60ec93c90fdb8f"
+            },
+            {
+              "path": "fannkuchredux/fannkuchredux-even.mec",
+              "sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe"
+            }
+          ],
+          "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fannkuchredux.html",
+          "native_benchmark_kernel": false
+        },
+        "control_for": "r",
+        "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+        "role": "Fresh current Mech AOT fastest-source control",
+        "maximum_workers": 8,
+        "producer_loc": 59,
+        "loc_status": "pending canonical count overlay",
+        "samples_seconds": [
+          1.76059325,
+          1.733728708,
+          1.707638583
+        ],
+        "median_seconds": 1.733728708,
+        "sample_stdev_seconds": 0.026478277249052946,
+        "sample_validation": [
+          {
+            "bytes": 29,
+            "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+            "reference_match": true
+          },
+          {
+            "bytes": 29,
+            "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+            "reference_match": true
+          },
+          {
+            "bytes": 29,
+            "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+            "reference_match": true
+          }
+        ],
+        "sample_execution_metadata": [
+          {
+            "key": "fannkuchredux:loc-minimum-study:mech-control",
+            "id": "mech-aot-control",
+            "benchmark": "fannkuchredux",
+            "language": "mech",
+            "source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe",
+            "command": [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after",
+              "12"
+            ],
+            "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+            "runtime_environment": {},
+            "execution_fingerprint": "{\"binary_sha256\": \"3d3599f1f174915251d6323592ea81bf3dc7ca57f0f07b8f310cd6825393e004\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe\", \"support\": {\"fannkuchredux/fannkuchredux-even.mec\": \"b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe\", \"fannkuchredux/fannkuchredux.mec\": \"0a5bee0d62631abf4f200489ddf9044c9b238f0c2dcd6a074c60ec93c90fdb8f\"}}",
+            "started_at": "2026-10-12T17:59:16.883081+00:00",
+            "workload_n": 12,
+            "full_workload": true,
+            "timeout_seconds": 14400,
+            "maximum_rss_mib": 8192,
+            "power_at_start": {
+              "source": "AC Power",
+              "low_power_mode": 0
+            },
+            "seconds": 1.76059325,
+            "exit_status": 0,
+            "remaining_group_members": [],
+            "competing_compilers": [],
+            "power_changes": [],
+            "power_at_end": {
+              "source": "AC Power",
+              "low_power_mode": 0
+            },
+            "monitor_errors": [],
+            "peak_process_group_rss_kib": 1840,
+            "resource_violation": null,
+            "resource_monitor_errors": [],
+            "stderr": "",
+            "stdout_bytes": 29,
+            "stdout_sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+            "validation": {
+              "bytes": 29,
+              "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+              "reference_match": true
+            },
+            "finished_at": "2026-10-12T17:59:18.879969+00:00",
+            "valid_environment": true,
+            "pins_unchanged_at_end": true,
+            "round": 1,
+            "attempt": 2,
+            "sampler_wait_status": 0,
+            "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/fannkuchredux/full-study/attempts/002-mech-aot-control.json",
+            "supervised_native_group": {
+              "type": "native-group-started",
+              "pid": 4366,
+              "pgid": 4366,
+              "command": [
+                "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after",
+                "12"
+              ],
+              "inherited_common_mutex": true
+            },
+            "supervisor_remaining_members": [],
+            "fatal_qualification_fields": [],
+            "qualified": true,
+            "retryable_environment_only": false,
+            "environment_attempt": 1
+          },
+          {
+            "key": "fannkuchredux:loc-minimum-study:mech-control",
+            "id": "mech-aot-control",
+            "benchmark": "fannkuchredux",
+            "language": "mech",
+            "source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe",
+            "command": [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after",
+              "12"
+            ],
+            "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+            "runtime_environment": {},
+            "execution_fingerprint": "{\"binary_sha256\": \"3d3599f1f174915251d6323592ea81bf3dc7ca57f0f07b8f310cd6825393e004\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe\", \"support\": {\"fannkuchredux/fannkuchredux-even.mec\": \"b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe\", \"fannkuchredux/fannkuchredux.mec\": \"0a5bee0d62631abf4f200489ddf9044c9b238f0c2dcd6a074c60ec93c90fdb8f\"}}",
+            "started_at": "2026-10-12T17:59:25.378981+00:00",
+            "workload_n": 12,
+            "full_workload": true,
+            "timeout_seconds": 14400,
+            "maximum_rss_mib": 8192,
+            "power_at_start": {
+              "source": "AC Power",
+              "low_power_mode": 0
+            },
+            "seconds": 1.733728708,
+            "exit_status": 0,
+            "remaining_group_members": [],
+            "competing_compilers": [],
+            "power_changes": [],
+            "power_at_end": {
+              "source": "AC Power",
+              "low_power_mode": 0
+            },
+            "monitor_errors": [],
+            "peak_process_group_rss_kib": 1840,
+            "resource_violation": null,
+            "resource_monitor_errors": [],
+            "stderr": "",
+            "stdout_bytes": 29,
+            "stdout_sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+            "validation": {
+              "bytes": 29,
+              "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+              "reference_match": true
+            },
+            "finished_at": "2026-10-12T17:59:27.322167+00:00",
+            "valid_environment": true,
+            "pins_unchanged_at_end": true,
+            "round": 2,
+            "attempt": 3,
+            "sampler_wait_status": 0,
+            "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/fannkuchredux/full-study/attempts/003-mech-aot-control.json",
+            "supervised_native_group": {
+              "type": "native-group-started",
+              "pid": 4489,
+              "pgid": 4489,
+              "command": [
+                "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after",
+                "12"
+              ],
+              "inherited_common_mutex": true
+            },
+            "supervisor_remaining_members": [],
+            "fatal_qualification_fields": [],
+            "qualified": true,
+            "retryable_environment_only": false,
+            "environment_attempt": 1
+          },
+          {
+            "key": "fannkuchredux:loc-minimum-study:mech-control",
+            "id": "mech-aot-control",
+            "benchmark": "fannkuchredux",
+            "language": "mech",
+            "source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe",
+            "command": [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after",
+              "12"
+            ],
+            "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+            "runtime_environment": {},
+            "execution_fingerprint": "{\"binary_sha256\": \"3d3599f1f174915251d6323592ea81bf3dc7ca57f0f07b8f310cd6825393e004\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe\", \"support\": {\"fannkuchredux/fannkuchredux-even.mec\": \"b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe\", \"fannkuchredux/fannkuchredux.mec\": \"0a5bee0d62631abf4f200489ddf9044c9b238f0c2dcd6a074c60ec93c90fdb8f\"}}",
+            "started_at": "2026-10-12T18:09:13.113635+00:00",
+            "workload_n": 12,
+            "full_workload": true,
+            "timeout_seconds": 14400,
+            "maximum_rss_mib": 8192,
+            "power_at_start": {
+              "source": "AC Power",
+              "low_power_mode": 0
+            },
+            "seconds": 1.707638583,
+            "exit_status": 0,
+            "remaining_group_members": [],
+            "competing_compilers": [],
+            "power_changes": [],
+            "power_at_end": {
+              "source": "AC Power",
+              "low_power_mode": 0
+            },
+            "monitor_errors": [],
+            "peak_process_group_rss_kib": 1840,
+            "resource_violation": null,
+            "resource_monitor_errors": [],
+            "stderr": "",
+            "stdout_bytes": 29,
+            "stdout_sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+            "validation": {
+              "bytes": 29,
+              "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+              "reference_match": true
+            },
+            "finished_at": "2026-10-12T18:09:15.020282+00:00",
+            "valid_environment": true,
+            "pins_unchanged_at_end": true,
+            "round": 3,
+            "attempt": 6,
+            "sampler_wait_status": 0,
+            "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/fannkuchredux/full-study/attempts/006-mech-aot-control.json",
+            "supervised_native_group": {
+              "type": "native-group-started",
+              "pid": 6267,
+              "pgid": 6267,
+              "command": [
+                "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after",
+                "12"
+              ],
+              "inherited_common_mutex": true
+            },
+            "supervisor_remaining_members": [],
+            "fatal_qualification_fields": [],
+            "qualified": true,
+            "retryable_environment_only": false,
+            "environment_attempt": 1
+          }
+        ]
+      },
+      "discarded_environment_records": 0,
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/fannkuchredux/full-study/manifest.json",
+      "manifest_sha256": "3e67337e67df5dceb76ce647a709a37839aa5a010c2fe8c0a368338efb94026a",
+      "report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/fannkuchredux/full-study/report.json",
+      "report_sha256": "0caaa1b9de09aed205ff9f1c5f4978bdb9e390afac3666d50d311a560c938b1c"
+    }
+  },
+  "actual_full_processes": 24,
+  "source_samples": 3,
+  "provenance": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-18/fixture-receipt.json": "b00afe351c40fb38e03a99ec81fe3d71bd69a82726f337aa87dfb40cfcaa6b6a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/pending-minima-source-review-v1.json": "17fd108ab16283ccce0216d7fa23e59ba8cf8318a018700f941d22155d94086a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-18/candidate-audit.json": "40f116c37bc01e39b725aca5cdf81bcbcba9c2c47658cbbb30e08ae0a4498582",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/jobs/boundary-audit-18/snapshot/pending_minima_records.py": "cdf93814f3e234c4bf5410c3b85d096df22cfed732f0a9cb778625af63fb242b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/review_pending_minima_v1.py": "7071fcc08dd3dfae20bab3c2006408e4aaf65448220035db7101156823e2210c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/full-study/attempts/001-mandelbrot-lua-2.json": "8cc70585f12947b555613c836b28ab2e0b63337a83288f1b315d77359d8a2f84",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/full-study/attempts/002-mech-aot-control.json": "427714ebc58ad7da39f2dfd9bb24b17d3e249a1a24ef7085704ef84bb31b5f8a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/full-study/attempts/003-mech-aot-control.json": "e900f8f1f8def1383739bdc478efb646d9ece948fe48c11ec625ea0410acdcb3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/full-study/attempts/004-mandelbrot-lua-2.json": "5962e6b9a669dd1dc8d07e010d5c3e7ce09ee60fa069cb05e40aeef83f9aa2a8",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/full-study/attempts/005-mandelbrot-lua-2.json": "60e49f47725cb55ba87a287b9b7a38579f4cb3a44df7e3f4b1fc75f8a971053a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/full-study/attempts/006-mech-aot-control.json": "9edcb0bffe99b410cd554370207bf95edc5ed970a0e8f5f1d79601d070529c9b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/full-study/manifest.json": "97ea9ced57da4f707222dc898b7f9a9cc03bb505d5f89ee865754bad850f7861",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/full-study/report.json": "bc483f9e594c0d5a514b5a7f5864a6a6f040c1e11e81ba2bc6ff40e605261efc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/mandelbrot-lua-2.lua": "16eacf7585991619923c8add0aa9ae0c1327aa2b5f31764208fcf27a5d52f249",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/full-study/attempts/001-spectralnorm-node-7.json": "896d7c4984f78c64b6f62b805cc4a8213ca6c5e58861334faafa8c61e0da49fa",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/full-study/attempts/002-mech-aot-control.json": "1caf1818a92c1aa1af08bddb119ec70cfb9354103dd3d0ee025ed5dc46b13764",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/full-study/attempts/003-mech-aot-control.json": "3ff6f7913f2f2c3a74aa998fc845275b0c96153cdc397b53e3121e9b8e0b50cd",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/full-study/attempts/004-spectralnorm-node-7.json": "32bce5ad52afd4c9c4d6bc0e74784d10c9ac6c3fc46ddd515e73a5bf9a4250d8",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/full-study/attempts/005-spectralnorm-node-7.json": "eef4d399cf8426ccfe4ffa51550725b5389c344c4540384929f54948ed565db0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/full-study/attempts/006-mech-aot-control.json": "00fae3d097bbda1e4c3a306ff9cfd7f9425cc92224bf92ec2ab4857ecc1fd386",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/full-study/manifest.json": "679a1874d1948b800dd9f5292099b15238a2079fb47eaad32d8a08b3ab501104",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/full-study/report.json": "88feb962a5bfc94a6b8e90768610039111ff0f6f9f5dc8693281cfd5fb0a8c35",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/spectralnorm/qualification-v1/spectralnorm-node-7.js": "2dea06681168ffa46990b461ef7468f38afeb3fd955d8b3078d8918b1c5afd4a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/binarytrees/full-study/attempts/001-binarytrees-ruby-2.json": "6f3fc2199e72d94697acb90bf553e29924627c3b43f900c7b64039eb3405ebe3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/binarytrees/full-study/attempts/002-mech-aot-control.json": "cc80b29ac924720bdca6dad19ad92c4a05daae313ccc3e3084f075708a1dcc83",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/binarytrees/full-study/attempts/003-mech-aot-control.json": "008ab168cf9bc73c648a36ecd2107c60c94a7a2034495c5792f61af583e91cd9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/binarytrees/full-study/attempts/004-binarytrees-ruby-2.json": "e25f81ada637949de526a89d67c9a0d9b57996e616504dc2ba8c4ab6c5402ae9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/binarytrees/full-study/attempts/005-binarytrees-ruby-2.json": "e6df65ba35f071fbb1c43583ac039d4a7f28e9839333504be8b5d4b0886c5905",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/binarytrees/full-study/attempts/006-mech-aot-control.json": "0f6f9796bd78eb6252e2049dbb33571346dd8109f93298d77f7dade72d7277c4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/binarytrees/full-study/manifest.json": "dd0a83144f83dea6de4b9533a1627543a16675161bbc67a341a155bdda31c86d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/binarytrees/full-study/report.json": "7bfc0203952ecff7d9fe8c517158b44c2b29905499d7e9438d88e83bdcae0fe9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/binarytrees/qualification-v1/binarytrees-ruby-2.rb": "d75c541ff893ccfb5b5fa399010bc60c7f14f51d1077a0f983502ffe60f05f6c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/fannkuchredux/full-study/attempts/001-fannkuchredux-php-8.json": "9f199e0d8f59a8d80f0e91fa0669eb1985bc417fe4392ee0303b346fe81ddcbc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/fannkuchredux/full-study/attempts/002-mech-aot-control.json": "5320187cae3618628416fd3399acc971a0c750d2c84d50b159a46c3eceb480d3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/fannkuchredux/full-study/attempts/003-mech-aot-control.json": "e73cebf9810faed754f09d05a16cb4339ff1bcdb19b025495d65df054cc84e39",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/fannkuchredux/full-study/attempts/004-fannkuchredux-php-8.json": "90bac9f22d8f1b02d51f4ac8c58002ed2d3f29528fded5b13b0e938c885d568c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/fannkuchredux/full-study/attempts/005-fannkuchredux-php-8.json": "a9a095d6d3e559e4fb7c5174dc0f760df11c3521038739ff767adf555af6fa27",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/fannkuchredux/full-study/attempts/006-mech-aot-control.json": "88e3f258adf5013d7c2b3d1e4abad1c80535a4a72768e4405a68cdd0c57d39ae",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/fannkuchredux/full-study/manifest.json": "3e67337e67df5dceb76ce647a709a37839aa5a010c2fe8c0a368338efb94026a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/fannkuchredux/full-study/report.json": "0caaa1b9de09aed205ff9f1c5f4978bdb9e390afac3666d50d311a560c938b1c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/fannkuchredux/qualification-v1/fannkuchredux-php-8.php": "7931a305151ebb9d4b54ec3729931622806334296557c2153637c2ea9315b1c4"
+  },
+  "common_timing_mutex": "/tmp/mech-clbg-timing.lock",
+  "exclusive_mutex_held": true,
+  "chart_or_site_modified": false,
+  "benchmark_source_bytes_modified": false,
+  "measurements_rewritten": false,
+  "completed_at": "2026-10-12T22:53:33.926250+00:00"
+}

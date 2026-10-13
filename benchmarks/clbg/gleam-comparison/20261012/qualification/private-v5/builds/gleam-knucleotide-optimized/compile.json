@@ -1,0 +1,28 @@
+{
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v1/compiler/gleam",
+    "compile-package",
+    "--target",
+    "erlang",
+    "--no-dev",
+    "--package",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v5/packages/gleam-knucleotide-optimized",
+    "--out",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v5/applications/gleam-knucleotide-optimized",
+    "--lib",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v1/libraries"
+  ],
+  "started_at": "2026-10-13T02:32:39.609176+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 180,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 34807,
+  "identity": {
+    "pid": 34807,
+    "process_listing": "Mon Oct 12 22:32:39 2026     /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v1/compiler/gleam compile-package --target erlang --no-dev --package /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v5/packages/gleam-knucleotide-optimized --out /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v5/applications/gleam-knucleotide-optimized --lib /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v1/libraries"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-13T02:32:39.828255+00:00",
+  "final_exit_status": 0
+}

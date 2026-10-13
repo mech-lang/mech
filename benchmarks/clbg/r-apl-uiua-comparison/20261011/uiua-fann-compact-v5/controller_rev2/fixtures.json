@@ -1,0 +1,15 @@
+{
+  "status": "passed",
+  "cases": 9,
+  "failures": 0,
+  "errors": 0,
+  "actual_signals_sent": 0,
+  "native_probes": 0,
+  "controller_sha256": "12a6467da5251eded5faa0faa760809634ca9af6f8ba3111293eb5c6857eb0be",
+  "fixture_source_sha256": "5b592ac8b8fa8e4a10d110cb1e71e4a1f5040ed42fa0c389b6530c90b2b97e64",
+  "shared_mutex": "/tmp/mech-clbg-timing.lock",
+  "isolated_tempfiles": true,
+  "mocked_process_identities": true,
+  "log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/fixtures.log",
+  "log_sha256": "6f10c20aeca75ff9f07e85027d0720004527c63cdd71826110fd3c4430a16dc1"
+}

@@ -1,0 +1,15 @@
+FULL 1 scalar11 16000 8
+FULL 1 frozen29-audited 16000 8
+FULL 1 five16-loop-fma 16000 8
+FULL 1 five16-rows-loop-fma 16000 8
+FULL 1 frozen20 16000 8
+FULL 2 frozen29-audited 16000 8
+FULL 2 five16-loop-fma 16000 8
+FULL 2 frozen20 16000 8
+FULL 2 scalar11 16000 8
+FULL 2 five16-rows-loop-fma 16000 8
+FULL 3 five16-loop-fma 16000 8
+FULL 3 frozen29-audited 16000 8
+FULL 3 five16-rows-loop-fma 16000 8
+FULL 3 scalar11 16000 8
+FULL 3 frozen20 16000 8

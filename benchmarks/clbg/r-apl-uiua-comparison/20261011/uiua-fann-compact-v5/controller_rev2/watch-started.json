@@ -1,0 +1,12 @@
+{
+  "started_at": "2026-10-12T13:44:44.299858+00:00",
+  "watcher_identity": {
+    "pid": 50921,
+    "listing": "Mon Oct 12 09:44:44 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/guarded_launcher.py --watch-child --launcher-sha256 754c3350441897314bb8c389fd28b27ab31e0e3a3c225bc1c39b871256c5f239 --plan-sha256 b29989867eb1e899f31025ef7259e9593a0e9e31a07da7d9c8a101fc765a994d --inherited-lock-fd 3 --handoff-go-fd 4"
+  },
+  "plan_sha256": "b29989867eb1e899f31025ef7259e9593a0e9e31a07da7d9c8a101fc765a994d",
+  "launcher_sha256": "754c3350441897314bb8c389fd28b27ab31e0e3a3c225bc1c39b871256c5f239",
+  "inherited_common_mutex": true,
+  "inherited_descriptor_matches_lock_inode": true,
+  "native_processes_signalled": false
+}

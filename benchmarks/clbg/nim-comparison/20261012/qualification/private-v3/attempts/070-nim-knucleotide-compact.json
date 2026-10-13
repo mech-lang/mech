@@ -1,0 +1,53 @@
+{
+  "key": "knucleotide:nim-knucleotide-compact",
+  "id": "nim-knucleotide-compact",
+  "benchmark": "knucleotide",
+  "language": "nim",
+  "source_sha256": "c9e05510b0d09ed88dea67ea5a7a478ad66d36f8e71186804c154b17d964bfbc",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v3/bin/nim-knucleotide-compact",
+    "1000"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012",
+  "runtime_environment": {
+    "LC_ALL": "C",
+    "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre/8.45/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"0a757bc451e494305846f621296d46e59857dbfc3259f0c7ef160e87ebac0eaa\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v3/bin/nim-knucleotide-compact\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre/8.45/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"c9e05510b0d09ed88dea67ea5a7a478ad66d36f8e71186804c154b17d964bfbc\", \"support\": {}}",
+  "started_at": "2026-10-12T17:47:21.316792+00:00",
+  "workload_n": 1000,
+  "full_workload": false,
+  "timeout_seconds": 120,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.182726041,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 163,
+  "stdout_sha256": "9de07a431d2c38e34d24a86542d28efb5badc944dee1abfe1c8830bd0aa82ae7",
+  "validation": {
+    "reference_match": true,
+    "bytes": 163,
+    "sha256": "9de07a431d2c38e34d24a86542d28efb5badc944dee1abfe1c8830bd0aa82ae7"
+  },
+  "finished_at": "2026-10-12T17:47:21.681712+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true
+}

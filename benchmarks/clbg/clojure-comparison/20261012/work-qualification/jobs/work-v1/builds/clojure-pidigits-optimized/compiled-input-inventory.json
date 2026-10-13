@@ -1,0 +1,108 @@
+{
+  "status": "qualified-exact-observer-compiler-inputs",
+  "actual_compile_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/jdk/jdk-25.0.4.1+1/Contents/Home/bin/java",
+    "-XX:ActiveProcessorCount=8",
+    "-Xms64m",
+    "-Xmx8g",
+    "-XX:+UseG1GC",
+    "-cp",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/packages/clojure-pidigits-optimized/sources:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/packages/clojure-pidigits-optimized/support:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/clojure-1.12.6.jar:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/spec.alpha-0.5.238.jar:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/core.specs.alpha-0.4.74.jar",
+    "clojure.main",
+    "-e",
+    "(binding [*compile-path* \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized\" *compiler-options* {:direct-linking true}] (compile 'clbg.work.observer) (compile 'clbg.work.support) (compile 'clbg.pidigitsobserver.optimized))"
+  ],
+  "actual_compile_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/builds/clojure-pidigits-optimized/compile-observer.json",
+  "authored_observer_source_bundle": [
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/packages/clojure-pidigits-optimized/sources/clbg/pidigitsobserver/optimized.clj",
+      "sha256": "662acb3b82e322dd3dbee7eeae4182659f18f370040b539ed6ff165dae724bb3",
+      "role": "observed-application"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/packages/clojure-pidigits-optimized/support/clbg/work/support.clj",
+      "sha256": "b0e34f0bd6ae4b8a07e3043ce79299bfcdaa8c219985b952f231a95b09dcb92a",
+      "role": "observed-application-helper"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/proposal-seals/work-v1/packages/clojure-pidigits-optimized/support/clbg/work/observer.clj",
+      "sha256": "f69fc293d88e050b175e40f62f43dcbd4d80b01a68034d886fa6177745cd5365",
+      "role": "generic-object-and-operand-observer"
+    }
+  ],
+  "original_scored_compiled_dependency_roots": [],
+  "original_scored_compiled_dependencies": {},
+  "original_scored_compiled_input_inventory": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/builds/clojure-pidigits-optimized/compiler-input-inventory.json",
+  "original_scored_compiled_input_inventory_sha256": "3565846c67658179ac7897e3debd16ccda81d453a10d85e13c553b74ee94451c",
+  "vendor_jars": [
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/clojure-1.12.6.jar",
+      "sha256": "21b578db389a8e74b286ce79c4a7f86ec641e26d88b12f18d69030916b0e18ca"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/spec.alpha-0.5.238.jar",
+      "sha256": "94cd99b6ea639641f37af4860a643b6ed399ee5a8be5d717cff0b663c8d75077"
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/core.specs.alpha-0.4.74.jar",
+      "sha256": "eb73ac08cf49ba840c88ba67beef11336ca554333d9408808d78946e0feb9ddb"
+    }
+  ],
+  "generated_class_artifacts": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/support$jobs.class": "66a212948c7f8d591c0ed45bff8235f8ec96e56b5725572588db19fe5b6cc409",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$field.class": "f019b8560ba557d8992e699c2165448b484e4a9f73c5a6abe17dfbf9cc2d6cd1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$tree_root.class": "df80f2143c8f4abdffa56732f88be250b7a121d2563b720859ed2558387d6792",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$storage_slots$slots__189$fn__190.class": "35d1546c59b36d59deb4d8e7dbdeaa512920f236b54e4357f8b2930f6894ad13",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/support$jobs$fn__239.class": "a2bfb622abe470ce6e7b6c5d35d0d8d92701ad3df02c8d0d0542c80db07da638",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$loading__6812__auto____136.class": "de6ebb5902b8dd59b33ca6c4dde8b57013143d13f0b27f5da32fb559b56c0365",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$json$fn__151.class": "0d11d051866ed0fcb0116bd4d3fda1e669b0f04ac69145bcfb474b838e60bfa3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$emit.class": "f67c66a4e793b8b7c347816ea9cee3347266e75051b8ea826a3cb1f83270ee07",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$fn__140.class": "39a88c0ff960b46585dbbf59359e89ec5491a0685fdde7f05ef24f39b4223472",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$fn__138.class": "777af5b57316886532380f39b36478a5ac64ee1005008c8c0f7051f4a1c67ee2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$with_worker.class": "c64888974eb7b9a7f36c68c1f31a8026dafbf0ea9c88cd8b982a20d5f6281237",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$tree_root$visit__177.class": "d01eb797fe916c80d5f2e14eb5f67e5581b485a16a34bee5647cb6c043ff7547",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/support$fn__229.class": "6f33d08a0b1c90bc907b0e00bb9897e14f3dfc11173171a089507d05989dfbef",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$start_interval.class": "84a1417e9d79e8d76e291baa7d6bbbeb563c9adc0a17e354596c2efab8da12c9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$field$fn__185.class": "a9b94abd59ddb60a398d6f6c6bd7f90089e64a924cbd78fac06ba1f8b09d99ff",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$map_write$fn__196.class": "d456bdba23410e6928565b4bd86f7f101660764a2e4a3fffc0487bdb950ece8a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$object_id.class": "bda7bf287f9e56b2c1777612e2df2a28260afa5bf3af548121509c877b2ca4a0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/support$loading__6812__auto____227.class": "f1b1725b81613a9c83db295c5181e2c533c288d9687860b9a3b247b17336e549",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$end_interval.class": "0251ea673ff299034f1f23779a24992b1d66a2af5d8946e1dcd737e5bb82c62b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$tree_root$fn__180.class": "f0865fd48b967c4a607436465a8f0bb8d4693511efcdfd69b97321b367905a82",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$json_string.class": "6d07cce591405dbbaaea1d7d83c044e04b3745794c1923647c3e30f2f98a0582",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$map_return$fn__205.class": "c561e7c16f6463789babdb1d1d1da783d62f1f9d23ea211fb5a3d3c61d4a8119",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$maps_received.class": "878f92b836d411c5972a129da2147c8cd4b55007964c98d0995c057a08f9be06",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$json.class": "20d41593a03f6c9b5f25a17090fa06beb9bda904d20533cd415b4dffee4ab508",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/support$printf.class": "eca1cb496d0692444e84f13414b7b4e523056aae8eed3d06359d713853b19d93",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/support$input_text.class": "2295b5967777d13d3b25f72aec5e3c405b4529787bcfc68df2842afcefed6620",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/support__init.class": "4e981b86309a49bf67c7cb1330901ed8b482c0421d6cc60cfb186503c40492fc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$finish$fn__224.class": "3bf722c894fa8d7be715b26b412e4723f38f2ac619f6112fd2c409fccc5a0bc3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$map_write.class": "62a0ae85524dc213c273fc0be4308f625c46f9bb131c644b198e60b365b15910",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$json_string$fn__146.class": "a3239963040eaf4970618d443aad78fd44cb13a3057e00fb8e99a7955d95f8bd",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$join_values$fn__168.class": "76c24787906290dade7a658b142eb3c0cb0777b0b80192400de1f74d58b1b6f7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/support$argument.class": "89b7892b2733a5fd0b8b80597da3e59c587b7b82b311a0dd62e9ff3aef2d6848",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$map_return.class": "69f114f6225b210043f202729d4858df35c221ee8292b0949f6c5951f3443754",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$map_start.class": "6ad029c0523e6fcd92856daccbfc1804b7093530dee9557b0acfbf02e795e186",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$join_values.class": "467ea6e5033334888aa0b26d38afe659a39a2a919c4aeb49fe308b5ab516cfff",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$finish.class": "2d3fa0afb4af0c7cc8263c8526ee9cb6318010026a5d29004a574702e2abb595",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/support$jobs$fn$reify__236.class": "7ddca2348113f2e28efa7f93122afdc32bdaf1e24cee602c9fc846b1d07415ac",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$map_return$fn__200.class": "c6fc90dadd3129227eef3c7cca77bcef5dc721f58ede8f0a5b0bfefe27dd341c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$join_values$fn__172.class": "34481547d896906c52561185707e038ebc59ce604ad2a287238d27338b783a58",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$storage_slots$slots__189.class": "65039a726dff271f02ef71dc272b7eeceee8639e2bae12a57a6638652b6998c1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/support$jobs$fn__235.class": "e59b9fa61b94631e9a53cabbbdd8a4e2eb47f16dee9b78bc85790ac70ba7e68b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer__init.class": "17e8ace76dbf514b53e7a1fd3a132723ee3ef80befd88035dbd68f5990f1f393",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$pi_step.class": "e861db41dbc4c38f6093ca9e8b996134e92726a6e029ae6306f96b6ec3fd6efc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$join_values$fn__170.class": "1ae1eb08a063121cf9ed8d3fe32177ddd1a57dee61007aaeba0d4cb92b8f81d3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/work/observer$storage_slots.class": "146d9008ca4db77f3e1f83d471d2c906babf37e6824e25cc2e2efb9e5565064e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/pidigitsobserver/optimized$loading__6812__auto____242.class": "a11b4931a5bf1b6e05dcd72b25bf9fa217034efbccfa62305308183ff8eb6fe2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/pidigitsobserver/optimized$run_scored.class": "0082416d1c12a60b9c09782d1ebd87c17b26cf35f7873b0e061bdbf69e12a825",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/pidigitsobserver/optimized$integer.class": "ce24eb837cc8753eae7c8fb87585f4da99726167ae06513b9649cfced2c32c41",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/pidigitsobserver/optimized$_main.class": "453c01b0c5d71236099ed9804ce5a9940150d712fc6194ab1df44e09a2db1e14",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/pidigitsobserver/optimized.class": "df2779dc1d18ffa1be9bde6c4fbe995da57b186c5dd73cf3471696796cd476da",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/pidigitsobserver/optimized$fn__244.class": "c368dbcdc6c4654152f6b4e20e24cfc880b9e2bb91833c8820255699507dc480",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-pidigits-optimized/clbg/pidigitsobserver/optimized__init.class": "c22cb6213ef209ac314c2a5cc4a5d881fade9b55296831a5b14dd8b82afe5d31"
+  },
+  "observed_main_namespace": "clbg.pidigitsobserver.optimized",
+  "observed_helper_namespace": "clbg.work.support",
+  "no_original_authored_source_directory_on_classpath": true
+}

@@ -1,0 +1,11 @@
+{
+  "pid": 41555,
+  "launched_at": "2026-10-12T12:37:42.170690+00:00",
+  "command": [
+    "/tmp/mech-nbody-plot-runtime/bin/python3",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/bootstrap.py"
+  ],
+  "log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/bootstrap.log",
+  "report_only": true
+}

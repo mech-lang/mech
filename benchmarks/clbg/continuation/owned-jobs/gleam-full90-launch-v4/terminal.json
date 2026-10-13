@@ -1,0 +1,20 @@
+{
+  "status": "command-exited-zero-awaiting-report-review",
+  "started_at": "2026-10-13T12:09:19.757900+00:00",
+  "worker_identity": {
+    "pid": 3622,
+    "listing": "3622     1 Tue Oct 13 08:09:19 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/gleam-full90-launch-v4 --lease-fd 3 --go-fd 4"
+  },
+  "actual_command_started": true,
+  "exit_code": 0,
+  "qualification_granted": false,
+  "automatic_retry": false,
+  "command_pid": 3630,
+  "command_identity": {
+    "pid": 3630,
+    "listing": "3630  3622 Tue Oct 13 08:09:19 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u revisions/work-full-v4/launch_all.py --revision full-v4 --index-sha256 d5eff42c8f88733af92a8e597b3e02c2b3e8212b24b827b17a494cfabd54497b"
+  },
+  "command_identity_observation_missing": false,
+  "finished_at": "2026-10-13T12:12:27.408191+00:00",
+  "stop_signals": []
+}

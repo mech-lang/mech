@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/usr/bin/xcrun",
+    "--show-sdk-path"
+  ],
+  "started_at": "2026-10-12T16:47:20.277302+00:00",
+  "inherited_common_mutex": true,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "timeout_seconds": 30,
+  "pid": 82280,
+  "identity": {
+    "pid": 82280,
+    "process_listing": "Mon Oct 12 12:47:20 2026     (xcrun)"
+  },
+  "exit_status": 0,
+  "final_exit_status": 0,
+  "finished_at": "2026-10-12T16:47:20.361737+00:00"
+}

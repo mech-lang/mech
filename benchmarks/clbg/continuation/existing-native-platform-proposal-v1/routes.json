@@ -1,0 +1,73 @@
+{
+  "status": "source-only-existing-platform-routes-awaiting-root-review-and-guarded-history-qualification",
+  "current_selected_rows": 133,
+  "current_selected_counts": {"c": 18, "cpp": 18, "rust": 19, "mech": 15, "mech-jit": 14, "mech-resident": 14, "julia": 17, "javascript": 18},
+  "verified": false,
+  "chart_admission": false,
+  "source_or_timing_mutations": 0,
+  "routes": {
+    "c": {"proposed_backend": "native-aot", "execution": "aot", "proof": "Exact saved native compile command and output, historical executable SHA or retime command-asset pin, complete measured source and original sample/report binding. Saved compiler version only when independently linked to its actual compile command."},
+    "cpp": {"proposed_backend": "native-aot", "execution": "aot", "proof": "Same native build boundary as C; separate summary/replication origin for local shared-products row. Compiler family is actual saved compiler, never upstream submission label."},
+    "rust": {"proposed_backend": "native-aot", "execution": "aot", "proof": "Saved rustc native command or exact Cargo manifest/dependency-lock/native-output lineage, historical executable SHA and actual command/sample/source. Shared-products and floating-CDF have separate saved local source/build records."},
+    "mech": {"proposed_backend": "native-aot", "execution": "aot", "proof": "Each of six timing report families independently resolves to its real source/build/native-object/native-binary origin. Linker/emitter command and actual executed binary SHA bind the authored main; no upstream or present compiler substitution."},
+    "mech-jit": {"proposed_backend": "native-jit", "execution": "jit", "proof": "Final execution-mode timing row explicitly says mode=jit, invokes the exact host/source/mode/optimization flags and records host SHA. Final objects and earlier source builds plus exact source/runner hashes are preserved; final host is not replaced by earlier build runner."},
+    "mech-resident": {"proposed_backend": "native-interpreter", "execution": "interpreted", "proof": "Actual after-phase row explicitly says resident, exact after host SHA/source/command, integration baseline and saved resident Machine::call disassembly/code-path audit. Preserve loaded-region sample time and its original full-process/preparation fields."},
+    "julia": {"proposed_backend": "native-runtime", "execution": "unknown", "proof": "Actual saved Julia version/runtime invocation and corresponding cohort producer/source/sample binding prove native runtime platform. Upgrade to native-jit only with actual saved mode evidence; execution_mode=julia is not the literal jit. Retime command-assets separately preserve historical binary SHA. Later regex/Pi retain missing historical byte identity without losing a proved platform; never borrow an older pin merely from equal path/version."},
+    "javascript": {"proposed_backend": "javascript-runtime", "execution": "unknown", "proof": "Saved actual Node command/version/runtime source receipt plus corresponding cohort producer/sample binding can prove JavaScript platform. Retain unknown execution when original ambient NODE_OPTIONS was not captured, and separate missing historical executable byte identity. Legacy regex cannot borrow an older pin merely from equal path/version."}
+  },
+  "frontend_backend_additions_owned_by_root": {
+    "native-jit": {"platform": "native", "execution": "jit"},
+    "native-interpreter": {"platform": "native", "execution": "interpreted"},
+    "javascript-runtime": {"platform": "javascript", "execution": "unknown"},
+    "native-runtime_candidate": {"platform": "native", "execution": "unknown", "status": "proposed-to-root-for-mode-unclassified-native-runtime-history"}
+  },
+  "native_report_routes": [
+    "retime/results/apple-m3-ac-normal-20261008.json",
+    "nbody/experiments/20261009-local-simd/final-confirmation-50m.json",
+    "nbody/experiments/20261011-shared-products/replication-50m.json",
+    "nbody/experiments/20261011-shared-products/summary.json",
+    "regexredux/results/apple-m3-ac-normal-20261009.json",
+    "pidigits/results/apple-m3-ac-normal-20261009.json",
+    "remaining-conformance/signed-division-confirmation.json",
+    "fasta/investigations/20261009-floating-cdf/results.json"
+  ],
+  "mech_aot_extra_routes": [
+    "additional-languages/20261009-full-suite/results/timings.json",
+    "function-application-audit/20261009T171437Z/application-v3/timings.json",
+    "function-application-audit/20261009T171437Z/application-v3/builds.json",
+    "work-audit/20261009/timings.json",
+    "work-audit/20261009/builds.json",
+    "mandelbrot/experiments/20261011-array-state/full-study/report.json",
+    "mandelbrot/experiments/20261011-array-state/full-study/manifest.json"
+  ],
+  "mech_mode_extra_routes": [
+    "execution-modes/20261010-final/timings.json",
+    "execution-modes/20261010-final/objects.json",
+    "execution-modes/20261010/builds.json",
+    "execution-modes/20261010-final/conformance.json",
+    "execution-modes/20261010-final/aot-runtime-control.json",
+    "interpreter-integration/20261011/timings.json",
+    "interpreter-integration/20261011/baseline.json",
+    "interpreter-integration/20261011/codegen-inspection.json"
+  ],
+  "javascript_extra_routes": [
+    "fast-scripting/results/apple-m3-ac-normal-20261009.json",
+    "pidigits-work-audit/20261011/results/timings.json",
+    "pidigits-work-audit/20261011/audit.json"
+  ],
+  "unknown_reason_codes": [
+    "missing-historical-runtime-binary-binding",
+    "missing-historical-native-build-output-binding",
+    "missing-historical-mode-runtime-source-binding",
+    "unrecorded-legacy-runtime-execution-options",
+    "source-build-sample-identity-mismatch",
+    "ambiguous-report-record-or-origin",
+    "unreviewed-existing-platform-program",
+    "missing-or-changed-preserved-evidence"
+  ],
+  "confidence_fields": ["historical_platform_verified", "historical_execution_verified", "historical_executable_bytes_verified"],
+  "confidence_rule": "Saved actual version/command/runtime receipt plus corresponding cohort producer/source/sample binding may prove platform while execution and executable-byte identity remain separately unknown. Missing mode or byte evidence does not erase proved platform; missing cohort-bound runtime observation does. Mode-specific native-jit/interpreter keys require actual saved mode evidence. All draft confidence flags remain false until guarded qualification.",
+  "current_binaries_rule": "An under-lock hash of an available artifact can corroborate an existing historical SHA, never create the missing historical SHA or a historical compiler/runtime version. Newly observed Mach-O/image metadata must be labeled as observation of the exact unchanged historical artifact; it never stands in for a saved measurement/runtime receipt.",
+  "sample_rule": "Require exact preserved displayed array and median, minimum three actual samples; retain seven-sample confirmation arrays and loaded-interpreter timing boundary. No sample conversion, warmed-process reinterpretation or retiming.",
+  "existing100_and_new120": "Both already reviewed routes remain separate immutable inputs. This additive route does not alter their qualified rows or erase unknown records; stage all selected existing identities before endpoint selection, then combine compatible disjoint changes transactionally."
+}

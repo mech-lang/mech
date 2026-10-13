@@ -1,0 +1,17 @@
+WAIT LOCK: seal Pony source/preparation proposal
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/guarded_prepare_v5.py", line 555, in <module>
+    main()
+    ~~~~^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/guarded_prepare_v5.py", line 548, in main
+    seal(args.proposal_file)
+    ~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/guarded_prepare_v5.py", line 102, in seal
+    owned_command(guard, harness, [sys.executable, '-B', '-m', 'unittest', '-v', 'test_guarded_prepare_v4', 'test_proof_reuse_v4', 'test_proof_reuse_v5'],
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                  dict(os.environ), seal_output, lock.fileno(), 30, 'ownership-fixtures')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/guarded_prepare_v5.py", line 174, in owned_command
+    assert process.returncode == 0, ('Owned command failed', name, process.returncode)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('Owned command failed', 'ownership-fixtures', 1)

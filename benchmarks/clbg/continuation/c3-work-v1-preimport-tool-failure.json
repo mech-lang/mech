@@ -1,0 +1,11 @@
+{
+  "recorded_at": "2026-10-13T02:11:26.881059+00:00",
+  "evidence_origin": "Actual exec_command tool result from this turn",
+  "tool_chunk_id": "71a7ac",
+  "exit_code": 1,
+  "actual_native_cases": 0,
+  "actual_fixture_cases": 0,
+  "source": "benchmarks/clbg/c3-comparison/20261012/revisions/work-full-v1/qualify_work.py",
+  "output": "  File \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/work-full-v1/qualify_work.py\", line 273\n    report['source_reviews'].append(dict(profile=row['id'], status='passed',\n                                   ^\nSyntaxError: '(' was never closed\n",
+  "historical_source_and_failed_packet_preserved": true
+}

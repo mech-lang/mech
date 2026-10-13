@@ -1,0 +1,53 @@
+{
+  "key": "fannkuchredux:nim-fannkuchredux-compact",
+  "id": "nim-fannkuchredux-compact",
+  "benchmark": "fannkuchredux",
+  "language": "nim",
+  "source_sha256": "57cc5adf96e38204127c5069077da3608bf1cd5c40965e968c3e9c3c4c894fcc",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v4/bin/nim-fannkuchredux-compact",
+    "5"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012",
+  "runtime_environment": {
+    "LC_ALL": "C",
+    "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre/8.45/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"5b30b6ae26c010080a48189459958abc0b24fac3bc73d9815bc93fe9a651075d\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v4/bin/nim-fannkuchredux-compact\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre/8.45/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"57cc5adf96e38204127c5069077da3608bf1cd5c40965e968c3e9c3c4c894fcc\", \"support\": {}}",
+  "started_at": "2026-10-12T19:35:13.472812+00:00",
+  "workload_n": 5,
+  "full_workload": false,
+  "timeout_seconds": 120,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.007994791,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 22,
+  "stdout_sha256": "e9a8b35247e69dddecaf5a1d4427d747d7690dee1f9366bd0f1a5617ee550578",
+  "validation": {
+    "reference_match": true,
+    "bytes": 22,
+    "sha256": "e9a8b35247e69dddecaf5a1d4427d747d7690dee1f9366bd0f1a5617ee550578"
+  },
+  "finished_at": "2026-10-12T19:35:13.664315+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true
+}

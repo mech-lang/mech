@@ -1,0 +1,61 @@
+{
+  "status": "passed",
+  "started_at": "2026-10-13T01:17:57.233092+00:00",
+  "exclusive_common_timing_mutex_held": true,
+  "expected_program_count": 100,
+  "expected_fixture_count": 6,
+  "required_fixture_ids": [
+    "test_qualify_metadata.MetadataEvidence.test_java_saved_jit_and_classpath_are_required",
+    "test_qualify_metadata.MetadataEvidence.test_dotnet_host_dll_cannot_be_reclassified_as_native_aot",
+    "test_qualify_metadata.MetadataEvidence.test_native_aot_requires_saved_publish_and_native_command",
+    "test_qualify_metadata.MetadataEvidence.test_native_arm64_header_rejects_x86_and_non_native_bytes",
+    "test_qualify_metadata.MetadataEvidence.test_changed_partial_nan_or_fabricated_samples_are_rejected",
+    "test_qualify_metadata.MetadataEvidence.test_exact_inventory_and_preserved_identity_are_required"
+  ],
+  "actual_started_fixture_ids": [
+    "test_qualify_metadata.MetadataEvidence.test_changed_partial_nan_or_fabricated_samples_are_rejected",
+    "test_qualify_metadata.MetadataEvidence.test_dotnet_host_dll_cannot_be_reclassified_as_native_aot",
+    "test_qualify_metadata.MetadataEvidence.test_exact_inventory_and_preserved_identity_are_required",
+    "test_qualify_metadata.MetadataEvidence.test_java_saved_jit_and_classpath_are_required",
+    "test_qualify_metadata.MetadataEvidence.test_native_aot_requires_saved_publish_and_native_command",
+    "test_qualify_metadata.MetadataEvidence.test_native_arm64_header_rejects_x86_and_non_native_bytes"
+  ],
+  "tests_run": 6,
+  "actual_native_processes": 0,
+  "runtime_version_reruns": 0,
+  "benchmark_replays": 0,
+  "chart_admission": false,
+  "dataset_mutated": false,
+  "sources_mutated": false,
+  "timings_mutated": false,
+  "automatic_retry": false,
+  "preserved_failed_prerequisite": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-qualification-v1/qualification-receipt.json",
+    "sha256": "ec2beab55610fd08a99677fe100ec15e22ae3bbb2ca1e93692c29e48e8761f95",
+    "actual_passed_fixture_count": 6,
+    "failed_stage": "original-versus-retime-command-lineage",
+    "raw_log": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-qualification-v1/fixtures.log",
+      "sha256": "23880f0d2518b31d29c3dfc77ec69e616373b5ca426567d10a4613f2ab12a3b6"
+    },
+    "native_processes": 0,
+    "metadata_output_created": false
+  },
+  "discovered_fixture_ids": [
+    "test_qualify_metadata.MetadataEvidence.test_changed_partial_nan_or_fabricated_samples_are_rejected",
+    "test_qualify_metadata.MetadataEvidence.test_dotnet_host_dll_cannot_be_reclassified_as_native_aot",
+    "test_qualify_metadata.MetadataEvidence.test_exact_inventory_and_preserved_identity_are_required",
+    "test_qualify_metadata.MetadataEvidence.test_java_saved_jit_and_classpath_are_required",
+    "test_qualify_metadata.MetadataEvidence.test_native_aot_requires_saved_publish_and_native_command",
+    "test_qualify_metadata.MetadataEvidence.test_native_arm64_header_rejects_x86_and_non_native_bytes"
+  ],
+  "failures": [],
+  "errors": [],
+  "skips": [],
+  "expected_failures": [],
+  "unexpected_successes": [],
+  "raw_fixture_log": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-qualification-v2/fixtures.log",
+    "sha256": "23880f0d2518b31d29c3dfc77ec69e616373b5ca426567d10a4613f2ab12a3b6"
+  }
+}

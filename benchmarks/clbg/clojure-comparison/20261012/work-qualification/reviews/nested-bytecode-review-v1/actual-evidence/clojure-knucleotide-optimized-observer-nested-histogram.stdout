@@ -1,0 +1,65 @@
+Compiled from "optimized.clj"
+public final class clbg.knucleotideobserver.optimized$histogram_raw$fn__252 extends clojure.lang.AFunction {
+  long next_key;
+
+  java.lang.Object table;
+
+  public static final java.lang.Object const__2;
+
+  public clbg.knucleotideobserver.optimized$histogram_raw$fn__252(long, java.lang.Object);
+    Code:
+         0: aload_0
+         1: invokespecial #14                 // Method clojure/lang/AFunction."<init>":()V
+         4: aload_0
+         5: lload_1
+         6: putfield      #16                 // Field next_key:J
+         9: aload_0
+        10: aload_3
+        11: putfield      #18                 // Field table:Ljava/lang/Object;
+        14: return
+
+  public java.lang.Object invoke();
+    Code:
+         0: aload_0
+         1: getfield      #18                 // Field table:Ljava/lang/Object;
+         4: ldc           #22                 // String put
+         6: iconst_2
+         7: anewarray     #24                 // class java/lang/Object
+        10: dup
+        11: iconst_0
+        12: aload_0
+        13: getfield      #16                 // Field next_key:J
+        16: invokestatic  #30                 // Method clojure/lang/Numbers.num:(J)Ljava/lang/Number;
+        19: aastore
+        20: dup
+        21: iconst_1
+        22: aload_0
+        23: getfield      #18                 // Field table:Ljava/lang/Object;
+        26: ldc           #32                 // String getOrDefault
+        28: iconst_2
+        29: anewarray     #24                 // class java/lang/Object
+        32: dup
+        33: iconst_0
+        34: aload_0
+        35: getfield      #16                 // Field next_key:J
+        38: invokestatic  #30                 // Method clojure/lang/Numbers.num:(J)Ljava/lang/Number;
+        41: aastore
+        42: dup
+        43: iconst_1
+        44: getstatic     #35                 // Field const__2:Ljava/lang/Object;
+        47: aastore
+        48: invokestatic  #41                 // Method clojure/lang/Reflector.invokeInstanceMethod:(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;
+        51: invokestatic  #47                 // Method clojure/lang/RT.longCast:(Ljava/lang/Object;)J
+        54: invokestatic  #51                 // Method clojure/lang/Numbers.inc:(J)J
+        57: invokestatic  #30                 // Method clojure/lang/Numbers.num:(J)Ljava/lang/Number;
+        60: aastore
+        61: invokestatic  #41                 // Method clojure/lang/Reflector.invokeInstanceMethod:(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;
+        64: areturn
+
+  public static {};
+    Code:
+         0: lconst_0
+         1: invokestatic  #59                 // Method java/lang/Long.valueOf:(J)Ljava/lang/Long;
+         4: putstatic     #35                 // Field const__2:Ljava/lang/Object;
+         7: return
+}

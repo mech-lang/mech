@@ -1,0 +1,72 @@
+{
+  "key": "nbody:gleam-nbody-compact",
+  "id": "gleam-nbody-compact",
+  "benchmark": "nbody",
+  "language": "gleam",
+  "source_sha256": "99b7ed3081277010229e6cba012aef3a1ca580a42d17c9e40a643a6baa633d8b",
+  "command": [
+    "/opt/homebrew/Cellar/erlang/29.1.1_2/bin/erl",
+    "+S",
+    "8:8",
+    "+A",
+    "1",
+    "+SDcpu",
+    "1:1",
+    "+SDio",
+    "1",
+    "-noshell",
+    "-noinput",
+    "-pa",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-nbody-compact/ebin",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v1/libraries/gleam_stdlib/ebin",
+    "-s",
+    "clbg_runner",
+    "main",
+    "-extra",
+    "0"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012",
+  "runtime_environment": {
+    "PATH": "/opt/homebrew/Cellar/erlang/29.1.1_2/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+    "LC_ALL": "C",
+    "ERL_FLAGS": "+S 8:8 +A 1 +SDcpu 1:1 +SDio 1",
+    "ERL_CRASH_DUMP": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/qualification/private-v4/erl_crash.dump",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"ef68f389ca08a7984d2cfbf9beedc44a111cf42215f77d020c3868a9a6ef88f1\", \"command\": [\"/opt/homebrew/Cellar/erlang/29.1.1_2/bin/erl\", \"+S\", \"8:8\", \"+A\", \"1\", \"+SDcpu\", \"1:1\", \"+SDio\", \"1\", \"-noshell\", \"-noinput\", \"-pa\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/applications/gleam-nbody-compact/ebin\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v1/libraries/gleam_stdlib/ebin\", \"-s\", \"clbg_runner\", \"main\", \"-extra\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012\", \"environment\": {\"ERL_CRASH_DUMP\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/qualification/private-v4/erl_crash.dump\", \"ERL_FLAGS\": \"+S 8:8 +A 1 +SDcpu 1:1 +SDio 1\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"PATH\": \"/opt/homebrew/Cellar/erlang/29.1.1_2/bin:/usr/bin:/bin:/usr/sbin:/sbin\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"99b7ed3081277010229e6cba012aef3a1ca580a42d17c9e40a643a6baa633d8b\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-nbody-compact/src/benchmark.gleam\": \"99b7ed3081277010229e6cba012aef3a1ca580a42d17c9e40a643a6baa633d8b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-nbody-compact/src/clbg_io.gleam\": \"34c68812594ab7472e7a2318e0ce22b8eae5b176465ce4dc85a19021d197a6eb\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-nbody-compact/src/clbg_io_ffi.erl\": \"c4c84235a88dcc32e07619e4eb66281fa913cf9d0f699207e14c08eafa892c39\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v4/packages/gleam-nbody-compact/src/clbg_runner.erl\": \"ba95e660c20543288d70602f8788b5cab5666a6e5a05b5a0e8d51315210e1190\"}}",
+  "started_at": "2026-10-13T01:49:52.115620+00:00",
+  "workload_n": 0,
+  "full_workload": false,
+  "timeout_seconds": 120,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.113902625,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 26,
+  "stdout_sha256": "34bc4d4151edc6b41bc68a7fe45586dd7470bf3a202be66a5e760a00f47f4580",
+  "validation": {
+    "reference_match": true,
+    "bytes": 26,
+    "sha256": "34bc4d4151edc6b41bc68a7fe45586dd7470bf3a202be66a5e760a00f47f4580"
+  },
+  "finished_at": "2026-10-13T01:49:52.450636+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true
+}

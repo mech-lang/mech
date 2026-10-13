@@ -1,0 +1,162 @@
+{
+  "schema_version": 1,
+  "status": "static-after-job13-proposal-not-executed-not-admitted",
+  "frozen_evidence": "jobs/boundary-audit-13/candidate-audit.json",
+  "prior_run_reported_by_parent": {
+    "fixture_methods": 611,
+    "passed": 611,
+    "candidate_registrations": 543,
+    "source_identities": 811
+  },
+  "scope": "Two exact C# sources, three complete extern prototypes and one identifier-assignment arrow method. No source files or frozen jobs changed. No parser imports, normalization, tests, lexer, hashes, builds, Git or job execution by reviewer.",
+  "fixture_methods_drafted": 51,
+  "added_methods": 5,
+  "old_fixture_expectations_changed": false,
+  "general_rules": {
+    "prototype": "Complete explicit typed name/formals/semicolon span is one header; separate attribute owners remain separate units. No written body/close is imputed.",
+    "single_assignment_arrow": "One named method header plus one written identifier assignment with proved scalar RHS:2; no imputed close.",
+    "pure_arrow": "Existing scalar expression method remains one definition unit.",
+    "chain": "Header1 plus N explicit assignments is exposed numerically; existing body/scope review gate retained until complete ownership proof is reviewed.",
+    "unknown_sequences": "Nested/parenthesized effects, commas with additional assignments, callbacks and unknown composition retain existing gates."
+  },
+  "new_result_metadata": "method_statement_owners",
+  "sources": [
+    {
+      "source_sha256_from_frozen_job": "4d4a9abfb13ab40f4d75269cf00e472cb73be9ea96359377d84e8920b4820466",
+      "path_from_frozen_job": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/regexredux-csharpcore-2-arm64-faithful.cs",
+      "source_identities": [
+        "4d4a9abfb13ab40f4d75269cf00e472cb73be9ea96359377d84e8920b4820466:csharp",
+        "4d4a9abfb13ab40f4d75269cf00e472cb73be9ea96359377d84e8920b4820466:csharp-aot"
+      ],
+      "current_registrations": [
+        "regexredux:regexredux-csharpcore-2-arm64-faithful-jit",
+        "regexredux:regexredux-csharpcore-2-arm64-faithful-aot"
+      ],
+      "baseline_proposed_loc": 118,
+      "baseline_diagnostics": [
+        {
+          "kind": "foreign-complex-declaration-review",
+          "message": "Possible packed declaration has an unresolved type/initializer/continuation form.",
+          "offset": 5109,
+          "line": 143,
+          "column": 1,
+          "bounded_source_text": [
+            {
+              "line": 142,
+              "text": "        [DllImport(\"/opt/homebrew/opt/pcre2/lib/libpcre2-8.0.dylib\", EntryPoint = \"pcre2_compile_8\", CharSet = CharSet.Ansi)]"
+            },
+            {
+              "line": 143,
+              "text": "        extern static IntPtr PcreCompile(string pattern, long length, uint options,"
+            },
+            {
+              "line": 144,
+              "text": "            out int errorcode, out long erroroffset, IntPtr ccontext);"
+            },
+            {
+              "line": 145,
+              "text": ""
+            }
+          ]
+        },
+        {
+          "kind": "foreign-complex-declaration-review",
+          "message": "Possible packed declaration has an unresolved type/initializer/continuation form.",
+          "offset": 5593,
+          "line": 150,
+          "column": 1,
+          "bounded_source_text": [
+            {
+              "line": 149,
+              "text": "        [DllImport(\"/opt/homebrew/opt/pcre2/lib/libpcre2-8.0.dylib\", EntryPoint = \"pcre2_jit_match_8\", CharSet = CharSet.Ansi)]"
+            },
+            {
+              "line": 150,
+              "text": "        extern unsafe static int PcreJitMatch(IntPtr code, byte* subject,"
+            },
+            {
+              "line": 151,
+              "text": "            long length, long startoffset, int options, IntPtr match_data, IntPtr mcontext);"
+            },
+            {
+              "line": 152,
+              "text": ""
+            }
+          ]
+        },
+        {
+          "kind": "foreign-complex-declaration-review",
+          "message": "Possible packed declaration has an unresolved type/initializer/continuation form.",
+          "offset": 6575,
+          "line": 163,
+          "column": 1,
+          "bounded_source_text": [
+            {
+              "line": 162,
+              "text": "        [DllImport(\"/opt/homebrew/opt/pcre2/lib/libpcre2-8.0.dylib\", EntryPoint = \"pcre2_substitute_8\", CharSet = CharSet.Ansi)]"
+            },
+            {
+              "line": 163,
+              "text": "        extern unsafe static int PcreSubstitute(IntPtr code, byte* subject,"
+            },
+            {
+              "line": 164,
+              "text": "            long length, long startoffset, int options, IntPtr match_data, IntPtr mcontext,"
+            },
+            {
+              "line": 165,
+              "text": "            byte* replacement, long rlength, byte* outputbuffer, ref long outlength);"
+            }
+          ]
+        }
+      ],
+      "proposed_direct_count_delta": -4,
+      "anticipated_loc_after_locked_recount": 114,
+      "admission": "Unexecuted exact-source proposal, requiring new frozen common-mutex fixture/source qualification."
+    },
+    {
+      "source_sha256_from_frozen_job": "62e1b2282931b6c1091c8406fd700abac2ddde44cc362536034380817b85e393",
+      "path_from_frozen_job": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/fasta-csharpcore-9-arm64-faithful.cs",
+      "source_identities": [
+        "62e1b2282931b6c1091c8406fd700abac2ddde44cc362536034380817b85e393:csharp",
+        "62e1b2282931b6c1091c8406fd700abac2ddde44cc362536034380817b85e393:csharp-aot"
+      ],
+      "current_registrations": [
+        "fasta:fasta-csharpcore-9-arm64-faithful-jit",
+        "fasta:fasta-csharpcore-9-arm64-faithful-aot"
+      ],
+      "baseline_proposed_loc": 144,
+      "baseline_diagnostics": [
+        {
+          "kind": "foreign-expression-method-body-review",
+          "message": "Expression method contains non-scalar or unresolved binding/executable composition.",
+          "offset": 461,
+          "line": 16,
+          "column": 1,
+          "bounded_source_text": [
+            {
+              "line": 15,
+              "text": "    [MethodImpl(MethodImplOptions.AggressiveInlining)]"
+            },
+            {
+              "line": 16,
+              "text": "    static uint Rand() => seed = (seed * IA + IC) % IM;"
+            },
+            {
+              "line": 17,
+              "text": ""
+            },
+            {
+              "line": 18,
+              "text": "    const int BUFLINES = 100;"
+            }
+          ]
+        }
+      ],
+      "proposed_direct_count_delta": 1,
+      "anticipated_loc_after_locked_recount": 145,
+      "admission": "Unexecuted exact-source proposal, requiring new frozen common-mutex fixture/source qualification."
+    }
+  ],
+  "required_validation": "Parent must freeze all dependency/test/receipt files and run a new full common-mutex fixture job and source audit; these anticipated deltas are not certified counts."
+}

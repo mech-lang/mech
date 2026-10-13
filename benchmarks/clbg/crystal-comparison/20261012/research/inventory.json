@@ -1,0 +1,405 @@
+{
+  "status": "primary-source-research-only",
+  "builds": 0,
+  "probes": 0,
+  "hash_sweeps": 0,
+  "website_changes": 0,
+  "toolchain": {
+    "version": "1.21.1",
+    "source_commit": "73ea5c2b1bc3b3ac0ba400aa9da77af96f63d6ef",
+    "tag_object": "da06ee9c9f5bbbba7bfb37d04ddd4b84294995ff",
+    "release_published_at": "2026-09-26T12:21:28Z",
+    "asset_name": "crystal-1.21.1-1-darwin-universal.tar.gz",
+    "asset_url": "https://github.com/crystal-lang/crystal/releases/download/1.21.1/crystal-1.21.1-1-darwin-universal.tar.gz",
+    "asset_bytes": 59333512,
+    "publisher_digest": "sha256:ba34fa7fb8bc8b951f12d17e12f69c9d7ccce38900caa4b8a17f1b4f29d37605",
+    "publisher_digest_locally_verified": false,
+    "archive_downloaded": false,
+    "installed": false,
+    "platform": "darwin-universal",
+    "native_arm64_supported": true,
+    "planned_common_build_flags": [
+      "--release",
+      "--no-debug",
+      "--mcpu",
+      "native"
+    ],
+    "llvm_backend": true
+  },
+  "language": {
+    "name": "Crystal",
+    "release_year": 2014,
+    "release_year_basis": "First official release 0.1.0, dated 19 June 2014 in the official release index; development birth in 2011 is separate.",
+    "release_year_source": "https://crystal-lang.org/releases/",
+    "github_color": "#000100",
+    "color_source_commit": "5fbdfcb8133be2bed88bf3ce62b2335f50474525",
+    "color_source": "https://github.com/github-linguist/linguist/blob/5fbdfcb8133be2bed88bf3ce62b2335f50474525/lib/linguist/languages.yml",
+    "proposed_existing_group": [
+      "aot"
+    ],
+    "additional_descriptors": [
+      "statically typed",
+      "object oriented",
+      "garbage collected"
+    ],
+    "classification_status": "research metadata; no chart/list added",
+    "dark_background_note": "Near-black official color needs a visibility treatment reviewed with existing palette; no arbitrary new hue selected."
+  },
+  "inventory": {
+    "published_candidate_count": 21,
+    "workloads": [
+      "binarytrees",
+      "fannkuchredux",
+      "fasta",
+      "knucleotide",
+      "mandelbrot",
+      "nbody",
+      "pidigits",
+      "regexredux",
+      "revcomp",
+      "spectralnorm"
+    ],
+    "missing_published_workloads": [],
+    "current_game_status": "Crystal is absent from the current Benchmarks Game language comparison index; these are published community ports, not current official measured submissions.",
+    "current_game_source": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html"
+  },
+  "parallelism": {
+    "version": "1.21.1",
+    "default_compute_capacity": 1,
+    "required_opt_in": "Fiber::ExecutionContext.default.resize(8)",
+    "alternative": "Fiber::ExecutionContext::Parallel.new(\"BENCH\", maximum: 8)",
+    "environment_only_is_not_opt_in": true,
+    "standard_synchronization": [
+      "Channel(T)#send/receive",
+      "WaitGroup",
+      "Sync"
+    ],
+    "source": "upstream/crystal/src/fiber/execution_context.cr",
+    "worker_policy": "At most eight fibers compute concurrently in one capped context; parent blocks during children and preserves output order. Runtime housekeeping threads counted separately from workload compute."
+  },
+  "bigint": {
+    "api": "require \"big\"; BigInt",
+    "implementation": "Standard-library GMP binding",
+    "floor_division": "// -> LibGMP.fdiv_q",
+    "truncated_division": "tdiv -> LibGMP.tdiv_q",
+    "memory": "LibGMP.set_memory_functions routes malloc/realloc/free through the Crystal GC.",
+    "no_custom_kernel_required": true
+  },
+  "regex": {
+    "api": "Regex; String#gsub and nonoverlapping matching",
+    "implementation": "Standard-library PCRE2 with JIT enabled where the library supports it",
+    "ordering": "All five replacements remain sequential and ordered.",
+    "pin_dynamic_library": true
+  },
+  "allocation": {
+    "default": "Boehm GC",
+    "tree_requirement": "class Node distinct allocations, including leaves; retain actual long-lived root through final check.",
+    "numeric_fixed_array": "StaticArray(T,N) is a value/stack fixed array.",
+    "gc_disabled": false,
+    "gc_tuning": "No unpublished GC-disable/no-GC profile is assumed; any future general collector experiment requires distinct documented profile and resource qualification."
+  },
+  "stdout": {
+    "binary_api": "STDOUT.write(bytes : Bytes) or write_byte(UInt8)",
+    "nul_preserved": true,
+    "text_api": "print/puts/String::Builder/IO::Memory",
+    "source": "upstream/crystal/src/io.cr"
+  },
+  "candidates": [
+    {
+      "benchmark": "binarytrees",
+      "family": "hanabi",
+      "source": "upstream/hanabi/bench/algorithm/binarytrees/1.cr",
+      "url": "https://raw.githubusercontent.com/hanabi1224/Programming-Language-Benchmarks/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/binarytrees/1.cr",
+      "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+      "status": "published-source-unbuilt-unqualified",
+      "sha256": null,
+      "canonical_loc": null,
+      "timing_samples": [],
+      "required_repairs": [],
+      "chart_eligible": false
+    },
+    {
+      "benchmark": "fannkuchredux",
+      "family": "hanabi",
+      "source": "upstream/hanabi/bench/algorithm/fannkuch-redux/1.cr",
+      "url": "https://raw.githubusercontent.com/hanabi1224/Programming-Language-Benchmarks/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/fannkuch-redux/1.cr",
+      "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+      "status": "published-source-unbuilt-unqualified",
+      "sha256": null,
+      "canonical_loc": null,
+      "timing_samples": [],
+      "required_repairs": [],
+      "chart_eligible": false
+    },
+    {
+      "benchmark": "fasta",
+      "family": "hanabi",
+      "source": "upstream/hanabi/bench/algorithm/fasta/1.cr",
+      "url": "https://raw.githubusercontent.com/hanabi1224/Programming-Language-Benchmarks/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/fasta/1.cr",
+      "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+      "status": "published-source-unbuilt-unqualified",
+      "sha256": null,
+      "canonical_loc": null,
+      "timing_samples": [],
+      "required_repairs": [],
+      "chart_eligible": false
+    },
+    {
+      "benchmark": "fasta",
+      "family": "hanabi",
+      "source": "upstream/hanabi/bench/algorithm/fasta/2.cr",
+      "url": "https://raw.githubusercontent.com/hanabi1224/Programming-Language-Benchmarks/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/fasta/2.cr",
+      "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+      "status": "published-source-unbuilt-unqualified",
+      "sha256": null,
+      "canonical_loc": null,
+      "timing_samples": [],
+      "required_repairs": [],
+      "chart_eligible": false
+    },
+    {
+      "benchmark": "mandelbrot",
+      "family": "hanabi",
+      "source": "upstream/hanabi/bench/algorithm/mandelbrot/1.cr",
+      "url": "https://raw.githubusercontent.com/hanabi1224/Programming-Language-Benchmarks/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/mandelbrot/1.cr",
+      "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+      "status": "published-source-unbuilt-unqualified",
+      "sha256": null,
+      "canonical_loc": null,
+      "timing_samples": [],
+      "required_repairs": [
+        "Outputs MD5 rather than full binary PBM.",
+        "Rounds dimensions upward to a multiple of eight; exact tail handling required."
+      ],
+      "chart_eligible": false
+    },
+    {
+      "benchmark": "mandelbrot",
+      "family": "hanabi",
+      "source": "upstream/hanabi/bench/algorithm/mandelbrot/2.cr",
+      "url": "https://raw.githubusercontent.com/hanabi1224/Programming-Language-Benchmarks/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/mandelbrot/2.cr",
+      "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+      "status": "published-source-unbuilt-unqualified",
+      "sha256": null,
+      "canonical_loc": null,
+      "timing_samples": [],
+      "required_repairs": [
+        "Outputs MD5 rather than full binary PBM.",
+        "Rounds dimensions upward to a multiple of eight; exact tail handling required."
+      ],
+      "chart_eligible": false
+    },
+    {
+      "benchmark": "nbody",
+      "family": "hanabi",
+      "source": "upstream/hanabi/bench/algorithm/nbody/1.cr",
+      "url": "https://raw.githubusercontent.com/hanabi1224/Programming-Language-Benchmarks/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/nbody/1.cr",
+      "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+      "status": "published-source-unbuilt-unqualified",
+      "sha256": null,
+      "canonical_loc": null,
+      "timing_samples": [],
+      "required_repairs": [],
+      "chart_eligible": false
+    },
+    {
+      "benchmark": "nbody",
+      "family": "hanabi",
+      "source": "upstream/hanabi/bench/algorithm/nbody/2.cr",
+      "url": "https://raw.githubusercontent.com/hanabi1224/Programming-Language-Benchmarks/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/nbody/2.cr",
+      "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+      "status": "published-source-unbuilt-unqualified",
+      "sha256": null,
+      "canonical_loc": null,
+      "timing_samples": [],
+      "required_repairs": [],
+      "chart_eligible": false
+    },
+    {
+      "benchmark": "pidigits",
+      "family": "hanabi",
+      "source": "upstream/hanabi/bench/algorithm/pidigits/1.cr",
+      "url": "https://raw.githubusercontent.com/hanabi1224/Programming-Language-Benchmarks/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/pidigits/1.cr",
+      "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+      "status": "published-source-unbuilt-unqualified",
+      "sha256": null,
+      "canonical_loc": null,
+      "timing_samples": [],
+      "required_repairs": [],
+      "chart_eligible": false
+    },
+    {
+      "benchmark": "regexredux",
+      "family": "hanabi",
+      "source": "upstream/hanabi/bench/algorithm/regex-redux/1.cr",
+      "url": "https://raw.githubusercontent.com/hanabi1224/Programming-Language-Benchmarks/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/regex-redux/1.cr",
+      "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+      "status": "published-source-unbuilt-unqualified",
+      "sha256": null,
+      "canonical_loc": null,
+      "timing_samples": [],
+      "required_repairs": [
+        "Reads a path argument instead of required stdin; keep the correct five ordered redux substitutions."
+      ],
+      "chart_eligible": false
+    },
+    {
+      "benchmark": "spectralnorm",
+      "family": "hanabi",
+      "source": "upstream/hanabi/bench/algorithm/spectral-norm/1.cr",
+      "url": "https://raw.githubusercontent.com/hanabi1224/Programming-Language-Benchmarks/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/spectral-norm/1.cr",
+      "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+      "status": "published-source-unbuilt-unqualified",
+      "sha256": null,
+      "canonical_loc": null,
+      "timing_samples": [],
+      "required_repairs": [],
+      "chart_eligible": false
+    },
+    {
+      "benchmark": "binarytrees",
+      "family": "kostya",
+      "source": "upstream/kostya/binarytrees/binarytrees.cr",
+      "url": "https://raw.githubusercontent.com/kostya/crystal-benchmarks-game/aaf7bd44118889605943df3200b7c9b0c6af6510/binarytrees/binarytrees.cr",
+      "upstream_commit": "aaf7bd44118889605943df3200b7c9b0c6af6510",
+      "status": "published-source-unbuilt-unqualified",
+      "sha256": null,
+      "canonical_loc": null,
+      "timing_samples": [],
+      "required_repairs": [
+        "Older signed-item paired-tree workload and stray stuk4 output; use current distinct-node counting workload instead."
+      ],
+      "chart_eligible": false
+    },
+    {
+      "benchmark": "fannkuchredux",
+      "family": "kostya",
+      "source": "upstream/kostya/fannkuchredux/fannkuchredux.cr",
+      "url": "https://raw.githubusercontent.com/kostya/crystal-benchmarks-game/aaf7bd44118889605943df3200b7c9b0c6af6510/fannkuchredux/fannkuchredux.cr",
+      "upstream_commit": "aaf7bd44118889605943df3200b7c9b0c6af6510",
+      "status": "published-source-unbuilt-unqualified",
+      "sha256": null,
+      "canonical_loc": null,
+      "timing_samples": [],
+      "required_repairs": [],
+      "chart_eligible": false
+    },
+    {
+      "benchmark": "fasta",
+      "family": "kostya",
+      "source": "upstream/kostya/fasta/fasta.cr",
+      "url": "https://raw.githubusercontent.com/kostya/crystal-benchmarks-game/aaf7bd44118889605943df3200b7c9b0c6af6510/fasta/fasta.cr",
+      "upstream_commit": "aaf7bd44118889605943df3200b7c9b0c6af6510",
+      "status": "published-source-unbuilt-unqualified",
+      "sha256": null,
+      "canonical_loc": null,
+      "timing_samples": [],
+      "required_repairs": [],
+      "chart_eligible": false
+    },
+    {
+      "benchmark": "knucleotide",
+      "family": "kostya",
+      "source": "upstream/kostya/knucleotide/knucleotide.cr",
+      "url": "https://raw.githubusercontent.com/kostya/crystal-benchmarks-game/aaf7bd44118889605943df3200b7c9b0c6af6510/knucleotide/knucleotide.cr",
+      "upstream_commit": "aaf7bd44118889605943df3200b7c9b0c6af6510",
+      "status": "published-source-unbuilt-unqualified",
+      "sha256": null,
+      "canonical_loc": null,
+      "timing_samples": [],
+      "required_repairs": [
+        "THREE parser accepts prefix collisions and never stops at subsequent record.",
+        "Skips no semicolon comments and assumes lowercase input.",
+        "Frequency ties need deterministic lexical ordering."
+      ],
+      "chart_eligible": false
+    },
+    {
+      "benchmark": "mandelbrot",
+      "family": "kostya",
+      "source": "upstream/kostya/mandelbrot/mandelbrot.cr",
+      "url": "https://raw.githubusercontent.com/kostya/crystal-benchmarks-game/aaf7bd44118889605943df3200b7c9b0c6af6510/mandelbrot/mandelbrot.cr",
+      "upstream_commit": "aaf7bd44118889605943df3200b7c9b0c6af6510",
+      "status": "published-source-unbuilt-unqualified",
+      "sha256": null,
+      "canonical_loc": null,
+      "timing_samples": [],
+      "required_repairs": [],
+      "chart_eligible": false
+    },
+    {
+      "benchmark": "nbody",
+      "family": "kostya",
+      "source": "upstream/kostya/nbody/nbody.cr",
+      "url": "https://raw.githubusercontent.com/kostya/crystal-benchmarks-game/aaf7bd44118889605943df3200b7c9b0c6af6510/nbody/nbody.cr",
+      "upstream_commit": "aaf7bd44118889605943df3200b7c9b0c6af6510",
+      "status": "published-source-unbuilt-unqualified",
+      "sha256": null,
+      "canonical_loc": null,
+      "timing_samples": [],
+      "required_repairs": [],
+      "chart_eligible": false
+    },
+    {
+      "benchmark": "pidigits",
+      "family": "kostya",
+      "source": "upstream/kostya/pidigits/pidigits.cr",
+      "url": "https://raw.githubusercontent.com/kostya/crystal-benchmarks-game/aaf7bd44118889605943df3200b7c9b0c6af6510/pidigits/pidigits.cr",
+      "upstream_commit": "aaf7bd44118889605943df3200b7c9b0c6af6510",
+      "status": "published-source-unbuilt-unqualified",
+      "sha256": null,
+      "canonical_loc": null,
+      "timing_samples": [],
+      "required_repairs": [
+        "One divmod plus remainder comparison infers the second endpoint; requires two actual arbitrary-precision divisions.",
+        "No proper nonmultiple-of-ten tail or zero-digit guard."
+      ],
+      "chart_eligible": false
+    },
+    {
+      "benchmark": "regexredux",
+      "family": "kostya",
+      "source": "upstream/kostya/regexdna/regexdna.cr",
+      "url": "https://raw.githubusercontent.com/kostya/crystal-benchmarks-game/aaf7bd44118889605943df3200b7c9b0c6af6510/regexdna/regexdna.cr",
+      "upstream_commit": "aaf7bd44118889605943df3200b7c9b0c6af6510",
+      "status": "published-source-unbuilt-unqualified",
+      "sha256": null,
+      "canonical_loc": null,
+      "timing_samples": [],
+      "required_repairs": [
+        "This is obsolete regex-dna ambiguity expansion, not the current five ordered regex-redux replacements."
+      ],
+      "chart_eligible": false
+    },
+    {
+      "benchmark": "revcomp",
+      "family": "kostya",
+      "source": "upstream/kostya/revcomp/revcomp.cr",
+      "url": "https://raw.githubusercontent.com/kostya/crystal-benchmarks-game/aaf7bd44118889605943df3200b7c9b0c6af6510/revcomp/revcomp.cr",
+      "upstream_commit": "aaf7bd44118889605943df3200b7c9b0c6af6510",
+      "status": "published-source-unbuilt-unqualified",
+      "sha256": null,
+      "canonical_loc": null,
+      "timing_samples": [],
+      "required_repairs": [
+        "Skip semicolon comment records; validate CRLF, all ambiguity codes, empty records and EOF tail."
+      ],
+      "chart_eligible": false
+    },
+    {
+      "benchmark": "spectralnorm",
+      "family": "kostya",
+      "source": "upstream/kostya/spectralnorm/spectralnorm.cr",
+      "url": "https://raw.githubusercontent.com/kostya/crystal-benchmarks-game/aaf7bd44118889605943df3200b7c9b0c6af6510/spectralnorm/spectralnorm.cr",
+      "upstream_commit": "aaf7bd44118889605943df3200b7c9b0c6af6510",
+      "status": "published-source-unbuilt-unqualified",
+      "sha256": null,
+      "canonical_loc": null,
+      "timing_samples": [],
+      "required_repairs": [
+        "Output needs canonical nine-decimal formatting."
+      ],
+      "chart_eligible": false
+    }
+  ]
+}

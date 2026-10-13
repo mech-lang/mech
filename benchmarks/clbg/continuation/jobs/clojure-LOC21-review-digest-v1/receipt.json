@@ -1,0 +1,13 @@
+{
+  "status": "root-reviewed21-source-semantics-pinned-awaiting-overlay",
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/source-counts/semantic-source-review-v3.json": "9a0d8414733b10a9fd2991e32efacee05528c43eef947eca8a62922d040047c1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/source-counts/seal_overlay_v3.py": "75561b469e0b987ae8d4222a0d87a12eda64fee7a472d17dfd77bdcdc57d7287",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/source-counts/OVERLAY_V3_REVIEW.md": "ed915f64caeec56c073e1dbc5dcaeab2b1c93558ba3a7bc31e5209a1657da7f6"
+  },
+  "actual_common_mutex_held": true,
+  "common_timing_mutex": "/tmp/mech-clbg-timing.lock",
+  "canonical_LOC_admitted": false,
+  "chart_admission": false,
+  "native_processes": 0
+}

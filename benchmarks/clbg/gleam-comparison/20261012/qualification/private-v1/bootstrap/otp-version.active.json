@@ -1,0 +1,27 @@
+{
+  "command": [
+    "/opt/homebrew/Cellar/erlang/29.1.1_2/bin/erl",
+    "+S",
+    "8:8",
+    "+A",
+    "1",
+    "+SDcpu",
+    "1:1",
+    "+SDio",
+    "1",
+    "-noshell",
+    "-noinput",
+    "-eval",
+    "io:put_chars(json:encode(#{otp=>list_to_binary(erlang:system_info(otp_release)), erts=>list_to_binary(erlang:system_info(version)), jit=>erlang:system_info(emu_flavor), arch=>list_to_binary(erlang:system_info(system_architecture)), schedulers=>erlang:system_info(schedulers_online), re=>re:version()})),halt()."
+  ],
+  "started_at": "2026-10-12T23:07:44.904416+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 76430,
+  "identity": {
+    "pid": 76430,
+    "process_listing": "Mon Oct 12 19:07:44 2026     /bin/sh /opt/homebrew/Cellar/erlang/29.1.1_2/bin/erl +S 8:8 +A 1 +SDcpu 1:1 +SDio 1 -noshell -noinput -eval io:put_chars(json:encode(#{otp=>list_to_binary(erlang:system_info(otp_release)), erts=>list_to_binary(erlang:system_info(version)), jit=>erlang:system_info(emu_flavor), arch=>list_to_binary(erlang:system_info(system_architecture)), schedulers=>erlang:system_info(schedulers_online), re=>re:version()})),halt()."
+  }
+}

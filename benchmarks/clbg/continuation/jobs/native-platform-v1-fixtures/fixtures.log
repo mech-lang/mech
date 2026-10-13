@@ -1,0 +1,9 @@
+test_complete_native_jvm_beam_stage_preserves_measurements (test_native_platform_metadata_v1.NativePlatformFixtures.test_complete_native_jvm_beam_stage_preserves_measurements) ... ok
+test_late_conflict_and_serialized_receipt_preserve_input (test_native_platform_metadata_v1.NativePlatformFixtures.test_late_conflict_and_serialized_receipt_preserve_input) ... ok
+test_partial_cohort_wrong_backend_and_v_reject (test_native_platform_metadata_v1.NativePlatformFixtures.test_partial_cohort_wrong_backend_and_v_reject) ... ok
+test_receipt_content_missing_pointer_and_encoding_reject (test_native_platform_metadata_v1.NativePlatformFixtures.test_receipt_content_missing_pointer_and_encoding_reject) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.010s
+
+OK

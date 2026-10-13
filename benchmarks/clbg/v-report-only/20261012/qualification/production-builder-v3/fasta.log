@@ -1,0 +1,26 @@
+WAIT LOCK: V preparation production-builder-v3 fasta
+BUILD v-fasta-compact-input-v2
+BUILD v-fasta-optimized-input-v2
+PROBE v-fasta-compact-input-v2 size-0
+PROBE v-fasta-compact-input-v2 size-1
+PROBE v-fasta-compact-input-v2 size-2
+PROBE v-fasta-compact-input-v2 size-29
+PROBE v-fasta-compact-input-v2 size-30
+PROBE v-fasta-compact-input-v2 size-31
+PROBE v-fasta-compact-input-v2 size-60
+PROBE v-fasta-compact-input-v2 size-61
+PROBE v-fasta-compact-input-v2 size-287
+PROBE v-fasta-compact-input-v2 size-574
+PROBE v-fasta-compact-input-v2 size-20000
+PROBE v-fasta-optimized-input-v2 size-0
+PROBE v-fasta-optimized-input-v2 size-1
+PROBE v-fasta-optimized-input-v2 size-2
+PROBE v-fasta-optimized-input-v2 size-29
+PROBE v-fasta-optimized-input-v2 size-30
+PROBE v-fasta-optimized-input-v2 size-31
+PROBE v-fasta-optimized-input-v2 size-60
+PROBE v-fasta-optimized-input-v2 size-61
+PROBE v-fasta-optimized-input-v2 size-287
+PROBE v-fasta-optimized-input-v2 size-574
+PROBE v-fasta-optimized-input-v2 size-20000
+PASS BOUNDED OUTPUTS fasta 24

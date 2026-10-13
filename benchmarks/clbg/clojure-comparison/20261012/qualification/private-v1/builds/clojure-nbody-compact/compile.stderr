@@ -1,0 +1,8 @@
+NOTE: Picked up JDK_JAVA_OPTIONS: 
+Picked up JAVA_TOOL_OPTIONS: 
+Picked up _JAVA_OPTIONS: 
+Syntax error compiling at (clbg/nbody/compact.clj:26:131).
+Unmatched delimiter: ]
+
+Full report at:
+/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/clojure-15387097782723716777.edn

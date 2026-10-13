@@ -1,0 +1,17 @@
+{
+  "status": "passed",
+  "tests_run": 4,
+  "failures": 0,
+  "errors": 0,
+  "created_at": "2026-10-12T16:36:27.839312+00:00",
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/test_minimum_launch.py": "6f4aa94de9c1e0bf4a65a5bd153c5ec03931474f03f1d66fa710625239678f64",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending_minima_study.py": "01e4c5adf928b021319c318c721f385a1d5c2b483163740013acd6024cd48610",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/prepare.py": "edf9b67813968d35dbb208ce6935aa83b66066cb91a722e5fd1145261d97951a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/full_study.py": "578a49d343fae3d6d67317594c6d820eb604556e8de5904b3d725706b15cc7c4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/full_study.py": "7a48690bef2f36375c72619f8c74170735273804d089dafb55e6813189613fe5"
+  },
+  "pins_unchanged_at_end": true,
+  "actual_native_runs": 0,
+  "chart_admitted": false
+}

@@ -1,0 +1,2 @@
+WAIT common mutex: V full-study manifest mandelbrot
+{"manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/studies/mandelbrot/full-study/manifest.json", "sha256": "a83657d329ce6850f300387abc6978b4ff8c06c65ef5f08d884b0b0f6fce1372", "profiles": ["v-mandelbrot-compact-input-v2", "v-mandelbrot-optimized-input-v2", "mech-aot-control"], "full_processes": 9, "report_only": true}

@@ -1,0 +1,8 @@
+{
+  "session_id": 64237,
+  "observed_exit_code": 130,
+  "observed_exception": "KeyboardInterrupt: FP preparation interrupted by signal 2",
+  "observed_location": "guarded_prepare.py:121 fcntl.flock(lock, fcntl.LOCK_EX)",
+  "preparation_started": false,
+  "native_or_compiler_interrupted": false
+}

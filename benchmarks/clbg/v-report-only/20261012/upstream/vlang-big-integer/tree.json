@@ -1,0 +1,220 @@
+{
+  "sha": "dae1213e3b7576b40bf84a5c45a25748a74ef3c0",
+  "url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/git/trees/dae1213e3b7576b40bf84a5c45a25748a74ef3c0",
+  "tree": [
+    {
+      "path": ".github",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "d25f615a573c83c245a2749df33126939392a372",
+      "url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/git/trees/d25f615a573c83c245a2749df33126939392a372"
+    },
+    {
+      "path": ".github/workflows",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "543bba0604c7a79a32325bab9f462235621a1225",
+      "url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/git/trees/543bba0604c7a79a32325bab9f462235621a1225"
+    },
+    {
+      "path": ".github/workflows/main.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "49513acb7afd3984b8d97f0058cfaceef9b73b77",
+      "size": 943,
+      "url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/git/blobs/49513acb7afd3984b8d97f0058cfaceef9b73b77"
+    },
+    {
+      "path": ".gitignore",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4794cf496824567eb2e092bf5fffa44c09864c66",
+      "size": 762,
+      "url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/git/blobs/4794cf496824567eb2e092bf5fffa44c09864c66"
+    },
+    {
+      "path": "LICENSE",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8d690bdee94cd095f7fe5b7f2a372547851dd05e",
+      "size": 1067,
+      "url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/git/blobs/8d690bdee94cd095f7fe5b7f2a372547851dd05e"
+    },
+    {
+      "path": "README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1e349ff12217b2fbd35b0864292c027b0d388c58",
+      "size": 1334,
+      "url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/git/blobs/1e349ff12217b2fbd35b0864292c027b0d388c58"
+    },
+    {
+      "path": "big_int.v",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7ba3c38ae0905f07ef7f51eb17ede77113d285c4",
+      "size": 939,
+      "url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/git/blobs/7ba3c38ae0905f07ef7f51eb17ede77113d285c4"
+    },
+    {
+      "path": "big_int_add_sub.v",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5d80b28d13dd0c970282cac3f860360ebf6bc8e8",
+      "size": 4189,
+      "url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/git/blobs/5d80b28d13dd0c970282cac3f860360ebf6bc8e8"
+    },
+    {
+      "path": "big_int_add_sub_test.v",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c5ebbb2a1b3327e130352a545fa1a19f6a0362c4",
+      "size": 1798,
+      "url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/git/blobs/c5ebbb2a1b3327e130352a545fa1a19f6a0362c4"
+    },
+    {
+      "path": "big_int_cmp.v",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "af558eab8917d946c2f2d7b179e377affd3474fd",
+      "size": 985,
+      "url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/git/blobs/af558eab8917d946c2f2d7b179e377affd3474fd"
+    },
+    {
+      "path": "big_int_constants.v",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e090e6583a76c23c9cd1c1f9b7a3772e02aaca17",
+      "size": 531,
+      "url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/git/blobs/e090e6583a76c23c9cd1c1f9b7a3772e02aaca17"
+    },
+    {
+      "path": "big_int_divmod.v",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a6ff9fba8cf4ca557083a39186773b3376717ed7",
+      "size": 2411,
+      "url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/git/blobs/a6ff9fba8cf4ca557083a39186773b3376717ed7"
+    },
+    {
+      "path": "big_int_divmod_test.v",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fdee21d53f39a66211d815dc352823a01f2e0cbc",
+      "size": 713,
+      "url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/git/blobs/fdee21d53f39a66211d815dc352823a01f2e0cbc"
+    },
+    {
+      "path": "big_int_multiply.v",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bd99bc7485fe53feb2cac29e618c15f6e612e01e",
+      "size": 1272,
+      "url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/git/blobs/bd99bc7485fe53feb2cac29e618c15f6e612e01e"
+    },
+    {
+      "path": "big_int_multiply_test.v",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "506c516bf9735ea2d86cad0c93e99b0d75402d04",
+      "size": 761,
+      "url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/git/blobs/506c516bf9735ea2d86cad0c93e99b0d75402d04"
+    },
+    {
+      "path": "big_int_num_from.v",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "17d4b1f59294afd16d5f7f71274e894ad73f507d",
+      "size": 1113,
+      "url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/git/blobs/17d4b1f59294afd16d5f7f71274e894ad73f507d"
+    },
+    {
+      "path": "big_int_num_from_test.v",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "34dc71d3bac4b9312e6a48ca22ff66362f1f77a1",
+      "size": 201,
+      "url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/git/blobs/34dc71d3bac4b9312e6a48ca22ff66362f1f77a1"
+    },
+    {
+      "path": "big_int_num_to.v",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6b1213b8f683cf117190e52635f9796da342f995",
+      "size": 592,
+      "url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/git/blobs/6b1213b8f683cf117190e52635f9796da342f995"
+    },
+    {
+      "path": "big_int_shift.v",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e14fefa28ab3dcced8a93627fca306478d39254c",
+      "size": 2002,
+      "url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/git/blobs/e14fefa28ab3dcced8a93627fca306478d39254c"
+    },
+    {
+      "path": "big_int_shift_test.v",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "73a7890df88caa44c07654f360ce502979f32209",
+      "size": 1115,
+      "url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/git/blobs/73a7890df88caa44c07654f360ce502979f32209"
+    },
+    {
+      "path": "big_int_str_from.v",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cae44d454003595b7ff0c7db3b07082a7d02648c",
+      "size": 911,
+      "url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/git/blobs/cae44d454003595b7ff0c7db3b07082a7d02648c"
+    },
+    {
+      "path": "big_int_str_from_test.v",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a5edcf78aacb5dab817a0fecfa94825b088228e9",
+      "size": 651,
+      "url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/git/blobs/a5edcf78aacb5dab817a0fecfa94825b088228e9"
+    },
+    {
+      "path": "big_int_str_to.v",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0e0be111565ad7928e5b7cd4874d01ea0f6e16ab",
+      "size": 934,
+      "url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/git/blobs/0e0be111565ad7928e5b7cd4874d01ea0f6e16ab"
+    },
+    {
+      "path": "big_int_test.v",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "79aba499feadb105023056a4baf9290bc9b15925",
+      "size": 1515,
+      "url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/git/blobs/79aba499feadb105023056a4baf9290bc9b15925"
+    },
+    {
+      "path": "examples",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "c3462bcce8be33f6af77d95b975446849b89ceac",
+      "url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/git/trees/c3462bcce8be33f6af77d95b975446849b89ceac"
+    },
+    {
+      "path": "examples/.gitignore",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a62c6dd75adec0678d12499e9b26861ef27f7708",
+      "size": 19,
+      "url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/git/blobs/a62c6dd75adec0678d12499e9b26861ef27f7708"
+    },
+    {
+      "path": "examples/pidigits.v",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b6bd893103673f742e2c9ca10405f2e4b10a37ad",
+      "size": 1413,
+      "url": "https://api.github.com/repos/hanabi1224/vlang-big-integer/git/blobs/b6bd893103673f742e2c9ca10405f2e4b10a37ad"
+    }
+  ],
+  "truncated": false
+}

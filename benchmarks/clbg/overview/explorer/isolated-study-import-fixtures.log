@@ -1,0 +1,32 @@
+test_complete_nine_records (test_isolated_study_data.LedgerTests.test_complete_nine_records) ... ok
+test_extra_actual_record (test_isolated_study_data.LedgerTests.test_extra_actual_record) ... ok
+test_false_captured_check (test_isolated_study_data.LedgerTests.test_false_captured_check) ... ok
+test_false_end_pin (test_isolated_study_data.LedgerTests.test_false_end_pin) ... ok
+test_false_qualification_flag (test_isolated_study_data.LedgerTests.test_false_qualification_flag) ... ok
+test_leftover_group (test_isolated_study_data.LedgerTests.test_leftover_group) ... ok
+test_missing_actual_record (test_isolated_study_data.LedgerTests.test_missing_actual_record) ... ok
+test_missing_captured_check (test_isolated_study_data.LedgerTests.test_missing_captured_check) ... ok
+test_missing_owned_group (test_isolated_study_data.LedgerTests.test_missing_owned_group) ... ok
+test_no_admission_for_missing_report (test_isolated_study_data.LedgerTests.test_no_admission_for_missing_report) ... ok
+test_no_admission_for_running_report (test_isolated_study_data.LedgerTests.test_no_admission_for_running_report) ... ok
+test_nonfull_workload (test_isolated_study_data.LedgerTests.test_nonfull_workload) ... ok
+test_probe_marked_never_eligible (test_isolated_study_data.LedgerTests.test_probe_marked_never_eligible) ... ok
+test_resource_ceiling (test_isolated_study_data.LedgerTests.test_resource_ceiling) ... ok
+test_running_report (test_isolated_study_data.LedgerTests.test_running_report) ... ok
+test_samples_do_not_match_records (test_isolated_study_data.LedgerTests.test_samples_do_not_match_records) ... ok
+test_shortened_workload (test_isolated_study_data.LedgerTests.test_shortened_workload) ... ok
+test_stats_do_not_match_samples (test_isolated_study_data.LedgerTests.test_stats_do_not_match_samples) ... ok
+test_swapped_attempt_order (test_isolated_study_data.LedgerTests.test_swapped_attempt_order) ... ok
+test_wrong_manifest_digest (test_isolated_study_data.LedgerTests.test_wrong_manifest_digest) ... ok
+test_wrong_native_command (test_isolated_study_data.LedgerTests.test_wrong_native_command) ... ok
+test_wrong_output (test_isolated_study_data.LedgerTests.test_wrong_output) ... ok
+test_wrong_power (test_isolated_study_data.LedgerTests.test_wrong_power) ... ok
+test_wrong_raw_output (test_isolated_study_data.LedgerTests.test_wrong_raw_output) ... ok
+test_wrong_runtime_environment (test_isolated_study_data.LedgerTests.test_wrong_runtime_environment) ... ok
+test_wrong_source (test_isolated_study_data.LedgerTests.test_wrong_source) ... ok
+test_wrong_source_loc (test_isolated_study_data.LedgerTests.test_wrong_source_loc) ... ok
+
+----------------------------------------------------------------------
+Ran 27 tests in 0.005s
+
+OK

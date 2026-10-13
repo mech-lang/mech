@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/Library/Developer/CommandLineTools/usr/bin/lldb",
+    "--version"
+  ],
+  "started_at": "2026-10-13T04:59:23.091233+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 66552,
+  "identity": {
+    "pid": 66552,
+    "process_listing": "Tue Oct 13 00:59:23 2026     /Library/Developer/CommandLineTools/usr/bin/lldb --version"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-13T04:59:23.469371+00:00",
+  "final_exit_status": 0
+}

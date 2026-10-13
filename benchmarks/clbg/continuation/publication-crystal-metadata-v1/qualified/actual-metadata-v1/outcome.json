@@ -1,0 +1,10 @@
+{
+  "status": "failed-metadata",
+  "chart_admission": false,
+  "native_subjects": 0,
+  "error": "AssertionError",
+  "error_type": "AssertionError",
+  "available_evidence_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/publication-crystal-metadata-v1/qualified/actual-metadata-v1/actual-error.log": "f71646f189041b156c95eaef4ef4afa2d9edf8502e0552fa7158dc46e03eb099"
+  }
+}

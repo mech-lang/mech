@@ -1,0 +1,27 @@
+FULL REMAINING apl fasta 1 fasta-apl-affine-hoisted-optimized-v3
+FULL REMAINING apl fasta 2 fasta-apl-affine-hoisted-optimized-v3
+FULL REMAINING apl fasta 2 fasta-apl-compact
+FULL REMAINING apl fasta 2 mech-control-fasta-for-apl-medium-v3
+FULL REMAINING apl fasta 3 fasta-apl-affine-hoisted-optimized-v3
+FULL REMAINING apl fasta 3 mech-control-fasta-for-apl-medium-v3
+FULL REMAINING apl fasta 3 fasta-apl-compact
+FULL REMAINING apl knucleotide 1 knucleotide-apl-v2-optimized
+FULL REMAINING apl knucleotide 1 knucleotide-apl-v2-compact
+FULL REMAINING apl knucleotide 1 mech-control-knucleotide-for-apl
+FULL REMAINING apl knucleotide 2 knucleotide-apl-v2-compact
+FULL REMAINING apl knucleotide 2 mech-control-knucleotide-for-apl
+FULL REMAINING apl knucleotide 2 knucleotide-apl-v2-optimized
+FULL REMAINING apl knucleotide 3 knucleotide-apl-v2-compact
+FULL REMAINING apl knucleotide 3 mech-control-knucleotide-for-apl
+FULL REMAINING apl knucleotide 3 knucleotide-apl-v2-optimized
+FULL REMAINING apl binarytrees 1 binarytrees-apl-compact
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/apl-argv-v1/continuation.py", line 336, in <module>
+    main()
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/apl-argv-v1/continuation.py", line 332, in main
+    (run if args.run else detach)(args.manifest_sha256)
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/apl-argv-v1/continuation.py", line 248, in run
+    g.execute_remaining(digest)
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining_owner.py", line 464, in execute_remaining
+    raise RuntimeError('Remaining actual sample failed qualification; evidence retained and no retry')
+RuntimeError: Remaining actual sample failed qualification; evidence retained and no retry

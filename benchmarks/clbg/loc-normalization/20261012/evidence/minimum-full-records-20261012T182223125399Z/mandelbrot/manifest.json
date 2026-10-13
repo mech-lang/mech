@@ -1,0 +1,1188 @@
+{
+  "status": "prepared-awaiting-root-review",
+  "benchmark": "mandelbrot",
+  "created_at": "2026-10-12T16:47:24.875648+00:00",
+  "samples": 3,
+  "size": 16000,
+  "profiles": [
+    {
+      "id": "mandelbrot-lua-2",
+      "key": "mandelbrot:mandelbrot-lua-2",
+      "benchmark": "mandelbrot",
+      "language": "lua",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/mandelbrot-lua-2.lua",
+      "source_sha256": "16eacf7585991619923c8add0aa9ae0c1327aa2b5f31764208fcf27a5d52f249",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/compact/upstream/mandelbrot-lua-2.lua",
+      "command": [
+        "/opt/homebrew/Cellar/lua/5.5.1/bin/lua",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/mandelbrot-lua-2.lua",
+        "{n}"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "8",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "8"
+      },
+      "maximum_workers": 1,
+      "loc": null,
+      "proposed_canonical_loc": 40,
+      "loc_status": "pending final pool/source review",
+      "role": "New listed compact candidate after canonical LOC reselection",
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Every requested pixel, prescribed binary64 recurrence/escape predicate and complete zero-padded binary PBM."
+      },
+      "publication_status": "pending qualification, all three full samples and count review",
+      "runtime": {
+        "path": "/opt/homebrew/Cellar/lua/5.5.1/bin/lua",
+        "sha256": "83ea84efb4f7692a4452cfedf9325cc1f342edc6cf0d50b262add4eab1b75bea",
+        "version": "Lua 5.5.1  Copyright (C) 1994-2026 Lua.org, PUC-Rio"
+      },
+      "small_validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "adversarial_validation": [
+        {
+          "key": "mandelbrot:mandelbrot-lua-2",
+          "id": "mandelbrot-lua-2",
+          "benchmark": "mandelbrot",
+          "language": "lua",
+          "source_sha256": "16eacf7585991619923c8add0aa9ae0c1327aa2b5f31764208fcf27a5d52f249",
+          "command": [
+            "/opt/homebrew/Cellar/lua/5.5.1/bin/lua",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/mandelbrot-lua-2.lua",
+            "0"
+          ],
+          "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg",
+          "runtime_environment": {
+            "LC_ALL": "C",
+            "OMP_NUM_THREADS": "8",
+            "OPENBLAS_NUM_THREADS": "1",
+            "VECLIB_MAXIMUM_THREADS": "1",
+            "RAYON_NUM_THREADS": "8"
+          },
+          "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/opt/homebrew/Cellar/lua/5.5.1/bin/lua\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"16eacf7585991619923c8add0aa9ae0c1327aa2b5f31764208fcf27a5d52f249\", \"support\": {\"/opt/homebrew/Cellar/lua/5.5.1/bin/lua\": \"83ea84efb4f7692a4452cfedf9325cc1f342edc6cf0d50b262add4eab1b75bea\"}}",
+          "started_at": "2026-10-12T16:47:21.975881+00:00",
+          "workload_n": 0,
+          "full_workload": false,
+          "timeout_seconds": 300,
+          "maximum_rss_mib": 8192,
+          "power_at_start": {
+            "source": "AC Power",
+            "low_power_mode": 0
+          },
+          "seconds": 0.006720833,
+          "exit_status": 0,
+          "remaining_group_members": [],
+          "competing_compilers": [],
+          "power_changes": [],
+          "power_at_end": {
+            "source": "AC Power",
+            "low_power_mode": 0
+          },
+          "monitor_errors": [],
+          "peak_process_group_rss_kib": 0,
+          "resource_violation": null,
+          "resource_monitor_errors": [],
+          "stderr": "",
+          "stdout_bytes": 7,
+          "stdout_sha256": "636415170043dd6d03f2099060158760eed57cd15a545377e78359eca4611a38",
+          "validation": {
+            "bytes": 7,
+            "sha256": "636415170043dd6d03f2099060158760eed57cd15a545377e78359eca4611a38",
+            "reference_match": true,
+            "bounded_independent_oracle": true,
+            "tolerance": null
+          },
+          "finished_at": "2026-10-12T16:47:22.165571+00:00",
+          "valid_environment": true,
+          "pins_unchanged_at_end": true,
+          "round": 0,
+          "attempt": 2,
+          "sampler_wait_status": 0,
+          "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/attempts/002-mandelbrot-lua-2.json",
+          "supervised_native_group": {
+            "type": "native-group-started",
+            "pid": 82374,
+            "pgid": 82374,
+            "command": [
+              "/opt/homebrew/Cellar/lua/5.5.1/bin/lua",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/mandelbrot-lua-2.lua",
+              "0"
+            ],
+            "inherited_common_mutex": true
+          },
+          "supervisor_remaining_members": [],
+          "fatal_qualification_fields": [],
+          "qualified": true,
+          "retryable_environment_only": false,
+          "case": "size-0",
+          "preparation_only": true,
+          "never_chart_eligible": true,
+          "full_performance_run": false,
+          "input_file": null
+        },
+        {
+          "key": "mandelbrot:mandelbrot-lua-2",
+          "id": "mandelbrot-lua-2",
+          "benchmark": "mandelbrot",
+          "language": "lua",
+          "source_sha256": "16eacf7585991619923c8add0aa9ae0c1327aa2b5f31764208fcf27a5d52f249",
+          "command": [
+            "/opt/homebrew/Cellar/lua/5.5.1/bin/lua",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/mandelbrot-lua-2.lua",
+            "1"
+          ],
+          "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg",
+          "runtime_environment": {
+            "LC_ALL": "C",
+            "OMP_NUM_THREADS": "8",
+            "OPENBLAS_NUM_THREADS": "1",
+            "VECLIB_MAXIMUM_THREADS": "1",
+            "RAYON_NUM_THREADS": "8"
+          },
+          "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/opt/homebrew/Cellar/lua/5.5.1/bin/lua\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"16eacf7585991619923c8add0aa9ae0c1327aa2b5f31764208fcf27a5d52f249\", \"support\": {\"/opt/homebrew/Cellar/lua/5.5.1/bin/lua\": \"83ea84efb4f7692a4452cfedf9325cc1f342edc6cf0d50b262add4eab1b75bea\"}}",
+          "started_at": "2026-10-12T16:47:22.236378+00:00",
+          "workload_n": 1,
+          "full_workload": false,
+          "timeout_seconds": 300,
+          "maximum_rss_mib": 8192,
+          "power_at_start": {
+            "source": "AC Power",
+            "low_power_mode": 0
+          },
+          "seconds": 0.009513708,
+          "exit_status": 0,
+          "remaining_group_members": [],
+          "competing_compilers": [],
+          "power_changes": [],
+          "power_at_end": {
+            "source": "AC Power",
+            "low_power_mode": 0
+          },
+          "monitor_errors": [],
+          "peak_process_group_rss_kib": 0,
+          "resource_violation": null,
+          "resource_monitor_errors": [],
+          "stderr": "",
+          "stdout_bytes": 8,
+          "stdout_sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+          "validation": {
+            "bytes": 8,
+            "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+            "reference_match": true,
+            "bounded_independent_oracle": true,
+            "tolerance": null
+          },
+          "finished_at": "2026-10-12T16:47:22.449824+00:00",
+          "valid_environment": true,
+          "pins_unchanged_at_end": true,
+          "round": 0,
+          "attempt": 3,
+          "sampler_wait_status": 0,
+          "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/attempts/003-mandelbrot-lua-2.json",
+          "supervised_native_group": {
+            "type": "native-group-started",
+            "pid": 82391,
+            "pgid": 82391,
+            "command": [
+              "/opt/homebrew/Cellar/lua/5.5.1/bin/lua",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/mandelbrot-lua-2.lua",
+              "1"
+            ],
+            "inherited_common_mutex": true
+          },
+          "supervisor_remaining_members": [],
+          "fatal_qualification_fields": [],
+          "qualified": true,
+          "retryable_environment_only": false,
+          "case": "size-1",
+          "preparation_only": true,
+          "never_chart_eligible": true,
+          "full_performance_run": false,
+          "input_file": null
+        },
+        {
+          "key": "mandelbrot:mandelbrot-lua-2",
+          "id": "mandelbrot-lua-2",
+          "benchmark": "mandelbrot",
+          "language": "lua",
+          "source_sha256": "16eacf7585991619923c8add0aa9ae0c1327aa2b5f31764208fcf27a5d52f249",
+          "command": [
+            "/opt/homebrew/Cellar/lua/5.5.1/bin/lua",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/mandelbrot-lua-2.lua",
+            "2"
+          ],
+          "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg",
+          "runtime_environment": {
+            "LC_ALL": "C",
+            "OMP_NUM_THREADS": "8",
+            "OPENBLAS_NUM_THREADS": "1",
+            "VECLIB_MAXIMUM_THREADS": "1",
+            "RAYON_NUM_THREADS": "8"
+          },
+          "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/opt/homebrew/Cellar/lua/5.5.1/bin/lua\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"16eacf7585991619923c8add0aa9ae0c1327aa2b5f31764208fcf27a5d52f249\", \"support\": {\"/opt/homebrew/Cellar/lua/5.5.1/bin/lua\": \"83ea84efb4f7692a4452cfedf9325cc1f342edc6cf0d50b262add4eab1b75bea\"}}",
+          "started_at": "2026-10-12T16:47:22.526618+00:00",
+          "workload_n": 2,
+          "full_workload": false,
+          "timeout_seconds": 300,
+          "maximum_rss_mib": 8192,
+          "power_at_start": {
+            "source": "AC Power",
+            "low_power_mode": 0
+          },
+          "seconds": 0.009350417,
+          "exit_status": 0,
+          "remaining_group_members": [],
+          "competing_compilers": [],
+          "power_changes": [],
+          "power_at_end": {
+            "source": "AC Power",
+            "low_power_mode": 0
+          },
+          "monitor_errors": [],
+          "peak_process_group_rss_kib": 0,
+          "resource_violation": null,
+          "resource_monitor_errors": [],
+          "stderr": "",
+          "stdout_bytes": 9,
+          "stdout_sha256": "2e4e5f9f953fd314adbaa1326f7020d08d403929fec8e60c1ef777440af987dd",
+          "validation": {
+            "bytes": 9,
+            "sha256": "2e4e5f9f953fd314adbaa1326f7020d08d403929fec8e60c1ef777440af987dd",
+            "reference_match": true,
+            "bounded_independent_oracle": true,
+            "tolerance": null
+          },
+          "finished_at": "2026-10-12T16:47:22.746041+00:00",
+          "valid_environment": true,
+          "pins_unchanged_at_end": true,
+          "round": 0,
+          "attempt": 4,
+          "sampler_wait_status": 0,
+          "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/attempts/004-mandelbrot-lua-2.json",
+          "supervised_native_group": {
+            "type": "native-group-started",
+            "pid": 82408,
+            "pgid": 82408,
+            "command": [
+              "/opt/homebrew/Cellar/lua/5.5.1/bin/lua",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/mandelbrot-lua-2.lua",
+              "2"
+            ],
+            "inherited_common_mutex": true
+          },
+          "supervisor_remaining_members": [],
+          "fatal_qualification_fields": [],
+          "qualified": true,
+          "retryable_environment_only": false,
+          "case": "size-2",
+          "preparation_only": true,
+          "never_chart_eligible": true,
+          "full_performance_run": false,
+          "input_file": null
+        },
+        {
+          "key": "mandelbrot:mandelbrot-lua-2",
+          "id": "mandelbrot-lua-2",
+          "benchmark": "mandelbrot",
+          "language": "lua",
+          "source_sha256": "16eacf7585991619923c8add0aa9ae0c1327aa2b5f31764208fcf27a5d52f249",
+          "command": [
+            "/opt/homebrew/Cellar/lua/5.5.1/bin/lua",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/mandelbrot-lua-2.lua",
+            "3"
+          ],
+          "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg",
+          "runtime_environment": {
+            "LC_ALL": "C",
+            "OMP_NUM_THREADS": "8",
+            "OPENBLAS_NUM_THREADS": "1",
+            "VECLIB_MAXIMUM_THREADS": "1",
+            "RAYON_NUM_THREADS": "8"
+          },
+          "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/opt/homebrew/Cellar/lua/5.5.1/bin/lua\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"16eacf7585991619923c8add0aa9ae0c1327aa2b5f31764208fcf27a5d52f249\", \"support\": {\"/opt/homebrew/Cellar/lua/5.5.1/bin/lua\": \"83ea84efb4f7692a4452cfedf9325cc1f342edc6cf0d50b262add4eab1b75bea\"}}",
+          "started_at": "2026-10-12T16:47:22.827715+00:00",
+          "workload_n": 3,
+          "full_workload": false,
+          "timeout_seconds": 300,
+          "maximum_rss_mib": 8192,
+          "power_at_start": {
+            "source": "AC Power",
+            "low_power_mode": 0
+          },
+          "seconds": 0.008224625,
+          "exit_status": 0,
+          "remaining_group_members": [],
+          "competing_compilers": [],
+          "power_changes": [],
+          "power_at_end": {
+            "source": "AC Power",
+            "low_power_mode": 0
+          },
+          "monitor_errors": [],
+          "peak_process_group_rss_kib": 0,
+          "resource_violation": null,
+          "resource_monitor_errors": [],
+          "stderr": "",
+          "stdout_bytes": 10,
+          "stdout_sha256": "283b41658c4a4006825d9a3a188f42018305cdc5a19247921d2470c56121ee76",
+          "validation": {
+            "bytes": 10,
+            "sha256": "283b41658c4a4006825d9a3a188f42018305cdc5a19247921d2470c56121ee76",
+            "reference_match": true,
+            "bounded_independent_oracle": true,
+            "tolerance": null
+          },
+          "finished_at": "2026-10-12T16:47:23.047701+00:00",
+          "valid_environment": true,
+          "pins_unchanged_at_end": true,
+          "round": 0,
+          "attempt": 5,
+          "sampler_wait_status": 0,
+          "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/attempts/005-mandelbrot-lua-2.json",
+          "supervised_native_group": {
+            "type": "native-group-started",
+            "pid": 82425,
+            "pgid": 82425,
+            "command": [
+              "/opt/homebrew/Cellar/lua/5.5.1/bin/lua",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/mandelbrot-lua-2.lua",
+              "3"
+            ],
+            "inherited_common_mutex": true
+          },
+          "supervisor_remaining_members": [],
+          "fatal_qualification_fields": [],
+          "qualified": true,
+          "retryable_environment_only": false,
+          "case": "size-3",
+          "preparation_only": true,
+          "never_chart_eligible": true,
+          "full_performance_run": false,
+          "input_file": null
+        },
+        {
+          "key": "mandelbrot:mandelbrot-lua-2",
+          "id": "mandelbrot-lua-2",
+          "benchmark": "mandelbrot",
+          "language": "lua",
+          "source_sha256": "16eacf7585991619923c8add0aa9ae0c1327aa2b5f31764208fcf27a5d52f249",
+          "command": [
+            "/opt/homebrew/Cellar/lua/5.5.1/bin/lua",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/mandelbrot-lua-2.lua",
+            "7"
+          ],
+          "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg",
+          "runtime_environment": {
+            "LC_ALL": "C",
+            "OMP_NUM_THREADS": "8",
+            "OPENBLAS_NUM_THREADS": "1",
+            "VECLIB_MAXIMUM_THREADS": "1",
+            "RAYON_NUM_THREADS": "8"
+          },
+          "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/opt/homebrew/Cellar/lua/5.5.1/bin/lua\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"16eacf7585991619923c8add0aa9ae0c1327aa2b5f31764208fcf27a5d52f249\", \"support\": {\"/opt/homebrew/Cellar/lua/5.5.1/bin/lua\": \"83ea84efb4f7692a4452cfedf9325cc1f342edc6cf0d50b262add4eab1b75bea\"}}",
+          "started_at": "2026-10-12T16:47:23.128599+00:00",
+          "workload_n": 7,
+          "full_workload": false,
+          "timeout_seconds": 300,
+          "maximum_rss_mib": 8192,
+          "power_at_start": {
+            "source": "AC Power",
+            "low_power_mode": 0
+          },
+          "seconds": 0.009229583,
+          "exit_status": 0,
+          "remaining_group_members": [],
+          "competing_compilers": [],
+          "power_changes": [],
+          "power_at_end": {
+            "source": "AC Power",
+            "low_power_mode": 0
+          },
+          "monitor_errors": [],
+          "peak_process_group_rss_kib": 0,
+          "resource_violation": null,
+          "resource_monitor_errors": [],
+          "stderr": "",
+          "stdout_bytes": 14,
+          "stdout_sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+          "validation": {
+            "bytes": 14,
+            "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+            "reference_match": true,
+            "bounded_independent_oracle": true,
+            "tolerance": null
+          },
+          "finished_at": "2026-10-12T16:47:23.340137+00:00",
+          "valid_environment": true,
+          "pins_unchanged_at_end": true,
+          "round": 0,
+          "attempt": 6,
+          "sampler_wait_status": 0,
+          "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/attempts/006-mandelbrot-lua-2.json",
+          "supervised_native_group": {
+            "type": "native-group-started",
+            "pid": 82442,
+            "pgid": 82442,
+            "command": [
+              "/opt/homebrew/Cellar/lua/5.5.1/bin/lua",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/mandelbrot-lua-2.lua",
+              "7"
+            ],
+            "inherited_common_mutex": true
+          },
+          "supervisor_remaining_members": [],
+          "fatal_qualification_fields": [],
+          "qualified": true,
+          "retryable_environment_only": false,
+          "case": "size-7",
+          "preparation_only": true,
+          "never_chart_eligible": true,
+          "full_performance_run": false,
+          "input_file": null
+        },
+        {
+          "key": "mandelbrot:mandelbrot-lua-2",
+          "id": "mandelbrot-lua-2",
+          "benchmark": "mandelbrot",
+          "language": "lua",
+          "source_sha256": "16eacf7585991619923c8add0aa9ae0c1327aa2b5f31764208fcf27a5d52f249",
+          "command": [
+            "/opt/homebrew/Cellar/lua/5.5.1/bin/lua",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/mandelbrot-lua-2.lua",
+            "8"
+          ],
+          "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg",
+          "runtime_environment": {
+            "LC_ALL": "C",
+            "OMP_NUM_THREADS": "8",
+            "OPENBLAS_NUM_THREADS": "1",
+            "VECLIB_MAXIMUM_THREADS": "1",
+            "RAYON_NUM_THREADS": "8"
+          },
+          "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/opt/homebrew/Cellar/lua/5.5.1/bin/lua\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"16eacf7585991619923c8add0aa9ae0c1327aa2b5f31764208fcf27a5d52f249\", \"support\": {\"/opt/homebrew/Cellar/lua/5.5.1/bin/lua\": \"83ea84efb4f7692a4452cfedf9325cc1f342edc6cf0d50b262add4eab1b75bea\"}}",
+          "started_at": "2026-10-12T16:47:23.417038+00:00",
+          "workload_n": 8,
+          "full_workload": false,
+          "timeout_seconds": 300,
+          "maximum_rss_mib": 8192,
+          "power_at_start": {
+            "source": "AC Power",
+            "low_power_mode": 0
+          },
+          "seconds": 0.006789417,
+          "exit_status": 0,
+          "remaining_group_members": [],
+          "competing_compilers": [],
+          "power_changes": [],
+          "power_at_end": {
+            "source": "AC Power",
+            "low_power_mode": 0
+          },
+          "monitor_errors": [],
+          "peak_process_group_rss_kib": 0,
+          "resource_violation": null,
+          "resource_monitor_errors": [],
+          "stderr": "",
+          "stdout_bytes": 15,
+          "stdout_sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+          "validation": {
+            "bytes": 15,
+            "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+            "reference_match": true,
+            "bounded_independent_oracle": true,
+            "tolerance": null
+          },
+          "finished_at": "2026-10-12T16:47:23.631632+00:00",
+          "valid_environment": true,
+          "pins_unchanged_at_end": true,
+          "round": 0,
+          "attempt": 7,
+          "sampler_wait_status": 0,
+          "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/attempts/007-mandelbrot-lua-2.json",
+          "supervised_native_group": {
+            "type": "native-group-started",
+            "pid": 82459,
+            "pgid": 82459,
+            "command": [
+              "/opt/homebrew/Cellar/lua/5.5.1/bin/lua",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/mandelbrot-lua-2.lua",
+              "8"
+            ],
+            "inherited_common_mutex": true
+          },
+          "supervisor_remaining_members": [],
+          "fatal_qualification_fields": [],
+          "qualified": true,
+          "retryable_environment_only": false,
+          "case": "size-8",
+          "preparation_only": true,
+          "never_chart_eligible": true,
+          "full_performance_run": false,
+          "input_file": null
+        },
+        {
+          "key": "mandelbrot:mandelbrot-lua-2",
+          "id": "mandelbrot-lua-2",
+          "benchmark": "mandelbrot",
+          "language": "lua",
+          "source_sha256": "16eacf7585991619923c8add0aa9ae0c1327aa2b5f31764208fcf27a5d52f249",
+          "command": [
+            "/opt/homebrew/Cellar/lua/5.5.1/bin/lua",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/mandelbrot-lua-2.lua",
+            "9"
+          ],
+          "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg",
+          "runtime_environment": {
+            "LC_ALL": "C",
+            "OMP_NUM_THREADS": "8",
+            "OPENBLAS_NUM_THREADS": "1",
+            "VECLIB_MAXIMUM_THREADS": "1",
+            "RAYON_NUM_THREADS": "8"
+          },
+          "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/opt/homebrew/Cellar/lua/5.5.1/bin/lua\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"16eacf7585991619923c8add0aa9ae0c1327aa2b5f31764208fcf27a5d52f249\", \"support\": {\"/opt/homebrew/Cellar/lua/5.5.1/bin/lua\": \"83ea84efb4f7692a4452cfedf9325cc1f342edc6cf0d50b262add4eab1b75bea\"}}",
+          "started_at": "2026-10-12T16:47:23.707099+00:00",
+          "workload_n": 9,
+          "full_workload": false,
+          "timeout_seconds": 300,
+          "maximum_rss_mib": 8192,
+          "power_at_start": {
+            "source": "AC Power",
+            "low_power_mode": 0
+          },
+          "seconds": 0.009147667,
+          "exit_status": 0,
+          "remaining_group_members": [],
+          "competing_compilers": [],
+          "power_changes": [],
+          "power_at_end": {
+            "source": "AC Power",
+            "low_power_mode": 0
+          },
+          "monitor_errors": [],
+          "peak_process_group_rss_kib": 0,
+          "resource_violation": null,
+          "resource_monitor_errors": [],
+          "stderr": "",
+          "stdout_bytes": 25,
+          "stdout_sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+          "validation": {
+            "bytes": 25,
+            "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+            "reference_match": true,
+            "bounded_independent_oracle": true,
+            "tolerance": null
+          },
+          "finished_at": "2026-10-12T16:47:23.918282+00:00",
+          "valid_environment": true,
+          "pins_unchanged_at_end": true,
+          "round": 0,
+          "attempt": 8,
+          "sampler_wait_status": 0,
+          "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/attempts/008-mandelbrot-lua-2.json",
+          "supervised_native_group": {
+            "type": "native-group-started",
+            "pid": 82476,
+            "pgid": 82476,
+            "command": [
+              "/opt/homebrew/Cellar/lua/5.5.1/bin/lua",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/mandelbrot-lua-2.lua",
+              "9"
+            ],
+            "inherited_common_mutex": true
+          },
+          "supervisor_remaining_members": [],
+          "fatal_qualification_fields": [],
+          "qualified": true,
+          "retryable_environment_only": false,
+          "case": "size-9",
+          "preparation_only": true,
+          "never_chart_eligible": true,
+          "full_performance_run": false,
+          "input_file": null
+        },
+        {
+          "key": "mandelbrot:mandelbrot-lua-2",
+          "id": "mandelbrot-lua-2",
+          "benchmark": "mandelbrot",
+          "language": "lua",
+          "source_sha256": "16eacf7585991619923c8add0aa9ae0c1327aa2b5f31764208fcf27a5d52f249",
+          "command": [
+            "/opt/homebrew/Cellar/lua/5.5.1/bin/lua",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/mandelbrot-lua-2.lua",
+            "17"
+          ],
+          "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg",
+          "runtime_environment": {
+            "LC_ALL": "C",
+            "OMP_NUM_THREADS": "8",
+            "OPENBLAS_NUM_THREADS": "1",
+            "VECLIB_MAXIMUM_THREADS": "1",
+            "RAYON_NUM_THREADS": "8"
+          },
+          "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/opt/homebrew/Cellar/lua/5.5.1/bin/lua\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"16eacf7585991619923c8add0aa9ae0c1327aa2b5f31764208fcf27a5d52f249\", \"support\": {\"/opt/homebrew/Cellar/lua/5.5.1/bin/lua\": \"83ea84efb4f7692a4452cfedf9325cc1f342edc6cf0d50b262add4eab1b75bea\"}}",
+          "started_at": "2026-10-12T16:47:24.000730+00:00",
+          "workload_n": 17,
+          "full_workload": false,
+          "timeout_seconds": 300,
+          "maximum_rss_mib": 8192,
+          "power_at_start": {
+            "source": "AC Power",
+            "low_power_mode": 0
+          },
+          "seconds": 0.009267416,
+          "exit_status": 0,
+          "remaining_group_members": [],
+          "competing_compilers": [],
+          "power_changes": [],
+          "power_at_end": {
+            "source": "AC Power",
+            "low_power_mode": 0
+          },
+          "monitor_errors": [],
+          "peak_process_group_rss_kib": 0,
+          "resource_violation": null,
+          "resource_monitor_errors": [],
+          "stderr": "",
+          "stdout_bytes": 60,
+          "stdout_sha256": "11a01916753a7774492b5b818545d4d6dfaabcd93de1da2c4eb5dd3597fcaf79",
+          "validation": {
+            "bytes": 60,
+            "sha256": "11a01916753a7774492b5b818545d4d6dfaabcd93de1da2c4eb5dd3597fcaf79",
+            "reference_match": true,
+            "bounded_independent_oracle": true,
+            "tolerance": null
+          },
+          "finished_at": "2026-10-12T16:47:24.216109+00:00",
+          "valid_environment": true,
+          "pins_unchanged_at_end": true,
+          "round": 0,
+          "attempt": 9,
+          "sampler_wait_status": 0,
+          "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/attempts/009-mandelbrot-lua-2.json",
+          "supervised_native_group": {
+            "type": "native-group-started",
+            "pid": 82493,
+            "pgid": 82493,
+            "command": [
+              "/opt/homebrew/Cellar/lua/5.5.1/bin/lua",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/mandelbrot-lua-2.lua",
+              "17"
+            ],
+            "inherited_common_mutex": true
+          },
+          "supervisor_remaining_members": [],
+          "fatal_qualification_fields": [],
+          "qualified": true,
+          "retryable_environment_only": false,
+          "case": "size-17",
+          "preparation_only": true,
+          "never_chart_eligible": true,
+          "full_performance_run": false,
+          "input_file": null
+        },
+        {
+          "key": "mandelbrot:mandelbrot-lua-2",
+          "id": "mandelbrot-lua-2",
+          "benchmark": "mandelbrot",
+          "language": "lua",
+          "source_sha256": "16eacf7585991619923c8add0aa9ae0c1327aa2b5f31764208fcf27a5d52f249",
+          "command": [
+            "/opt/homebrew/Cellar/lua/5.5.1/bin/lua",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/mandelbrot-lua-2.lua",
+            "31"
+          ],
+          "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg",
+          "runtime_environment": {
+            "LC_ALL": "C",
+            "OMP_NUM_THREADS": "8",
+            "OPENBLAS_NUM_THREADS": "1",
+            "VECLIB_MAXIMUM_THREADS": "1",
+            "RAYON_NUM_THREADS": "8"
+          },
+          "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/opt/homebrew/Cellar/lua/5.5.1/bin/lua\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"16eacf7585991619923c8add0aa9ae0c1327aa2b5f31764208fcf27a5d52f249\", \"support\": {\"/opt/homebrew/Cellar/lua/5.5.1/bin/lua\": \"83ea84efb4f7692a4452cfedf9325cc1f342edc6cf0d50b262add4eab1b75bea\"}}",
+          "started_at": "2026-10-12T16:47:24.294993+00:00",
+          "workload_n": 31,
+          "full_workload": false,
+          "timeout_seconds": 300,
+          "maximum_rss_mib": 8192,
+          "power_at_start": {
+            "source": "AC Power",
+            "low_power_mode": 0
+          },
+          "seconds": 0.007615208,
+          "exit_status": 0,
+          "remaining_group_members": [],
+          "competing_compilers": [],
+          "power_changes": [],
+          "power_at_end": {
+            "source": "AC Power",
+            "low_power_mode": 0
+          },
+          "monitor_errors": [],
+          "peak_process_group_rss_kib": 0,
+          "resource_violation": null,
+          "resource_monitor_errors": [],
+          "stderr": "",
+          "stdout_bytes": 133,
+          "stdout_sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+          "validation": {
+            "bytes": 133,
+            "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+            "reference_match": true,
+            "bounded_independent_oracle": true,
+            "tolerance": null
+          },
+          "finished_at": "2026-10-12T16:47:24.501485+00:00",
+          "valid_environment": true,
+          "pins_unchanged_at_end": true,
+          "round": 0,
+          "attempt": 10,
+          "sampler_wait_status": 0,
+          "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/attempts/010-mandelbrot-lua-2.json",
+          "supervised_native_group": {
+            "type": "native-group-started",
+            "pid": 82510,
+            "pgid": 82510,
+            "command": [
+              "/opt/homebrew/Cellar/lua/5.5.1/bin/lua",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/mandelbrot-lua-2.lua",
+              "31"
+            ],
+            "inherited_common_mutex": true
+          },
+          "supervisor_remaining_members": [],
+          "fatal_qualification_fields": [],
+          "qualified": true,
+          "retryable_environment_only": false,
+          "case": "size-31",
+          "preparation_only": true,
+          "never_chart_eligible": true,
+          "full_performance_run": false,
+          "input_file": null
+        },
+        {
+          "key": "mandelbrot:mandelbrot-lua-2",
+          "id": "mandelbrot-lua-2",
+          "benchmark": "mandelbrot",
+          "language": "lua",
+          "source_sha256": "16eacf7585991619923c8add0aa9ae0c1327aa2b5f31764208fcf27a5d52f249",
+          "command": [
+            "/opt/homebrew/Cellar/lua/5.5.1/bin/lua",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/mandelbrot-lua-2.lua",
+            "65"
+          ],
+          "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg",
+          "runtime_environment": {
+            "LC_ALL": "C",
+            "OMP_NUM_THREADS": "8",
+            "OPENBLAS_NUM_THREADS": "1",
+            "VECLIB_MAXIMUM_THREADS": "1",
+            "RAYON_NUM_THREADS": "8"
+          },
+          "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/opt/homebrew/Cellar/lua/5.5.1/bin/lua\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"16eacf7585991619923c8add0aa9ae0c1327aa2b5f31764208fcf27a5d52f249\", \"support\": {\"/opt/homebrew/Cellar/lua/5.5.1/bin/lua\": \"83ea84efb4f7692a4452cfedf9325cc1f342edc6cf0d50b262add4eab1b75bea\"}}",
+          "started_at": "2026-10-12T16:47:24.583346+00:00",
+          "workload_n": 65,
+          "full_workload": false,
+          "timeout_seconds": 300,
+          "maximum_rss_mib": 8192,
+          "power_at_start": {
+            "source": "AC Power",
+            "low_power_mode": 0
+          },
+          "seconds": 0.011602125,
+          "exit_status": 0,
+          "remaining_group_members": [],
+          "competing_compilers": [],
+          "power_changes": [],
+          "power_at_end": {
+            "source": "AC Power",
+            "low_power_mode": 0
+          },
+          "monitor_errors": [],
+          "peak_process_group_rss_kib": 0,
+          "resource_violation": null,
+          "resource_monitor_errors": [],
+          "stderr": "",
+          "stdout_bytes": 594,
+          "stdout_sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c",
+          "validation": {
+            "bytes": 594,
+            "sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c",
+            "reference_match": true,
+            "bounded_independent_oracle": true,
+            "tolerance": null
+          },
+          "finished_at": "2026-10-12T16:47:24.794931+00:00",
+          "valid_environment": true,
+          "pins_unchanged_at_end": true,
+          "round": 0,
+          "attempt": 11,
+          "sampler_wait_status": 0,
+          "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/attempts/011-mandelbrot-lua-2.json",
+          "supervised_native_group": {
+            "type": "native-group-started",
+            "pid": 82527,
+            "pgid": 82527,
+            "command": [
+              "/opt/homebrew/Cellar/lua/5.5.1/bin/lua",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/mandelbrot-lua-2.lua",
+              "65"
+            ],
+            "inherited_common_mutex": true
+          },
+          "supervisor_remaining_members": [],
+          "fatal_qualification_fields": [],
+          "qualified": true,
+          "retryable_environment_only": false,
+          "case": "size-65",
+          "preparation_only": true,
+          "never_chart_eligible": true,
+          "full_performance_run": false,
+          "input_file": null
+        }
+      ],
+      "required_work_review": {
+        "status": "passed",
+        "method": "Root source review plus canonical and independent bounded outputs",
+        "source_sha256": "16eacf7585991619923c8add0aa9ae0c1327aa2b5f31764208fcf27a5d52f249",
+        "contract": "Every requested pixel, prescribed binary64 recurrence/escape predicate and complete zero-padded binary PBM."
+      }
+    },
+    {
+      "id": "mech-aot-control",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec",
+      "source_sha256": "baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde",
+      "loc": null,
+      "simd": true,
+      "loop_fma": true,
+      "executable": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+      "emission": {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/.build/arrow-mutations-current/mech-clbg-mandelbrot-compiled",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec",
+          "emit-cranelift-simd",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma.o",
+          "--source-program",
+          "--fp-contract-loop"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "link": {
+        "command": [
+          "/opt/homebrew/opt/llvm@22/bin/clang-22",
+          "-O3",
+          "-mcpu=native",
+          "-ffp-contract=off",
+          "-isysroot",
+          "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma.o",
+          "-lm",
+          "-pthread",
+          "-o",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma"
+        ],
+        "returncode": 0,
+        "stdout": "",
+        "stderr": "ld: warning: no platform load command found in '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma.o', assuming: macOS\n"
+      },
+      "generated_c_sha256": "0d442a69533edc4868567f8f10762f2e706e8851aab56f8c7d92d3b1d4dabfe1",
+      "native_object_sha256": "41ad4bedd5f8baf3093a0b2e65dfbf60e4638f0bb5d177d2f9f39c1a9e3f6843",
+      "object_inspection": {
+        "_mech_map_bits": {
+          "instructions": 219,
+          "mnemonics": {
+            "and": 8,
+            "b": 1,
+            "b.ne": 1,
+            "cmp": 1,
+            "csel": 1,
+            "dup.2d": 2,
+            "fadd": 1,
+            "fadd.2d": 40,
+            "fcmge.2d": 4,
+            "fcmp": 1,
+            "fdiv": 1,
+            "fmla.2d": 24,
+            "fmls.2d": 20,
+            "fmov": 8,
+            "fmov.2d": 2,
+            "fmul": 1,
+            "fmul.2d": 24,
+            "fsub": 1,
+            "fsub.2d": 4,
+            "ldr": 10,
+            "mov": 3,
+            "mov.16b": 31,
+            "mov.d": 12,
+            "movi.16b": 1,
+            "movi.2s": 1,
+            "orn": 1,
+            "orr": 14,
+            "ret": 1
+          },
+          "memory_instructions": [
+            {
+              "address": 0,
+              "mnemonic": "ldr",
+              "operands": "d5, [x0]"
+            },
+            {
+              "address": 4,
+              "mnemonic": "ldr",
+              "operands": "d23, [x0, #0x8]"
+            },
+            {
+              "address": 8,
+              "mnemonic": "ldr",
+              "operands": "d6, [x0, #0x10]"
+            },
+            {
+              "address": 12,
+              "mnemonic": "ldr",
+              "operands": "d22, [x0, #0x18]"
+            },
+            {
+              "address": 16,
+              "mnemonic": "ldr",
+              "operands": "d7, [x0, #0x20]"
+            },
+            {
+              "address": 20,
+              "mnemonic": "ldr",
+              "operands": "d20, [x0, #0x28]"
+            },
+            {
+              "address": 24,
+              "mnemonic": "ldr",
+              "operands": "d17, [x0, #0x30]"
+            },
+            {
+              "address": 28,
+              "mnemonic": "ldr",
+              "operands": "d19, [x0, #0x38]"
+            },
+            {
+              "address": 32,
+              "mnemonic": "ldr",
+              "operands": "d18, [x0, #0x40]"
+            },
+            {
+              "address": 36,
+              "mnemonic": "ldr",
+              "operands": "d25, [x0, #0x48]"
+            }
+          ]
+        },
+        "_mech_grid_row": {
+          "instructions": 65,
+          "mnemonics": {
+            "add": 9,
+            "and": 1,
+            "b": 1,
+            "b.eq": 1,
+            "b.hs": 1,
+            "bl": 1,
+            "cmp": 3,
+            "csel": 1,
+            "ldp": 3,
+            "lsl": 1,
+            "lsr": 1,
+            "mov": 13,
+            "pacibsp": 1,
+            "retab": 1,
+            "stp": 3,
+            "strb": 1,
+            "stur": 10,
+            "sub": 3,
+            "ucvtf": 10
+          },
+          "memory_instructions": [
+            {
+              "address": 880,
+              "mnemonic": "stp",
+              "operands": "x29, x30, [sp, #-0x10]!"
+            },
+            {
+              "address": 888,
+              "mnemonic": "stp",
+              "operands": "x21, x22, [sp, #-0x10]!"
+            },
+            {
+              "address": 892,
+              "mnemonic": "stp",
+              "operands": "x19, x20, [sp, #-0x10]!"
+            },
+            {
+              "address": 912,
+              "mnemonic": "stur",
+              "operands": "d0, [sp]"
+            },
+            {
+              "address": 920,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x48]"
+            },
+            {
+              "address": 944,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x8]"
+            },
+            {
+              "address": 956,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x10]"
+            },
+            {
+              "address": 968,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x18]"
+            },
+            {
+              "address": 980,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x20]"
+            },
+            {
+              "address": 992,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x28]"
+            },
+            {
+              "address": 1004,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x30]"
+            },
+            {
+              "address": 1016,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x38]"
+            },
+            {
+              "address": 1028,
+              "mnemonic": "stur",
+              "operands": "d0, [sp, #0x40]"
+            },
+            {
+              "address": 1088,
+              "mnemonic": "strb",
+              "operands": "w0, [x2, x1]"
+            },
+            {
+              "address": 1120,
+              "mnemonic": "ldp",
+              "operands": "x19, x20, [sp], #0x10"
+            },
+            {
+              "address": 1124,
+              "mnemonic": "ldp",
+              "operands": "x21, x22, [sp], #0x10"
+            },
+            {
+              "address": 1128,
+              "mnemonic": "ldp",
+              "operands": "x29, x30, [sp], #0x10"
+            }
+          ]
+        }
+      },
+      "binary_sha256": "42a54ae5ab8902a4b71d031f3744a1da23c1da1fa26af6943fa3b77475691d8f",
+      "key": "mandelbrot:loc-minimum-study:mech-control",
+      "benchmark": "mandelbrot",
+      "language": "mech",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+        "{n}",
+        "8"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "state_layout": "2x8 numeric state plus scalar iteration",
+      "role": "Fresh current Mech AOT fastest-source control",
+      "mode": "aot-control",
+      "timing_boundary": "Fresh-process elapsed including startup, complete PBM output and shutdown; unchanged canonical-source AOT binary from the completed array-state study.",
+      "maximum_workers": 8,
+      "producer_loc": 16,
+      "loc_status": "pending canonical count overlay"
+    }
+  ],
+  "orders": [
+    {
+      "round": 1,
+      "profiles": [
+        "mandelbrot-lua-2",
+        "mech-aot-control"
+      ]
+    },
+    {
+      "round": 2,
+      "profiles": [
+        "mech-aot-control",
+        "mandelbrot-lua-2"
+      ]
+    },
+    {
+      "round": 3,
+      "profiles": [
+        "mandelbrot-lua-2",
+        "mech-aot-control"
+      ]
+    }
+  ],
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/test_references.py": "b0df8d06db76af743cfd345e30cef4fb9d8700d451ee69b6bd620aed40198fa0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/references.py": "962e34002982a48d172762a9d43c81976ee09d7b9371d14eb7be7dc8f85d69eb",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/full_study.py": "578a49d343fae3d6d67317594c6d820eb604556e8de5904b3d725706b15cc7c4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/full_study.py": "7a48690bef2f36375c72619f8c74170735273804d089dafb55e6813189613fe5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run.py": "5b2a038cfae4112e9e2eee79c3cd57ccc6a1521812828c47bf28986d6a8e139b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/test_prepare.py": "cdbf617d9d77b37c17639c85b6bf3db012fd888335bf4735a3c81b29c8a54851",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/prepare.py": "edf9b67813968d35dbb208ce6935aa83b66066cb91a722e5fd1145261d97951a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/test_cleanup.py": "fc4f7c76831ed674ed84005d0952b1a6c76ec945760bec365b106e56277ea64f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/prepare_cohort.py": "d4c26a05012f608f94c3c15c8db3173a2fd7fcbfa1667f4bab1c2f25d8a9a1d2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/test_minimum_launch.py": "6f4aa94de9c1e0bf4a65a5bd153c5ec03931474f03f1d66fa710625239678f64",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending_minima_study.py": "01e4c5adf928b021319c318c721f385a1d5c2b483163740013acd6024cd48610",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/compact/upstream/mandelbrot-lua-2.lua": "16eacf7585991619923c8add0aa9ae0c1327aa2b5f31764208fcf27a5d52f249",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/mandelbrot-lua-2.lua": "16eacf7585991619923c8add0aa9ae0c1327aa2b5f31764208fcf27a5d52f249",
+    "/opt/homebrew/Cellar/lua/5.5.1/bin/lua": "83ea84efb4f7692a4452cfedf9325cc1f342edc6cf0d50b262add4eab1b75bea",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/compact/manifest.json": "2181a2060b8660084bec003054e22740a21f64cbe6317e60eaffdfeff1106b35",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/prepare.py": "27fcf050ed21db40e747f2e8801ca6f227d82f1ea98f8592bba7b10a768109e5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/compact/run.py": "6926e288a7b9b59b030c9226227df967aa1d92b3e395789467706e2241d987ae",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/run.py": "e907f71b3fdf8fc6f65adc76aab6dfc424811875388c14f0eb2f31e14e9cffcf",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/all-20261009/run.py": "8b7f1b408fb5838dc6adc2404bcfa6146e48e770e602fbe78255454f3cacb8c7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/oracle-fixtures.json": "e80cf4279af209cb28cb14fb43b242a4d1cec8429274636d38ed15f34e700efe",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/preparation-fixtures.json": "f06283e1642585198a4a2a27b49388a8b3aa789fe1c209d90d525ed6ae993c6f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/cleanup-fixtures.json": "505100c316b7fe1cd9d25882e72f7c96bbd0576dc46857d4a16a19d3acc9e9ff",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/minimum-launch-fixtures.json": "6b64b428aeffbf9be92af228726c939adf012e6240c1de6f26e7494a361d1745",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/source-audit-r.json": "d76be20504617addb9efd5915bf7074877e727e3a49ccbd36585b4be5c763af3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/full-study/manifest.json": "fbffba7b5674e889ac9e5088bbb2e2d8499df41f5d9b4c677be38d831091680f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec": "baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma": "42a54ae5ab8902a4b71d031f3744a1da23c1da1fa26af6943fa3b77475691d8f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/probes.json": "8f7d097f83882a8d5bf89d486b2f22f923c5a501ec6eee7a0df88023423e37f1"
+  },
+  "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+  "required_power_profile": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "maximum_rss_mib": 8192,
+  "timeout_seconds": 14400,
+  "maximum_compute_workers": 8,
+  "environment_retry_limit": 3,
+  "qualification": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/pending-minima/mandelbrot/qualification-v1/probes.json",
+  "chart_admitted": false,
+  "loc_status": "pending final canonical audit",
+  "timing_boundary": "Fresh process startup, all prescribed work, full output, and shutdown; preparation excluded.",
+  "retry_policy": "Only bounded environment-only retries; output/work/resource/pin/ownership failures stop and retain evidence."
+}

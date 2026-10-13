@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/usr/bin/lipo",
+    "-archs",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v7/bin/actual-pi-compact"
+  ],
+  "started_at": "2026-10-13T01:30:04.452763+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 13080,
+  "identity": {
+    "pid": 13080,
+    "process_listing": "Mon Oct 12 21:30:04 2026     /Library/Developer/CommandLineTools/usr/bin/lipo -archs /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v7/bin/actual-pi-compact"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-13T01:30:04.467837+00:00",
+  "final_exit_status": 0
+}

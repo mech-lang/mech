@@ -1,0 +1,18 @@
+{
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/nbody-library-pilot-v1/nbody-aot",
+  "architectures": [
+    "arm64"
+  ],
+  "dependencies": [
+    {
+      "install_name": "@rpath/libclbgnbodypilot.dylib",
+      "lookup_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/nbody-library-pilot-v1/bundle/lib/libclbgnbodypilot.dylib",
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/nbody-library-pilot-v1/bundle/lib/libclbgnbodypilot.dylib",
+      "sha256": "5a3694c05b8e1b1f1ff336dda630b59663dd28dce00b74641756474ff654cc8c"
+    },
+    {
+      "install_name": "/usr/lib/libSystem.B.dylib",
+      "scope": "OS-image-not-hashed"
+    }
+  ]
+}

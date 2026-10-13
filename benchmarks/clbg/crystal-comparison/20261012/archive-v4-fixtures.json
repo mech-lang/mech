@@ -1,0 +1,24 @@
+{
+  "status": "failed",
+  "tests_run": 6,
+  "failures": 1,
+  "errors": 1,
+  "native_probes": 0,
+  "actual_signals_sent": 0,
+  "source_revision": "input-label-archive-v4",
+  "never_chart_eligible": true,
+  "original112probes_reexecuted": false,
+  "prior_fixture_methods_reexecuted": false,
+  "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/test_archive_v4.py": "242af196b01143c3c0cc7b3e911a09932ad6106fd1e7a608a645561f6ff1161f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/guarded_prepare_v4.py": "96861dc69c568ee3d2e473d7eb71c8551dded73e6560577e0d7e3d1546c5fe10",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/proof_reuse_v4.py": "cee6e6f8969fd0ae04ee2e7c91d55be4087ca7a340c3db8da78deafb6b2d3cc3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/ARCHIVE_V4.md": "d0b69e7c520936d6fa610e76f4b4a271b7f91f782588f86ed64dfe05a92a36b0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/guarded_prepare_v3.py": "de7bcbb690d5300527826323090a1a4cad12bbf2d8096051b6a54a7dbcc1b061",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/proof_reuse_v3.py": "c559582c32df7d5dc12819b2a962062a2d23533060eb5280e82893baa278ddfb",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/input-v3-fixtures.json": "c642aeb23999b0977407ae24189534ba56d7517c833f8dc7208d7d4184b3d15d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/metadata-failures/input-v3-seal-001/failure.json": "5f682d05ed1718522ee95c523444dc2550bb5610a13c873afb06787317d08ec2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/archive-v4-fixtures.log": "3f5fb89645eacd371b9743b94500174f6bd1c11a4800803345a7b059fb24c4a1"
+  }
+}

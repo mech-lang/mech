@@ -1,0 +1,9 @@
+{
+  "pid": 52680,
+  "identity": {
+    "pid": 52680,
+    "process_listing": "Mon Oct 12 09:56:31 2026     (python3.14)"
+  },
+  "manifest_sha256": "affba5b243da43d1a15c28e5364741828e4f684bb1b43d15d81ad720b28ef39f",
+  "launched_at": "2026-10-12T13:56:31.133928+00:00"
+}

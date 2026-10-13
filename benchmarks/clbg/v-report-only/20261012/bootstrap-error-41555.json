@@ -1,0 +1,6 @@
+{
+  "finished_at": "2026-10-12T13:44:50.925909+00:00",
+  "error": "('Production smoke build failed', 1)",
+  "error_type": "AssertionError",
+  "no_automatic_retry": true
+}

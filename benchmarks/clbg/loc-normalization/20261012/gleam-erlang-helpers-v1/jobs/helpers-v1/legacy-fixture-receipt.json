@@ -1,0 +1,17 @@
+{
+  "status": "not-started",
+  "expected_ids": [
+    "independent-bindings",
+    "tuple-data",
+    "call-arguments",
+    "list-data-and-comment",
+    "nested-block"
+  ],
+  "started_ids": [],
+  "actual_cases": 0,
+  "raw_case_receipts": [],
+  "actual_common_mutex_held": true,
+  "actual_benchmark_processes": 0,
+  "original_counter_source_sha256": "4397dec13918804bf0fe83b454e1a187ed7da6e85988547b741a28fff36daf5b",
+  "no_synthetic_completed_fixture_status": true
+}

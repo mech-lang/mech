@@ -1,0 +1,154 @@
+{
+  "status": "additive-builder-v3-draft-unbuilt-unqualified",
+  "report_only": true,
+  "chart_admission": false,
+  "full_performance_runs": 0,
+  "source_revision": "pidigits-builder-v3",
+  "v_release": "0.5.2",
+  "v_source_ref": "7647ce1c6fad63b5578bc07883139906de74b2f8",
+  "source_path_basis": "All source paths relative to v-report-only/20261012",
+  "parent_profiles": "revisions/input-v2/profiles.json",
+  "selected_profile_count": 2,
+  "changed_sources": 1,
+  "exact_parent_copies": 1,
+  "profiles": [
+    {
+      "id": "v-pidigits-compact-builder-v3",
+      "benchmark": "pidigits",
+      "variant": "compact",
+      "role": "compact",
+      "source": "revisions/pidigits-builder-v3/sources/pidigits/compact.v",
+      "source_sha256": null,
+      "loc": null,
+      "loc_status": "pending canonical normalization under common mutex",
+      "status": "additive-builder-v3-unbuilt-unqualified",
+      "provenance": {
+        "kind": "locally-authored-V",
+        "upstream": null,
+        "upstream_repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+        "input_revision_parent_id": "v-pidigits-compact",
+        "input_revision_parent_source": "sources/pidigits/compact.v"
+      },
+      "technique": "Pure V standard math.big LFT with both explicit exact endpoint numerators/divisions for every tested candidate.",
+      "library": "V math.big (pure V arbitrary precision)",
+      "required_work": {
+        "digits": "argument",
+        "canonical_n": 10000,
+        "exact_extracts_per_candidate": 2,
+        "sequential_spigot": true,
+        "output_tail_and_count": true,
+        "zero_digits_empty": true
+      },
+      "algorithm": {
+        "status": "source-draft-awaiting-independent-review",
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Pure V standard math.big LFT with both explicit exact endpoint numerators/divisions for every tested candidate.",
+        "required_work": {
+          "digits": "argument",
+          "canonical_n": 10000,
+          "exact_extracts_per_candidate": 2,
+          "sequential_spigot": true,
+          "output_tail_and_count": true,
+          "zero_digits_empty": true
+        }
+      },
+      "native_benchmark_kernel": false,
+      "maximum_workers": 1,
+      "maximum_compute_workers": 1,
+      "compiler_flags": [
+        "-prod",
+        "-cc",
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-cflags",
+        "-O3 -march=native -ffp-contract=off"
+      ],
+      "chart_eligible": false,
+      "report_only": true,
+      "historical_id": "v-pidigits-compact-input-v2",
+      "source_revision": "pidigits-builder-v3",
+      "parent_source": "revisions/input-v2/sources/pidigits/compact.v",
+      "parent_source_policy": "Original frozen source remains unchanged; seal both exact hashes under common mutex.",
+      "parent_bytes_unchanged": true,
+      "source_changes": [
+        "Exact unchanged compact input-v2 source bytes."
+      ],
+      "eligible_for_chart": false,
+      "never_chart_eligible": true,
+      "small_validation": null,
+      "required_work_review": {
+        "status": "pending fresh native output and actual two-extract work qualification"
+      }
+    },
+    {
+      "id": "v-pidigits-optimized-builder-v3",
+      "benchmark": "pidigits",
+      "variant": "optimized",
+      "role": "optimized",
+      "source": "revisions/pidigits-builder-v3/sources/pidigits/optimized.v",
+      "source_sha256": null,
+      "loc": null,
+      "loc_status": "pending canonical normalization under common mutex",
+      "status": "additive-builder-v3-unbuilt-unqualified",
+      "provenance": {
+        "kind": "adapted-published-source",
+        "upstream": "upstream/hanabi/bench/algorithm/pidigits/2.v",
+        "upstream_repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+        "input_revision_parent_id": "v-pidigits-optimized",
+        "input_revision_parent_source": "sources/pidigits/optimized.v"
+      },
+      "technique": "Published endpoint-numerator basis avoids rebuilding3q+r and4q+r each test; both divisions still execute.",
+      "library": "V math.big (pure V arbitrary precision)",
+      "required_work": {
+        "digits": "argument",
+        "canonical_n": 10000,
+        "exact_extracts_per_candidate": 2,
+        "sequential_spigot": true,
+        "output_tail_and_count": true,
+        "zero_digits_empty": true
+      },
+      "algorithm": {
+        "status": "source-draft-awaiting-independent-review",
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Published endpoint-numerator basis avoids rebuilding3q+r and4q+r each test; both divisions still execute.",
+        "required_work": {
+          "digits": "argument",
+          "canonical_n": 10000,
+          "exact_extracts_per_candidate": 2,
+          "sequential_spigot": true,
+          "output_tail_and_count": true,
+          "zero_digits_empty": true
+        }
+      },
+      "native_benchmark_kernel": false,
+      "maximum_workers": 1,
+      "maximum_compute_workers": 1,
+      "compiler_flags": [
+        "-prod",
+        "-cc",
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-cflags",
+        "-O3 -march=native -ffp-contract=off"
+      ],
+      "chart_eligible": false,
+      "report_only": true,
+      "historical_id": "v-pidigits-optimized-input-v2",
+      "source_revision": "pidigits-builder-v3",
+      "parent_source": "revisions/input-v2/sources/pidigits/optimized.v",
+      "parent_source_policy": "Original frozen source remains unchanged; seal both exact hashes under common mutex.",
+      "parent_bytes_unchanged": false,
+      "source_changes": [
+        "Swap defer/unsafe nesting so strings.Builder.free is called inside unsafe at deferred cleanup; all digit arithmetic/output statements remain exact."
+      ],
+      "eligible_for_chart": false,
+      "never_chart_eligible": true,
+      "small_validation": null,
+      "required_work_review": {
+        "status": "pending fresh native output and actual two-extract work qualification"
+      }
+    }
+  ]
+}

@@ -1,0 +1,201 @@
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.26
+   Compiling quote v1.0.47
+   Compiling libm v0.2.16
+   Compiling syn v3.0.6
+   Compiling foldhash v0.2.0
+   Compiling serde_core v1.0.229
+   Compiling libc v0.2.190
+   Compiling autocfg v1.5.1
+   Compiling hashbrown v0.17.1
+   Compiling cfg-if v1.0.5
+   Compiling equivalent v1.0.2
+   Compiling typenum v1.20.1
+   Compiling indexmap v2.14.2
+   Compiling num-traits v0.2.19
+   Compiling memchr v2.8.3
+   Compiling hybrid-array v0.4.15
+   Compiling syn v2.0.119
+   Compiling crc32fast v1.5.2
+   Compiling paste v1.0.15
+   Compiling bytemuck v1.25.2
+   Compiling safe_arch v0.7.4
+   Compiling matrixmultiply v0.3.11
+   Compiling serde v1.0.229
+   Compiling zmij v1.0.23
+   Compiling alloc-no-stdlib v2.0.4
+   Compiling alloc-stdlib v0.2.4
+   Compiling wide v0.7.33
+   Compiling block-buffer v0.12.1
+   Compiling crypto-common v0.2.2
+   Compiling approx v0.5.1
+   Compiling num-complex v0.4.6
+   Compiling num-integer v0.1.47
+   Compiling serde_derive v1.0.229
+   Compiling rawpointer v0.2.1
+   Compiling serde_json v1.0.151
+   Compiling virtue v0.0.18
+   Compiling bincode_derive v2.0.1
+   Compiling num-rational v0.4.2
+   Compiling simba v0.9.1
+   Compiling digest v0.11.3
+   Compiling nalgebra-macros v0.3.0
+   Compiling brotli-decompressor v5.0.3
+   Compiling cpufeatures v0.3.1
+   Compiling synstructure v0.14.0
+   Compiling itoa v1.0.18
+   Compiling unty v0.0.4
+   Compiling byteorder v1.5.0
+   Compiling bincode v2.0.1
+   Compiling sha2 v0.11.0
+   Compiling nalgebra v0.34.2
+   Compiling brotli v8.0.4
+   Compiling base64 v0.22.1
+   Compiling seahash v4.1.0
+   Compiling mech-core v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/module-bridge-v4/.build/reduction/workspace/src/core)
+   Compiling zerofrom-derive v0.1.8
+   Compiling zerofrom v0.1.8
+   Compiling yoke-derive v0.8.4
+   Compiling stable_deref_trait v1.2.1
+   Compiling fnv v1.0.7
+   Compiling yoke v0.8.3
+   Compiling cranelift-srcgen v0.131.3
+   Compiling cranelift-assembler-x64-meta v0.131.3
+   Compiling zerovec-derive v0.11.6
+   Compiling hashbrown v0.16.1
+   Compiling wasmtime-internal-core v44.0.3
+   Compiling smallvec v1.16.2
+   Compiling zerovec v0.11.8
+   Compiling displaydoc v0.2.7
+   Compiling version_check v0.9.5
+   Compiling generic-array v0.14.7
+   Compiling cranelift-isle v0.131.3
+   Compiling heck v0.5.0
+   Compiling allocator-api2 v0.2.21
+   Compiling cranelift-codegen-shared v0.131.3
+   Compiling cranelift-codegen-meta v0.131.3
+   Compiling cranelift-bitset v0.131.3
+   Compiling tinystr v0.8.4
+   Compiling cranelift-assembler-x64 v0.131.3
+   Compiling target-lexicon v0.13.5
+   Compiling icu_properties_data v2.3.0
+   Compiling writeable v0.6.4
+   Compiling litemap v0.8.3
+   Compiling icu_locale_core v2.3.0
+   Compiling cranelift-entity v0.131.3
+   Compiling cranelift-codegen v0.131.3
+   Compiling bumpalo v3.20.3
+   Compiling zerotrie v0.2.5
+   Compiling potential_utf v0.1.6
+   Compiling log v0.4.34
+   Compiling rustc-hash v2.1.3
+   Compiling bytecount v0.6.9
+   Compiling arbitrary v1.5.0
+   Compiling unicode-width v0.2.2
+   Compiling tinyvec_macros v0.1.1
+   Compiling utf8_iter v1.0.4
+   Compiling icu_collections v2.3.0
+   Compiling tinyvec v1.12.0
+   Compiling papergrid v0.17.0
+   Compiling cranelift-control v0.131.3
+   Compiling regalloc2 v0.15.2
+   Compiling icu_provider v2.3.1
+   Compiling cranelift-bforest v0.131.3
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.7
+   Compiling gimli v0.33.0
+   Compiling unicode-segmentation v1.13.3
+   Compiling crossbeam-utils v0.8.23
+   Compiling grapheme_macro v2.0.0
+   Compiling digest v0.10.7
+   Compiling icu_properties v2.3.0
+   Compiling tabled v0.20.0
+   Compiling unicode-normalization v0.1.25
+   Compiling cpufeatures v0.2.17
+   Compiling shlex v2.0.1
+   Compiling colored v3.1.1
+   Compiling find-msvc-tools v0.1.14
+   Compiling anyhow v1.0.104
+   Compiling crossbeam-epoch v0.9.21
+   Compiling cc v1.6.0
+   Compiling mech-syntax v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/module-bridge-v4/.build/reduction/workspace/src/syntax)
+   Compiling sha2 v0.10.9
+   Compiling grapheme v1.3.0
+   Compiling mech-bytecode v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/module-bridge-v4/.build/reduction/workspace/src/bytecode)
+   Compiling crossbeam-deque v0.8.8
+   Compiling either v1.19.0
+   Compiling gmp-mpfr-sys v1.6.8
+   Compiling getrandom v0.4.3
+   Compiling mech-engine v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/module-bridge-v4/.build/reduction/workspace/src/engine)
+   Compiling blake3 v1.8.7
+   Compiling winnow v1.0.4
+   Compiling object v0.39.1
+   Compiling rayon-core v1.13.0
+   Compiling toml_parser v1.1.3+spec-1.1.0
+   Compiling cranelift-module v0.131.3
+   Compiling itertools v0.14.0
+   Compiling aho-corasick v1.1.5
+   Compiling mach2 v0.4.3
+   Compiling winnow v0.7.15
+   Compiling mech-stdlib v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/module-bridge-v4/.build/reduction/workspace/src/stdlib)
+   Compiling arrayvec v0.7.8
+   Compiling rug v1.28.1
+   Compiling toml_writer v1.1.2+spec-1.1.0
+   Compiling toml_datetime v0.7.5+spec-1.1.0
+   Compiling bitflags v1.3.2
+   Compiling regex-syntax v0.8.11
+   Compiling constant_time_eq v0.4.2
+   Compiling regex-automata v0.4.18
+   Compiling region v3.0.2
+   Compiling toml_edit v0.23.10+spec-1.0.0
+   Compiling mech-combinatorics v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/module-bridge-v4/.build/reduction/workspace/machines/combinatorics)
+   Compiling uuid v1.27.0
+   Compiling mech-set v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/module-bridge-v4/.build/reduction/workspace/machines/set)
+   Compiling mech-math v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/module-bridge-v4/.build/reduction/workspace/machines/math)
+   Compiling cranelift-native v0.131.3
+   Compiling mech-compare v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/module-bridge-v4/.build/reduction/workspace/machines/compare)
+   Compiling mech-matrix v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/module-bridge-v4/.build/reduction/workspace/machines/matrix)
+   Compiling mech-string v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/module-bridge-v4/.build/reduction/workspace/machines/string)
+   Compiling mech-range v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/module-bridge-v4/.build/reduction/workspace/machines/range)
+   Compiling mech-logic v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/module-bridge-v4/.build/reduction/workspace/machines/logic)
+   Compiling mech-stats v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/module-bridge-v4/.build/reduction/workspace/machines/stats)
+   Compiling wasmtime-internal-jit-icache-coherence v44.0.3
+   Compiling foldhash v0.1.5
+   Compiling az v1.3.0
+   Compiling hashbrown v0.15.5
+   Compiling cranelift-jit v0.131.3
+   Compiling cranelift-object v0.131.3
+   Compiling rayon v1.12.0
+   Compiling mech-runtime v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/module-bridge-v4/.build/reduction/workspace/src/runtime)
+   Compiling regex v1.13.1
+   Compiling mech-compute v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/module-bridge-v4/.build/reduction/workspace/src/compute)
+   Compiling cranelift-frontend v0.131.3
+   Compiling fxhash v0.2.1
+   Compiling libloading v0.8.9
+   Compiling web-time v1.1.0
+   Compiling mech-gpu v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/module-bridge-v4/.build/reduction/workspace/hosts/gpu)
+error[E0689]: can't call method `algebraic_add` on ambiguous numeric type `{float}`
+   --> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/module-bridge-v4/.build/reduction/workspace/hosts/gpu/src/sequence/resident.rs:310:27
+    |
+310 |                 sum = sum.algebraic_add(term);
+    |                           ^^^^^^^^^^^^^
+    |
+help: you must specify a type for this binding, like `f32`
+    |
+299 |         let mut sum: f32 = 0.0;
+    |                    +++++
+
+error[E0689]: can't call method `algebraic_add` on ambiguous numeric type `{float}`
+   --> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/module-bridge-v4/.build/reduction/workspace/hosts/gpu/src/sequence/resident.rs:340:19
+    |
+340 |         sum = sum.algebraic_add(term);
+    |                   ^^^^^^^^^^^^^
+    |
+help: you must specify a type for this binding, like `f32`
+    |
+327 |     let mut sum: f32 = 0.0;
+    |                +++++
+
+For more information about this error, try `rustc --explain E0689`.
+error: could not compile `mech-gpu` (lib) due to 2 previous errors
+warning: build failed, waiting for other jobs to finish...

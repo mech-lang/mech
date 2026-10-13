@@ -1,0 +1,8 @@
+{
+  "status": "started",
+  "proposal": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/proposals/private-v4.json",
+  "timestamp": "2026-10-13T01:35:52.300443+00:00",
+  "exclusive_common_mutex_held": true,
+  "chart_admission": false,
+  "native_benchmarks": 0
+}

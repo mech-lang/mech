@@ -1,0 +1,34 @@
+{
+  "status": "approved-additive-explicit-initialization-and-access-clarification",
+  "rule_version": "canonical-source-units-20261012-approved-rule-v2",
+  "authority": "Parent review message received 2026-10-12 after recovery; prior frozen policy receipts remain unchanged.",
+  "decisions": [
+    {
+      "decision_key": "cpp-explicit-member-initializer-units",
+      "form": "Proven C++ explicitly written constructor member initializer list",
+      "example": "Node(Node*l,Node*r):l(l),r(r){}",
+      "units": 4,
+      "components": {
+        "constructor_header": 1,
+        "explicit_member_l_initialization": 1,
+        "explicit_member_r_initialization": 1,
+        "written_executable_close": 1,
+        "initializer_arguments": 0,
+        "imputed_inherited_or_compiler_generated_fields": 0
+      },
+      "gate": "Each explicit independent member initialization matches a separately written body assignment. Unknown ownership, base/delegating initialization or unmatched groups remain reviewed."
+    },
+    {
+      "decision_key": "fortran-written-private-access-declaration",
+      "form": "Proven Fortran written PRIVATE access-control declaration",
+      "units": 1,
+      "gate": "PRIVATE is an explicit access-control declaration, unlike structural CONTAINS0. No inferred deletion or language-wide exception.",
+      "reviewed_current_source_identity": "53468cf617ab77aa79dd83b3958ca2a7e5461ddb4a184b2bf43fc6b6ee407d36:fortran",
+      "source_line": 13
+    }
+  ],
+  "source_bytes_changed": false,
+  "producer_loc_changed": false,
+  "timing_records_changed": false,
+  "chart_admitted": false
+}

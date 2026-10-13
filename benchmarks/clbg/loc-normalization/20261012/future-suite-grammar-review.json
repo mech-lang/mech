@@ -1,0 +1,1285 @@
+{
+  "schema": "mech-clbg-future-suite-grammar-review-v1",
+  "status": "static-grammar-review-provisional-no-counts",
+  "date": "2026-10-12",
+  "scope": {
+    "families": [
+      "nim",
+      "crystal",
+      "pony"
+    ],
+    "benchmarks": [
+      "binarytrees",
+      "fannkuchredux",
+      "fasta",
+      "knucleotide",
+      "mandelbrot",
+      "nbody",
+      "pidigits",
+      "regexredux",
+      "revcomp",
+      "spectralnorm"
+    ],
+    "variants": [
+      "compact",
+      "optimized"
+    ],
+    "registration_inventory_size": 60,
+    "source_revision_pins_verified": false,
+    "source_revision_policy": "Mutable preparation paths; freeze the actual qualified revision before canonical replay."
+  },
+  "operations": {
+    "static_text_reads": true,
+    "static_path_inventory": true,
+    "static_textual_diffs": true,
+    "syntax_only_compile_of_new_drafts": true,
+    "parser_imports": false,
+    "lexing": false,
+    "normalization": false,
+    "hashing": false,
+    "tests": false,
+    "builds": false,
+    "probes": false,
+    "timing": false,
+    "original_source_edits": false,
+    "original_manifest_or_report_edits": false,
+    "chart_admission": false
+  },
+  "common_policy": {
+    "header_units": 1,
+    "executable_opening_extra_units": 0,
+    "written_executable_close_units": 1,
+    "declaration_section_marker_units": 0,
+    "independent_body_units": "separate",
+    "layout_dedent_written_units": 0,
+    "data_wrapping": "preserve",
+    "explicit_callbacks": "header/body/written close even when one expression",
+    "pure_values": "only proved value-only outer operand or actual expression-only form",
+    "unknown_ownership": "review gate; no admitted count",
+    "compressed_source_metric": false
+  },
+  "families": {
+    "nim": {
+      "preparation_documents": [
+        "nim-comparison/20261012/PROVENANCE.md",
+        "nim-comparison/20261012/REVISION-V3.md",
+        "nim-comparison/20261012/profiles.json"
+      ],
+      "required_owners": [
+        "section:type/let/var/const",
+        "named-object/ref-object/tuple-type",
+        "type-fields",
+        "proc/func/template-header-and-layout-body",
+        "layout-control-and-block",
+        "arguments/formals/generic-types/data",
+        "meaningful-pragma"
+      ],
+      "pending_decisions": [
+        "exact tuple-type field/header event review",
+        "pragma attachment versus independently retained semantic directive",
+        "case with raise is not assumed value-only"
+      ],
+      "evidence": [
+        {
+          "source": "nim-comparison/20261012/sources/nbody/compact.nim",
+          "lines": [
+            4,
+            5,
+            6,
+            14,
+            58,
+            66
+          ],
+          "forms": [
+            "structural declaration sections",
+            "object fields",
+            "grouped formals"
+          ]
+        },
+        {
+          "source": "nim-comparison/20261012/sources/knucleotide/optimized.nim",
+          "lines": [
+            5,
+            6,
+            20,
+            21,
+            22,
+            26,
+            28,
+            30
+          ],
+          "forms": [
+            "named tuple types",
+            "numeric apostrophe suffix",
+            "case with error branch",
+            "meaningful pragmas"
+          ]
+        },
+        {
+          "source": "nim-comparison/20261012/sources/binarytrees/optimized.nim",
+          "lines": [
+            3,
+            6,
+            19,
+            27
+          ],
+          "forms": [
+            "acyclic type pragma",
+            "thread pragma",
+            "explicit scoped block"
+          ]
+        }
+      ]
+    },
+    "crystal": {
+      "preparation_documents": [
+        "crystal-comparison/20261012/SOURCE_PLAN.md",
+        "crystal-comparison/20261012/LAYOUT_V2.md",
+        "crystal-comparison/20261012/profiles.json"
+      ],
+      "required_owners": [
+        "typed class/member/property",
+        "constructor/default/formals/@field-shorthand",
+        "do/end-and-braced-callback",
+        "tuple/hash/data-braces",
+        "assignment-condition-control",
+        "postfix-control",
+        "value-case-versus-imperative-case",
+        "begin-body",
+        "member-keyword-and-setter",
+        "nested-interpolation"
+      ],
+      "pending_decisions": [
+        "@field formals are structural but implicit independent storage declaration policy requires review",
+        "complex interpolation expression ownership",
+        "value-only case with else raise"
+      ],
+      "evidence": [
+        {
+          "source": "crystal-comparison/20261012/sources/binarytrees/compact.cr",
+          "lines": [
+            1,
+            2,
+            3,
+            4
+          ],
+          "forms": [
+            "typed properties",
+            "@field default formals"
+          ]
+        },
+        {
+          "source": "crystal-comparison/20261012/sources/fannkuchredux/compact.cr",
+          "lines": [
+            4,
+            25,
+            37,
+            43,
+            53
+          ],
+          "forms": [
+            "explicit callbacks",
+            "tuple swaps/destructuring",
+            "independent chained assignments"
+          ]
+        },
+        {
+          "source": "crystal-comparison/20261012/sources/fasta/compact.cr",
+          "lines": [
+            49,
+            56,
+            58,
+            62
+          ],
+          "forms": [
+            "floor division",
+            "explicit tuple binding",
+            "assignment chain",
+            "destructured callback formal"
+          ]
+        },
+        {
+          "source": "crystal-comparison/20261012/sources/regexredux/compact.cr",
+          "lines": [
+            22,
+            24,
+            33
+          ],
+          "forms": [
+            "assignment loop condition",
+            "member named end",
+            "interpolation"
+          ]
+        },
+        {
+          "source": "crystal-comparison/20261012/sources/revcomp/optimized.cr",
+          "lines": [
+            1,
+            2,
+            5,
+            7
+          ],
+          "forms": [
+            "begin opener",
+            "imperative construction",
+            "explicit callback and end"
+          ]
+        },
+        {
+          "source": "crystal-comparison/20261012/sources/knucleotide/optimized.cr",
+          "lines": [
+            22,
+            28,
+            29,
+            34,
+            53,
+            54,
+            55
+          ],
+          "forms": [
+            "nested interpolation",
+            "typed case",
+            "postfix assignment control",
+            "fiber/channel coordination"
+          ]
+        }
+      ]
+    },
+    "pony": {
+      "preparation_documents": [
+        "pony-comparison/20261012/PROVENANCE.md",
+        "pony-comparison/20261012/REVISION-V3.md",
+        "pony-comparison/20261012/profiles.json"
+      ],
+      "required_owners": [
+        "actor/class/primitive/type layout",
+        "independent fields",
+        "new/fun/be header/layout",
+        "capability/partial-signature",
+        "keyword controls/written end",
+        "match patterns/value arms",
+        "recover-construction-versus-imperative-region",
+        "assignment-return-value/destructive-read",
+        "where named arguments",
+        "receiver-chain-composition",
+        "partial ? and consume/error/transfer"
+      ],
+      "pending_decisions": [
+        "recover scoped construction versus imperative region header/control policy",
+        "mixed try fallback and error ownership",
+        "future explicit lambda/FFI source rules require fixtures"
+      ],
+      "evidence": [
+        {
+          "source": "pony-comparison/20261012/sources/knucleotide/compact/main.pony",
+          "lines": [
+            6,
+            27,
+            30,
+            31,
+            32,
+            92,
+            111,
+            157
+          ],
+          "forms": [
+            "recover mixed region",
+            "capabilities",
+            "apostrophe identifiers",
+            "destructive read/reset assignment",
+            "named arguments"
+          ]
+        },
+        {
+          "source": "pony-comparison/20261012/sources/binarytrees/compact/main.pony",
+          "lines": [
+            3,
+            6,
+            14,
+            16,
+            19,
+            21
+          ],
+          "forms": [
+            "type/member layout",
+            "value match",
+            "pattern let"
+          ]
+        },
+        {
+          "source": "pony-comparison/20261012/sources/nbody/compact/main.pony",
+          "lines": [
+            3,
+            22,
+            68,
+            91,
+            107,
+            119,
+            127,
+            128,
+            129,
+            130,
+            131,
+            179
+          ],
+          "forms": [
+            "named methods/fields",
+            "expression method",
+            "receiver chain",
+            "where named arguments"
+          ]
+        },
+        {
+          "source": "pony-comparison/20261012/sources/spectralnorm/compact/main.pony",
+          "lines": [
+            26,
+            27,
+            38,
+            55,
+            56,
+            57,
+            77
+          ],
+          "forms": [
+            "value conditional operands",
+            "recover construction",
+            "destructive read/reset assignment"
+          ]
+        },
+        {
+          "source": "pony-comparison/20261012/sources/pidigits/compact/main.pony",
+          "lines": [
+            37,
+            38
+          ],
+          "forms": [
+            "destructive read/reset assignment",
+            "consume operand"
+          ]
+        },
+        {
+          "source": "pony-comparison/20261012/sources/regexredux/compact/main.pony",
+          "lines": [
+            116,
+            146
+          ],
+          "forms": [
+            "partial try expression",
+            "named arguments"
+          ]
+        }
+      ]
+    }
+  },
+  "sources": [
+    {
+      "id": "nim-binarytrees-compact",
+      "family": "nim",
+      "benchmark": "binarytrees",
+      "variant": "compact",
+      "source": "nim-comparison/20261012/sources/binarytrees/compact.nim",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-binarytrees-optimized",
+      "family": "nim",
+      "benchmark": "binarytrees",
+      "variant": "optimized",
+      "source": "nim-comparison/20261012/sources/binarytrees/optimized.nim",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-fannkuchredux-compact",
+      "family": "nim",
+      "benchmark": "fannkuchredux",
+      "variant": "compact",
+      "source": "nim-comparison/20261012/sources/fannkuchredux/compact.nim",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-fannkuchredux-optimized",
+      "family": "nim",
+      "benchmark": "fannkuchredux",
+      "variant": "optimized",
+      "source": "nim-comparison/20261012/sources/fannkuchredux/optimized.nim",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-fasta-compact",
+      "family": "nim",
+      "benchmark": "fasta",
+      "variant": "compact",
+      "source": "nim-comparison/20261012/sources/fasta/compact.nim",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-fasta-optimized",
+      "family": "nim",
+      "benchmark": "fasta",
+      "variant": "optimized",
+      "source": "nim-comparison/20261012/sources/fasta/optimized.nim",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-knucleotide-compact",
+      "family": "nim",
+      "benchmark": "knucleotide",
+      "variant": "compact",
+      "source": "nim-comparison/20261012/sources/knucleotide/compact.nim",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-knucleotide-optimized",
+      "family": "nim",
+      "benchmark": "knucleotide",
+      "variant": "optimized",
+      "source": "nim-comparison/20261012/sources/knucleotide/optimized.nim",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-mandelbrot-compact",
+      "family": "nim",
+      "benchmark": "mandelbrot",
+      "variant": "compact",
+      "source": "nim-comparison/20261012/sources/mandelbrot/compact.nim",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-mandelbrot-optimized",
+      "family": "nim",
+      "benchmark": "mandelbrot",
+      "variant": "optimized",
+      "source": "nim-comparison/20261012/sources/mandelbrot/optimized.nim",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-nbody-compact",
+      "family": "nim",
+      "benchmark": "nbody",
+      "variant": "compact",
+      "source": "nim-comparison/20261012/sources/nbody/compact.nim",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-nbody-optimized",
+      "family": "nim",
+      "benchmark": "nbody",
+      "variant": "optimized",
+      "source": "nim-comparison/20261012/sources/nbody/optimized.nim",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-pidigits-compact",
+      "family": "nim",
+      "benchmark": "pidigits",
+      "variant": "compact",
+      "source": "nim-comparison/20261012/sources/pidigits/compact.nim",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-pidigits-optimized",
+      "family": "nim",
+      "benchmark": "pidigits",
+      "variant": "optimized",
+      "source": "nim-comparison/20261012/sources/pidigits/optimized.nim",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-regexredux-compact",
+      "family": "nim",
+      "benchmark": "regexredux",
+      "variant": "compact",
+      "source": "nim-comparison/20261012/sources/regexredux/compact.nim",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-regexredux-optimized",
+      "family": "nim",
+      "benchmark": "regexredux",
+      "variant": "optimized",
+      "source": "nim-comparison/20261012/sources/regexredux/optimized.nim",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-revcomp-compact",
+      "family": "nim",
+      "benchmark": "revcomp",
+      "variant": "compact",
+      "source": "nim-comparison/20261012/sources/revcomp/compact.nim",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-revcomp-optimized",
+      "family": "nim",
+      "benchmark": "revcomp",
+      "variant": "optimized",
+      "source": "nim-comparison/20261012/sources/revcomp/optimized.nim",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-spectralnorm-compact",
+      "family": "nim",
+      "benchmark": "spectralnorm",
+      "variant": "compact",
+      "source": "nim-comparison/20261012/sources/spectralnorm/compact.nim",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-spectralnorm-optimized",
+      "family": "nim",
+      "benchmark": "spectralnorm",
+      "variant": "optimized",
+      "source": "nim-comparison/20261012/sources/spectralnorm/optimized.nim",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "crystal-binarytrees-compact",
+      "family": "crystal",
+      "benchmark": "binarytrees",
+      "variant": "compact",
+      "source": "crystal-comparison/20261012/sources/binarytrees/compact.cr",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "crystal-binarytrees-optimized",
+      "family": "crystal",
+      "benchmark": "binarytrees",
+      "variant": "optimized",
+      "source": "crystal-comparison/20261012/sources/binarytrees/optimized.cr",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "crystal-fannkuchredux-compact",
+      "family": "crystal",
+      "benchmark": "fannkuchredux",
+      "variant": "compact",
+      "source": "crystal-comparison/20261012/sources/fannkuchredux/compact.cr",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "crystal-fannkuchredux-optimized",
+      "family": "crystal",
+      "benchmark": "fannkuchredux",
+      "variant": "optimized",
+      "source": "crystal-comparison/20261012/sources/fannkuchredux/optimized.cr",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "crystal-fasta-compact",
+      "family": "crystal",
+      "benchmark": "fasta",
+      "variant": "compact",
+      "source": "crystal-comparison/20261012/sources/fasta/compact.cr",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "crystal-fasta-optimized",
+      "family": "crystal",
+      "benchmark": "fasta",
+      "variant": "optimized",
+      "source": "crystal-comparison/20261012/sources/fasta/optimized.cr",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "crystal-knucleotide-compact",
+      "family": "crystal",
+      "benchmark": "knucleotide",
+      "variant": "compact",
+      "source": "crystal-comparison/20261012/sources/knucleotide/compact.cr",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "crystal-knucleotide-optimized",
+      "family": "crystal",
+      "benchmark": "knucleotide",
+      "variant": "optimized",
+      "source": "crystal-comparison/20261012/sources/knucleotide/optimized.cr",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "crystal-mandelbrot-compact",
+      "family": "crystal",
+      "benchmark": "mandelbrot",
+      "variant": "compact",
+      "source": "crystal-comparison/20261012/sources/mandelbrot/compact.cr",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "crystal-mandelbrot-optimized",
+      "family": "crystal",
+      "benchmark": "mandelbrot",
+      "variant": "optimized",
+      "source": "crystal-comparison/20261012/sources/mandelbrot/optimized.cr",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "crystal-nbody-compact",
+      "family": "crystal",
+      "benchmark": "nbody",
+      "variant": "compact",
+      "source": "crystal-comparison/20261012/sources/nbody/compact.cr",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "crystal-nbody-optimized",
+      "family": "crystal",
+      "benchmark": "nbody",
+      "variant": "optimized",
+      "source": "crystal-comparison/20261012/sources/nbody/optimized.cr",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "crystal-pidigits-compact",
+      "family": "crystal",
+      "benchmark": "pidigits",
+      "variant": "compact",
+      "source": "crystal-comparison/20261012/sources/pidigits/compact.cr",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "crystal-pidigits-optimized",
+      "family": "crystal",
+      "benchmark": "pidigits",
+      "variant": "optimized",
+      "source": "crystal-comparison/20261012/sources/pidigits/optimized.cr",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "crystal-regexredux-compact",
+      "family": "crystal",
+      "benchmark": "regexredux",
+      "variant": "compact",
+      "source": "crystal-comparison/20261012/sources/regexredux/compact.cr",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "crystal-regexredux-optimized",
+      "family": "crystal",
+      "benchmark": "regexredux",
+      "variant": "optimized",
+      "source": "crystal-comparison/20261012/sources/regexredux/optimized.cr",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "crystal-revcomp-compact",
+      "family": "crystal",
+      "benchmark": "revcomp",
+      "variant": "compact",
+      "source": "crystal-comparison/20261012/sources/revcomp/compact.cr",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "crystal-revcomp-optimized",
+      "family": "crystal",
+      "benchmark": "revcomp",
+      "variant": "optimized",
+      "source": "crystal-comparison/20261012/sources/revcomp/optimized.cr",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "crystal-spectralnorm-compact",
+      "family": "crystal",
+      "benchmark": "spectralnorm",
+      "variant": "compact",
+      "source": "crystal-comparison/20261012/sources/spectralnorm/compact.cr",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "crystal-spectralnorm-optimized",
+      "family": "crystal",
+      "benchmark": "spectralnorm",
+      "variant": "optimized",
+      "source": "crystal-comparison/20261012/sources/spectralnorm/optimized.cr",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-binarytrees-compact",
+      "family": "pony",
+      "benchmark": "binarytrees",
+      "variant": "compact",
+      "source": "pony-comparison/20261012/sources/binarytrees/compact/main.pony",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-binarytrees-optimized",
+      "family": "pony",
+      "benchmark": "binarytrees",
+      "variant": "optimized",
+      "source": "pony-comparison/20261012/sources/binarytrees/optimized/main.pony",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-fannkuchredux-compact",
+      "family": "pony",
+      "benchmark": "fannkuchredux",
+      "variant": "compact",
+      "source": "pony-comparison/20261012/sources/fannkuchredux/compact/main.pony",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-fannkuchredux-optimized",
+      "family": "pony",
+      "benchmark": "fannkuchredux",
+      "variant": "optimized",
+      "source": "pony-comparison/20261012/sources/fannkuchredux/optimized/main.pony",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-fasta-compact",
+      "family": "pony",
+      "benchmark": "fasta",
+      "variant": "compact",
+      "source": "pony-comparison/20261012/sources/fasta/compact/main.pony",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-fasta-optimized",
+      "family": "pony",
+      "benchmark": "fasta",
+      "variant": "optimized",
+      "source": "pony-comparison/20261012/sources/fasta/optimized/main.pony",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-knucleotide-compact",
+      "family": "pony",
+      "benchmark": "knucleotide",
+      "variant": "compact",
+      "source": "pony-comparison/20261012/sources/knucleotide/compact/main.pony",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-knucleotide-optimized",
+      "family": "pony",
+      "benchmark": "knucleotide",
+      "variant": "optimized",
+      "source": "pony-comparison/20261012/sources/knucleotide/optimized/main.pony",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-mandelbrot-compact",
+      "family": "pony",
+      "benchmark": "mandelbrot",
+      "variant": "compact",
+      "source": "pony-comparison/20261012/sources/mandelbrot/compact/main.pony",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-mandelbrot-optimized",
+      "family": "pony",
+      "benchmark": "mandelbrot",
+      "variant": "optimized",
+      "source": "pony-comparison/20261012/sources/mandelbrot/optimized/main.pony",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-nbody-compact",
+      "family": "pony",
+      "benchmark": "nbody",
+      "variant": "compact",
+      "source": "pony-comparison/20261012/sources/nbody/compact/main.pony",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-nbody-optimized",
+      "family": "pony",
+      "benchmark": "nbody",
+      "variant": "optimized",
+      "source": "pony-comparison/20261012/sources/nbody/optimized/main.pony",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-pidigits-compact",
+      "family": "pony",
+      "benchmark": "pidigits",
+      "variant": "compact",
+      "source": "pony-comparison/20261012/sources/pidigits/compact/main.pony",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-pidigits-optimized",
+      "family": "pony",
+      "benchmark": "pidigits",
+      "variant": "optimized",
+      "source": "pony-comparison/20261012/sources/pidigits/optimized/main.pony",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-regexredux-compact",
+      "family": "pony",
+      "benchmark": "regexredux",
+      "variant": "compact",
+      "source": "pony-comparison/20261012/sources/regexredux/compact/main.pony",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-regexredux-optimized",
+      "family": "pony",
+      "benchmark": "regexredux",
+      "variant": "optimized",
+      "source": "pony-comparison/20261012/sources/regexredux/optimized/main.pony",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-revcomp-compact",
+      "family": "pony",
+      "benchmark": "revcomp",
+      "variant": "compact",
+      "source": "pony-comparison/20261012/sources/revcomp/compact/main.pony",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-revcomp-optimized",
+      "family": "pony",
+      "benchmark": "revcomp",
+      "variant": "optimized",
+      "source": "pony-comparison/20261012/sources/revcomp/optimized/main.pony",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-spectralnorm-compact",
+      "family": "pony",
+      "benchmark": "spectralnorm",
+      "variant": "compact",
+      "source": "pony-comparison/20261012/sources/spectralnorm/compact/main.pony",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    },
+    {
+      "id": "pony-spectralnorm-optimized",
+      "family": "pony",
+      "benchmark": "spectralnorm",
+      "variant": "optimized",
+      "source": "pony-comparison/20261012/sources/spectralnorm/optimized/main.pony",
+      "identity_status": "unverified-provisional-path",
+      "source_sha256": null,
+      "normalized_loc": null,
+      "normalization_status": "pending-family-pathway-qualification-and-exact-source-review",
+      "eligible_for_chart": false
+    }
+  ],
+  "api_plan": {
+    "modules": [
+      "foreign_nim.py",
+      "foreign_crystal.py",
+      "foreign_pony.py"
+    ],
+    "entry_points": [
+      "mask_<family>(source)",
+      "classify_scopes(cleaned, language, literal_spans=(), directives=())",
+      "binding_counter",
+      "normalize"
+    ],
+    "mask_contract": [
+      "offset-preserving cleaned text",
+      "literal/comment/identifier spans",
+      "retained directives",
+      "diagnostics"
+    ],
+    "grammar_selection": "language/source syntax only; no benchmark/input/helper-name selector",
+    "shared_event_model": "foreign_core; ownership must be proved before integration",
+    "no_raw_producer_loc_fallback": true
+  },
+  "fixture_groups": [
+    {
+      "id": "mask-offsets",
+      "families": [
+        "nim",
+        "crystal",
+        "pony"
+      ],
+      "checks": [
+        "same character count and exact CR/LF positions",
+        "comments opaque",
+        "strings/characters opaque",
+        "unclosed literal/comment diagnostics",
+        "no original-source mutation"
+      ]
+    },
+    {
+      "id": "nim-lexical",
+      "families": [
+        "nim"
+      ],
+      "checks": [
+        "nested #[ ]#",
+        "re-prefixed/generalized raw string",
+        "triple string",
+        "'A' versus 0'u64",
+        "backtick identifier",
+        "retain {.inline/thread/acyclic.} and pragma evidence"
+      ]
+    },
+    {
+      "id": "crystal-lexical",
+      "families": [
+        "crystal"
+      ],
+      "checks": [
+        "/regex/ versus / and // division",
+        "nested #{...} containing quoted expression",
+        "character versus string",
+        "percent/heredoc ambiguity gates",
+        "member .end versus scope end"
+      ]
+    },
+    {
+      "id": "pony-lexical",
+      "families": [
+        "pony"
+      ],
+      "checks": [
+        "// versus strings",
+        "nested /* */",
+        "triple string",
+        "'A' versus word' identifier",
+        "partial ? retained",
+        "=> retained"
+      ]
+    },
+    {
+      "id": "section-type-field-formals",
+      "families": [
+        "nim",
+        "crystal",
+        "pony"
+      ],
+      "checks": [
+        "declaration section opener zero",
+        "actual named type header",
+        "independent type fields",
+        "formal grouped names/defaults structural",
+        "constructor data fields structural",
+        "@field shorthand pending review"
+      ]
+    },
+    {
+      "id": "binding-versus-producer",
+      "families": [
+        "nim",
+        "crystal",
+        "pony"
+      ],
+      "checks": [
+        "independent declaration groups",
+        "explicit tuple/destructuring producer",
+        "multiple independent assignments",
+        "where named args structural",
+        "destructive read receiving binding plus reset"
+      ]
+    },
+    {
+      "id": "callbacks-versus-data",
+      "families": [
+        "crystal",
+        "pony"
+      ],
+      "checks": [
+        "explicit callback header/body/written close",
+        "pure explicit callback stays expanded",
+        "literal tuple/hash/type brackets structural",
+        "nested executable owner inside constructor"
+      ]
+    },
+    {
+      "id": "value-versus-imperative",
+      "families": [
+        "nim",
+        "crystal",
+        "pony"
+      ],
+      "checks": [
+        "proven value-only conditional operand",
+        "actual expression-only method",
+        "imperative locals not collapsed",
+        "raise/error/transfer not assumed pure",
+        "recover pending explicit policy"
+      ]
+    },
+    {
+      "id": "layout-and-written-close",
+      "families": [
+        "nim",
+        "pony"
+      ],
+      "checks": [
+        "dedent closes owner without synthetic source token",
+        "sibling method header ends prior member owner",
+        "written control end counts once",
+        "nested fields/formals/loop patterns not body actions"
+      ]
+    },
+    {
+      "id": "pragma-ffi-helper-boundary",
+      "families": [
+        "nim",
+        "crystal",
+        "pony"
+      ],
+      "checks": [
+        "meaningful pragmas retained",
+        "FFI prototypes versus bodies gated",
+        "generic stdlib/package support needs provenance",
+        "application workload helpers always retained"
+      ]
+    }
+  ],
+  "admission_gates": [
+    "Root reviews pending role decisions",
+    "Freeze actual qualified source/profile/library boundaries and pins",
+    "One immutable lock-held fixture/source-replay job with actual terminal receipt",
+    "Independent exact-source diagnostic review",
+    "Correctness/full-work qualification and actual full timing samples for any new candidate/minimum",
+    "Preserve original producer LOC and every timing record"
+  ],
+  "mask_proposal": {
+    "module": "foreign_future_mask.py",
+    "fixture_module": "test_foreign_future_mask.py",
+    "supported_draft_families": ["nim", "pony"],
+    "crystal": "explicitly unsupported pending own interpolation/regex pathway",
+    "fixture_methods_authored": 20,
+    "fixture_methods_executed": 0,
+    "syntax_only_compilation": "passed without module import or test execution",
+    "scope": "offset-preserving mask only; no owner parsing or LOC",
+    "integration": "none",
+    "qualification": "pending immutable lock-held actual receipt"
+  },
+  "counts_assigned": false,
+  "timings_assigned": false,
+  "chart_admitted": false
+}

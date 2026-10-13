@@ -1,0 +1,21 @@
+{
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/revisions/work-full-v3/fixture_runner.py",
+    "--set",
+    "work",
+    "--receipt",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/work-qualification/work-v3/fixtures/actual-inventory.json"
+  ],
+  "started_at": "2026-10-13T04:59:05.981775+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 66471,
+  "identity": {
+    "pid": 66471,
+    "process_listing": "Tue Oct 13 00:59:05 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/revisions/work-full-v3/fixture_runner.py --set work --receipt /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/work-qualification/work-v3/fixtures/actual-inventory.json"
+  }
+}

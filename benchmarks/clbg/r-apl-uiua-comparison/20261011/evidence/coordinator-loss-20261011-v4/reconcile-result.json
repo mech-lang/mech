@@ -1,0 +1,10 @@
+{
+  "event_id": "r-apl-uiua-20261011-apl-mandelbrot-coordinator-loss-25078",
+  "reconciled_at": "2026-10-11T22:25:31.929585+00:00",
+  "prior_report_sha256": "23a2fa135d0e3e01813865d51b7691affb4f8d9a6719749d8acaaff945fd900b",
+  "reconciled_report_sha256": "9ef8f3776ce6c7ddf65a29cec7378e782188862a271aea2826df486cac0f98f7",
+  "preserved_attempts_count": 44,
+  "new_attempts_added": 0,
+  "new_samples_added": 0,
+  "source_audit_sha256": "9b26c06182bb97b4d3e26d70d9edd6e5ec78e57f1b59a77a91874869c9e83936"
+}

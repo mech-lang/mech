@@ -1,0 +1,56 @@
+{
+  "benchmark": "regexredux",
+  "status": "reconciled-three-full-samples",
+  "profiles": {
+    "v-regexredux-compact-input-v2": {
+      "language": "v",
+      "variant": "compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualification/production-input-v2/regexredux/v-regexredux-compact-input-v2/program.v",
+      "source_sha256": "24de96320eb9cd97b5cbfbb07de6d230025db47a3cb3d6a3832eb6933e5c1000",
+      "samples_seconds": [
+        47.281682667,
+        47.2926055,
+        47.033068125
+      ],
+      "median_seconds": 47.281682667,
+      "loc": null,
+      "time_ratio_to_matched_mech": 96.25272090172642
+    },
+    "v-regexredux-optimized-input-v2": {
+      "language": "v",
+      "variant": "optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualification/production-input-v2/regexredux/v-regexredux-optimized-input-v2/program.v",
+      "source_sha256": "7304cc35707931978b13f04ba658ac1cc3a90b80212d585e08030e24cace11b5",
+      "samples_seconds": [
+        24.599152333,
+        24.146278916,
+        24.472304417
+      ],
+      "median_seconds": 24.472304417,
+      "loc": null,
+      "time_ratio_to_matched_mech": 49.818994460525296
+    },
+    "mech-aot-control": {
+      "language": "mech",
+      "variant": null,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/regexredux.mec",
+      "source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d",
+      "samples_seconds": [
+        0.517518375,
+        0.486975584,
+        0.491224375
+      ],
+      "median_seconds": 0.491224375,
+      "loc": null,
+      "time_ratio_to_matched_mech": 1.0
+    }
+  },
+  "environment_exclusions": [],
+  "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/studies/regexredux/full-study/manifest.json",
+  "manifest_sha256": "abe3d2fd5b5c54cabf685139faaa65278f0953abab047247f36fbdf2e6454499",
+  "report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/studies/regexredux/full-study/report.json",
+  "report_sha256": "34d8de14577a4a61c1385b6d6dfa860bbd95d890b8da26be50b1805c798700f7",
+  "report_only": true,
+  "never_chart_eligible": true,
+  "reconciler_sha256": "09bf28d948a7a88b768bf498d512e557d7e10cbdfc82e741299c3d55453f9a52"
+}

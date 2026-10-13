@@ -1,0 +1,98 @@
+{
+  "key": "fasta:fasta-apl-compact",
+  "id": "fasta-apl-compact",
+  "benchmark": "fasta",
+  "language": "apl",
+  "source_sha256": "d41ae162630187a26ee6f1ca2a89e9e83e8cfe0130d5aa3d7eafc5351337b21f",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+    "--cc",
+    "1",
+    "-f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/fasta.compact.apl",
+    "--",
+    "25000000"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+  "runtime_environment": {
+    "LC_ALL": "C"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh\", \"--cc\", \"1\", \"-f\", \"{source}\", \"--\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011\", \"environment\": {\"LC_ALL\": \"C\"}, \"source_sha256\": \"d41ae162630187a26ee6f1ca2a89e9e83e8cfe0130d5aa3d7eafc5351337b21f\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl\": \"ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh\": \"50c937c62df5095151dd766dcbd8bc2058e24a93ccefb6b5b601944a48cdadf4\", \"/opt/homebrew/Cellar/pcre2/10.49/lib/libpcre2-32.0.dylib\": \"ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9\", \"/opt/homebrew/opt/pcre2/lib/libpcre2-32.0.dylib\": \"ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9\"}}",
+  "started_at": "2026-10-12T17:48:18.584426+00:00",
+  "workload_n": 25000000,
+  "full_workload": true,
+  "timeout_seconds": 14400,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 333.146645875,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 5216,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+  "stdout_bytes": 254166745,
+  "stdout_sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+  "validation": {
+    "bytes": 254166745,
+    "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+    "reference_match": true
+  },
+  "finished_at": "2026-10-12T17:53:52.154805+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true,
+  "round": 1,
+  "attempt": 56,
+  "sampler_wait_status": 0,
+  "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining-owner/attempts/056-fasta-apl-compact.json",
+  "supervised_native_group": {
+    "type": "native-group-started",
+    "pid": 718,
+    "pgid": 718,
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+      "--cc",
+      "1",
+      "-f",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/fasta.compact.apl",
+      "--",
+      "25000000"
+    ],
+    "inherited_common_mutex": true
+  },
+  "supervisor_remaining_members": [],
+  "qualification_checks": {
+    "sampler_exited_normally": true,
+    "authoritative_native_group_received": true,
+    "native_inherited_common_mutex": true,
+    "native_exited_normally": true,
+    "no_execution_error": true,
+    "no_wrapper_integrity_error": true,
+    "no_resource_violation": true,
+    "no_resource_monitor_errors": true,
+    "no_compiler_power_monitor_errors": true,
+    "no_monitor_finish_error": true,
+    "no_execute_cleanup_error": true,
+    "no_remaining_execute_group": true,
+    "no_supervisor_cleanup": true,
+    "no_supervisor_remaining_group": true,
+    "valid_environment": true,
+    "actual_full_workload": true,
+    "exact_command_and_group": true,
+    "complete_output_reference_match": true,
+    "complete_output_bytes_and_hash": true,
+    "pins_unchanged": true
+  },
+  "qualified": true,
+  "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining-owner/attempts/056-fasta-apl-compact.supervisor.json"
+}

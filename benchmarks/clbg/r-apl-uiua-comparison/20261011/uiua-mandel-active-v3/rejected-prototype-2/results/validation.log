@@ -1,0 +1,12 @@
+Waiting for common mutex; every runtime/reference probe requires acquisition.
+Locked bounded active-pixel validation.
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/manifest.json prepared-pending-locked-validation 82baf08d2f0c54e741d0720988078959fbce1abf76d7a486f3126f8af26f344c
+mandelbrot:mandelbrot-uiua-active-pixels-optimized-v3 14 LOC c229d6798fddecb0760bdbeaf8037a907eadcab04818b616e55f4ca561e21ded
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/validate.py", line 309, in <module>
+    main()
+    ~~~~^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/validate.py", line 226, in main
+    assert done.returncode == 0 and done.stdout == expected[n][0], (n, done.stderr.decode())
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: (1, 'Style: Split this into multiple lines (heuristic: 60/40) 🤨\n  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/sources/fast.ua:4:1\n4 | Advance ← M ⊃(+⊃M.Cx(-⊃(˙×M.I)(˙×M.R))|+⊃M.Cy(×2×⊃M.R M.I)|M.Index|M.Cx|M.Cy|+1M.Iter)\n    ──────────────────────────────────────────────────────────────────────────────────────\nAdvice: Split this into multiple lines (heuristic: 71/60) 😠\n  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/sources/fast.ua:7:1\n7 | Prune ← M ⊃(⊏⊃Selection.Keep(M.R Selection.State)|⊏⊃Selection.Keep(M.I Selection.State)|⊏⊃Selection.Keep(M.Index Selection.State)|⊏⊃Selection.Keep(M.Cx Selection.State)|M.Cy Selection.State|M.Iter Selection.State) Selected\n    ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\nError: Cannot write box array to file\n  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/sources/fast.ua:11:7\n11 | Row ← &fwa "/dev/stdout" Pack Bits ⍢(Iterate|×⊃(<50M.Iter)(>0⧻M.Index)) M (↯N 0) (↯N 0) (⇡N) Cr ⊙0\n           ────\n  in Row at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/sources/fast.ua:14:2\n')

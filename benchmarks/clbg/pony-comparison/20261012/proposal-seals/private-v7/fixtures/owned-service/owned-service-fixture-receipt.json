@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "actual_common_mutex_held": true,
+  "inherited_common_mutex": true,
+  "suite": "owned-service",
+  "expected_ids": [
+    "test_owned_service_v7.OwnedService.test_success_requires_bounded_reap_and_empty_group",
+    "test_owned_service_v7.OwnedService.test_failed_group_kill_and_wait_preserve_bounded_receipt",
+    "test_owned_service_v7.OwnedService.test_missing_live_identity_still_cleans_and_journals"
+  ],
+  "discovered_ids": [
+    "test_owned_service_v7.OwnedService.test_failed_group_kill_and_wait_preserve_bounded_receipt",
+    "test_owned_service_v7.OwnedService.test_missing_live_identity_still_cleans_and_journals",
+    "test_owned_service_v7.OwnedService.test_success_requires_bounded_reap_and_empty_group"
+  ],
+  "started_ids": [
+    "test_owned_service_v7.OwnedService.test_failed_group_kill_and_wait_preserve_bounded_receipt",
+    "test_owned_service_v7.OwnedService.test_missing_live_identity_still_cleans_and_journals",
+    "test_owned_service_v7.OwnedService.test_success_requires_bounded_reap_and_empty_group"
+  ],
+  "expected_count": 3,
+  "tests_run": 3,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "expected_failures": 0,
+  "unexpected_successes": 0,
+  "raw_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/proposal-seals/private-v7/fixtures/owned-service/owned-service.log",
+  "raw_log_sha256": "0ebb5db1bcafb8cce3b408f316ed94453536493913f44b605cc32efb30651139",
+  "native_probes": 0,
+  "chart_admission": false
+}

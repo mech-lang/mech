@@ -1,0 +1,15 @@
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-v2/bootstrap_runtime_v2.py", line 510, in <module>
+    main()
+    ~~~~^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-v2/bootstrap_runtime_v2.py", line 308, in main
+    metadata_seal(args)
+    ~~~~~~~~~~~~~^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-v2/bootstrap_runtime_v2.py", line 238, in metadata_seal
+    raise error
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-v2/bootstrap_runtime_v2.py", line 222, in metadata_seal
+    actual = runner.run(output, pins, sha, verify, save)
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/revisions/runtime-v2/fixture_runner_v2.py", line 81, in run
+    assert len(receipt['discovered_test_ids']) == len(set(receipt['discovered_test_ids'])) == 6
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

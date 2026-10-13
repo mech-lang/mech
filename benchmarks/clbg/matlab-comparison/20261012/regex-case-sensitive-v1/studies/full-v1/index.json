@@ -1,0 +1,12 @@
+{
+  "status": "sealed-awaiting-root-review",
+  "benchmarks": {
+    "regexredux": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/studies/full-v1/regexredux/manifest.json",
+      "sha256": "8e35f8f769c5d751348245b9a614c0ada15c62265d721b3d89abe7bc203ee443"
+    }
+  },
+  "samples": 3,
+  "full_processes": 9,
+  "chart_admission": false
+}

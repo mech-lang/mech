@@ -1,0 +1,8 @@
+test_every_unsafe_gate_stops_and_truthy_values_do_not_waive_it (test_full_study.IsolatedFailures.test_every_unsafe_gate_stops_and_truthy_values_do_not_waive_it) ... ok
+test_missing_gates_and_non_source_failure_stop (test_full_study.IsolatedFailures.test_missing_gates_and_non_source_failure_stop) ... ok
+test_real_source_failure_with_literal_safe_gates_is_isolated (test_full_study.IsolatedFailures.test_real_source_failure_with_literal_safe_gates_is_isolated) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.000s
+
+OK

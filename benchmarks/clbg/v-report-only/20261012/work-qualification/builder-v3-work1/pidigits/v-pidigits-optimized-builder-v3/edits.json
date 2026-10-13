@@ -1,0 +1,21 @@
+{
+  "status": "authored-unbuilt-unqualified-trace-copy",
+  "benchmark": "pidigits",
+  "variant": "optimized",
+  "scheme": "TRACE_V1",
+  "trace_environment": "MECH_V_WORK_TRACE",
+  "changes": [
+    "Both quotient values are logged immediately after their actual source divisions.",
+    "Acceptance is logged only inside the original digit-emission branch.",
+    "Original numerator construction, arithmetic ordering, predicate, output and loop remain unchanged."
+  ],
+  "full_workload": false,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "full_performance_run": false,
+  "stdout_policy": "Must still match the complete independent bounded oracle.",
+  "original_source_mutated": false,
+  "trace_file_policy": "Fresh isolated file; dump complete values, never use the truncated stderr capture.",
+  "scored_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualification/production-builder-v3/pidigits/v-pidigits-optimized-builder-v3/program.v",
+  "scored_source_sha256": "c9c78dc4f4daa1140d5d04008132c1557274910efbd593388a3f04346d9e7d8c"
+}

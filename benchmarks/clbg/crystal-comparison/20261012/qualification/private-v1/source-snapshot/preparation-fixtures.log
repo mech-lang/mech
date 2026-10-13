@@ -1,0 +1,17 @@
+test_absent_input_restored_as_absent (test_guarded_prepare.PreparationChecks.test_absent_input_restored_as_absent) ... ok
+test_active_journal_failure_still_reaps_owned_child (test_guarded_prepare.PreparationChecks.test_active_journal_failure_still_reaps_owned_child) ... ok
+test_command_inherits_lock_and_owns_new_session (test_guarded_prepare.PreparationChecks.test_command_inherits_lock_and_owns_new_session) ... ok
+test_conflicting_pin_rejected (test_guarded_prepare.PreparationChecks.test_conflicting_pin_rejected) ... ok
+test_expected_write_error_does_not_launch (test_guarded_prepare.PreparationChecks.test_expected_write_error_does_not_launch) ... ok
+test_identity_failure_still_reaps_owned_child (test_guarded_prepare.PreparationChecks.test_identity_failure_still_reaps_owned_child) ... ok
+test_input_write_error_restores_scope_before_launch (test_guarded_prepare.PreparationChecks.test_input_write_error_restores_scope_before_launch) ... ok
+test_late_child_group_rejects_and_cleans (test_guarded_prepare.PreparationChecks.test_late_child_group_rejects_and_cleans) ... ok
+test_popen_failure_has_no_foreign_cleanup (test_guarded_prepare.PreparationChecks.test_popen_failure_has_no_foreign_cleanup) ... ok
+test_sampler_error_restores_scope (test_guarded_prepare.PreparationChecks.test_sampler_error_restores_scope) ... ok
+test_success_restores_existing_work_input_validator (test_guarded_prepare.PreparationChecks.test_success_restores_existing_work_input_validator) ... ok
+test_unqualified_attempt_retained_and_scope_restored (test_guarded_prepare.PreparationChecks.test_unqualified_attempt_retained_and_scope_restored) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 0.010s
+
+OK

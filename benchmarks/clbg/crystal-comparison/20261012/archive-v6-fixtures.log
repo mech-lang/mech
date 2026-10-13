@@ -1,0 +1,11 @@
+test_absolute_and_parent_traversal_member_names_fail (__main__.ArchiveChecks.test_absolute_and_parent_traversal_member_names_fail) ... ok
+test_absolute_and_relative_escaping_symlink_targets_fail (__main__.ArchiveChecks.test_absolute_and_relative_escaping_symlink_targets_fail) ... ok
+test_changed_bytes_and_substituted_regular_or_parent_symlinks_fail (__main__.ArchiveChecks.test_changed_bytes_and_substituted_regular_or_parent_symlinks_fail) ... ok
+test_changed_link_metadata_fails_even_with_same_file_target (__main__.ArchiveChecks.test_changed_link_metadata_fails_even_with_same_file_target) ... ok
+test_hardlink_topology_and_unchanged_proved_functions (__main__.ArchiveChecks.test_hardlink_topology_and_unchanged_proved_functions) ... ok
+test_regular_payload_and_exact_foreign_target_cycles_pass (__main__.ArchiveChecks.test_regular_payload_and_exact_foreign_target_cycles_pass) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.038s
+
+OK

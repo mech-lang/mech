@@ -1,0 +1,29 @@
+{
+  "status": "durable-job-launched",
+  "launched_at": "2026-10-13T12:00:33.857829+00:00",
+  "job": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/clojure-full-manifests-v1",
+  "worker_identity": {
+    "pid": 721,
+    "listing": "721   720 Tue Oct 13 08:00:33 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/clojure-full-manifests-v1 --lease-fd 3 --go-fd 4"
+  },
+  "command": [
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+    "-B",
+    "-u",
+    "benchmarks/clbg/clojure-comparison/20261012/revisions/work-full-v1/seal_full_studies.py",
+    "--qualified-file",
+    "benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/report.json",
+    "--qualified-sha256",
+    "69bf7cdb025759e6d10cb8c1ae1c189839e253ced9aca50e4f9cc1e838d36d79",
+    "--work-file",
+    "benchmarks/clbg/clojure-comparison/20261012/work-qualification/qualified/work-v1-reviewed-v2/report.json",
+    "--work-sha256",
+    "7e0029f49eacaad3bfd4a3a24e339dccf46ee757ae5ca6db6b062be0bc9b7ebf",
+    "--study-revision",
+    "full-v1"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "detached_session": true,
+  "automatic_retry": false,
+  "qualification_granted": false
+}

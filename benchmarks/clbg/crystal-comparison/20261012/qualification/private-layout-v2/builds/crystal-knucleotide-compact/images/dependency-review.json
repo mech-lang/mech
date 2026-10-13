@@ -1,0 +1,22 @@
+{
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-knucleotide-compact",
+  "architectures": [
+    "arm64"
+  ],
+  "dependencies": [
+    {
+      "install_name": "/opt/homebrew/opt/pcre2/lib/libpcre2-8.0.dylib",
+      "path": "/opt/homebrew/Cellar/pcre2/10.49/lib/libpcre2-8.0.dylib",
+      "lookup_path": "/opt/homebrew/opt/pcre2/lib/libpcre2-8.0.dylib",
+      "sha256": "c3adcd954967b7e92812831fe12c614a9ca2d12221e897a87ee379df2ac004fd"
+    },
+    {
+      "install_name": "/usr/lib/libSystem.B.dylib",
+      "scope": "OS-system-image-not-hashed"
+    },
+    {
+      "install_name": "/usr/lib/libiconv.2.dylib",
+      "scope": "OS-system-image-not-hashed"
+    }
+  ]
+}

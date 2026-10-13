@@ -1,0 +1,73 @@
+{
+  "status": "source-reviewed-descriptor-awaiting-guarded-actual-evidence-qualification",
+  "language": "crystal",
+  "label": "Crystal",
+  "execution": "AOT",
+  "backend_label": "Crystal 1.21.1 / LLVM 15.0.7, native macOS ARM64",
+  "memory_label": "Boehm conservative garbage collection",
+  "actual_compiler_version_verified": false,
+  "actual_native_architecture_verified": false,
+  "actual_memory_policy_verified": false,
+  "release_year": 2014,
+  "release_source": "https://crystal-lang.org/2014/06/19/crystal-0.1.0-released/",
+  "release_note": "First official compiler release 0.1.0 on 18 June 2014, documented by the language team's 19 June announcement; this basis is distinct from development start or 1.0.",
+  "typing": "Static with type inference",
+  "language_style": "General-purpose object-oriented language with Ruby-inspired syntax, compiled static checking and fibers/channels.",
+  "color": "#000100",
+  "color_source": "GitHub Linguist",
+  "color_provenance": "https://github.com/github-linguist/linguist/blob/538da05f034fa5c83bd81df128d144e208898da3/lib/linguist/languages.yml",
+  "runtime_support_by_benchmark": {
+    "regexredux": "Crystal standard Regex/IO and PCRE2 10.49 nonoverlapping matching/ordered replacement; ordinary Boehm GC and system C/libiconv. Workload orchestration is authored Crystal.",
+    "revcomp": "Crystal standard strings/buffers/IO and ordinary Boehm GC; authored complete FASTA/IUPAC reversal loops.",
+    "pidigits": "Crystal standard BigInt backed by generic GMP 6.3.0, including both actual extraction divisions; ordinary Boehm GC. Pi recurrence and output are authored Crystal.",
+    "spectralnorm": "Crystal arrays, numeric operations, fibers/channels and ordinary Boehm GC; authored matrix-element/product/transpose iteration loops.",
+    "mandelbrot": "Crystal numeric operations, row buffers, fibers/channels and ordinary Boehm GC; authored complete complex recurrence and packed output.",
+    "fasta": "Crystal buffers/IO and ordinary Boehm GC; authored repeated emission, LCG and probability selection.",
+    "knucleotide": "Crystal standard growing Hash maps, buffers/IO, fibers/channels and ordinary Boehm GC; all seven complete maps/windows remain authored Crystal work.",
+    "binarytrees": "Crystal reference objects, ordinary Boehm GC, fibers/channels and IO; actual newly allocated leaf/interior nodes, recursive checks and long-lived retained root.",
+    "nbody": "Crystal numeric/array operations and ordinary Boehm GC; authored momentum, all pairwise forces/position steps and two energy calculations.",
+    "fannkuchredux": "Crystal arrays, numeric operations, fibers/channels and ordinary Boehm GC; authored permutation/rank/flip/checksum loops."
+  },
+  "timing_boundary": "Three complete sequential fresh native processes per exact source in rotated rounds with a fresh unchanged Mech AOT control for each workload. Includes startup, complete canonical input, workload computation, full stdout and teardown; all outputs validated after timing. No warmed/persistent process filtering. All native/compiler/QA work shares one mutex, AC power and Low Power Mode off, at most 8 compute workers, fixed time/RSS limits.",
+  "source_provenance": "Twenty locally authored/adapted compact/optimized Crystal applications implementing the prescribed CLBG algorithms. Published algorithm examples and original archive remain immutable; every scored main is separately compiler-bound and counted. No published Crystal performance sample is reused. Generic standard libraries/runtime are separately pinned; no external benchmark executor or domain kernel is introduced.",
+  "expected_evidence": {
+    "suite": "crystal-comparison/20261012/reconciliation/full-v1-suite-v2.json",
+    "canonical_loc": "crystal-comparison/20261012/source-counts/corrected-qualified-overlay-v2/qualified-loc-overlay.json",
+    "canonical_loc_sha256": "e22140622a5154a1e3b9512580eb469c8c078beda4a2ae9812bf429e51e089e2",
+    "full_index": "crystal-comparison/20261012/studies/full-v1/index.json",
+    "full_index_sha256": "f8b3f9f20265245461020f112bf0c7b2bd880c702f726c246ccf68a480147476",
+    "compiler_version_stdout": "crystal-comparison/20261012/qualification/private-layout-v2/bootstrap/compiler-version.stdout",
+    "compiler_version_receipt": "crystal-comparison/20261012/qualification/private-layout-v2/bootstrap/compiler-version.json",
+    "actual_version_text": "Crystal 1.21.1 [73ea5c2b1] (2026-09-26)\n\nLLVM: 15.0.7\nDefault target: aarch64-apple-macosx11.0\n",
+    "gc_selection_source": "crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/src/gc.cr",
+    "gc_selection": "Pinned source chooses gc/boehm unless gc_none or wasm32 flag. Every actual original/fresh scored build command must lack either flag; environment must lack compiler/runtime GC-disabling injections. Boehm is statically supplied by unchanged official package, so dynamic-image listing alone cannot prove/exclude its presence.",
+    "input_inventory": "The separately qualified LOC overlay supplies all 20 original/fresh actual build receipts and measured-source/binary hashes. Sealer must reconcile every inventory against all 20 independently reconciled measured rows, actual command/build/native-image/runtime pins and full report/manifest/source lineage."
+  },
+  "primary_sources": [
+    "https://crystal-lang.org/2014/06/19/crystal-0.1.0-released/",
+    "https://crystal-lang.org/reference/1.21/man/crystal/",
+    "https://crystal-lang.org/reference/1.21/man/required_libraries.html",
+    "https://github.com/crystal-lang/crystal/blob/73ea5c2b1bc3b3ac0ba400aa9da77af96f63d6ef/src/gc.cr",
+    "https://github.com/github-linguist/linguist/blob/538da05f034fa5c83bd81df128d144e208898da3/lib/linguist/languages.yml"
+  ],
+  "primary_source_review": "Read official 2014 announcement, versioned 1.21 runtime library/compiler docs and exact 73ea5c2b GC selection source; read pinned Linguist Crystal color entry. Claims are paraphrased; local actual receipts establish measured compiler/runtime, not website version metadata.",
+  "measured_backend_template": {
+    "key": "native-aot",
+    "execution": "aot",
+    "label": "Crystal 1.21.1 / LLVM 15.0.7, native macOS ARM64",
+    "verified": false,
+    "runtime_receipt": {
+      "verified": false,
+      "report": null,
+      "report_sha256": null,
+      "field": "/actual_compiler_version_stdout",
+      "value": "Crystal 1.21.1 [73ea5c2b1] (2026-09-26)\n\nLLVM: 15.0.7\nDefault target: aarch64-apple-macosx11.0\n",
+      "value_encoding": "literal-saved-string"
+    }
+  },
+  "memory_strategies": [],
+  "qualified_memory_strategies_expected": ["gc"],
+  "pins": {},
+  "chart_admission": false,
+  "site_changed": false
+}

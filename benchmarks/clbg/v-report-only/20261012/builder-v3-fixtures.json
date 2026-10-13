@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "tests_run": 6,
+  "failures": 0,
+  "errors": 0,
+  "native_probes": 0,
+  "actual_signals_sent": 0,
+  "full_performance_runs": 0,
+  "never_chart_eligible": true,
+  "source_revision": "builder-continuation-v3",
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/test_builder_v3.py": "5a09f09e890056280b08123df141fe1cf982094e2eacc4f66cf53542f8e5c0bf",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/prepare_builder_v3.py": "b4fa2aa6d2240dc611b843fa3be7501593193c95440c3d47773b27c131976d96",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/prepare_builder_v3_cohort.py": "a3c368fc7afb36dbc0eb003ea7635836b14a4a55b3856d36c31d0f4ee893ae33",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/retained_builder_v3.py": "a55f485be6c33e2f69653c7247587d85c2feb2066a1876ff4133fec0af8b7abc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/prepare_input_v2.py": "71d86c00ff6a2aea04e186b1c80bdcd1a09477859158462f5c13d45f42ef596d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/prepare_input_v2_cohort.py": "4609f2d593aa48b13765cbb55d9a91f2d7673bd72d3507479382fea51ba863f1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/prepare_cohort.py": "d4c26a05012f608f94c3c15c8db3173a2fd7fcbfa1667f4bab1c2f25d8a9a1d2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/revisions/builder-continuation-v3/profiles.json": "4a65f2b25ef5875ced998ebbb0c819d4df6bbff2a7b060bdbda639156ff50ea5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/revisions/builder-continuation-v3/REVISION.md": "e1f8918e10f17b271c43fcf9f9f6a5a1a8c3b54774b3b5b926696aa91917738f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/revisions/pidigits-builder-v3/sources/pidigits/optimized.v": "c9c78dc4f4daa1140d5d04008132c1557274910efbd593388a3f04346d9e7d8c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/builder-v3-fixtures.log": "2ffcfce8f254b6eff28e6a3d8978bf581eb53f9a35abcdb10e6ba9725dc18ec1"
+  }
+}

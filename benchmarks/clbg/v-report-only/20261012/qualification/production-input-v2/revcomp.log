@@ -1,0 +1,20 @@
+WAIT LOCK: V preparation production-input-v2 revcomp
+BUILD v-revcomp-compact-input-v2
+BUILD v-revcomp-optimized-input-v2
+PROBE v-revcomp-compact-input-v2 all-iupac-empty
+PROBE v-revcomp-compact-input-v2 crlf-comment-eof
+PROBE v-revcomp-compact-input-v2 missing-final-newline
+PROBE v-revcomp-compact-input-v2 long-odd-wrap
+PROBE v-revcomp-compact-input-v2 header-eof
+PROBE v-revcomp-compact-input-v2 empty-input
+PROBE v-revcomp-compact-input-v2 cr-only-record-comments
+PROBE v-revcomp-compact-input-v2 complete-multirecord-beyond-buffer
+PROBE v-revcomp-optimized-input-v2 all-iupac-empty
+PROBE v-revcomp-optimized-input-v2 crlf-comment-eof
+PROBE v-revcomp-optimized-input-v2 missing-final-newline
+PROBE v-revcomp-optimized-input-v2 long-odd-wrap
+PROBE v-revcomp-optimized-input-v2 header-eof
+PROBE v-revcomp-optimized-input-v2 empty-input
+PROBE v-revcomp-optimized-input-v2 cr-only-record-comments
+PROBE v-revcomp-optimized-input-v2 complete-multirecord-beyond-buffer
+PASS BOUNDED OUTPUTS revcomp 18

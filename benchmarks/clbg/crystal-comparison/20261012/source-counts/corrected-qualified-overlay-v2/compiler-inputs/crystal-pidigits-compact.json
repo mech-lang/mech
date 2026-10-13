@@ -1,0 +1,47 @@
+{
+  "status": "qualified-exact-authored-compiler-inputs",
+  "profile": "crystal-pidigits-compact",
+  "source_sha256": "10a661763c5991cc979ee498afa6f3e9a202e094fc8889b1216543bd5c17a537",
+  "binary_sha256": "61c8b23197209c4e57c9c566421e2d5c9a5598cd94addaf1516796e2d32c2158",
+  "files": [
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-input-archive-filter-v6/source-snapshot/sources/pidigits/compact.cr",
+      "sha256": "10a661763c5991cc979ee498afa6f3e9a202e094fc8889b1216543bd5c17a537"
+    }
+  ],
+  "actual_build_receipt": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-input-archive-filter-v6/builds/crystal-pidigits-compact/build.json",
+    "sha256": "c75eaeb5b2fc89bffb8452ceb31de2425e0e1503fd0f04b89e350d249c37db3f"
+  },
+  "actual_build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/bin/crystal",
+    "build",
+    "--release",
+    "--no-debug",
+    "--no-color",
+    "--error-trace",
+    "--mcpu",
+    "native",
+    "--threads",
+    "1",
+    "--link-flags",
+    "-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk -mmacosx-version-min=14.4 -L /opt/homebrew/Cellar/gmp/6.3.0/lib -L /opt/homebrew/Cellar/pcre2/10.49/lib -L /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-input-archive-filter-v6/bin/crystal-pidigits-compact",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-input-archive-filter-v6/source-snapshot/sources/pidigits/compact.cr"
+  ],
+  "qualified_preparation": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-input-archive-filter-v6/report.json",
+    "sha256": "1b1f4ae9b39a9ee17e66204095f7532718f299f318e6cde3d9def2c1cd761372"
+  },
+  "source_role_review": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/source-counts/repaired-replay-semantic-review-v2.json",
+    "sha256": "3087d38fe95ab7d9cc1340291d361448367b8995f43da744124a5af8362303f0",
+    "review_identity": "crystal-repaired-replay-source-review-v2:crystal-pidigits-compact",
+    "disposition": "Vendor big require is one declaration; both actual divisions, accepted/rejected extraction branches and written digit/output recurrence retain independent owners without generated library-body units."
+  },
+  "counted_source_alias": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/sources/pidigits/compact.cr",
+  "alias_bytes_equal": true,
+  "vendor_inputs": "Pinned Crystal standard library/compiler/native dependencies; no local authored helper is compiled",
+  "source_inventory_is_derived_from_actual_compiler_receipt": true
+}

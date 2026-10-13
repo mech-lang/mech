@@ -24,6 +24,12 @@ def sha(path):
         return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
+def save(path, value):
+    temporary = path.with_suffix(path.suffix+'.tmp')
+    temporary.write_text(json.dumps(value, indent=2, ensure_ascii=False)+'\n')
+    temporary.replace(path)
+
+
 def proof(path, first, last, conclusion):
     return dict(path=str(path), sha256=sha(path), first_line=first, last_line=last,
                 excerpt='\n'.join(path.read_text().splitlines()[first-1:last]), conclusion=conclusion)
@@ -69,7 +75,7 @@ def main():
         proof(root / 'src/algorithm/dyadic/structure.rs', 1138, 1145, 'Ordinary Select converts the complete selector and dispatches by array datatype.'),
         proof(root / 'src/algorithm/dyadic/structure.rs', 1268, 1358, 'Native selection gathers all supplied rows in order; each of four state/coordinate vectors is selected with the same stable index vector.'),
         proof(root / 'parser/src/defs.rs', 1480, 1494, 'Under Select supports replacing selected rows with a scalar; the documented generic operation writes ones at surviving original pixel indices.'),
-        proof(root / 'src/run_prim.rs', 919, 924, 'UndoSelect pops replacement, original selector and target then dispatches to the ordinary native indexed update.'),
+        proof(root / 'src/run_prim.rs', 919, 924, 'UndoSelect directly dispatches the replacement, original selector and target values to the ordinary native indexed update.'),
         proof(root / 'src/algorithm/dyadic/structure.rs', 1147, 1217, 'UndoSelect validates the ordinary selector, handles duplicate semantics and dispatches the replacement and target by datatype.'),
         proof(root / 'src/algorithm/dyadic/structure.rs', 1466, 1486, 'The lower-rank scalar replacement path writes the repeated scalar directly at every supplied target index; no pixel-pair membership matrix is built.'),
         proof(root / 'src/algorithm/pervade.rs', 64, 104, 'Binary64 array arithmetic and scalar broadcasting use the general pervasive implementation; arithmetic is unmodified.'),
@@ -110,7 +116,7 @@ def main():
                  validation_file=str(report_path), validation_sha256=sha(report_path) if report else None,
                  full_performance_runs=0, measured_speedup=None)
     audit_path = RESULTS / 'source-audit.json'
-    audit_path.write_text(json.dumps(audit, indent=2, ensure_ascii=False)+'\n')
+    save(audit_path, audit)
     pins = dict(runtime['pins'])
     for item in proofs:
         pins[item['path']] = item['sha256']
@@ -156,7 +162,7 @@ def main():
     for path, digest in pins.items():
         assert sha(path) == digest, path
     destination = HERE / 'manifest.json'
-    destination.write_text(json.dumps(manifest, indent=2, ensure_ascii=False)+'\n')
+    save(destination, manifest)
     print(destination, manifest['status'], sha(destination))
     print(row['key'], '14 LOC', row['source_sha256'])
 

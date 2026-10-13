@@ -1,0 +1,21 @@
+{
+  "status": "failed-observation",
+  "runtime_aot_proven": false,
+  "chart_admission": false,
+  "actual_benchmark_runs": 0,
+  "request": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/request.json",
+  "all_thread_breakpoints": true,
+  "debugger_expressions_evaluated_in_target": 0,
+  "native_arguments": [
+    "41",
+    "--julia-args",
+    "--compile=no",
+    "--threads=8,0",
+    "--startup-file=no",
+    "--history-file=no",
+    "-O3"
+  ],
+  "source_or_algorithm_modified": false,
+  "error": "process exited with status -1 (lost connection)",
+  "error_type": "AssertionError"
+}

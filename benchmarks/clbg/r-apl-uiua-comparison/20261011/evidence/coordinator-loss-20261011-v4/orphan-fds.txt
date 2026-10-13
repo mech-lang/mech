@@ -1,0 +1,12 @@
+COMMAND   PID   USER   FD   TYPE DEVICE SIZE/OFF                NODE NAME
+apl     25078 cim310  cwd    DIR   1,16     2528            79825338 /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011
+apl     25078 cim310  txt    REG   1,16  3365312            79843184 /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl
+apl     25078 cim310  txt    REG   1,16   521040            77678167 /opt/homebrew/Cellar/pcre2/10.49/lib/libpcre2-32.0.dylib
+apl     25078 cim310  txt    REG   1,16  2299152 1152921500312563341 /usr/lib/dyld
+apl     25078 cim310    0u   CHR    3,2      0t0                 336 /dev/null
+apl     25078 cim310    1u   REG   1,16        0            79901061 /private/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/tmpyeix8uds
+apl     25078 cim310    2u   REG   1,16        0            79901061 /private/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/tmpyeix8uds
+apl     25078 cim310    3u   REG   1,16 24125440            79901060 /private/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/tmpm7zeuwnx
+apl     25078 cim310    4r   REG   1,16        0            79853438 /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.apl.history
+apl     25078 cim310    5r   REG   1,16      730            79843468 /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/mandelbrot.compact.apl
+apl     25078 cim310    6u   REG   1,16 24125440            79901060 /private/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/tmpm7zeuwnx

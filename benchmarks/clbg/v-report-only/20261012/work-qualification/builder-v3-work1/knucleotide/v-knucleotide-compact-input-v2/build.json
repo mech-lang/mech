@@ -1,0 +1,22 @@
+{
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/.build-sdk-v1/toolchain/v/v",
+    "-prod",
+    "-cc",
+    "/opt/homebrew/opt/llvm@22/bin/clang-22",
+    "-cflags",
+    "-O3 -march=native -ffp-contract=off",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/work-qualification/builder-v3-work1/knucleotide/v-knucleotide-compact-input-v2/work-trace",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/work-qualification/builder-v3-work1/knucleotide/v-knucleotide-compact-input-v2/work-trace.v"
+  ],
+  "started_at": "2026-10-13T01:36:09.709621+00:00",
+  "inherited_common_mutex": true,
+  "pid": 14662,
+  "identity": {
+    "pid": 14662,
+    "process_listing": "Mon Oct 12 21:36:09 2026     /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/.build-sdk-v1/toolchain/v/v -prod -cc /opt/homebrew/opt/llvm@22/bin/clang-22 -cflags -O3 -march=native -ffp-contract=off -o /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/work-qualification/builder-v3-work1/knucleotide/v-knucleotide-compact-input-v2/work-trace /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/work-qualification/builder-v3-work1/knucleotide/v-knucleotide-compact-input-v2/work-trace.v"
+  },
+  "returncode": 0,
+  "finished_at": "2026-10-13T01:36:11.354778+00:00"
+}

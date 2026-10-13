@@ -1,0 +1,16 @@
+Style: Split this into multiple lines (heuristic: 58/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/results/instrumented.ua:6:1
+6 |   M ⊃(+⊃M.Cx(-⊃(˙×M.I)(˙×M.R))|+⊃M.Cy(×2×⊃M.R M.I)|M.Index|M.Cx|M.Cy|+1M.Iter)
+    ──────────────────────────────────────────────────────────────────────────────
+Advice: Split this into multiple lines (heuristic: 71/60) 😠
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/results/instrumented.ua:13:1
+13 | Prune ← M ⊃(⊏⊃Selection.Keep(M.R Selection.State)|⊏⊃Selection.Keep(M.I Selection.State)|⊏⊃Selection.Keep(M.Index Selection.State)|⊏⊃Selection.Keep(M.Cx Selection.State)|M.Cy Selection.State|M.Iter Selection.State) Selected
+     ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Style: Split this into multiple lines (heuristic: 42/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/results/instrumented.ua:21:1
+21 | Row ← &p ⊂ "ROW=" json Pack Bits ⍢(Iterate|×⊃(<50M.Iter)(>0⧻M.Index)) M (↯N 0) (↯N 0) (⇡N) Cr ⊙0
+     ────────────────────────────────────────────────────────────────────────────────────────────────
+Warning: . duplicate is deprecated and will be removed in a future version, use ˙ self, ⊸ by, or ⟜∘ instead
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/results/instrumented.ua:7:25
+7 |   &p ⊂ "ADVANCED=" json .
+                            ─

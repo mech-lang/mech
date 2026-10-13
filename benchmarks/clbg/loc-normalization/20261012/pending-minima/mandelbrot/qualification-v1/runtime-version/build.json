@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/opt/homebrew/Cellar/lua/5.5.1/bin/lua",
+    "-v"
+  ],
+  "started_at": "2026-10-12T16:47:21.531302+00:00",
+  "inherited_common_mutex": true,
+  "pid": 82289,
+  "identity": {
+    "pid": 82289,
+    "process_listing": "Mon Oct 12 12:47:21 2026     /opt/homebrew/Cellar/lua/5.5.1/bin/lua -v"
+  },
+  "returncode": 0,
+  "finished_at": "2026-10-12T16:47:21.624691+00:00"
+}

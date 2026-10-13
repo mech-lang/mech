@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "actual_common_mutex_held": true,
+  "inherited_common_mutex": true,
+  "suite": "full-gates",
+  "expected_ids": [
+    "test_full_study.IsolatedFailures.test_real_source_failure_with_literal_safe_gates_is_isolated",
+    "test_full_study.IsolatedFailures.test_every_unsafe_gate_stops_and_truthy_values_do_not_waive_it",
+    "test_full_study.IsolatedFailures.test_missing_gates_and_non_source_failure_stop"
+  ],
+  "discovered_ids": [
+    "test_full_study.IsolatedFailures.test_every_unsafe_gate_stops_and_truthy_values_do_not_waive_it",
+    "test_full_study.IsolatedFailures.test_missing_gates_and_non_source_failure_stop",
+    "test_full_study.IsolatedFailures.test_real_source_failure_with_literal_safe_gates_is_isolated"
+  ],
+  "started_ids": [
+    "test_full_study.IsolatedFailures.test_every_unsafe_gate_stops_and_truthy_values_do_not_waive_it",
+    "test_full_study.IsolatedFailures.test_missing_gates_and_non_source_failure_stop",
+    "test_full_study.IsolatedFailures.test_real_source_failure_with_literal_safe_gates_is_isolated"
+  ],
+  "expected_count": 3,
+  "tests_run": 3,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "expected_failures": 0,
+  "unexpected_successes": 0,
+  "raw_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v2/fixtures/full-gates/full-gates.log",
+  "raw_log_sha256": "3caa5cf7f4bb6bbcb6103b0b745829cc4ad1fb43e8af4b1e862588ec43cc0f59",
+  "native_probes": 0,
+  "chart_admission": false
+}

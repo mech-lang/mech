@@ -1,0 +1,85 @@
+{
+  "status": "prepared-continuation-not-launched",
+  "created_at": "2026-10-12T13:44:44.786765+00:00",
+  "lineage": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-r.json": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/revision/before/timings-r.json",
+      "sha256": "44a20749c5ee485392af2c220ef074d3846323e04c613243a73d3c6f9da49b0a"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-uiua.json": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/revision/before/timings-uiua.json",
+      "sha256": "da5ccf102e90dc2755388414390f6401402b2f67edb177ba74a377f2c5cae709"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-apl.json": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/revision/before/timings-apl.json",
+      "sha256": "9ef8f3776ce6c7ddf65a29cec7378e782188862a271aea2826df486cac0f98f7"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/source-audit-r.json": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/revision/before/source-audit-r.json",
+      "sha256": "d76be20504617addb9efd5915bf7074877e727e3a49ccbd36585b4be5c763af3"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/source-audit-uiua.json": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/revision/before/source-audit-uiua.json",
+      "sha256": "82b15648d0c49c6393a0eec1efb441f1ee11237ceae4a8f41ca854c0b7ee0860"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/source-audit-apl.json": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/revision/before/source-audit-apl.json",
+      "sha256": "9b26c06182bb97b4d3e26d70d9edd6e5ec78e57f1b59a77a91874869c9e83936"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-manifest.json": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/revision/before/uiua-manifest.json",
+      "sha256": "c6cbef6595f2f5a8195b4edbe937ebe28165985245d73f34db17dd42a02dac32"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/coordinator-v4/status.json": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/revision/before/status.json",
+      "sha256": "098766de9103c0cdc654071629142ccf948b1b95ce8e43e3fc389569af6019e6"
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/coordinator-v4/long-r-uiua.log": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/revision/before/long-r-uiua.log",
+      "sha256": "d7bd8ec0bb601f84e78577ea1257fba5aabfef5fca6a7deb4da480a047eb0e08"
+    }
+  },
+  "retained_uiua_report": {
+    "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/revision/before/timings-uiua.json",
+    "sha256": "da5ccf102e90dc2755388414390f6401402b2f67edb177ba74a377f2c5cae709"
+  },
+  "continuing_reports": {
+    "r": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-r.json",
+    "apl": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-apl.json"
+  },
+  "continuing_audits": {
+    "r": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/source-audit-r.json",
+      "sha256": "d76be20504617addb9efd5915bf7074877e727e3a49ccbd36585b4be5c763af3"
+    },
+    "apl": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/source-audit-apl.json",
+      "sha256": "9b26c06182bb97b4d3e26d70d9edd6e5ec78e57f1b59a77a91874869c9e83936"
+    }
+  },
+  "uiua_endpoint_revision": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/revision/uiua-fann-v5-endpoint-revision.json",
+    "sha256": "91217bd8622d8d703c096e87e428b7ad1e995e93732d66b325862b6075303770"
+  },
+  "separate_uiua_fann_study": {
+    "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/full-study/manifest.json",
+    "manifest_sha256": "d8b6ad100671b3fef5ae46d90dcb36b044733b25ea8d65e3ba7a4589e5b62513",
+    "report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/full-study/report.json",
+    "import_requires_complete_three_actual_samples": true
+  },
+  "remaining_stage_plan": [
+    {
+      "languages": "r",
+      "benchmarks": "fannkuchredux",
+      "samples": 3
+    },
+    {
+      "languages": "apl",
+      "benchmarks": "mandelbrot,fasta,knucleotide,binarytrees,nbody,fannkuchredux",
+      "samples": 3
+    }
+  ],
+  "no_benchmarks_launched": true,
+  "original_reports_preserved": true,
+  "original_five_pinned_inputs_preserved": true
+}

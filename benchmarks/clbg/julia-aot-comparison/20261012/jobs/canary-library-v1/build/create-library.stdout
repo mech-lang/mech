@@ -1,0 +1,32 @@
+PackageCompiler: bundled libraries:
+  ├── Base:
+  │    ├── libLLVM.dylib - 61.616 MiB
+  │    ├── libatomic.1.dylib - 105.297 KiB
+  │    ├── libdSFMT.dylib - 67.094 KiB
+  │    ├── libgcc_s.1.1.dylib - 173.422 KiB
+  │    ├── libgfortran.5.dylib - 2.084 MiB
+  │    ├── libgmp.10.dylib - 489.984 KiB
+  │    ├── libgmpxx.4.dylib - 110.828 KiB
+  │    ├── libgomp.1.dylib - 442.641 KiB
+  │    ├── libjulia-codegen.1.13.1.dylib - 2.088 MiB
+  │    ├── libjulia-internal.1.13.1.dylib - 3.746 MiB
+  │    ├── libmpfr.6.dylib - 563.500 KiB
+  │    ├── libopenlibm.4.0.dylib - 172.625 KiB
+  │    ├── libpcre2-8.0.dylib - 822.969 KiB
+  │    ├── libquadmath.0.dylib - 354.891 KiB
+  │    ├── libssp.0.dylib - 70.281 KiB
+  │    ├── libstdc++.6.dylib - 3.724 MiB
+  │    ├── libuv.2.dylib - 368.266 KiB
+  │    ├── libz.1.3.1.dylib - 169.188 KiB
+  │    ├── libzstd.1.dylib - 767.859 KiB
+  │    ├── libunwind.1.0.dylib - 91.797 KiB
+  │    ├── libjulia.1.13.1.dylib - 191.359 KiB
+  ├── Stdlibs:
+  │   ├── OpenBLAS_jll
+  │   │   ├── libopenblas64_.0.3.30.dylib - 22.543 MiB
+  │   ├── libblastrampoline_jll
+  │   │   ├── libblastrampoline.5.dylib - 2.517 MiB
+  │   ├── OpenSSL_jll
+  │   │   ├── libcrypto.3.dylib - 4.854 MiB
+  │   │   ├── libssl.3.dylib - 1021.641 KiB
+  Total library file size: 109.015 MiB

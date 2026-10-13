@@ -1,0 +1,13 @@
+Building builtin -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/release/0.74.0-95ad180/packages/builtin
+Building /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v1/source-snapshot/sources/pidigits/compact -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v1/source-snapshot/sources/pidigits/compact
+Building gmp -> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/gmp4pony/gmp4pony-b14db4ba347f6a2b840f135e1602e19f85625c39/gmp
+Error:
+ponytest: couldn't locate this path
+Error:
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/gmp4pony/gmp4pony-b14db4ba347f6a2b840f135e1602e19f85625c39/gmp/_test.pony:1:1: can't load package 'ponytest'
+use "ponytest"
+^
+Error:
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v1/source-snapshot/sources/pidigits/compact/main.pony:1:1: can't load package 'gmp'
+use "gmp"
+^

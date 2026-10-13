@@ -1,0 +1,11 @@
+Waiting for shared mutex for bounded Fann runner qualification and sealing.
+Acquired common mutex.
+{
+  "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/full-study/manifest.json",
+  "sha256": "d8b6ad100671b3fef5ae46d90dcb36b044733b25ea8d65e3ba7a4589e5b62513",
+  "runner": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/full_study.py",
+  "runner_sha256": "3c4bf49bed3db3cf2aa575f44157f1ed1cd83ad065a708db1f545502884ded2d",
+  "status": "prepared-awaiting-root-review",
+  "profiles": 3,
+  "full_processes": 9
+}

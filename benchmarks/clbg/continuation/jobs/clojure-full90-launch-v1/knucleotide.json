@@ -1,0 +1,26 @@
+{
+  "status": "durable-job-launched",
+  "launched_at": "2026-10-13T12:11:15.261547+00:00",
+  "job": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/clojure-full-v1-knucleotide",
+  "worker_identity": {
+    "pid": 3988,
+    "listing": "3988  3984 Tue Oct 13 08:11:15 2026     /opt/homebrew/opt/python@3.14/bin/python3.14 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/clojure-full-v1-knucleotide --lease-fd 3 --go-fd 4"
+  },
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/revisions/work-full-v1/full_study.py",
+    "--run",
+    "--benchmark",
+    "knucleotide",
+    "--revision",
+    "full-v1",
+    "--manifest-sha256",
+    "d574e81368d72793262e7439cb15a3de0fadfd4c971d26a40ea0ff781c3674a2"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "detached_session": true,
+  "automatic_retry": false,
+  "qualification_granted": false
+}

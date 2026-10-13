@@ -1,0 +1,57 @@
+{
+  "status": "tagged-source-route-reviewed-awaiting-native-evidence",
+  "scope": "Source inspection only; no Julia generation, hash, build or execution",
+  "packagecompiler_version": "2.4.3",
+  "julia_version": "1.13.1",
+  "sources": [
+    {
+      "url": "https://raw.githubusercontent.com/JuliaLang/PackageCompiler.jl/v2.4.3/src/julia_init.c",
+      "range": "89-136",
+      "finding": "Default library initialization parses options, resolves its image and bundle paths, then calls jl_init_with_image_file. This wrapper has no Julia expression-evaluation call; shutdown calls jl_atexit_hook."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/JuliaLang/PackageCompiler.jl/v2.4.3/src/julia_init.h",
+      "range": "1-2",
+      "finding": "The proposed direct driver's init_julia and shutdown_julia declarations agree with this header."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/JuliaLang/PackageCompiler.jl/v2.4.3/src/PackageCompiler.jl",
+      "range": "1131-1137,1155-1186,1240-1256",
+      "finding": "create_library accepts custom initialization C/header files and an image-build script. These are potential build-time configuration routes, not proof that an application is AOT."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/JuliaLang/julia/v1.13.1/src/jlapi.c",
+      "range": "112-126",
+      "finding": "The image-file entry preloads the selected image and invokes jl_init_."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/JuliaLang/julia/v1.13.1/src/init.c",
+      "range": "543-606,633-735",
+      "finding": "The supplied-image branch restores the image. The separate no-image branch loads boot.jl. Startup initializes runtime facilities and runs the saved module initializer sequence after starting threads and enabling GC."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/JuliaLang/julia/v1.13.1/src/toplevel.c",
+      "range": "54-79",
+      "finding": "Module initialization resolves each module's __init__ and invokes it through jl_apply. Nested initializer behavior therefore still requires native coverage and observation."
+    }
+  ],
+  "conclusions": {
+    "direct_library_wrapper_eval_suspicion_resolved_by_tagged_source": true,
+    "startup_native_method_coverage_proven": false,
+    "all_initializer_paths_free_of_interpreter_or_codegen_proven": false,
+    "supplied_image_native_artifacts_inspected": false,
+    "final_loaded_initializer_inventory_observed": false,
+    "runtime_aot_proven": false,
+    "chart_admission": false,
+    "generation_or_native_queue_authorized": false
+  },
+  "remaining_evidence": [
+    "Pin the actual PackageCompiler initializer/header and Julia runtime/image/header bytes under the common mutex.",
+    "Bind the exact produced library, C launcher, exported ABI and actual runtime option receipt.",
+    "Observe the complete loaded module initializer sequence and all threads from before initialization through shutdown.",
+    "Distinguish codegen target initialization or native-pointer lookup from actual Julia code emission; record unresolved hook semantics explicitly.",
+    "Reject actual interpreter and code-emission events using complete native routes and a missing-native-method negative canary.",
+    "Resolve binarytrees4 Main/package bindings without timed source evaluation or a changed distributed algorithm.",
+    "Preserve whole-process startup cost and use fresh matched derived JIT measurements alongside any qualified AOT measurements."
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "status": "failed-fixtures",
+  "updated_at": "2026-10-12T17:24:50.468611+00:00",
+  "pid": 93046,
+  "tests_run": 361,
+  "failures": 1,
+  "errors": 27,
+  "audit_started": false,
+  "automatic_retry": false
+}

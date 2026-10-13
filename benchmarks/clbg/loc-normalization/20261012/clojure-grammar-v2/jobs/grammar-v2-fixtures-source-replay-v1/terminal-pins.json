@@ -1,0 +1,29 @@
+{
+  "status": "completed-proposal-evidence-retained",
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/clojure-grammar-v2/jobs/grammar-v2-fixtures-source-replay-v1/source-proposals.json": "f627e98645499fdcd90b91746c1aef81446d4e939ff7bcb9b4c8c759116cd3d2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/clojure-grammar-v2/jobs/grammar-v2-fixtures-source-replay-v1/fixture-receipt.json": "f379fa568dbde7dd9afa443f4a56d5ede3cf201ad3faa68f778939982b5b6e8f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/clojure-grammar-v2/jobs/grammar-v2-fixtures-source-replay-v1/fixtures.log": "54101846333af117b78f65775e477ee0af0f41382751afb18ba3a6efba1de153",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/clojure-grammar-v2/jobs/grammar-v2-fixtures-source-replay-v1/snapshot/foreign_clojure.py": "512e59013f7b59c2d7fe193e011237d7341b58ebc80791a3fc8db9ef87ee191e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/clojure-grammar-v2/jobs/grammar-v2-fixtures-source-replay-v1/snapshot/REVIEW.md": "74c200a41806ae1c4db6ad935c75e8f46230401cb069ffa6465138af9690be03",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/clojure-grammar-v2/jobs/grammar-v2-fixtures-source-replay-v1/snapshot/test_foreign_clojure.py": "3698b7b09e195acbb94e96fdd66950b72037d3db8c6560e740bd2c63fe71ae83",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/clojure-grammar-v2/jobs/grammar-v2-fixtures-source-replay-v1/snapshot/qualify_replay.py": "c505706a97d820e6cc0fc0f8fbb4ee846a9b1097a36b030209d2da445738d188",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/clojure-grammar-v2/jobs/grammar-v2-fixtures-source-replay-v1/python-dependencies/unittest/signals.py": "f8286e818ca56e10e03745bc056cdfd31147678f9a1dc8cb6b0fe96ef9a4362a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/clojure-grammar-v2/jobs/grammar-v2-fixtures-source-replay-v1/python-dependencies/unittest/runner.py": "51780085229bd3547a2751e8d75ab1d8f391dd2c9c3ca1d011b54529348faeb4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/clojure-grammar-v2/jobs/grammar-v2-fixtures-source-replay-v1/python-dependencies/unittest/suite.py": "ed2da92bc9f97c53403ee2d3d12cc53b16a96e85d596ebc887b5a93458f3f6bc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/clojure-grammar-v2/jobs/grammar-v2-fixtures-source-replay-v1/python-dependencies/unittest/util.py": "fdcc640c3505d16deab9c32eae7c3f5f67c3b5e81c563dc6698fa7fcf403854d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/clojure-grammar-v2/jobs/grammar-v2-fixtures-source-replay-v1/python-dependencies/unittest/__init__.py": "2698f2daf7a02609a6825b89cd459ebaa283dec2403c7b846315a0701bc74a0d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/clojure-grammar-v2/jobs/grammar-v2-fixtures-source-replay-v1/python-dependencies/unittest/result.py": "813415b331a53acc1bd88ffebadfcb46886dba1ff2bbda2908533e24548db50c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/clojure-grammar-v2/jobs/grammar-v2-fixtures-source-replay-v1/python-dependencies/unittest/loader.py": "b993c1631e000d5f13256cdd71e40f6453974b90074eddec929f3685c59e0855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/clojure-grammar-v2/jobs/grammar-v2-fixtures-source-replay-v1/python-dependencies/unittest/case.py": "a79b422eec43c90352e25a54bce8cee106811974c8dea9405199e4caa689ffe9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/clojure-grammar-v2/jobs/grammar-v2-fixtures-source-replay-v1/python-dependencies/unittest/main.py": "12de7da0fea92dbff8713ebe9904ada6dbd1e0a334d58861c6287ccfc0a261d2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/clojure-grammar-v2/jobs/grammar-v2-fixtures-source-replay-v1/python-dependencies/unittest/async_case.py": "5e8265cb20ead3877aef870cda91f2462acf107513933f84b4f3419028e8746f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/clojure-grammar-v2/jobs/grammar-v2-fixtures-source-replay-v1/python-dependencies/unittest/__main__.py": "ff6b9a100d32001715b40d61bc4d613623b139edb1fdc3566427b83c331caae3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/clojure-grammar-v2/jobs/grammar-v2-fixtures-source-replay-v1/python-dependencies/unittest/_log.py": "905672317ab26c656c600defce25d477728068f597f00a7f94e22e8128c323b9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/clojure-grammar-v2/jobs/grammar-v2-fixtures-source-replay-v1/python-dependencies/unittest/mock.py": "856148cdc93943b4ff948276e94561db3d6c44ddecacf53c3d25eb7dc46a108d"
+  },
+  "exclusive_mutex_held": true,
+  "common_timing_mutex": "/tmp/mech-clbg-timing.lock",
+  "canonical_LOC_admitted": false,
+  "chart_admission": false
+}

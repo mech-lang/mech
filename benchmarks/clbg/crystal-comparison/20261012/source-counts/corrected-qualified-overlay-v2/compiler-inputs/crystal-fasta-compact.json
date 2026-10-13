@@ -1,0 +1,47 @@
+{
+  "status": "qualified-exact-authored-compiler-inputs",
+  "profile": "crystal-fasta-compact",
+  "source_sha256": "fb5a254a6c357a5541e3f6d0c405b1e4fabab002adb34e357012e593e30fdc7c",
+  "binary_sha256": "2f7e8f21bcd38f1d01ffd67f9a2fe3a5a3d816881666587216fa4dde0c433d8e",
+  "files": [
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/source-snapshot/sources/fasta/compact.cr",
+      "sha256": "fb5a254a6c357a5541e3f6d0c405b1e4fabab002adb34e357012e593e30fdc7c"
+    }
+  ],
+  "actual_build_receipt": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/builds/crystal-fasta-compact/build.json",
+    "sha256": "8b181695a88e321f7b320fe139b592147d6e4aed82a84073e26090979b3b2c1d"
+  },
+  "actual_build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/bin/crystal",
+    "build",
+    "--release",
+    "--no-debug",
+    "--no-color",
+    "--error-trace",
+    "--mcpu",
+    "native",
+    "--threads",
+    "1",
+    "--link-flags",
+    "-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk -mmacosx-version-min=14.4 -L /opt/homebrew/Cellar/gmp/6.3.0/lib -L /opt/homebrew/Cellar/pcre2/10.49/lib -L /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-fasta-compact",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-layout-v2/source-snapshot/sources/fasta/compact.cr"
+  ],
+  "qualified_preparation": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-input-archive-filter-v6/report.json",
+    "sha256": "1b1f4ae9b39a9ee17e66204095f7532718f299f318e6cde3d9def2c1cd761372"
+  },
+  "source_role_review": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/source-counts/repaired-replay-semantic-review-v2.json",
+    "sha256": "3087d38fe95ab7d9cc1340291d361448367b8995f43da744124a5af8362303f0",
+    "review_identity": "crystal-repaired-replay-source-review-v2:crystal-fasta-compact",
+    "disposition": "Probability tables and tuples are data; written random/cumulative/repeat/output loops and table[k]=prob+=p chained state retain executable owners."
+  },
+  "counted_source_alias": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/sources/fasta/compact.cr",
+  "alias_bytes_equal": true,
+  "vendor_inputs": "Pinned Crystal standard library/compiler/native dependencies; no local authored helper is compiled",
+  "source_inventory_is_derived_from_actual_compiler_receipt": true
+}

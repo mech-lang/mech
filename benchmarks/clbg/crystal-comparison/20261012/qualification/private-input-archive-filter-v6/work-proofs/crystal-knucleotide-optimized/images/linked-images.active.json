@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/usr/bin/otool",
+    "-L",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-input-archive-filter-v6/work-proofs/crystal-knucleotide-optimized/work-trace"
+  ],
+  "started_at": "2026-10-12T22:42:53.251272+00:00",
+  "inherited_common_mutex": true,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "timeout_seconds": 30,
+  "pid": 69536,
+  "identity": {
+    "pid": 69536,
+    "process_listing": "Mon Oct 12 18:42:53 2026     /Library/Developer/CommandLineTools/usr/bin/otool -L /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-input-archive-filter-v6/work-proofs/crystal-knucleotide-optimized/work-trace"
+  }
+}

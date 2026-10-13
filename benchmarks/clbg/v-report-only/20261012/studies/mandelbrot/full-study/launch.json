@@ -1,0 +1,22 @@
+{
+  "pid": 11276,
+  "identity": {
+    "pid": 11276,
+    "process_listing": "Mon Oct 12 21:23:25 2026     /tmp/mech-nbody-plot-runtime/bin/python3 -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/full_study.py --run --benchmark mandelbrot --manifest-sha256 a83657d329ce6850f300387abc6978b4ff8c06c65ef5f08d884b0b0f6fce1372"
+  },
+  "benchmark": "mandelbrot",
+  "command": [
+    "/tmp/mech-nbody-plot-runtime/bin/python3",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/full_study.py",
+    "--run",
+    "--benchmark",
+    "mandelbrot",
+    "--manifest-sha256",
+    "a83657d329ce6850f300387abc6978b4ff8c06c65ef5f08d884b0b0f6fce1372"
+  ],
+  "manifest_sha256": "a83657d329ce6850f300387abc6978b4ff8c06c65ef5f08d884b0b0f6fce1372",
+  "launched_at": "2026-10-13T01:23:25.058659+00:00",
+  "report_only": true,
+  "never_chart_eligible": true
+}

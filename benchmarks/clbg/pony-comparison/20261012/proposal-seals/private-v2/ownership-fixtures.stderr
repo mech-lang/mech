@@ -1,0 +1,37 @@
+test_cleanup_failure_is_fatal_and_waits (test_guarded_prepare_v2.OwnershipChecks.test_cleanup_failure_is_fatal_and_waits) ... ok
+test_identity_failure_cleans_known_child (test_guarded_prepare_v2.OwnershipChecks.test_identity_failure_cleans_known_child) ... ok
+test_journal_failure_cleans_known_child (test_guarded_prepare_v2.OwnershipChecks.test_journal_failure_cleans_known_child) ... ok
+test_orphan_compiler_child_is_fatal (test_guarded_prepare_v2.OwnershipChecks.test_orphan_compiler_child_is_fatal) ... ok
+test_popen_failure_has_no_foreign_cleanup (test_guarded_prepare_v2.OwnershipChecks.test_popen_failure_has_no_foreign_cleanup) ... ok
+test_timeout_preserves_complete_drained_output (test_guarded_prepare_v2.OwnershipChecks.test_timeout_preserves_complete_drained_output) ... ok
+test_absent_input_key_is_removed_on_failure (test_guarded_prepare_v2.ProbeRestorationChecks.test_absent_input_key_is_removed_on_failure) ... ok
+test_parent_failure_archives_actual_sampler_bytes (test_guarded_prepare_v2.ProbeRestorationChecks.test_parent_failure_archives_actual_sampler_bytes) ... ok
+test_setup_failure_restores_present_state (test_guarded_prepare_v2.ProbeRestorationChecks.test_setup_failure_restores_present_state) ... ok
+test_trace_failure_archives_and_stops (test_guarded_prepare_v2.ProbeRestorationChecks.test_trace_failure_archives_and_stops) ... ok
+test_alias_is_only_build_change_and_core_ownership_guards_identical (test_proof_reuse_v2.ExactOldProofChecks.test_alias_is_only_build_change_and_core_ownership_guards_identical) ... ok
+test_changed_fingerprint_or_runtime_rejected (test_proof_reuse_v2.ExactOldProofChecks.test_changed_fingerprint_or_runtime_rejected) ... ok
+test_changed_source_or_binary_identity_rejected (test_proof_reuse_v2.ExactOldProofChecks.test_changed_source_or_binary_identity_rejected) ... ok
+test_failed_output_or_execution_or_integrity_rejected (test_proof_reuse_v2.ExactOldProofChecks.test_failed_output_or_execution_or_integrity_rejected) ... ok
+test_full_scored_or_unqualified_record_cannot_be_reused (test_proof_reuse_v2.ExactOldProofChecks.test_full_scored_or_unqualified_record_cannot_be_reused) ... ok
+test_missing_or_duplicate_case_rejected (test_proof_reuse_v2.ExactOldProofChecks.test_missing_or_duplicate_case_rejected) ... ok
+test_native_cap_and_inherited_lock_are_required (test_proof_reuse_v2.ExactOldProofChecks.test_native_cap_and_inherited_lock_are_required) ... ok
+test_retained_archive_must_match_extracted_tool_bytes (test_proof_reuse_v2.ExactOldProofChecks.test_retained_archive_must_match_extracted_tool_bytes) ... FAIL
+test_reused_row_keeps_exact_old_execution_and_provenance (test_proof_reuse_v2.ExactOldProofChecks.test_reused_row_keeps_exact_old_execution_and_provenance) ... ok
+test_twenty_mock_records_preserve_four_fingerprints (test_proof_reuse_v2.ExactOldProofChecks.test_twenty_mock_records_preserve_four_fingerprints) ... ok
+
+======================================================================
+FAIL: test_retained_archive_must_match_extracted_tool_bytes (test_proof_reuse_v2.ExactOldProofChecks.test_retained_archive_must_match_extracted_tool_bytes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/test_proof_reuse_v2.py", line 141, in test_retained_archive_must_match_extracted_tool_bytes
+    self.assertEqual(reuse.archive_correspondence(preparation, archive, directory), {str(target): digest})
+AssertionError: {'/private/var/folders/m2/dzwv83md69n8qlq2nv[107 chars]a87'} != {'/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c00[99 chars]a87'}
+- {'/private/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/tmptkyqpx0u/extracted/ponyc': 'da0da436c289b6c24d4bf9b379bb93670929a1d34a19720ffad8ae631dfcfa87'}
+?   --------
+
++ {'/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/tmptkyqpx0u/extracted/ponyc': 'da0da436c289b6c24d4bf9b379bb93670929a1d34a19720ffad8ae631dfcfa87'}
+
+----------------------------------------------------------------------
+Ran 20 tests in 0.056s
+
+FAILED (failures=1)

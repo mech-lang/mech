@@ -1,0 +1,4 @@
+NOTE: Picked up JDK_JAVA_OPTIONS: 
+Picked up JAVA_TOOL_OPTIONS: 
+Picked up _JAVA_OPTIONS: 
+WARNING: frequencies already refers to: #'clojure.core/frequencies in namespace: clbg.knucleotideobserver.optimized, being replaced by: #'clbg.knucleotideobserver.optimized/frequencies

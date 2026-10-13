@@ -1,0 +1,19 @@
+{
+  "status": "root-reviewed-source-packet-digests-only",
+  "reviewed_packet": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/matlab-regexp-reviewed-digests-v1/reviewed-packet.json",
+  "reviewed_packet_sha256": "4222852c3ac28554da174a176f2984bc887c990a3c7c3ef553367c7699dbfe57",
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/matlab-regexp-grammar-v1/foreign_matlab.py": "2346ef175d5d1ce2d566021625c3e93803a03bbc94bae3723441d7e456de781f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/matlab-regexp-grammar-v1/test_foreign_matlab.py": "2099942475f7a2fa95aded5cbcbb5b51142be9bab0b1e2995302403949f29ee4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/matlab-regexp-grammar-v1/qualify_replay.py": "379104af95910a652697512f3a9aa170ca8c4614f7855e433052a3bac09f4acc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/matlab-regexp-grammar-v1/REVIEW.md": "f52df2b1e37d8561a81c333bb9a43f303c97a1ca2d3567e13aa406d4c541efb1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/matlab-regexp-grammar-v1/GRAMMAR_REVIEW.md": "48572c0da15686b096bac9adb9f0ae60a6e5348c19f18479310e520bbcc7fe3c"
+  },
+  "exclusive_mutex_held": true,
+  "common_timing_mutex": "/tmp/mech-clbg-timing.lock",
+  "actual_fixture_tests": 0,
+  "actual_native_subjects": 0,
+  "canonical_LOC_admitted": false,
+  "chart_admission": false,
+  "finished_at": "2026-10-13T05:11:10.707732+00:00"
+}

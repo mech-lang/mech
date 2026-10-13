@@ -1,0 +1,107 @@
+Compiled from "optimized.clj"
+public final class clbg.knucleotideobserver.optimized$histogram_raw extends clojure.lang.AFunction {
+  public clbg.knucleotideobserver.optimized$histogram_raw();
+    Code:
+         0: aload_0
+         1: invokespecial #9                  // Method clojure/lang/AFunction."<init>":()V
+         4: return
+
+  public static java.lang.Object invokeStatic(java.lang.Object, java.lang.Object);
+    Code:
+         0: new           #13                 // class java/util/HashMap
+         3: dup
+         4: invokespecial #14                 // Method java/util/HashMap."<init>":()V
+         7: aload_0
+         8: aload_1
+         9: invokestatic  #19                 // Method clbg/work/observer$map_start.invokeStatic:(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+        12: astore_2
+        13: lconst_1
+        14: ldc2_w        #20                 // long 2l
+        17: aload_1
+        18: invokestatic  #27                 // Method clojure/lang/Numbers.multiply:(JLjava/lang/Object;)Ljava/lang/Number;
+        21: invokestatic  #31                 // Method clojure/lang/Numbers.shiftLeft:(JLjava/lang/Object;)J
+        24: invokestatic  #35                 // Method clojure/lang/Numbers.dec:(J)J
+        27: lstore_3
+        28: lconst_0
+        29: lstore        5
+        31: lconst_0
+        32: lstore        7
+        34: lload         5
+        36: aload_0
+        37: checkcast     #37                 // class java/lang/String
+        40: invokevirtual #41                 // Method java/lang/String.length:()I
+        43: i2l
+        44: lcmp
+        45: ifge          147
+        48: lload_3
+        49: lload         7
+        51: ldc2_w        #20                 // long 2l
+        54: l2i
+        55: lshl
+        56: aload_0
+        57: checkcast     #37                 // class java/lang/String
+        60: lload         5
+        62: invokestatic  #47                 // Method clojure/lang/RT.intCast:(J)I
+        65: invokevirtual #51                 // Method java/lang/String.charAt:(I)C
+        68: invokestatic  #57                 // Method java/lang/Character.valueOf:(C)Ljava/lang/Character;
+        71: invokestatic  #62                 // Method clbg/knucleotideobserver/optimized$code.invokeStatic:(Ljava/lang/Object;)Ljava/lang/Object;
+        74: invokestatic  #65                 // Method clojure/lang/Numbers.or:(JLjava/lang/Object;)J
+        77: land
+        78: lstore        9
+        80: lload         5
+        82: invokestatic  #68                 // Method clojure/lang/Numbers.inc:(J)J
+        85: aload_1
+        86: invokestatic  #72                 // Method clojure/lang/Numbers.gte:(JLjava/lang/Object;)Z
+        89: ifeq          126
+        92: aload_2
+        93: lload         9
+        95: invokestatic  #76                 // Method clojure/lang/Numbers.num:(J)Ljava/lang/Number;
+        98: lload         5
+       100: invokestatic  #68                 // Method clojure/lang/Numbers.inc:(J)J
+       103: aload_1
+       104: invokestatic  #79                 // Method clojure/lang/Numbers.minus:(JLjava/lang/Object;)Ljava/lang/Number;
+       107: aload_1
+       108: new           #81                 // class clbg/knucleotideobserver/optimized$histogram_raw$fn__252
+       111: dup
+       112: lload         9
+       114: aload_2
+       115: invokespecial #84                 // Method clbg/knucleotideobserver/optimized$histogram_raw$fn__252."<init>":(JLjava/lang/Object;)V
+       118: invokestatic  #89                 // Method clbg/work/observer$map_write.invokeStatic:(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+       121: pop
+       122: goto          128
+       125: athrow
+       126: aconst_null
+       127: pop
+       128: lload         5
+       130: invokestatic  #68                 // Method clojure/lang/Numbers.inc:(J)J
+       133: lload         9
+       135: nop
+       136: lstore        7
+       138: lstore        5
+       140: goto          34
+       143: nop
+       144: nop
+       145: athrow
+       146: athrow
+       147: aconst_null
+       148: pop
+       149: aload_2
+       150: aconst_null
+       151: astore_2
+       152: areturn
+
+  public java.lang.Object invoke(java.lang.Object, java.lang.Object);
+    Code:
+         0: aload_1
+         1: aconst_null
+         2: astore_1
+         3: aload_2
+         4: aconst_null
+         5: astore_2
+         6: invokestatic  #105                // Method invokeStatic:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+         9: areturn
+
+  public static {};
+    Code:
+         0: return
+}

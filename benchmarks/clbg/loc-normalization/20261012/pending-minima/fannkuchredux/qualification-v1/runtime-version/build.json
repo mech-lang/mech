@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/opt/homebrew/Cellar/php/8.5.11/bin/php",
+    "--version"
+  ],
+  "started_at": "2026-10-12T17:12:45.505463+00:00",
+  "inherited_common_mutex": true,
+  "pid": 88612,
+  "identity": {
+    "pid": 88612,
+    "process_listing": "Mon Oct 12 13:12:45 2026     /opt/homebrew/Cellar/php/8.5.11/bin/php --version"
+  },
+  "returncode": 0,
+  "finished_at": "2026-10-12T17:12:45.565668+00:00"
+}

@@ -1,0 +1,2 @@
+WAIT common mutex: V full-study manifest nbody
+{"manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/studies/nbody/full-study/manifest.json", "sha256": "df293f49d15b34b778a30285ddaa2ffcb8240af0944199de563262629282ada9", "profiles": ["v-nbody-optimized-input-v2", "v-nbody-compact-input-v2", "mech-aot-control"], "full_processes": 9, "report_only": true}

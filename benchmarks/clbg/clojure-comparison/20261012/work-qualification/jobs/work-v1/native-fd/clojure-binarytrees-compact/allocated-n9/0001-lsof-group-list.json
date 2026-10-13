@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/bin/ps",
+    "-eo",
+    "pid,pgid,stat,comm"
+  ],
+  "query_pgid": 30668,
+  "inherited_common_mutex": true,
+  "timeout_seconds": 5,
+  "owned_pid": 30671,
+  "actual_members": [],
+  "owned_query_reaped": true,
+  "exit_status": 0,
+  "cleanup_errors": []
+}

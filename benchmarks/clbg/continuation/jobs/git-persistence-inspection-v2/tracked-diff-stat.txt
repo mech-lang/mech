@@ -1,0 +1,18 @@
+ .../clbg/continuation/root-recovery-20261012.json  |   48 +-
+ benchmarks/clbg/overview/explorer/augment_data.py  |    2 +
+ .../20261011/results/summary.csv                   |    8 +
+ .../20261011/results/summary.json                  |  614 +++++--
+ .../20261011/results/summary.md                    |   12 +-
+ .../20261011/results/timings-apl.json              | 1619 +++++++++++++++-
+ .../20261011/results/timings-r.json                | 1846 ++++++++++++++++++-
+ .../20261011/results/timings-uiua.json             | 1936 +++++++++++++++++++-
+ .../20261011/uiua-mandel-active-v3/README.md       |    3 +
+ .../20261011/uiua-mandel-active-v3/manifest.json   |  950 +++++++++-
+ .../20261011/uiua-mandel-active-v3/prepare.py      |    2 +-
+ .../uiua-mandel-active-v3/prepare_manifest.py      |   12 +-
+ .../uiua-mandel-active-v3/results/instrumented.ua  |    2 +-
+ .../results/source-audit.json                      |   16 +-
+ .../uiua-mandel-active-v3/results/validation.log   |   30 +
+ .../20261011/uiua-mandel-active-v3/sources/fast.ua |    2 +-
+ .../20261011/uiua-mandel-active-v3/validate.py     |   52 +-
+ 17 files changed, 6836 insertions(+), 318 deletions(-)

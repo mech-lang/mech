@@ -1,0 +1,181 @@
+{
+  "status": "public-implementation-fallback-lineage-awaiting-loaded-address-review",
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbols-v1/report.json": "66d1b3f9b89c3caf66bb6b1cff83eac81fbbfe3ae13f3e883d432a820fe36bdf",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbols-v1/terminal-pins.json": "a85f7db4b03974a5a5e7f1db7f5b74a7cbbd3bae7d156ffb10a2221d95aa6cf5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbols-v1/images/libjulia.1.13.1/symbols.stdout": "e2e8fa392d913212432dd1bf24a1708874eeecf0121f037ef1c09cf73e0f9033",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbols-v1/images/libjulia-internal.1.13.1/symbols.stdout": "93926dcd6ba80d9bd4b7eb4ccc51149472f8b3d2468660693c6659c971e6a3e6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbols-v1/images/libjulia-codegen.1.13.1/symbols.stdout": "14dad26f4b982206c3c3a9a6a07cb4d033a71058e9d2ef1850deccde4aca25da",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbols-v1/images/sys/symbols.stdout": "1033181b9d215a1c04d7190ddb9dbb91d773ddeb613d78255382b0cb713a183f"
+  },
+  "symbols": {
+    "jl_compile_codeinst": [
+      {
+        "image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/libjulia.1.13.1.dylib",
+        "image_sha256": "459753693d70784e22bf5b7a88013b78116bbe8037af129aa49fe7be55e31289",
+        "linkage_name": "_jl_compile_codeinst",
+        "nm_type": "T",
+        "file_symbol_value": "00000000000027a4",
+        "raw_line": "00000000000027a4 T _jl_compile_codeinst",
+        "loaded_address_pending": true
+      },
+      {
+        "image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-internal.1.13.1.dylib",
+        "image_sha256": "aaf25ba7ac705b5e0d564e6942da9d158bf59cf387fa9d5dca097a254764d816",
+        "linkage_name": "_jl_compile_codeinst_fallback",
+        "nm_type": "T",
+        "file_symbol_value": "00000000000b4e2c",
+        "raw_line": "00000000000b4e2c T _jl_compile_codeinst_fallback",
+        "loaded_address_pending": true
+      },
+      {
+        "image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-codegen.1.13.1.dylib",
+        "image_sha256": "030b316273f4b3c0ecf285e866a0a9653f37471f57e3d51be7476154f6aa9781",
+        "linkage_name": "_jl_compile_codeinst_impl",
+        "nm_type": "T",
+        "file_symbol_value": "000000000008c0bc",
+        "raw_line": "000000000008c0bc T _jl_compile_codeinst_impl",
+        "loaded_address_pending": true
+      }
+    ],
+    "jl_emit_codeinst_to_jit": [
+      {
+        "image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/libjulia.1.13.1.dylib",
+        "image_sha256": "459753693d70784e22bf5b7a88013b78116bbe8037af129aa49fe7be55e31289",
+        "linkage_name": "_jl_emit_codeinst_to_jit",
+        "nm_type": "T",
+        "file_symbol_value": "00000000000026d8",
+        "raw_line": "00000000000026d8 T _jl_emit_codeinst_to_jit",
+        "loaded_address_pending": true
+      },
+      {
+        "image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-internal.1.13.1.dylib",
+        "image_sha256": "aaf25ba7ac705b5e0d564e6942da9d158bf59cf387fa9d5dca097a254764d816",
+        "linkage_name": "_jl_emit_codeinst_to_jit_fallback",
+        "nm_type": "T",
+        "file_symbol_value": "00000000000b4e34",
+        "raw_line": "00000000000b4e34 T _jl_emit_codeinst_to_jit_fallback",
+        "loaded_address_pending": true
+      },
+      {
+        "image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-codegen.1.13.1.dylib",
+        "image_sha256": "030b316273f4b3c0ecf285e866a0a9653f37471f57e3d51be7476154f6aa9781",
+        "linkage_name": "_jl_emit_codeinst_to_jit_impl",
+        "nm_type": "T",
+        "file_symbol_value": "0000000000089efc",
+        "raw_line": "0000000000089efc T _jl_emit_codeinst_to_jit_impl",
+        "loaded_address_pending": true
+      }
+    ],
+    "jl_generate_fptr_for_unspecialized": [
+      {
+        "image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/libjulia.1.13.1.dylib",
+        "image_sha256": "459753693d70784e22bf5b7a88013b78116bbe8037af129aa49fe7be55e31289",
+        "linkage_name": "_jl_generate_fptr_for_unspecialized",
+        "nm_type": "T",
+        "file_symbol_value": "0000000000002798",
+        "raw_line": "0000000000002798 T _jl_generate_fptr_for_unspecialized",
+        "loaded_address_pending": true
+      },
+      {
+        "image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-internal.1.13.1.dylib",
+        "image_sha256": "aaf25ba7ac705b5e0d564e6942da9d158bf59cf387fa9d5dca097a254764d816",
+        "linkage_name": "_jl_generate_fptr_for_unspecialized_fallback",
+        "nm_type": "T",
+        "file_symbol_value": "00000000000b4e18",
+        "raw_line": "00000000000b4e18 T _jl_generate_fptr_for_unspecialized_fallback",
+        "loaded_address_pending": true
+      },
+      {
+        "image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-codegen.1.13.1.dylib",
+        "image_sha256": "030b316273f4b3c0ecf285e866a0a9653f37471f57e3d51be7476154f6aa9781",
+        "linkage_name": "_jl_generate_fptr_for_unspecialized_impl",
+        "nm_type": "T",
+        "file_symbol_value": "000000000008df14",
+        "raw_line": "000000000008df14 T _jl_generate_fptr_for_unspecialized_impl",
+        "loaded_address_pending": true
+      }
+    ],
+    "jl_init_codegen": [
+      {
+        "image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/libjulia.1.13.1.dylib",
+        "image_sha256": "459753693d70784e22bf5b7a88013b78116bbe8037af129aa49fe7be55e31289",
+        "linkage_name": "_jl_init_codegen",
+        "nm_type": "T",
+        "file_symbol_value": "0000000000002774",
+        "raw_line": "0000000000002774 T _jl_init_codegen",
+        "loaded_address_pending": true
+      },
+      {
+        "image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-internal.1.13.1.dylib",
+        "image_sha256": "aaf25ba7ac705b5e0d564e6942da9d158bf59cf387fa9d5dca097a254764d816",
+        "linkage_name": "_jl_init_codegen_fallback",
+        "nm_type": "T",
+        "file_symbol_value": "00000000000b4e08",
+        "raw_line": "00000000000b4e08 T _jl_init_codegen_fallback",
+        "loaded_address_pending": true
+      },
+      {
+        "image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-codegen.1.13.1.dylib",
+        "image_sha256": "030b316273f4b3c0ecf285e866a0a9653f37471f57e3d51be7476154f6aa9781",
+        "linkage_name": "_jl_init_codegen_impl",
+        "nm_type": "T",
+        "file_symbol_value": "0000000000023960",
+        "raw_line": "0000000000023960 T _jl_init_codegen_impl",
+        "loaded_address_pending": true
+      }
+    ],
+    "jl_jit_abi_converter": [
+      {
+        "image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/libjulia.1.13.1.dylib",
+        "image_sha256": "459753693d70784e22bf5b7a88013b78116bbe8037af129aa49fe7be55e31289",
+        "linkage_name": "_jl_jit_abi_converter",
+        "nm_type": "T",
+        "file_symbol_value": "0000000000002858",
+        "raw_line": "0000000000002858 T _jl_jit_abi_converter",
+        "loaded_address_pending": true
+      },
+      {
+        "image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-internal.1.13.1.dylib",
+        "image_sha256": "aaf25ba7ac705b5e0d564e6942da9d158bf59cf387fa9d5dca097a254764d816",
+        "linkage_name": "_jl_jit_abi_converter_fallback",
+        "nm_type": "T",
+        "file_symbol_value": "00000000000b76a8",
+        "raw_line": "00000000000b76a8 T _jl_jit_abi_converter_fallback",
+        "loaded_address_pending": true
+      },
+      {
+        "image": "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-codegen.1.13.1.dylib",
+        "image_sha256": "030b316273f4b3c0ecf285e866a0a9653f37471f57e3d51be7476154f6aa9781",
+        "linkage_name": "_jl_jit_abi_converter_impl",
+        "nm_type": "T",
+        "file_symbol_value": "0000000000088a2c",
+        "raw_line": "0000000000088a2c T _jl_jit_abi_converter_impl",
+        "loaded_address_pending": true
+      }
+    ]
+  },
+  "exclusive_common_mutex_held": true,
+  "runtime_aot_proven": false,
+  "chart_admission": false,
+  "actual_julia_processes": 0,
+  "builds": 0,
+  "automatic_retry": false,
+  "tagged_source_routes": [
+    {
+      "url": "https://raw.githubusercontent.com/JuliaLang/julia/v1.13.1/src/jitlayers.cpp",
+      "lines": "767-789,850-901",
+      "finding": "Implementation hooks carry _impl suffix; emit and unspecialized entry can return for existing native code. Exact entry versus actual emission requires argument/state observation."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/JuliaLang/julia/v1.13.1/cli/loader_lib.c",
+      "lines": "397-428",
+      "finding": "Loader binds codegen exported addresses to the real plugin when loaded or fallback implementations otherwise."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/JuliaLang/julia/v1.13.1/src/codegen-stubs.c",
+      "lines": "36-55",
+      "finding": "No-codegen unspecialized fallback installs an interpreter invocation; watching only public wrappers is insufficient route evidence."
+    }
+  ]
+}

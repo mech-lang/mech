@@ -1,0 +1,23 @@
+{
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/.build-sdk-v1/toolchain/v/v",
+    "-prod",
+    "-cc",
+    "/opt/homebrew/opt/llvm@22/bin/clang-22",
+    "-cflags",
+    "-O3 -march=native -ffp-contract=off",
+    "-keepc",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/lowering-evidence/builder-v3-work1/v-binarytrees-optimized-input-v2/unscored-allocation-evidence",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/lowering-evidence/builder-v3-work1/v-binarytrees-optimized-input-v2/unchanged.v"
+  ],
+  "started_at": "2026-10-13T01:39:11.772244+00:00",
+  "inherited_common_mutex": true,
+  "pid": 16048,
+  "identity": {
+    "pid": 16048,
+    "process_listing": "Mon Oct 12 21:39:11 2026     /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/.build-sdk-v1/toolchain/v/v -prod -cc /opt/homebrew/opt/llvm@22/bin/clang-22 -cflags -O3 -march=native -ffp-contract=off -keepc -o /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/lowering-evidence/builder-v3-work1/v-binarytrees-optimized-input-v2/unscored-allocation-evidence /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/lowering-evidence/builder-v3-work1/v-binarytrees-optimized-input-v2/unchanged.v"
+  },
+  "returncode": 0,
+  "finished_at": "2026-10-13T01:39:12.797518+00:00"
+}

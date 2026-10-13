@@ -1,0 +1,22 @@
+{
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/.build-sdk-v1/toolchain/v/v",
+    "-prod",
+    "-cc",
+    "/opt/homebrew/opt/llvm@22/bin/clang-22",
+    "-cflags",
+    "-O3 -march=native -ffp-contract=off",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualification/production-input-v2/revcomp/v-revcomp-optimized-input-v2/program",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualification/production-input-v2/revcomp/v-revcomp-optimized-input-v2/program.v"
+  ],
+  "started_at": "2026-10-12T17:56:45.877774+00:00",
+  "inherited_common_mutex": true,
+  "pid": 3483,
+  "identity": {
+    "pid": 3483,
+    "process_listing": "Mon Oct 12 13:56:45 2026     /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/.build-sdk-v1/toolchain/v/v -prod -cc /opt/homebrew/opt/llvm@22/bin/clang-22 -cflags -O3 -march=native -ffp-contract=off -o /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualification/production-input-v2/revcomp/v-revcomp-optimized-input-v2/program /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualification/production-input-v2/revcomp/v-revcomp-optimized-input-v2/program.v"
+  },
+  "returncode": 0,
+  "finished_at": "2026-10-12T17:56:46.908245+00:00"
+}

@@ -1,0 +1,8 @@
+test_attempt_failure_preserves_raw_and_restores_overrides (matlab_case_controller_fixtures.CandidateMocks.test_attempt_failure_preserves_raw_and_restores_overrides) ... ok
+test_observer_restores_exact_original_functions (matlab_case_controller_fixtures.CandidateMocks.test_observer_restores_exact_original_functions) ... ok
+test_owned_observer_timeout_cleans_only_known_mock_groups (matlab_case_controller_fixtures.CandidateMocks.test_owned_observer_timeout_cleans_only_known_mock_groups) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.003s
+
+OK

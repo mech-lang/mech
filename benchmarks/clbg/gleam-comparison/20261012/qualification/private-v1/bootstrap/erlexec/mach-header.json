@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/usr/bin/otool",
+    "-hv",
+    "/opt/homebrew/Cellar/erlang/29.1.1_2/lib/erlang/erts-17.1/bin/erlexec"
+  ],
+  "started_at": "2026-10-12T23:07:46.097979+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 76496,
+  "identity": {
+    "pid": 76496,
+    "process_listing": "Mon Oct 12 19:07:46 2026     /usr/bin/otool -hv /opt/homebrew/Cellar/erlang/29.1.1_2/lib/erlang/erts-17.1/bin/erlexec"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-12T23:07:46.123131+00:00",
+  "final_exit_status": 0
+}

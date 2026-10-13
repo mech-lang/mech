@@ -1,0 +1,257 @@
+{
+  "status": "static-source-owner-review-awaiting-guarded-fixtures-replay",
+  "rule": "Parent-approved scalar interpolation ownership independent of call name/purity.",
+  "sources": [
+    {
+      "language": "csharp",
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/mandelbrot-csharpcore-7.cs",
+      "source_sha256": "d22346944ed5d13c1dbb2d626f17f38c5ff075a23c97b31eca1bb129c6630679",
+      "identity_basis": "Pin copied from immutable mutex-held job09; no fresh hash in this static review.",
+      "reviewed_sites": [
+        {
+          "line": 51,
+          "source_line": "Console.WriteLine($\"P4\\n{width} {height}\");",
+          "owner": "Single scalar variable/member/index/call/operator composition inside an owned string.",
+          "additional_units": 0
+        }
+      ],
+      "whole_source_certified": false,
+      "canonical_count_admitted": false
+    },
+    {
+      "language": "csharp",
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/regexredux-csharpcore-2-arm64-faithful.cs",
+      "source_sha256": "4d4a9abfb13ab40f4d75269cf00e472cb73be9ea96359377d84e8920b4820466",
+      "identity_basis": "Pin copied from immutable mutex-held job09; no fresh hash in this static review.",
+      "reviewed_sites": [
+        {
+          "line": 59,
+          "source_line": "        Console.Out.WriteLine($\"\\n{initialLength}\\n{seqLen}\\n{magicTask.Result}\");",
+          "owner": "Single scalar variable/member/index/call/operator composition inside an owned string.",
+          "additional_units": 0
+        },
+        {
+          "line": 98,
+          "source_line": "                throw new ArgumentException($@\"Error compiling pattern \"\"{pattern}\"\": {GetErrorMessage(errorcode)} at offset {erroffset}\");",
+          "owner": "Single scalar variable/member/index/call/operator composition inside an owned string.",
+          "additional_units": 0
+        },
+        {
+          "line": 102,
+          "source_line": "                throw new ArgumentException($@\"Error jit compiling pattern \"\"{pattern}\"\": {GetErrorMessage(ret)}\");",
+          "owner": "Single scalar variable/member/index/call/operator composition inside an owned string.",
+          "additional_units": 0
+        },
+        {
+          "line": 106,
+          "source_line": "                throw new ArgumentException($@\"Match data could not be obtained for pattern \"\"{pattern}\"\"\");",
+          "owner": "Single scalar variable/member/index/call/operator composition inside an owned string.",
+          "additional_units": 0
+        }
+      ],
+      "whole_source_certified": false,
+      "canonical_count_admitted": false
+    },
+    {
+      "language": "dart",
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/dart/mandelbrot-dart-4.dart",
+      "source_sha256": "a5b6d719e5d76261595f260f961db5d52c9e191e227aea7c6aff21f659851299",
+      "identity_basis": "Pin copied from immutable mutex-held job09; no fresh hash in this static review.",
+      "reviewed_sites": [
+        {
+          "line": 20,
+          "source_line": "  stdout.write('P4\\n$w $h\\n');",
+          "owner": "Single scalar variable/member/index/call/operator composition inside an owned string.",
+          "additional_units": 0
+        }
+      ],
+      "whole_source_certified": false,
+      "canonical_count_admitted": false
+    },
+    {
+      "language": "dart",
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/dart/mandelbrot-dart-1.dart",
+      "source_sha256": "bf85ad43630b2899b9795edc8cf12dc27ef4289104160f7b4f21873064ff7de2",
+      "identity_basis": "Pin copied from immutable mutex-held job09; no fresh hash in this static review.",
+      "reviewed_sites": [
+        {
+          "line": 20,
+          "source_line": "  stdout.write('P4\\n$w $h\\n');",
+          "owner": "Single scalar variable/member/index/call/operator composition inside an owned string.",
+          "additional_units": 0
+        }
+      ],
+      "whole_source_certified": false,
+      "canonical_count_admitted": false
+    },
+    {
+      "language": "dart",
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/dart/knucleotide-dart-3.dart",
+      "source_sha256": "fd39860f284bded2df51f859e4e82c045b13f94e07406e180d3900d3230d47b9",
+      "identity_basis": "Pin copied from immutable mutex-held job09; no fresh hash in this static review.",
+      "reviewed_sites": [
+        {
+          "line": 134,
+          "source_line": "    print('$key $count');",
+          "owner": "Single scalar variable/member/index/call/operator composition inside an owned string.",
+          "additional_units": 0
+        },
+        {
+          "line": 141,
+          "source_line": "  return '${(freq[string] ?? 0)}\\t$string';",
+          "owner": "Single scalar variable/member/index/call/operator composition inside an owned string.",
+          "additional_units": 0
+        }
+      ],
+      "whole_source_certified": false,
+      "canonical_count_admitted": false
+    },
+    {
+      "language": "dart",
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/dart/knucleotide-dart-1.dart",
+      "source_sha256": "d710420443c72ceb7194c1c56c12f4d1832521576d43ef32e8f9be7b1761d221",
+      "identity_basis": "Pin copied from immutable mutex-held job09; no fresh hash in this static review.",
+      "reviewed_sites": [
+        {
+          "line": 52,
+          "source_line": "    print('$key $count');",
+          "owner": "Single scalar variable/member/index/call/operator composition inside an owned string.",
+          "additional_units": 0
+        },
+        {
+          "line": 59,
+          "source_line": "  print('${(freq[string] ?? 0)}\\t$string');",
+          "owner": "Single scalar variable/member/index/call/operator composition inside an owned string.",
+          "additional_units": 0
+        }
+      ],
+      "whole_source_certified": false,
+      "canonical_count_admitted": false
+    },
+    {
+      "language": "dart",
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/dart/fannkuchredux-dart-5.dart",
+      "source_sha256": "9b2fe39a3162b92f8a6ef5e2c4f2f040787eb12497c13b2a159f6ca67d406f31",
+      "identity_basis": "Pin copied from immutable mutex-held job09; no fresh hash in this static review.",
+      "reviewed_sites": [
+        {
+          "line": 166,
+          "source_line": "        print(\"$chk\\nPfannkuchen($n) = $flips\");",
+          "owner": "Single scalar variable/member/index/call/operator composition inside an owned string.",
+          "additional_units": 0
+        }
+      ],
+      "whole_source_certified": false,
+      "canonical_count_admitted": false
+    },
+    {
+      "language": "dart",
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/dart/fannkuchredux-dart-8.dart",
+      "source_sha256": "5ace80fe7c680eaacbf5c8adc51fb8fd063ecf9b40595f16c7248fa69e4abae6",
+      "identity_basis": "Pin copied from immutable mutex-held job09; no fresh hash in this static review.",
+      "reviewed_sites": [
+        {
+          "line": 65,
+          "source_line": "   print(\"Pfannkuchen($n) = ${fannkuch(n)}\");",
+          "owner": "Single scalar variable/member/index/call/operator composition inside an owned string.",
+          "additional_units": 0
+        }
+      ],
+      "whole_source_certified": false,
+      "canonical_count_admitted": false
+    },
+    {
+      "language": "dart",
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/dart/binarytrees-dart-6.dart",
+      "source_sha256": "0c9b5938f7b4dd8f71427524b6d5b037546dd7041740eadb5813bc7e4e3f5064",
+      "identity_basis": "Pin copied from immutable mutex-held job09; no fresh hash in this static review.",
+      "reviewed_sites": [
+        {
+          "line": 12,
+          "source_line": "  print(\"stretch tree of depth $stretchDepth\\t check: $check\");",
+          "owner": "Single scalar variable/member/index/call/operator composition inside an owned string.",
+          "additional_units": 0
+        },
+        {
+          "line": 22,
+          "source_line": "      \"long lived tree of depth $maxDepth\\t check: ${itemCheck(longLivedTree)}\");",
+          "owner": "Single scalar variable/member/index/call/operator composition inside an owned string.",
+          "additional_units": 0
+        },
+        {
+          "line": 30,
+          "source_line": "  print(\"${iterations}\\t trees of depth $depth\\t check: $check\");",
+          "owner": "Single scalar variable/member/index/call/operator composition inside an owned string.",
+          "additional_units": 0
+        }
+      ],
+      "whole_source_certified": false,
+      "canonical_count_admitted": false
+    },
+    {
+      "language": "dart",
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/dart/regexredux-dart-5.dart",
+      "source_sha256": "9ac065f5658d4e0df9c1f45c95fd3599abc9c915fa1b4fffbd5078c343cef854",
+      "identity_basis": "Pin copied from immutable mutex-held job09; no fresh hash in this static review.",
+      "reviewed_sites": [
+        {
+          "line": 25,
+          "source_line": "      print('\\n$initial\\n$cleaned\\n$magicLength');",
+          "owner": "Single scalar variable/member/index/call/operator composition inside an owned string.",
+          "additional_units": 0
+        },
+        {
+          "line": 46,
+          "source_line": "    print('$each ${regex.allMatches(s).length}');",
+          "owner": "Single scalar variable/member/index/call/operator composition inside an owned string.",
+          "additional_units": 0
+        }
+      ],
+      "whole_source_certified": false,
+      "canonical_count_admitted": false
+    },
+    {
+      "language": "dart",
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/dart/regexredux-dart-4.dart",
+      "source_sha256": "fc2381d57db35b582dd4a69c7426e007583c56cc2a693b0b963a39c488fedd5a",
+      "identity_basis": "Pin copied from immutable mutex-held job09; no fresh hash in this static review.",
+      "reviewed_sites": [
+        {
+          "line": 13,
+          "source_line": "    print('\\n${s.length}\\n${z.length}\\n${magicLengthOf(z)}');",
+          "owner": "Single scalar variable/member/index/call/operator composition inside an owned string.",
+          "additional_units": 0
+        },
+        {
+          "line": 32,
+          "source_line": "    print('$each ${regex.allMatches(s).length}');",
+          "owner": "Single scalar variable/member/index/call/operator composition inside an owned string.",
+          "additional_units": 0
+        }
+      ],
+      "whole_source_certified": false,
+      "canonical_count_admitted": false
+    },
+    {
+      "language": "dart",
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/dart/pidigits-dart-2.dart",
+      "source_sha256": "a7c014da189a420ee39ff265f75d2238c201e31efa61101a255a29ba6c8403f3",
+      "identity_basis": "Pin copied from immutable mutex-held job09; no fresh hash in this static review.",
+      "reviewed_sites": [
+        {
+          "line": 52,
+          "source_line": "          print(pad(ns, last) + '\\t:$i');",
+          "owner": "Single scalar variable/member/index/call/operator composition inside an owned string.",
+          "additional_units": 0
+        }
+      ],
+      "whole_source_certified": false,
+      "canonical_count_admitted": false
+    }
+  ],
+  "imports_or_normalization_executed": false,
+  "source_hashes_recomputed": false,
+  "sources_modified": false,
+  "timings_modified": false,
+  "chart_admitted": false
+}

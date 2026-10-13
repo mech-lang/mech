@@ -1,0 +1,6 @@
+test_fresh_nested_build_root_reaches_owned_compile_boundary (test_directory_init_v8.DirectoryInitialization.test_fresh_nested_build_root_reaches_owned_compile_boundary) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.003s
+
+OK

@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "pid": 75515,
+  "updated_at": "2026-10-12T16:36:27.831678+00:00",
+  "tests_run": 17,
+  "failures": 0,
+  "errors": 0,
+  "source_pool_audit_started": false,
+  "chart_admitted": false
+}

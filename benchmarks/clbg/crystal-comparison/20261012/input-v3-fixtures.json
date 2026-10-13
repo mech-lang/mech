@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "tests_run": 10,
+  "failures": 0,
+  "errors": 0,
+  "native_probes": 0,
+  "actual_signals_sent": 0,
+  "never_chart_eligible": true,
+  "source_revision": "input-label-v3",
+  "prior112cases_reexecuted": false,
+  "prior24plus8fixtures_reexecuted": false,
+  "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/test_input_v3.py": "a46b730bc3a96ac3c4ed13955de03bb0809dddc818045b1df8aa60298eaabbd6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/guarded_prepare_v3.py": "de7bcbb690d5300527826323090a1a4cad12bbf2d8096051b6a54a7dbcc1b061",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/guarded_prepare_v2.py": "295e6e12f19f056477ffdd2a2e4dae799efd17241d7c5dcc2b58cd39a1afe099",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/proof_reuse_v3.py": "c559582c32df7d5dc12819b2a962062a2d23533060eb5280e82893baa278ddfb",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/source_proofs.py": "cc3817859ef76cde69bceeb5362136c7da099946fdc5d3660f8c36c4595a91f4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/source_proofs_v3.py": "f8b30675acb7ba0c54de0a9254e6b9b5a486f253b73bcccfc7fd148a09f17c1c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/INPUT_V3.md": "445e75d0e3a31b73e9ef4890ce35f4c3c57b2f071630afaaff6ae07584a3e94e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/input-v3-fixtures.log": "9d1cf1e9df714878fbe368d6695fd040154f39bc040e4ea52d4c20f97c9b919a"
+  }
+}

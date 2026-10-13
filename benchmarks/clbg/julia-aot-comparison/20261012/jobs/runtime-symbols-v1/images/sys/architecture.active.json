@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/usr/bin/lipo",
+    "-archs",
+    "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/sys.dylib"
+  ],
+  "started_at": "2026-10-13T01:18:27.331889+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 10158,
+  "identity": {
+    "pid": 10158,
+    "process_listing": "Mon Oct 12 21:18:27 2026     /usr/bin/lipo -archs /private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/sys.dylib"
+  }
+}

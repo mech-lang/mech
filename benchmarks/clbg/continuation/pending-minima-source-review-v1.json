@@ -1,0 +1,44 @@
+{
+  "status": "manual-source-review-awaiting-locked-pin-and-record-reconciliation",
+  "basis": "Root read each complete selected application source and the saved LOC18 expansion records. No source parser, hash, fixture or benchmark was rerun during the manual reading.",
+  "sources": {
+    "binarytrees": {
+      "key": "binarytrees:binarytrees-ruby-2",
+      "sha256": "d75c541ff893ccfb5b5fa399010bc60c7f14f51d1077a0f983502ffe60f05f6c",
+      "physical_loc": 28,
+      "normalized_loc": 30,
+      "extra_units_by_line": {"10": 1, "15": 1},
+      "count_reason": "Each postfix if contributes its actual conditional header and return body. All other written function/loop headers, bodies and end tokens retain one source unit; formal and call arguments do not become independent statements.",
+      "required_work_review": "Every constructor call returns a new two-slot Array, including leaves; both recursive children are built. Recursive checks consume the actual graph. The stretch root is released before the long-lived root is allocated; that root remains referenced through all prescribed temporary tree iterations and is checked last."
+    },
+    "fannkuchredux": {
+      "key": "fannkuchredux:fannkuchredux-php-8",
+      "sha256": "7931a305151ebb9d4b54ec3729931622806334296557c2153637c2ea9315b1c4",
+      "physical_loc": 49,
+      "normalized_loc": 71,
+      "extra_units_by_line": {"10": 1, "13": 6, "18": 3, "19": 3, "27": 2, "33": 1, "34": 3, "53": 3},
+      "count_reason": "The seven chained writes count separately; packed loops/branches expose their real headers, statements and written closers; the swap has three writes. Array literals, loop-header clauses and printf arguments are structural within their owners.",
+      "required_work_review": "The carry/rotation generator visits every permutation in canonical order, copies the actual permutation, reverses actual prefixes until the first value is zero, and accumulates global rank parity checksum and maximum flips. No cached flips or permutation results."
+    },
+    "mandelbrot": {
+      "key": "mandelbrot:mandelbrot-lua-2",
+      "sha256": "16eacf7585991619923c8add0aa9ae0c1327aa2b5f31764208fcf27a5d52f249",
+      "physical_loc": 32,
+      "normalized_loc": 40,
+      "extra_units_by_line": {"6": 1, "7": 1, "8": 1, "19": 3, "34": 2},
+      "count_reason": "Four multiple bindings split into their actual independent local writes. The packed padding loop has header/body/end. Local numeric and/or selection supplies a scalar loop bound without hidden body statements or calls.",
+      "required_work_review": "All requested pixels execute the prescribed binary64 recurrence and escape predicate for at most fifty iterations. Only output padding is handled separately, with zero final PBM padding bits. No analytic interior or periodicity shortcut."
+    },
+    "spectralnorm": {
+      "key": "spectralnorm:spectralnorm-node-7",
+      "sha256": "2dea06681168ffa46990b461ef7468f38afeb3fd955d8b3078d8918b1c5afd4a",
+      "physical_loc": 45,
+      "normalized_loc": 45,
+      "extra_units_by_line": {},
+      "count_reason": "Every written application unit is already on its own line. SharedArrayBuffer and typed-array constructor arguments are data/call structure, with no hidden callback or multiple binding. Opening braces share their counted headers; each written closing brace counts.",
+      "required_work_review": "Four coefficient/multiply/transpose/composition functions perform forty fresh N-by-N implicit products across ten iterations. Each coefficient is recomputed from indices; only ordinary vector storage is retained."
+    }
+  },
+  "old_source_or_measurement_modified": false,
+  "chart_or_site_modified": false
+}

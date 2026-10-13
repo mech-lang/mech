@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/canary-observation-v1/snapshot/observe_lldb.py", line 95, in observe
+    assert error.Success() and process.IsValid(), error.GetCString()
+AssertionError: process exited with status -1 (lost connection)

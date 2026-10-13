@@ -1,0 +1,25 @@
+{
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "-m",
+    "unittest",
+    "-v",
+    "test_guarded_prepare_v4",
+    "test_proof_reuse_v4",
+    "test_proof_reuse_v6"
+  ],
+  "started_at": "2026-10-12T21:21:34.900246+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 44238,
+  "identity": {
+    "pid": 44238,
+    "process_listing": "Mon Oct 12 17:21:34 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -m unittest -v test_guarded_prepare_v4 test_proof_reuse_v4 test_proof_reuse_v6"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-12T21:21:35.188817+00:00",
+  "final_exit_status": 0
+}

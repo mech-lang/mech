@@ -1,0 +1,28 @@
+{
+  "status": "durable-watch-authorized",
+  "launched_at": "2026-10-12T13:44:44.118690+00:00",
+  "pid": 50921,
+  "watcher_identity": {
+    "pid": 50921,
+    "listing": "Mon Oct 12 09:44:44 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/guarded_launcher.py --watch-child --launcher-sha256 754c3350441897314bb8c389fd28b27ab31e0e3a3c225bc1c39b871256c5f239 --plan-sha256 b29989867eb1e899f31025ef7259e9593a0e9e31a07da7d9c8a101fc765a994d --inherited-lock-fd 3 --handoff-go-fd 4"
+  },
+  "launcher_sha256": "754c3350441897314bb8c389fd28b27ab31e0e3a3c225bc1c39b871256c5f239",
+  "controller_sha256": "12a6467da5251eded5faa0faa760809634ca9af6f8ba3111293eb5c6857eb0be",
+  "plan": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/plan2.json",
+  "plan_sha256": "b29989867eb1e899f31025ef7259e9593a0e9e31a07da7d9c8a101fc765a994d",
+  "fixture_sha256": "3a422ab64e1c89d572de7c1495cf08dc5b247d68a0f9a223e3e006342d129b52",
+  "verified_pins": 1253,
+  "common_mutex_handoff": "same held open description inherited; parent closes after persisted launch",
+  "observed_boundary": {
+    "observed_at": "2026-10-12T13:44:43.996623+00:00",
+    "last_stage_log_line": "WAIT LOCK 2 fannkuchredux-r-array-batched",
+    "stage_descendants": [],
+    "report_sha256": {
+      "r": "44a20749c5ee485392af2c220ef074d3846323e04c613243a73d3c6f9da49b0a",
+      "uiua": "da5ccf102e90dc2755388414390f6401402b2f67edb177ba74a377f2c5cae709",
+      "apl": "9ef8f3776ce6c7ddf65a29cec7378e782188862a271aea2826df486cac0f98f7"
+    }
+  },
+  "log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/watcher.log",
+  "native_processes_signalled": false
+}

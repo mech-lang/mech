@@ -1,0 +1,356 @@
+{
+  "status": "unqualified-proposal",
+  "language": "c3",
+  "version": "0.8.5",
+  "profiles": [
+    {
+      "id": "c3-regexredux-compact",
+      "benchmark": "regexredux",
+      "variant": "compact",
+      "source": "revisions/private-v2/sources/regexredux/compact.c3",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 1,
+      "application_helpers": [],
+      "general_library_support": [
+        "support/buffer.c3",
+        "support/pcre2.c3"
+      ],
+      "compiled_source_bundle": [
+        "revisions/private-v2/sources/regexredux/compact.c3",
+        "support/buffer.c3",
+        "support/pcre2.c3"
+      ],
+      "eligible_for_chart": false,
+      "loc": null
+    },
+    {
+      "id": "c3-regexredux-optimized",
+      "benchmark": "regexredux",
+      "variant": "optimized",
+      "source": "revisions/private-v2/sources/regexredux/optimized.c3",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 8,
+      "application_helpers": [],
+      "general_library_support": [
+        "support/buffer.c3",
+        "support/pcre2.c3",
+        "support/threads.c3"
+      ],
+      "compiled_source_bundle": [
+        "revisions/private-v2/sources/regexredux/optimized.c3",
+        "support/buffer.c3",
+        "support/pcre2.c3",
+        "support/threads.c3"
+      ],
+      "eligible_for_chart": false,
+      "loc": null
+    },
+    {
+      "id": "c3-revcomp-compact",
+      "benchmark": "revcomp",
+      "variant": "compact",
+      "source": "sources/revcomp/compact.c3",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 1,
+      "application_helpers": [],
+      "general_library_support": [
+        "support/buffer.c3"
+      ],
+      "compiled_source_bundle": [
+        "sources/revcomp/compact.c3",
+        "support/buffer.c3"
+      ],
+      "eligible_for_chart": false,
+      "loc": null
+    },
+    {
+      "id": "c3-revcomp-optimized",
+      "benchmark": "revcomp",
+      "variant": "optimized",
+      "source": "sources/revcomp/optimized.c3",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 1,
+      "application_helpers": [],
+      "general_library_support": [
+        "support/buffer.c3"
+      ],
+      "compiled_source_bundle": [
+        "sources/revcomp/optimized.c3",
+        "support/buffer.c3"
+      ],
+      "eligible_for_chart": false,
+      "loc": null
+    },
+    {
+      "id": "c3-pidigits-compact",
+      "benchmark": "pidigits",
+      "variant": "compact",
+      "source": "sources/pidigits/compact.c3",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 1,
+      "application_helpers": [],
+      "general_library_support": [
+        "support/gmp.c3"
+      ],
+      "compiled_source_bundle": [
+        "sources/pidigits/compact.c3",
+        "support/gmp.c3"
+      ],
+      "eligible_for_chart": false,
+      "loc": null
+    },
+    {
+      "id": "c3-pidigits-optimized",
+      "benchmark": "pidigits",
+      "variant": "optimized",
+      "source": "sources/pidigits/optimized.c3",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 1,
+      "application_helpers": [],
+      "general_library_support": [
+        "support/buffer.c3",
+        "support/gmp.c3"
+      ],
+      "compiled_source_bundle": [
+        "sources/pidigits/optimized.c3",
+        "support/buffer.c3",
+        "support/gmp.c3"
+      ],
+      "eligible_for_chart": false,
+      "loc": null
+    },
+    {
+      "id": "c3-spectralnorm-compact",
+      "benchmark": "spectralnorm",
+      "variant": "compact",
+      "source": "sources/spectralnorm/compact.c3",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 1,
+      "application_helpers": [],
+      "general_library_support": [],
+      "compiled_source_bundle": [
+        "sources/spectralnorm/compact.c3"
+      ],
+      "eligible_for_chart": false,
+      "loc": null
+    },
+    {
+      "id": "c3-spectralnorm-optimized",
+      "benchmark": "spectralnorm",
+      "variant": "optimized",
+      "source": "sources/spectralnorm/optimized.c3",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 8,
+      "application_helpers": [],
+      "general_library_support": [
+        "support/threads.c3"
+      ],
+      "compiled_source_bundle": [
+        "sources/spectralnorm/optimized.c3",
+        "support/threads.c3"
+      ],
+      "eligible_for_chart": false,
+      "loc": null
+    },
+    {
+      "id": "c3-mandelbrot-compact",
+      "benchmark": "mandelbrot",
+      "variant": "compact",
+      "source": "sources/mandelbrot/compact.c3",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 1,
+      "application_helpers": [],
+      "general_library_support": [],
+      "compiled_source_bundle": [
+        "sources/mandelbrot/compact.c3"
+      ],
+      "eligible_for_chart": false,
+      "loc": null
+    },
+    {
+      "id": "c3-mandelbrot-optimized",
+      "benchmark": "mandelbrot",
+      "variant": "optimized",
+      "source": "sources/mandelbrot/optimized.c3",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 8,
+      "application_helpers": [],
+      "general_library_support": [
+        "support/threads.c3"
+      ],
+      "compiled_source_bundle": [
+        "sources/mandelbrot/optimized.c3",
+        "support/threads.c3"
+      ],
+      "eligible_for_chart": false,
+      "loc": null
+    },
+    {
+      "id": "c3-fasta-compact",
+      "benchmark": "fasta",
+      "variant": "compact",
+      "source": "sources/fasta/compact.c3",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 1,
+      "application_helpers": [],
+      "general_library_support": [],
+      "compiled_source_bundle": [
+        "sources/fasta/compact.c3"
+      ],
+      "eligible_for_chart": false,
+      "loc": null
+    },
+    {
+      "id": "c3-fasta-optimized",
+      "benchmark": "fasta",
+      "variant": "optimized",
+      "source": "sources/fasta/optimized.c3",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 1,
+      "application_helpers": [],
+      "general_library_support": [
+        "support/buffer.c3"
+      ],
+      "compiled_source_bundle": [
+        "sources/fasta/optimized.c3",
+        "support/buffer.c3"
+      ],
+      "eligible_for_chart": false,
+      "loc": null
+    },
+    {
+      "id": "c3-knucleotide-compact",
+      "benchmark": "knucleotide",
+      "variant": "compact",
+      "source": "sources/knucleotide/compact.c3",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 1,
+      "application_helpers": [],
+      "general_library_support": [
+        "support/buffer.c3"
+      ],
+      "compiled_source_bundle": [
+        "sources/knucleotide/compact.c3",
+        "support/buffer.c3"
+      ],
+      "eligible_for_chart": false,
+      "loc": null
+    },
+    {
+      "id": "c3-knucleotide-optimized",
+      "benchmark": "knucleotide",
+      "variant": "optimized",
+      "source": "sources/knucleotide/optimized.c3",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 7,
+      "application_helpers": [],
+      "general_library_support": [
+        "support/buffer.c3",
+        "support/threads.c3"
+      ],
+      "compiled_source_bundle": [
+        "sources/knucleotide/optimized.c3",
+        "support/buffer.c3",
+        "support/threads.c3"
+      ],
+      "eligible_for_chart": false,
+      "loc": null
+    },
+    {
+      "id": "c3-binarytrees-compact",
+      "benchmark": "binarytrees",
+      "variant": "compact",
+      "source": "sources/binarytrees/compact.c3",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 1,
+      "application_helpers": [],
+      "general_library_support": [],
+      "compiled_source_bundle": [
+        "sources/binarytrees/compact.c3"
+      ],
+      "eligible_for_chart": false,
+      "loc": null
+    },
+    {
+      "id": "c3-binarytrees-optimized",
+      "benchmark": "binarytrees",
+      "variant": "optimized",
+      "source": "revisions/private-v3/sources/binarytrees/optimized.c3",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 8,
+      "application_helpers": [],
+      "general_library_support": [
+        "support/threads.c3"
+      ],
+      "compiled_source_bundle": [
+        "revisions/private-v3/sources/binarytrees/optimized.c3",
+        "support/threads.c3"
+      ],
+      "eligible_for_chart": false,
+      "loc": null
+    },
+    {
+      "id": "c3-nbody-compact",
+      "benchmark": "nbody",
+      "variant": "compact",
+      "source": "sources/nbody/compact.c3",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 1,
+      "application_helpers": [],
+      "general_library_support": [],
+      "compiled_source_bundle": [
+        "sources/nbody/compact.c3"
+      ],
+      "eligible_for_chart": false,
+      "loc": null
+    },
+    {
+      "id": "c3-nbody-optimized",
+      "benchmark": "nbody",
+      "variant": "optimized",
+      "source": "sources/nbody/optimized.c3",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 1,
+      "application_helpers": [],
+      "general_library_support": [],
+      "compiled_source_bundle": [
+        "sources/nbody/optimized.c3"
+      ],
+      "eligible_for_chart": false,
+      "loc": null
+    },
+    {
+      "id": "c3-fannkuchredux-compact",
+      "benchmark": "fannkuchredux",
+      "variant": "compact",
+      "source": "revisions/private-v3/sources/fannkuchredux/compact.c3",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 1,
+      "application_helpers": [],
+      "general_library_support": [],
+      "compiled_source_bundle": [
+        "revisions/private-v3/sources/fannkuchredux/compact.c3"
+      ],
+      "eligible_for_chart": false,
+      "loc": null
+    },
+    {
+      "id": "c3-fannkuchredux-optimized",
+      "benchmark": "fannkuchredux",
+      "variant": "optimized",
+      "source": "revisions/private-v3/sources/fannkuchredux/optimized.c3",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 8,
+      "application_helpers": [],
+      "general_library_support": [
+        "support/threads.c3"
+      ],
+      "compiled_source_bundle": [
+        "revisions/private-v3/sources/fannkuchredux/optimized.c3",
+        "support/threads.c3"
+      ],
+      "eligible_for_chart": false,
+      "loc": null
+    }
+  ]
+}

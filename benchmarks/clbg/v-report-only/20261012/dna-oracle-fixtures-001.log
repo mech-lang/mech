@@ -1,0 +1,14 @@
+WAIT common mutex: additive DNA oracle fixtures
+test_all_seven_window_totals_and_required_queries (__main__.ExactTokenOracleChecks.test_all_seven_window_totals_and_required_queries) ... ok
+test_carriage_return_and_linefeed_are_real_separators (__main__.ExactTokenOracleChecks.test_carriage_return_and_linefeed_are_real_separators) ... ok
+test_comments_cannot_change_record_selection (__main__.ExactTokenOracleChecks.test_comments_cannot_change_record_selection) ... ok
+test_empty_and_unterminated_headers (__main__.ExactTokenOracleChecks.test_empty_and_unterminated_headers) ... ok
+test_existing_frozen_fixture_outputs_remain_equal (__main__.ExactTokenOracleChecks.test_existing_frozen_fixture_outputs_remain_equal) ... ok
+test_literal_frequency_order_and_one_base_tail (__main__.ExactTokenOracleChecks.test_literal_frequency_order_and_one_base_tail) ... ok
+test_lookalike_target_is_skipped (__main__.ExactTokenOracleChecks.test_lookalike_target_is_skipped) ... ok
+test_vertical_tab_is_neither_line_break_nor_token_separator (__main__.ExactTokenOracleChecks.test_vertical_tab_is_neither_line_break_nor_token_separator) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.013s
+
+OK

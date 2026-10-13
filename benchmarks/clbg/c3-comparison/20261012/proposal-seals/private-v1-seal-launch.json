@@ -1,0 +1,17 @@
+{
+  "pid": 57083,
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-u",
+    "-B",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/private-v1/guarded_prepare.py",
+    "--seal",
+    "--proposal-file",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/proposals/private-v1.json"
+  ],
+  "log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/proposal-seals/private-v1-seal.log",
+  "launched_at": "2026-10-12T22:01:07.848991+00:00",
+  "common_mutex": "/tmp/mech-clbg-timing.lock",
+  "metadata_seal_only": true,
+  "compiler_download_compile_or_benchmark_authorized": false
+}

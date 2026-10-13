@@ -1,0 +1,17 @@
+{
+  "status": "technical-orchestration-disposition-not-result-evidence",
+  "session": 8730,
+  "pid": 32323,
+  "exit_code": 143,
+  "owner_sent_sigterm_to_only_this_owned_waiter": true,
+  "reason": "Newer actual six-pass receipt and existing sealer found after launch",
+  "tests_run": 0,
+  "native_processes": 0,
+  "compiler_processes": 0,
+  "heavy_hashes": 0,
+  "journal_written_by_waiter": false,
+  "existing_sealer_pid": 27883,
+  "existing_native_jobs_touched": false,
+  "source_files_changed": false,
+  "recorded_at_utc": "2026-10-12T20:34:31.955425+00:00"
+}

@@ -1,0 +1,16 @@
+{
+  "status": "root-authorized-metadata-seal-queued",
+  "pid": 62772,
+  "exec_session": 22327,
+  "command": ["python3", "-u", "benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/controller.py", "--seal"],
+  "log": "jobs/metadata-seal-v1.log",
+  "exclusive_log_creation": true,
+  "root_static_review_received": true,
+  "common_timing_mutex": "/tmp/mech-clbg-timing.lock",
+  "first_metadata_only_seal": true,
+  "native_qualification_authorized": false,
+  "full_measurement_authorized": false,
+  "JDK_or_Clojure_work_queued": false,
+  "old_cohort_mutated": false,
+  "chart_or_site_modified": false
+}

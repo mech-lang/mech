@@ -1,0 +1,20 @@
+{
+  "status": "command-exited-zero-awaiting-report-review",
+  "started_at": "2026-10-13T11:58:36.640442+00:00",
+  "worker_identity": {
+    "pid": 99668,
+    "listing": "99668     1 Tue Oct 13 07:58:36 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/c3-full90-launch-v1 --lease-fd 3 --go-fd 4"
+  },
+  "actual_command_started": true,
+  "exit_code": 0,
+  "qualification_granted": false,
+  "automatic_retry": false,
+  "command_pid": 99672,
+  "command_identity": {
+    "pid": 99672,
+    "listing": "99672 99668 Tue Oct 13 07:58:36 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u revisions/work-full-v3/launch_all.py --revision full-v1 --index-sha256 05ed934ffd9e81136b0a8bd802aff4adda31e8f6f364df345dc2141f57deeece"
+  },
+  "command_identity_observation_missing": false,
+  "finished_at": "2026-10-13T11:58:50.232201+00:00",
+  "stop_signals": []
+}

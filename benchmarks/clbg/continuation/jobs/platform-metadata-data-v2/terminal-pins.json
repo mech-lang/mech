@@ -1,0 +1,31 @@
+{
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-data-v2/fixture-receipt.json": "36d59fba2c189416da638d0f7f2be61db66972f685668654cabaa3abb7df4f39",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-data-v2/fixtures.log": "8633ad01b1599128b3ac1ce3e84b03d79f23cf781f73bb26f2c4fbc5baade688",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-data-v2/frontend-candidate/test_platform.mjs": "a619bc00ca735d34914a1f804f9c48feb2e8a9d8fc950005510a8ddc1d5ca90c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-data-v2/frontend-candidate/REVIEW.md": "04933894e223d70aa92399e6d789f13870e8d3d33c3ad541506a6d78771d7578",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-data-v2/frontend-candidate/traits.mjs": "7157a70080450af9585565f02a17a0aa529ae2c29f545d08bf91acd234fc9182",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-data-v2/frontend-candidate/platform.mjs": "45743c01175067f0e35abbbd33f242c4050dfb1a78a173a1c819c101f194866f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-data-v2/snapshot/platform_metadata_data_v2.py": "d5aa46ee7cc618e1814a88bfa75ea1fc8ba85954b2ff35cbca0efcc79f6ee0f8",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-data-v2/snapshot/test_platform_metadata_data_v2.py": "07f0dc5160c479eabac36aa4511fe848f077a7159502295ca51c83bb6d30650d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-data-v2/python-dependencies/unittest/signals.py": "f8286e818ca56e10e03745bc056cdfd31147678f9a1dc8cb6b0fe96ef9a4362a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-data-v2/python-dependencies/unittest/runner.py": "51780085229bd3547a2751e8d75ab1d8f391dd2c9c3ca1d011b54529348faeb4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-data-v2/python-dependencies/unittest/suite.py": "ed2da92bc9f97c53403ee2d3d12cc53b16a96e85d596ebc887b5a93458f3f6bc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-data-v2/python-dependencies/unittest/util.py": "fdcc640c3505d16deab9c32eae7c3f5f67c3b5e81c563dc6698fa7fcf403854d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-data-v2/python-dependencies/unittest/__init__.py": "2698f2daf7a02609a6825b89cd459ebaa283dec2403c7b846315a0701bc74a0d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-data-v2/python-dependencies/unittest/result.py": "813415b331a53acc1bd88ffebadfcb46886dba1ff2bbda2908533e24548db50c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-data-v2/python-dependencies/unittest/loader.py": "b993c1631e000d5f13256cdd71e40f6453974b90074eddec929f3685c59e0855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-data-v2/python-dependencies/unittest/case.py": "a79b422eec43c90352e25a54bce8cee106811974c8dea9405199e4caa689ffe9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-data-v2/python-dependencies/unittest/main.py": "12de7da0fea92dbff8713ebe9904ada6dbd1e0a334d58861c6287ccfc0a261d2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-data-v2/python-dependencies/unittest/async_case.py": "5e8265cb20ead3877aef870cda91f2462acf107513933f84b4f3419028e8746f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-data-v2/python-dependencies/unittest/__main__.py": "ff6b9a100d32001715b40d61bc4d613623b139edb1fdc3566427b83c331caae3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-data-v2/python-dependencies/unittest/_log.py": "905672317ab26c656c600defce25d477728068f597f00a7f94e22e8128c323b9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-data-v2/python-dependencies/unittest/mock.py": "856148cdc93943b4ff948276e94561db3d6c44ddecacf53c3d25eb7dc46a108d"
+  },
+  "receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/platform-metadata-data-v2/fixture-receipt.json",
+  "receipt_sha256": "36d59fba2c189416da638d0f7f2be61db66972f685668654cabaa3abb7df4f39",
+  "terminal_status": "passed",
+  "exclusive_common_timing_mutex_held": true,
+  "chart_admission": false,
+  "automatic_retry": false
+}

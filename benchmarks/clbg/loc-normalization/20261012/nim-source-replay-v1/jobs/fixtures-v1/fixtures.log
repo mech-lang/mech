@@ -1,0 +1,11 @@
+test_fresh_frontend_command_preserves_original_semantics (test_input_inventory.InputInventoryFixtures.test_fresh_frontend_command_preserves_original_semantics) ... ok
+test_import_include_and_repeated_includes_preserve_actual_owners (test_input_inventory.InputInventoryFixtures.test_import_include_and_repeated_includes_preserve_actual_owners) ... ok
+test_main_and_all_authored_helpers_are_mandatory (test_input_inventory.InputInventoryFixtures.test_main_and_all_authored_helpers_are_mandatory) ... ok
+test_saved_owned_receipt_rejects_nonzero_boolean_and_cleanup (test_input_inventory.InputInventoryFixtures.test_saved_owned_receipt_rejects_nonzero_boolean_and_cleanup) ... ok
+test_unknown_or_vendor_prefix_escape_is_rejected (test_input_inventory.InputInventoryFixtures.test_unknown_or_vendor_prefix_escape_is_rejected) ... ok
+test_unrecognized_cached_relative_and_ansi_events_are_rejected (test_input_inventory.InputInventoryFixtures.test_unrecognized_cached_relative_and_ansi_events_are_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.001s
+
+OK

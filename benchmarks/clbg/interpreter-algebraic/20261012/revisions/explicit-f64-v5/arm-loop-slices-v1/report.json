@@ -1,0 +1,49 @@
+{
+  "status": "exact-scoped-ARM-slices-awaiting-independent-loop-review",
+  "exclusive_common_timing_mutex_held": true,
+  "native_processes": 0,
+  "full_performance_runs": 0,
+  "relevant_codegen_gain_proven": false,
+  "chart_admission": false,
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/explicit-f64-v5/review-evidence-v1/report.json": "1541398c495815083aeb480c54a62c739d6ea642349af4351222bacdbc138982",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/explicit-f64-v5/preparation/strict/codegen/arm-disassembly.stdout": "15c6555fec327ffb7957e5e59c5fb0c3ee3e2fdd68818037ac22e745524fe3c9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/explicit-f64-v5/preparation/reduction/codegen/arm-disassembly.stdout": "e5cba3871fe45db308fe860fb4f285511e27968823fad9e15e734f052771a0c8",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/explicit-f64-v5/preparation/broad/codegen/arm-disassembly.stdout": "aa325f0061bb910276c65933fae52e80831bf057669464b4f2653b1a766db8db"
+  },
+  "slices": [
+    {
+      "variant": "strict",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/explicit-f64-v5/preparation/strict/codegen/arm-disassembly.stdout",
+      "source_sha256": "15c6555fec327ffb7957e5e59c5fb0c3ee3e2fdd68818037ac22e745524fe3c9",
+      "first_line": 255286,
+      "last_line": 256840,
+      "slice": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/explicit-f64-v5/arm-loop-slices-v1/strict.asm",
+      "slice_sha256": "028fdd79225ff8023795e574cb58f3479843bcb666002409b0d272efff29f34f",
+      "instruction_lines": 1555,
+      "gain_review_pending": true
+    },
+    {
+      "variant": "reduction",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/explicit-f64-v5/preparation/reduction/codegen/arm-disassembly.stdout",
+      "source_sha256": "e5cba3871fe45db308fe860fb4f285511e27968823fad9e15e734f052771a0c8",
+      "first_line": 262423,
+      "last_line": 263903,
+      "slice": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/explicit-f64-v5/arm-loop-slices-v1/reduction.asm",
+      "slice_sha256": "ce7de878a202e587e507e4ce0daa8ad4682d295ca993b253d0d464d381e8ed04",
+      "instruction_lines": 1481,
+      "gain_review_pending": true
+    },
+    {
+      "variant": "broad",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/explicit-f64-v5/preparation/broad/codegen/arm-disassembly.stdout",
+      "source_sha256": "aa325f0061bb910276c65933fae52e80831bf057669464b4f2653b1a766db8db",
+      "first_line": 305730,
+      "last_line": 307210,
+      "slice": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/explicit-f64-v5/arm-loop-slices-v1/broad.asm",
+      "slice_sha256": "5fda84cd91f7ae8414696360f44996647fef4955248ee4882aa34053381187c9",
+      "instruction_lines": 1481,
+      "gain_review_pending": true
+    }
+  ]
+}

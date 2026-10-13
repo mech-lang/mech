@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v4/release/0.74.0-95ad180/bin/ponyc",
+    "--version"
+  ],
+  "started_at": "2026-10-12T19:37:07.285372+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 16032,
+  "identity": {
+    "pid": 16032,
+    "process_listing": "Mon Oct 12 15:37:07 2026     /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v4/release/0.74.0-95ad180/bin/ponyc --version"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-12T19:37:08.600287+00:00",
+  "final_exit_status": 0
+}

@@ -1,0 +1,20 @@
+{
+  "status": "command-exited-zero-awaiting-report-review",
+  "started_at": "2026-10-13T07:20:02.394870+00:00",
+  "worker_identity": {
+    "pid": 89702,
+    "listing": "89702     1 Tue Oct 13 03:20:02 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/prolog-private-v1-seal --lease-fd 3 --go-fd 4"
+  },
+  "actual_command_started": true,
+  "exit_code": 0,
+  "qualification_granted": false,
+  "automatic_retry": false,
+  "command_pid": 89706,
+  "command_identity": {
+    "pid": 89706,
+    "listing": "89706 89702 Tue Oct 13 03:20:02 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u drafts/private-v1/guarded_prepare.py --seal --service-proposal-sha256 43438603d675472393050d05928e488a20f16040493935aca676007fc0ada050"
+  },
+  "command_identity_observation_missing": false,
+  "finished_at": "2026-10-13T07:25:45.319854+00:00",
+  "stop_signals": []
+}

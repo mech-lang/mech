@@ -1,0 +1,3 @@
+WAIT common mutex: Clojure reviewed supplemental admission
+{"report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/qualified/work-v1-reviewed-v2/report.json", "sha256": "7e0029f49eacaad3bfd4a3a24e339dccf46ee757ae5ca6db6b062be0bc9b7ebf", "status": "passed-exact-source-compiled-JVM-work-review"}
+{"status": "completed", "outcome": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/controller-outcomes/admit/work-v1-reviewed-v2/outcome.json"}

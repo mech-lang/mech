@@ -1,0 +1,17 @@
+{
+  "source_report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/results/apple-m3-ac-normal-20261009.json",
+  "source_report_sha256": "8cb4fe825e100a7d2db9bbb92f1526de024b1c0c0eb62fca86d5e2c5387e073e",
+  "excluded_rows": [
+    {
+      "id": "pidigits-lua-1",
+      "language": "lua",
+      "reason": "Command '['/opt/homebrew/bin/lua', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua', '30']' returned non-zero exit status 1. /opt/homebrew/bin/lua: ...ech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua:36: attempt to call a nil value (upvalue 'set')\nstack traceback:\n\t...ech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua:36: in local 'main'\n\t...ech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua:59: in main chunk\n\t[C]: in ?\n"
+    },
+    {
+      "id": "pidigits-lua-7",
+      "language": "lua",
+      "reason": "Command '['/opt/homebrew/bin/lua', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua', '30']' returned non-zero exit status 1. /opt/homebrew/bin/lua: ...ech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua:10: module 'c-gmp' not found:\n\tno field package.preload['c-gmp']\n\tno file '/opt/homebrew/share/lua/5.5/c-gmp.lua'\n\tno file '/opt/homebrew/share/lua/5.5/c-gmp/init.lua'\n\tno file '/opt/homebrew/lib/lua/5.5/c-gmp.lua'\n\tno file '/opt/homebrew/lib/lua/5.5/c-gmp/init.lua'\n\tno file './c-gmp.lua'\n\tno file './c-gmp/init.lua'\n\tno file '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/lua/c-gmp.so'\n\tno file '/opt/homebrew/lib/lua/5.5/c-gmp.so'\n\tno file '/opt/homebrew/lib/lua/5.5/loadall.so'\n\tno file './c-gmp.so'\nstack traceback:\n\t[C]: in global 'require'\n\t...ech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua:10: in main chunk\n\t[C]: in ?\n"
+    }
+  ],
+  "preserve_original_report": true
+}

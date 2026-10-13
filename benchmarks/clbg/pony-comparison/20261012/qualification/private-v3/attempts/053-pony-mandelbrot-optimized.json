@@ -1,0 +1,55 @@
+{
+  "key": "mandelbrot:pony-mandelbrot-optimized",
+  "id": "pony-mandelbrot-optimized",
+  "benchmark": "mandelbrot",
+  "language": "pony",
+  "source_sha256": "7e72a7821d2afb1ab39338ddaafbab50ae28d5da1b0f7ff31cc27e1beb5914ff",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v3/bin/pony-mandelbrot-optimized/pony-mandelbrot-optimized",
+    "31",
+    "--ponymaxthreads",
+    "8"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012",
+  "runtime_environment": {
+    "LC_ALL": "C",
+    "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"4c07c5fce6f2dd1a294d78e3e38951a5b3fb0d3705a3b68d89b443e6f9aff6e7\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v3/bin/pony-mandelbrot-optimized/pony-mandelbrot-optimized\", \"{n}\", \"--ponymaxthreads\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"7e72a7821d2afb1ab39338ddaafbab50ae28d5da1b0f7ff31cc27e1beb5914ff\", \"support\": {}}",
+  "started_at": "2026-10-12T17:21:53.740504+00:00",
+  "workload_n": 31,
+  "full_workload": false,
+  "timeout_seconds": 120,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.085152291,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 133,
+  "stdout_sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+  "validation": {
+    "reference_match": true,
+    "bytes": 133,
+    "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1"
+  },
+  "finished_at": "2026-10-12T17:21:54.028655+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true
+}

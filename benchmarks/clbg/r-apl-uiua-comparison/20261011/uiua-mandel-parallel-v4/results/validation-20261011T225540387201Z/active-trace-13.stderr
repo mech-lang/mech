@@ -1,0 +1,16 @@
+Style: Split this into multiple lines (heuristic: 60/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/trace-active.ua:5:1
+5 | Advance ← M ⊃(+⊃M.Cx(-⊃(˙×M.I)(˙×M.R))|+⊃M.Cy(×2×⊃M.R M.I)|M.Index|M.Cx|M.Cy|+1M.Iter)
+    ──────────────────────────────────────────────────────────────────────────────────────
+Advice: Split this into multiple lines (heuristic: 71/60) 😠
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/trace-active.ua:8:1
+8 | Prune ← M ⊃(⊏⊃Selection.Keep(M.R Selection.State)|⊏⊃Selection.Keep(M.I Selection.State)|⊏⊃Selection.Keep(M.Index Selection.State)|⊏⊃Selection.Keep(M.Cx Selection.State)|M.Cy Selection.State|M.Iter Selection.State) Selected
+    ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Style: Split this into multiple lines (heuristic: 60/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/trace-active.ua:19:1
+19 | Row ← TracedRow ⊃(Pack Bits Recorder.State|Recorder.Frames) ⍢(Logged|×⊃(<50M.Iter Recorder.State)(>0⧻M.Index Recorder.State)) Recorder ⊃∘(⋅[]) M (↯N 0) (↯N 0) (⇡N) Cr ⊙0
+     ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Style: Prefer `⟜` over `⊃∘` for clarity
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/trace-active.ua:19:136
+19 | Row ← TracedRow ⊃(Pack Bits Recorder.State|Recorder.Frames) ⍢(Logged|×⊃(<50M.Iter Recorder.State)(>0⧻M.Index Recorder.State)) Recorder ⊃∘(⋅[]) M (↯N 0) (↯N 0) (⇡N) Cr ⊙0
+                                                                                                                                            ──

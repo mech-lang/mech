@@ -1,0 +1,24 @@
+WAIT LOCK: V preparation production-builder-v3 mandelbrot
+BUILD v-mandelbrot-compact-input-v2
+BUILD v-mandelbrot-optimized-input-v2
+PROBE v-mandelbrot-compact-input-v2 size-0
+PROBE v-mandelbrot-compact-input-v2 size-1
+PROBE v-mandelbrot-compact-input-v2 size-2
+PROBE v-mandelbrot-compact-input-v2 size-3
+PROBE v-mandelbrot-compact-input-v2 size-7
+PROBE v-mandelbrot-compact-input-v2 size-8
+PROBE v-mandelbrot-compact-input-v2 size-9
+PROBE v-mandelbrot-compact-input-v2 size-17
+PROBE v-mandelbrot-compact-input-v2 size-31
+PROBE v-mandelbrot-compact-input-v2 size-65
+PROBE v-mandelbrot-optimized-input-v2 size-0
+PROBE v-mandelbrot-optimized-input-v2 size-1
+PROBE v-mandelbrot-optimized-input-v2 size-2
+PROBE v-mandelbrot-optimized-input-v2 size-3
+PROBE v-mandelbrot-optimized-input-v2 size-7
+PROBE v-mandelbrot-optimized-input-v2 size-8
+PROBE v-mandelbrot-optimized-input-v2 size-9
+PROBE v-mandelbrot-optimized-input-v2 size-17
+PROBE v-mandelbrot-optimized-input-v2 size-31
+PROBE v-mandelbrot-optimized-input-v2 size-65
+PASS BOUNDED OUTPUTS mandelbrot 22

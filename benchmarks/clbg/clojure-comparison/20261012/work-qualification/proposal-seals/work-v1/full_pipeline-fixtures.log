@@ -1,0 +1,12 @@
+test_exact_twenty_gate_names_and_literal_true_values_are_required (test_full_study.LedgerChecks.test_exact_twenty_gate_names_and_literal_true_values_are_required) ... ok
+test_interrupt_becomes_durable_stopped_evidence_without_actual_signals (test_full_study.LedgerChecks.test_interrupt_becomes_durable_stopped_evidence_without_actual_signals) ... ok
+test_isolation_requires_every_literal_safety_gate_and_exact_typed_inventory (test_full_study.LedgerChecks.test_isolation_requires_every_literal_safety_gate_and_exact_typed_inventory) ... ok
+test_nine_actual_ledger_entries_three_each_and_matched_control (test_full_study.LedgerChecks.test_nine_actual_ledger_entries_three_each_and_matched_control) ... ok
+test_supervisor_exception_preserves_raw_and_separate_unqualified_wrapper (test_full_study.LedgerChecks.test_supervisor_exception_preserves_raw_and_separate_unqualified_wrapper) ... ok
+test_unqualified_second_attempt_persists_and_stops_without_retry (test_full_study.LedgerChecks.test_unqualified_second_attempt_persists_and_stops_without_retry) ... ok
+test_verified_source_failure_is_unscored_and_other_form_control_finish (test_full_study.LedgerChecks.test_verified_source_failure_is_unscored_and_other_form_control_finish) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.011s
+
+OK

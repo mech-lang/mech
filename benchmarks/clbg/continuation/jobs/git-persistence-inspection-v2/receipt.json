@@ -1,0 +1,88 @@
+{
+  "status": "git-inventory-completed-awaiting-curated-staging",
+  "recorded_at": "2026-10-13T07:21:32.457900+00:00",
+  "head": "363b4ffb20e895a7ce92bade44d38e9c3e58dd3d",
+  "branch": "codex/clbg-native-benchmarks",
+  "tracked_changes": 17,
+  "untracked_paths": 104930,
+  "commands": [
+    {
+      "command": [
+        "git",
+        "status",
+        "--porcelain=v1",
+        "--untracked-files=no"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--stat"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "git",
+        "ls-files",
+        "--others",
+        "--exclude-standard"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "git",
+        "ls-files"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "git",
+        "remote"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "git",
+        "branch",
+        "--show-current"
+      ],
+      "exit_code": 0
+    }
+  ],
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/git-persistence-inspection-v2/branch.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/git-persistence-inspection-v2/untracked-paths.txt": "b95c19eae08b62df22041f117c00543d04bedba2b505d19d05dd572935c97442",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/git-persistence-inspection-v2/tracked-paths.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/git-persistence-inspection-v2/tracked-status.txt": "3aecdb141dc12d2aa9605074945089a07e3da6a11d4d0ad454e3e0fc05fe31ca",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/git-persistence-inspection-v2/tracked-paths.txt": "e58e0ddb4d3a0ea0e4d19bd3b9425f76af1af12a5043a55e9178009091848fff",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/git-persistence-inspection-v2/head.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/git-persistence-inspection-v2/tracked-diff-stat.txt": "1b9dfa35d92358c935ab75a1bd4749bc50e9652cb5d64ebdc16b05f9ab0087e3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/git-persistence-inspection-v2/tracked-diff-stat.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/git-persistence-inspection-v2/untracked-sizes.json": "5d5c303edb643b3fc717907252589dbd40d57223ab05d3a8f0e4985585da8278",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/git-persistence-inspection-v2/branch.txt": "5b41861c26ac8cf1d4ecdbda59effc5029c05447d2b6e583c9fc7163fd489c11",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/git-persistence-inspection-v2/tracked-status.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/git-persistence-inspection-v2/remotes.txt": "4a2dfa4847cc3e691abb38d206f62c5059c81da77246258010d54f2703883be7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/git-persistence-inspection-v2/remotes.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/git-persistence-inspection-v2/head.txt": "ff6f73e27143b843928d489c821ee74432b3a8cc2ac22cacca7c434993821034",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/git-persistence-inspection-v2/untracked-paths.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "common_timing_mutex_held": true,
+  "staged_files": 0,
+  "commits_created": 0,
+  "pushes_attempted": 0,
+  "benchmark_runs": 0
+}

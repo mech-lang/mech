@@ -1,0 +1,34 @@
+test_active_never_signals (revision2_preparation_fixtures.Safety.test_active_never_signals) ... ok
+test_identity_change_is_fatal (revision2_preparation_fixtures.Safety.test_identity_change_is_fatal) ... ok
+test_incomplete_nbody_never_signals (revision2_preparation_fixtures.Safety.test_incomplete_nbody_never_signals) ... ok
+test_native_child_never_signals (revision2_preparation_fixtures.Safety.test_native_child_never_signals) ... ok
+test_nbody_monitor_failure_is_rejected (revision2_preparation_fixtures.Safety.test_nbody_monitor_failure_is_rejected) ... ok
+test_old_uiua_fann_attempt_is_retained_at_boundary (revision2_preparation_fixtures.Safety.test_old_uiua_fann_attempt_is_retained_at_boundary) ... ok
+test_revision_preserves_all_legacy_fann_lineage (revision2_preparation_fixtures.Safety.test_revision_preserves_all_legacy_fann_lineage) ... ok
+test_settles_final_save_then_rereads_fresh_bytes (revision2_preparation_fixtures.Safety.test_settles_final_save_then_rereads_fresh_bytes) ... ok
+test_success_targets_recorded_python_pid_only (revision2_preparation_fixtures.Safety.test_success_targets_recorded_python_pid_only) ... {
+  "status": "maintenance-complete-new-owner-awaiting-review",
+  "finished_at": "2026-10-12T13:44:43.532038+00:00",
+  "plan_sha256": "778ee1846096f8f39816f68ec6d84a99aa2134b14b01a9fbbcb5e1bf759850ad",
+  "boundary": {
+    "observed_at": "2026-10-12T13:44:43.531572+00:00",
+    "last_stage_log_line": "WAIT LOCK 1 old-fann",
+    "stage_descendants": [],
+    "report_sha256": {
+      "r": "a6e54189fa978c477e5243a5d3a65496645d6ec5a41e0eb067531288c9ef87c4",
+      "uiua": "2de828ab4bf042dc5375190c1b13b43af0ecef3b3ae418adcb52f671d18535e1",
+      "apl": "c9f28d9fe60599994bcb2541e7ae031fdef3fdb0859c06e11e1447ebb38b6093"
+    }
+  },
+  "stage_exit_status": 130,
+  "signal": "SIGINT to waiting Python stage owner only",
+  "native_processes_signalled": false,
+  "benchmarks_launched": false,
+  "revision_directory": "mock additive revision"
+}
+ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.020s
+
+OK

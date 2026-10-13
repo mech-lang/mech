@@ -1,0 +1,14 @@
+{
+  "status": "stopped-unqualified",
+  "started_at": "2026-10-12T15:56:13.999657+00:00",
+  "proposal_sha256": "515f2f82daea7b5436349b9ac069ebfcc377876c67a7074b968e8f32c3b838f8",
+  "attempts": [],
+  "active": null,
+  "full_performance_runs": 0,
+  "chart_admission": false,
+  "never_chart_eligible": true,
+  "no_automatic_retry": true,
+  "finished_at": "2026-10-12T15:56:20.357380+00:00",
+  "error": "('Owned command failed', 'build', 1)",
+  "error_type": "AssertionError"
+}

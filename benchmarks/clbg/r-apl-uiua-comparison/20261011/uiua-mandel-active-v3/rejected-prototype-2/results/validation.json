@@ -1,0 +1,107 @@
+{
+  "status": "failed",
+  "created_at": "2026-10-11T22:21:13.482395+00:00",
+  "scope": "Bounded complete PBMs, all active/escape states, select/scatter and byte-padding probes; no full timing.",
+  "source_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/sources/fast.ua": "c229d6798fddecb0760bdbeaf8037a907eadcab04818b616e55f4ca561e21ded",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandelbrot-v2/sources/fast.ua": "64f2913ec83009b70cc3ac8c4064438732bc1faf4448af198b7052e4cb0aaa4e"
+  },
+  "runtime": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+  "runtime_sha256": "096e8176bcfd4eff1506e86104ad8a618c2c60b5e2cdd1dd4d286963ebec6f3c",
+  "runtime_environment": {
+    "LC_ALL": "C",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+  "validator": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/validate.py",
+  "validator_sha256": "daa69868d05051b4159ec0b838305c02ad2af763631ca3a7a62c7ee6b7091d92",
+  "cases": [
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/sources/fast.ua",
+      "source_sha256": "c229d6798fddecb0760bdbeaf8037a907eadcab04818b616e55f4ca561e21ded",
+      "n": 1,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/sources/fast.ua",
+        "1"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 1,
+      "bytes": 7,
+      "sha256": "d4a32cd03b3f1505b9c4f1c75fa6486fca66966838ac6cf05116f187d0b67f26",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/results/output-1.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/results/output-1.stderr",
+      "stderr_sha256": "341cc316850b2727f4c7cc405b6e31f4dac701aa326b6365ac63b60cb461629b"
+    }
+  ],
+  "baseline_cases": [],
+  "instrumentation": [],
+  "prune_cases": [],
+  "scatter_cases": [],
+  "primitive_cases": [],
+  "diagnostic_cases": [
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/results/diagnostic-bits.ua",
+      "source_sha256": "b719ab777e9eb8d37094a74851c6cd44854f556167a6d86edaf1116f4a9f5158",
+      "n": 1,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/results/diagnostic-bits.ua",
+        "1"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 10,
+      "sha256": "c0d17f24ff929082af02b394714cff97bad95c7bf54389d1f1bfaa6356bca898",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/results/diagnostic-bits.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/results/diagnostic-bits.stderr",
+      "stderr_sha256": "a40c1a830e7a1400c9ba63c1bc123927ea22a7b256a48a764a5edc4dbd4fb911"
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/results/diagnostic-state.ua",
+      "source_sha256": "ccefe3316a78fb5722af9c58aa3d86f38ae49bb82bfe4c9edba49c400272ce67",
+      "n": 1,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/results/diagnostic-state.ua",
+        "1"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 26,
+      "sha256": "63e8be1f9b778f72a84fd0899dd340966b661c813f078dc6c28024bac836725a",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/results/diagnostic-state.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/results/diagnostic-state.stderr",
+      "stderr_sha256": "4567732ae46b2129089037418b59c4b285d34960ab0e32482e505322430cd0f6"
+    }
+  ],
+  "failed_at": "2026-10-11T22:21:13.926667+00:00",
+  "error": "AssertionError((1, 'Style: Split this into multiple lines (heuristic: 60/40) 🤨\\n  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/sources/fast.ua:4:1\\n4 | Advance ← M ⊃(+⊃M.Cx(-⊃(˙×M.I)(˙×M.R))|+⊃M.Cy(×2×⊃M.R M.I)|M.Index|M.Cx|M.Cy|+1M.Iter)\\n    ──────────────────────────────────────────────────────────────────────────────────────\\nAdvice: Split this into multiple lines (heuristic: 71/60) 😠\\n  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/sources/fast.ua:7:1\\n7 | Prune ← M ⊃(⊏⊃Selection.Keep(M.R Selection.State)|⊏⊃Selection.Keep(M.I Selection.State)|⊏⊃Selection.Keep(M.Index Selection.State)|⊏⊃Selection.Keep(M.Cx Selection.State)|M.Cy Selection.State|M.Iter Selection.State) Selected\\n    ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\\nError: Cannot write box array to file\\n  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/sources/fast.ua:11:7\\n11 | Row ← &fwa \"/dev/stdout\" Pack Bits ⍢(Iterate|×⊃(<50M.Iter)(>0⧻M.Index)) M (↯N 0) (↯N 0) (⇡N) Cr ⊙0\\n           ────\\n  in Row at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/sources/fast.ua:14:2\\n'))",
+  "full_performance_runs": 0
+}

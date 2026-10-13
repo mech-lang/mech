@@ -1,0 +1,41 @@
+{
+  "status": "both-kernel-exit-statuses-captured-awaiting-raw-pin-review",
+  "observer_pid": 83359,
+  "started_at": "2026-10-13T06:28:37.091526+00:00",
+  "signals_sent": 0,
+  "benchmarks_started": 0,
+  "debugger_attached": false,
+  "qualification_granted": false,
+  "exit_events": {
+    "68666": {
+      "pid": 68666,
+      "observed_at": "2026-10-13T07:21:25.000113+00:00",
+      "raw_event": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/apl-sample84-kqueue-observer-v1/raw-event-0001.json",
+      "filter": -5,
+      "flags": 32821,
+      "fflags": 2214592512,
+      "kernel_wait_status": 0,
+      "exited_normally": true,
+      "exit_code": 0,
+      "signalled": false,
+      "signal_number": null,
+      "qualification_granted": false
+    },
+    "68659": {
+      "pid": 68659,
+      "observed_at": "2026-10-13T07:21:26.745443+00:00",
+      "raw_event": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/apl-sample84-kqueue-observer-v1/raw-event-0002.json",
+      "filter": -5,
+      "flags": 32821,
+      "fflags": 2214592512,
+      "kernel_wait_status": 0,
+      "exited_normally": true,
+      "exit_code": 0,
+      "signalled": false,
+      "signal_number": null,
+      "qualification_granted": false
+    }
+  },
+  "exit_status_origin": "Darwin EVFILT_PROC NOTE_EXITSTATUS; not synthetic waitpid",
+  "finished_at": "2026-10-13T07:21:26.745570+00:00"
+}

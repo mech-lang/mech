@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/usr/bin/lipo",
+    "-archs",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v4/bin/pony-knucleotide-compact-precedence-v4/pony-knucleotide-compact-precedence-v4"
+  ],
+  "started_at": "2026-10-12T19:37:12.577442+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 16094,
+  "identity": {
+    "pid": 16094,
+    "process_listing": "Mon Oct 12 15:37:12 2026     /Library/Developer/CommandLineTools/usr/bin/lipo -archs /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v4/bin/pony-knucleotide-compact-precedence-v4/pony-knucleotide-compact-precedence-v4"
+  }
+}

@@ -1,0 +1,11 @@
+test_all_seven_growing_map_inventories_and_handoff_are_required (test_work_proofs.WorkProofChecks.test_all_seven_growing_map_inventories_and_handoff_are_required) ... ok
+test_every_overlapping_window_including_tail_is_required (test_work_proofs.WorkProofChecks.test_every_overlapping_window_including_tail_is_required) ... ok
+test_native_mutex_description_and_owned_observer_cleanup_are_required (test_work_proofs.WorkProofChecks.test_native_mutex_description_and_owned_observer_cleanup_are_required) ... ok
+test_retained_graph_identity_must_survive_actual_churn (test_work_proofs.WorkProofChecks.test_retained_graph_identity_must_survive_actual_churn) ... ok
+test_tree_requires_actual_fresh_leaves_and_distinct_graph_storage (test_work_proofs.WorkProofChecks.test_tree_requires_actual_fresh_leaves_and_distinct_graph_storage) ... ok
+test_two_actual_pi_divisions_recurrence_and_zero_extraction_are_required (test_work_proofs.WorkProofChecks.test_two_actual_pi_divisions_recurrence_and_zero_extraction_are_required) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.118s
+
+OK

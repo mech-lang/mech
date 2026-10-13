@@ -1,0 +1,22 @@
+{
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/.build-sdk-v1/toolchain/v/v",
+    "-prod",
+    "-cc",
+    "/opt/homebrew/opt/llvm@22/bin/clang-22",
+    "-cflags",
+    "-O3 -march=native -ffp-contract=off",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualification/production-sdk-v1/regexredux/v-regexredux-optimized/program",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualification/production-sdk-v1/regexredux/v-regexredux-optimized/program.v"
+  ],
+  "started_at": "2026-10-12T15:34:09.390806+00:00",
+  "inherited_common_mutex": true,
+  "pid": 68350,
+  "identity": {
+    "pid": 68350,
+    "process_listing": "Mon Oct 12 11:34:09 2026     /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/.build-sdk-v1/toolchain/v/v -prod -cc /opt/homebrew/opt/llvm@22/bin/clang-22 -cflags -O3 -march=native -ffp-contract=off -o /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualification/production-sdk-v1/regexredux/v-regexredux-optimized/program /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualification/production-sdk-v1/regexredux/v-regexredux-optimized/program.v"
+  },
+  "returncode": 0,
+  "finished_at": "2026-10-12T15:34:11.444819+00:00"
+}

@@ -1,0 +1,148 @@
+PLANNING ONLY binarytrees:binarytrees-uiua-compact 14
+PLANNING ESTIMATE binarytrees:binarytrees-uiua-compact 13.528s observed; ~0.48h full (not a measured benchmark) 
+PLANNING ONLY fannkuchredux:fannkuchredux-uiua-native-indices-compact-v2 9
+PLANNING ESTIMATE fannkuchredux:fannkuchredux-uiua-native-indices-compact-v2 6.523s observed; ~2.39h full (not a measured benchmark) 
+PLANNING ONLY fannkuchredux:fannkuchredux-uiua-native-flat-gather-optimized-v2 9
+PLANNING ESTIMATE fannkuchredux:fannkuchredux-uiua-native-flat-gather-optimized-v2 5.066s observed; ~1.86h full (not a measured benchmark) 
+PLANNING ONLY nbody:nbody-uiua-native-denominator-compact-v3 100000
+PLANNING ESTIMATE nbody:nbody-uiua-native-denominator-compact-v3 1.547s observed; ~0.21h full (not a measured benchmark) 
+PLANNING ONLY nbody:nbody-uiua-native-denominator-optimized-v3 100000
+PLANNING ESTIMATE nbody:nbody-uiua-native-denominator-optimized-v3 1.160s observed; ~0.16h full (not a measured benchmark) 
+WAIT LOCK 1 mech-control-binarytrees-for-r
+RUN FULL 1 mech-control-binarytrees-for-r timeout 14400
+SAMPLE FULL 1 mech-control-binarytrees-for-r 0.451045s
+WAIT LOCK 1 binarytrees-r-compact
+RUN FULL 1 binarytrees-r-compact timeout 550
+SAMPLE FULL 1 binarytrees-r-compact 224.330497s
+WAIT LOCK 1 binarytrees-r-optimized
+RUN FULL 1 binarytrees-r-optimized timeout 380
+SAMPLE FULL 1 binarytrees-r-optimized 74.600980s
+WAIT LOCK 1 binarytrees-uiua-compact
+RUN FULL 1 binarytrees-uiua-compact timeout 5195
+SAMPLE FULL 1 binarytrees-uiua-compact 2627.882693s
+WAIT LOCK 1 mech-control-binarytrees-for-uiua
+RUN FULL 1 mech-control-binarytrees-for-uiua timeout 14400
+SAMPLE FULL 1 mech-control-binarytrees-for-uiua 0.404389s
+WAIT LOCK 2 binarytrees-r-compact
+RUN FULL 2 binarytrees-r-compact timeout 550
+SAMPLE FULL 2 binarytrees-r-compact 223.656414s
+WAIT LOCK 2 mech-control-binarytrees-for-r
+RUN FULL 2 mech-control-binarytrees-for-r timeout 14400
+SAMPLE FULL 2 mech-control-binarytrees-for-r 0.399303s
+WAIT LOCK 2 binarytrees-r-optimized
+RUN FULL 2 binarytrees-r-optimized timeout 380
+SAMPLE FULL 2 binarytrees-r-optimized 73.453099s
+WAIT LOCK 2 binarytrees-uiua-compact
+RUN FULL 2 binarytrees-uiua-compact timeout 5195
+SAMPLE FULL 2 binarytrees-uiua-compact 2628.778294s
+WAIT LOCK 2 mech-control-binarytrees-for-uiua
+RUN FULL 2 mech-control-binarytrees-for-uiua timeout 14400
+SAMPLE FULL 2 mech-control-binarytrees-for-uiua 0.396901s
+WAIT LOCK 3 binarytrees-r-optimized
+RUN FULL 3 binarytrees-r-optimized timeout 380
+SAMPLE FULL 3 binarytrees-r-optimized 73.900382s
+WAIT LOCK 3 binarytrees-r-compact
+RUN FULL 3 binarytrees-r-compact timeout 550
+SAMPLE FULL 3 binarytrees-r-compact 224.050623s
+WAIT LOCK 3 mech-control-binarytrees-for-r
+RUN FULL 3 mech-control-binarytrees-for-r timeout 14400
+SAMPLE FULL 3 mech-control-binarytrees-for-r 0.395720s
+WAIT LOCK 3 binarytrees-uiua-compact
+RUN FULL 3 binarytrees-uiua-compact timeout 5195
+SAMPLE FULL 3 binarytrees-uiua-compact 2607.096764s
+WAIT LOCK 3 mech-control-binarytrees-for-uiua
+RUN FULL 3 mech-control-binarytrees-for-uiua timeout 14400
+SAMPLE FULL 3 mech-control-binarytrees-for-uiua 0.404131s
+WAIT LOCK 1 nbody-r-optimized
+RUN FULL 1 nbody-r-optimized timeout 1005
+SAMPLE FULL 1 nbody-r-optimized 392.574531s
+WAIT LOCK 1 mech-control-nbody-for-r
+RUN FULL 1 mech-control-nbody-for-r timeout 14400
+SAMPLE FULL 1 mech-control-nbody-for-r 1.195677s
+WAIT LOCK 1 nbody-r-compact
+RUN FULL 1 nbody-r-compact timeout 636
+SAMPLE FULL 1 nbody-r-compact 207.511276s
+WAIT LOCK 1 mech-control-nbody-for-uiua-medium-v3
+RUN FULL 1 mech-control-nbody-for-uiua-medium-v3 timeout 14400
+SAMPLE FULL 1 mech-control-nbody-for-uiua-medium-v3 1.036202s
+WAIT LOCK 1 nbody-uiua-native-denominator-compact-v3
+RUN FULL 1 nbody-uiua-native-denominator-compact-v3 timeout 1548
+SAMPLE FULL 1 nbody-uiua-native-denominator-compact-v3 768.803221s
+WAIT LOCK 1 nbody-uiua-native-denominator-optimized-v3
+RUN FULL 1 nbody-uiua-native-denominator-optimized-v3 timeout 1160
+SAMPLE FULL 1 nbody-uiua-native-denominator-optimized-v3 472.771878s
+WAIT LOCK 2 mech-control-nbody-for-r
+RUN FULL 2 mech-control-nbody-for-r timeout 14400
+SAMPLE FULL 2 mech-control-nbody-for-r 1.042176s
+WAIT LOCK 2 nbody-r-compact
+RUN FULL 2 nbody-r-compact timeout 636
+SAMPLE FULL 2 nbody-r-compact 207.016749s
+WAIT LOCK 2 nbody-r-optimized
+RUN FULL 2 nbody-r-optimized timeout 1005
+SAMPLE FULL 2 nbody-r-optimized 392.360528s
+WAIT LOCK 2 nbody-uiua-native-denominator-optimized-v3
+RUN FULL 2 nbody-uiua-native-denominator-optimized-v3 timeout 1160
+SAMPLE FULL 2 nbody-uiua-native-denominator-optimized-v3 473.159003s
+WAIT LOCK 2 mech-control-nbody-for-uiua-medium-v3
+RUN FULL 2 mech-control-nbody-for-uiua-medium-v3 timeout 14400
+SAMPLE FULL 2 mech-control-nbody-for-uiua-medium-v3 1.058564s
+WAIT LOCK 2 nbody-uiua-native-denominator-compact-v3
+RUN FULL 2 nbody-uiua-native-denominator-compact-v3 timeout 1548
+DISCARDED ENVIRONMENT nbody-uiua-native-denominator-compact-v3 776.363119416
+WAIT LOCK 2 nbody-uiua-native-denominator-compact-v3
+RUN FULL 2 nbody-uiua-native-denominator-compact-v3 timeout 1548
+SAMPLE FULL 2 nbody-uiua-native-denominator-compact-v3 772.873891s
+WAIT LOCK 3 nbody-r-optimized
+RUN FULL 3 nbody-r-optimized timeout 1005
+SAMPLE FULL 3 nbody-r-optimized 392.301742s
+WAIT LOCK 3 mech-control-nbody-for-r
+RUN FULL 3 mech-control-nbody-for-r timeout 14400
+SAMPLE FULL 3 mech-control-nbody-for-r 1.044816s
+WAIT LOCK 3 nbody-r-compact
+RUN FULL 3 nbody-r-compact timeout 636
+SAMPLE FULL 3 nbody-r-compact 207.623647s
+WAIT LOCK 3 nbody-uiua-native-denominator-optimized-v3
+RUN FULL 3 nbody-uiua-native-denominator-optimized-v3 timeout 1160
+SAMPLE FULL 3 nbody-uiua-native-denominator-optimized-v3 470.129021s
+WAIT LOCK 3 mech-control-nbody-for-uiua-medium-v3
+RUN FULL 3 mech-control-nbody-for-uiua-medium-v3 timeout 14400
+SAMPLE FULL 3 mech-control-nbody-for-uiua-medium-v3 1.044674s
+WAIT LOCK 3 nbody-uiua-native-denominator-compact-v3
+RUN FULL 3 nbody-uiua-native-denominator-compact-v3 timeout 1548
+SAMPLE FULL 3 nbody-uiua-native-denominator-compact-v3 774.856346s
+WAIT LOCK 1 fannkuchredux-r-array-batched
+RUN FULL 1 fannkuchredux-r-array-batched timeout 973
+SAMPLE FULL 1 fannkuchredux-r-array-batched 344.345889s
+WAIT LOCK 1 mech-control-fannkuchredux-for-r
+RUN FULL 1 mech-control-fannkuchredux-for-r timeout 14400
+SAMPLE FULL 1 mech-control-fannkuchredux-for-r 1.811297s
+WAIT LOCK 1 fannkuchredux-r-array-compact
+RUN FULL 1 fannkuchredux-r-array-compact timeout 4126
+SAMPLE FULL 1 fannkuchredux-r-array-compact 1484.208011s
+WAIT LOCK 1 mech-control-fannkuchredux-for-uiua-medium-v3
+RUN FULL 1 mech-control-fannkuchredux-for-uiua-medium-v3 timeout 14400
+SAMPLE FULL 1 mech-control-fannkuchredux-for-uiua-medium-v3 1.707103s
+WAIT LOCK 1 fannkuchredux-uiua-native-indices-compact-v2
+RUN FULL 1 fannkuchredux-uiua-native-indices-compact-v2 timeout 14400
+SAMPLE FULL 1 fannkuchredux-uiua-native-indices-compact-v2 12760.520206s
+WAIT LOCK 1 fannkuchredux-uiua-native-flat-gather-optimized-v2
+RUN FULL 1 fannkuchredux-uiua-native-flat-gather-optimized-v2 timeout 14400
+SAMPLE FULL 1 fannkuchredux-uiua-native-flat-gather-optimized-v2 9717.947564s
+WAIT LOCK 2 fannkuchredux-r-array-batched
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/supervise_v4.py", line 253, in <module>
+    run_stage(arguments.run_stage)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/supervise_v4.py", line 106, in run_stage
+    run.main()
+    ~~~~~~~~^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run.py", line 220, in main
+    for language,state in states.items():run_sample(language,state,bench,sample,args)
+                                         ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run.py", line 173, in run_sample
+    fcntl.flock(lock,fcntl.LOCK_EX);compact.wait_for_environment(REQUIRED);state['guard'].verify()
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run.py", line 8, in interrupted
+    def interrupted(signum,frame):raise KeyboardInterrupt('Benchmark harness received signal '+str(signum))
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt: Benchmark harness received signal 2

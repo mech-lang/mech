@@ -1,0 +1,26 @@
+Advice: Split this into multiple lines (heuristic: 68/60) 😠
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-parallel-v4/results/validation-20261012T013728870662Z/block-cap-1.ua:27:1
+27 | Work         ← F ⊃(+⊃(F.Index Block.State)(⧻Block.Indices)|F.End Block.State|+⊃(F.Checksum Block.State)(/+×⊃(˜ⁿ¯1Block.Indices)Block.Counts)|↥⊃(F.Maximum Block.State)(/↥Block.Counts)) Candidate
+     ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Error: Index 4 is out of bounds of length 4
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-parallel-v4/results/validation-20261012T013728870662Z/block-cap-1.ua:11:51
+11 | RotateGather       ← ↯⊃(△RotateWork.Permutations)(⊏⊃(♭+⊃(×N⇡⧻ RotateWork.Permutations)(RotationIndices RotateWork.Stage))(♭RotateWork.Permutations))
+                                                       ─
+  in RotateGather at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-parallel-v4/results/validation-20261012T013728870662Z/block-cap-1.ua:12:22
+  in RotateRows at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-parallel-v4/results/validation-20261012T013728870662Z/block-cap-1.ua:15:23
+  in PermutationBlock at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-parallel-v4/results/validation-20261012T013728870662Z/block-cap-1.ua:26:56
+  in Candidate at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-parallel-v4/results/validation-20261012T013728870662Z/block-cap-1.ua:27:185
+  in Work at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-parallel-v4/results/validation-20261012T013728870662Z/block-cap-1.ua:28:13
+  in Run at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-parallel-v4/results/validation-20261012T013728870662Z/block-cap-1.ua:32:13
+  in Worker at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-parallel-v4/results/validation-20261012T013728870662Z/block-cap-1.ua:33:17
+Error: Index 4 is out of bounds of length 4
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-parallel-v4/results/validation-20261012T013728870662Z/block-cap-1.ua:11:51
+11 | RotateGather       ← ↯⊃(△RotateWork.Permutations)(⊏⊃(♭+⊃(×N⇡⧻ RotateWork.Permutations)(RotationIndices RotateWork.Stage))(♭RotateWork.Permutations))
+                                                       ─
+  in RotateGather at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-parallel-v4/results/validation-20261012T013728870662Z/block-cap-1.ua:12:22
+  in RotateRows at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-parallel-v4/results/validation-20261012T013728870662Z/block-cap-1.ua:15:23
+  in PermutationBlock at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-parallel-v4/results/validation-20261012T013728870662Z/block-cap-1.ua:26:56
+  in Candidate at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-parallel-v4/results/validation-20261012T013728870662Z/block-cap-1.ua:27:185
+  in Work at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-parallel-v4/results/validation-20261012T013728870662Z/block-cap-1.ua:28:13
+  in Run at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-parallel-v4/results/validation-20261012T013728870662Z/block-cap-1.ua:32:13
+  in Worker at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-parallel-v4/results/validation-20261012T013728870662Z/block-cap-1.ua:33:17

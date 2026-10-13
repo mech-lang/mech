@@ -1,0 +1,471 @@
+{
+  "status": "exact21-source-unit-meaning-reviewed-awaiting-guarded-seal",
+  "language": "clojure",
+  "review_identity": "Crystal static selected-source owner review, Clojure grammar-v3 actual21 replay, 2026-10-13",
+  "actual_source_replay": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/clojure-grammar-v3/jobs/grammar-v3-source-replay-v1/source-proposals.json",
+    "sha256": "ef10308e6dad994658c626ca34e7c4f21d78e4e91afc92f2a7b58fbe7a6c4bd7"
+  },
+  "actual_qualified_preparation": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/qualification/private-v2/report.json",
+    "sha256": "69bf7cdb025759e6d10cb8c1ae1c189839e253ced9aca50e4f9cc1e838d36d79"
+  },
+  "counts_transcribed_from_actual_replay": true,
+  "unique_authored_files": 21,
+  "profiles_count": 20,
+  "compiler_input_evidence_basis": "Actual replay compiler_input_evidence binds each exact authored main plus whole support to original/fresh compiler-inventory/owned compile/class/JAR/runtime pins; private-v2 corrected Nbody aliases required. No inferred empty source_bundle or generated-class LOC substitution.",
+  "runtime_review": {
+    "language_compiler": "Clojure 1.12.6 with exact pinned spec.alpha/core.specs.alpha jars",
+    "native_jvm": "Qualified ARM64 Temurin 25.0.4.1+1, HotSpot JIT/G1; original byte-identical copied runtime receipt and full official JDK archive correspondence",
+    "actual_class_inputs": "Twenty isolated AOT class trees compiled from exact namespace main + clbg.support; measured classpath contains class tree and three pinned jars only, no source roots",
+    "selected_value_prefix_basis": "Only source/type-bound core aget and exact closed immutable java.math.BigInteger arithmetic compositions. Runtime metadata or method names alone do not admit owner waivers.",
+    "reference": "https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/math/BigInteger.html"
+  },
+  "shared_helper": {
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/support/clbg/support.clj",
+    "source_sha256": "ae37ffdcbfe8d1fa34632e1151d4098b5747f71ce2ad074d326043be3d289446",
+    "physical_loc": 23,
+    "normalized_loc": 46,
+    "role": "complete-authored-application-helper-counted-once-per-profile",
+    "metric_ref": {
+      "profile": "clojure-binarytrees-compact",
+      "source_bundle_index": 1
+    },
+    "owner_review": "Literal refer-clojure printf exclusion and five actual imported Java classes are selected namespace declarations. argument if branches, input String/standard I/O construction, printf print+flush effects and all function closes remain owned. jobs pool/futures initialized bindings, try/finally, actual mapv fn, Callable reify/call method, submitted function body, stateful Future.get anonymous callback, shutdown/awaitTermination/throw and written closes are all visible. Containing call/initializer prefixes merge only with the first directly nested callable/control header; extra callback/method/body/effect/close owners remain separate. No generated class, formal/destructuring binding or vector data element is invented or counted; no stateful callback receives the scalar arithmetic waiver.",
+    "unresolved": []
+  },
+  "profiles": [
+    {
+      "id": "clojure-binarytrees-compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/binarytrees/compact.clj",
+      "source_sha256": "d3735e4f6e092583c76ababcdb39d159960073f1865d53230e92c2b7d3b2c7bf",
+      "physical_loc": 25,
+      "normalized_loc": 43,
+      "source_role": "application",
+      "metric_ref": {
+        "profile": "clojure-binarytrees-compact",
+        "source_bundle_index": 0
+      },
+      "status": "source-owner-meaning-reviewed-awaiting-guarded-seal",
+      "owner_review": "Namespace require and bare gen-class are selected literal declarations. make-tree's initialized node binding, when header, two independent aset effects, returned node and written closes remain separate owners. The checker owns its if, both recursive branches and closes. Compact owns depth/iteration loops and independent maximum/stretch/retained bindings. Optimized owns interval loop, worker/range/callback headers and bodies, joined totals and final retained check. Node arrays and return/vector arguments are structural data; no literal/shared leaf waiver occurs. Standard original source and complete scored class inputs are separately compiler-bound.",
+      "complete_authored_source_bundle": [
+        "sources/clbg/binarytrees/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "effective_physical_loc": 48,
+      "effective_normalized_loc": 89,
+      "unresolved": []
+    },
+    {
+      "id": "clojure-binarytrees-optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/binarytrees/optimized.clj",
+      "source_sha256": "6899d4738d9f5a179c5f788ee698ce56843a63862db0a4b343f9331c999a33f3",
+      "physical_loc": 30,
+      "normalized_loc": 52,
+      "source_role": "application",
+      "metric_ref": {
+        "profile": "clojure-binarytrees-optimized",
+        "source_bundle_index": 0
+      },
+      "status": "source-owner-meaning-reviewed-awaiting-guarded-seal",
+      "owner_review": "Namespace require and bare gen-class are selected literal declarations. make-tree's initialized node binding, when header, two independent aset effects, returned node and written closes remain separate owners. The checker owns its if, both recursive branches and closes. Compact owns depth/iteration loops and independent maximum/stretch/retained bindings. Optimized owns interval loop, worker/range/callback headers and bodies, joined totals and final retained check. Node arrays and return/vector arguments are structural data; no literal/shared leaf waiver occurs. Standard original source and complete scored class inputs are separately compiler-bound.",
+      "complete_authored_source_bundle": [
+        "sources/clbg/binarytrees/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "effective_physical_loc": 53,
+      "effective_normalized_loc": 98,
+      "unresolved": []
+    },
+    {
+      "id": "clojure-fannkuchredux-compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/fannkuchredux/compact.clj",
+      "source_sha256": "7056b08ea6619eb51be47067aec5d14d839a3bf628235f0400746cdef9d956b7",
+      "physical_loc": 38,
+      "normalized_loc": 95,
+      "source_role": "application",
+      "metric_ref": {
+        "profile": "clojure-fannkuchredux-compact",
+        "source_bundle_index": 0
+      },
+      "status": "source-owner-meaning-reviewed-awaiting-guarded-seal",
+      "owner_review": "Typed primitive-array formals are literal type metadata. Every rotate/flip/carry effect, initialized work/indices/counts, nested loop/when/if/do sequence and written close remains owned. Checksums' nested parity if retains its header/branches/close inside the initializer/recur expression. Compact carries actual global permutation state; optimized factoradic setup and interval functions retain independent initialized bindings, rank loops, reversal effects and worker callbacks. Return vectors [permutation counts] and [checksum maximum] are data values, not callable scopes. All authored helpers and effects remain counted.",
+      "complete_authored_source_bundle": [
+        "sources/clbg/fannkuchredux/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "effective_physical_loc": 61,
+      "effective_normalized_loc": 141,
+      "unresolved": []
+    },
+    {
+      "id": "clojure-fannkuchredux-optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/fannkuchredux/optimized.clj",
+      "source_sha256": "dcff2d2b86b6ce63ada0603d705361a329e793ecc1619fea57ac3d2be83bdb6e",
+      "physical_loc": 49,
+      "normalized_loc": 120,
+      "source_role": "application",
+      "metric_ref": {
+        "profile": "clojure-fannkuchredux-optimized",
+        "source_bundle_index": 0
+      },
+      "status": "source-owner-meaning-reviewed-awaiting-guarded-seal",
+      "owner_review": "Typed primitive-array formals are literal type metadata. Every rotate/flip/carry effect, initialized work/indices/counts, nested loop/when/if/do sequence and written close remains owned. Checksums' nested parity if retains its header/branches/close inside the initializer/recur expression. Compact carries actual global permutation state; optimized factoradic setup and interval functions retain independent initialized bindings, rank loops, reversal effects and worker callbacks. Return vectors [permutation counts] and [checksum maximum] are data values, not callable scopes. All authored helpers and effects remain counted.",
+      "complete_authored_source_bundle": [
+        "sources/clbg/fannkuchredux/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "effective_physical_loc": 72,
+      "effective_normalized_loc": 166,
+      "unresolved": []
+    },
+    {
+      "id": "clojure-nbody-compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/revisions/private-v2/sources/clbg/nbody/compact.clj",
+      "source_sha256": "193e26ad8dfd011fd1835d9d67be04bb223d088e6cdd3e2d6302ca8cae2f46d4",
+      "physical_loc": 49,
+      "normalized_loc": 109,
+      "source_role": "application",
+      "metric_ref": {
+        "profile": "clojure-nbody-compact",
+        "source_bundle_index": 0
+      },
+      "status": "source-owner-meaning-reviewed-awaiting-guarded-seal",
+      "owner_review": "Only the separately compiled private-v2 Nbody aliases enter this review; the original missing-paren sources and their reader/compile failures stay preserved. Planetary vectors and type hints are structural data. Each written body/force/energy/pair/axis/position loop and condition, each independent initialized binding and each array write is owned. The formerly unclosed potential loop now has its actual written close. Optimized's pair comprehension has selected for bindings/body/close, followed by distinct delta/magnitude and both velocity-update effects. Written source bodies and helper remain counted; no numeric kernel is moved outside authored Clojure.",
+      "complete_authored_source_bundle": [
+        "revisions/private-v2/sources/clbg/nbody/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "effective_physical_loc": 72,
+      "effective_normalized_loc": 155,
+      "unresolved": []
+    },
+    {
+      "id": "clojure-nbody-optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/revisions/private-v2/sources/clbg/nbody/optimized.clj",
+      "source_sha256": "e0d1ea88a301c26752fa0cf3bf5ade22ed79321661255956cf0cf061df4c0881",
+      "physical_loc": 56,
+      "normalized_loc": 121,
+      "source_role": "application",
+      "metric_ref": {
+        "profile": "clojure-nbody-optimized",
+        "source_bundle_index": 0
+      },
+      "status": "source-owner-meaning-reviewed-awaiting-guarded-seal",
+      "owner_review": "Only the separately compiled private-v2 Nbody aliases enter this review; the original missing-paren sources and their reader/compile failures stay preserved. Planetary vectors and type hints are structural data. Each written body/force/energy/pair/axis/position loop and condition, each independent initialized binding and each array write is owned. The formerly unclosed potential loop now has its actual written close. Optimized's pair comprehension has selected for bindings/body/close, followed by distinct delta/magnitude and both velocity-update effects. Written source bodies and helper remain counted; no numeric kernel is moved outside authored Clojure.",
+      "complete_authored_source_bundle": [
+        "revisions/private-v2/sources/clbg/nbody/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "effective_physical_loc": 79,
+      "effective_normalized_loc": 167,
+      "unresolved": []
+    },
+    {
+      "id": "clojure-spectralnorm-compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/spectralnorm/compact.clj",
+      "source_sha256": "32540cd34c495a8d7acf4e64ca04704f2e2fe8414acc3c7d5c83747a064ba2a2",
+      "physical_loc": 24,
+      "normalized_loc": 62,
+      "source_role": "application",
+      "metric_ref": {
+        "profile": "clojure-spectralnorm-compact",
+        "source_bundle_index": 0
+      },
+      "status": "source-owner-meaning-reviewed-awaiting-guarded-seal",
+      "owner_review": "Every denominator, multiply/interval, ata, result and main function owns written headers, initialized bindings, dotimes/loop/if/when bodies and closes. The actual core aget preceding nested transpose-if reads only a lexically visible ^doubles formal with a scalar column; namespaces do not shadow/refer/exclude core aget and operands have no stateful frontier. The selected value prefix remains composition while the nested if's header/branches/close are independent. Both actual source-specific resolved AST/type spans in replay bind this decision; arbitrary Java/array-call purity is not inferred. Optimized worker callbacks and each complete dot-product remain visible.",
+      "complete_authored_source_bundle": [
+        "sources/clbg/spectralnorm/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "effective_physical_loc": 47,
+      "effective_normalized_loc": 108,
+      "unresolved": []
+    },
+    {
+      "id": "clojure-spectralnorm-optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/spectralnorm/optimized.clj",
+      "source_sha256": "9d668efbc990a3dd2ea0989f8d6ee7b7314482b7869007f4c0d069ff42feaf3a",
+      "physical_loc": 31,
+      "normalized_loc": 77,
+      "source_role": "application",
+      "metric_ref": {
+        "profile": "clojure-spectralnorm-optimized",
+        "source_bundle_index": 0
+      },
+      "status": "source-owner-meaning-reviewed-awaiting-guarded-seal",
+      "owner_review": "Every denominator, multiply/interval, ata, result and main function owns written headers, initialized bindings, dotimes/loop/if/when bodies and closes. The actual core aget preceding nested transpose-if reads only a lexically visible ^doubles formal with a scalar column; namespaces do not shadow/refer/exclude core aget and operands have no stateful frontier. The selected value prefix remains composition while the nested if's header/branches/close are independent. Both actual source-specific resolved AST/type spans in replay bind this decision; arbitrary Java/array-call purity is not inferred. Optimized worker callbacks and each complete dot-product remain visible.",
+      "complete_authored_source_bundle": [
+        "sources/clbg/spectralnorm/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "effective_physical_loc": 54,
+      "effective_normalized_loc": 123,
+      "unresolved": []
+    },
+    {
+      "id": "clojure-mandelbrot-compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/mandelbrot/compact.clj",
+      "source_sha256": "5e3f2d6aacf6b438f0b7f2fb107973dab8e6a4b4e5ff21c2cddcbd6fcbd85000",
+      "physical_loc": 20,
+      "normalized_loc": 53,
+      "source_role": "application",
+      "metric_ref": {
+        "profile": "clojure-mandelbrot-compact",
+        "source_bundle_index": 0
+      },
+      "status": "source-owner-meaning-reviewed-awaiting-guarded-seal",
+      "owner_review": "Coordinate arithmetic and literal byte/array type hints are structural expression data. Every inside? recurrence loop, iteration cutoff and escape conditional, initialized real/imaginary values, pixel/byte/offset loops, packing effect and PBM writes retains owner/header/body/close units. Nested per-pixel conditional work is retained inside the recur expression. Optimized's arithmetic-only anonymous coordinate projection is selected scalar composition; row job callbacks are owned callable bodies. Array/data arguments are not mistaken for statement sequences.",
+      "complete_authored_source_bundle": [
+        "sources/clbg/mandelbrot/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "effective_physical_loc": 43,
+      "effective_normalized_loc": 99,
+      "unresolved": []
+    },
+    {
+      "id": "clojure-mandelbrot-optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/mandelbrot/optimized.clj",
+      "source_sha256": "9ac679181206a05af5dc3aa11b61aa9513035e379e39c90d69ee71778dbf311e",
+      "physical_loc": 26,
+      "normalized_loc": 69,
+      "source_role": "application",
+      "metric_ref": {
+        "profile": "clojure-mandelbrot-optimized",
+        "source_bundle_index": 0
+      },
+      "status": "source-owner-meaning-reviewed-awaiting-guarded-seal",
+      "owner_review": "Coordinate arithmetic and literal byte/array type hints are structural expression data. Every inside? recurrence loop, iteration cutoff and escape conditional, initialized real/imaginary values, pixel/byte/offset loops, packing effect and PBM writes retains owner/header/body/close units. Nested per-pixel conditional work is retained inside the recur expression. Optimized's arithmetic-only anonymous coordinate projection is selected scalar composition; row job callbacks are owned callable bodies. Array/data arguments are not mistaken for statement sequences.",
+      "complete_authored_source_bundle": [
+        "sources/clbg/mandelbrot/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "effective_physical_loc": 49,
+      "effective_normalized_loc": 115,
+      "unresolved": []
+    },
+    {
+      "id": "clojure-pidigits-compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/pidigits/compact.clj",
+      "source_sha256": "f1571777e9aade13ae0b3f41c50dc46055b2113942858d7888073132fcf8c8db",
+      "physical_loc": 26,
+      "normalized_loc": 48,
+      "source_role": "application",
+      "metric_ref": {
+        "profile": "clojure-pidigits-compact",
+        "source_bundle_index": 0
+      },
+      "status": "source-owner-meaning-reviewed-awaiting-guarded-seal",
+      "owner_review": "The exact java.math.BigInteger import and unique single-body integer helper BigInteger/valueOf(long value) are counted and lexically resolved; no global overwrite/referral or alternate helper is present. ONE/ZERO seeds plus actual .add/.subtract/.multiply/.divide receiver/argument flows establish immutable BigInteger values. Compact's arithmetic recur operands before the final nested line-if are selected value composition, with actual AST/helper/import/type spans retained; the final if and every loop/when/let/header/body/close remain owned. Both separately initialized numerator and quotient bindings are retained, as are optimized StringBuilder effects and constant definitions. Actual JDK25 archive/runtime/compiler/class provenance is authoritative; no generic method-name/type-hint purity waiver applies.",
+      "complete_authored_source_bundle": [
+        "sources/clbg/pidigits/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "effective_physical_loc": 49,
+      "effective_normalized_loc": 94,
+      "unresolved": []
+    },
+    {
+      "id": "clojure-pidigits-optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/pidigits/optimized.clj",
+      "source_sha256": "1296ac776e823178a3f8214454b26fefca22d7e7fc69a315103864d3bb4f050b",
+      "physical_loc": 31,
+      "normalized_loc": 54,
+      "source_role": "application",
+      "metric_ref": {
+        "profile": "clojure-pidigits-optimized",
+        "source_bundle_index": 0
+      },
+      "status": "source-owner-meaning-reviewed-awaiting-guarded-seal",
+      "owner_review": "The exact java.math.BigInteger import and unique single-body integer helper BigInteger/valueOf(long value) are counted and lexically resolved; no global overwrite/referral or alternate helper is present. ONE/ZERO seeds plus actual .add/.subtract/.multiply/.divide receiver/argument flows establish immutable BigInteger values. Compact's arithmetic recur operands before the final nested line-if are selected value composition, with actual AST/helper/import/type spans retained; the final if and every loop/when/let/header/body/close remain owned. Both separately initialized numerator and quotient bindings are retained, as are optimized StringBuilder effects and constant definitions. Actual JDK25 archive/runtime/compiler/class provenance is authoritative; no generic method-name/type-hint purity waiver applies.",
+      "complete_authored_source_bundle": [
+        "sources/clbg/pidigits/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "effective_physical_loc": 54,
+      "effective_normalized_loc": 100,
+      "unresolved": []
+    },
+    {
+      "id": "clojure-fasta-compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/fasta/compact.clj",
+      "source_sha256": "a1738475e8bd4721f22a96e85bc6122ea77232d8eeed599d3286a874b76d074c",
+      "physical_loc": 36,
+      "normalized_loc": 73,
+      "source_role": "application",
+      "metric_ref": {
+        "profile": "clojure-fasta-compact",
+        "source_bundle_index": 0
+      },
+      "status": "source-owner-meaning-reviewed-awaiting-guarded-seal",
+      "owner_review": "ALU/alphabet/probability tables are literal data definitions. Every draw state update and floating division, CDF-selection loop, independent record/position/width/line initialization, wrapping conditional and output effect remains owned. Compact StringBuilder loops and optimized stream writes/newline effects have independent body units; close parentheses belonging to controls/functions remain written closes. Packed scalar arithmetic is expression composition; no vector literal, RNG library call or data-wrapping element becomes a generated statement.",
+      "complete_authored_source_bundle": [
+        "sources/clbg/fasta/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "effective_physical_loc": 59,
+      "effective_normalized_loc": 119,
+      "unresolved": []
+    },
+    {
+      "id": "clojure-fasta-optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/fasta/optimized.clj",
+      "source_sha256": "8cc4c30fc903d727cf2b652fe3a1a1b21061434fdd4d6f8a978ce0eb2122a25a",
+      "physical_loc": 39,
+      "normalized_loc": 79,
+      "source_role": "application",
+      "metric_ref": {
+        "profile": "clojure-fasta-optimized",
+        "source_bundle_index": 0
+      },
+      "status": "source-owner-meaning-reviewed-awaiting-guarded-seal",
+      "owner_review": "ALU/alphabet/probability tables are literal data definitions. Every draw state update and floating division, CDF-selection loop, independent record/position/width/line initialization, wrapping conditional and output effect remains owned. Compact StringBuilder loops and optimized stream writes/newline effects have independent body units; close parentheses belonging to controls/functions remain written closes. Packed scalar arithmetic is expression composition; no vector literal, RNG library call or data-wrapping element becomes a generated statement.",
+      "complete_authored_source_bundle": [
+        "sources/clbg/fasta/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "effective_physical_loc": 62,
+      "effective_normalized_loc": 125,
+      "unresolved": []
+    },
+    {
+      "id": "clojure-revcomp-compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/revcomp/compact.clj",
+      "source_sha256": "27557c3f45b67533d4114d48868715d6735422b504a6243b470ce7e868bb8870",
+      "physical_loc": 21,
+      "normalized_loc": 44,
+      "source_role": "application",
+      "metric_ref": {
+        "profile": "clojure-revcomp-compact",
+        "source_bundle_index": 0
+      },
+      "status": "source-owner-meaning-reviewed-awaiting-guarded-seal",
+      "owner_review": "Complement tables and parser regex strings are data. Reduce's explicit fn owns the cond, record allocation, append effect, returned accumulator and written closes. Each main doseq/let/loop/when/if/do header/body/close and independent initialized binding remains visible. Optimized complement/swap operations own both writes; subsequent chunked output is a separate loop. Literal import/namespace clauses are selected, generated classes excluded. No callback body is hidden by a containing reduce call or initialized binding.",
+      "complete_authored_source_bundle": [
+        "sources/clbg/revcomp/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "effective_physical_loc": 44,
+      "effective_normalized_loc": 90,
+      "unresolved": []
+    },
+    {
+      "id": "clojure-revcomp-optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/revcomp/optimized.clj",
+      "source_sha256": "8f99077aadb2a446c8af7d0b3d35d0ea31cfe81eb70131310eb309fd98461911",
+      "physical_loc": 31,
+      "normalized_loc": 58,
+      "source_role": "application",
+      "metric_ref": {
+        "profile": "clojure-revcomp-optimized",
+        "source_bundle_index": 0
+      },
+      "status": "source-owner-meaning-reviewed-awaiting-guarded-seal",
+      "owner_review": "Complement tables and parser regex strings are data. Reduce's explicit fn owns the cond, record allocation, append effect, returned accumulator and written closes. Each main doseq/let/loop/when/if/do header/body/close and independent initialized binding remains visible. Optimized complement/swap operations own both writes; subsequent chunked output is a separate loop. Literal import/namespace clauses are selected, generated classes excluded. No callback body is hidden by a containing reduce call or initialized binding.",
+      "complete_authored_source_bundle": [
+        "sources/clbg/revcomp/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "effective_physical_loc": 54,
+      "effective_normalized_loc": 104,
+      "unresolved": []
+    },
+    {
+      "id": "clojure-knucleotide-compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/knucleotide/compact.clj",
+      "source_sha256": "f889c7f46906831717c246584fe9c88a6007edd55b05527fd54efbb9a233ee41",
+      "physical_loc": 36,
+      "normalized_loc": 79,
+      "source_role": "application",
+      "metric_ref": {
+        "profile": "clojure-knucleotide-compact",
+        "source_bundle_index": 0
+      },
+      "status": "source-owner-meaning-reviewed-awaiting-guarded-seal",
+      "owner_review": "Seven widths and query strings are data definitions. Third-record parsing keeps loop bindings, if-let/cond/nested-if/do and append/recur effects. Compact histogram owns initialized windows, transient table and every overlapping substring/assoc! loop; optimized histogram owns real HashMap construction, rolling key/mask bindings, put effects and returned map. The doseq initializer's sort-by explicit fn is independently owned: outer iteration header plus comparator fn header/body/close, without overlapping spans or a control-header merge waiver. Decode, frequency projection, job-producing fn and stateful anonymous histogram callbacks, query reduction and parent output bodies all remain counted. All seven windows/maps are source work, never replaced by helper-count estimates.",
+      "complete_authored_source_bundle": [
+        "sources/clbg/knucleotide/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "effective_physical_loc": 59,
+      "effective_normalized_loc": 125,
+      "unresolved": []
+    },
+    {
+      "id": "clojure-knucleotide-optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/knucleotide/optimized.clj",
+      "source_sha256": "8555e3d807bedda93681f29b301bc5968cc13b44491bb0b5fc09ff5a7ef253ec",
+      "physical_loc": 49,
+      "normalized_loc": 120,
+      "source_role": "application",
+      "metric_ref": {
+        "profile": "clojure-knucleotide-optimized",
+        "source_bundle_index": 0
+      },
+      "status": "source-owner-meaning-reviewed-awaiting-guarded-seal",
+      "owner_review": "Seven widths and query strings are data definitions. Third-record parsing keeps loop bindings, if-let/cond/nested-if/do and append/recur effects. Compact histogram owns initialized windows, transient table and every overlapping substring/assoc! loop; optimized histogram owns real HashMap construction, rolling key/mask bindings, put effects and returned map. The doseq initializer's sort-by explicit fn is independently owned: outer iteration header plus comparator fn header/body/close, without overlapping spans or a control-header merge waiver. Decode, frequency projection, job-producing fn and stateful anonymous histogram callbacks, query reduction and parent output bodies all remain counted. All seven windows/maps are source work, never replaced by helper-count estimates.",
+      "complete_authored_source_bundle": [
+        "sources/clbg/knucleotide/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "effective_physical_loc": 72,
+      "effective_normalized_loc": 166,
+      "unresolved": []
+    },
+    {
+      "id": "clojure-regexredux-compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/regexredux/compact.clj",
+      "source_sha256": "20b92684b9bd667464df984546f0bd547133ebf8206fc213c92af90272bfa5c0",
+      "physical_loc": 19,
+      "normalized_loc": 34,
+      "source_role": "application",
+      "metric_ref": {
+        "profile": "clojure-regexredux-compact",
+        "source_bundle_index": 0
+      },
+      "status": "source-owner-meaning-reviewed-awaiting-guarded-seal",
+      "owner_review": "Pattern and replacement tables are literal data definitions. count-matches owns actual matcher initialization, .find loop/if/recur and closes. Each nine-pattern iteration or job callback and explicit replacement reduce fn retains header/body/close; five ordered replacement arguments remain data. Original/raw/DNA/count/changed initialized bindings and printf effects remain separate units. Actual Pattern import resolves standard JVM regex; no authored Java benchmark executor exists. Library execution does not waive the caller's application or whole support LOC.",
+      "complete_authored_source_bundle": [
+        "sources/clbg/regexredux/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "effective_physical_loc": 42,
+      "effective_normalized_loc": 80,
+      "unresolved": []
+    },
+    {
+      "id": "clojure-regexredux-optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/regexredux/optimized.clj",
+      "source_sha256": "83ebb599bd01e70b9165040b313c7fe4f8fafb90a4a32f08a6f90f426812a87b",
+      "physical_loc": 21,
+      "normalized_loc": 40,
+      "source_role": "application",
+      "metric_ref": {
+        "profile": "clojure-regexredux-optimized",
+        "source_bundle_index": 0
+      },
+      "status": "source-owner-meaning-reviewed-awaiting-guarded-seal",
+      "owner_review": "Pattern and replacement tables are literal data definitions. count-matches owns actual matcher initialization, .find loop/if/recur and closes. Each nine-pattern iteration or job callback and explicit replacement reduce fn retains header/body/close; five ordered replacement arguments remain data. Original/raw/DNA/count/changed initialized bindings and printf effects remain separate units. Actual Pattern import resolves standard JVM regex; no authored Java benchmark executor exists. Library execution does not waive the caller's application or whole support LOC.",
+      "complete_authored_source_bundle": [
+        "sources/clbg/regexredux/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "effective_physical_loc": 44,
+      "effective_normalized_loc": 86,
+      "unresolved": []
+    }
+  ],
+  "unresolved": [],
+  "peer_review_pending": false,
+  "source_only_peer_review": {
+    "reviewer": "/root/pony_completion",
+    "status": "accepted-all20-main-metrics-helper-effective-totals-and-selected-owner-facts",
+    "scope": "All20 actual replay main source hashes/physical/canonical/effective totals and shared23/46 helper; both corrected Nbody aliases; selected K doseq/callback separation, typed spectral aget and source/type-bound Pi BigInteger owners. Parent root retains peer message. No parser/hash/execution by reviewer.",
+    "canonical_admission_granted_by_peer": false
+  },
+  "canonical_LOC_admitted": false,
+  "chart_admission": false,
+  "source_or_raw_evidence_mutated": false,
+  "hash_or_parser_executed_by_author": false
+}

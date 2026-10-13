@@ -1,0 +1,13 @@
+{
+  "status": "completed-input-digests-captured",
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v3/report.json": "c683c6f669016eb70cd380455077c3589b8df86537ce448a655a40be44606ca3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/work-qualification/work-v5/report.json": "8ea18488e670034bcb8283a70e3671e0c629e3246128d394ceecc8e7855ab1e3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/work-qualification/work-v4/report.json": "c2660bcfc418092697c8af738cefa3057657f39ac0f81aae2b1fc328b70c190a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/prolog-comparison/20261013/proposals/private-v1.json": "5b9186bb51e748fe69b16dcd35a632dd9ed8556abdbc30cbab45159a36a1bf88",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/studies/binarytrees/remaining-eight-v1/report.json": "c24c7f84243c15e28e78dbe0ce2bd40282ba35079931dbb58df69130d19a4b79",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261012/regex-case-sensitive-v1/studies/full-v1/regexredux/report.json": "0329e11f98bf771b634c4947104d8c1ab35182f1440a6c49f30f6eb048f2b27f"
+  },
+  "common_timing_mutex_held": true,
+  "benchmark_runs": 0
+}

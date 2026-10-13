@@ -1,0 +1,35 @@
+{
+  "status": "passed",
+  "actual_common_mutex_held": true,
+  "inherited_common_mutex": true,
+  "suite": "owned-service",
+  "expected_ids": [
+    "test_owned_work_service.OwnedService.test_success_requires_bounded_reap_and_empty_group",
+    "test_owned_work_service.OwnedService.test_failed_group_kill_and_wait_preserve_bounded_receipt",
+    "test_owned_work_service.OwnedService.test_missing_live_identity_still_cleans_and_journals",
+    "test_owned_work_service.OwnedService.test_resource_observer_failure_after_journal_cleans_known_child"
+  ],
+  "discovered_ids": [
+    "test_owned_work_service.OwnedService.test_failed_group_kill_and_wait_preserve_bounded_receipt",
+    "test_owned_work_service.OwnedService.test_missing_live_identity_still_cleans_and_journals",
+    "test_owned_work_service.OwnedService.test_resource_observer_failure_after_journal_cleans_known_child",
+    "test_owned_work_service.OwnedService.test_success_requires_bounded_reap_and_empty_group"
+  ],
+  "started_ids": [
+    "test_owned_work_service.OwnedService.test_failed_group_kill_and_wait_preserve_bounded_receipt",
+    "test_owned_work_service.OwnedService.test_missing_live_identity_still_cleans_and_journals",
+    "test_owned_work_service.OwnedService.test_resource_observer_failure_after_journal_cleans_known_child",
+    "test_owned_work_service.OwnedService.test_success_requires_bounded_reap_and_empty_group"
+  ],
+  "expected_count": 4,
+  "tests_run": 4,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "expected_failures": 0,
+  "unexpected_successes": 0,
+  "raw_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v2/fixtures/owned-service/owned-service.log",
+  "raw_log_sha256": "838924a7c23fac655bc22454afc2b5c8a3f0b53419f3e86351d8f32496107a83",
+  "native_probes": 0,
+  "chart_admission": false
+}

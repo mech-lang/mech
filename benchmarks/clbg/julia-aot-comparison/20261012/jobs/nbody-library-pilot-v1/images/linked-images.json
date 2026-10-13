@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/usr/bin/otool",
+    "-L",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/nbody-library-pilot-v1/nbody-aot"
+  ],
+  "started_at": "2026-10-13T05:11:07.954980+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 68582,
+  "identity": {
+    "pid": 68582,
+    "process_listing": "Tue Oct 13 01:11:07 2026     /usr/bin/otool -L /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/nbody-library-pilot-v1/nbody-aot"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-13T05:11:07.970455+00:00",
+  "final_exit_status": 0
+}

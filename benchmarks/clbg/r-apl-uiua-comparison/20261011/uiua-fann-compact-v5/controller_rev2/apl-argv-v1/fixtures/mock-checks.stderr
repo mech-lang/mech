@@ -1,0 +1,18 @@
+test_a_qualified_sample_cannot_be_reset (__main__.ArgvChecks.test_a_qualified_sample_cannot_be_reset) ... ok
+test_actual_descriptor_fields_require_exact_pid_fd_device_inode_and_path (__main__.ArgvChecks.test_actual_descriptor_fields_require_exact_pid_fd_device_inode_and_path) ... ok
+test_all_five_remaining_numeric_and_stdin_contracts_are_checked (__main__.ArgvChecks.test_all_five_remaining_numeric_and_stdin_contracts_are_checked) ... ok
+test_audit_and_last_failed_attempt_must_match (__main__.ArgvChecks.test_audit_and_last_failed_attempt_must_match) ... ok
+test_failed_dispatch_cleans_only_known_waiter_with_bounded_waits (__main__.ArgvChecks.test_failed_dispatch_cleans_only_known_waiter_with_bounded_waits) ... ok
+test_frozen_guard_alias_order_and_sample_resume_are_reused (__main__.ArgvChecks.test_frozen_guard_alias_order_and_sample_resume_are_reused) ... ok
+test_high_descriptor_is_same_description_without_a_low_keeper (__main__.ArgvChecks.test_high_descriptor_is_same_description_without_a_low_keeper) ... ok
+test_missing_numeric_input_is_rejected_before_native_work (__main__.ArgvChecks.test_missing_numeric_input_is_rejected_before_native_work) ... ok
+test_only_argv_changes_and_all_failed_lineage_remains (__main__.ArgvChecks.test_only_argv_changes_and_all_failed_lineage_remains) ... ok
+test_other_failures_or_changed_commands_cannot_be_silently_repaired (__main__.ArgvChecks.test_other_failures_or_changed_commands_cannot_be_silently_repaired) ... ok
+test_remaining_stages_exclude_completed_r_mandel_and_uiua (__main__.ArgvChecks.test_remaining_stages_exclude_completed_r_mandel_and_uiua) ... ok
+test_stdin_requires_pinned_small_full_and_no_numeric_argument (__main__.ArgvChecks.test_stdin_requires_pinned_small_full_and_no_numeric_argument) ... ok
+test_worker_source_binary_and_placeholder_contracts_cannot_change (__main__.ArgvChecks.test_worker_source_binary_and_placeholder_contracts_cannot_change) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 0.006s
+
+OK

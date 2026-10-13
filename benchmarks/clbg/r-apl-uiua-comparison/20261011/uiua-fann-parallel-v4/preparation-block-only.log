@@ -1,0 +1,26 @@
+Waiting for common mutex before preparation, hashing or probes.
+ACQUIRED mutex for one bounded parallel/block qualification job.
+parallel 27 LOC 528a29d3bc3773bb792f93b9146c6aed203894b1a1899b9d66fe70dffb1f3312
+block 35 LOC e1a979a50218a32b1dbccd4214503e68baee95197e14166e1046912b1ac12203
+REUSED exact unchanged parallel27:64 outputs/5 traces/11 gates and v2:8 controls; no runtime repetition.
+block 1 COMPLETE n1..8 OUTPUT PASS
+block 2 COMPLETE n1..8 OUTPUT PASS
+block 3 COMPLETE n1..8 OUTPUT PASS
+block 4 COMPLETE n1..8 OUTPUT PASS
+block 5 COMPLETE n1..8 OUTPUT PASS
+block 6 COMPLETE n1..8 OUTPUT PASS
+block 7 COMPLETE n1..8 OUTPUT PASS
+block 8 COMPLETE n1..8 OUTPUT PASS
+block 2 8 RETURNED EVERY-RANK/FLIP TRACE PASS
+block 5 7 RETURNED EVERY-RANK/FLIP TRACE PASS
+block 6 7 RETURNED EVERY-RANK/FLIP TRACE PASS
+block 7 3 RETURNED EVERY-RANK/FLIP TRACE PASS
+block 8 8 RETURNED EVERY-RANK/FLIP TRACE PASS
+block ACTUAL 1..8 WORKER GATES PASS
+parallel-8 N9 PLANNING ONLY 2.2223427499411628
+block-8 N9 PLANNING ONLY 0.21326895896345377
+block-1 N9 PLANNING ONLY 0.9335884579923004
+SEALED /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-parallel-v4/manifest.json 231e3f950ed63a7e7f3e293d8f5e0aeebf68986247aeff9ad21426d34502828e
+fannkuchredux-uiua-parallel-parallel-v4 27 LOC 528a29d3bc3773bb792f93b9146c6aed203894b1a1899b9d66fe70dffb1f3312
+fannkuchredux-uiua-block-parallel-v4 35 LOC e1a979a50218a32b1dbccd4214503e68baee95197e14166e1046912b1ac12203
+ALL BOUNDED QUALIFICATION PASSED; no full run or frozen suite edits.

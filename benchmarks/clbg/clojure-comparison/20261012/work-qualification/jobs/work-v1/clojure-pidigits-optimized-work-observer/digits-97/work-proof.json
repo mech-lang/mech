@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "flags": {
+    "both_actual_extraction_divisions": true,
+    "accepted_and_rejected_recurrence": true,
+    "zero_digits_no_extraction": false
+  },
+  "actual_ordered_trace": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-pidigits-optimized-work-observer/digits-97/actual-work.jsonl",
+  "actual_ordered_trace_sha256": "425daedf65c28322907adf1b8229f9586fa4656fd4f11af5a7f3acec606fd76d",
+  "native_fd_evidence": null,
+  "source_sha256": "662acb3b82e322dd3dbee7eeae4182659f18f370040b539ed6ff165dae724bb3",
+  "original_scored_source_sha256": "1296ac776e823178a3f8214454b26fefca22d7e7fc69a315103864d3bb4f050b"
+}

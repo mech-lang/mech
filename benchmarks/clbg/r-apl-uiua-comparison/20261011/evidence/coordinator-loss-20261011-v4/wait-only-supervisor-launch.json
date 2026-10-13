@@ -1,0 +1,12 @@
+{
+  "pid": 30544,
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/supervise_v4.py",
+    "--orphan-pid",
+    "25078"
+  ],
+  "detached_session": true,
+  "log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/coordinator-v4/supervisor.log"
+}

@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "benchmark": "binarytrees",
+  "variant": "compact",
+  "n": 6,
+  "actual_roots": 83,
+  "temporary_roots": 80,
+  "actual_nodes_traversed": 4525,
+  "distinct_nodes_and_leaves_per_root": true,
+  "retained_root_and_all_edges_identical": true,
+  "temporary_graphs_disjoint_from_live_retained_graph": true,
+  "complete_stdout_match": true,
+  "creator_check_and_node_declaration_unchanged": true,
+  "temporary_address_reuse_between_different_roots_allowed": true,
+  "observer_retains_no_extra_node_objects": true,
+  "full_workload": false,
+  "never_chart_eligible": true,
+  "scored_samples": 0,
+  "case": "nodes-6",
+  "source_sha256": "24b173a1d2f978f2e89d6deb6a40e3c3e564b2684071ec070ab899916d7faa86",
+  "trace_source_sha256": "02253a2b44adbbf23a23fb809d63713b6a02eb841cdf024098bc88e40a38cbab",
+  "attempt": 1
+}

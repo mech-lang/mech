@@ -1,0 +1,1151 @@
+{
+  "status": "source-drafts-unbuilt-unqualified",
+  "report_only": true,
+  "chart_admission": false,
+  "v_release": "0.5.2",
+  "v_source_ref": "7647ce1c6fad63b5578bc07883139906de74b2f8",
+  "canonical_normalization": "Pending root-owned common rule: count written headers/closures; split independent executable bindings; data and opening-only delimiters remain structural.",
+  "profiles": [
+    {
+      "id": "v-nbody-optimized",
+      "benchmark": "nbody",
+      "variant": "optimized",
+      "role": "optimized",
+      "source": "sources/nbody/optimized.v",
+      "source_sha256": null,
+      "loc": null,
+      "loc_status": "pending canonical normalization under common mutex",
+      "status": "authored-unbuilt-unqualified",
+      "provenance": {
+        "kind": "adapted-published-source",
+        "upstream": "upstream/hanabi/bench/algorithm/nbody/1.v",
+        "upstream_repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0"
+      },
+      "technique": "Published cached scalar body fields, fixed five-body loop and mass-scaled velocity updates.",
+      "library": "V standard library",
+      "required_work": {
+        "steps": "argument",
+        "bodies": 5,
+        "unordered_pairs_per_step": 10,
+        "energy_before_after": true,
+        "approximate_reciprocal": false
+      },
+      "algorithm": {
+        "status": "source-draft-awaiting-independent-review",
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Published cached scalar body fields, fixed five-body loop and mass-scaled velocity updates.",
+        "required_work": {
+          "steps": "argument",
+          "bodies": 5,
+          "unordered_pairs_per_step": 10,
+          "energy_before_after": true,
+          "approximate_reciprocal": false
+        }
+      },
+      "native_benchmark_kernel": false,
+      "maximum_workers": 1,
+      "maximum_compute_workers": 1,
+      "compiler_flags": [
+        "-prod",
+        "-cc",
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-cflags",
+        "-O3 -march=native -ffp-contract=off"
+      ],
+      "chart_eligible": false,
+      "report_only": true
+    },
+    {
+      "id": "v-nbody-compact",
+      "benchmark": "nbody",
+      "variant": "compact",
+      "role": "compact",
+      "source": "sources/nbody/compact.v",
+      "source_sha256": null,
+      "loc": null,
+      "loc_status": "pending canonical normalization under common mutex",
+      "status": "authored-unbuilt-unqualified",
+      "provenance": {
+        "kind": "adapted-published-source",
+        "upstream": "upstream/hanabi/bench/algorithm/nbody/1.v",
+        "upstream_repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0"
+      },
+      "technique": "Ordinary matrix body state and coordinate loops, exact square roots/divisions.",
+      "library": "V standard library",
+      "required_work": {
+        "steps": "argument",
+        "bodies": 5,
+        "unordered_pairs_per_step": 10,
+        "energy_before_after": true,
+        "approximate_reciprocal": false
+      },
+      "algorithm": {
+        "status": "source-draft-awaiting-independent-review",
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Ordinary matrix body state and coordinate loops, exact square roots/divisions.",
+        "required_work": {
+          "steps": "argument",
+          "bodies": 5,
+          "unordered_pairs_per_step": 10,
+          "energy_before_after": true,
+          "approximate_reciprocal": false
+        }
+      },
+      "native_benchmark_kernel": false,
+      "maximum_workers": 1,
+      "maximum_compute_workers": 1,
+      "compiler_flags": [
+        "-prod",
+        "-cc",
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-cflags",
+        "-O3 -march=native -ffp-contract=off"
+      ],
+      "chart_eligible": false,
+      "report_only": true
+    },
+    {
+      "id": "v-mandelbrot-compact",
+      "benchmark": "mandelbrot",
+      "variant": "compact",
+      "role": "compact",
+      "source": "sources/mandelbrot/compact.v",
+      "source_sha256": null,
+      "loc": null,
+      "loc_status": "pending canonical normalization under common mutex",
+      "status": "authored-unbuilt-unqualified",
+      "provenance": {
+        "kind": "locally-authored-V",
+        "upstream": null,
+        "upstream_repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0"
+      },
+      "technique": "Scalar escape loop and exact-width PBM including zero padding bits.",
+      "library": "V standard library",
+      "required_work": {
+        "width": "argument",
+        "height": "argument",
+        "iterations": 50,
+        "complete_pbm": true,
+        "round_dimensions": false,
+        "md5_only": false
+      },
+      "algorithm": {
+        "status": "source-draft-awaiting-independent-review",
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Scalar escape loop and exact-width PBM including zero padding bits.",
+        "required_work": {
+          "width": "argument",
+          "height": "argument",
+          "iterations": 50,
+          "complete_pbm": true,
+          "round_dimensions": false,
+          "md5_only": false
+        }
+      },
+      "native_benchmark_kernel": false,
+      "maximum_workers": 1,
+      "maximum_compute_workers": 1,
+      "compiler_flags": [
+        "-prod",
+        "-cc",
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-cflags",
+        "-O3 -march=native -ffp-contract=off"
+      ],
+      "chart_eligible": false,
+      "report_only": true
+    },
+    {
+      "id": "v-mandelbrot-optimized",
+      "benchmark": "mandelbrot",
+      "variant": "optimized",
+      "role": "optimized",
+      "source": "sources/mandelbrot/optimized.v",
+      "source_sha256": null,
+      "loc": null,
+      "loc_status": "pending canonical normalization under common mutex",
+      "status": "authored-unbuilt-unqualified",
+      "provenance": {
+        "kind": "adapted-published-source",
+        "upstream": "upstream/hanabi/bench/algorithm/mandelbrot/1.v",
+        "upstream_repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0"
+      },
+      "technique": "Eight ordinary V row workers and uniform fixed eight-lane arithmetic with five-iteration escape checks as in the published source; exact PBM/tails replace MD5 and rounded dimensions.",
+      "library": "V standard library",
+      "required_work": {
+        "width": "argument",
+        "height": "argument",
+        "iterations": 50,
+        "complete_pbm": true,
+        "round_dimensions": false,
+        "md5_only": false
+      },
+      "algorithm": {
+        "status": "source-draft-awaiting-independent-review",
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Eight ordinary V row workers and uniform fixed eight-lane arithmetic with five-iteration escape checks as in the published source; exact PBM/tails replace MD5 and rounded dimensions.",
+        "required_work": {
+          "width": "argument",
+          "height": "argument",
+          "iterations": 50,
+          "complete_pbm": true,
+          "round_dimensions": false,
+          "md5_only": false
+        }
+      },
+      "native_benchmark_kernel": false,
+      "maximum_workers": 8,
+      "maximum_compute_workers": 8,
+      "compiler_flags": [
+        "-prod",
+        "-cc",
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-cflags",
+        "-O3 -march=native -ffp-contract=off"
+      ],
+      "chart_eligible": false,
+      "report_only": true
+    },
+    {
+      "id": "v-spectralnorm-compact",
+      "benchmark": "spectralnorm",
+      "variant": "compact",
+      "role": "compact",
+      "source": "sources/spectralnorm/compact.v",
+      "source_sha256": null,
+      "loc": null,
+      "loc_status": "pending canonical normalization under common mutex",
+      "status": "authored-unbuilt-unqualified",
+      "provenance": {
+        "kind": "adapted-published-source",
+        "upstream": "upstream/hanabi/bench/algorithm/spectral-norm/1.v",
+        "upstream_repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0"
+      },
+      "technique": "One implicit-matrix application with transpose flag and no materialized matrix.",
+      "library": "V standard library",
+      "required_work": {
+        "size": "argument",
+        "power_iterations": 10,
+        "implicit_matrix_products": 40,
+        "cache_matrix": false
+      },
+      "algorithm": {
+        "status": "source-draft-awaiting-independent-review",
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "One implicit-matrix application with transpose flag and no materialized matrix.",
+        "required_work": {
+          "size": "argument",
+          "power_iterations": 10,
+          "implicit_matrix_products": 40,
+          "cache_matrix": false
+        }
+      },
+      "native_benchmark_kernel": false,
+      "maximum_workers": 1,
+      "maximum_compute_workers": 1,
+      "compiler_flags": [
+        "-prod",
+        "-cc",
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-cflags",
+        "-O3 -march=native -ffp-contract=off"
+      ],
+      "chart_eligible": false,
+      "report_only": true
+    },
+    {
+      "id": "v-spectralnorm-optimized",
+      "benchmark": "spectralnorm",
+      "variant": "optimized",
+      "role": "optimized",
+      "source": "sources/spectralnorm/optimized.v",
+      "source_sha256": null,
+      "loc": null,
+      "loc_status": "pending canonical normalization under common mutex",
+      "status": "authored-unbuilt-unqualified",
+      "provenance": {
+        "kind": "locally-authored-V",
+        "upstream": null,
+        "upstream_repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0"
+      },
+      "technique": "Eight row workers, exact denominator recurrence and four independent accumulation chains with complete scalar tails.",
+      "library": "V standard library",
+      "required_work": {
+        "size": "argument",
+        "power_iterations": 10,
+        "implicit_matrix_products": 40,
+        "cache_matrix": false
+      },
+      "algorithm": {
+        "status": "source-draft-awaiting-independent-review",
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Eight row workers, exact denominator recurrence and four independent accumulation chains with complete scalar tails.",
+        "required_work": {
+          "size": "argument",
+          "power_iterations": 10,
+          "implicit_matrix_products": 40,
+          "cache_matrix": false
+        }
+      },
+      "native_benchmark_kernel": false,
+      "maximum_workers": 8,
+      "maximum_compute_workers": 8,
+      "compiler_flags": [
+        "-prod",
+        "-cc",
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-cflags",
+        "-O3 -march=native -ffp-contract=off"
+      ],
+      "chart_eligible": false,
+      "report_only": true
+    },
+    {
+      "id": "v-binarytrees-compact",
+      "benchmark": "binarytrees",
+      "variant": "compact",
+      "role": "compact",
+      "source": "sources/binarytrees/compact.v",
+      "source_sha256": null,
+      "loc": null,
+      "loc_status": "pending canonical normalization under common mutex",
+      "status": "authored-unbuilt-unqualified",
+      "provenance": {
+        "kind": "adapted-published-source",
+        "upstream": "upstream/hanabi/bench/algorithm/binarytrees/1.v",
+        "upstream_repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0"
+      },
+      "technique": "Distinct heap Node objects for all internal nodes and leaves; scoped stretch lifetime and retained long-lived root.",
+      "library": "V standard library",
+      "required_work": {
+        "depth": "argument",
+        "minimum_max_depth": 6,
+        "minimum_depth": 4,
+        "per_node_heap_allocation": true,
+        "distinct_leaves": true,
+        "long_root_retained": true
+      },
+      "algorithm": {
+        "status": "source-draft-awaiting-independent-review",
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Distinct heap Node objects for all internal nodes and leaves; scoped stretch lifetime and retained long-lived root.",
+        "required_work": {
+          "depth": "argument",
+          "minimum_max_depth": 6,
+          "minimum_depth": 4,
+          "per_node_heap_allocation": true,
+          "distinct_leaves": true,
+          "long_root_retained": true
+        }
+      },
+      "native_benchmark_kernel": false,
+      "maximum_workers": 1,
+      "maximum_compute_workers": 1,
+      "compiler_flags": [
+        "-prod",
+        "-cc",
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-cflags",
+        "-O3 -march=native -ffp-contract=off"
+      ],
+      "chart_eligible": false,
+      "report_only": true
+    },
+    {
+      "id": "v-binarytrees-optimized",
+      "benchmark": "binarytrees",
+      "variant": "optimized",
+      "role": "optimized",
+      "source": "sources/binarytrees/optimized.v",
+      "source_sha256": null,
+      "loc": null,
+      "loc_status": "pending canonical normalization under common mutex",
+      "status": "authored-unbuilt-unqualified",
+      "provenance": {
+        "kind": "locally-authored-V",
+        "upstream": null,
+        "upstream_repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0"
+      },
+      "technique": "At most eight standard V depth workers, ordered result joins; identical actual Node allocations and traversals.",
+      "library": "V standard library",
+      "required_work": {
+        "depth": "argument",
+        "minimum_max_depth": 6,
+        "minimum_depth": 4,
+        "per_node_heap_allocation": true,
+        "distinct_leaves": true,
+        "long_root_retained": true
+      },
+      "algorithm": {
+        "status": "source-draft-awaiting-independent-review",
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "At most eight standard V depth workers, ordered result joins; identical actual Node allocations and traversals.",
+        "required_work": {
+          "depth": "argument",
+          "minimum_max_depth": 6,
+          "minimum_depth": 4,
+          "per_node_heap_allocation": true,
+          "distinct_leaves": true,
+          "long_root_retained": true
+        }
+      },
+      "native_benchmark_kernel": false,
+      "maximum_workers": 8,
+      "maximum_compute_workers": 8,
+      "compiler_flags": [
+        "-prod",
+        "-cc",
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-cflags",
+        "-O3 -march=native -ffp-contract=off"
+      ],
+      "chart_eligible": false,
+      "report_only": true
+    },
+    {
+      "id": "v-fannkuchredux-compact",
+      "benchmark": "fannkuchredux",
+      "variant": "compact",
+      "role": "compact",
+      "source": "sources/fannkuchredux/compact.v",
+      "source_sha256": null,
+      "loc": null,
+      "loc_status": "pending canonical normalization under common mutex",
+      "status": "authored-unbuilt-unqualified",
+      "provenance": {
+        "kind": "adapted-published-source",
+        "upstream": "upstream/hanabi/bench/algorithm/fannkuch-redux/1.v",
+        "upstream_repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0"
+      },
+      "technique": "Published fixed arrays and sequential permutation rotations; every actual prefix reversal and checksum sign.",
+      "library": "V standard library",
+      "required_work": {
+        "size": "argument",
+        "canonical_n": 12,
+        "permutations": 479001600,
+        "global_rank_parity": true,
+        "actual_prefix_flips": true
+      },
+      "algorithm": {
+        "status": "source-draft-awaiting-independent-review",
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Published fixed arrays and sequential permutation rotations; every actual prefix reversal and checksum sign.",
+        "required_work": {
+          "size": "argument",
+          "canonical_n": 12,
+          "permutations": 479001600,
+          "global_rank_parity": true,
+          "actual_prefix_flips": true
+        }
+      },
+      "native_benchmark_kernel": false,
+      "maximum_workers": 1,
+      "maximum_compute_workers": 1,
+      "compiler_flags": [
+        "-prod",
+        "-cc",
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-cflags",
+        "-O3 -march=native -ffp-contract=off"
+      ],
+      "chart_eligible": false,
+      "report_only": true
+    },
+    {
+      "id": "v-fannkuchredux-optimized",
+      "benchmark": "fannkuchredux",
+      "variant": "optimized",
+      "role": "optimized",
+      "source": "sources/fannkuchredux/optimized.v",
+      "source_sha256": null,
+      "loc": null,
+      "loc_status": "pending canonical normalization under common mutex",
+      "status": "authored-unbuilt-unqualified",
+      "provenance": {
+        "kind": "locally-authored-V",
+        "upstream": null,
+        "upstream_repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0"
+      },
+      "technique": "Eight contiguous global-rank ranges, descending-width factoradic initialization, ordinary fixed-array rotations and actual flips.",
+      "library": "V standard library",
+      "required_work": {
+        "size": "argument",
+        "canonical_n": 12,
+        "permutations": 479001600,
+        "global_rank_parity": true,
+        "actual_prefix_flips": true,
+        "permutation_cache": false,
+        "flip_cache": false
+      },
+      "algorithm": {
+        "status": "source-draft-awaiting-independent-review",
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Eight contiguous global-rank ranges, descending-width factoradic initialization, ordinary fixed-array rotations and actual flips.",
+        "required_work": {
+          "size": "argument",
+          "canonical_n": 12,
+          "permutations": 479001600,
+          "global_rank_parity": true,
+          "actual_prefix_flips": true,
+          "permutation_cache": false,
+          "flip_cache": false
+        }
+      },
+      "native_benchmark_kernel": false,
+      "maximum_workers": 8,
+      "maximum_compute_workers": 8,
+      "compiler_flags": [
+        "-prod",
+        "-cc",
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-cflags",
+        "-O3 -march=native -ffp-contract=off"
+      ],
+      "chart_eligible": false,
+      "report_only": true
+    },
+    {
+      "id": "v-pidigits-compact",
+      "benchmark": "pidigits",
+      "variant": "compact",
+      "role": "compact",
+      "source": "sources/pidigits/compact.v",
+      "source_sha256": null,
+      "loc": null,
+      "loc_status": "pending canonical normalization under common mutex",
+      "status": "authored-unbuilt-unqualified",
+      "provenance": {
+        "kind": "locally-authored-V",
+        "upstream": null,
+        "upstream_repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0"
+      },
+      "technique": "Pure V standard math.big LFT with both explicit exact endpoint numerators/divisions for every tested candidate.",
+      "library": "V math.big (pure V arbitrary precision)",
+      "required_work": {
+        "digits": "argument",
+        "canonical_n": 10000,
+        "exact_extracts_per_candidate": 2,
+        "sequential_spigot": true,
+        "output_tail_and_count": true,
+        "zero_digits_empty": true
+      },
+      "algorithm": {
+        "status": "source-draft-awaiting-independent-review",
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Pure V standard math.big LFT with both explicit exact endpoint numerators/divisions for every tested candidate.",
+        "required_work": {
+          "digits": "argument",
+          "canonical_n": 10000,
+          "exact_extracts_per_candidate": 2,
+          "sequential_spigot": true,
+          "output_tail_and_count": true,
+          "zero_digits_empty": true
+        }
+      },
+      "native_benchmark_kernel": false,
+      "maximum_workers": 1,
+      "maximum_compute_workers": 1,
+      "compiler_flags": [
+        "-prod",
+        "-cc",
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-cflags",
+        "-O3 -march=native -ffp-contract=off"
+      ],
+      "chart_eligible": false,
+      "report_only": true
+    },
+    {
+      "id": "v-pidigits-optimized",
+      "benchmark": "pidigits",
+      "variant": "optimized",
+      "role": "optimized",
+      "source": "sources/pidigits/optimized.v",
+      "source_sha256": null,
+      "loc": null,
+      "loc_status": "pending canonical normalization under common mutex",
+      "status": "authored-unbuilt-unqualified",
+      "provenance": {
+        "kind": "adapted-published-source",
+        "upstream": "upstream/hanabi/bench/algorithm/pidigits/2.v",
+        "upstream_repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0"
+      },
+      "technique": "Published endpoint-numerator basis avoids rebuilding3q+r and4q+r each test; both divisions still execute.",
+      "library": "V math.big (pure V arbitrary precision)",
+      "required_work": {
+        "digits": "argument",
+        "canonical_n": 10000,
+        "exact_extracts_per_candidate": 2,
+        "sequential_spigot": true,
+        "output_tail_and_count": true,
+        "zero_digits_empty": true
+      },
+      "algorithm": {
+        "status": "source-draft-awaiting-independent-review",
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Published endpoint-numerator basis avoids rebuilding3q+r and4q+r each test; both divisions still execute.",
+        "required_work": {
+          "digits": "argument",
+          "canonical_n": 10000,
+          "exact_extracts_per_candidate": 2,
+          "sequential_spigot": true,
+          "output_tail_and_count": true,
+          "zero_digits_empty": true
+        }
+      },
+      "native_benchmark_kernel": false,
+      "maximum_workers": 1,
+      "maximum_compute_workers": 1,
+      "compiler_flags": [
+        "-prod",
+        "-cc",
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-cflags",
+        "-O3 -march=native -ffp-contract=off"
+      ],
+      "chart_eligible": false,
+      "report_only": true
+    },
+    {
+      "id": "v-pidigits-published-package",
+      "benchmark": "pidigits",
+      "variant": "published-package",
+      "role": "published-package",
+      "source": "sources/pidigits/published-package.v",
+      "source_sha256": null,
+      "loc": null,
+      "loc_status": "pending canonical normalization under common mutex",
+      "status": "authored-unbuilt-unqualified",
+      "provenance": {
+        "kind": "adapted-published-source",
+        "upstream": "upstream/hanabi/bench/algorithm/pidigits/1.v",
+        "upstream_repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0"
+      },
+      "technique": "Optional separately labelled published general biginteger library using the same two-extract endpoint basis; not admitted until its implementation/package pins are reviewed.",
+      "library": "hanabi1224.biginteger \u2014 public pure-V32-bit-limb library (separate profile)",
+      "required_work": {
+        "digits": "argument",
+        "canonical_n": 10000,
+        "exact_extracts_per_candidate": 2,
+        "sequential_spigot": true,
+        "output_tail_and_count": true,
+        "zero_digits_empty": true
+      },
+      "algorithm": {
+        "status": "source-draft-awaiting-independent-review",
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Optional separately labelled published general biginteger library using the same two-extract endpoint basis; not admitted until its implementation/package pins are reviewed.",
+        "required_work": {
+          "digits": "argument",
+          "canonical_n": 10000,
+          "exact_extracts_per_candidate": 2,
+          "sequential_spigot": true,
+          "output_tail_and_count": true,
+          "zero_digits_empty": true
+        }
+      },
+      "native_benchmark_kernel": false,
+      "maximum_workers": 1,
+      "maximum_compute_workers": 1,
+      "compiler_flags": [
+        "-prod",
+        "-cc",
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-cflags",
+        "-O3 -march=native -ffp-contract=off"
+      ],
+      "chart_eligible": false,
+      "report_only": true,
+      "library_provenance": {
+        "repository": "https://github.com/hanabi1224/vlang-big-integer",
+        "commit": "dae1213e3b7576b40bf84a5c45a25748a74ef3c0",
+        "original_sources": "upstream/vlang-big-integer",
+        "compatibility_status": "unbuilt; old option/error syntax needs release compatibility review"
+      }
+    },
+    {
+      "id": "v-fasta-compact",
+      "benchmark": "fasta",
+      "variant": "compact",
+      "role": "compact",
+      "source": "sources/fasta/compact.v",
+      "source_sha256": null,
+      "loc": null,
+      "loc_status": "pending canonical normalization under common mutex",
+      "status": "authored-unbuilt-unqualified",
+      "provenance": {
+        "kind": "adapted-published-source",
+        "upstream": "upstream/hanabi/bench/algorithm/fasta/1.v",
+        "upstream_repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0"
+      },
+      "technique": "Explicit ordered binary64 CDFs, complete60-column output, corrected exact-repeat termination and seed carry between random records.",
+      "library": "V standard library",
+      "required_work": {
+        "size": "argument",
+        "repeat_bases": "2n",
+        "iub_bases": "3n",
+        "human_bases": "5n",
+        "binary64_cdf": true,
+        "integer_scaled_cdf": false,
+        "seed_carry": true,
+        "complete_output": true
+      },
+      "algorithm": {
+        "status": "source-draft-awaiting-independent-review",
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Explicit ordered binary64 CDFs, complete60-column output, corrected exact-repeat termination and seed carry between random records.",
+        "required_work": {
+          "size": "argument",
+          "repeat_bases": "2n",
+          "iub_bases": "3n",
+          "human_bases": "5n",
+          "binary64_cdf": true,
+          "integer_scaled_cdf": false,
+          "seed_carry": true,
+          "complete_output": true
+        }
+      },
+      "native_benchmark_kernel": false,
+      "maximum_workers": 1,
+      "maximum_compute_workers": 1,
+      "compiler_flags": [
+        "-prod",
+        "-cc",
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-cflags",
+        "-O3 -march=native -ffp-contract=off"
+      ],
+      "chart_eligible": false,
+      "report_only": true
+    },
+    {
+      "id": "v-fasta-optimized",
+      "benchmark": "fasta",
+      "variant": "optimized",
+      "role": "optimized",
+      "source": "sources/fasta/optimized.v",
+      "source_sha256": null,
+      "loc": null,
+      "loc_status": "pending canonical normalization under common mutex",
+      "status": "authored-unbuilt-unqualified",
+      "provenance": {
+        "kind": "locally-authored-V",
+        "upstream": null,
+        "upstream_repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0"
+      },
+      "technique": "Bounded output buffers, wrap counter replacing repeat modulo and binary search over exact binary64 cumulative probabilities.",
+      "library": "V standard library",
+      "required_work": {
+        "size": "argument",
+        "repeat_bases": "2n",
+        "iub_bases": "3n",
+        "human_bases": "5n",
+        "binary64_cdf": true,
+        "integer_scaled_cdf": false,
+        "seed_carry": true,
+        "complete_output": true
+      },
+      "algorithm": {
+        "status": "source-draft-awaiting-independent-review",
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Bounded output buffers, wrap counter replacing repeat modulo and binary search over exact binary64 cumulative probabilities.",
+        "required_work": {
+          "size": "argument",
+          "repeat_bases": "2n",
+          "iub_bases": "3n",
+          "human_bases": "5n",
+          "binary64_cdf": true,
+          "integer_scaled_cdf": false,
+          "seed_carry": true,
+          "complete_output": true
+        }
+      },
+      "native_benchmark_kernel": false,
+      "maximum_workers": 1,
+      "maximum_compute_workers": 1,
+      "compiler_flags": [
+        "-prod",
+        "-cc",
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-cflags",
+        "-O3 -march=native -ffp-contract=off"
+      ],
+      "chart_eligible": false,
+      "report_only": true
+    },
+    {
+      "id": "v-revcomp-compact",
+      "benchmark": "revcomp",
+      "variant": "compact",
+      "role": "compact",
+      "source": "sources/revcomp/compact.v",
+      "source_sha256": null,
+      "loc": null,
+      "loc_status": "pending canonical normalization under common mutex",
+      "status": "authored-unbuilt-unqualified",
+      "provenance": {
+        "kind": "locally-authored-V",
+        "upstream": null,
+        "upstream_repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0"
+      },
+      "technique": "Complete FASTA records, case-insensitive IUPAC complement and60-column output.",
+      "library": "V standard library",
+      "required_work": {
+        "stdin_fasta": true,
+        "all_records": true,
+        "iupac": true,
+        "wrap_columns": 60,
+        "complete_output": true
+      },
+      "algorithm": {
+        "status": "source-draft-awaiting-independent-review",
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete FASTA records, case-insensitive IUPAC complement and60-column output.",
+        "required_work": {
+          "stdin_fasta": true,
+          "all_records": true,
+          "iupac": true,
+          "wrap_columns": 60,
+          "complete_output": true
+        }
+      },
+      "native_benchmark_kernel": false,
+      "maximum_workers": 1,
+      "maximum_compute_workers": 1,
+      "compiler_flags": [
+        "-prod",
+        "-cc",
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-cflags",
+        "-O3 -march=native -ffp-contract=off"
+      ],
+      "chart_eligible": false,
+      "report_only": true
+    },
+    {
+      "id": "v-revcomp-optimized",
+      "benchmark": "revcomp",
+      "variant": "optimized",
+      "role": "optimized",
+      "source": "sources/revcomp/optimized.v",
+      "source_sha256": null,
+      "loc": null,
+      "loc_status": "pending canonical normalization under common mutex",
+      "status": "authored-unbuilt-unqualified",
+      "provenance": {
+        "kind": "locally-authored-V",
+        "upstream": null,
+        "upstream_repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0"
+      },
+      "technique": "Byte-oriented FASTA parser, general256-byte IUPAC table and in-place reversal, bulk wrapped output.",
+      "library": "V standard library",
+      "required_work": {
+        "stdin_fasta": true,
+        "all_records": true,
+        "iupac": true,
+        "wrap_columns": 60,
+        "complete_output": true
+      },
+      "algorithm": {
+        "status": "source-draft-awaiting-independent-review",
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Byte-oriented FASTA parser, general256-byte IUPAC table and in-place reversal, bulk wrapped output.",
+        "required_work": {
+          "stdin_fasta": true,
+          "all_records": true,
+          "iupac": true,
+          "wrap_columns": 60,
+          "complete_output": true
+        }
+      },
+      "native_benchmark_kernel": false,
+      "maximum_workers": 1,
+      "maximum_compute_workers": 1,
+      "compiler_flags": [
+        "-prod",
+        "-cc",
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-cflags",
+        "-O3 -march=native -ffp-contract=off"
+      ],
+      "chart_eligible": false,
+      "report_only": true
+    },
+    {
+      "id": "v-knucleotide-compact",
+      "benchmark": "knucleotide",
+      "variant": "compact",
+      "role": "compact",
+      "source": "sources/knucleotide/compact.v",
+      "source_sha256": null,
+      "loc": null,
+      "loc_status": "pending canonical normalization under common mutex",
+      "status": "authored-unbuilt-unqualified",
+      "provenance": {
+        "kind": "locally-authored-V",
+        "upstream": null,
+        "upstream_repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0"
+      },
+      "technique": "Seven independent growable string-key maps, visiting every overlapping window for every required length.",
+      "library": "V standard library",
+      "required_work": {
+        "target_record": "THREE",
+        "lengths": [
+          1,
+          2,
+          3,
+          4,
+          6,
+          12,
+          18
+        ],
+        "all_windows": true,
+        "growable_maps": 7,
+        "small_tables_are_maps": true,
+        "query_shortcuts": false
+      },
+      "algorithm": {
+        "status": "source-draft-awaiting-independent-review",
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Seven independent growable string-key maps, visiting every overlapping window for every required length.",
+        "required_work": {
+          "target_record": "THREE",
+          "lengths": [
+            1,
+            2,
+            3,
+            4,
+            6,
+            12,
+            18
+          ],
+          "all_windows": true,
+          "growable_maps": 7,
+          "small_tables_are_maps": true,
+          "query_shortcuts": false
+        }
+      },
+      "native_benchmark_kernel": false,
+      "maximum_workers": 1,
+      "maximum_compute_workers": 1,
+      "compiler_flags": [
+        "-prod",
+        "-cc",
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-cflags",
+        "-O3 -march=native -ffp-contract=off"
+      ],
+      "chart_eligible": false,
+      "report_only": true
+    },
+    {
+      "id": "v-knucleotide-optimized",
+      "benchmark": "knucleotide",
+      "variant": "optimized",
+      "role": "optimized",
+      "source": "sources/knucleotide/optimized.v",
+      "source_sha256": null,
+      "loc": null,
+      "loc_status": "pending canonical normalization under common mutex",
+      "status": "authored-unbuilt-unqualified",
+      "provenance": {
+        "kind": "locally-authored-V",
+        "upstream": null,
+        "upstream_repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0"
+      },
+      "technique": "Seven ordinary map workers with rolling2-bit keys and exact all-window growable maps, including lengths1/2; decode only output keys.",
+      "library": "V standard library",
+      "required_work": {
+        "target_record": "THREE",
+        "lengths": [
+          1,
+          2,
+          3,
+          4,
+          6,
+          12,
+          18
+        ],
+        "all_windows": true,
+        "growable_maps": 7,
+        "small_tables_are_maps": true,
+        "query_shortcuts": false,
+        "maximum_compute_workers": 7
+      },
+      "algorithm": {
+        "status": "source-draft-awaiting-independent-review",
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Seven ordinary map workers with rolling2-bit keys and exact all-window growable maps, including lengths1/2; decode only output keys.",
+        "required_work": {
+          "target_record": "THREE",
+          "lengths": [
+            1,
+            2,
+            3,
+            4,
+            6,
+            12,
+            18
+          ],
+          "all_windows": true,
+          "growable_maps": 7,
+          "small_tables_are_maps": true,
+          "query_shortcuts": false,
+          "maximum_compute_workers": 7
+        }
+      },
+      "native_benchmark_kernel": false,
+      "maximum_workers": 7,
+      "maximum_compute_workers": 7,
+      "compiler_flags": [
+        "-prod",
+        "-cc",
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-cflags",
+        "-O3 -march=native -ffp-contract=off"
+      ],
+      "chart_eligible": false,
+      "report_only": true
+    },
+    {
+      "id": "v-regexredux-compact",
+      "benchmark": "regexredux",
+      "variant": "compact",
+      "role": "compact",
+      "source": "sources/regexredux/compact.v",
+      "source_sha256": null,
+      "loc": null,
+      "loc_status": "pending canonical normalization under common mutex",
+      "status": "authored-unbuilt-unqualified",
+      "provenance": {
+        "kind": "adapted-published-source",
+        "upstream": "upstream/hanabi/bench/algorithm/regex-redux/1.v",
+        "upstream_repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0"
+      },
+      "technique": "Standard V regex implementation, stdin and explicit ordered replacement arrays replacing an implicit map order.",
+      "library": "V standard library",
+      "required_work": {
+        "stdin_fasta": true,
+        "count_patterns": 9,
+        "ordered_replacements": 5,
+        "complete_input": true,
+        "full_output": true
+      },
+      "algorithm": {
+        "status": "source-draft-awaiting-independent-review",
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Standard V regex implementation, stdin and explicit ordered replacement arrays replacing an implicit map order.",
+        "required_work": {
+          "stdin_fasta": true,
+          "count_patterns": 9,
+          "ordered_replacements": 5,
+          "complete_input": true,
+          "full_output": true
+        }
+      },
+      "native_benchmark_kernel": false,
+      "maximum_workers": 1,
+      "maximum_compute_workers": 1,
+      "compiler_flags": [
+        "-prod",
+        "-cc",
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-cflags",
+        "-O3 -march=native -ffp-contract=off"
+      ],
+      "chart_eligible": false,
+      "report_only": true
+    },
+    {
+      "id": "v-regexredux-optimized",
+      "benchmark": "regexredux",
+      "variant": "optimized",
+      "role": "optimized",
+      "source": "sources/regexredux/optimized.v",
+      "source_sha256": null,
+      "loc": null,
+      "loc_status": "pending canonical normalization under common mutex",
+      "status": "authored-unbuilt-unqualified",
+      "provenance": {
+        "kind": "locally-authored-V",
+        "upstream": null,
+        "upstream_repository": "https://github.com/hanabi1224/Programming-Language-Benchmarks",
+        "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0"
+      },
+      "technique": "Eight independent standard regex count workers plus ninth after joins; identical generic regex cleanup and all five sequential ordered replacements.",
+      "library": "V standard library",
+      "required_work": {
+        "stdin_fasta": true,
+        "count_patterns": 9,
+        "ordered_replacements": 5,
+        "complete_input": true,
+        "full_output": true
+      },
+      "algorithm": {
+        "status": "source-draft-awaiting-independent-review",
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Eight independent standard regex count workers plus ninth after joins; identical generic regex cleanup and all five sequential ordered replacements.",
+        "required_work": {
+          "stdin_fasta": true,
+          "count_patterns": 9,
+          "ordered_replacements": 5,
+          "complete_input": true,
+          "full_output": true
+        }
+      },
+      "native_benchmark_kernel": false,
+      "maximum_workers": 8,
+      "maximum_compute_workers": 8,
+      "compiler_flags": [
+        "-prod",
+        "-cc",
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-cflags",
+        "-O3 -march=native -ffp-contract=off"
+      ],
+      "chart_eligible": false,
+      "report_only": true
+    }
+  ]
+}

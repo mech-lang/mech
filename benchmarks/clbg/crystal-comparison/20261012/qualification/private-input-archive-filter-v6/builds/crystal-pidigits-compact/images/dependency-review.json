@@ -1,0 +1,22 @@
+{
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-input-archive-filter-v6/bin/crystal-pidigits-compact",
+  "architectures": [
+    "arm64"
+  ],
+  "dependencies": [
+    {
+      "install_name": "/opt/homebrew/opt/gmp/lib/libgmp.10.dylib",
+      "path": "/opt/homebrew/Cellar/gmp/6.3.0/lib/libgmp.10.dylib",
+      "lookup_path": "/opt/homebrew/opt/gmp/lib/libgmp.10.dylib",
+      "sha256": "571ffb9eb5b5110cda32f62197c1f039e5627d66524ba47bb0774eca184532b9"
+    },
+    {
+      "install_name": "/usr/lib/libSystem.B.dylib",
+      "scope": "OS-system-image-not-hashed"
+    },
+    {
+      "install_name": "/usr/lib/libiconv.2.dylib",
+      "scope": "OS-system-image-not-hashed"
+    }
+  ]
+}

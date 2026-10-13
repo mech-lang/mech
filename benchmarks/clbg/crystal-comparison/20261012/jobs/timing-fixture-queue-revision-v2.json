@@ -1,0 +1,9 @@
+{
+  "status": "owned-pre-lock-fixture-waiter-interrupted-for-source-change",
+  "pid": 28781,
+  "identity": "Mon Oct 12 16:19:02 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python benchmarks/clbg/crystal-comparison/20261012/studies/pipeline/test_full_study.py",
+  "signal": "SIGINT",
+  "reason": "Root requested genuine-source-failure continuation; queued Python had imported earlier draft and must not certify changed bytes.",
+  "native_benchmark_processes_started": 0,
+  "earlier_waiter_not_reused": true
+}

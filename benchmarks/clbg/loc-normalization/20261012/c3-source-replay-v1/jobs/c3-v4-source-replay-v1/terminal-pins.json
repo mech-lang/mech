@@ -1,0 +1,11 @@
+{
+  "status": "failed-terminal-evidence-retained",
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-source-replay-v1/jobs/c3-v4-source-replay-v1/terminal-error.json": "d7f47a030640f6b3339d7f734d9e9650360ad29f2c2b419f8b4d5e2d5a8d4c5c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-source-replay-v1/jobs/c3-v4-source-replay-v1/terminal-error.log": "3f41e69d8d05eac280a780ddd36c10a69713f43a0c250203547e7a340e4d8db1"
+  },
+  "exclusive_mutex_held": true,
+  "common_timing_mutex": "/tmp/mech-clbg-timing.lock",
+  "canonical_LOC_admitted": false,
+  "chart_admission": false
+}

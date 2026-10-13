@@ -1,0 +1,1382 @@
+{
+  "schema_version": 1,
+  "status": "static-bounded-proposal-not-executed-not-admitted",
+  "scope": "Current C#/Dart braced diagnostics only; frozen job11 untouched, original source bytes untouched. No benchmarks, imports, parser calls, hashes, tests, Git or jobs executed by this review. Metadata reads and bounded exact source-text reads only.",
+  "frozen_input": "jobs/boundary-audit-11/candidate-audit.json",
+  "static_inventory": {
+    "family_source_identities": 75,
+    "family_distinct_source_sha": 38,
+    "flagged_source_identities": 35,
+    "flagged_distinct_source_sha": 18,
+    "distinct_diagnostic_sites": 39,
+    "identity_diagnostic_registrations": 75,
+    "current_flagged_candidate_registrations": 35,
+    "current_diagnostic_registrations": 75,
+    "distinct_sites_by_kind": {
+      "foreign-complex-declaration-review": 18,
+      "foreign-pattern-switch-record-review": 5,
+      "foreign-complex-type-declaration-review": 5,
+      "foreign-generic-initializer-review": 7,
+      "foreign-callback-surrounding-expression-review": 2,
+      "foreign-ambiguous-brace-review": 2
+    }
+  },
+  "approved_parent_policy": "One C# using type alias definition unit; tuple component declarations are type/formal structure. Generic call/type arguments and named-call arguments structural without callee names. Scalar expression methods one unit. Pointer ownership requires builtin/source-local visible type proof, with shadows gated. Callback/chain surrounds remain gated.",
+  "files_drafted": [
+    "foreign_braced.py",
+    "test_foreign_braced.py"
+  ],
+  "fixture_methods": 46,
+  "added_fixture_methods": 18,
+  "new_metadata_fields": [
+    "source_type_owners",
+    "source_type_value_shadows",
+    "wrapped_declaration_owners"
+  ],
+  "implementation_limits": [
+    "Only bounded C# tuple type grammar; numeric/pattern/unknown-role tuple forms remain gated.",
+    "C# pointer base must be a builtin or exact visible source-local named type/alias; namespaces/uppercase spellings/external qualified names are not proof.",
+    "Duplicate/local/class-contained aliases retain explicit gates.",
+    "Only complete whole-statement declarator lists allow trailing row commas; initializer/literal physical wrapping is preserved.",
+    "Unproved generic initializer type syntax retains a gate.",
+    "Actual extra callback argument and then-chain remain gated.",
+    "No source/chart admission; parent must run immutable dependency snapshot and all fixtures/source reconciliation under common timing mutex.",
+    "Initial tuple destructuring requires its exact balanced group followed by assignment excluding =>; unknown tuple-return arrow method does not inherit assignment ownership."
+  ],
+  "sources": [
+    {
+      "source_sha256_from_frozen_job": "970cf62b15e5986fe68169d6ac92556b6cde985e8f80d7ddae782f869d929fb0",
+      "grammar_family": "csharp",
+      "source_identities": [
+        "970cf62b15e5986fe68169d6ac92556b6cde985e8f80d7ddae782f869d929fb0:csharp",
+        "970cf62b15e5986fe68169d6ac92556b6cde985e8f80d7ddae782f869d929fb0:csharp-aot"
+      ],
+      "paths_from_frozen_job": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/binarytrees-csharpcore-3.cs"
+      ],
+      "baseline_normalized_loc": 56,
+      "diagnostics": [
+        {
+          "kind": "foreign-callback-surrounding-expression-review",
+          "offset": 1339,
+          "line": 39,
+          "column": 22,
+          "source_text": "                    },",
+          "bounded_context": [
+            {
+              "line": 38,
+              "text": "                            (TreeNode.bottomUpTree(depth)).itemCheck();"
+            },
+            {
+              "line": 39,
+              "text": "                    },"
+            },
+            {
+              "line": 40,
+              "text": "                    localCheck => Interlocked.Add(ref check, localCheck)"
+            }
+          ],
+          "decision": "retained-review-gate",
+          "ownership_plan": "Keep the diagnostic: the written source has another callback argument or a chained then callback, with no approved surrounding-expression count proof.",
+          "site_count_delta": "0 at this diagnostic site"
+        }
+      ],
+      "current_displayed_registrations": [
+        "binarytrees:binarytrees-csharpcore-3-jit",
+        "binarytrees:binarytrees-csharpcore-3-aot"
+      ],
+      "direct_source_count_decision": {
+        "delta": 0,
+        "whole_source_count_status": "reviewed diagnostic-site classification changes should preserve written units; whole-source qualification still required"
+      }
+    },
+    {
+      "source_sha256_from_frozen_job": "be3604348e0b2d0d7e48978e26753d758bac1425454d482c9141d3cecee8e44d",
+      "grammar_family": "csharp",
+      "source_identities": [
+        "be3604348e0b2d0d7e48978e26753d758bac1425454d482c9141d3cecee8e44d:csharp"
+      ],
+      "paths_from_frozen_job": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/binarytrees-csharpcore-7.cs"
+      ],
+      "baseline_normalized_loc": 56,
+      "diagnostics": [
+        {
+          "kind": "foreign-complex-declaration-review",
+          "offset": 547,
+          "line": 21,
+          "column": 1,
+          "source_text": "            \"\\t check: \", (bottomUpTree(maxDepth + 1)).itemCheck()));",
+          "bounded_context": [
+            {
+              "line": 20,
+              "text": "        Console.WriteLine(string.Concat(\"stretch tree of depth \", maxDepth + 1,"
+            },
+            {
+              "line": 21,
+              "text": "            \"\\t check: \", (bottomUpTree(maxDepth + 1)).itemCheck()));"
+            },
+            {
+              "line": 22,
+              "text": ""
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "Prove an ordinary declarator list, a scalar expression method, or full wrapped declaration; argument contexts do not enter declaration inference.",
+          "site_count_delta": "0 at this diagnostic site"
+        },
+        {
+          "kind": "foreign-generic-initializer-review",
+          "offset": 904,
+          "line": 31,
+          "column": 1,
+          "source_text": "            var tasks = new Task<int>[NoTasks];",
+          "bounded_context": [
+            {
+              "line": 30,
+              "text": "            int n = (1 << maxDepth - depth + MinDepth) / NoTasks;"
+            },
+            {
+              "line": 31,
+              "text": "            var tasks = new Task<int>[NoTasks];"
+            },
+            {
+              "line": 32,
+              "text": "            for (int t = 0; t < tasks.Length; t++)"
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "Protect a complete bounded type-argument list only when immediately attached to a generic call or new array owner; no callee-name contract.",
+          "site_count_delta": "0 at this diagnostic site"
+        },
+        {
+          "kind": "foreign-complex-declaration-review",
+          "offset": 1731,
+          "line": 52,
+          "column": 1,
+          "source_text": "            \"\\t check: \", longLivedTree.itemCheck()));",
+          "bounded_context": [
+            {
+              "line": 51,
+              "text": "        Console.WriteLine(string.Concat(\"long lived tree of depth \", maxDepth,"
+            },
+            {
+              "line": 52,
+              "text": "            \"\\t check: \", longLivedTree.itemCheck()));"
+            },
+            {
+              "line": 53,
+              "text": "    }"
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "Prove an ordinary declarator list, a scalar expression method, or full wrapped declaration; argument contexts do not enter declaration inference.",
+          "site_count_delta": "0 at this diagnostic site"
+        }
+      ],
+      "current_displayed_registrations": [
+        "binarytrees:binarytrees-csharpcore-7-jit"
+      ],
+      "direct_source_count_decision": {
+        "delta": 0,
+        "whole_source_count_status": "reviewed diagnostic-site classification changes should preserve written units; whole-source qualification still required"
+      }
+    },
+    {
+      "source_sha256_from_frozen_job": "5e68341ac5640b9bfc1b598d3fa8a2f582ebf66471811a4a4c9f8aac1a707cb5",
+      "grammar_family": "csharp",
+      "source_identities": [
+        "5e68341ac5640b9bfc1b598d3fa8a2f582ebf66471811a4a4c9f8aac1a707cb5:csharp",
+        "5e68341ac5640b9bfc1b598d3fa8a2f582ebf66471811a4a4c9f8aac1a707cb5:csharp-aot"
+      ],
+      "paths_from_frozen_job": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/fannkuchredux-csharpcore-5-arm64-faithful.cs"
+      ],
+      "baseline_normalized_loc": 150,
+      "diagnostics": [
+        {
+          "kind": "foreign-generic-initializer-review",
+          "offset": 2423,
+          "line": 65,
+          "column": 1,
+          "source_text": "        var masks_shift = new Vector128<byte>[16];",
+          "bounded_context": [
+            {
+              "line": 64,
+              "text": "    {"
+            },
+            {
+              "line": 65,
+              "text": "        var masks_shift = new Vector128<byte>[16];"
+            },
+            {
+              "line": 66,
+              "text": "        var c0 = Vector128<byte>.Zero;"
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "Protect a complete bounded type-argument list only when immediately attached to a generic call or new array owner; no callee-name contract.",
+          "site_count_delta": "0 at this diagnostic site"
+        },
+        {
+          "kind": "foreign-complex-declaration-review",
+          "offset": 7785,
+          "line": 184,
+          "column": 1,
+          "source_text": "    internal static Vector128<byte> AndNot(Vector128<byte> a, Vector128<byte> b) => ~a & b;",
+          "bounded_context": [
+            {
+              "line": 183,
+              "text": "    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]"
+            },
+            {
+              "line": 184,
+              "text": "    internal static Vector128<byte> AndNot(Vector128<byte> a, Vector128<byte> b) => ~a & b;"
+            },
+            {
+              "line": 185,
+              "text": "    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]"
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "Prove an ordinary declarator list, a scalar expression method, or full wrapped declaration; argument contexts do not enter declaration inference.",
+          "site_count_delta": "0 at this diagnostic site"
+        }
+      ],
+      "current_displayed_registrations": [
+        "fannkuchredux:fannkuchredux-csharpcore-5-arm64-faithful-jit",
+        "fannkuchredux:fannkuchredux-csharpcore-5-arm64-faithful-aot"
+      ],
+      "direct_source_count_decision": {
+        "delta": 0,
+        "whole_source_count_status": "reviewed diagnostic-site classification changes should preserve written units; whole-source qualification still required"
+      }
+    },
+    {
+      "source_sha256_from_frozen_job": "5f4cb3646bdcf031b1f9f675f8e952cfccf36f3a14d60df580032d8fd4a982dc",
+      "grammar_family": "csharp",
+      "source_identities": [
+        "5f4cb3646bdcf031b1f9f675f8e952cfccf36f3a14d60df580032d8fd4a982dc:csharp",
+        "5f4cb3646bdcf031b1f9f675f8e952cfccf36f3a14d60df580032d8fd4a982dc:csharp-aot"
+      ],
+      "paths_from_frozen_job": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/knucleotide-csharpcore-1-arm64-faithful.cs"
+      ],
+      "baseline_normalized_loc": 158,
+      "diagnostics": [
+        {
+          "kind": "foreign-generic-initializer-review",
+          "offset": 584,
+          "line": 21,
+          "column": 1,
+          "source_text": "    public static List<byte[]> threeBlocks = new List<byte[]>();",
+          "bounded_context": [
+            {
+              "line": 20,
+              "text": "    const int BLOCK_SIZE = 1024 * 1024 * 8;"
+            },
+            {
+              "line": 21,
+              "text": "    public static List<byte[]> threeBlocks = new List<byte[]>();"
+            },
+            {
+              "line": 22,
+              "text": "    public static int threeStart, threeEnd;"
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "Protect a complete bounded type-argument list only when immediately attached to a generic call or new array owner; no callee-name contract.",
+          "site_count_delta": "0 at this diagnostic site"
+        },
+        {
+          "kind": "foreign-complex-declaration-review",
+          "offset": 3654,
+          "line": 105,
+          "column": 1,
+          "source_text": "            var dict = new Dictionary<long, int>(1024);",
+          "bounded_context": [
+            {
+              "line": 104,
+              "text": "            while (--l > 0) rollingKey = (rollingKey << 2) | firstBlock[start++];"
+            },
+            {
+              "line": 105,
+              "text": "            var dict = new Dictionary<long, int>(1024);"
+            },
+            {
+              "line": 106,
+              "text": "            "
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "Prove an ordinary declarator list, a scalar expression method, or full wrapped declaration; argument contexts do not enter declaration inference.",
+          "site_count_delta": "0 at this diagnostic site"
+        }
+      ],
+      "current_displayed_registrations": [
+        "knucleotide:knucleotide-csharpcore-1-arm64-faithful-jit",
+        "knucleotide:knucleotide-csharpcore-1-arm64-faithful-aot"
+      ],
+      "direct_source_count_decision": {
+        "delta": 0,
+        "whole_source_count_status": "reviewed diagnostic-site classification changes should preserve written units; whole-source qualification still required"
+      }
+    },
+    {
+      "source_sha256_from_frozen_job": "888ebde7cbfb1368a0eac86960477948f29853649d1c3f4016123cf4970ab5fe",
+      "grammar_family": "csharp",
+      "source_identities": [
+        "888ebde7cbfb1368a0eac86960477948f29853649d1c3f4016123cf4970ab5fe:csharp",
+        "888ebde7cbfb1368a0eac86960477948f29853649d1c3f4016123cf4970ab5fe:csharp-aot"
+      ],
+      "paths_from_frozen_job": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/knucleotide-csharpcore-8-arm64-faithful.cs"
+      ],
+      "baseline_normalized_loc": 62,
+      "diagnostics": [
+        {
+          "kind": "foreign-generic-initializer-review",
+          "offset": 432,
+          "line": 20,
+          "column": 1,
+          "source_text": "      var lines = new List<string>();",
+          "bounded_context": [
+            {
+              "line": 19,
+              "text": "      }         "
+            },
+            {
+              "line": 20,
+              "text": "      var lines = new List<string>();"
+            },
+            {
+              "line": 21,
+              "text": "      while ((line = Console.ReadLine()) != null) {      "
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "Protect a complete bounded type-argument list only when immediately attached to a generic call or new array owner; no callee-name contract.",
+          "site_count_delta": "0 at this diagnostic site"
+        },
+        {
+          "kind": "foreign-complex-declaration-review",
+          "offset": 744,
+          "line": 31,
+          "column": 1,
+          "source_text": "        var counts = new Dictionary<string,int>();   ",
+          "bounded_context": [
+            {
+              "line": 30,
+              "text": "    {     "
+            },
+            {
+              "line": 31,
+              "text": "        var counts = new Dictionary<string,int>();   "
+            },
+            {
+              "line": 32,
+              "text": "        int size = seq.Count() + 1 - bases;  "
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "Prove an ordinary declarator list, a scalar expression method, or full wrapped declaration; argument contexts do not enter declaration inference.",
+          "site_count_delta": "0 at this diagnostic site"
+        },
+        {
+          "kind": "foreign-complex-declaration-review",
+          "offset": 1524,
+          "line": 50,
+          "column": 1,
+          "source_text": "        var freqs = new List<KeyValuePair<string,double>>();",
+          "bounded_context": [
+            {
+              "line": 49,
+              "text": "        counts.Sort((a, b) => b.Value != a.Value ? b.Value.CompareTo(a.Value) : StringComparer.Ordinal.Compare(a.Key, b.Key));"
+            },
+            {
+              "line": 50,
+              "text": "        var freqs = new List<KeyValuePair<string,double>>();"
+            },
+            {
+              "line": 51,
+              "text": "        foreach (var kvp in counts) {"
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "Prove an ordinary declarator list, a scalar expression method, or full wrapped declaration; argument contexts do not enter declaration inference.",
+          "site_count_delta": "0 at this diagnostic site"
+        }
+      ],
+      "current_displayed_registrations": [
+        "knucleotide:knucleotide-csharpcore-8-arm64-faithful-jit",
+        "knucleotide:knucleotide-csharpcore-8-arm64-faithful-aot"
+      ],
+      "direct_source_count_decision": {
+        "delta": 0,
+        "whole_source_count_status": "reviewed diagnostic-site classification changes should preserve written units; whole-source qualification still required"
+      }
+    },
+    {
+      "source_sha256_from_frozen_job": "d22346944ed5d13c1dbb2d626f17f38c5ff075a23c97b31eca1bb129c6630679",
+      "grammar_family": "csharp",
+      "source_identities": [
+        "d22346944ed5d13c1dbb2d626f17f38c5ff075a23c97b31eca1bb129c6630679:csharp",
+        "d22346944ed5d13c1dbb2d626f17f38c5ff075a23c97b31eca1bb129c6630679:csharp-aot"
+      ],
+      "paths_from_frozen_job": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/mandelbrot-csharpcore-7.cs"
+      ],
+      "baseline_normalized_loc": 68,
+      "diagnostics": [
+        {
+          "kind": "foreign-generic-initializer-review",
+          "offset": 1090,
+          "line": 34,
+          "column": 1,
+          "source_text": "var Cr0Array = new Vector512<double>[lineSize];",
+          "bounded_context": [
+            {
+              "line": 33,
+              "text": ""
+            },
+            {
+              "line": 34,
+              "text": "var Cr0Array = new Vector512<double>[lineSize];"
+            },
+            {
+              "line": 35,
+              "text": ""
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "Protect a complete bounded type-argument list only when immediately attached to a generic call or new array owner; no callee-name contract.",
+          "site_count_delta": "0 at this diagnostic site"
+        }
+      ],
+      "current_displayed_registrations": [
+        "mandelbrot:mandelbrot-csharpcore-7-jit",
+        "mandelbrot:mandelbrot-csharpcore-7-aot"
+      ],
+      "direct_source_count_decision": {
+        "delta": 0,
+        "whole_source_count_status": "reviewed diagnostic-site classification changes should preserve written units; whole-source qualification still required"
+      }
+    },
+    {
+      "source_sha256_from_frozen_job": "212627189a66c75feb27605ae77e0a1d47fcf20ea8ddc080bd4f18e97e9950a7",
+      "grammar_family": "csharp",
+      "source_identities": [
+        "212627189a66c75feb27605ae77e0a1d47fcf20ea8ddc080bd4f18e97e9950a7:csharp",
+        "212627189a66c75feb27605ae77e0a1d47fcf20ea8ddc080bd4f18e97e9950a7:csharp-aot"
+      ],
+      "paths_from_frozen_job": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/nbody-csharpcore-0.cs"
+      ],
+      "baseline_normalized_loc": 88,
+      "diagnostics": [
+        {
+          "kind": "foreign-complex-type-declaration-review",
+          "offset": 247,
+          "line": 9,
+          "column": 1,
+          "source_text": "    (double X, double Y, double Z) P,",
+          "bounded_context": [
+            {
+              "line": 8,
+              "text": "using Body = ("
+            },
+            {
+              "line": 9,
+              "text": "    (double X, double Y, double Z) P,"
+            },
+            {
+              "line": 10,
+              "text": "    (double X, double Y, double Z) V, double M);"
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "Explicit tuple alias/component type structure or builtin/source-visible C# pointer declaration. Unknown pointer/type/value shadows remain gated.",
+          "site_count_delta": "requires whole-owner locked recount; see source decision"
+        },
+        {
+          "kind": "foreign-complex-type-declaration-review",
+          "offset": 285,
+          "line": 10,
+          "column": 1,
+          "source_text": "    (double X, double Y, double Z) V, double M);",
+          "bounded_context": [
+            {
+              "line": 9,
+              "text": "    (double X, double Y, double Z) P,"
+            },
+            {
+              "line": 10,
+              "text": "    (double X, double Y, double Z) V, double M);"
+            },
+            {
+              "line": 11,
+              "text": ""
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "Explicit tuple alias/component type structure or builtin/source-visible C# pointer declaration. Unknown pointer/type/value shadows remain gated.",
+          "site_count_delta": "requires whole-owner locked recount; see source decision"
+        }
+      ],
+      "current_displayed_registrations": [
+        "nbody:nbody-csharpcore-0-jit",
+        "nbody:nbody-csharpcore-0-aot"
+      ],
+      "direct_source_count_decision": {
+        "before": 3,
+        "after_proposal": 1,
+        "delta": -2,
+        "owner": "using Body tuple type alias at source lines8-10; one explicit alias definition, component tuple formals structural",
+        "whole_source_count_status": "requires locked qualification; anticipated alias-only delta -2"
+      }
+    },
+    {
+      "source_sha256_from_frozen_job": "603be6e0c78135fc00ce3109c020dfa486df06651ef88a4f3f2a149d61de7b9a",
+      "grammar_family": "csharp",
+      "source_identities": [
+        "603be6e0c78135fc00ce3109c020dfa486df06651ef88a4f3f2a149d61de7b9a:csharp",
+        "603be6e0c78135fc00ce3109c020dfa486df06651ef88a4f3f2a149d61de7b9a:csharp-aot"
+      ],
+      "paths_from_frozen_job": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/nbody-csharpcore-6-arm64-faithful.cs"
+      ],
+      "baseline_normalized_loc": 160,
+      "diagnostics": [
+        {
+          "kind": "foreign-complex-type-declaration-review",
+          "offset": 1497,
+          "line": 44,
+          "column": 1,
+          "source_text": "                Body* system = stackalloc Body[5];",
+          "bounded_context": [
+            {
+              "line": 43,
+              "text": ""
+            },
+            {
+              "line": 44,
+              "text": "                Body* system = stackalloc Body[5];"
+            },
+            {
+              "line": 45,
+              "text": "                Body* last = system + 4;"
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "Explicit tuple alias/component type structure or builtin/source-visible C# pointer declaration. Unknown pointer/type/value shadows remain gated.",
+          "site_count_delta": "0 at this diagnostic site"
+        },
+        {
+          "kind": "foreign-complex-type-declaration-review",
+          "offset": 1548,
+          "line": 45,
+          "column": 1,
+          "source_text": "                Body* last = system + 4;",
+          "bounded_context": [
+            {
+              "line": 44,
+              "text": "                Body* system = stackalloc Body[5];"
+            },
+            {
+              "line": 45,
+              "text": "                Body* last = system + 4;"
+            },
+            {
+              "line": 46,
+              "text": ""
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "Explicit tuple alias/component type structure or builtin/source-visible C# pointer declaration. Unknown pointer/type/value shadows remain gated.",
+          "site_count_delta": "0 at this diagnostic site"
+        },
+        {
+          "kind": "foreign-complex-declaration-review",
+          "offset": 8177,
+          "line": 202,
+          "column": 1,
+          "source_text": "        private static V256d Square(this V256d x) => Vector256.Multiply(x, x);",
+          "bounded_context": [
+            {
+              "line": 201,
+              "text": "        [MethodImpl(AllOptimizations)]"
+            },
+            {
+              "line": 202,
+              "text": "        private static V256d Square(this V256d x) => Vector256.Multiply(x, x);"
+            },
+            {
+              "line": 203,
+              "text": ""
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "Prove an ordinary declarator list, a scalar expression method, or full wrapped declaration; argument contexts do not enter declaration inference.",
+          "site_count_delta": "0 at this diagnostic site"
+        },
+        {
+          "kind": "foreign-complex-declaration-review",
+          "offset": 8296,
+          "line": 205,
+          "column": 1,
+          "source_text": "        private static V128d SumLanes(this V256d x) => Vector128.Add(x.GetLower(), x.GetUpper());",
+          "bounded_context": [
+            {
+              "line": 204,
+              "text": "        [MethodImpl(AllOptimizations)]"
+            },
+            {
+              "line": 205,
+              "text": "        private static V128d SumLanes(this V256d x) => Vector128.Add(x.GetLower(), x.GetUpper());"
+            },
+            {
+              "line": 206,
+              "text": ""
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "Prove an ordinary declarator list, a scalar expression method, or full wrapped declaration; argument contexts do not enter declaration inference.",
+          "site_count_delta": "0 at this diagnostic site"
+        }
+      ],
+      "current_displayed_registrations": [
+        "nbody:nbody-csharpcore-6-arm64-faithful-jit",
+        "nbody:nbody-csharpcore-6-arm64-faithful-aot"
+      ],
+      "direct_source_count_decision": {
+        "delta": 0,
+        "whole_source_count_status": "reviewed diagnostic-site classification changes should preserve written units; whole-source qualification still required"
+      }
+    },
+    {
+      "source_sha256_from_frozen_job": "a5e9734cd31f06a454ac4d2ed11bb249e8be236ea84eead9cf4677d8fe99679c",
+      "grammar_family": "csharp",
+      "source_identities": [
+        "a5e9734cd31f06a454ac4d2ed11bb249e8be236ea84eead9cf4677d8fe99679c:csharp",
+        "a5e9734cd31f06a454ac4d2ed11bb249e8be236ea84eead9cf4677d8fe99679c:csharp-aot"
+      ],
+      "paths_from_frozen_job": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/pidigits-csharpcore-6-arm64-faithful.cs"
+      ],
+      "baseline_normalized_loc": 106,
+      "diagnostics": [
+        {
+          "kind": "foreign-pattern-switch-record-review",
+          "offset": 444,
+          "line": 16,
+          "column": 23,
+          "source_text": "        mpz_t temp1 = default;",
+          "bounded_context": [
+            {
+              "line": 15,
+              "text": "    {"
+            },
+            {
+              "line": 16,
+              "text": "        mpz_t temp1 = default;"
+            },
+            {
+              "line": 17,
+              "text": "        mpz_t temp2 = default;"
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "These exact sites are default value literals, not switch labels. Real default/case labels retain the existing review gate.",
+          "site_count_delta": "0 at this diagnostic site"
+        },
+        {
+          "kind": "foreign-pattern-switch-record-review",
+          "offset": 475,
+          "line": 17,
+          "column": 23,
+          "source_text": "        mpz_t temp2 = default;",
+          "bounded_context": [
+            {
+              "line": 16,
+              "text": "        mpz_t temp1 = default;"
+            },
+            {
+              "line": 17,
+              "text": "        mpz_t temp2 = default;"
+            },
+            {
+              "line": 18,
+              "text": "        mpz_t accumulator = default;"
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "These exact sites are default value literals, not switch labels. Real default/case labels retain the existing review gate.",
+          "site_count_delta": "0 at this diagnostic site"
+        },
+        {
+          "kind": "foreign-pattern-switch-record-review",
+          "offset": 512,
+          "line": 18,
+          "column": 29,
+          "source_text": "        mpz_t accumulator = default;",
+          "bounded_context": [
+            {
+              "line": 17,
+              "text": "        mpz_t temp2 = default;"
+            },
+            {
+              "line": 18,
+              "text": "        mpz_t accumulator = default;"
+            },
+            {
+              "line": 19,
+              "text": "        mpz_t denominator = default;"
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "These exact sites are default value literals, not switch labels. Real default/case labels retain the existing review gate.",
+          "site_count_delta": "0 at this diagnostic site"
+        },
+        {
+          "kind": "foreign-pattern-switch-record-review",
+          "offset": 549,
+          "line": 19,
+          "column": 29,
+          "source_text": "        mpz_t denominator = default;",
+          "bounded_context": [
+            {
+              "line": 18,
+              "text": "        mpz_t accumulator = default;"
+            },
+            {
+              "line": 19,
+              "text": "        mpz_t denominator = default;"
+            },
+            {
+              "line": 20,
+              "text": "        mpz_t numerator = default;"
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "These exact sites are default value literals, not switch labels. Real default/case labels retain the existing review gate.",
+          "site_count_delta": "0 at this diagnostic site"
+        },
+        {
+          "kind": "foreign-pattern-switch-record-review",
+          "offset": 584,
+          "line": 20,
+          "column": 27,
+          "source_text": "        mpz_t numerator = default;",
+          "bounded_context": [
+            {
+              "line": 19,
+              "text": "        mpz_t denominator = default;"
+            },
+            {
+              "line": 20,
+              "text": "        mpz_t numerator = default;"
+            },
+            {
+              "line": 21,
+              "text": ""
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "These exact sites are default value literals, not switch labels. Real default/case labels retain the existing review gate.",
+          "site_count_delta": "0 at this diagnostic site"
+        },
+        {
+          "kind": "foreign-complex-type-declaration-review",
+          "offset": 1098,
+          "line": 33,
+          "column": 1,
+          "source_text": "        char* builder = stackalloc char[((n + 9) / 10) * (14 + args[0].Length)];",
+          "bounded_context": [
+            {
+              "line": 32,
+              "text": "        // we also manually handle it because muh nanoseconds."
+            },
+            {
+              "line": 33,
+              "text": "        char* builder = stackalloc char[((n + 9) / 10) * (14 + args[0].Length)];"
+            },
+            {
+              "line": 34,
+              "text": ""
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "Explicit tuple alias/component type structure or builtin/source-visible C# pointer declaration. Unknown pointer/type/value shadows remain gated.",
+          "site_count_delta": "0 at this diagnostic site"
+        }
+      ],
+      "current_displayed_registrations": [
+        "pidigits:pidigits-csharpcore-6-arm64-faithful-jit",
+        "pidigits:pidigits-csharpcore-6-arm64-faithful-aot"
+      ],
+      "direct_source_count_decision": {
+        "delta": 0,
+        "whole_source_count_status": "reviewed diagnostic-site classification changes should preserve written units; whole-source qualification still required"
+      }
+    },
+    {
+      "source_sha256_from_frozen_job": "4d4a9abfb13ab40f4d75269cf00e472cb73be9ea96359377d84e8920b4820466",
+      "grammar_family": "csharp",
+      "source_identities": [
+        "4d4a9abfb13ab40f4d75269cf00e472cb73be9ea96359377d84e8920b4820466:csharp",
+        "4d4a9abfb13ab40f4d75269cf00e472cb73be9ea96359377d84e8920b4820466:csharp-aot"
+      ],
+      "paths_from_frozen_job": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/regexredux-csharpcore-2-arm64-faithful.cs"
+      ],
+      "baseline_normalized_loc": 125,
+      "diagnostics": [
+        {
+          "kind": "foreign-complex-declaration-review",
+          "offset": 1961,
+          "line": 62,
+          "column": 1,
+          "source_text": "    static (byte[] buf, long len) Read(Stream stream)",
+          "bounded_context": [
+            {
+              "line": 61,
+              "text": ""
+            },
+            {
+              "line": 62,
+              "text": "    static (byte[] buf, long len) Read(Stream stream)"
+            },
+            {
+              "line": 63,
+              "text": "    {"
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "Prove an ordinary declarator list, a scalar expression method, or full wrapped declaration; argument contexts do not enter declaration inference.",
+          "site_count_delta": "0 at this diagnostic site"
+        },
+        {
+          "kind": "foreign-ambiguous-brace-review",
+          "offset": 2019,
+          "line": 63,
+          "column": 5,
+          "source_text": "    {",
+          "bounded_context": [
+            {
+              "line": 62,
+              "text": "    static (byte[] buf, long len) Read(Stream stream)"
+            },
+            {
+              "line": 63,
+              "text": "    {"
+            },
+            {
+              "line": 64,
+              "text": "        var buf = new byte[1024 * 1024];"
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "Tuple return type proves the Read function owner; its written close then proves the following Pcre type boundary.",
+          "site_count_delta": "requires whole-owner locked recount; see source decision"
+        },
+        {
+          "kind": "foreign-ambiguous-brace-review",
+          "offset": 2355,
+          "line": 76,
+          "column": 5,
+          "source_text": "    {",
+          "bounded_context": [
+            {
+              "line": 75,
+              "text": "    class Pcre"
+            },
+            {
+              "line": 76,
+              "text": "    {"
+            },
+            {
+              "line": 77,
+              "text": "        readonly IntPtr pcre;"
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "Tuple return type proves the Read function owner; its written close then proves the following Pcre type boundary.",
+          "site_count_delta": "requires whole-owner locked recount; see source decision"
+        }
+      ],
+      "current_displayed_registrations": [
+        "regexredux:regexredux-csharpcore-2-arm64-faithful-jit",
+        "regexredux:regexredux-csharpcore-2-arm64-faithful-aot"
+      ],
+      "direct_source_count_decision": {
+        "delta": null,
+        "owner": "tuple-return Read body and subsequent Pcre type/method bodies regain explicit owner events",
+        "whole_source_count_status": "requires locked qualification; do not infer full delta from two newly zero-unit opens because downstream method/control owners also change"
+      }
+    },
+    {
+      "source_sha256_from_frozen_job": "d1b214b471909300cce9f40a55d0542da654b9aaabc087ddd03d9ba579ecff9d",
+      "grammar_family": "csharp",
+      "source_identities": [
+        "d1b214b471909300cce9f40a55d0542da654b9aaabc087ddd03d9ba579ecff9d:csharp",
+        "d1b214b471909300cce9f40a55d0542da654b9aaabc087ddd03d9ba579ecff9d:csharp-aot"
+      ],
+      "paths_from_frozen_job": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/revcomp-csharpcore-3.cs"
+      ],
+      "baseline_normalized_loc": 100,
+      "diagnostics": [
+        {
+          "kind": "foreign-generic-initializer-review",
+          "offset": 690,
+          "line": 29,
+          "column": 1,
+          "source_text": "      List<byte[]> builder = new List<byte[]>();",
+          "bounded_context": [
+            {
+              "line": 28,
+              "text": ""
+            },
+            {
+              "line": 29,
+              "text": "      List<byte[]> builder = new List<byte[]>();"
+            },
+            {
+              "line": 30,
+              "text": "      string line;"
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "Protect a complete bounded type-argument list only when immediately attached to a generic call or new array owner; no callee-name contract.",
+          "site_count_delta": "0 at this diagnostic site"
+        }
+      ],
+      "current_displayed_registrations": [
+        "revcomp:revcomp-csharpcore-3-jit",
+        "revcomp:revcomp-csharpcore-3-aot"
+      ],
+      "direct_source_count_decision": {
+        "delta": 0,
+        "whole_source_count_status": "reviewed diagnostic-site classification changes should preserve written units; whole-source qualification still required"
+      }
+    },
+    {
+      "source_sha256_from_frozen_job": "c9c90844bf2f9ad3c2e7f09fabc01a6fcd3660694b64a1a5a01404fb61b49c4d",
+      "grammar_family": "csharp",
+      "source_identities": [
+        "c9c90844bf2f9ad3c2e7f09fabc01a6fcd3660694b64a1a5a01404fb61b49c4d:csharp",
+        "c9c90844bf2f9ad3c2e7f09fabc01a6fcd3660694b64a1a5a01404fb61b49c4d:csharp-aot"
+      ],
+      "paths_from_frozen_job": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/revcomp-csharpcore-9-arm64-faithful.cs"
+      ],
+      "baseline_normalized_loc": 248,
+      "diagnostics": [
+        {
+          "kind": "foreign-complex-declaration-review",
+          "offset": 13991,
+          "line": 355,
+          "column": 1,
+          "source_text": "    internal static Vector128<byte> AndNot(Vector128<byte> a, Vector128<byte> b) => ~a & b;",
+          "bounded_context": [
+            {
+              "line": 354,
+              "text": "    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]"
+            },
+            {
+              "line": 355,
+              "text": "    internal static Vector128<byte> AndNot(Vector128<byte> a, Vector128<byte> b) => ~a & b;"
+            },
+            {
+              "line": 356,
+              "text": "    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]"
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "Prove an ordinary declarator list, a scalar expression method, or full wrapped declaration; argument contexts do not enter declaration inference.",
+          "site_count_delta": "0 at this diagnostic site"
+        }
+      ],
+      "current_displayed_registrations": [
+        "revcomp:revcomp-csharpcore-9-arm64-faithful-jit",
+        "revcomp:revcomp-csharpcore-9-arm64-faithful-aot"
+      ],
+      "direct_source_count_decision": {
+        "delta": 0,
+        "whole_source_count_status": "reviewed diagnostic-site classification changes should preserve written units; whole-source qualification still required"
+      }
+    },
+    {
+      "source_sha256_from_frozen_job": "81fad5d7b9226afe4a514ecac92d888841e9f2fb2feaeb18fc83ebc10007c170",
+      "grammar_family": "csharp",
+      "source_identities": [
+        "81fad5d7b9226afe4a514ecac92d888841e9f2fb2feaeb18fc83ebc10007c170:csharp",
+        "81fad5d7b9226afe4a514ecac92d888841e9f2fb2feaeb18fc83ebc10007c170:csharp-aot"
+      ],
+      "paths_from_frozen_job": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/spectralnorm-csharpcore-5-arm64-faithful.cs"
+      ],
+      "baseline_normalized_loc": 74,
+      "diagnostics": [
+        {
+          "kind": "foreign-complex-declaration-review",
+          "offset": 1948,
+          "line": 65,
+          "column": 1,
+          "source_text": "                var value = Unsafe.As<Vector128<double>, double>(ref add);",
+          "bounded_context": [
+            {
+              "line": 64,
+              "text": "                var add = Vector128.Create(sum.GetElement(0) + sum.GetElement(1));"
+            },
+            {
+              "line": 65,
+              "text": "                var value = Unsafe.As<Vector128<double>, double>(ref add);"
+            },
+            {
+              "line": 66,
+              "text": "                if ((n & 1) != 0) value += v[n - 1] / A(i, n - 1);"
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "Prove an ordinary declarator list, a scalar expression method, or full wrapped declaration; argument contexts do not enter declaration inference.",
+          "site_count_delta": "0 at this diagnostic site"
+        },
+        {
+          "kind": "foreign-complex-declaration-review",
+          "offset": 2775,
+          "line": 85,
+          "column": 1,
+          "source_text": "                var value = Unsafe.As<Vector128<double>, double>(ref add);",
+          "bounded_context": [
+            {
+              "line": 84,
+              "text": "                var add = Vector128.Create(sum.GetElement(0) + sum.GetElement(1));"
+            },
+            {
+              "line": 85,
+              "text": "                var value = Unsafe.As<Vector128<double>, double>(ref add);"
+            },
+            {
+              "line": 86,
+              "text": "                if ((n & 1) != 0) value += v[n - 1] / A(n - 1, i);"
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "Prove an ordinary declarator list, a scalar expression method, or full wrapped declaration; argument contexts do not enter declaration inference.",
+          "site_count_delta": "0 at this diagnostic site"
+        }
+      ],
+      "current_displayed_registrations": [
+        "spectralnorm:spectralnorm-csharpcore-5-arm64-faithful-jit",
+        "spectralnorm:spectralnorm-csharpcore-5-arm64-faithful-aot"
+      ],
+      "direct_source_count_decision": {
+        "delta": 0,
+        "whole_source_count_status": "reviewed diagnostic-site classification changes should preserve written units; whole-source qualification still required"
+      }
+    },
+    {
+      "source_sha256_from_frozen_job": "e6fb4daa85a3266a56f10d59d92a8c11cfb04f63e90e2cc1515c0df84cef2ed5",
+      "grammar_family": "dart",
+      "source_identities": [
+        "e6fb4daa85a3266a56f10d59d92a8c11cfb04f63e90e2cc1515c0df84cef2ed5:dart",
+        "e6fb4daa85a3266a56f10d59d92a8c11cfb04f63e90e2cc1515c0df84cef2ed5:dart-jit"
+      ],
+      "paths_from_frozen_job": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/dart/fasta-dart-5.dart"
+      ],
+      "baseline_normalized_loc": 156,
+      "diagnostics": [
+        {
+          "kind": "foreign-complex-declaration-review",
+          "offset": 2628,
+          "line": 99,
+          "column": 1,
+          "source_text": "          '>ONE Homo sapiens alu',",
+          "bounded_context": [
+            {
+              "line": 98,
+              "text": "      Request("
+            },
+            {
+              "line": 99,
+              "text": "          '>ONE Homo sapiens alu',"
+            },
+            {
+              "line": 100,
+              "text": "          'GGCCGGGCGCGGTGGCTCACGCCT'"
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "Prove an ordinary declarator list, a scalar expression method, or full wrapped declaration; argument contexts do not enter declaration inference.",
+          "site_count_delta": "0 at this diagnostic site"
+        },
+        {
+          "kind": "foreign-complex-declaration-review",
+          "offset": 3264,
+          "line": 119,
+          "column": 1,
+          "source_text": "          '>TWO IUB ambiguity codes',",
+          "bounded_context": [
+            {
+              "line": 118,
+              "text": "      Request("
+            },
+            {
+              "line": 119,
+              "text": "          '>TWO IUB ambiguity codes',"
+            },
+            {
+              "line": 120,
+              "text": "          'acgtBDHKMNRSVWY',"
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "Prove an ordinary declarator list, a scalar expression method, or full wrapped declaration; argument contexts do not enter declaration inference.",
+          "site_count_delta": "0 at this diagnostic site"
+        }
+      ],
+      "current_displayed_registrations": [
+        "fasta:fasta-dart-5",
+        "fasta:fasta-dart-jit-5"
+      ],
+      "direct_source_count_decision": {
+        "delta": 0,
+        "whole_source_count_status": "reviewed diagnostic-site classification changes should preserve written units; whole-source qualification still required"
+      }
+    },
+    {
+      "source_sha256_from_frozen_job": "d710420443c72ceb7194c1c56c12f4d1832521576d43ef32e8f9be7b1761d221",
+      "grammar_family": "dart",
+      "source_identities": [
+        "d710420443c72ceb7194c1c56c12f4d1832521576d43ef32e8f9be7b1761d221:dart",
+        "d710420443c72ceb7194c1c56c12f4d1832521576d43ef32e8f9be7b1761d221:dart-jit"
+      ],
+      "paths_from_frozen_job": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/dart/knucleotide-dart-1.dart"
+      ],
+      "baseline_normalized_loc": 54,
+      "diagnostics": [
+        {
+          "kind": "foreign-complex-declaration-review",
+          "offset": 634,
+          "line": 26,
+          "column": 1,
+          "source_text": "  HashMap<String, int> freq = new HashMap<String, int>();",
+          "bounded_context": [
+            {
+              "line": 25,
+              "text": "HashMap<String, int> frequency(String sequence, int length) {"
+            },
+            {
+              "line": 26,
+              "text": "  HashMap<String, int> freq = new HashMap<String, int>();"
+            },
+            {
+              "line": 27,
+              "text": "  int n = sequence.length - length + 1;"
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "Prove an ordinary declarator list, a scalar expression method, or full wrapped declaration; argument contexts do not enter declaration inference.",
+          "site_count_delta": "0 at this diagnostic site"
+        }
+      ],
+      "current_displayed_registrations": [
+        "knucleotide:knucleotide-dart-1",
+        "knucleotide:knucleotide-dart-jit-1"
+      ],
+      "direct_source_count_decision": {
+        "delta": 0,
+        "whole_source_count_status": "reviewed diagnostic-site classification changes should preserve written units; whole-source qualification still required"
+      }
+    },
+    {
+      "source_sha256_from_frozen_job": "fd39860f284bded2df51f859e4e82c045b13f94e07406e180d3900d3230d47b9",
+      "grammar_family": "dart",
+      "source_identities": [
+        "fd39860f284bded2df51f859e4e82c045b13f94e07406e180d3900d3230d47b9:dart",
+        "fd39860f284bded2df51f859e4e82c045b13f94e07406e180d3900d3230d47b9:dart-jit"
+      ],
+      "paths_from_frozen_job": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/dart/knucleotide-dart-3.dart"
+      ],
+      "baseline_normalized_loc": 145,
+      "diagnostics": [
+        {
+          "kind": "foreign-callback-surrounding-expression-review",
+          "offset": 2200,
+          "line": 90,
+          "column": 5,
+          "source_text": "  }).then((_) {",
+          "bounded_context": [
+            {
+              "line": 89,
+              "text": "    }"
+            },
+            {
+              "line": 90,
+              "text": "  }).then((_) {"
+            },
+            {
+              "line": 91,
+              "text": "    codeList.flush();"
+            }
+          ],
+          "decision": "retained-review-gate",
+          "ownership_plan": "Keep the diagnostic: the written source has another callback argument or a chained then callback, with no approved surrounding-expression count proof.",
+          "site_count_delta": "0 at this diagnostic site"
+        },
+        {
+          "kind": "foreign-complex-declaration-review",
+          "offset": 2321,
+          "line": 97,
+          "column": 1,
+          "source_text": "  final freq = HashMap<int, int>();",
+          "bounded_context": [
+            {
+              "line": 96,
+              "text": "Map<String, int> frequency(CodeList codes, int length) {"
+            },
+            {
+              "line": 97,
+              "text": "  final freq = HashMap<int, int>();"
+            },
+            {
+              "line": 98,
+              "text": "  final int shift = 64 - (length * 2);"
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "Prove an ordinary declarator list, a scalar expression method, or full wrapped declaration; argument contexts do not enter declaration inference.",
+          "site_count_delta": "0 at this diagnostic site"
+        }
+      ],
+      "current_displayed_registrations": [
+        "knucleotide:knucleotide-dart-3",
+        "knucleotide:knucleotide-dart-jit-3"
+      ],
+      "direct_source_count_decision": {
+        "delta": 0,
+        "whole_source_count_status": "reviewed diagnostic-site classification changes should preserve written units; whole-source qualification still required"
+      }
+    },
+    {
+      "source_sha256_from_frozen_job": "41ae588b3f1630540ee0bfa4e828ad9bdd2332e005829eb006f40f4b89cea088",
+      "grammar_family": "dart",
+      "source_identities": [
+        "41ae588b3f1630540ee0bfa4e828ad9bdd2332e005829eb006f40f4b89cea088:dart",
+        "41ae588b3f1630540ee0bfa4e828ad9bdd2332e005829eb006f40f4b89cea088:dart-jit"
+      ],
+      "paths_from_frozen_job": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/dart/spectralnorm-dart-6.dart"
+      ],
+      "baseline_normalized_loc": 135,
+      "diagnostics": [
+        {
+          "kind": "foreign-complex-declaration-review",
+          "offset": 1434,
+          "line": 61,
+          "column": 1,
+          "source_text": "  var u = new Float64List(n)..fillRange(0, n, 1.0),",
+          "bounded_context": [
+            {
+              "line": 60,
+              "text": "Future<double> spectralNorm(int n) async {"
+            },
+            {
+              "line": 61,
+              "text": "  var u = new Float64List(n)..fillRange(0, n, 1.0),"
+            },
+            {
+              "line": 62,
+              "text": "      v = new Float64List(n),"
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "Prove an ordinary declarator list, a scalar expression method, or full wrapped declaration; argument contexts do not enter declaration inference.",
+          "site_count_delta": "0 at this diagnostic site"
+        },
+        {
+          "kind": "foreign-generic-initializer-review",
+          "offset": 3492,
+          "line": 137,
+          "column": 1,
+          "source_text": "    final c = Completer<dynamic>();",
+          "bounded_context": [
+            {
+              "line": 136,
+              "text": "    each.data = u;"
+            },
+            {
+              "line": 137,
+              "text": "    final c = Completer<dynamic>();"
+            },
+            {
+              "line": 138,
+              "text": "    completers.add(c);"
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "Protect a complete bounded type-argument list only when immediately attached to a generic call or new array owner; no callee-name contract.",
+          "site_count_delta": "0 at this diagnostic site"
+        }
+      ],
+      "current_displayed_registrations": [
+        "spectralnorm:spectralnorm-dart-6",
+        "spectralnorm:spectralnorm-dart-jit-6"
+      ],
+      "direct_source_count_decision": {
+        "delta": 0,
+        "whole_source_count_status": "reviewed diagnostic-site classification changes should preserve written units; whole-source qualification still required"
+      }
+    },
+    {
+      "source_sha256_from_frozen_job": "8fd8d17cf6c2ee4fcf2cbeb846028ea39ed962f17af1abe5a27cab3edd48b811",
+      "grammar_family": "dart",
+      "source_identities": [
+        "8fd8d17cf6c2ee4fcf2cbeb846028ea39ed962f17af1abe5a27cab3edd48b811:dart",
+        "8fd8d17cf6c2ee4fcf2cbeb846028ea39ed962f17af1abe5a27cab3edd48b811:dart-jit"
+      ],
+      "paths_from_frozen_job": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/dart/spectralnorm-dart-8.dart"
+      ],
+      "baseline_normalized_loc": 47,
+      "diagnostics": [
+        {
+          "kind": "foreign-complex-declaration-review",
+          "offset": 892,
+          "line": 40,
+          "column": 1,
+          "source_text": "  var u = new Float64List(N)..fillRange(0, N, 1.0),",
+          "bounded_context": [
+            {
+              "line": 39,
+              "text": "  int N = args.length > 0 ? int.parse(args[0]) : 100;"
+            },
+            {
+              "line": 40,
+              "text": "  var u = new Float64List(N)..fillRange(0, N, 1.0),"
+            },
+            {
+              "line": 41,
+              "text": "      v = new Float64List(N);        "
+            }
+          ],
+          "decision": "bounded-generic-ownership-proposal",
+          "ownership_plan": "Prove an ordinary declarator list, a scalar expression method, or full wrapped declaration; argument contexts do not enter declaration inference.",
+          "site_count_delta": "0 at this diagnostic site"
+        }
+      ],
+      "current_displayed_registrations": [
+        "spectralnorm:spectralnorm-dart-8",
+        "spectralnorm:spectralnorm-dart-jit-8"
+      ],
+      "direct_source_count_decision": {
+        "delta": 0,
+        "whole_source_count_status": "reviewed diagnostic-site classification changes should preserve written units; whole-source qualification still required"
+      }
+    }
+  ]
+}

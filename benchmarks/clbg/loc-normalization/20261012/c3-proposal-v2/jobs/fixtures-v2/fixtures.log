@@ -1,0 +1,51 @@
+test_c3_function_formals_are_structural (test_foreign_c3.C3Fixtures.test_c3_function_formals_are_structural) ... ok
+test_contracts_and_macro_compile_time_forms_are_not_silent_comments (test_foreign_c3.C3Fixtures.test_contracts_and_macro_compile_time_forms_are_not_silent_comments) ... ok
+test_defer_call_and_defer_block_owners (test_foreign_c3.C3Fixtures.test_defer_call_and_defer_block_owners) ... ok
+test_extern_abi_signature_and_attribute_are_one_header (test_foreign_c3.C3Fixtures.test_extern_abi_signature_and_attribute_are_one_header) ... ok
+test_for_foreach_headers_do_not_become_body_assignments (test_foreign_c3.C3Fixtures.test_for_foreach_headers_do_not_become_body_assignments) ... ok
+test_function_pointer_and_generic_aliases (test_foreign_c3.C3Fixtures.test_function_pointer_and_generic_aliases) ... ok
+test_initialized_uninitialized_and_chained_bindings (test_foreign_c3.C3Fixtures.test_initialized_uninitialized_and_chained_bindings) ... ok
+test_initializer_and_index_owners_cannot_hide_executable_effects (test_foreign_c3.C3Fixtures.test_initializer_and_index_owners_cannot_hide_executable_effects) ... ok
+test_inline_control_branch_and_body_count (test_foreign_c3.C3Fixtures.test_inline_control_branch_and_body_count) ... ok
+test_module_import_and_separate_packed_statements (test_foreign_c3.C3Fixtures.test_module_import_and_separate_packed_statements) ... ok
+test_named_call_arguments_and_data_assignments_are_structural (test_foreign_c3.C3Fixtures.test_named_call_arguments_and_data_assignments_are_structural) ... FAIL
+test_nested_comments_literals_raw_ticks_and_exact_offsets (test_foreign_c3.C3Fixtures.test_nested_comments_literals_raw_ticks_and_exact_offsets) ... ok
+test_nested_struct_has_its_own_real_close (test_foreign_c3.C3Fixtures.test_nested_struct_has_its_own_real_close) ... ok
+test_optional_unwrapping_unknown_attribute_and_switch_are_gated (test_foreign_c3.C3Fixtures.test_optional_unwrapping_unknown_attribute_and_switch_are_gated) ... ok
+test_pure_arrow_one_definition_and_mutating_arrow_is_gated (test_foreign_c3.C3Fixtures.test_pure_arrow_one_definition_and_mutating_arrow_is_gated) ... ok
+test_scalar_switch_arm_headers_preserve_each_real_body_statement (test_foreign_c3.C3Fixtures.test_scalar_switch_arm_headers_preserve_each_real_body_statement) ... ok
+test_single_external_variable_has_proved_typed_owner (test_foreign_c3.C3Fixtures.test_single_external_variable_has_proved_typed_owner) ... ok
+test_struct_pointer_array_slice_fields_and_independent_declarators (test_foreign_c3.C3Fixtures.test_struct_pointer_array_slice_fields_and_independent_declarators) ... ok
+test_unterminated_and_unbalanced_input_remains_gated (test_foreign_c3.C3Fixtures.test_unterminated_and_unbalanced_input_remains_gated) ... FAIL
+
+======================================================================
+FAIL: test_named_call_arguments_and_data_assignments_are_structural (test_foreign_c3.C3Fixtures.test_named_call_arguments_and_data_assignments_are_structural)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-proposal-v2/jobs/fixtures-v2/snapshot/test_foreign_c3.py", line 110, in test_named_call_arguments_and_data_assignments_are_structural
+    self.count('emit({.value=call(1,2),.count=3});', 1)
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-proposal-v2/jobs/fixtures-v2/snapshot/test_foreign_c3.py", line 11, in count
+    self.assertEqual(result['normalized_loc'], expected, result)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 2 != 1 : {'rule_version': 'canonical-source-units-20261012-approved-rule-v2', 'language': 'c3', 'physical_loc': 1, 'normalized_loc': 2, 'expansions': [{'line': 1, 'original': 'emit({.value=call(1,2),.count=3});', 'units': 2, 'extra_lines': 1, 'canonical_events': [], 'events': [{'start_column': 1, 'end_column': 35, 'units': 2, 'assignments': [{'column': 13, 'operator': '='}, {'column': 30, 'operator': '='}], 'declaration_bindings': 0, 'reason': 'independent-statement-and-chained-bindings'}], 'reason': 'Approved owner/header/body/close units; preserve literal/data wrapping.'}], 'canonical_events': [], 'diagnostics': [], 'review_status': 'candidate-parser-pass', 'admission': 'Unhooked source-count proposal; caller must verify exact source/producer pins and review all diagnostics.', 'proposal_version': 'c3-source-owners-0.8.5-private-v2', 'compiler_version': '0.8.5', 'proposal_only': True, 'proposal_status': 'unhooked-no-admission', 'eligible_for_chart': False, 'literal_spans': [], 'scope_evidence': [(4, 32, 'args')]}
+
+======================================================================
+FAIL: test_unterminated_and_unbalanced_input_remains_gated (test_foreign_c3.C3Fixtures.test_unterminated_and_unbalanced_input_remains_gated)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-proposal-v2/jobs/fixtures-v2/snapshot/test_foreign_c3.py", line 165, in test_unterminated_and_unbalanced_input_remains_gated
+    self.gate('int x=1\nint y=2;', 'c3-unproved-typed-declaration-review')
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-proposal-v2/jobs/fixtures-v2/snapshot/test_foreign_c3.py", line 21, in gate
+    self.assertEqual(result['review_status'], 'needs-review', result)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'candidate-parser-pass' != 'needs-review'
+- candidate-parser-pass
++ needs-review
+ : {'rule_version': 'canonical-source-units-20261012-approved-rule-v2', 'language': 'c3', 'physical_loc': 2, 'normalized_loc': 2, 'expansions': [], 'canonical_events': [], 'diagnostics': [], 'review_status': 'candidate-parser-pass', 'admission': 'Unhooked source-count proposal; caller must verify exact source/producer pins and review all diagnostics.', 'proposal_version': 'c3-source-owners-0.8.5-private-v2', 'compiler_version': '0.8.5', 'proposal_only': True, 'proposal_status': 'unhooked-no-admission', 'eligible_for_chart': False, 'literal_spans': [], 'scope_evidence': []}
+
+----------------------------------------------------------------------
+Ran 19 tests in 0.009s
+
+FAILED (failures=2)

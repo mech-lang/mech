@@ -1,0 +1,17 @@
+{
+  "pid": 5873,
+  "pgid": 5873,
+  "launched_at": "2026-10-13T01:09:11.427556+00:00",
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-proposal-v3/jobs/fixtures-v3/worker.py",
+    "--worker",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-proposal-v3/jobs/fixtures-v3"
+  ],
+  "same_pid_direct_exec": true,
+  "automatic_retry": false,
+  "source_counting_started": false,
+  "chart_admitted": false
+}

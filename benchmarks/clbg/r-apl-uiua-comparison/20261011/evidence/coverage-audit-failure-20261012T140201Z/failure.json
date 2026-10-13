@@ -1,0 +1,12 @@
+{
+  "status": "execution-failed-before-coverage",
+  "session": 33048,
+  "locked_at": "2026-10-12T14:02:01.122793+00:00",
+  "tests_run": 0,
+  "coverage_rows": 0,
+  "failed_action": "Read mistaken Site root/data.json path",
+  "error_type": "FileNotFoundError",
+  "correct_site_dataset": "benchmark-explorer-site/dist/data.json",
+  "source_or_report_mutations": false,
+  "data_admission": false
+}

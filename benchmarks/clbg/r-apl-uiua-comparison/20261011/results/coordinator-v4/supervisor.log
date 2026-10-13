@@ -1,0 +1,10 @@
+COORDINATOR 30544 WAIT ORPHAN {'pid': 25078, 'started': 'Sun Oct 11 17:58:35 2026', 'command': '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl --silent --noCIN --noCONT --noColor --noSV --cc 1 -f /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/mandelbrot.compact.apl -- 16000'}
+COORDINATOR 31810 WAIT ORPHAN None
+RECONCILED {"event_id": "r-apl-uiua-20261011-apl-mandelbrot-coordinator-loss-25078", "reconciled_at": "2026-10-11T22:25:31.929585+00:00", "prior_report_sha256": "23a2fa135d0e3e01813865d51b7691affb4f8d9a6719749d8acaaff945fd900b", "reconciled_report_sha256": "9ef8f3776ce6c7ddf65a29cec7378e782188862a271aea2826df486cac0f98f7", "preserved_attempts_count": 44, "new_attempts_added": 0, "new_samples_added": 0, "source_audit_sha256": "9b26c06182bb97b4d3e26d70d9edd6e5ec78e57f1b59a77a91874869c9e83936"}
+STAGE knucleotide-r-uiua PID 31820 LOG /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/coordinator-v4/knucleotide-r-uiua.log
+STAGE long-r-uiua PID 54174 LOG /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/coordinator-v4/long-r-uiua.log
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/supervise_v4.py", line 246, in <module>
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/supervise_v4.py", line 221, in supervise
+    stage['pid'] = proc.pid
+RuntimeError: Stage failed; preserved reports and no automatic duplicate launch: long-r-uiua

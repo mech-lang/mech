@@ -1,0 +1,70 @@
+Compiled from "compact.clj"
+public final class clbg.binarytrees.compact$check_tree extends clojure.lang.AFunction {
+  public static final java.lang.Object const__4;
+
+  public static final clojure.lang.Var const__6;
+
+  public clbg.binarytrees.compact$check_tree();
+    Code:
+         0: aload_0
+         1: invokespecial #9                  // Method clojure/lang/AFunction."<init>":()V
+         4: return
+
+  public static java.lang.Object invokeStatic(java.lang.Object);
+    Code:
+         0: aload_0
+         1: checkcast     #13                 // class "[Ljava/lang/Object;"
+         4: lconst_0
+         5: invokestatic  #19                 // Method clojure/lang/RT.intCast:(J)I
+         8: invokestatic  #23                 // Method clojure/lang/RT.aget:([Ljava/lang/Object;I)Ljava/lang/Object;
+        11: aconst_null
+        12: invokestatic  #29                 // Method clojure/lang/Util.identical:(Ljava/lang/Object;Ljava/lang/Object;)Z
+        15: ifeq          25
+        18: getstatic     #33                 // Field const__4:Ljava/lang/Object;
+        21: goto          84
+        24: athrow
+        25: lconst_1
+        26: getstatic     #37                 // Field const__6:Lclojure/lang/Var;
+        29: invokevirtual #43                 // Method clojure/lang/Var.getRawRoot:()Ljava/lang/Object;
+        32: checkcast     #45                 // class clojure/lang/IFn
+        35: aload_0
+        36: checkcast     #13                 // class "[Ljava/lang/Object;"
+        39: lconst_0
+        40: invokestatic  #19                 // Method clojure/lang/RT.intCast:(J)I
+        43: invokestatic  #23                 // Method clojure/lang/RT.aget:([Ljava/lang/Object;I)Ljava/lang/Object;
+        46: invokeinterface #48,  2           // InterfaceMethod clojure/lang/IFn.invoke:(Ljava/lang/Object;)Ljava/lang/Object;
+        51: invokestatic  #54                 // Method clojure/lang/Numbers.add:(JLjava/lang/Object;)Ljava/lang/Number;
+        54: getstatic     #37                 // Field const__6:Lclojure/lang/Var;
+        57: invokevirtual #43                 // Method clojure/lang/Var.getRawRoot:()Ljava/lang/Object;
+        60: checkcast     #45                 // class clojure/lang/IFn
+        63: aload_0
+        64: aconst_null
+        65: astore_0
+        66: checkcast     #13                 // class "[Ljava/lang/Object;"
+        69: lconst_1
+        70: invokestatic  #19                 // Method clojure/lang/RT.intCast:(J)I
+        73: invokestatic  #23                 // Method clojure/lang/RT.aget:([Ljava/lang/Object;I)Ljava/lang/Object;
+        76: invokeinterface #48,  2           // InterfaceMethod clojure/lang/IFn.invoke:(Ljava/lang/Object;)Ljava/lang/Object;
+        81: invokestatic  #57                 // Method clojure/lang/Numbers.add:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Number;
+        84: areturn
+
+  public java.lang.Object invoke(java.lang.Object);
+    Code:
+         0: aload_1
+         1: aconst_null
+         2: astore_1
+         3: invokestatic  #64                 // Method invokeStatic:(Ljava/lang/Object;)Ljava/lang/Object;
+         6: areturn
+
+  public static {};
+    Code:
+         0: lconst_1
+         1: invokestatic  #71                 // Method java/lang/Long.valueOf:(J)Ljava/lang/Long;
+         4: putstatic     #33                 // Field const__4:Ljava/lang/Object;
+         7: ldc           #73                 // String clbg.binarytrees.compact
+         9: ldc           #75                 // String check-tree
+        11: invokestatic  #79                 // Method clojure/lang/RT.var:(Ljava/lang/String;Ljava/lang/String;)Lclojure/lang/Var;
+        14: checkcast     #39                 // class clojure/lang/Var
+        17: putstatic     #37                 // Field const__6:Lclojure/lang/Var;
+        20: return
+}

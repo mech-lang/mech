@@ -1,0 +1,3 @@
+Acquired common timing mutex; starting frozen fixtures.
+{"python_executable": "/opt/homebrew/opt/python@3.14/bin/python3.14", "python_version": "3.14.8 (main, Sep 30 2026, 17:55:09) [Clang 21.0.0 (clang-2100.3.34.2)]", "pygments_version": "2.19.2", "pygments_module": "/private/tmp/mech-clbg-compact-libs/pygments/__init__.py"}
+Fixtures failed; stopped before source-pool audit. See fixtures.log.

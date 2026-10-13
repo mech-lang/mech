@@ -1,0 +1,313 @@
+{
+  "language": "clojure",
+  "status": "authored-unbuilt-awaiting-root-static-review",
+  "compiler_version": "1.12.6",
+  "backend": "Clojure AOT JVM bytecode, then fresh-process native ARM64 HotSpot JIT",
+  "runtime_version": "Temurin25.0.4.1+1",
+  "dependencies": {
+    "org.clojure/spec.alpha": "0.5.238",
+    "org.clojure/core.specs.alpha": "0.4.74"
+  },
+  "profiles": [
+    {
+      "id": "clojure-binarytrees-compact",
+      "benchmark": "binarytrees",
+      "variant": "compact",
+      "namespace": "clbg.binarytrees.compact",
+      "source": "sources/clbg/binarytrees/compact.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/binarytrees/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 1,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-binarytrees-optimized",
+      "benchmark": "binarytrees",
+      "variant": "optimized",
+      "namespace": "clbg.binarytrees.optimized",
+      "source": "sources/clbg/binarytrees/optimized.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/binarytrees/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 8,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-fannkuchredux-compact",
+      "benchmark": "fannkuchredux",
+      "variant": "compact",
+      "namespace": "clbg.fannkuchredux.compact",
+      "source": "sources/clbg/fannkuchredux/compact.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/fannkuchredux/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 1,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-fannkuchredux-optimized",
+      "benchmark": "fannkuchredux",
+      "variant": "optimized",
+      "namespace": "clbg.fannkuchredux.optimized",
+      "source": "sources/clbg/fannkuchredux/optimized.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/fannkuchredux/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 8,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-nbody-compact",
+      "benchmark": "nbody",
+      "variant": "compact",
+      "namespace": "clbg.nbody.compact",
+      "source": "revisions/private-v2/sources/clbg/nbody/compact.clj",
+      "compiled_source_bundle": [
+        "revisions/private-v2/sources/clbg/nbody/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 1,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-nbody-optimized",
+      "benchmark": "nbody",
+      "variant": "optimized",
+      "namespace": "clbg.nbody.optimized",
+      "source": "revisions/private-v2/sources/clbg/nbody/optimized.clj",
+      "compiled_source_bundle": [
+        "revisions/private-v2/sources/clbg/nbody/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 1,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-spectralnorm-compact",
+      "benchmark": "spectralnorm",
+      "variant": "compact",
+      "namespace": "clbg.spectralnorm.compact",
+      "source": "sources/clbg/spectralnorm/compact.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/spectralnorm/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 1,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-spectralnorm-optimized",
+      "benchmark": "spectralnorm",
+      "variant": "optimized",
+      "namespace": "clbg.spectralnorm.optimized",
+      "source": "sources/clbg/spectralnorm/optimized.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/spectralnorm/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 8,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-mandelbrot-compact",
+      "benchmark": "mandelbrot",
+      "variant": "compact",
+      "namespace": "clbg.mandelbrot.compact",
+      "source": "sources/clbg/mandelbrot/compact.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/mandelbrot/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 1,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-mandelbrot-optimized",
+      "benchmark": "mandelbrot",
+      "variant": "optimized",
+      "namespace": "clbg.mandelbrot.optimized",
+      "source": "sources/clbg/mandelbrot/optimized.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/mandelbrot/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 8,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-pidigits-compact",
+      "benchmark": "pidigits",
+      "variant": "compact",
+      "namespace": "clbg.pidigits.compact",
+      "source": "sources/clbg/pidigits/compact.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/pidigits/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 1,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-pidigits-optimized",
+      "benchmark": "pidigits",
+      "variant": "optimized",
+      "namespace": "clbg.pidigits.optimized",
+      "source": "sources/clbg/pidigits/optimized.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/pidigits/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 1,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-fasta-compact",
+      "benchmark": "fasta",
+      "variant": "compact",
+      "namespace": "clbg.fasta.compact",
+      "source": "sources/clbg/fasta/compact.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/fasta/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 1,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-fasta-optimized",
+      "benchmark": "fasta",
+      "variant": "optimized",
+      "namespace": "clbg.fasta.optimized",
+      "source": "sources/clbg/fasta/optimized.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/fasta/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 1,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-revcomp-compact",
+      "benchmark": "revcomp",
+      "variant": "compact",
+      "namespace": "clbg.revcomp.compact",
+      "source": "sources/clbg/revcomp/compact.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/revcomp/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 1,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-revcomp-optimized",
+      "benchmark": "revcomp",
+      "variant": "optimized",
+      "namespace": "clbg.revcomp.optimized",
+      "source": "sources/clbg/revcomp/optimized.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/revcomp/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 1,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-knucleotide-compact",
+      "benchmark": "knucleotide",
+      "variant": "compact",
+      "namespace": "clbg.knucleotide.compact",
+      "source": "sources/clbg/knucleotide/compact.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/knucleotide/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 1,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-knucleotide-optimized",
+      "benchmark": "knucleotide",
+      "variant": "optimized",
+      "namespace": "clbg.knucleotide.optimized",
+      "source": "sources/clbg/knucleotide/optimized.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/knucleotide/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 8,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-regexredux-compact",
+      "benchmark": "regexredux",
+      "variant": "compact",
+      "namespace": "clbg.regexredux.compact",
+      "source": "sources/clbg/regexredux/compact.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/regexredux/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 1,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-regexredux-optimized",
+      "benchmark": "regexredux",
+      "variant": "optimized",
+      "namespace": "clbg.regexredux.optimized",
+      "source": "sources/clbg/regexredux/optimized.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/regexredux/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 8,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    }
+  ]
+}

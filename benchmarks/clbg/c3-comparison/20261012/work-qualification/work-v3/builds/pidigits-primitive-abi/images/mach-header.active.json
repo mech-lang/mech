@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/usr/bin/otool",
+    "-hv",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v3/source-work/work-v3/pidigits-primitive-abi/observed"
+  ],
+  "started_at": "2026-10-13T05:05:27.604778+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 67599,
+  "identity": {
+    "pid": 67599,
+    "process_listing": "Tue Oct 13 01:05:27 2026     /Library/Developer/CommandLineTools/usr/bin/otool -hv /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/.build/private-v3/source-work/work-v3/pidigits-primitive-abi/observed"
+  }
+}

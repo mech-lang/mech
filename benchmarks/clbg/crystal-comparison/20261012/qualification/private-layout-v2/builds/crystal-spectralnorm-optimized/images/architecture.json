@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/usr/bin/lipo",
+    "-archs",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-spectralnorm-optimized"
+  ],
+  "started_at": "2026-10-12T17:14:15.754266+00:00",
+  "inherited_common_mutex": true,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "timeout_seconds": 30,
+  "pid": 89948,
+  "identity": {
+    "pid": 89948,
+    "process_listing": "Mon Oct 12 13:14:15 2026     /Library/Developer/CommandLineTools/usr/bin/lipo -archs /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/bin/crystal-spectralnorm-optimized"
+  },
+  "exit_status": 0,
+  "final_exit_status": 0,
+  "finished_at": "2026-10-12T17:14:15.839839+00:00"
+}

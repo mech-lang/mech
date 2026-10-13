@@ -1,0 +1,345 @@
+Compiled from "optimized.clj"
+public final class clbg.binarytreesobserver.optimized$run_scored extends clojure.lang.RestFn {
+  public static final java.lang.Object const__3;
+
+  public static final clojure.lang.Var const__4;
+
+  public static final java.lang.Object const__8;
+
+  public static final java.lang.Object const__12;
+
+  public static final java.lang.Object const__13;
+
+  public static final clojure.lang.Var const__18;
+
+  public clbg.binarytreesobserver.optimized$run_scored();
+    Code:
+         0: aload_0
+         1: invokespecial #9                  // Method clojure/lang/RestFn."<init>":()V
+         4: return
+
+  public static java.lang.Object invokeStatic(clojure.lang.ISeq);
+    Code:
+         0: ldc2_w        #12                 // long 6l
+         3: aload_0
+         4: aconst_null
+         5: astore_0
+         6: getstatic     #17                 // Field const__3:Ljava/lang/Object;
+         9: invokestatic  #22                 // Method clbg/work/support$argument.invokeStatic:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+        12: invokestatic  #28                 // Method clojure/lang/Numbers.max:(JLjava/lang/Object;)Ljava/lang/Object;
+        15: astore_1
+        16: aload_1
+        17: invokestatic  #32                 // Method clojure/lang/Numbers.inc:(Ljava/lang/Object;)Ljava/lang/Number;
+        20: invokestatic  #37                 // Method clbg/binarytrees/optimized$make_tree.invokeStatic:(Ljava/lang/Object;)Ljava/lang/Object;
+        23: aload_1
+        24: invokestatic  #32                 // Method clojure/lang/Numbers.inc:(Ljava/lang/Object;)Ljava/lang/Number;
+        27: ldc           #39                 // String stretch
+        29: getstatic     #42                 // Field const__8:Ljava/lang/Object;
+        32: getstatic     #46                 // Field const__4:Lclojure/lang/Var;
+        35: invokevirtual #52                 // Method clojure/lang/Var.getRawRoot:()Ljava/lang/Object;
+        38: invokestatic  #57                 // Method clbg/work/observer$tree_root.invokeStatic:(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+        41: invokestatic  #60                 // Method clbg/binarytrees/optimized$check_tree.invokeStatic:(Ljava/lang/Object;)Ljava/lang/Object;
+        44: astore_2
+        45: aload_1
+        46: invokestatic  #37                 // Method clbg/binarytrees/optimized$make_tree.invokeStatic:(Ljava/lang/Object;)Ljava/lang/Object;
+        49: aload_1
+        50: ldc           #62                 // String retained-before
+        52: getstatic     #42                 // Field const__8:Ljava/lang/Object;
+        55: getstatic     #46                 // Field const__4:Lclojure/lang/Var;
+        58: invokevirtual #52                 // Method clojure/lang/Var.getRawRoot:()Ljava/lang/Object;
+        61: invokestatic  #57                 // Method clbg/work/observer$tree_root.invokeStatic:(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+        64: astore_3
+        65: ldc           #64                 // String stretch tree of depth %d\t check: %d\n
+        67: iconst_2
+        68: anewarray     #66                 // class java/lang/Object
+        71: dup
+        72: iconst_0
+        73: aload_1
+        74: invokestatic  #32                 // Method clojure/lang/Numbers.inc:(Ljava/lang/Object;)Ljava/lang/Number;
+        77: aastore
+        78: dup
+        79: iconst_1
+        80: aload_2
+        81: aconst_null
+        82: astore_2
+        83: aastore
+        84: invokestatic  #72                 // Method clojure/lang/ArraySeq.create:([Ljava/lang/Object;)Lclojure/lang/ArraySeq;
+        87: invokestatic  #77                 // Method clbg/work/support$printf.invokeStatic:(Ljava/lang/Object;Lclojure/lang/ISeq;)Ljava/lang/Object;
+        90: pop
+        91: getstatic     #80                 // Field const__12:Ljava/lang/Object;
+        94: aload_1
+        95: invokestatic  #32                 // Method clojure/lang/Numbers.inc:(Ljava/lang/Object;)Ljava/lang/Number;
+        98: getstatic     #83                 // Field const__13:Ljava/lang/Object;
+       101: invokestatic  #88                 // Method clojure/core$range.invokeStatic:(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+       104: invokestatic  #91                 // Method clojure/core$seq__5486.invokeStatic:(Ljava/lang/Object;)Ljava/lang/Object;
+       107: astore        4
+       109: aconst_null
+       110: astore        5
+       112: lconst_0
+       113: lstore        6
+       115: lconst_0
+       116: lstore        8
+       118: lload         8
+       120: lload         6
+       122: lcmp
+       123: ifge          280
+       126: aload         5
+       128: checkcast     #93                 // class clojure/lang/Indexed
+       131: lload         8
+       133: invokestatic  #99                 // Method clojure/lang/RT.intCast:(J)I
+       136: invokeinterface #103,  2          // InterfaceMethod clojure/lang/Indexed.nth:(I)Ljava/lang/Object;
+       141: astore        10
+       143: lconst_1
+       144: aload_1
+       145: ldc2_w        #104                // long 4l
+       148: invokestatic  #109                // Method clojure/lang/Numbers.add:(Ljava/lang/Object;J)Ljava/lang/Number;
+       151: aload         10
+       153: invokestatic  #112                // Method clojure/lang/Numbers.minus:(Ljava/lang/Object;)Ljava/lang/Number;
+       156: invokestatic  #115                // Method clojure/lang/Numbers.add:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Number;
+       159: invokestatic  #119                // Method clojure/lang/Numbers.shiftLeft:(JLjava/lang/Object;)J
+       162: lstore        11
+       164: ldc2_w        #120                // long 8l
+       167: lload         11
+       169: invokestatic  #125                // Method clojure/lang/Numbers.min:(JJ)J
+       172: lstore        13
+       174: new           #127                // class clbg/binarytreesobserver/optimized$run_scored$fn__251
+       177: dup
+       178: lload         11
+       180: lload         13
+       182: aload         10
+       184: invokespecial #130                // Method clbg/binarytreesobserver/optimized$run_scored$fn__251."<init>":(JJLjava/lang/Object;)V
+       187: lload         13
+       189: invokestatic  #134                // Method clojure/lang/Numbers.num:(J)Ljava/lang/Number;
+       192: invokestatic  #135                // Method clojure/core$range.invokeStatic:(Ljava/lang/Object;)Ljava/lang/Object;
+       195: invokestatic  #138                // Method clojure/core$mapv.invokeStatic:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+       198: invokestatic  #141                // Method clbg/work/support$jobs.invokeStatic:(Ljava/lang/Object;)Ljava/lang/Object;
+       201: astore        15
+       203: ldc           #143                // String %d\t trees of depth %d\t check: %d\n
+       205: iconst_3
+       206: anewarray     #66                 // class java/lang/Object
+       209: dup
+       210: iconst_0
+       211: lload         11
+       213: invokestatic  #134                // Method clojure/lang/Numbers.num:(J)Ljava/lang/Number;
+       216: aastore
+       217: dup
+       218: iconst_1
+       219: aload         10
+       221: aconst_null
+       222: astore        10
+       224: aastore
+       225: dup
+       226: iconst_2
+       227: getstatic     #146                // Field const__18:Lclojure/lang/Var;
+       230: invokevirtual #52                 // Method clojure/lang/Var.getRawRoot:()Ljava/lang/Object;
+       233: aload         15
+       235: aconst_null
+       236: astore        15
+       238: invokestatic  #149                // Method clojure/core$reduce.invokeStatic:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+       241: aastore
+       242: invokestatic  #72                 // Method clojure/lang/ArraySeq.create:([Ljava/lang/Object;)Lclojure/lang/ArraySeq;
+       245: invokestatic  #77                 // Method clbg/work/support$printf.invokeStatic:(Ljava/lang/Object;Lclojure/lang/ISeq;)Ljava/lang/Object;
+       248: pop
+       249: aload         4
+       251: aconst_null
+       252: astore        4
+       254: aload         5
+       256: aconst_null
+       257: astore        5
+       259: lload         6
+       261: lload         8
+       263: lconst_1
+       264: ladd
+       265: lstore        8
+       267: lstore        6
+       269: astore        5
+       271: astore        4
+       273: goto          118
+       276: nop
+       277: nop
+       278: athrow
+       279: athrow
+       280: aload         4
+       282: aconst_null
+       283: astore        4
+       285: invokestatic  #91                 // Method clojure/core$seq__5486.invokeStatic:(Ljava/lang/Object;)Ljava/lang/Object;
+       288: astore        10
+       290: aload         10
+       292: dup
+       293: ifnull        511
+       296: getstatic     #160                // Field java/lang/Boolean.FALSE:Ljava/lang/Boolean;
+       299: if_acmpeq     512
+       302: aload         10
+       304: aconst_null
+       305: astore        10
+       307: astore        16
+       309: aload         16
+       311: invokestatic  #163                // Method clojure/core$chunked_seq_QMARK_.invokeStatic:(Ljava/lang/Object;)Ljava/lang/Object;
+       314: dup
+       315: ifnull        372
+       318: getstatic     #160                // Field java/lang/Boolean.FALSE:Ljava/lang/Boolean;
+       321: if_acmpeq     373
+       324: aload         16
+       326: invokestatic  #166                // Method clojure/core$chunk_first.invokeStatic:(Ljava/lang/Object;)Ljava/lang/Object;
+       329: astore        17
+       331: aload         16
+       333: aconst_null
+       334: astore        16
+       336: invokestatic  #169                // Method clojure/core$chunk_rest.invokeStatic:(Ljava/lang/Object;)Ljava/lang/Object;
+       339: aload         17
+       341: aload         17
+       343: aconst_null
+       344: astore        17
+       346: invokestatic  #173                // Method clojure/lang/RT.count:(Ljava/lang/Object;)I
+       349: invokestatic  #176                // Method clojure/lang/RT.intCast:(I)I
+       352: i2l
+       353: lconst_0
+       354: invokestatic  #99                 // Method clojure/lang/RT.intCast:(J)I
+       357: i2l
+       358: lstore        8
+       360: lstore        6
+       362: astore        5
+       364: astore        4
+       366: goto          118
+       369: nop
+       370: nop
+       371: athrow
+       372: pop
+       373: aload         16
+       375: invokestatic  #180                // Method clojure/core$first__5468.invokeStatic:(Ljava/lang/Object;)Ljava/lang/Object;
+       378: astore        17
+       380: lconst_1
+       381: aload_1
+       382: ldc2_w        #104                // long 4l
+       385: invokestatic  #109                // Method clojure/lang/Numbers.add:(Ljava/lang/Object;J)Ljava/lang/Number;
+       388: aload         17
+       390: invokestatic  #112                // Method clojure/lang/Numbers.minus:(Ljava/lang/Object;)Ljava/lang/Number;
+       393: invokestatic  #115                // Method clojure/lang/Numbers.add:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Number;
+       396: invokestatic  #119                // Method clojure/lang/Numbers.shiftLeft:(JLjava/lang/Object;)J
+       399: lstore        18
+       401: ldc2_w        #120                // long 8l
+       404: lload         18
+       406: invokestatic  #125                // Method clojure/lang/Numbers.min:(JJ)J
+       409: lstore        20
+       411: new           #182                // class clbg/binarytreesobserver/optimized$run_scored$fn__255
+       414: dup
+       415: lload         18
+       417: aload         17
+       419: lload         20
+       421: invokespecial #185                // Method clbg/binarytreesobserver/optimized$run_scored$fn__255."<init>":(JLjava/lang/Object;J)V
+       424: lload         20
+       426: invokestatic  #134                // Method clojure/lang/Numbers.num:(J)Ljava/lang/Number;
+       429: invokestatic  #135                // Method clojure/core$range.invokeStatic:(Ljava/lang/Object;)Ljava/lang/Object;
+       432: invokestatic  #138                // Method clojure/core$mapv.invokeStatic:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+       435: invokestatic  #141                // Method clbg/work/support$jobs.invokeStatic:(Ljava/lang/Object;)Ljava/lang/Object;
+       438: astore        22
+       440: ldc           #143                // String %d\t trees of depth %d\t check: %d\n
+       442: iconst_3
+       443: anewarray     #66                 // class java/lang/Object
+       446: dup
+       447: iconst_0
+       448: lload         18
+       450: invokestatic  #134                // Method clojure/lang/Numbers.num:(J)Ljava/lang/Number;
+       453: aastore
+       454: dup
+       455: iconst_1
+       456: aload         17
+       458: aconst_null
+       459: astore        17
+       461: aastore
+       462: dup
+       463: iconst_2
+       464: getstatic     #146                // Field const__18:Lclojure/lang/Var;
+       467: invokevirtual #52                 // Method clojure/lang/Var.getRawRoot:()Ljava/lang/Object;
+       470: aload         22
+       472: aconst_null
+       473: astore        22
+       475: invokestatic  #149                // Method clojure/core$reduce.invokeStatic:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+       478: aastore
+       479: invokestatic  #72                 // Method clojure/lang/ArraySeq.create:([Ljava/lang/Object;)Lclojure/lang/ArraySeq;
+       482: invokestatic  #77                 // Method clbg/work/support$printf.invokeStatic:(Ljava/lang/Object;Lclojure/lang/ISeq;)Ljava/lang/Object;
+       485: pop
+       486: aload         16
+       488: aconst_null
+       489: astore        16
+       491: invokestatic  #188                // Method clojure/core$next__5470.invokeStatic:(Ljava/lang/Object;)Ljava/lang/Object;
+       494: aconst_null
+       495: lconst_0
+       496: lconst_0
+       497: lstore        8
+       499: lstore        6
+       501: astore        5
+       503: astore        4
+       505: goto          118
+       508: nop
+       509: nop
+       510: athrow
+       511: pop
+       512: aconst_null
+       513: pop
+       514: ldc           #195                // String long lived tree of depth %d\t check: %d\n
+       516: iconst_2
+       517: anewarray     #66                 // class java/lang/Object
+       520: dup
+       521: iconst_0
+       522: aload_1
+       523: aastore
+       524: dup
+       525: iconst_1
+       526: aload_3
+       527: aconst_null
+       528: astore_3
+       529: aload_1
+       530: aconst_null
+       531: astore_1
+       532: ldc           #197                // String retained-after
+       534: getstatic     #42                 // Field const__8:Ljava/lang/Object;
+       537: getstatic     #46                 // Field const__4:Lclojure/lang/Var;
+       540: invokevirtual #52                 // Method clojure/lang/Var.getRawRoot:()Ljava/lang/Object;
+       543: invokestatic  #57                 // Method clbg/work/observer$tree_root.invokeStatic:(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+       546: invokestatic  #60                 // Method clbg/binarytrees/optimized$check_tree.invokeStatic:(Ljava/lang/Object;)Ljava/lang/Object;
+       549: aastore
+       550: invokestatic  #72                 // Method clojure/lang/ArraySeq.create:([Ljava/lang/Object;)Lclojure/lang/ArraySeq;
+       553: invokestatic  #77                 // Method clbg/work/support$printf.invokeStatic:(Ljava/lang/Object;Lclojure/lang/ISeq;)Ljava/lang/Object;
+       556: areturn
+
+  public java.lang.Object doInvoke(java.lang.Object);
+    Code:
+         0: aload_1
+         1: checkcast     #206                // class clojure/lang/ISeq
+         4: aconst_null
+         5: astore_1
+         6: invokestatic  #208                // Method invokeStatic:(Lclojure/lang/ISeq;)Ljava/lang/Object;
+         9: areturn
+
+  public int getRequiredArity();
+    Code:
+         0: iconst_0
+         1: ireturn
+
+  public static {};
+    Code:
+         0: ldc2_w        #212                // long 10l
+         3: invokestatic  #219                // Method java/lang/Long.valueOf:(J)Ljava/lang/Long;
+         6: putstatic     #17                 // Field const__3:Ljava/lang/Object;
+         9: ldc           #221                // String clbg.binarytrees.optimized
+        11: ldc           #223                // String check-tree
+        13: invokestatic  #227                // Method clojure/lang/RT.var:(Ljava/lang/String;Ljava/lang/String;)Lclojure/lang/Var;
+        16: checkcast     #48                 // class clojure/lang/Var
+        19: putstatic     #46                 // Field const__4:Lclojure/lang/Var;
+        22: ldc2_w        #228                // long -1l
+        25: invokestatic  #219                // Method java/lang/Long.valueOf:(J)Ljava/lang/Long;
+        28: putstatic     #42                 // Field const__8:Ljava/lang/Object;
+        31: ldc2_w        #104                // long 4l
+        34: invokestatic  #219                // Method java/lang/Long.valueOf:(J)Ljava/lang/Long;
+        37: putstatic     #80                 // Field const__12:Ljava/lang/Object;
+        40: ldc2_w        #230                // long 2l
+        43: invokestatic  #219                // Method java/lang/Long.valueOf:(J)Ljava/lang/Long;
+        46: putstatic     #83                 // Field const__13:Ljava/lang/Object;
+        49: ldc           #233                // String clojure.core
+        51: ldc           #235                // String +
+        53: invokestatic  #227                // Method clojure/lang/RT.var:(Ljava/lang/String;Ljava/lang/String;)Lclojure/lang/Var;
+        56: checkcast     #48                 // class clojure/lang/Var
+        59: putstatic     #146                // Field const__18:Lclojure/lang/Var;
+        62: return
+}

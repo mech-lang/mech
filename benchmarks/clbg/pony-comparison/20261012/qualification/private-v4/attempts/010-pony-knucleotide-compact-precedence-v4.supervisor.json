@@ -1,0 +1,96 @@
+{
+  "key": "knucleotide:pony-knucleotide-compact-precedence-v4",
+  "id": "pony-knucleotide-compact-precedence-v4",
+  "benchmark": "knucleotide",
+  "language": "pony",
+  "source_sha256": "36f5c7b8bfd1ea57e7190b70fc200bc40bbb2d6985b26593c16e977820a13f0e",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v4/bin/pony-knucleotide-compact-precedence-v4/pony-knucleotide-compact-precedence-v4",
+    "1000",
+    "--ponymaxthreads",
+    "8"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012",
+  "runtime_environment": {
+    "LC_ALL": "C",
+    "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"e097b82d011e2a2ff0e83eb0e8566bcb81b20f663fbf8b45e02e61eab530730d\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v4/bin/pony-knucleotide-compact-precedence-v4/pony-knucleotide-compact-precedence-v4\", \"{n}\", \"--ponymaxthreads\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre2/10.49/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"36f5c7b8bfd1ea57e7190b70fc200bc40bbb2d6985b26593c16e977820a13f0e\", \"support\": {}}",
+  "started_at": "2026-10-12T19:38:22.694854+00:00",
+  "workload_n": 1000,
+  "full_workload": false,
+  "timeout_seconds": 120,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.085418666,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 154,
+  "stdout_sha256": "3db337b7afc51bf48b98dc51c90b0f7f442588a31180437e23ce853b0a9a2340",
+  "validation": {
+    "reference_match": true,
+    "bytes": 154,
+    "sha256": "3db337b7afc51bf48b98dc51c90b0f7f442588a31180437e23ce853b0a9a2340"
+  },
+  "finished_at": "2026-10-12T19:38:22.982439+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true,
+  "round": 0,
+  "attempt": 10,
+  "sampler_wait_status": 0,
+  "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v4/attempts/010-pony-knucleotide-compact-precedence-v4.json",
+  "supervised_native_group": {
+    "type": "native-group-started",
+    "pid": 16432,
+    "pgid": 16432,
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v4/bin/pony-knucleotide-compact-precedence-v4/pony-knucleotide-compact-precedence-v4",
+      "1000",
+      "--ponymaxthreads",
+      "8"
+    ],
+    "inherited_common_mutex": true
+  },
+  "supervisor_remaining_members": [],
+  "qualification_checks": {
+    "sampler_exited_normally": true,
+    "authoritative_native_group_received": true,
+    "native_inherited_common_mutex": true,
+    "native_exited_normally": true,
+    "no_execution_error": true,
+    "no_wrapper_integrity_error": true,
+    "no_resource_violation": true,
+    "no_resource_monitor_errors": true,
+    "no_compiler_power_monitor_errors": true,
+    "no_monitor_finish_error": true,
+    "no_execute_cleanup_error": true,
+    "no_remaining_execute_group": true,
+    "no_supervisor_cleanup": true,
+    "no_supervisor_remaining_group": true,
+    "valid_environment": true,
+    "actual_full_workload": true,
+    "exact_command_and_group": true,
+    "complete_output_reference_match": true,
+    "complete_output_bytes_and_hash": true,
+    "pins_unchanged": true
+  },
+  "qualified": true,
+  "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v4/attempts/010-pony-knucleotide-compact-precedence-v4.supervisor.json"
+}

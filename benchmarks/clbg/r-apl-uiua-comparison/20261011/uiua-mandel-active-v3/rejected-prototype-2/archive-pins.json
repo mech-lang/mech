@@ -1,0 +1,25 @@
+{
+  "status": "rejected-prototype",
+  "reason": "Locked diagnostics show the zero-target expression produced an empty boxed value. Recurrence state correctly terminated the n=1 pixel after iteration2. No successful candidate or measured result.",
+  "pins": {
+    "prepare_manifest.py": "e3cfe76d7c0362f30a7fa783c931b2c26c3230ba033b8579b0b8707e6847d17f",
+    "README.md": "fe83cc50b1bff07fa568672662e7cd8eed584615ecb2ca348f274bbf71d1addd",
+    "validate.py": "daa69868d05051b4159ec0b838305c02ad2af763631ca3a7a62c7ee6b7091d92",
+    "manifest.json": "82baf08d2f0c54e741d0720988078959fbce1abf76d7a486f3126f8af26f344c",
+    "prepare.py": "46c19a4cf6adfff801aa80d0b95cc381e13380309df65dc331172ecb9ab6eefb",
+    "results/diagnostic-bits.stdout": "c0d17f24ff929082af02b394714cff97bad95c7bf54389d1f1bfaa6356bca898",
+    "results/validation.log": "d7db4e8b3deb0fdd71eaf1146065d37c799b7bd3053cdde9dbda20bb61dd9e23",
+    "results/diagnostic-state.ua": "ccefe3316a78fb5722af9c58aa3d86f38ae49bb82bfe4c9edba49c400272ce67",
+    "results/source-audit.json": "383cf897a97899174fd25dd345170feaf109220ac85a13bfe9739016d7cfd04b",
+    "results/instrumented.ua": "65de1dabc141ab3effb285b3f782461a8dfbfbb63717a484869e75b5c57f1b01",
+    "results/diagnostic-bits.stderr": "a40c1a830e7a1400c9ba63c1bc123927ea22a7b256a48a764a5edc4dbd4fb911",
+    "results/diagnostic-state.stderr": "4567732ae46b2129089037418b59c4b285d34960ab0e32482e505322430cd0f6",
+    "results/validation.json": "e74d5b5b61b475096cd0dc2f7854a6fcb96b80bc4d6807ffadd5e325d436b713",
+    "results/output-1.stdout": "d4a32cd03b3f1505b9c4f1c75fa6486fca66966838ac6cf05116f187d0b67f26",
+    "results/output-1.stderr": "341cc316850b2727f4c7cc405b6e31f4dac701aa326b6365ac63b60cb461629b",
+    "results/validation-wait-only.log": "df10a33746f69883b89b9c7bc39ac4c2e1de52cc948f715cfe0edc3b20149f88",
+    "results/diagnostic-bits.ua": "b719ab777e9eb8d37094a74851c6cd44854f556167a6d86edaf1116f4a9f5158",
+    "results/diagnostic-state.stdout": "63e8be1f9b778f72a84fd0899dd340966b661c813f078dc6c28024bac836725a",
+    "sources/fast.ua": "c229d6798fddecb0760bdbeaf8037a907eadcab04818b616e55f4ca561e21ded"
+  }
+}

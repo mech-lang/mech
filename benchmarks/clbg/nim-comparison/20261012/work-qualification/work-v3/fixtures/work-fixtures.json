@@ -1,0 +1,24 @@
+{
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v3/fixture_runner.py",
+    "--set",
+    "work",
+    "--receipt",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/work-qualification/work-v3/fixtures/actual-inventory.json"
+  ],
+  "started_at": "2026-10-13T01:38:21.608316+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 60,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 15690,
+  "identity": {
+    "pid": 15690,
+    "process_listing": "Mon Oct 12 21:38:21 2026     /opt/homebrew/opt/python@3.14/bin/python3.14 -B /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v3/fixture_runner.py --set work --receipt /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/work-qualification/work-v3/fixtures/actual-inventory.json"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-13T01:38:21.844659+00:00",
+  "final_exit_status": 0
+}

@@ -1,0 +1,92 @@
+{
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v6/source-snapshot/revisions/precedence-v4/sources/binarytrees/compact/main.pony",
+  "source_sha256": "9fe1b9d288f21559aaf6d40706cd6fe3c969bfdddcbbaa0900fa3d97cc670a20",
+  "trace_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/work-qualification/private-v8-work-v2/source-snapshot/sources/binarytrees/compact/main.pony",
+  "trace_source_sha256": "965a997bdc2d7193141a7e5cca4aa57017e060e32362421f6e01e765d2bb749c",
+  "changes": [
+    {
+      "old": "class Node\n",
+      "new": "class Node\n  let _trace_depth: USize\n  let _trace_final: String\n"
+    },
+    {
+      "old": "  new create(depth: USize) =>\n",
+      "new": "  new create(depth: USize) =>\n    _trace_depth = depth\n    _trace_final = \"FINAL\\t\" + depth.string() + \"\\n\"\n    Trace(\"NODE\\t\" + depth.string())\n"
+    },
+    {
+      "old": "  fun check(): U64 =>\n",
+      "new": "  fun _final() =>\n    let written = @write(2, _trace_final.cpointer(), _trace_final.size())\n    if written != _trace_final.size().i64() then @exit(1) end\n  fun check(): U64 =>\n    Trace(\"CHECK\\t\" + _trace_depth.string())\n"
+    },
+    {
+      "old": "      let tree = Node(_depth)\n",
+      "new": "      Trace(\"TREE\\t\" + _depth.string())\n      let tree = Node(_depth)\n"
+    },
+    {
+      "old": "    _long = Node(_maximum)\n",
+      "new": "    Trace(\"LONG_NEW\\t\" + _maximum.string())\n    _long = Node(_maximum)\n"
+    },
+    {
+      "old": "        _env.out.print(\"long lived tree",
+      "new": "        Trace(\"LONG_CHECK\\t\" + _maximum.string())\n        _env.out.print(\"long lived tree"
+    },
+    {
+      "kind": "scheduler-identity-hooks",
+      "before": "use \"collections\"\n\nclass Node\n  let _trace_depth: USize\n  let _trace_final: String\n  let left: (Node | None)\n  let right: (Node | None)\n  new create(depth: USize) =>\n    _trace_depth = depth\n    _trace_final = \"FINAL\\t\" + depth.string() + \"\\n\"\n    Trace(\"NODE\\t\" + depth.string())\n    if depth > 0 then\n      left = Node(depth - 1)\n      right = Node(depth - 1)\n    else\n      left = None\n      right = None\n    end\n  fun _final() =>\n    let written = @write(2, _trace_final.cpointer(), _trace_final.size())\n    if written != _trace_final.size().i64() then @exit(1) end\n  fun check(): U64 =>\n    Trace(\"CHECK\\t\" + _trace_depth.string())\n    match (left, right)\n    | (let first: Node box, let second: Node box) => 1 + first.check() + second.check()\n    else\n      1\n    end\n\nactor Worker\n  let _parent: Main\n  let _depth: USize\n  var _remaining: USize\n  var _sum: U64 = 0\n  new create(parent: Main, depth: USize, count: USize) =>\n    _parent = parent\n    _depth = depth\n    _remaining = count\n    _one()\n  be _one() =>\n    if _remaining == 0 then\n      _parent.done(_sum)\n    else\n      Trace(\"TREE\\t\" + _depth.string())\n      let tree = Node(_depth)\n      _sum = _sum + tree.check()\n      _remaining = _remaining - 1\n      _one()\n    end\n\nactor Main\n  let _env: Env\n  let _maximum: USize\n  let _long: Node\n  var _depth: USize = 4\n  var _iterations: USize = 0\n  var _pending: USize = 0\n  var _sum: U64 = 0\n  new create(env: Env) =>\n    _env = env\n    _maximum = (try env.args(1)?.usize()? else 6 end).max(6)\n    let stretch = Node(_maximum + 1)\n    env.out.print(\"stretch tree of depth \" + (_maximum + 1).string() + \"\\t check: \" + stretch.check().string())\n    Trace(\"LONG_NEW\\t\" + _maximum.string())\n    _long = Node(_maximum)\n    _start()\n  be _start() =>\n    _iterations = USize(1) << ((_maximum - _depth) + 4)\n    _pending = 1\n    _sum = 0\n    for index in Range[USize](0, _pending) do\n      let count = ((_iterations * (index + 1)) / _pending) - ((_iterations * index) / _pending)\n      Worker(this, _depth, count)\n    end\n  be done(value: U64) =>\n    _sum = _sum + value\n    _pending = _pending - 1\n    if _pending == 0 then\n      _env.out.print(_iterations.string() + \"\\t trees of depth \" + _depth.string() + \"\\t check: \" + _sum.string())\n      _depth = _depth + 2\n      if _depth <= _maximum then\n        _start()\n      else\n        Trace(\"LONG_CHECK\\t\" + _maximum.string())\n        _env.out.print(\"long lived tree of depth \" + _maximum.string() + \"\\t check: \" + _long.check().string())\n        _env.out.flush()\n      end\n    end\n",
+      "after": "use \"collections\"\n\nclass Node\n  let _trace_depth: USize\n  let _trace_final: String\n  let left: (Node | None)\n  let right: (Node | None)\n  new create(depth: USize) =>\n    _trace_depth = depth\n    _trace_final = \"FINAL\\t\" + depth.string() + \"\\n\"\n    Trace(\"NODE\\t\" + depth.string())\n    if depth > 0 then\n      left = Node(depth - 1)\n      right = Node(depth - 1)\n    else\n      left = None\n      right = None\n    end\n  fun _final() =>\n    let written = @write(2, _trace_final.cpointer(), _trace_final.size())\n    if written != _trace_final.size().i64() then @exit(1) end\n  fun check(): U64 =>\n    Trace(\"CHECK\\t\" + _trace_depth.string())\n    match (left, right)\n    | (let first: Node box, let second: Node box) => 1 + first.check() + second.check()\n    else\n      1\n    end\n\nactor Worker\n  let _parent: Main\n  let _depth: USize\n  var _remaining: USize\n  var _sum: U64 = 0\n  new create(parent: Main, depth: USize, count: USize) =>\n    _parent = parent\n    _depth = depth\n    _remaining = count\n    _one()\n  be _one() =>\n    Trace(\"THREAD\\t\" + @pthread_self().string())\n    if _remaining == 0 then\n      _parent.done(_sum)\n    else\n      Trace(\"TREE\\t\" + _depth.string())\n      let tree = Node(_depth)\n      _sum = _sum + tree.check()\n      _remaining = _remaining - 1\n      _one()\n    end\n\nactor Main\n  let _env: Env\n  let _maximum: USize\n  let _long: Node\n  var _depth: USize = 4\n  var _iterations: USize = 0\n  var _pending: USize = 0\n  var _sum: U64 = 0\n  new create(env: Env) =>\n    _env = env\n    _maximum = (try env.args(1)?.usize()? else 6 end).max(6)\n    let stretch = Node(_maximum + 1)\n    env.out.print(\"stretch tree of depth \" + (_maximum + 1).string() + \"\\t check: \" + stretch.check().string())\n    Trace(\"LONG_NEW\\t\" + _maximum.string())\n    _long = Node(_maximum)\n    _start()\n  be _start() =>\n    Trace(\"THREAD\\t\" + @pthread_self().string())\n    _iterations = USize(1) << ((_maximum - _depth) + 4)\n    _pending = 1\n    _sum = 0\n    for index in Range[USize](0, _pending) do\n      let count = ((_iterations * (index + 1)) / _pending) - ((_iterations * index) / _pending)\n      Worker(this, _depth, count)\n    end\n  be done(value: U64) =>\n    Trace(\"THREAD\\t\" + @pthread_self().string())\n    _sum = _sum + value\n    _pending = _pending - 1\n    if _pending == 0 then\n      _env.out.print(_iterations.string() + \"\\t trees of depth \" + _depth.string() + \"\\t check: \" + _sum.string())\n      _depth = _depth + 2\n      if _depth <= _maximum then\n        _start()\n      else\n        Trace(\"LONG_CHECK\\t\" + _maximum.string())\n        _env.out.print(\"long lived tree of depth \" + _maximum.string() + \"\\t check: \" + _long.check().string())\n        _env.out.flush()\n      end\n    end\n"
+    },
+    {
+      "kind": "diagnostic-use-directive-order",
+      "original_imports": "use \"collections\"\n\n",
+      "diagnostic_imports": "use @write[I64](fd: I32, buffer: Pointer[U8] tag, count: USize)\nuse @pthread_self[USize]()\nuse @exit[None](status: I32)",
+      "first_type": "Trace"
+    },
+    {
+      "old": "  let _trace_final: String\n",
+      "new": "  var _trace_final: String = \"\"\n"
+    },
+    {
+      "old": "    _trace_final = \"FINAL\\t\" + depth.string() + \"\\n\"\n",
+      "new": ""
+    },
+    {
+      "old": "    end\n  fun _final() =>\n",
+      "new": "    end\n    let identity = (digestof this).string()\n    _trace_final = \"FINAL\\t\" + depth.string() + \"\\t\" + identity + \"\\n\"\n    match (left, right)\n    | (let first: Node box, let second: Node box) =>\n      Trace(\"GRAPH\\t\" + depth.string() + \"\\t\" + identity + \"\\t\" + (digestof first).string() + \"\\t\" + (digestof second).string())\n    else\n      Trace(\"GRAPH\\t\" + depth.string() + \"\\t\" + identity + \"\\t0\\t0\")\n    end\n  fun _final() =>\n"
+    },
+    {
+      "old": "    Trace(\"CHECK\\t\" + _trace_depth.string())\n",
+      "new": "    Trace(\"CHECK\\t\" + _trace_depth.string() + \"\\t\" + (digestof this).string())\n"
+    },
+    {
+      "old": "    let stretch = Node(_maximum + 1)\n",
+      "new": "    let stretch = Node(_maximum + 1)\n    Trace(\"ROOT_STRETCH_NEW\\t\" + (_maximum + 1).string() + \"\\t\" + (digestof stretch).string())\n"
+    },
+    {
+      "old": "    _long = Node(_maximum)\n",
+      "new": "    Trace(\"ROOT_STRETCH_CHECK\\t\" + (_maximum + 1).string() + \"\\t\" + (digestof stretch).string())\n    _long = Node(_maximum)\n    Trace(\"ROOT_LONG_NEW\\t\" + _maximum.string() + \"\\t\" + (digestof _long).string())\n"
+    },
+    {
+      "old": "      let tree = Node(_depth)\n",
+      "new": "      let tree = Node(_depth)\n      Trace(\"ROOT_CHURN_NEW\\t\" + _depth.string() + \"\\t\" + (digestof tree).string() + \"\\t\" + @pthread_self().string())\n"
+    },
+    {
+      "old": "      _sum = _sum + tree.check()\n",
+      "new": "      _sum = _sum + tree.check()\n      Trace(\"ROOT_CHURN_CHECK\\t\" + _depth.string() + \"\\t\" + (digestof tree).string() + \"\\t\" + @pthread_self().string())\n"
+    },
+    {
+      "old": "      _parent.done(_sum)\n",
+      "new": "      Trace(\"WORKER_DONE\\t\" + _depth.string() + \"\\t\" + (digestof this).string())\n      _parent.done(_sum, _depth, digestof this)\n"
+    },
+    {
+      "old": "  be done(value: U64) =>\n",
+      "new": "  be done(value: U64, trace_depth: USize, trace_worker: USize) =>\n"
+    },
+    {
+      "old": "    _sum = _sum + value\n",
+      "new": "    Trace(\"WORKER_JOIN\\t\" + trace_depth.string() + \"\\t\" + trace_worker.string())\n    _sum = _sum + value\n"
+    },
+    {
+      "old": "        _env.out.flush()\n",
+      "new": "        Trace(\"ROOT_LONG_CHECK\\t\" + _maximum.string() + \"\\t\" + (digestof _long).string())\n        _env.out.flush()\n"
+    }
+  ],
+  "diagnostic_header": "use @write[I64](fd: I32, buffer: Pointer[U8] tag, count: USize)\nuse @pthread_self[USize]()\nuse @exit[None](status: I32)\n\nprimitive Trace\n  fun apply(message: String) =>\n    let line = message + \"\\n\"\n    var offset: USize = 0\n    while offset < line.size() do\n      let written = @write(2, line.cpointer(offset), line.size() - offset)\n      if written <= 0 then @exit(1) end\n      offset = offset + written.usize()\n    end\n"
+}

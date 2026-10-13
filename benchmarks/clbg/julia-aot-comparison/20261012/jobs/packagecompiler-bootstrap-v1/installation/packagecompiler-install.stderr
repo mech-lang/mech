@@ -1,0 +1,5 @@
+ERROR: LoadError: ArgumentError: Package Pkg not found in current path.
+Stacktrace:
+ [1] top-level scope
+   @ ~/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/packagecompiler-bootstrap-v1/install.jl:1
+in expression starting at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/packagecompiler-bootstrap-v1/install.jl:1

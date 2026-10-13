@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/usr/bin/otool",
+    "-L",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/compile-input-v3/.build/strict/target/release/mech-interpreter-integrated"
+  ],
+  "started_at": "2026-10-12T19:43:47.708946+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 17327,
+  "identity": {
+    "pid": 17327,
+    "process_listing": "Mon Oct 12 15:43:47 2026     /usr/bin/otool -L /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/compile-input-v3/.build/strict/target/release/mech-interpreter-integrated"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-12T19:43:47.725978+00:00",
+  "final_exit_status": 0
+}

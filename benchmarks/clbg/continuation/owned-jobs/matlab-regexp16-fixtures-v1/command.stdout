@@ -1,0 +1,2 @@
+WAIT common mutex: MATLAB grammar fixtures/exact runtime source replay
+{"fixture": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/matlab-regexp-grammar-v1/jobs/fixtures16-restored-v1/fixture-receipt.json", "fixture_sha256": "9f943cabf4a27eeb7010f2178a7b45e5310382cfeaa08c04bbbdab6a65fae7cd", "actual_tests": 16, "canonical_LOC_admitted": false}

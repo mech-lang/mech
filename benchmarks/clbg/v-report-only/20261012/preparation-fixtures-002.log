@@ -1,0 +1,12 @@
+WAIT LOCK: V preparation override regression checks
+LOCKED: V preparation override regression checks
+test_input_oracle_failure_restores_input_pair (__main__.ProbeOwnershipChecks.test_input_oracle_failure_restores_input_pair) ... ok
+test_oracle_failure_restores_before_any_sampler (__main__.ProbeOwnershipChecks.test_oracle_failure_restores_before_any_sampler) ... ok
+test_sampler_failure_restores_both_functions (__main__.ProbeOwnershipChecks.test_sampler_failure_restores_both_functions) ... ok
+test_success_restores_numeric_override (__main__.ProbeOwnershipChecks.test_success_restores_numeric_override) ... ok
+test_unqualified_attempt_is_retained_and_stops (__main__.ProbeOwnershipChecks.test_unqualified_attempt_is_retained_and_stops) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.003s
+
+OK

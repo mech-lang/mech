@@ -1,0 +1,10 @@
+WAIT common mutex: explicit V binarytrees continuation
+FULL REMAINING V TREE 1 v-binarytrees-optimized-input-v2 21
+FULL REMAINING V TREE 1 mech-aot-control 21
+FULL REMAINING V TREE 2 v-binarytrees-optimized-input-v2 21
+FULL REMAINING V TREE 2 mech-aot-control 21
+FULL REMAINING V TREE 2 v-binarytrees-compact-input-v2 21
+FULL REMAINING V TREE 3 mech-aot-control 21
+FULL REMAINING V TREE 3 v-binarytrees-compact-input-v2 21
+FULL REMAINING V TREE 3 v-binarytrees-optimized-input-v2 21
+{"report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/studies/binarytrees/remaining-eight-v1/report.json", "status": "complete", "retained_attempts": 1, "fresh_attempts": 8, "report_only": true, "chart_admission": false}

@@ -1,0 +1,21 @@
+{
+  "status": "saved-evidence-extracted-awaiting-call-review",
+  "creators": [
+    {
+      "symbol": "_clbg.binarytrees.make",
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/c3-tree-arm-inspection-v1/creator-0.arm"
+    }
+  ],
+  "actual_saved_proof_count": 38,
+  "native_processes": 0,
+  "source_edits": 0,
+  "allocation_gate_changed": false,
+  "exclusive_common_mutex_held": true,
+  "actual_pid": 32133,
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/work-qualification/work-v2/report.json": "f0a09665cc11b5df929547110d06413df76a32114aedc9bd5e7481e348ae3ed3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/work-qualification/work-v2/scored-allocation/c3-binarytrees-compact/final-scored-arm.json": "9d6cfa5c5746e4ae2b0f9018e8fcc69b1af5420ec0f688ccc5427307a43b8eb0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/work-qualification/work-v2/scored-allocation/c3-binarytrees-compact/final-scored-arm.stdout": "5cfee445e07d627ed945cfa643cea2469506b8d77ce8a08f361a358e8f74e987",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/c3-tree-arm-inspection-v1/creator-0.arm": "b5ad5a9f4c17275ff63e2a782e3e2935f3fb47ad4ba24da03fa830ecd411359f"
+  }
+}

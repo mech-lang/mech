@@ -1,0 +1,72 @@
+{
+  "key": "knucleotide:v-knucleotide-compact-input-v2-work-trace",
+  "id": "v-knucleotide-compact-input-v2-work-trace",
+  "benchmark": "knucleotide",
+  "language": "v",
+  "source_sha256": "abc555e70a2743c90797edf68e375e896c113729b3e09c7a0cb72320da635bd9",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/work-qualification/builder-v3-work1/knucleotide/v-knucleotide-compact-input-v2/work-trace"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012",
+  "runtime_environment": {
+    "LC_ALL": "C",
+    "OMP_NUM_THREADS": "8",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1",
+    "RAYON_NUM_THREADS": "8",
+    "MECH_V_WORK_TRACE": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/work-qualification/builder-v3-work1/knucleotide/v-knucleotide-compact-input-v2-work-trace/lookalike-target/actual.trace"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"91fab66f9ba0816fc3b315a6066192451270c7f568cbab0d9e5a95ce662b1e27\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/work-qualification/builder-v3-work1/knucleotide/v-knucleotide-compact-input-v2/work-trace\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012\", \"environment\": {\"LC_ALL\": \"C\", \"MECH_V_WORK_TRACE\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/work-qualification/builder-v3-work1/knucleotide/v-knucleotide-compact-input-v2-work-trace/lookalike-target/actual.trace\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"RAYON_NUM_THREADS\": \"8\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"abc555e70a2743c90797edf68e375e896c113729b3e09c7a0cb72320da635bd9\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/.build-sdk-v1/toolchain/v/v\": \"d3c86b7326e62990d1eb77247b68ea2914a834e5fe9444f981cfbc3863cb4ac1\"}}",
+  "started_at": "2026-10-13T01:36:24.965239+00:00",
+  "workload_n": 1000,
+  "full_workload": false,
+  "timeout_seconds": 300,
+  "maximum_rss_mib": 8192,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.012807666,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 189,
+  "stdout_sha256": "1d8c77a088ebb2aaa49f043ac748ecdcb59c823a7da9a28e754ccb41d0e0d2e8",
+  "validation": {
+    "bytes": 189,
+    "sha256": "1d8c77a088ebb2aaa49f043ac748ecdcb59c823a7da9a28e754ccb41d0e0d2e8",
+    "reference_match": true,
+    "bounded_independent_oracle": true,
+    "tolerance": null
+  },
+  "finished_at": "2026-10-13T01:36:25.191055+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true,
+  "round": 0,
+  "attempt": 11,
+  "sampler_wait_status": 0,
+  "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/work-qualification/builder-v3-work1/knucleotide/attempts/011-v-knucleotide-compact-input-v2-work-trace.json",
+  "supervised_native_group": {
+    "type": "native-group-started",
+    "pid": 14908,
+    "pgid": 14908,
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/work-qualification/builder-v3-work1/knucleotide/v-knucleotide-compact-input-v2/work-trace"
+    ],
+    "inherited_common_mutex": true
+  },
+  "supervisor_remaining_members": [],
+  "fatal_qualification_fields": [],
+  "qualified": true,
+  "retryable_environment_only": false
+}

@@ -1,0 +1,12 @@
+test_complete_graph_and_lifecycle (test_work_v2.TreeProofV2.test_complete_graph_and_lifecycle) ... ok
+test_early_retained_node_finalizer_rejected (test_work_v2.TreeProofV2.test_early_retained_node_finalizer_rejected) ... ok
+test_live_identity_reuse_rejected (test_work_v2.TreeProofV2.test_live_identity_reuse_rejected) ... ok
+test_missing_worker_join_rejected (test_work_v2.TreeProofV2.test_missing_worker_join_rejected) ... ok
+test_released_stretch_identity_reuse_is_allowed (test_work_v2.TreeProofV2.test_released_stretch_identity_reuse_is_allowed) ... ok
+test_shared_leaf_rejected (test_work_v2.TreeProofV2.test_shared_leaf_rejected) ... ok
+test_skipped_actual_check_rejected (test_work_v2.TreeProofV2.test_skipped_actual_check_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.075s
+
+OK

@@ -1,0 +1,7 @@
+WAIT LOCK: V preparation override regression checks
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/test_prepare.py", line 123, in <module>
+    main()
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/test_prepare.py", line 100, in main
+    fcntl.flock(lock, fcntl.LOCK_EX)
+KeyboardInterrupt

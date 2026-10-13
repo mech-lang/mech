@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/usr/bin/otool",
+    "-L",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v5/bin/gmp-abi"
+  ],
+  "started_at": "2026-10-12T22:53:02.096896+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 72276,
+  "identity": {
+    "pid": 72276,
+    "process_listing": "Mon Oct 12 18:53:02 2026     /Library/Developer/CommandLineTools/usr/bin/otool -L /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v5/bin/gmp-abi"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-12T22:53:02.121052+00:00",
+  "final_exit_status": 0
+}

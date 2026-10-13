@@ -1,0 +1,2889 @@
+{
+  "status": "actual-guarded-audit-awaiting-source-review",
+  "source_audit": "jobs/boundary-audit-18/candidate-audit.json",
+  "fixture_receipt": "jobs/boundary-audit-18/fixture-receipt.json",
+  "completed_at": "2026-10-12T21:21:14.119968+00:00",
+  "fixtures": {
+    "tests": 672,
+    "failures": 0,
+    "errors": 0
+  },
+  "measured_candidates": 543,
+  "source_identities": 811,
+  "diagnostics": 816,
+  "current_registrations": 292,
+  "gated_current_registrations": 64,
+  "pending_needed_measurement": [
+    {
+      "key": "binarytrees:binarytrees-perl-5",
+      "benchmark": "binarytrees",
+      "language": "perl",
+      "normalized_loc": 83,
+      "measured_smallest_key": "binarytrees:binarytrees-perl-6",
+      "measured_smallest_loc": 82,
+      "report": "compact/manifest.json",
+      "status": "parser-review-before-qualification-and-measurement",
+      "reason": "Pinned listed source has no admitted three-sample full-size measurement; work and output qualification remain required.",
+      "parser_review_status": "needs-review"
+    },
+    {
+      "key": "binarytrees:binarytrees-perl-4",
+      "benchmark": "binarytrees",
+      "language": "perl",
+      "normalized_loc": 77,
+      "measured_smallest_key": "binarytrees:binarytrees-perl-6",
+      "measured_smallest_loc": 82,
+      "report": "compact/manifest.json",
+      "status": "parser-review-before-qualification-and-measurement",
+      "reason": "Pinned listed source has no admitted three-sample full-size measurement; work and output qualification remain required.",
+      "parser_review_status": "needs-review"
+    },
+    {
+      "key": "binarytrees:binarytrees-perl-3",
+      "benchmark": "binarytrees",
+      "language": "perl",
+      "normalized_loc": 65,
+      "measured_smallest_key": "binarytrees:binarytrees-perl-6",
+      "measured_smallest_loc": 82,
+      "report": "compact/manifest.json",
+      "status": "parser-review-before-qualification-and-measurement",
+      "reason": "Pinned listed source has no admitted three-sample full-size measurement; work and output qualification remain required.",
+      "parser_review_status": "needs-review"
+    },
+    {
+      "key": "fasta:fasta-perl-4",
+      "benchmark": "fasta",
+      "language": "perl",
+      "normalized_loc": 92,
+      "measured_smallest_key": "fasta:fasta-perl-1",
+      "measured_smallest_loc": 79,
+      "report": "compact/manifest.json",
+      "status": "parser-review-before-qualification-and-measurement",
+      "reason": "Pinned listed source has no admitted three-sample full-size measurement; work and output qualification remain required.",
+      "parser_review_status": "needs-review"
+    },
+    {
+      "key": "knucleotide:knucleotide-node-1",
+      "benchmark": "knucleotide",
+      "language": "javascript",
+      "normalized_loc": 108,
+      "measured_smallest_key": "knucleotide:knucleotide-node-8",
+      "measured_smallest_loc": 59,
+      "report": "compact/manifest.json",
+      "status": "parser-review-before-qualification-and-measurement",
+      "reason": "Pinned listed source has no admitted three-sample full-size measurement; work and output qualification remain required.",
+      "parser_review_status": "needs-review"
+    },
+    {
+      "key": "knucleotide:knucleotide-ruby-7",
+      "benchmark": "knucleotide",
+      "language": "ruby",
+      "normalized_loc": 81,
+      "measured_smallest_key": "knucleotide:knucleotide-ruby-2",
+      "measured_smallest_loc": 39,
+      "report": "compact/manifest.json",
+      "status": "parser-review-before-qualification-and-measurement",
+      "reason": "Pinned listed source has no admitted three-sample full-size measurement; work and output qualification remain required.",
+      "parser_review_status": "needs-review"
+    },
+    {
+      "key": "knucleotide:knucleotide-ruby-3",
+      "benchmark": "knucleotide",
+      "language": "ruby",
+      "normalized_loc": 58,
+      "measured_smallest_key": "knucleotide:knucleotide-ruby-2",
+      "measured_smallest_loc": 39,
+      "report": "compact/manifest.json",
+      "status": "parser-review-before-qualification-and-measurement",
+      "reason": "Pinned listed source has no admitted three-sample full-size measurement; work and output qualification remain required.",
+      "parser_review_status": "needs-review"
+    },
+    {
+      "key": "knucleotide:knucleotide-ruby-8",
+      "benchmark": "knucleotide",
+      "language": "ruby",
+      "normalized_loc": 60,
+      "measured_smallest_key": "knucleotide:knucleotide-ruby-2",
+      "measured_smallest_loc": 39,
+      "report": "compact/manifest.json",
+      "status": "parser-review-before-qualification-and-measurement",
+      "reason": "Pinned listed source has no admitted three-sample full-size measurement; work and output qualification remain required.",
+      "parser_review_status": "needs-review"
+    },
+    {
+      "key": "pidigits:pidigits-ruby-2",
+      "benchmark": "pidigits",
+      "language": "ruby",
+      "normalized_loc": 91,
+      "measured_smallest_key": "pidigits:pidigits-ruby-1",
+      "measured_smallest_loc": 76,
+      "report": "pidigits/manifest.json",
+      "status": "parser-review-before-qualification-and-measurement",
+      "reason": "Pinned listed source has no admitted three-sample full-size measurement; work and output qualification remain required.",
+      "parser_review_status": "needs-review"
+    },
+    {
+      "key": "revcomp:revcomp-gpp-5",
+      "benchmark": "revcomp",
+      "language": "cpp",
+      "normalized_loc": 84,
+      "measured_smallest_key": "revcomp:revcomp-gpp-1-gcc",
+      "measured_smallest_loc": 44,
+      "report": "revcomp/manifest.json",
+      "status": "parser-review-before-qualification-and-measurement",
+      "reason": "Pinned listed source has no admitted three-sample full-size measurement; work and output qualification remain required.",
+      "parser_review_status": "needs-review"
+    },
+    {
+      "key": "revcomp:revcomp-lua-5",
+      "benchmark": "revcomp",
+      "language": "lua",
+      "normalized_loc": 82,
+      "measured_smallest_key": "revcomp:revcomp-lua-2",
+      "measured_smallest_loc": 47,
+      "report": "compact/manifest.json",
+      "status": "parser-review-before-qualification-and-measurement",
+      "reason": "Pinned listed source has no admitted three-sample full-size measurement; work and output qualification remain required.",
+      "parser_review_status": "needs-review"
+    },
+    {
+      "key": "revcomp:revcomp-lua-4",
+      "benchmark": "revcomp",
+      "language": "lua",
+      "normalized_loc": 61,
+      "measured_smallest_key": "revcomp:revcomp-lua-2",
+      "measured_smallest_loc": 47,
+      "report": "compact/manifest.json",
+      "status": "parser-review-before-qualification-and-measurement",
+      "reason": "Pinned listed source has no admitted three-sample full-size measurement; work and output qualification remain required.",
+      "parser_review_status": "needs-review"
+    },
+    {
+      "key": "revcomp:revcomp-perl-3",
+      "benchmark": "revcomp",
+      "language": "perl",
+      "normalized_loc": 19,
+      "measured_smallest_key": "revcomp:revcomp-perl-4",
+      "measured_smallest_loc": 17,
+      "report": "compact/manifest.json",
+      "status": "parser-review-before-qualification-and-measurement",
+      "reason": "Pinned listed source has no admitted three-sample full-size measurement; work and output qualification remain required.",
+      "parser_review_status": "needs-review"
+    }
+  ],
+  "cpp_constructor_sources": [
+    {
+      "source_identity": "7c8ff3d053e191ed2c68129b57f6483233a9c22baaabcb6ec7c25c4b8a251983:cpp",
+      "paths": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/upstream/binarytrees-gpp-1.cpp"
+      ],
+      "old_parser_loc": 71,
+      "new_parser_loc": 75,
+      "diagnostics": [
+        {
+          "kind": "c-typedef-declarator-owner-review",
+          "offset": 589,
+          "source_text": "using Node_pool = boost::object_pool<Node>;",
+          "line": 32,
+          "column": 1
+        }
+      ],
+      "constructors": [
+        {
+          "name": "Node",
+          "start": 413,
+          "end": 434,
+          "members": [
+            {
+              "name": "l",
+              "start": 422,
+              "end": 426,
+              "argument_start": 424,
+              "argument_end": 425,
+              "opening": 423,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false,
+              "separator_start": 426,
+              "separator_end": 427
+            },
+            {
+              "name": "r",
+              "start": 427,
+              "end": 431,
+              "argument_start": 429,
+              "argument_end": 430,
+              "opening": 428,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false
+            }
+          ],
+          "member_declarations": [
+            {
+              "name": "l",
+              "start": 398,
+              "end": 409,
+              "static": false,
+              "conditional": false,
+              "type_name": "Node",
+              "type_evidence": {
+                "name": "Node",
+                "type_name": "Node",
+                "kind": "source-local-cpp-named-type",
+                "aggregate_kind": "struct",
+                "definition_start": 381,
+                "definition_end": 394,
+                "visible_start": 392,
+                "scope_start": 0,
+                "scope_end": 2227,
+                "scope_opening": null,
+                "conditional": false,
+                "source_text": "struct Node {",
+                "header_start": 381,
+                "header_end": 394,
+                "body_opening": 393,
+                "body_end": 586,
+                "forward_declaration": false
+              },
+              "source_text": "Node *l,*r"
+            },
+            {
+              "name": "r",
+              "start": 398,
+              "end": 409,
+              "static": false,
+              "conditional": false,
+              "type_name": "Node",
+              "type_evidence": {
+                "name": "Node",
+                "type_name": "Node",
+                "kind": "source-local-cpp-named-type",
+                "aggregate_kind": "struct",
+                "definition_start": 381,
+                "definition_end": 394,
+                "visible_start": 392,
+                "scope_start": 0,
+                "scope_end": 2227,
+                "scope_opening": null,
+                "conditional": false,
+                "source_text": "struct Node {",
+                "header_start": 381,
+                "header_end": 394,
+                "body_opening": 393,
+                "body_end": 586,
+                "forward_declaration": false
+              },
+              "source_text": "Node *l,*r"
+            }
+          ]
+        },
+        {
+          "name": "Node",
+          "start": 438,
+          "end": 474,
+          "members": [
+            {
+              "name": "l",
+              "start": 462,
+              "end": 466,
+              "argument_start": 464,
+              "argument_end": 465,
+              "opening": 463,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false,
+              "separator_start": 466,
+              "separator_end": 467
+            },
+            {
+              "name": "r",
+              "start": 467,
+              "end": 471,
+              "argument_start": 469,
+              "argument_end": 470,
+              "opening": 468,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false
+            }
+          ],
+          "member_declarations": [
+            {
+              "name": "l",
+              "start": 398,
+              "end": 409,
+              "static": false,
+              "conditional": false,
+              "type_name": "Node",
+              "type_evidence": {
+                "name": "Node",
+                "type_name": "Node",
+                "kind": "source-local-cpp-named-type",
+                "aggregate_kind": "struct",
+                "definition_start": 381,
+                "definition_end": 394,
+                "visible_start": 392,
+                "scope_start": 0,
+                "scope_end": 2227,
+                "scope_opening": null,
+                "conditional": false,
+                "source_text": "struct Node {",
+                "header_start": 381,
+                "header_end": 394,
+                "body_opening": 393,
+                "body_end": 586,
+                "forward_declaration": false
+              },
+              "source_text": "Node *l,*r"
+            },
+            {
+              "name": "r",
+              "start": 398,
+              "end": 409,
+              "static": false,
+              "conditional": false,
+              "type_name": "Node",
+              "type_evidence": {
+                "name": "Node",
+                "type_name": "Node",
+                "kind": "source-local-cpp-named-type",
+                "aggregate_kind": "struct",
+                "definition_start": 381,
+                "definition_end": 394,
+                "visible_start": 392,
+                "scope_start": 0,
+                "scope_end": 2227,
+                "scope_opening": null,
+                "conditional": false,
+                "source_text": "struct Node {",
+                "header_start": 381,
+                "header_end": 394,
+                "body_opening": 393,
+                "body_end": 586,
+                "forward_declaration": false
+              },
+              "source_text": "Node *l,*r"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "source_identity": "88d980126647637c117f57cd6ab07218fc6ce6e3ed8800828b89f36972c2736c:cpp",
+      "paths": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/upstream/binarytrees-gpp-2.cpp"
+      ],
+      "old_parser_loc": 53,
+      "new_parser_loc": 57,
+      "diagnostics": [
+        {
+          "kind": "possible-packed-declaration-type-owner-review",
+          "type_spelling": "int",
+          "possible_names": [
+            "iterations",
+            "c"
+          ],
+          "possible_declarator_count": 2,
+          "units": null,
+          "review_required": true,
+          "reason": "possible-declaration-grammar-does-not-prove-lexical-type-ownership",
+          "offset": 998,
+          "message": "Packed declaration ownership is not proven by the source type environment; independent units require review.",
+          "line": 46,
+          "column": 1
+        }
+      ],
+      "constructors": [
+        {
+          "name": "Node",
+          "start": 274,
+          "end": 296,
+          "members": [
+            {
+              "name": "l",
+              "start": 283,
+              "end": 287,
+              "argument_start": 285,
+              "argument_end": 286,
+              "opening": 284,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false,
+              "separator_start": 287,
+              "separator_end": 288
+            },
+            {
+              "name": "r",
+              "start": 289,
+              "end": 293,
+              "argument_start": 291,
+              "argument_end": 292,
+              "opening": 290,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false
+            }
+          ],
+          "member_declarations": [
+            {
+              "name": "l",
+              "start": 259,
+              "end": 271,
+              "static": false,
+              "conditional": false,
+              "type_name": "Node",
+              "type_evidence": {
+                "name": "Node",
+                "type_name": "Node",
+                "kind": "source-local-cpp-named-type",
+                "aggregate_kind": "struct",
+                "definition_start": 243,
+                "definition_end": 256,
+                "visible_start": 254,
+                "scope_start": 0,
+                "scope_end": 1442,
+                "scope_opening": null,
+                "conditional": false,
+                "source_text": "struct Node {",
+                "header_start": 243,
+                "header_end": 256,
+                "body_opening": 255,
+                "body_end": 470,
+                "forward_declaration": false
+              },
+              "source_text": "Node *l, *r"
+            },
+            {
+              "name": "r",
+              "start": 259,
+              "end": 271,
+              "static": false,
+              "conditional": false,
+              "type_name": "Node",
+              "type_evidence": {
+                "name": "Node",
+                "type_name": "Node",
+                "kind": "source-local-cpp-named-type",
+                "aggregate_kind": "struct",
+                "definition_start": 243,
+                "definition_end": 256,
+                "visible_start": 254,
+                "scope_start": 0,
+                "scope_end": 1442,
+                "scope_opening": null,
+                "conditional": false,
+                "source_text": "struct Node {",
+                "header_start": 243,
+                "header_end": 256,
+                "body_opening": 255,
+                "body_end": 470,
+                "forward_declaration": false
+              },
+              "source_text": "Node *l, *r"
+            }
+          ]
+        },
+        {
+          "name": "Node",
+          "start": 299,
+          "end": 341,
+          "members": [
+            {
+              "name": "l",
+              "start": 326,
+              "end": 331,
+              "argument_start": 328,
+              "argument_end": 330,
+              "opening": 327,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false,
+              "separator_start": 331,
+              "separator_end": 332
+            },
+            {
+              "name": "r",
+              "start": 333,
+              "end": 338,
+              "argument_start": 335,
+              "argument_end": 337,
+              "opening": 334,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false
+            }
+          ],
+          "member_declarations": [
+            {
+              "name": "l",
+              "start": 259,
+              "end": 271,
+              "static": false,
+              "conditional": false,
+              "type_name": "Node",
+              "type_evidence": {
+                "name": "Node",
+                "type_name": "Node",
+                "kind": "source-local-cpp-named-type",
+                "aggregate_kind": "struct",
+                "definition_start": 243,
+                "definition_end": 256,
+                "visible_start": 254,
+                "scope_start": 0,
+                "scope_end": 1442,
+                "scope_opening": null,
+                "conditional": false,
+                "source_text": "struct Node {",
+                "header_start": 243,
+                "header_end": 256,
+                "body_opening": 255,
+                "body_end": 470,
+                "forward_declaration": false
+              },
+              "source_text": "Node *l, *r"
+            },
+            {
+              "name": "r",
+              "start": 259,
+              "end": 271,
+              "static": false,
+              "conditional": false,
+              "type_name": "Node",
+              "type_evidence": {
+                "name": "Node",
+                "type_name": "Node",
+                "kind": "source-local-cpp-named-type",
+                "aggregate_kind": "struct",
+                "definition_start": 243,
+                "definition_end": 256,
+                "visible_start": 254,
+                "scope_start": 0,
+                "scope_end": 1442,
+                "scope_opening": null,
+                "conditional": false,
+                "source_text": "struct Node {",
+                "header_start": 243,
+                "header_end": 256,
+                "body_opening": 255,
+                "body_end": 470,
+                "forward_declaration": false
+              },
+              "source_text": "Node *l, *r"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "source_identity": "e59e23e9ff9d72d129d4fbfacad16efdffb3207ca8a7f3a5b7b2c348623f6727:cpp",
+      "paths": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/upstream/binarytrees-gpp-3.cpp"
+      ],
+      "old_parser_loc": 78,
+      "new_parser_loc": 82,
+      "diagnostics": [
+        {
+          "kind": "c-typedef-declarator-owner-review",
+          "offset": 764,
+          "source_text": "typedef boost::object_pool<Node> NodePool;",
+          "line": 42,
+          "column": 1
+        }
+      ],
+      "constructors": [
+        {
+          "name": "Node",
+          "start": 571,
+          "end": 596,
+          "members": [
+            {
+              "name": "l",
+              "start": 580,
+              "end": 584,
+              "argument_start": 582,
+              "argument_end": 583,
+              "opening": 581,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false,
+              "separator_start": 584,
+              "separator_end": 585
+            },
+            {
+              "name": "r",
+              "start": 586,
+              "end": 590,
+              "argument_start": 588,
+              "argument_end": 589,
+              "opening": 587,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false
+            }
+          ],
+          "member_declarations": [
+            {
+              "name": "l",
+              "start": 551,
+              "end": 563,
+              "static": false,
+              "conditional": false,
+              "type_name": "Node",
+              "type_evidence": {
+                "name": "Node",
+                "type_name": "Node",
+                "kind": "source-local-cpp-named-type",
+                "aggregate_kind": "struct",
+                "definition_start": 534,
+                "definition_end": 547,
+                "visible_start": 545,
+                "scope_start": 0,
+                "scope_end": 3100,
+                "scope_opening": null,
+                "conditional": false,
+                "source_text": "struct Node\n{",
+                "header_start": 534,
+                "header_end": 547,
+                "body_opening": 546,
+                "body_end": 761,
+                "forward_declaration": false
+              },
+              "source_text": "Node *l, *r"
+            },
+            {
+              "name": "r",
+              "start": 551,
+              "end": 563,
+              "static": false,
+              "conditional": false,
+              "type_name": "Node",
+              "type_evidence": {
+                "name": "Node",
+                "type_name": "Node",
+                "kind": "source-local-cpp-named-type",
+                "aggregate_kind": "struct",
+                "definition_start": 534,
+                "definition_end": 547,
+                "visible_start": 545,
+                "scope_start": 0,
+                "scope_end": 3100,
+                "scope_opening": null,
+                "conditional": false,
+                "source_text": "struct Node\n{",
+                "header_start": 534,
+                "header_end": 547,
+                "body_opening": 546,
+                "body_end": 761,
+                "forward_declaration": false
+              },
+              "source_text": "Node *l, *r"
+            }
+          ]
+        },
+        {
+          "name": "Node",
+          "start": 600,
+          "end": 645,
+          "members": [
+            {
+              "name": "l",
+              "start": 627,
+              "end": 632,
+              "argument_start": 629,
+              "argument_end": 631,
+              "opening": 628,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false,
+              "separator_start": 632,
+              "separator_end": 633
+            },
+            {
+              "name": "r",
+              "start": 634,
+              "end": 639,
+              "argument_start": 636,
+              "argument_end": 638,
+              "opening": 635,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false
+            }
+          ],
+          "member_declarations": [
+            {
+              "name": "l",
+              "start": 551,
+              "end": 563,
+              "static": false,
+              "conditional": false,
+              "type_name": "Node",
+              "type_evidence": {
+                "name": "Node",
+                "type_name": "Node",
+                "kind": "source-local-cpp-named-type",
+                "aggregate_kind": "struct",
+                "definition_start": 534,
+                "definition_end": 547,
+                "visible_start": 545,
+                "scope_start": 0,
+                "scope_end": 3100,
+                "scope_opening": null,
+                "conditional": false,
+                "source_text": "struct Node\n{",
+                "header_start": 534,
+                "header_end": 547,
+                "body_opening": 546,
+                "body_end": 761,
+                "forward_declaration": false
+              },
+              "source_text": "Node *l, *r"
+            },
+            {
+              "name": "r",
+              "start": 551,
+              "end": 563,
+              "static": false,
+              "conditional": false,
+              "type_name": "Node",
+              "type_evidence": {
+                "name": "Node",
+                "type_name": "Node",
+                "kind": "source-local-cpp-named-type",
+                "aggregate_kind": "struct",
+                "definition_start": 534,
+                "definition_end": 547,
+                "visible_start": 545,
+                "scope_start": 0,
+                "scope_end": 3100,
+                "scope_opening": null,
+                "conditional": false,
+                "source_text": "struct Node\n{",
+                "header_start": 534,
+                "header_end": 547,
+                "body_opening": 546,
+                "body_end": 761,
+                "forward_declaration": false
+              },
+              "source_text": "Node *l, *r"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "source_identity": "0cf19324d00c58cc32a4782e7dc553249c65665e322d2b0d90be2d5cc9da3e2d:cpp",
+      "paths": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/upstream/binarytrees-gpp-6.cpp"
+      ],
+      "old_parser_loc": 69,
+      "new_parser_loc": 73,
+      "diagnostics": [
+        {
+          "kind": "c-typedef-declarator-owner-review",
+          "offset": 646,
+          "source_text": "typedef boost::object_pool<Node> NodePool;",
+          "line": 39,
+          "column": 1
+        }
+      ],
+      "constructors": [
+        {
+          "name": "Node",
+          "start": 442,
+          "end": 468,
+          "members": [
+            {
+              "name": "l",
+              "start": 451,
+              "end": 455,
+              "argument_start": 453,
+              "argument_end": 454,
+              "opening": 452,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false,
+              "separator_start": 455,
+              "separator_end": 456
+            },
+            {
+              "name": "r",
+              "start": 457,
+              "end": 461,
+              "argument_start": 459,
+              "argument_end": 460,
+              "opening": 458,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false
+            }
+          ],
+          "member_declarations": [
+            {
+              "name": "l",
+              "start": 420,
+              "end": 432,
+              "static": false,
+              "conditional": false,
+              "type_name": "Node",
+              "type_evidence": {
+                "name": "Node",
+                "type_name": "Node",
+                "kind": "source-local-cpp-named-type",
+                "aggregate_kind": "struct",
+                "definition_start": 401,
+                "definition_end": 415,
+                "visible_start": 412,
+                "scope_start": 0,
+                "scope_end": 2556,
+                "scope_opening": null,
+                "conditional": false,
+                "source_text": "struct Node \n{",
+                "header_start": 401,
+                "header_end": 415,
+                "body_opening": 414,
+                "body_end": 643,
+                "forward_declaration": false
+              },
+              "source_text": "Node *l, *r"
+            },
+            {
+              "name": "r",
+              "start": 420,
+              "end": 432,
+              "static": false,
+              "conditional": false,
+              "type_name": "Node",
+              "type_evidence": {
+                "name": "Node",
+                "type_name": "Node",
+                "kind": "source-local-cpp-named-type",
+                "aggregate_kind": "struct",
+                "definition_start": 401,
+                "definition_end": 415,
+                "visible_start": 412,
+                "scope_start": 0,
+                "scope_end": 2556,
+                "scope_opening": null,
+                "conditional": false,
+                "source_text": "struct Node \n{",
+                "header_start": 401,
+                "header_end": 415,
+                "body_opening": 414,
+                "body_end": 643,
+                "forward_declaration": false
+              },
+              "source_text": "Node *l, *r"
+            }
+          ]
+        },
+        {
+          "name": "Node",
+          "start": 473,
+          "end": 519,
+          "members": [
+            {
+              "name": "l",
+              "start": 500,
+              "end": 505,
+              "argument_start": 502,
+              "argument_end": 504,
+              "opening": 501,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false,
+              "separator_start": 505,
+              "separator_end": 506
+            },
+            {
+              "name": "r",
+              "start": 507,
+              "end": 512,
+              "argument_start": 509,
+              "argument_end": 511,
+              "opening": 508,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false
+            }
+          ],
+          "member_declarations": [
+            {
+              "name": "l",
+              "start": 420,
+              "end": 432,
+              "static": false,
+              "conditional": false,
+              "type_name": "Node",
+              "type_evidence": {
+                "name": "Node",
+                "type_name": "Node",
+                "kind": "source-local-cpp-named-type",
+                "aggregate_kind": "struct",
+                "definition_start": 401,
+                "definition_end": 415,
+                "visible_start": 412,
+                "scope_start": 0,
+                "scope_end": 2556,
+                "scope_opening": null,
+                "conditional": false,
+                "source_text": "struct Node \n{",
+                "header_start": 401,
+                "header_end": 415,
+                "body_opening": 414,
+                "body_end": 643,
+                "forward_declaration": false
+              },
+              "source_text": "Node *l, *r"
+            },
+            {
+              "name": "r",
+              "start": 420,
+              "end": 432,
+              "static": false,
+              "conditional": false,
+              "type_name": "Node",
+              "type_evidence": {
+                "name": "Node",
+                "type_name": "Node",
+                "kind": "source-local-cpp-named-type",
+                "aggregate_kind": "struct",
+                "definition_start": 401,
+                "definition_end": 415,
+                "visible_start": 412,
+                "scope_start": 0,
+                "scope_end": 2556,
+                "scope_opening": null,
+                "conditional": false,
+                "source_text": "struct Node \n{",
+                "header_start": 401,
+                "header_end": 415,
+                "body_opening": 414,
+                "body_end": 643,
+                "forward_declaration": false
+              },
+              "source_text": "Node *l, *r"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "source_identity": "407789d3a4d7629b571390933e018b3c1fc1154bc4b2fae9c1100e3eaf054225:cpp",
+      "paths": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gpp-1.cpp"
+      ],
+      "old_parser_loc": 118,
+      "new_parser_loc": 120,
+      "diagnostics": [],
+      "constructors": [
+        {
+          "name": "Perm",
+          "start": 669,
+          "end": 799,
+          "members": [
+            {
+              "name": "cnt",
+              "start": 688,
+              "end": 695,
+              "argument_start": 693,
+              "argument_end": 694,
+              "opening": 692,
+              "delimiter": "{",
+              "scalar_arguments": true,
+              "wrapped_arguments": false,
+              "separator_start": 695,
+              "separator_end": 696
+            },
+            {
+              "name": "n",
+              "start": 696,
+              "end": 700,
+              "argument_start": 698,
+              "argument_end": 699,
+              "opening": 697,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false,
+              "separator_start": 700,
+              "separator_end": 701
+            },
+            {
+              "name": "permcount",
+              "start": 701,
+              "end": 713,
+              "argument_start": 711,
+              "argument_end": 712,
+              "opening": 710,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false
+            }
+          ],
+          "member_declarations": [
+            {
+              "name": "cnt",
+              "start": 1414,
+              "end": 1428,
+              "static": false,
+              "conditional": false,
+              "type_name": "int_t",
+              "type_evidence": {
+                "name": "int_t",
+                "kind": "source-local-typedef",
+                "type_name": "unsigned char",
+                "definition_start": 307,
+                "definition_end": 335,
+                "visible_start": 335,
+                "scope_start": 0,
+                "scope_end": 2722,
+                "scope_opening": null,
+                "conditional": false,
+                "source_text": "typedef unsigned char int_t;"
+              },
+              "source_text": "int_t cnt[16]"
+            },
+            {
+              "name": "fact",
+              "start": 1432,
+              "end": 1462,
+              "static": false,
+              "conditional": false,
+              "type_name": "unsigned",
+              "type_evidence": {
+                "kind": "builtin-type",
+                "type_name": "unsigned"
+              },
+              "source_text": "unsigned fact[16],n,permcount"
+            },
+            {
+              "name": "n",
+              "start": 1432,
+              "end": 1462,
+              "static": false,
+              "conditional": false,
+              "type_name": "unsigned",
+              "type_evidence": {
+                "kind": "builtin-type",
+                "type_name": "unsigned"
+              },
+              "source_text": "unsigned fact[16],n,permcount"
+            },
+            {
+              "name": "permcount",
+              "start": 1432,
+              "end": 1462,
+              "static": false,
+              "conditional": false,
+              "type_name": "unsigned",
+              "type_evidence": {
+                "kind": "builtin-type",
+                "type_name": "unsigned"
+              },
+              "source_text": "unsigned fact[16],n,permcount"
+            },
+            {
+              "name": "perm",
+              "start": 1466,
+              "end": 1473,
+              "static": false,
+              "conditional": false,
+              "type_name": "P",
+              "type_evidence": {
+                "name": "P",
+                "type_name": "P",
+                "kind": "source-local-cpp-named-type",
+                "aggregate_kind": "struct",
+                "definition_start": 640,
+                "definition_end": 649,
+                "visible_start": 648,
+                "scope_start": 630,
+                "scope_end": 1475,
+                "scope_opening": 630,
+                "conditional": false,
+                "source_text": "struct P{",
+                "header_start": 640,
+                "header_end": 649,
+                "body_opening": 648,
+                "body_end": 667,
+                "forward_declaration": false
+              },
+              "source_text": "P perm"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "source_identity": "56a0ea5221ad0a75efe9819f2a9d31e6d30bef69e1320b522fe82b1d724e4dca:cpp",
+      "paths": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/upstream/fasta-gpp-1.cpp"
+      ],
+      "old_parser_loc": 113,
+      "new_parser_loc": 116,
+      "diagnostics": [
+        {
+          "kind": "cpp-member-base-initializer-owner-review",
+          "offset": 1711,
+          "message": "Initializer is not one uniquely proven direct nonstatic member; base/static/unknown roles remain gated.",
+          "name": "i",
+          "line": 86,
+          "column": 32
+        },
+        {
+          "kind": "c-type-parameter-shadow-owner-review",
+          "offset": 617,
+          "source_text": "std::vector<IUB>& i",
+          "line": 36,
+          "column": 16
+        },
+        {
+          "kind": "cpp-named-type-parameter-shadow-owner-review",
+          "offset": 629,
+          "name": "IUB",
+          "line": 36,
+          "column": 28
+        },
+        {
+          "kind": "cpp-named-type-parameter-shadow-owner-review",
+          "offset": 1702,
+          "name": "IUB",
+          "line": 86,
+          "column": 23
+        },
+        {
+          "kind": "canonical-callback-composition-review",
+          "offset": 1865,
+          "message": "A real following argument/call/composed expression needs outer-expression ownership review; only structural callback suffix punctuation was suppressed.",
+          "line": 91,
+          "column": 42
+        },
+        {
+          "kind": "canonical-standalone-brace-context-review",
+          "offset": 1937,
+          "message": "Standalone brace lacks an unambiguous literal or executable header.",
+          "line": 98,
+          "column": 4
+        },
+        {
+          "kind": "canonical-standalone-brace-context-review",
+          "offset": 2251,
+          "message": "Standalone brace lacks an unambiguous literal or executable header.",
+          "line": 118,
+          "column": 4
+        }
+      ],
+      "constructors": [
+        {
+          "name": "Repeat",
+          "start": 1484,
+          "end": 1541,
+          "members": [
+            {
+              "name": "i",
+              "start": 1508,
+              "end": 1512,
+              "argument_start": 1510,
+              "argument_end": 1511,
+              "opening": 1509,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false,
+              "separator_start": 1512,
+              "separator_end": 1513
+            },
+            {
+              "name": "size",
+              "start": 1513,
+              "end": 1530,
+              "argument_start": 1518,
+              "argument_end": 1529,
+              "opening": 1517,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false,
+              "separator_start": 1530,
+              "separator_end": 1531
+            },
+            {
+              "name": "alu",
+              "start": 1531,
+              "end": 1539,
+              "argument_start": 1535,
+              "argument_end": 1538,
+              "opening": 1534,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false
+            }
+          ],
+          "member_declarations": [
+            {
+              "name": "i",
+              "start": 1624,
+              "end": 1640,
+              "static": false,
+              "conditional": false,
+              "type_name": "unsigned",
+              "type_evidence": {
+                "kind": "builtin-type",
+                "type_name": "unsigned"
+              },
+              "source_text": "unsigned i,size"
+            },
+            {
+              "name": "size",
+              "start": 1624,
+              "end": 1640,
+              "static": false,
+              "conditional": false,
+              "type_name": "unsigned",
+              "type_evidence": {
+                "kind": "builtin-type",
+                "type_name": "unsigned"
+              },
+              "source_text": "unsigned i,size"
+            },
+            {
+              "name": "alu",
+              "start": 1644,
+              "end": 1660,
+              "static": false,
+              "conditional": false,
+              "type_name": "char",
+              "type_evidence": {
+                "kind": "builtin-type",
+                "type_name": "char"
+              },
+              "source_text": "const char* alu"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "source_identity": "b22f8afa7e51850fefdbbf7bf094e630a72a6e9b65f99eff9744f144f18488c3:cpp",
+      "paths": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-gpp-3.cpp"
+      ],
+      "old_parser_loc": 152,
+      "new_parser_loc": 160,
+      "diagnostics": [],
+      "constructors": [
+        {
+          "name": "Body",
+          "start": 470,
+          "end": 533,
+          "members": [
+            {
+              "name": "x",
+              "start": 477,
+              "end": 483,
+              "argument_start": 479,
+              "argument_end": 482,
+              "opening": 478,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false,
+              "separator_start": 483,
+              "separator_end": 484
+            },
+            {
+              "name": "y",
+              "start": 484,
+              "end": 490,
+              "argument_start": 486,
+              "argument_end": 489,
+              "opening": 485,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false,
+              "separator_start": 490,
+              "separator_end": 491
+            },
+            {
+              "name": "z",
+              "start": 491,
+              "end": 497,
+              "argument_start": 493,
+              "argument_end": 496,
+              "opening": 492,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false,
+              "separator_start": 497,
+              "separator_end": 498
+            },
+            {
+              "name": "vx",
+              "start": 498,
+              "end": 505,
+              "argument_start": 501,
+              "argument_end": 504,
+              "opening": 500,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false,
+              "separator_start": 505,
+              "separator_end": 506
+            },
+            {
+              "name": "vy",
+              "start": 506,
+              "end": 513,
+              "argument_start": 509,
+              "argument_end": 512,
+              "opening": 508,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false,
+              "separator_start": 513,
+              "separator_end": 514
+            },
+            {
+              "name": "vz",
+              "start": 514,
+              "end": 521,
+              "argument_start": 517,
+              "argument_end": 520,
+              "opening": 516,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false,
+              "separator_start": 521,
+              "separator_end": 522
+            },
+            {
+              "name": "mass",
+              "start": 522,
+              "end": 531,
+              "argument_start": 527,
+              "argument_end": 530,
+              "opening": 526,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false
+            }
+          ],
+          "member_declarations": [
+            {
+              "name": "PI",
+              "start": 230,
+              "end": 283,
+              "static": true,
+              "conditional": false,
+              "type_name": "double",
+              "type_evidence": {
+                "kind": "builtin-type",
+                "type_name": "double"
+              },
+              "source_text": "constexpr static const double PI = 3.141592653589793"
+            },
+            {
+              "name": "SOLAR_MASS",
+              "start": 296,
+              "end": 351,
+              "static": true,
+              "conditional": false,
+              "type_name": "double",
+              "type_evidence": {
+                "kind": "builtin-type",
+                "type_name": "double"
+              },
+              "source_text": "constexpr static const double SOLAR_MASS = 4 * PI * PI"
+            },
+            {
+              "name": "DAYS_PER_YEAR",
+              "start": 360,
+              "end": 413,
+              "static": true,
+              "conditional": false,
+              "type_name": "double",
+              "type_evidence": {
+                "kind": "builtin-type",
+                "type_name": "double"
+              },
+              "source_text": "constexpr static const double DAYS_PER_YEAR = 365.24"
+            },
+            {
+              "name": "x",
+              "start": 423,
+              "end": 456,
+              "static": false,
+              "conditional": false,
+              "type_name": "double",
+              "type_evidence": {
+                "kind": "builtin-type",
+                "type_name": "double"
+              },
+              "source_text": "double x, y, z, vx, vy, vz, mass"
+            },
+            {
+              "name": "y",
+              "start": 423,
+              "end": 456,
+              "static": false,
+              "conditional": false,
+              "type_name": "double",
+              "type_evidence": {
+                "kind": "builtin-type",
+                "type_name": "double"
+              },
+              "source_text": "double x, y, z, vx, vy, vz, mass"
+            },
+            {
+              "name": "z",
+              "start": 423,
+              "end": 456,
+              "static": false,
+              "conditional": false,
+              "type_name": "double",
+              "type_evidence": {
+                "kind": "builtin-type",
+                "type_name": "double"
+              },
+              "source_text": "double x, y, z, vx, vy, vz, mass"
+            },
+            {
+              "name": "vx",
+              "start": 423,
+              "end": 456,
+              "static": false,
+              "conditional": false,
+              "type_name": "double",
+              "type_evidence": {
+                "kind": "builtin-type",
+                "type_name": "double"
+              },
+              "source_text": "double x, y, z, vx, vy, vz, mass"
+            },
+            {
+              "name": "vy",
+              "start": 423,
+              "end": 456,
+              "static": false,
+              "conditional": false,
+              "type_name": "double",
+              "type_evidence": {
+                "kind": "builtin-type",
+                "type_name": "double"
+              },
+              "source_text": "double x, y, z, vx, vy, vz, mass"
+            },
+            {
+              "name": "vz",
+              "start": 423,
+              "end": 456,
+              "static": false,
+              "conditional": false,
+              "type_name": "double",
+              "type_evidence": {
+                "kind": "builtin-type",
+                "type_name": "double"
+              },
+              "source_text": "double x, y, z, vx, vy, vz, mass"
+            },
+            {
+              "name": "mass",
+              "start": 423,
+              "end": 456,
+              "static": false,
+              "conditional": false,
+              "type_name": "double",
+              "type_evidence": {
+                "kind": "builtin-type",
+                "type_name": "double"
+              },
+              "source_text": "double x, y, z, vx, vy, vz, mass"
+            }
+          ]
+        },
+        {
+          "name": "NBodySystem",
+          "start": 2968,
+          "end": 3730,
+          "members": [
+            {
+              "name": "numBodies",
+              "start": 2982,
+              "end": 2994,
+              "argument_start": 2992,
+              "argument_end": 2993,
+              "opening": 2991,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false
+            }
+          ],
+          "member_declarations": [
+            {
+              "name": "numBodies",
+              "start": 2891,
+              "end": 2905,
+              "static": false,
+              "conditional": false,
+              "type_name": "int",
+              "type_evidence": {
+                "kind": "builtin-type",
+                "type_name": "int"
+              },
+              "source_text": "int numBodies"
+            },
+            {
+              "name": "bodies",
+              "start": 2914,
+              "end": 2929,
+              "static": false,
+              "conditional": false,
+              "type_name": "Body",
+              "type_evidence": {
+                "name": "Body",
+                "type_name": "Body",
+                "kind": "source-local-cpp-named-type",
+                "aggregate_kind": "class",
+                "definition_start": 197,
+                "definition_end": 209,
+                "visible_start": 207,
+                "scope_start": 0,
+                "scope_end": 6174,
+                "scope_opening": null,
+                "conditional": false,
+                "source_text": "class Body {",
+                "header_start": 197,
+                "header_end": 209,
+                "body_opening": 208,
+                "body_end": 2839,
+                "forward_declaration": false
+              },
+              "source_text": "Body bodies[5]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "source_identity": "90f5f496693e27c210bb9d29e84409c219c3c33ccd151910b07aaace9596d471:cpp",
+      "paths": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-gpp-5.cpp"
+      ],
+      "old_parser_loc": 133,
+      "new_parser_loc": 136,
+      "diagnostics": [
+        {
+          "kind": "canonical-bare-block-review",
+          "offset": 4662,
+          "message": "Standalone nested brace could introduce an executable block.",
+          "line": 161,
+          "column": 7
+        }
+      ],
+      "constructors": [
+        {
+          "name": "vec3",
+          "start": 556,
+          "end": 622,
+          "members": [
+            {
+              "name": "x",
+              "start": 603,
+              "end": 607,
+              "argument_start": 605,
+              "argument_end": 606,
+              "opening": 604,
+              "delimiter": "{",
+              "scalar_arguments": true,
+              "wrapped_arguments": false,
+              "separator_start": 607,
+              "separator_end": 608
+            },
+            {
+              "name": "y",
+              "start": 609,
+              "end": 613,
+              "argument_start": 611,
+              "argument_end": 612,
+              "opening": 610,
+              "delimiter": "{",
+              "scalar_arguments": true,
+              "wrapped_arguments": false,
+              "separator_start": 613,
+              "separator_end": 614
+            },
+            {
+              "name": "z",
+              "start": 615,
+              "end": 619,
+              "argument_start": 617,
+              "argument_end": 618,
+              "opening": 616,
+              "delimiter": "{",
+              "scalar_arguments": true,
+              "wrapped_arguments": false
+            }
+          ],
+          "member_declarations": [
+            {
+              "name": "x",
+              "start": 493,
+              "end": 531,
+              "static": false,
+              "conditional": false,
+              "type_name": "double",
+              "type_evidence": {
+                "kind": "builtin-type",
+                "type_name": "double"
+              },
+              "source_text": "double x = 0, y = 0, z = 0, __pad = 0"
+            },
+            {
+              "name": "y",
+              "start": 493,
+              "end": 531,
+              "static": false,
+              "conditional": false,
+              "type_name": "double",
+              "type_evidence": {
+                "kind": "builtin-type",
+                "type_name": "double"
+              },
+              "source_text": "double x = 0, y = 0, z = 0, __pad = 0"
+            },
+            {
+              "name": "z",
+              "start": 493,
+              "end": 531,
+              "static": false,
+              "conditional": false,
+              "type_name": "double",
+              "type_evidence": {
+                "kind": "builtin-type",
+                "type_name": "double"
+              },
+              "source_text": "double x = 0, y = 0, z = 0, __pad = 0"
+            },
+            {
+              "name": "__pad",
+              "start": 493,
+              "end": 531,
+              "static": false,
+              "conditional": false,
+              "type_name": "double",
+              "type_evidence": {
+                "kind": "builtin-type",
+                "type_name": "double"
+              },
+              "source_text": "double x = 0, y = 0, z = 0, __pad = 0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "source_identity": "e9ea172b053a24a2fc804a0232af6b242b1fbfedc143500a66355446bb251d98:cpp",
+      "paths": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-gpp-4.cpp"
+      ],
+      "old_parser_loc": 54,
+      "new_parser_loc": 58,
+      "diagnostics": [],
+      "constructors": [
+        {
+          "name": "LFT",
+          "start": 307,
+          "end": 339,
+          "members": [
+            {
+              "name": "q",
+              "start": 315,
+              "end": 319,
+              "argument_start": 317,
+              "argument_end": 318,
+              "opening": 316,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false,
+              "separator_start": 319,
+              "separator_end": 320
+            },
+            {
+              "name": "r",
+              "start": 321,
+              "end": 325,
+              "argument_start": 323,
+              "argument_end": 324,
+              "opening": 322,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false,
+              "separator_start": 325,
+              "separator_end": 326
+            },
+            {
+              "name": "t",
+              "start": 327,
+              "end": 331,
+              "argument_start": 329,
+              "argument_end": 330,
+              "opening": 328,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false,
+              "separator_start": 331,
+              "separator_end": 332
+            },
+            {
+              "name": "k",
+              "start": 333,
+              "end": 337,
+              "argument_start": 335,
+              "argument_end": 336,
+              "opening": 334,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false
+            }
+          ],
+          "member_declarations": [
+            {
+              "name": "q",
+              "start": 231,
+              "end": 243,
+              "static": false,
+              "conditional": false,
+              "type_name": "mpz_class",
+              "type_evidence": {
+                "name": "mpz_class",
+                "kind": "explicit-header-type-contract",
+                "type_name": "gmpxx.h",
+                "definition_start": 148,
+                "definition_end": 166,
+                "visible_start": 166,
+                "scope_start": 0,
+                "scope_end": 1507,
+                "scope_opening": null,
+                "conditional": false,
+                "source_text": "#include SSSSSSSSS"
+              },
+              "source_text": "mpz_class q"
+            },
+            {
+              "name": "r",
+              "start": 248,
+              "end": 260,
+              "static": false,
+              "conditional": false,
+              "type_name": "mpz_class",
+              "type_evidence": {
+                "name": "mpz_class",
+                "kind": "explicit-header-type-contract",
+                "type_name": "gmpxx.h",
+                "definition_start": 148,
+                "definition_end": 166,
+                "visible_start": 166,
+                "scope_start": 0,
+                "scope_end": 1507,
+                "scope_opening": null,
+                "conditional": false,
+                "source_text": "#include SSSSSSSSS"
+              },
+              "source_text": "mpz_class r"
+            },
+            {
+              "name": "t",
+              "start": 265,
+              "end": 277,
+              "static": false,
+              "conditional": false,
+              "type_name": "mpz_class",
+              "type_evidence": {
+                "name": "mpz_class",
+                "kind": "explicit-header-type-contract",
+                "type_name": "gmpxx.h",
+                "definition_start": 148,
+                "definition_end": 166,
+                "visible_start": 166,
+                "scope_start": 0,
+                "scope_end": 1507,
+                "scope_opening": null,
+                "conditional": false,
+                "source_text": "#include SSSSSSSSS"
+              },
+              "source_text": "mpz_class t"
+            },
+            {
+              "name": "k",
+              "start": 282,
+              "end": 293,
+              "static": false,
+              "conditional": false,
+              "type_name": "unsigned",
+              "type_evidence": {
+                "kind": "builtin-type",
+                "type_name": "unsigned"
+              },
+              "source_text": "unsigned k"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "source_identity": "c2335acdacef13e18d53cd4bd5704070e9d10594234a2648c9736e9e3b8720b0:cpp",
+      "paths": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/revcomp/upstream/revcomp-gpp-3.cpp"
+      ],
+      "old_parser_loc": 90,
+      "new_parser_loc": 88,
+      "diagnostics": [
+        {
+          "kind": "canonical-bare-block-review",
+          "offset": 304,
+          "message": "Standalone nested brace could introduce an executable block.",
+          "line": 14,
+          "column": 4
+        }
+      ],
+      "constructors": [
+        {
+          "name": "chunk",
+          "start": 522,
+          "end": 597,
+          "members": [
+            {
+              "name": "previous",
+              "start": 544,
+              "end": 555,
+              "argument_start": 553,
+              "argument_end": 554,
+              "opening": 552,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false,
+              "separator_start": 555,
+              "separator_end": 556
+            },
+            {
+              "name": "next",
+              "start": 563,
+              "end": 570,
+              "argument_start": 568,
+              "argument_end": 569,
+              "opening": 567,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false,
+              "separator_start": 570,
+              "separator_end": 571
+            },
+            {
+              "name": "length",
+              "start": 578,
+              "end": 587,
+              "argument_start": 585,
+              "argument_end": 586,
+              "opening": 584,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false
+            }
+          ],
+          "member_declarations": [
+            {
+              "name": "previous",
+              "start": 732,
+              "end": 749,
+              "static": false,
+              "conditional": false,
+              "type_name": "chunk",
+              "type_evidence": {
+                "name": "chunk",
+                "type_name": "chunk",
+                "kind": "source-local-cpp-named-type",
+                "aggregate_kind": "struct",
+                "definition_start": 504,
+                "definition_end": 518,
+                "visible_start": 516,
+                "scope_start": 0,
+                "scope_end": 2724,
+                "scope_opening": null,
+                "conditional": false,
+                "source_text": "struct chunk\n{",
+                "header_start": 504,
+                "header_end": 518,
+                "body_opening": 517,
+                "body_end": 815,
+                "forward_declaration": false
+              },
+              "source_text": "chunk * previous"
+            },
+            {
+              "name": "next",
+              "start": 753,
+              "end": 766,
+              "static": false,
+              "conditional": false,
+              "type_name": "chunk",
+              "type_evidence": {
+                "name": "chunk",
+                "type_name": "chunk",
+                "kind": "source-local-cpp-named-type",
+                "aggregate_kind": "struct",
+                "definition_start": 504,
+                "definition_end": 518,
+                "visible_start": 516,
+                "scope_start": 0,
+                "scope_end": 2724,
+                "scope_opening": null,
+                "conditional": false,
+                "source_text": "struct chunk\n{",
+                "header_start": 504,
+                "header_end": 518,
+                "body_opening": 517,
+                "body_end": 815,
+                "forward_declaration": false
+              },
+              "source_text": "chunk * next"
+            },
+            {
+              "name": "length",
+              "start": 770,
+              "end": 792,
+              "static": false,
+              "conditional": false,
+              "type_name": "unsigned short",
+              "type_evidence": {
+                "kind": "builtin-type",
+                "type_name": "unsigned short"
+              },
+              "source_text": "unsigned short length"
+            },
+            {
+              "name": "data",
+              "start": 796,
+              "end": 813,
+              "static": false,
+              "conditional": false,
+              "type_name": "char",
+              "type_evidence": {
+                "kind": "builtin-type",
+                "type_name": "char"
+              },
+              "source_text": "char data[65526]"
+            }
+          ]
+        },
+        {
+          "name": "chunk",
+          "start": 601,
+          "end": 728,
+          "members": [
+            {
+              "name": "previous",
+              "start": 639,
+              "end": 657,
+              "argument_start": 648,
+              "argument_end": 656,
+              "opening": 647,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false,
+              "separator_start": 657,
+              "separator_end": 658
+            },
+            {
+              "name": "next",
+              "start": 665,
+              "end": 672,
+              "argument_start": 670,
+              "argument_end": 671,
+              "opening": 669,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false,
+              "separator_start": 672,
+              "separator_end": 673
+            },
+            {
+              "name": "length",
+              "start": 680,
+              "end": 689,
+              "argument_start": 687,
+              "argument_end": 688,
+              "opening": 686,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false
+            }
+          ],
+          "member_declarations": [
+            {
+              "name": "previous",
+              "start": 732,
+              "end": 749,
+              "static": false,
+              "conditional": false,
+              "type_name": "chunk",
+              "type_evidence": {
+                "name": "chunk",
+                "type_name": "chunk",
+                "kind": "source-local-cpp-named-type",
+                "aggregate_kind": "struct",
+                "definition_start": 504,
+                "definition_end": 518,
+                "visible_start": 516,
+                "scope_start": 0,
+                "scope_end": 2724,
+                "scope_opening": null,
+                "conditional": false,
+                "source_text": "struct chunk\n{",
+                "header_start": 504,
+                "header_end": 518,
+                "body_opening": 517,
+                "body_end": 815,
+                "forward_declaration": false
+              },
+              "source_text": "chunk * previous"
+            },
+            {
+              "name": "next",
+              "start": 753,
+              "end": 766,
+              "static": false,
+              "conditional": false,
+              "type_name": "chunk",
+              "type_evidence": {
+                "name": "chunk",
+                "type_name": "chunk",
+                "kind": "source-local-cpp-named-type",
+                "aggregate_kind": "struct",
+                "definition_start": 504,
+                "definition_end": 518,
+                "visible_start": 516,
+                "scope_start": 0,
+                "scope_end": 2724,
+                "scope_opening": null,
+                "conditional": false,
+                "source_text": "struct chunk\n{",
+                "header_start": 504,
+                "header_end": 518,
+                "body_opening": 517,
+                "body_end": 815,
+                "forward_declaration": false
+              },
+              "source_text": "chunk * next"
+            },
+            {
+              "name": "length",
+              "start": 770,
+              "end": 792,
+              "static": false,
+              "conditional": false,
+              "type_name": "unsigned short",
+              "type_evidence": {
+                "kind": "builtin-type",
+                "type_name": "unsigned short"
+              },
+              "source_text": "unsigned short length"
+            },
+            {
+              "name": "data",
+              "start": 796,
+              "end": 813,
+              "static": false,
+              "conditional": false,
+              "type_name": "char",
+              "type_evidence": {
+                "kind": "builtin-type",
+                "type_name": "char"
+              },
+              "source_text": "char data[65526]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "source_identity": "b87c816a9b09d6777584aaeec2f5c7a3d52414b9676fcf3cf399563d427bb010:cpp",
+      "paths": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-gpp-0.cpp"
+      ],
+      "old_parser_loc": 182,
+      "new_parser_loc": 183,
+      "diagnostics": [],
+      "constructors": [
+        {
+          "name": "NBodySystem",
+          "start": 1618,
+          "end": 4299,
+          "members": [
+            {
+              "name": "rt",
+              "start": 1643,
+              "end": 1665,
+              "argument_start": 1646,
+              "argument_end": 1664,
+              "opening": 1645,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false
+            }
+          ],
+          "member_declarations": [
+            {
+              "name": "rt",
+              "start": 1595,
+              "end": 1612,
+              "static": false,
+              "conditional": false,
+              "type_name": "__m256d",
+              "type_evidence": {
+                "name": "__m256d",
+                "kind": "explicit-header-type-contract",
+                "type_name": "immintrin.h",
+                "definition_start": 258,
+                "definition_end": 280,
+                "visible_start": 280,
+                "scope_start": 0,
+                "scope_end": 7720,
+                "scope_opening": null,
+                "conditional": false,
+                "source_text": "#include SSSSSSSSSSSSS"
+              },
+              "source_text": "const __m256d rt"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "source_identity": "7819f848b436fba0cbe5b5694ec622f2e45b77497397d21b00096a711248a62b:cpp",
+      "paths": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/upstream/mandelbrot-gpp-4.cpp"
+      ],
+      "old_parser_loc": 427,
+      "new_parser_loc": 427,
+      "diagnostics": [
+        {
+          "kind": "cpp-member-base-initializer-owner-review",
+          "offset": 905,
+          "message": "Initializer is not one uniquely proven direct nonstatic member; base/static/unknown roles remain gated.",
+          "name": "_ostr",
+          "line": 32,
+          "column": 7
+        },
+        {
+          "kind": "cpp-member-base-initializer-owner-review",
+          "offset": 924,
+          "message": "Initializer is not one uniquely proven direct nonstatic member; base/static/unknown roles remain gated.",
+          "name": "_width",
+          "line": 33,
+          "column": 7
+        },
+        {
+          "kind": "cpp-member-base-initializer-owner-review",
+          "offset": 972,
+          "message": "Initializer is not one uniquely proven direct nonstatic member; base/static/unknown roles remain gated.",
+          "name": "_height",
+          "line": 34,
+          "column": 7
+        },
+        {
+          "kind": "cpp-member-base-initializer-owner-review",
+          "offset": 1030,
+          "message": "Initializer is not one uniquely proven direct nonstatic member; base/static/unknown roles remain gated.",
+          "name": "_data",
+          "line": 35,
+          "column": 7
+        },
+        {
+          "kind": "cpp-member-base-initializer-owner-review",
+          "offset": 2004,
+          "message": "Initializer is not one uniquely proven direct nonstatic member; base/static/unknown roles remain gated.",
+          "name": "_interlaceIncrement",
+          "line": 68,
+          "column": 15
+        },
+        {
+          "kind": "cpp-member-base-initializer-owner-review",
+          "offset": 2059,
+          "message": "Initializer is not one uniquely proven direct nonstatic member; base/static/unknown roles remain gated.",
+          "name": "_dataPointerIncrement",
+          "line": 69,
+          "column": 15
+        },
+        {
+          "kind": "cpp-member-base-initializer-owner-review",
+          "offset": 2736,
+          "message": "Initializer is not one uniquely proven direct nonstatic member; base/static/unknown roles remain gated.",
+          "name": "_yStart",
+          "line": 89,
+          "column": 11
+        },
+        {
+          "kind": "cpp-member-base-initializer-owner-review",
+          "offset": 2763,
+          "message": "Initializer is not one uniquely proven direct nonstatic member; base/static/unknown roles remain gated.",
+          "name": "_increment",
+          "line": 90,
+          "column": 11
+        },
+        {
+          "kind": "cpp-member-base-initializer-owner-review",
+          "offset": 2796,
+          "message": "Initializer is not one uniquely proven direct nonstatic member; base/static/unknown roles remain gated.",
+          "name": "_dataStart",
+          "line": 91,
+          "column": 11
+        },
+        {
+          "kind": "cpp-member-base-initializer-owner-review",
+          "offset": 2847,
+          "message": "Initializer is not one uniquely proven direct nonstatic member; base/static/unknown roles remain gated.",
+          "name": "_dataPointerIncrement",
+          "line": 92,
+          "column": 11
+        },
+        {
+          "kind": "cpp-initializer-constructor-owner-review",
+          "offset": 10782,
+          "message": "No unique source-local class/struct constructor declaration owner.",
+          "name": "VectorizedComplex",
+          "line": 308,
+          "column": 5
+        },
+        {
+          "kind": "cpp-initializer-constructor-owner-review",
+          "offset": 12184,
+          "message": "No unique source-local class/struct constructor declaration owner.",
+          "name": "ComplexPlaneCalculator",
+          "line": 342,
+          "column": 5
+        },
+        {
+          "kind": "cpp-initializer-constructor-owner-review",
+          "offset": 14562,
+          "message": "No unique source-local class/struct constructor declaration owner.",
+          "name": "MandelbrotFunction",
+          "line": 399,
+          "column": 5
+        },
+        {
+          "kind": "cpp-named-type-conditional-owner-review",
+          "offset": 5604,
+          "name": "Simd128DUnion",
+          "line": 173,
+          "column": 1
+        },
+        {
+          "kind": "cpp-named-type-conditional-owner-review",
+          "offset": 6718,
+          "name": "Simd256DUnion",
+          "line": 204,
+          "column": 1
+        },
+        {
+          "kind": "cpp-named-type-conditional-owner-review",
+          "offset": 7634,
+          "name": "Simd512DUnion",
+          "line": 228,
+          "column": 1
+        },
+        {
+          "kind": "cpp-named-type-template-owner-review",
+          "offset": 10427,
+          "name": "VectorizedComplex",
+          "line": 299,
+          "column": 1
+        },
+        {
+          "kind": "cpp-named-type-template-owner-review",
+          "offset": 11950,
+          "name": "ComplexPlaneCalculator",
+          "line": 335,
+          "column": 1
+        },
+        {
+          "kind": "cpp-named-type-template-owner-review",
+          "offset": 14206,
+          "name": "MandelbrotFunction",
+          "line": 390,
+          "column": 1
+        },
+        {
+          "kind": "c-type-conditional-owner-review",
+          "offset": 426,
+          "name": "__m128",
+          "line": 17,
+          "column": 1
+        },
+        {
+          "kind": "c-type-conditional-owner-review",
+          "offset": 426,
+          "name": "__m128d",
+          "line": 17,
+          "column": 1
+        },
+        {
+          "kind": "c-type-conditional-owner-review",
+          "offset": 426,
+          "name": "__m128i",
+          "line": 17,
+          "column": 1
+        },
+        {
+          "kind": "c-type-conditional-owner-review",
+          "offset": 426,
+          "name": "__m256",
+          "line": 17,
+          "column": 1
+        },
+        {
+          "kind": "c-type-conditional-owner-review",
+          "offset": 426,
+          "name": "__m256d",
+          "line": 17,
+          "column": 1
+        },
+        {
+          "kind": "c-type-conditional-owner-review",
+          "offset": 426,
+          "name": "__m256i",
+          "line": 17,
+          "column": 1
+        },
+        {
+          "kind": "c-type-conditional-owner-review",
+          "offset": 426,
+          "name": "__m512",
+          "line": 17,
+          "column": 1
+        },
+        {
+          "kind": "c-type-conditional-owner-review",
+          "offset": 426,
+          "name": "__m512d",
+          "line": 17,
+          "column": 1
+        },
+        {
+          "kind": "c-type-conditional-owner-review",
+          "offset": 426,
+          "name": "__m512i",
+          "line": 17,
+          "column": 1
+        },
+        {
+          "kind": "c-typedef-declarator-owner-review",
+          "offset": 805,
+          "source_text": "using Size=std::size_t;",
+          "line": 30,
+          "column": 5
+        },
+        {
+          "kind": "c-type-conditional-owner-review",
+          "offset": 5630,
+          "name": "NumberType",
+          "line": 174,
+          "column": 5
+        },
+        {
+          "kind": "c-typedef-declarator-owner-review",
+          "offset": 5661,
+          "source_text": "using SimdRegisterType = __m128d;",
+          "line": 175,
+          "column": 5
+        },
+        {
+          "kind": "c-type-conditional-owner-review",
+          "offset": 6744,
+          "name": "NumberType",
+          "line": 205,
+          "column": 5
+        },
+        {
+          "kind": "c-typedef-declarator-owner-review",
+          "offset": 6775,
+          "source_text": "using SimdRegisterType = __m256d;",
+          "line": 206,
+          "column": 5
+        },
+        {
+          "kind": "c-type-conditional-owner-review",
+          "offset": 7660,
+          "name": "NumberType",
+          "line": 229,
+          "column": 5
+        },
+        {
+          "kind": "c-typedef-declarator-owner-review",
+          "offset": 7691,
+          "source_text": "using SimdRegisterType = __m512d;",
+          "line": 230,
+          "column": 5
+        },
+        {
+          "kind": "c-typedef-declarator-owner-review",
+          "offset": 8749,
+          "source_text": "using SimdRegisterType = typename SimdUnion::SimdRegisterType;",
+          "line": 259,
+          "column": 5
+        },
+        {
+          "kind": "c-typedef-declarator-owner-review",
+          "offset": 9328,
+          "source_text": "using SimdRegisterType = typename SimdUnion::SimdRegisterType;",
+          "line": 273,
+          "column": 5
+        },
+        {
+          "kind": "c-typedef-declarator-owner-review",
+          "offset": 10465,
+          "source_text": "using NumberType = typename SimdUnion::NumberType;",
+          "line": 301,
+          "column": 5
+        },
+        {
+          "kind": "c-typedef-declarator-owner-review",
+          "offset": 10520,
+          "source_text": "using SimdRegisterType = typename SimdUnion::SimdRegisterType;",
+          "line": 302,
+          "column": 5
+        },
+        {
+          "kind": "c-typedef-declarator-owner-review",
+          "offset": 10587,
+          "source_text": "using Size = std::size_t;",
+          "line": 303,
+          "column": 5
+        },
+        {
+          "kind": "c-typedef-declarator-owner-review",
+          "offset": 11993,
+          "source_text": "using VComplex = VectorizedComplex<SimdUnion>;",
+          "line": 337,
+          "column": 5
+        },
+        {
+          "kind": "c-typedef-declarator-owner-review",
+          "offset": 12044,
+          "source_text": "using NumberType = typename SimdUnion::NumberType;",
+          "line": 338,
+          "column": 5
+        },
+        {
+          "kind": "c-typedef-declarator-owner-review",
+          "offset": 12099,
+          "source_text": "using Line = typename PortableBinaryBitmap::Line;",
+          "line": 339,
+          "column": 5
+        },
+        {
+          "kind": "c-typedef-declarator-owner-review",
+          "offset": 12153,
+          "source_text": "using Size = std::size_t;",
+          "line": 340,
+          "column": 5
+        },
+        {
+          "kind": "c-typedef-declarator-owner-review",
+          "offset": 14245,
+          "source_text": "using VComplex = VectorizedComplex<SimdUnion>;",
+          "line": 392,
+          "column": 5
+        },
+        {
+          "kind": "c-typedef-declarator-owner-review",
+          "offset": 14296,
+          "source_text": "using SimdRegisterType = typename SimdUnion::SimdRegisterType;",
+          "line": 393,
+          "column": 5
+        },
+        {
+          "kind": "c-typedef-declarator-owner-review",
+          "offset": 14363,
+          "source_text": "using NumberType = typename SimdUnion::NumberType;",
+          "line": 394,
+          "column": 5
+        },
+        {
+          "kind": "c-typedef-declarator-owner-review",
+          "offset": 14418,
+          "source_text": "using Size = std::size_t;",
+          "line": 395,
+          "column": 5
+        },
+        {
+          "kind": "c-typedef-declarator-owner-review",
+          "offset": 15926,
+          "source_text": "using SystemSimdUnion = Simd512DUnion;",
+          "line": 435,
+          "column": 1
+        },
+        {
+          "kind": "c-typedef-declarator-owner-review",
+          "offset": 15987,
+          "source_text": "using SystemSimdUnion = Simd256DUnion;",
+          "line": 437,
+          "column": 1
+        },
+        {
+          "kind": "c-typedef-declarator-owner-review",
+          "offset": 16048,
+          "source_text": "using SystemSimdUnion = Simd128DUnion;",
+          "line": 439,
+          "column": 1
+        },
+        {
+          "kind": "c-type-conditional-owner-review",
+          "offset": 16093,
+          "name": "SystemSimdUnion",
+          "line": 441,
+          "column": 1
+        },
+        {
+          "kind": "c-typedef-declarator-owner-review",
+          "offset": 16196,
+          "source_text": "using NumberType = SystemSimdUnion::NumberType;",
+          "line": 447,
+          "column": 5
+        },
+        {
+          "kind": "c-typedef-declarator-owner-review",
+          "offset": 16248,
+          "source_text": "using ComplexNumber = std::complex<NumberType>;",
+          "line": 448,
+          "column": 5
+        },
+        {
+          "kind": "c-typedef-declarator-owner-review",
+          "offset": 16300,
+          "source_text": "using MandelbrotCalculator = ComplexPlaneCalculator<SystemSimdUnion,\n            MandelbrotFunction<SystemSimdUnion>>;",
+          "line": 449,
+          "column": 5
+        }
+      ],
+      "constructors": [
+        {
+          "name": "NoSimdUnion",
+          "start": 4394,
+          "end": 4430,
+          "members": [
+            {
+              "name": "reg",
+              "start": 4414,
+              "end": 4422,
+              "argument_start": 4418,
+              "argument_end": 4421,
+              "opening": 4417,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false
+            }
+          ],
+          "member_declarations": [
+            {
+              "name": "reg",
+              "start": 5488,
+              "end": 5510,
+              "static": false,
+              "conditional": false,
+              "type_name": "SimdRegisterType",
+              "type_evidence": {
+                "name": "SimdRegisterType",
+                "kind": "source-local-using",
+                "type_name": "double",
+                "definition_start": 4357,
+                "definition_end": 4389,
+                "visible_start": 4389,
+                "scope_start": 4320,
+                "scope_end": 5535,
+                "scope_opening": 4320,
+                "conditional": false,
+                "source_text": "using SimdRegisterType = double;"
+              },
+              "source_text": "SimdRegisterType* reg"
+            },
+            {
+              "name": "val",
+              "start": 5515,
+              "end": 5533,
+              "static": false,
+              "conditional": false,
+              "type_name": "NumberType",
+              "type_evidence": {
+                "name": "NumberType",
+                "kind": "source-local-using",
+                "type_name": "double",
+                "definition_start": 4326,
+                "definition_end": 4352,
+                "visible_start": 4352,
+                "scope_start": 4320,
+                "scope_end": 5535,
+                "scope_opening": 4320,
+                "conditional": false,
+                "source_text": "using NumberType = double;"
+              },
+              "source_text": "NumberType val[8]"
+            }
+          ]
+        },
+        {
+          "name": "NoSimdUnion",
+          "start": 4435,
+          "end": 4575,
+          "members": [
+            {
+              "name": "reg",
+              "start": 4479,
+              "end": 4487,
+              "argument_start": 4483,
+              "argument_end": 4486,
+              "opening": 4482,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false
+            }
+          ],
+          "member_declarations": [
+            {
+              "name": "reg",
+              "start": 5488,
+              "end": 5510,
+              "static": false,
+              "conditional": false,
+              "type_name": "SimdRegisterType",
+              "type_evidence": {
+                "name": "SimdRegisterType",
+                "kind": "source-local-using",
+                "type_name": "double",
+                "definition_start": 4357,
+                "definition_end": 4389,
+                "visible_start": 4389,
+                "scope_start": 4320,
+                "scope_end": 5535,
+                "scope_opening": 4320,
+                "conditional": false,
+                "source_text": "using SimdRegisterType = double;"
+              },
+              "source_text": "SimdRegisterType* reg"
+            },
+            {
+              "name": "val",
+              "start": 5515,
+              "end": 5533,
+              "static": false,
+              "conditional": false,
+              "type_name": "NumberType",
+              "type_evidence": {
+                "name": "NumberType",
+                "kind": "source-local-using",
+                "type_name": "double",
+                "definition_start": 4326,
+                "definition_end": 4352,
+                "visible_start": 4352,
+                "scope_start": 4320,
+                "scope_end": 5535,
+                "scope_opening": 4320,
+                "conditional": false,
+                "source_text": "using NumberType = double;"
+              },
+              "source_text": "NumberType val[8]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "source_identity": "ab3fcc7dc7ca63325217e336c3cb77327d065aa4aae22b4ebb654cfeacbbe59a:cpp",
+      "paths": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/upstream/fasta-gpp-9.cpp"
+      ],
+      "old_parser_loc": 242,
+      "new_parser_loc": 243,
+      "diagnostics": [
+        {
+          "kind": "cpp-member-base-initializer-owner-review",
+          "offset": 2881,
+          "message": "Initializer is not one uniquely proven direct nonstatic member; base/static/unknown roles remain gated.",
+          "name": "count_",
+          "line": 115,
+          "column": 9
+        },
+        {
+          "kind": "cpp-named-type-template-owner-review",
+          "offset": 1584,
+          "name": "WeightedRandom",
+          "line": 71,
+          "column": 1
+        },
+        {
+          "kind": "c-type-conditional-owner-review",
+          "offset": 539,
+          "name": "__m128",
+          "line": 22,
+          "column": 1
+        },
+        {
+          "kind": "c-type-conditional-owner-review",
+          "offset": 539,
+          "name": "__m128d",
+          "line": 22,
+          "column": 1
+        },
+        {
+          "kind": "c-type-conditional-owner-review",
+          "offset": 539,
+          "name": "__m128i",
+          "line": 22,
+          "column": 1
+        },
+        {
+          "kind": "c-type-parameter-shadow-owner-review",
+          "offset": 1305,
+          "source_text": "__m128i v",
+          "line": 61,
+          "column": 27
+        },
+        {
+          "kind": "canonical-bare-block-review",
+          "offset": 7534,
+          "message": "Standalone nested brace could introduce an executable block.",
+          "line": 276,
+          "column": 9
+        },
+        {
+          "kind": "canonical-bare-block-review",
+          "offset": 7584,
+          "message": "Standalone nested brace could introduce an executable block.",
+          "line": 277,
+          "column": 9
+        },
+        {
+          "kind": "canonical-bare-block-review",
+          "offset": 7634,
+          "message": "Standalone nested brace could introduce an executable block.",
+          "line": 278,
+          "column": 9
+        },
+        {
+          "kind": "canonical-bare-block-review",
+          "offset": 7684,
+          "message": "Standalone nested brace could introduce an executable block.",
+          "line": 279,
+          "column": 9
+        },
+        {
+          "kind": "canonical-bare-block-review",
+          "offset": 7734,
+          "message": "Standalone nested brace could introduce an executable block.",
+          "line": 280,
+          "column": 9
+        },
+        {
+          "kind": "canonical-bare-block-review",
+          "offset": 8011,
+          "message": "Standalone nested brace could introduce an executable block.",
+          "line": 291,
+          "column": 7
+        },
+        {
+          "kind": "canonical-bare-block-review",
+          "offset": 8042,
+          "message": "Standalone nested brace could introduce an executable block.",
+          "line": 292,
+          "column": 7
+        },
+        {
+          "kind": "canonical-bare-block-review",
+          "offset": 8073,
+          "message": "Standalone nested brace could introduce an executable block.",
+          "line": 293,
+          "column": 7
+        },
+        {
+          "kind": "canonical-bare-block-review",
+          "offset": 8104,
+          "message": "Standalone nested brace could introduce an executable block.",
+          "line": 294,
+          "column": 7
+        }
+      ],
+      "constructors": [
+        {
+          "name": "Writer",
+          "start": 3615,
+          "end": 3672,
+          "members": [
+            {
+              "name": "thread_count_",
+              "start": 3642,
+              "end": 3669,
+              "argument_start": 3656,
+              "argument_end": 3668,
+              "opening": 3655,
+              "delimiter": "(",
+              "scalar_arguments": true,
+              "wrapped_arguments": false
+            }
+          ],
+          "member_declarations": [
+            {
+              "name": "mtx_",
+              "start": 3962,
+              "end": 3975,
+              "static": false,
+              "conditional": false,
+              "type_name": "mutex_t",
+              "type_evidence": {
+                "name": "mutex_t",
+                "kind": "source-local-using",
+                "type_name": "SpinLock",
+                "definition_start": 1183,
+                "definition_end": 1208,
+                "visible_start": 1208,
+                "scope_start": 0,
+                "scope_end": 8275,
+                "scope_opening": null,
+                "conditional": false,
+                "source_text": "using mutex_t = SpinLock;"
+              },
+              "source_text": "mutex_t mtx_"
+            },
+            {
+              "name": "thread_count_",
+              "start": 3978,
+              "end": 3996,
+              "static": false,
+              "conditional": false,
+              "type_name": "int",
+              "type_evidence": {
+                "kind": "builtin-type",
+                "type_name": "int"
+              },
+              "source_text": "int thread_count_"
+            },
+            {
+              "name": "next_thread_id_",
+              "start": 3999,
+              "end": 4023,
+              "static": false,
+              "conditional": false,
+              "type_name": "int",
+              "type_evidence": {
+                "kind": "builtin-type",
+                "type_name": "int"
+              },
+              "source_text": "int next_thread_id_ = 0"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "cpp_constructor_proposals": 20,
+  "chart_admitted": false,
+  "source_bytes_modified": false,
+  "timings_modified": false,
+  "derived_from_saved_metadata_only": true
+}

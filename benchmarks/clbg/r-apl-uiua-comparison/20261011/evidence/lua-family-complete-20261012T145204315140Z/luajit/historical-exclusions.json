@@ -1,0 +1,12 @@
+{
+  "source_report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/results/apple-m3-ac-normal-20261009.json",
+  "source_report_sha256": "8cb4fe825e100a7d2db9bbb92f1526de024b1c0c0eb62fca86d5e2c5387e073e",
+  "excluded_rows": [
+    {
+      "id": "pidigits-lua-7-luajit",
+      "language": "luajit",
+      "reason": "Command '['/tmp/mech-clbg-luajit/src/luajit', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua', '30']' returned non-zero exit status 1. /tmp/mech-clbg-luajit/src/luajit: ...ech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua:10: module 'c-gmp' not found:\n\tno field package.preload['c-gmp']\n\tno file './c-gmp.lua'\n\tno file '/usr/local/share/luajit-2.1/c-gmp.lua'\n\tno file '/usr/local/share/lua/5.1/c-gmp.lua'\n\tno file '/usr/local/share/lua/5.1/c-gmp/init.lua'\n\tno file '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/luajit/c-gmp.so'\n\tno file './c-gmp.so'\n\tno file '/usr/local/lib/lua/5.1/c-gmp.so'\n\tno file '/usr/local/lib/lua/5.1/loadall.so'\nstack traceback:\n\t[C]: in function 'require'\n\t...ech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua:10: in main chunk\n\t[C]: at 0x010489b3d8\n"
+    }
+  ],
+  "preserve_original_report": true
+}

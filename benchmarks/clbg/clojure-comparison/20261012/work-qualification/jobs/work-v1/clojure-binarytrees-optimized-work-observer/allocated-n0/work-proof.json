@@ -1,0 +1,15 @@
+{
+  "status": "passed",
+  "flags": {
+    "actual_fresh_node_storage": true,
+    "actual_leaf_allocation": true,
+    "retained_identity_after_churn": true,
+    "all_iteration_graphs_verified": true,
+    "worker_cap_verified": true
+  },
+  "actual_ordered_trace": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-binarytrees-optimized-work-observer/allocated-n0/actual-work.jsonl",
+  "actual_ordered_trace_sha256": "a8b2ff65a3deec2a378ca28696650bfcb2996b923025f58c82455d2dad53fca7",
+  "native_fd_evidence": null,
+  "source_sha256": "cf178c4d9fb8c1115e9ad91622cae5da1f4017db2f8d23773d9f74a624cc87a8",
+  "original_scored_source_sha256": "6899d4738d9f5a179c5f788ee698ce56843a63862db0a4b343f9331c999a33f3"
+}

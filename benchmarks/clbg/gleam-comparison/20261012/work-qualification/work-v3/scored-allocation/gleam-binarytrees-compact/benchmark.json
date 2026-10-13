@@ -1,0 +1,30 @@
+{
+  "command": [
+    "/opt/homebrew/Cellar/erlang/29.1.1_2/bin/erl",
+    "+S",
+    "8:8",
+    "+A",
+    "1",
+    "+SDcpu",
+    "1:1",
+    "+SDio",
+    "1",
+    "-noshell",
+    "-noinput",
+    "-eval",
+    "io:format(\"~tp.~n\",[beam_disasm:file(\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v1/applications/gleam-binarytrees-compact/ebin/benchmark.beam\")]),halt()."
+  ],
+  "started_at": "2026-10-13T04:59:06.165819+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 66475,
+  "identity": {
+    "pid": 66475,
+    "process_listing": "Tue Oct 13 00:59:06 2026     /bin/sh /opt/homebrew/Cellar/erlang/29.1.1_2/bin/erl +S 8:8 +A 1 +SDcpu 1:1 +SDio 1 -noshell -noinput -eval io:format(\"~tp.~n\",[beam_disasm:file(\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/gleam-comparison/20261012/.build/private-v1/applications/gleam-binarytrees-compact/ebin/benchmark.beam\")]),halt()."
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-13T04:59:06.704098+00:00",
+  "final_exit_status": 0
+}

@@ -1,0 +1,14 @@
+WAIT LOCK: V process cleanup regression checks
+test_cohort_identity_failure_signals_only_owned_controller (__main__.CleanupChecks.test_cohort_identity_failure_signals_only_owned_controller) ... ok
+test_cohort_status_save_failure_signals_owned_controller (__main__.CleanupChecks.test_cohort_status_save_failure_signals_owned_controller) ... ok
+test_compiler_identity_failure_still_cleans_known_group (__main__.CleanupChecks.test_compiler_identity_failure_still_cleans_known_group) ... ok
+test_compiler_leftover_group_stops_build (__main__.CleanupChecks.test_compiler_leftover_group_stops_build) ... ok
+test_compiler_timeout_still_cleans_known_group (__main__.CleanupChecks.test_compiler_timeout_still_cleans_known_group) ... ok
+test_completed_controller_needs_no_signal (__main__.CleanupChecks.test_completed_controller_needs_no_signal) ... ok
+test_conflicting_pins_are_rejected (__main__.CleanupChecks.test_conflicting_pins_are_rejected) ... ok
+test_identical_pins_are_preserved (__main__.CleanupChecks.test_identical_pins_are_preserved) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.003s
+
+OK

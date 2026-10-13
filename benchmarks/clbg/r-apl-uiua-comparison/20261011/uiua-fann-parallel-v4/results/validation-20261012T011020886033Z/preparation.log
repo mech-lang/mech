@@ -1,0 +1,23 @@
+Waiting for common mutex before preparation, hashing or probes.
+ACQUIRED mutex for one bounded parallel/block qualification job.
+parallel 27 LOC 528a29d3bc3773bb792f93b9146c6aed203894b1a1899b9d66fe70dffb1f3312
+block 35 LOC e13047e2e5bebb532a2a6014da2b473fbe4396aae7f3b752406c4c4711fce603
+parallel 1 COMPLETE n1..8 OUTPUT PASS
+parallel 2 COMPLETE n1..8 OUTPUT PASS
+parallel 3 COMPLETE n1..8 OUTPUT PASS
+parallel 4 COMPLETE n1..8 OUTPUT PASS
+parallel 5 COMPLETE n1..8 OUTPUT PASS
+parallel 6 COMPLETE n1..8 OUTPUT PASS
+parallel 7 COMPLETE n1..8 OUTPUT PASS
+parallel 8 COMPLETE n1..8 OUTPUT PASS
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-parallel-v4/validate.py", line 350, in <module>
+    main()
+    ~~~~^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-parallel-v4/validate.py", line 274, in main
+    row.update(check_trace(output, n, cap, expected[n]), family=family, requested_workers=cap,
+               ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-parallel-v4/validate.py", line 160, in check_trace
+    assert observed_checksum == sum(count * (-1 if rank % 2 else 1) for rank, count in zip(worker_ranks, worker_counts))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

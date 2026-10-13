@@ -1,0 +1,14 @@
+{
+  "status": "stopped-unqualified",
+  "started_at": "2026-10-12T15:56:07.276645+00:00",
+  "proposal_sha256": "f36e362ceca5a38a6d9a590bff69132d14452cfc8c05c38cfefd6714b1f888df",
+  "attempts": [],
+  "active": null,
+  "full_performance_runs": 0,
+  "chart_admission": false,
+  "never_chart_eligible": true,
+  "no_automatic_retry": true,
+  "finished_at": "2026-10-12T15:56:12.510451+00:00",
+  "error": "Release compiler/stdlib layout ambiguous",
+  "error_type": "AssertionError"
+}

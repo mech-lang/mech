@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/jdk/jdk-25.0.4.1+1/Contents/Home/bin/javac",
+    "-version"
+  ],
+  "started_at": "2026-10-13T01:04:01.248928+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 3224,
+  "identity": {
+    "pid": 3224,
+    "process_listing": "Mon Oct 12 21:04:01 2026     /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/jdk/jdk-25.0.4.1+1/Contents/Home/bin/javac -version"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-13T01:04:01.416830+00:00",
+  "final_exit_status": 0
+}

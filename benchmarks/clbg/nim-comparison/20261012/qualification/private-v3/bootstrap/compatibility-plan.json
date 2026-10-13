@@ -1,0 +1,26 @@
+{
+  "status": "planned-two-union-pragma-moves",
+  "files": [
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v3/nim-gmp/nim-gmp-4e9a6a05bfc274abd02a241f2d7c9162b2300191/src/gmp/header.nim",
+      "original_copy": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/qualification/private-v3/bootstrap/original-header.nim",
+      "original_sha256": "04eb76ea7cc0704fa31df918ebe1f19e3788d57a3821eeef0034fd3ac0c8d38b",
+      "changed_sha256": "793ab27125355b3e2b2bac8b91bdf7ef4fa2ac5e5f4d29c6ea9c9dec7d2df469",
+      "old_declaration": "  INNER_C_UNION_5532179898798000430* {.importc: \"no_name\", header: \"<gmp.h>\".} = object  {.\n      union.}",
+      "new_declaration": "  INNER_C_UNION_5532179898798000430* {.importc: \"no_name\", header: \"<gmp.h>\", union.} = object",
+      "arithmetic_changed": false,
+      "ffi_symbols_types_argument_order_changed": false
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v3/nim-gmp/nim-gmp-4e9a6a05bfc274abd02a241f2d7c9162b2300191/src/gmp/pure.nim",
+      "original_copy": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/qualification/private-v3/bootstrap/original-pure.nim",
+      "original_sha256": "d43d2569a42927d7b9725f8a82688fdd50400f3a4b0358d5b65adcc64b0a481b",
+      "changed_sha256": "8a0fc8f3c295d310400f77485d35db7f59832a5192270ca0e5d7c59206717ab0",
+      "old_declaration": "  mm_gmp_randstate_algdata* {.pure.} = object  {.union.}",
+      "new_declaration": "  mm_gmp_randstate_algdata* {.pure, union.} = object",
+      "arithmetic_changed": false,
+      "ffi_symbols_types_argument_order_changed": false
+    }
+  ],
+  "never_chart_eligible": true
+}

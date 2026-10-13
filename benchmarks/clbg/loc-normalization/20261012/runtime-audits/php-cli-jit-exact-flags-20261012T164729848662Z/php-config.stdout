@@ -1,0 +1,59 @@
+{
+    "version": "8.5.11",
+    "loaded_zend_extensions": [
+        "Zend OPcache"
+    ],
+    "opcache_module_loaded": true,
+    "opcache_status": {
+        "opcache_enabled": true,
+        "cache_full": false,
+        "restart_pending": false,
+        "restart_in_progress": false,
+        "memory_usage": {
+            "used_memory": 9274568,
+            "free_memory": 124943160,
+            "wasted_memory": 0,
+            "current_wasted_percentage": 0
+        },
+        "interned_strings_usage": {
+            "buffer_size": 8388608,
+            "used_memory": 2598168,
+            "free_memory": 5790440,
+            "number_of_strings": 10482
+        },
+        "opcache_statistics": {
+            "num_cached_scripts": 0,
+            "num_cached_keys": 0,
+            "max_cached_keys": 16229,
+            "hits": 0,
+            "start_time": 1791823650,
+            "last_restart_time": 0,
+            "oom_restarts": 0,
+            "hash_restarts": 0,
+            "manual_restarts": 0,
+            "misses": 0,
+            "blacklist_misses": 0,
+            "blacklist_miss_ratio": 0,
+            "opcache_hit_rate": 0
+        },
+        "jit": {
+            "enabled": true,
+            "on": true,
+            "kind": 5,
+            "opt_level": 4,
+            "opt_flags": 6,
+            "buffer_size": 67108848,
+            "buffer_free": 67105256
+        }
+    },
+    "ini_directives": {
+        "opcache.enable_cli": "1",
+        "opcache.jit_buffer_size": "64M",
+        "opcache.jit": "tracing",
+        "extension_dir": "\/opt\/homebrew\/Cellar\/php\/8.5.11\/lib\/php\/20250925",
+        "short_open_tag": "1",
+        "memory_limit": "-1"
+    },
+    "loaded_ini_file": false,
+    "scanned_ini_files": false
+}

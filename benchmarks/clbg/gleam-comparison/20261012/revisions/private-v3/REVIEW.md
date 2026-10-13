@@ -1,0 +1,39 @@
+# Private-v3 metadata review packet
+
+Source-only, unqueued. The first-seal command is in REPAIR.md. No native qualification, work probe, full measurement or publication is authorized by this packet. The native controller plan remains nineteen fresh application builds and152 fresh cases plus the four explicitly retained private-v1 compact-tree cases.
+
+Changed Python behavior is limited to the historical fingerprint projection/cross-check, an accurately shaped mock and one concrete corruption fixture, the exact20 total fixture count, and additive snapshot/failure-evidence preservation. Profiles are the unchanged private-v2 declarations and continue to point at its five frozen corrected sources. All twenty original/five corrected production source bytes and authored helpers remain untouched.
+
+Nine local IDs:
+
+```text
+test_guarded_prepare.CandidatePreparation.test_preheader_input_is_declared_and_reference_ignores_preamble
+test_guarded_prepare.CandidatePreparation.test_complete_authored_inventory_and_explicit_beam_command
+test_guarded_prepare.CandidatePreparation.test_missing_form_foreign_source_and_ffi_module_collision_are_rejected
+test_guarded_prepare.CandidatePreparation.test_hex_inner_checksum_and_exact_outer_inventory_are_required
+test_guarded_prepare.CandidatePreparation.test_archive_traversal_and_links_cannot_become_compiler_inputs
+test_guarded_prepare.AdditiveRepair.test_exact_old_compact_tree_records_are_retained_without_mutation
+test_guarded_prepare.AdditiveRepair.test_changed_missing_or_nonboolean_old_record_is_rejected
+test_guarded_prepare.AdditiveRepair.test_exact_six_grouping_pairs_change_only_the_five_reviewed_sources
+test_guarded_prepare.AdditiveRepair.test_saved_fingerprint_projection_is_exact_and_runtime_pins_stay_separate
+```
+
+Eleven immutable generic service IDs:
+
+```text
+test_guarded_prepare.OwnershipChecks.test_popen_failure_has_no_foreign_cleanup
+test_guarded_prepare.OwnershipChecks.test_identity_failure_cleans_known_child
+test_guarded_prepare.OwnershipChecks.test_journal_failure_cleans_known_child
+test_guarded_prepare.OwnershipChecks.test_timeout_preserves_complete_drained_output
+test_guarded_prepare.OwnershipChecks.test_orphan_compiler_child_is_fatal
+test_guarded_prepare.OwnershipChecks.test_cleanup_failure_is_fatal_and_waits
+test_guarded_prepare.OwnershipChecks.test_live_child_cleanup_failure_is_bounded_and_only_signals_owned_group
+test_guarded_prepare.ProbeRestorationChecks.test_setup_failure_restores_present_state
+test_guarded_prepare.ProbeRestorationChecks.test_absent_input_key_is_removed_on_failure
+test_guarded_prepare.ProbeRestorationChecks.test_parent_failure_archives_actual_sampler_bytes
+test_guarded_prepare.ProbeRestorationChecks.test_trace_failure_archives_and_stops
+```
+
+The direct fixture receipts require actual discovery/start identities and zero failures/errors/skips/expected failures/unexpected successes. Owned fixture command receipts and raw streams are pinned before proposal creation. Historical raw fingerprints are preserved byte-for-byte; source/input/classpath/runtime/application-artifact pins remain independent required gates.
+
+Final root review must include the separately preserved actual private-v2 launch/traceback evidence and its binding. Missing failure evidence prevents the first seal. Later actual proposal digest review is a separate prerequisite for native work.

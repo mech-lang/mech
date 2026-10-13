@@ -1,0 +1,51 @@
+{
+  "status": "failed",
+  "inventory": "work",
+  "expected_test_ids": [
+    "test_tree_work.ActualGraphFixtures.test_minimum_odd_and_uneven_depth_shapes",
+    "test_tree_work.ActualGraphFixtures.test_missing_duplicate_and_reused_node_addresses_rejected",
+    "test_tree_work.ActualGraphFixtures.test_changed_retained_root_rejected",
+    "test_tree_work.ActualGraphFixtures.test_overlapping_worker_ranges_and_missing_joins_rejected",
+    "test_tree_work.ActualGraphFixtures.test_worker_iteration_labels_must_match_their_own_section",
+    "test_tree_work.ActualGraphFixtures.test_concurrently_live_churn_graph_is_disjoint_from_retained_graph",
+    "test_tree_work.ActualGraphFixtures.test_instrumentation_retains_original_creators_checks_and_observes_before_check",
+    "test_tree_work.ActualGraphFixtures.test_final_scored_creator_requires_real_allocation_and_both_children",
+    "test_full_study.FailureIsolation.test_guard_admitted_runtime_output_or_resource_failure_can_continue_other_profiles",
+    "test_full_study.FailureIsolation.test_frozen_guard_rejection_is_never_relabelled_source_failure",
+    "test_full_study.FailureIsolation.test_every_ownership_environment_workload_or_pin_gate_is_literal_true",
+    "test_full_study.FailureIsolation.test_exact_twenty_key_inventory_and_boolean_types_are_required",
+    "test_tree_work.ActualGraphFixtures.test_actual_compact_exception_target_is_null_and_other_returns_allocate",
+    "test_tree_work.ActualGraphFixtures.test_exception_exemption_rejects_depth_shortcut_unknown_call_and_nonnull_return"
+  ],
+  "actual_test_ids": [
+    "test_tree_work.ActualGraphFixtures.test_actual_compact_exception_target_is_null_and_other_returns_allocate",
+    "test_tree_work.ActualGraphFixtures.test_changed_retained_root_rejected",
+    "test_tree_work.ActualGraphFixtures.test_concurrently_live_churn_graph_is_disjoint_from_retained_graph",
+    "test_tree_work.ActualGraphFixtures.test_exception_exemption_rejects_depth_shortcut_unknown_call_and_nonnull_return",
+    "test_tree_work.ActualGraphFixtures.test_final_scored_creator_requires_real_allocation_and_both_children",
+    "test_tree_work.ActualGraphFixtures.test_instrumentation_retains_original_creators_checks_and_observes_before_check",
+    "test_tree_work.ActualGraphFixtures.test_minimum_odd_and_uneven_depth_shapes",
+    "test_tree_work.ActualGraphFixtures.test_missing_duplicate_and_reused_node_addresses_rejected",
+    "test_tree_work.ActualGraphFixtures.test_overlapping_worker_ranges_and_missing_joins_rejected",
+    "test_tree_work.ActualGraphFixtures.test_worker_iteration_labels_must_match_their_own_section",
+    "test_full_study.FailureIsolation.test_every_ownership_environment_workload_or_pin_gate_is_literal_true",
+    "test_full_study.FailureIsolation.test_exact_twenty_key_inventory_and_boolean_types_are_required",
+    "test_full_study.FailureIsolation.test_frozen_guard_rejection_is_never_relabelled_source_failure",
+    "test_full_study.FailureIsolation.test_guard_admitted_runtime_output_or_resource_failure_can_continue_other_profiles"
+  ],
+  "tests_run": 14,
+  "discovered_tests": 14,
+  "successful": false,
+  "skipped": [],
+  "failures": [
+    [
+      "test_tree_work.ActualGraphFixtures.test_actual_compact_exception_target_is_null_and_other_returns_allocate",
+      "Traceback (most recent call last):\n  File \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v4/test_tree_work.py\", line 177, in test_actual_compact_exception_target_is_null_and_other_returns_allocate\n    result = tree_work.creator_arm(arm, 'make__compact_u7', source)\n  File \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v4/tree_work.py\", line 235, in creator_arm\n    dominance = arm_allocation.allocation_dominance(body, name, source)\n  File \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v4/arm_allocation.py\", line 108, in allocation_dominance\n    exception = exception_guard(code, allocator, name, source)\n  File \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v4/arm_allocation.py\", line 76, in exception_guard\n    source_proof = source_exception_preamble(source)\n  File \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v4/arm_allocation.py\", line 36, in source_exception_preamble\n    assert re.fullmatch(pattern, compact), 'Preallocation generated C is not the exact error-flag/NIL return preamble'\n           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^\nAssertionError: Preallocation generated C is not the exact error-flag/NIL return preamble\n"
+    ]
+  ],
+  "errors": [],
+  "expected_failures": [],
+  "unexpected_successes": [],
+  "inventory_error": "AssertionError",
+  "inventory_error_type": "AssertionError"
+}

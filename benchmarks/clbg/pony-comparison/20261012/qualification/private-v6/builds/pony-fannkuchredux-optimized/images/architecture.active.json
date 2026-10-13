@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/usr/bin/lipo",
+    "-archs",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/bin/pony-fannkuchredux-optimized/pony-fannkuchredux-optimized"
+  ],
+  "started_at": "2026-10-12T22:51:05.148927+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 71899,
+  "identity": {
+    "pid": 71899,
+    "process_listing": "Mon Oct 12 18:51:05 2026     /Library/Developer/CommandLineTools/usr/bin/lipo -archs /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v6/bin/pony-fannkuchredux-optimized/pony-fannkuchredux-optimized"
+  }
+}

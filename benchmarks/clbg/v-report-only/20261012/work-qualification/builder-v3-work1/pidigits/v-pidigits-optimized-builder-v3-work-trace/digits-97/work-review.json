@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "benchmark": "pidigits",
+  "variant": "optimized",
+  "n": 97,
+  "tested_candidates": 416,
+  "actual_divisions": 832,
+  "accepted_digits": 97,
+  "both_actual_extracts_per_candidate": true,
+  "distinct_endpoint_numerators": true,
+  "all_numerators_and_quotients_reconciled": true,
+  "nonnegative_numerators": true,
+  "stdout_unchanged": true,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "full_performance_run": false,
+  "case": "digits-97",
+  "scored_source_sha256": "c9c78dc4f4daa1140d5d04008132c1557274910efbd593388a3f04346d9e7d8c",
+  "trace_source_sha256": "448d30aa4d52c3df567ca70d832a568b88a34f44a57995e019510a7a1ef39728",
+  "attempt": 3
+}

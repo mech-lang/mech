@@ -1,0 +1,9 @@
+test_complete_actual_overlay_preserves_records_and_object_identities (test_platform_metadata_data_v2.PlatformMetadataTransaction.test_complete_actual_overlay_preserves_records_and_object_identities) ... ok
+test_late_changed_source_report_receipt_or_provenance_leaves_input_unchanged (test_platform_metadata_data_v2.PlatformMetadataTransaction.test_late_changed_source_report_receipt_or_provenance_leaves_input_unchanged) ... ok
+test_mixed_java_verification_clears_legacy_modes_and_preserves_provenance (test_platform_metadata_data_v2.PlatformMetadataTransaction.test_mixed_java_verification_clears_legacy_modes_and_preserves_provenance) ... ok
+test_partial_typed_or_foreign_descriptor_evidence_is_transactional (test_platform_metadata_data_v2.PlatformMetadataTransaction.test_partial_typed_or_foreign_descriptor_evidence_is_transactional) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.157s
+
+OK

@@ -1,0 +1,42 @@
+{
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v3/release/0.74.0-95ad180/bin/ponyc",
+    "--strip",
+    "--triple",
+    "aarch64-apple-macosx14.4.0",
+    "--sysroot",
+    "/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk",
+    "--lib-path",
+    "/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/lib",
+    "--lib-path",
+    "/opt/homebrew/Cellar/pcre2/10.49/lib",
+    "--lib-path",
+    "/opt/homebrew/Cellar/gmp/6.3.0/lib",
+    "--path",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v3/regex/regex-589eb008db250aab17d4c073a41c5562ac5b8dc7",
+    "--path",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v3/gmp4pony/gmp4pony-b14db4ba347f6a2b840f135e1602e19f85625c39",
+    "--path",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v3/source-snapshot/support-v2",
+    "--output",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v3/bin/pony-knucleotide-compact",
+    "--bin-name",
+    "pony-knucleotide-compact",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v3/source-snapshot/sources/knucleotide/compact"
+  ],
+  "started_at": "2026-10-12T17:24:15.957380+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 600,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 94175,
+  "identity": {
+    "pid": 94175,
+    "process_listing": "Mon Oct 12 13:24:15 2026     /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v3/release/0.74.0-95ad180/bin/ponyc --strip --triple aarch64-apple-macosx14.4.0 --sysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk --lib-path /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/lib --lib-path /opt/homebrew/Cellar/pcre2/10.49/lib --lib-path /opt/homebrew/Cellar/gmp/6.3.0/lib --path /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v3/regex/regex-589eb008db250aab17d4c073a41c5562ac5b8dc7 --path /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v3/gmp4pony/gmp4pony-b14db4ba347f6a2b840f135e1602e19f85625c39 --path /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v3/source-snapshot/support-v2 --output /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v3/bin/pony-knucleotide-compact --bin-name pony-knucleotide-compact /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v3/source-snapshot/sources/knucleotide/compact"
+  },
+  "exit_status": 255,
+  "finished_at": "2026-10-12T17:24:16.008696+00:00",
+  "error": "('Owned command failed', 'build', 255)",
+  "error_type": "AssertionError",
+  "final_exit_status": 255
+}

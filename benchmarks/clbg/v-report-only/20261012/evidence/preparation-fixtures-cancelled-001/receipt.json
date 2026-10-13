@@ -1,0 +1,8 @@
+{
+  "pid": 47979,
+  "session_id": 64574,
+  "exit_code": 130,
+  "tests_executed": 0,
+  "native_children": 0,
+  "reason": "Cancel own still-waiting unscored metadata fixture job before correcting compiler/cohort cleanup and expanding regression coverage; active benchmark untouched."
+}

@@ -1,0 +1,13 @@
+{
+  "status": "stopped-unqualified",
+  "proposal_sha256": "d6d318a54b4277527ceb9a2ecd0ab35c46c86ddfb55228e453df5117ac111512",
+  "attempts": [],
+  "active": null,
+  "full_performance_runs": 0,
+  "chart_admission": false,
+  "no_automatic_retry": true,
+  "reused_bounded_cases": 154,
+  "reused_cases_relabelled_as_attempts": false,
+  "error": "[Errno 2] No such file or directory: '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v7/bin/standard-primitives'",
+  "error_type": "FileNotFoundError"
+}

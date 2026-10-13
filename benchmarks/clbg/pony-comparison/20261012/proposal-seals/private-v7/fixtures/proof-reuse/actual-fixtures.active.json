@@ -1,0 +1,25 @@
+{
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/private-v7/run_fixtures_v7.py",
+    "--suite",
+    "proof-reuse",
+    "--output",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/proposal-seals/private-v7/fixtures/proof-reuse",
+    "--lock-fd",
+    "3"
+  ],
+  "started_at": "2026-10-13T00:43:05.510401+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "bounded_local_service": true,
+  "cleanup_errors": [],
+  "pid": 97315,
+  "identity": {
+    "pid": 97315,
+    "process_listing": "Mon Oct 12 20:43:05 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/revisions/private-v7/run_fixtures_v7.py --suite proof-reuse --output /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/proposal-seals/private-v7/fixtures/proof-reuse --lock-fd 3"
+  }
+}

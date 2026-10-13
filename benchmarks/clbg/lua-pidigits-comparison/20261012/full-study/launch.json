@@ -1,0 +1,9 @@
+{
+  "pid": 90747,
+  "identity": {
+    "pid": 90747,
+    "process_listing": "Mon Oct 12 00:28:00 2026     /tmp/mech-nbody-plot-runtime/bin/python3 -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/full_study.py --run --manifest-sha256 aaf6af5fad6bb4d2f9008e8f91be7037025e117f2cb9532dfb14ae928f6f55dd"
+  },
+  "manifest_sha256": "aaf6af5fad6bb4d2f9008e8f91be7037025e117f2cb9532dfb14ae928f6f55dd",
+  "launched_at": "2026-10-12T04:28:00.975726+00:00"
+}

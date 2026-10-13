@@ -1,0 +1,72 @@
+{
+  "key": "mandelbrot:canonical-source-modes:row16-jit",
+  "id": "row16-jit",
+  "benchmark": "mandelbrot",
+  "language": "mech-jit",
+  "source_sha256": "baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec",
+    "jit",
+    "16000",
+    "--fp-contract-loop"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "runtime_environment": {
+    "RAYON_NUM_THREADS": "8",
+    "JULIA_NUM_THREADS": "8",
+    "OMP_NUM_THREADS": "8",
+    "OMP_DYNAMIC": "FALSE",
+    "CHPL_RT_NUM_THREADS_PER_LOCALE": "8",
+    "GOMAXPROCS": "8",
+    "OPENBLAS_NUM_THREADS": "1",
+    "PYTHONHASHSEED": "0",
+    "MECH_TIMINGS": "1"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"9e8d1360d80a6570327329b6eef2cee905b6972bd3f7909e51185f3913694dbc\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes\", \"{source}\", \"jit\", \"{n}\", \"--fp-contract-loop\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"CHPL_RT_NUM_THREADS_PER_LOCALE\": \"8\", \"GOMAXPROCS\": \"8\", \"JULIA_NUM_THREADS\": \"8\", \"MECH_TIMINGS\": \"1\", \"OMP_DYNAMIC\": \"FALSE\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"PYTHONHASHSEED\": \"0\", \"RAYON_NUM_THREADS\": \"8\"}, \"source_sha256\": \"baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde\", \"support\": {}}",
+  "started_at": "2026-10-12T06:04:46.361595+00:00",
+  "workload_n": 16000,
+  "full_workload": true,
+  "timeout_seconds": 14400,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.74175025,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "TIMING {\"prepare_seconds\":0.272477792,\"kernel_seconds\":0.453034833}\n",
+  "stdout_bytes": 32000015,
+  "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+  "validation": {
+    "bytes": 32000015,
+    "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+    "reference_match": true
+  },
+  "finished_at": "2026-10-12T06:04:47.324946+00:00",
+  "valid_environment": true,
+  "canonical_full_workload": true,
+  "never_chart_eligible": false,
+  "wall_seconds": 0.74175025,
+  "timing": {
+    "wall_seconds": 0.74175025,
+    "prepare_seconds": 0.272477792,
+    "kernel_seconds": 0.453034833,
+    "reported_seconds": 0.74175025
+  },
+  "prepare_seconds": 0.272477792,
+  "kernel_seconds": 0.453034833,
+  "valid_source_timing": true,
+  "pins_unchanged_at_end": true
+}

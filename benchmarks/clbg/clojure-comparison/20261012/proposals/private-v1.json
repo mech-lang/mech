@@ -1,0 +1,560 @@
+{
+  "status": "sealed-awaiting-root-review",
+  "language": "clojure",
+  "created_at": "2026-10-13T00:43:04.188563+00:00",
+  "profiles": [
+    {
+      "id": "clojure-binarytrees-compact",
+      "benchmark": "binarytrees",
+      "variant": "compact",
+      "namespace": "clbg.binarytrees.compact",
+      "source": "sources/clbg/binarytrees/compact.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/binarytrees/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 1,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-binarytrees-optimized",
+      "benchmark": "binarytrees",
+      "variant": "optimized",
+      "namespace": "clbg.binarytrees.optimized",
+      "source": "sources/clbg/binarytrees/optimized.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/binarytrees/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 8,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-fannkuchredux-compact",
+      "benchmark": "fannkuchredux",
+      "variant": "compact",
+      "namespace": "clbg.fannkuchredux.compact",
+      "source": "sources/clbg/fannkuchredux/compact.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/fannkuchredux/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 1,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-fannkuchredux-optimized",
+      "benchmark": "fannkuchredux",
+      "variant": "optimized",
+      "namespace": "clbg.fannkuchredux.optimized",
+      "source": "sources/clbg/fannkuchredux/optimized.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/fannkuchredux/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 8,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-nbody-compact",
+      "benchmark": "nbody",
+      "variant": "compact",
+      "namespace": "clbg.nbody.compact",
+      "source": "sources/clbg/nbody/compact.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/nbody/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 1,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-nbody-optimized",
+      "benchmark": "nbody",
+      "variant": "optimized",
+      "namespace": "clbg.nbody.optimized",
+      "source": "sources/clbg/nbody/optimized.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/nbody/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 1,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-spectralnorm-compact",
+      "benchmark": "spectralnorm",
+      "variant": "compact",
+      "namespace": "clbg.spectralnorm.compact",
+      "source": "sources/clbg/spectralnorm/compact.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/spectralnorm/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 1,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-spectralnorm-optimized",
+      "benchmark": "spectralnorm",
+      "variant": "optimized",
+      "namespace": "clbg.spectralnorm.optimized",
+      "source": "sources/clbg/spectralnorm/optimized.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/spectralnorm/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 8,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-mandelbrot-compact",
+      "benchmark": "mandelbrot",
+      "variant": "compact",
+      "namespace": "clbg.mandelbrot.compact",
+      "source": "sources/clbg/mandelbrot/compact.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/mandelbrot/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 1,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-mandelbrot-optimized",
+      "benchmark": "mandelbrot",
+      "variant": "optimized",
+      "namespace": "clbg.mandelbrot.optimized",
+      "source": "sources/clbg/mandelbrot/optimized.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/mandelbrot/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 8,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-pidigits-compact",
+      "benchmark": "pidigits",
+      "variant": "compact",
+      "namespace": "clbg.pidigits.compact",
+      "source": "sources/clbg/pidigits/compact.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/pidigits/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 1,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-pidigits-optimized",
+      "benchmark": "pidigits",
+      "variant": "optimized",
+      "namespace": "clbg.pidigits.optimized",
+      "source": "sources/clbg/pidigits/optimized.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/pidigits/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 1,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-fasta-compact",
+      "benchmark": "fasta",
+      "variant": "compact",
+      "namespace": "clbg.fasta.compact",
+      "source": "sources/clbg/fasta/compact.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/fasta/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 1,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-fasta-optimized",
+      "benchmark": "fasta",
+      "variant": "optimized",
+      "namespace": "clbg.fasta.optimized",
+      "source": "sources/clbg/fasta/optimized.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/fasta/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 1,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-revcomp-compact",
+      "benchmark": "revcomp",
+      "variant": "compact",
+      "namespace": "clbg.revcomp.compact",
+      "source": "sources/clbg/revcomp/compact.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/revcomp/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 1,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-revcomp-optimized",
+      "benchmark": "revcomp",
+      "variant": "optimized",
+      "namespace": "clbg.revcomp.optimized",
+      "source": "sources/clbg/revcomp/optimized.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/revcomp/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 1,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-knucleotide-compact",
+      "benchmark": "knucleotide",
+      "variant": "compact",
+      "namespace": "clbg.knucleotide.compact",
+      "source": "sources/clbg/knucleotide/compact.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/knucleotide/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 1,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-knucleotide-optimized",
+      "benchmark": "knucleotide",
+      "variant": "optimized",
+      "namespace": "clbg.knucleotide.optimized",
+      "source": "sources/clbg/knucleotide/optimized.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/knucleotide/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 8,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-regexredux-compact",
+      "benchmark": "regexredux",
+      "variant": "compact",
+      "namespace": "clbg.regexredux.compact",
+      "source": "sources/clbg/regexredux/compact.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/regexredux/compact.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 1,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    },
+    {
+      "id": "clojure-regexredux-optimized",
+      "benchmark": "regexredux",
+      "variant": "optimized",
+      "namespace": "clbg.regexredux.optimized",
+      "source": "sources/clbg/regexredux/optimized.clj",
+      "compiled_source_bundle": [
+        "sources/clbg/regexredux/optimized.clj",
+        "support/clbg/support.clj"
+      ],
+      "maximum_compute_workers": 8,
+      "loc": null,
+      "eligible_for_chart": false,
+      "author": "Local Clojure adaptation of the prescribed benchmark algorithms; full source provenance in PROVENANCE.md"
+    }
+  ],
+  "snapshot_paths": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/PLAN.md",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/PREPARATION.md",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/PROVENANCE.md",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/profiles.json",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/revisions/private-v1/WORK_PROTOCOL.md",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/revisions/private-v1/fixture_runner.py",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/revisions/private-v1/guarded_prepare.py",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/revisions/private-v1/test_guarded_prepare.py",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/binarytrees/compact.clj",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/binarytrees/optimized.clj",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/fannkuchredux/compact.clj",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/fannkuchredux/optimized.clj",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/fasta/compact.clj",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/fasta/optimized.clj",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/knucleotide/compact.clj",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/knucleotide/optimized.clj",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/mandelbrot/compact.clj",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/mandelbrot/optimized.clj",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/nbody/compact.clj",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/nbody/optimized.clj",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/pidigits/compact.clj",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/pidigits/optimized.clj",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/regexredux/compact.clj",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/regexredux/optimized.clj",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/revcomp/compact.clj",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/revcomp/optimized.clj",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/spectralnorm/compact.clj",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/spectralnorm/optimized.clj",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/support/clbg/support.clj"
+  ],
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/PLAN.md": "c6f63ad7e77a195fab7e147006aee71a732049199b794737857ae58306e92aeb",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/PREPARATION.md": "65c76cccbbd48fdf5193494543176f7b343dc0115b2e5e5e345a3f3ed3bedd58",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/PROVENANCE.md": "4f342de63be2cbaebad6557ceb1f1d0fb6be6a9bb4866d56a5676931d644d364",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/profiles.json": "f0b961977555241713ac5829427000a1fe6c6e0722b49fc1c929ddf1146fe654",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/revisions/private-v1/WORK_PROTOCOL.md": "0db695582c022f8f71b0905c9e7594535f9d860b58325a131fafcc8bb22cb9a4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/revisions/private-v1/fixture_runner.py": "83734346e55a2d8149ef00ab37d2f9de0d24e9361222664affe4ba795d855585",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/revisions/private-v1/guarded_prepare.py": "5ae1da6660e0d864f6800cba2d23bc9b210098ab616ae5e8a92e7e1d008ee3f3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/revisions/private-v1/test_guarded_prepare.py": "50e357c2f43abb86b03d277942e698b6e33a1a917ebd7cde4a076f4117387d8b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/binarytrees/compact.clj": "d3735e4f6e092583c76ababcdb39d159960073f1865d53230e92c2b7d3b2c7bf",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/binarytrees/optimized.clj": "6899d4738d9f5a179c5f788ee698ce56843a63862db0a4b343f9331c999a33f3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/fannkuchredux/compact.clj": "7056b08ea6619eb51be47067aec5d14d839a3bf628235f0400746cdef9d956b7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/fannkuchredux/optimized.clj": "dcff2d2b86b6ce63ada0603d705361a329e793ecc1619fea57ac3d2be83bdb6e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/fasta/compact.clj": "a1738475e8bd4721f22a96e85bc6122ea77232d8eeed599d3286a874b76d074c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/fasta/optimized.clj": "8cc4c30fc903d727cf2b652fe3a1a1b21061434fdd4d6f8a978ce0eb2122a25a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/knucleotide/compact.clj": "f889c7f46906831717c246584fe9c88a6007edd55b05527fd54efbb9a233ee41",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/knucleotide/optimized.clj": "8555e3d807bedda93681f29b301bc5968cc13b44491bb0b5fc09ff5a7ef253ec",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/mandelbrot/compact.clj": "5e3f2d6aacf6b438f0b7f2fb107973dab8e6a4b4e5ff21c2cddcbd6fcbd85000",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/mandelbrot/optimized.clj": "9ac679181206a05af5dc3aa11b61aa9513035e379e39c90d69ee71778dbf311e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/nbody/compact.clj": "248708224550a6319526557ff5224183d373f3d302ee3c7bd7233c3aac1f3b09",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/nbody/optimized.clj": "73fb465fe29c74c7d67d919a7298c9c97bdb109daf15278c5dc3c96903de5b80",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/pidigits/compact.clj": "f1571777e9aade13ae0b3f41c50dc46055b2113942858d7888073132fcf8c8db",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/pidigits/optimized.clj": "1296ac776e823178a3f8214454b26fefca22d7e7fc69a315103864d3bb4f050b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/regexredux/compact.clj": "20b92684b9bd667464df984546f0bd547133ebf8206fc213c92af90272bfa5c0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/regexredux/optimized.clj": "83ebb599bd01e70b9165040b313c7fe4f8fafb90a4a32f08a6f90f426812a87b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/revcomp/compact.clj": "27557c3f45b67533d4114d48868715d6735422b504a6243b470ce7e868bb8870",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/revcomp/optimized.clj": "8f99077aadb2a446c8af7d0b3d35d0ea31cfe81eb70131310eb309fd98461911",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/spectralnorm/compact.clj": "32540cd34c495a8d7acf4e64ca04704f2e2fe8414acc3c7d5c83747a064ba2a2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/sources/clbg/spectralnorm/optimized.clj": "9d668efbc990a3dd2ea0989f8d6ee7b7314482b7869007f4c0d069ff42feaf3a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/support/clbg/support.clj": "ae37ffdcbfe8d1fa34632e1151d4098b5747f71ce2ad074d326043be3d289446",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining_owner.py": "55581d56609803243b3be264e6a2e37229be06789c22788bbf8cdb6ff6828544",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run.py": "5b2a038cfae4112e9e2eee79c3cd57ccc6a1521812828c47bf28986d6a8e139b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/prepare.py": "27fcf050ed21db40e747f2e8801ca6f227d82f1ea98f8592bba7b10a768109e5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/private-v1/references.py": "6ba2d8d70f23ac04f2bd24e73356f14a1c3a046da35f25e936332b10a7cba1f3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/dna_oracles.py": "3f7b4573f17fecd3420afbc825d296caa9e8b84c18be57414eb9b38a1d6971fa",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/results/builds.json": "f12e20c7bd9247a6c3cda0a0802b96f9f09d1d9c7faee72d1f38d80a27517253",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/results/java-install.json": "4ec41eb35957ef209f685b655f1afb088f0d192a70a82ae57af4a93f0432b98d",
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tarfile.py": "825de0990d0bedf6ed8db97b4a0fc98f25617a692c3d38c0bbba800beb9952fb",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/private-v1/test_work_traces.py": "bb5a1dbe3e613be85602a6843439a0e2f42cce35cde3af16b79e8f1149e889f9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/private-v1/seal_full_studies.py": "3392f4dc7d478a854826f6541ab119fa2b818c87aaf790c24a9440cb1b3b915f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/private-v1/test_guarded_prepare.py": "0ee0be76f1ef86b501a5d806f22939debdf8a94bf5eac5c068d517ff60aaf0ba",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/private-v1/test_full_study.py": "dc621164c0f0582bc2e8e6c7511b0fe0b28137100e8201accb2eb362fa6c3a1d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/private-v1/guarded_prepare.py": "78b9f2870e0627b2aa6cc87ddcbd9ba54c1581ef7f28392f1859b79509dff9d4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/private-v1/work_traces.py": "34279417919f2ed164455a1b5dc65c7ac43adef4312c570ce5357d7e7ada0440",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/private-v1/REQUIRED_SOURCE_REVIEW.md": "8ba0eef48c312917c028f182457556f10f303281ae38de16cf4f6b6a093dbccd",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/private-v1/fixture_runner.py": "ed549688d299cb2a823e6e1bd2ac617614ae6e24249c9ee50f38b38875446fc2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/private-v1/full_study.py": "4316943fb465eb4a212bb2b8e2f7b1fc065a7fb25a8b63ebc1cbed5eabd2af74",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/private-v1/launch_all.py": "1a439b942836118ee9969e63bb5f495f050bdf22f35f3eb55eb8f109a8382652",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/private-v1/qualify_work.py": "d6984d2498bf5204bacea7e0cf9f3f954a4e703eb8ff27814b9cdb75239c9446",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/proposal-seals/private-v1/spec.alpha-0.5.238.jar.sha1": "3335dd92cdac1ab02bb73a23e5889aa59c6d1834d44d3d50e62c723280f29d58",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/proposal-seals/private-v1/ownership-fixtures.active.json": "fe6372fe9566f553da9aab85e76b1b432d9fd0a1dec70e1d3657a8192033dcaa",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/proposal-seals/private-v1/clojure-command-bundle-inventory.json": "aae1abc92c7d08bcd6a745c0c5b14a12a16f3b26c6e83bb4fe6eb7fe7c431799",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/proposal-seals/private-v1/candidate-fixtures.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/proposal-seals/private-v1/candidate-fixtures.active.json": "e62044b0b5182b6f789237c9a9561ea1226ceb08c354058c61825e7b21692f37",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/proposal-seals/private-v1/clojure-1.12.6.jar.sha1": "0ef2eb2a8e817eff8b40ee226fa9abe1a525c6ca751a858110a30eef64ffa572",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/proposal-seals/private-v1/candidate-fixtures.stderr": "54ca28334991a89217362abec921f63789fc7f604f305e0df0b9a6a822d7e0f3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/proposal-seals/private-v1/core.specs.alpha-0.4.74.jar.sha1": "abf1ce5833a4e07ef39d244fff7b3c86bd7f26b474b15f539b04e1b07ebd1acf",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/proposal-seals/private-v1/generic-ownership-inventory.json": "44178d322cf7e5b390d3150c6e4cfb73b1e8758ab9bb8953dc7f6aa769f7b1e3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/proposal-seals/private-v1/ownership-fixtures.stderr": "b2a2637a9054406339a3a7fe7a345422d33d1f52cbd2443235b6f3541c5094c7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/proposal-seals/private-v1/ownership-fixtures.json": "47acb1ea9fb144cf75bd387791a368f05f908caae9aac7d9852802357ebb63cd",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/proposal-seals/private-v1/OpenJDK25U-jdk_aarch64_mac_hotspot_25.0.4.1_1.tar.gz.sha256": "c214cc838ea011f8b8c6b83f9bc10e1006fbbf899e1ef0f67d26c3e51c74e862",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/proposal-seals/private-v1/ownership-fixtures.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/proposal-seals/private-v1/candidate-fixtures.json": "92e6e1095e20273e387df8ed5a0b5eb101606dc4cb8a3c7495084555d67c82f8"
+  },
+  "case_inventory": {
+    "binarytrees": [
+      "n-0",
+      "n-4",
+      "n-7",
+      "n-9"
+    ],
+    "fannkuchredux": [
+      "n-1",
+      "n-2",
+      "n-3",
+      "n-4",
+      "n-5",
+      "n-6",
+      "n-7",
+      "n-8"
+    ],
+    "fasta": [
+      "n-0",
+      "n-1",
+      "n-2",
+      "n-29",
+      "n-30",
+      "n-31",
+      "n-60",
+      "n-61",
+      "n-287",
+      "n-574",
+      "n-20000"
+    ],
+    "knucleotide": [
+      "ties-and-stop",
+      "one-base",
+      "empty",
+      "missing",
+      "crlf-comment-eof",
+      "embedded-header-comment",
+      "arbitrary-widths",
+      "header-eof",
+      "empty-input",
+      "exact-token-cr",
+      "exact-token-controls",
+      "tail"
+    ],
+    "mandelbrot": [
+      "n-1",
+      "n-2",
+      "n-3",
+      "n-7",
+      "n-8",
+      "n-9",
+      "n-15",
+      "n-16",
+      "n-17",
+      "n-31",
+      "n-65",
+      "n-129",
+      "n-200"
+    ],
+    "nbody": [
+      "n-0",
+      "n-1",
+      "n-2",
+      "n-10000"
+    ],
+    "pidigits": [
+      "n-0",
+      "n-1",
+      "n-9",
+      "n-10",
+      "n-11",
+      "n-20",
+      "n-21",
+      "n-27",
+      "n-97"
+    ],
+    "regexredux": [
+      "all-replacements",
+      "records",
+      "header-eof",
+      "replacement-boundaries",
+      "empty"
+    ],
+    "revcomp": [
+      "iupac",
+      "comment-crlf-eof",
+      "tail",
+      "empty",
+      "header-eof",
+      "preheader"
+    ],
+    "spectralnorm": [
+      "n-1",
+      "n-2",
+      "n-3",
+      "n-5",
+      "n-9",
+      "n-100"
+    ]
+  },
+  "actual_fixture_receipts": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/proposal-seals/private-v1/generic-ownership-inventory.json",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/proposal-seals/private-v1/clojure-command-bundle-inventory.json"
+  ],
+  "jdk_version": "25.0.4.1+1",
+  "jdk_archive_url": "https://github.com/adoptium/temurin25-binaries/releases/download/jdk-25.0.4.1%2B1/OpenJDK25U-jdk_aarch64_mac_hotspot_25.0.4.1_1.tar.gz",
+  "jdk_archive_sha256": "61979887f7506a24a57439ff99adb8b3a7fc89977d9cfe3b8984f58a981b7b9d",
+  "jdk_release": "https://github.com/adoptium/temurin25-binaries/releases/tag/jdk-25.0.4.1%2B1",
+  "artifacts": [
+    {
+      "name": "clojure",
+      "version": "1.12.6",
+      "url": "https://repo.maven.apache.org/maven2/org/clojure/clojure/1.12.6/clojure-1.12.6.jar",
+      "publisher_sha1": "ea744fe01a09db46021b07c4aadf072698bf7a75",
+      "publisher_checksum": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/proposal-seals/private-v1/clojure-1.12.6.jar.sha1"
+    },
+    {
+      "name": "spec.alpha",
+      "version": "0.5.238",
+      "url": "https://repo.maven.apache.org/maven2/org/clojure/spec.alpha/0.5.238/spec.alpha-0.5.238.jar",
+      "publisher_sha1": "4eb5dea521c4e6e1f68c2c47517f14a922003e60",
+      "publisher_checksum": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/proposal-seals/private-v1/spec.alpha-0.5.238.jar.sha1"
+    },
+    {
+      "name": "core.specs.alpha",
+      "version": "0.4.74",
+      "url": "https://repo.maven.apache.org/maven2/org/clojure/core.specs.alpha/0.4.74/core.specs.alpha-0.4.74.jar",
+      "publisher_sha1": "d56a8d4c666ff8140e6d0a62d41263134be39254",
+      "publisher_checksum": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/proposal-seals/private-v1/core.specs.alpha-0.4.74.jar.sha1"
+    }
+  ],
+  "runtime_flags": [
+    "-XX:ActiveProcessorCount=8",
+    "-Xms64m",
+    "-Xmx8g",
+    "-XX:+UseG1GC"
+  ],
+  "compiler_version": "1.12.6",
+  "backend": "JVM bytecode then fresh-process ARM64 HotSpot JIT",
+  "collector": "explicit G1, pending actual runtime verification",
+  "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+  "guard_sha256": "55581d56609803243b3be264e6a2e37229be06789c22788bbf8cdb6ff6828544",
+  "compiler_or_subject_processes": 0,
+  "executable_payload_downloads": 0,
+  "full_processes_authorized": 0,
+  "full_timings": false,
+  "chart_admission": false,
+  "no_automatic_retry": true,
+  "canonical_LOC_admitted": false,
+  "mandatory_pending_gates": [
+    "actual source-bound tree allocation/retention",
+    "seven complete growing maps/windows and owner handoff",
+    "both actual Pi quotients",
+    "compiled bytecode/source work review",
+    "actual native retained common-mutex descriptor",
+    "canonical exact-authored LOC overlay",
+    "root-reviewed full manifests and nine actual samples per benchmark"
+  ]
+}

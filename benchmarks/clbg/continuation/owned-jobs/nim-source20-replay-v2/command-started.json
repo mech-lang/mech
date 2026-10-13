@@ -1,0 +1,22 @@
+{
+  "started_at": "2026-10-13T12:02:18.994428+00:00",
+  "command_pid": 1283,
+  "command_identity": {
+    "pid": 1283,
+    "listing": "1283  1276 Tue Oct 13 08:02:18 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/nim-source-replay-v1/qualify_replay.py --revision source20-restored-v2 --fixture-receipt /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/nim-source-replay-v1/jobs/fixtures-v1/fixture-receipt.json --fixture-sha256 aec967282855da29084de8d445b6f8311c42f3c1be5963f162078e1f167e2e52"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/nim-source-replay-v1/qualify_replay.py",
+    "--revision",
+    "source20-restored-v2",
+    "--fixture-receipt",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/nim-source-replay-v1/jobs/fixtures-v1/fixture-receipt.json",
+    "--fixture-sha256",
+    "aec967282855da29084de8d445b6f8311c42f3c1be5963f162078e1f167e2e52"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech"
+}

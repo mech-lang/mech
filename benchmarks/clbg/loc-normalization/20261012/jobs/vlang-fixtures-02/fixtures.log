@@ -1,0 +1,22 @@
+test_ambiguous_expression_and_compile_time_forms_are_gated (test_vlang.VlangNormalizationFixtures.test_ambiguous_expression_and_compile_time_forms_are_gated) ... ok
+test_block_callback_function_packing (test_vlang.VlangNormalizationFixtures.test_block_callback_function_packing) ... ok
+test_declarations_do_not_get_literal_packing_discount (test_vlang.VlangNormalizationFixtures.test_declarations_do_not_get_literal_packing_discount) ... ok
+test_defer_block_packing (test_vlang.VlangNormalizationFixtures.test_defer_block_packing) ... ok
+test_for_header_separators_are_structural (test_vlang.VlangNormalizationFixtures.test_for_header_separators_are_structural) ... ok
+test_imperative_branches (test_vlang.VlangNormalizationFixtures.test_imperative_branches) ... ok
+test_imperative_or_handler_packing (test_vlang.VlangNormalizationFixtures.test_imperative_or_handler_packing) ... ok
+test_independent_bindings_and_multi_return (test_vlang.VlangNormalizationFixtures.test_independent_bindings_and_multi_return) ... ok
+test_interpolation_and_nested_quotes_are_masked (test_vlang.VlangNormalizationFixtures.test_interpolation_and_nested_quotes_are_masked) ... ok
+test_literal_offset_and_crlf_preservation (test_vlang.VlangNormalizationFixtures.test_literal_offset_and_crlf_preservation) ... ok
+test_meaningful_compiler_pragmas_are_not_packing_discounts (test_vlang.VlangNormalizationFixtures.test_meaningful_compiler_pragmas_are_not_packing_discounts) ... ok
+test_named_function_packing (test_vlang.VlangNormalizationFixtures.test_named_function_packing) ... ok
+test_nested_comments_and_literal_separators (test_vlang.VlangNormalizationFixtures.test_nested_comments_and_literal_separators) ... ok
+test_typed_literals_remain_data (test_vlang.VlangNormalizationFixtures.test_typed_literals_remain_data) ... ok
+test_value_fallback_and_unsafe_are_composition (test_vlang.VlangNormalizationFixtures.test_value_fallback_and_unsafe_are_composition) ... ok
+test_value_if_is_one_composed_binding (test_vlang.VlangNormalizationFixtures.test_value_if_is_one_composed_binding) ... ok
+test_verilog_alias_is_rejected (test_vlang.VlangNormalizationFixtures.test_verilog_alias_is_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 0.005s
+
+OK

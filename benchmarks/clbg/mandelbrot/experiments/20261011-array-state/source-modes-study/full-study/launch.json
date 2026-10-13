@@ -1,0 +1,9 @@
+{
+  "pid": 84435,
+  "identity": {
+    "pid": 84435,
+    "process_listing": "Sun Oct 11 23:50:36 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/full_study.py --run --manifest-sha256 fbffba7b5674e889ac9e5088bbb2e2d8499df41f5d9b4c677be38d831091680f"
+  },
+  "manifest_sha256": "fbffba7b5674e889ac9e5088bbb2e2d8499df41f5d9b4c677be38d831091680f",
+  "launched_at": "2026-10-12T03:50:36.933657+00:00"
+}

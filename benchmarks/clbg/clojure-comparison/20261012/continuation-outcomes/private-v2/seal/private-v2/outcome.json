@@ -1,0 +1,23 @@
+{
+  "status": "completed",
+  "mode": "seal",
+  "revision": "private-v2",
+  "common_mutex_held": true,
+  "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+  "full_performance_runs": 0,
+  "chart_admission": false,
+  "actual_terminal_evidence_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/proposal-seals/private-v2/ownership-fixtures.active.json": "20de06e9194382cbae39d6b88cd03e5ce95217b83fa02d935e78768edab142b8",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/proposal-seals/private-v2/proof-reuse.json": "32741c36030359fbbc68b8d2ae5077716362d7438a331777b36845b3d289dee2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/proposal-seals/private-v2/candidate-fixtures.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/proposal-seals/private-v2/candidate-fixtures.active.json": "e7e8f14ec3d890758b2427c131c3678f8f5ba2aa976b83024bfbb375bd236143",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/proposal-seals/private-v2/candidate-fixtures.stderr": "db2572450f7f14f0d1a95e7b6e863d4316db726866467f18a678fa4dafebc08f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/proposal-seals/private-v2/clojure-command-reuse-inventory.json": "b2ffe31c5e151f53e2ef54b48cdb9a58e7b669fcea6a632c8d29a4e68461b1d0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/proposal-seals/private-v2/generic-ownership-inventory.json": "44178d322cf7e5b390d3150c6e4cfb73b1e8758ab9bb8953dc7f6aa769f7b1e3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/proposal-seals/private-v2/ownership-fixtures.stderr": "b2a2637a9054406339a3a7fe7a345422d33d1f52cbd2443235b6f3541c5094c7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/proposal-seals/private-v2/ownership-fixtures.json": "9e186bd3d5428d373d49ea01c4b9296241b463e8eb62a85c171a6a8b2db9c5a3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/proposal-seals/private-v2/ownership-fixtures.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/proposal-seals/private-v2/candidate-fixtures.json": "33106bb602a72c63bde386d4c6896015c23f5ea03038492d1377e08903d84f46",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/continuation-outcomes/private-v2/seal/private-v2/started.json": "61b2270901caf151b59cb6cd5b388d75119b547545d0b203d6c1ce628a9afc27"
+  }
+}

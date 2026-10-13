@@ -1,0 +1,2398 @@
+{
+  "status": "complete",
+  "created_at": "2026-10-12T03:50:41.056247+00:00",
+  "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/full-study/manifest.json",
+  "manifest_sha256": "fbffba7b5674e889ac9e5088bbb2e2d8499df41f5d9b4c677be38d831091680f",
+  "supervisor": {
+    "pid": 84435,
+    "process_listing": "Sun Oct 11 23:50:36 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/full_study.py --run --manifest-sha256 fbffba7b5674e889ac9e5088bbb2e2d8499df41f5d9b4c677be38d831091680f"
+  },
+  "orders": [
+    {
+      "round": 1,
+      "profiles": [
+        "scalar11-resident",
+        "row16-jit",
+        "row16-aot-control",
+        "scalar11-aot-control",
+        "scalar11-jit",
+        "row16-resident"
+      ]
+    },
+    {
+      "round": 2,
+      "profiles": [
+        "row16-jit",
+        "scalar11-resident",
+        "row16-resident",
+        "scalar11-jit",
+        "row16-aot-control",
+        "scalar11-aot-control"
+      ]
+    },
+    {
+      "round": 3,
+      "profiles": [
+        "row16-resident",
+        "row16-aot-control",
+        "row16-jit",
+        "scalar11-aot-control",
+        "scalar11-resident",
+        "scalar11-jit"
+      ]
+    }
+  ],
+  "attempts": [
+    {
+      "key": "mandelbrot:canonical-source-modes:scalar11-resident",
+      "id": "scalar11-resident",
+      "benchmark": "mandelbrot",
+      "language": "mech-resident",
+      "source_sha256": "4e4b881e9c2368ba9ddfcbd2b8df49f78e6fd759833b26e7a10374b432de7b3a",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-scalar-canonical.mec",
+        "resident",
+        "16000",
+        "--scalar"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "RAYON_NUM_THREADS": "8",
+        "JULIA_NUM_THREADS": "8",
+        "OMP_NUM_THREADS": "8",
+        "OMP_DYNAMIC": "FALSE",
+        "CHPL_RT_NUM_THREADS_PER_LOCALE": "8",
+        "GOMAXPROCS": "8",
+        "OPENBLAS_NUM_THREADS": "1",
+        "PYTHONHASHSEED": "0",
+        "MECH_TIMINGS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"9e8d1360d80a6570327329b6eef2cee905b6972bd3f7909e51185f3913694dbc\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes\", \"{source}\", \"resident\", \"{n}\", \"--scalar\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"CHPL_RT_NUM_THREADS_PER_LOCALE\": \"8\", \"GOMAXPROCS\": \"8\", \"JULIA_NUM_THREADS\": \"8\", \"MECH_TIMINGS\": \"1\", \"OMP_DYNAMIC\": \"FALSE\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"PYTHONHASHSEED\": \"0\", \"RAYON_NUM_THREADS\": \"8\"}, \"source_sha256\": \"4e4b881e9c2368ba9ddfcbd2b8df49f78e6fd759833b26e7a10374b432de7b3a\", \"support\": {}}",
+      "started_at": "2026-10-12T04:20:34.829733+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 44.751780292,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 51824,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "TIMING {\"prepare_seconds\":0.134672458,\"kernel_seconds\":44.751780292}\n",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T04:21:19.969861+00:00",
+      "valid_environment": true,
+      "canonical_full_workload": true,
+      "never_chart_eligible": false,
+      "wall_seconds": 44.893752875,
+      "timing": {
+        "wall_seconds": 44.893752875,
+        "prepare_seconds": 0.134672458,
+        "kernel_seconds": 44.751780292,
+        "reported_seconds": 44.751780292
+      },
+      "prepare_seconds": 0.134672458,
+      "kernel_seconds": 44.751780292,
+      "valid_source_timing": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 1,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/full-study/attempts/001-scalar11-resident.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 89754,
+        "pgid": 89754,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-scalar-canonical.mec",
+          "resident",
+          "16000",
+          "--scalar"
+        ]
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "valid_source_timing": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true
+    },
+    {
+      "key": "mandelbrot:canonical-source-modes:row16-jit",
+      "id": "row16-jit",
+      "benchmark": "mandelbrot",
+      "language": "mech-jit",
+      "source_sha256": "baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec",
+        "jit",
+        "16000",
+        "--fp-contract-loop"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "RAYON_NUM_THREADS": "8",
+        "JULIA_NUM_THREADS": "8",
+        "OMP_NUM_THREADS": "8",
+        "OMP_DYNAMIC": "FALSE",
+        "CHPL_RT_NUM_THREADS_PER_LOCALE": "8",
+        "GOMAXPROCS": "8",
+        "OPENBLAS_NUM_THREADS": "1",
+        "PYTHONHASHSEED": "0",
+        "MECH_TIMINGS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"9e8d1360d80a6570327329b6eef2cee905b6972bd3f7909e51185f3913694dbc\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes\", \"{source}\", \"jit\", \"{n}\", \"--fp-contract-loop\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"CHPL_RT_NUM_THREADS_PER_LOCALE\": \"8\", \"GOMAXPROCS\": \"8\", \"JULIA_NUM_THREADS\": \"8\", \"MECH_TIMINGS\": \"1\", \"OMP_DYNAMIC\": \"FALSE\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"PYTHONHASHSEED\": \"0\", \"RAYON_NUM_THREADS\": \"8\"}, \"source_sha256\": \"baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde\", \"support\": {}}",
+      "started_at": "2026-10-12T04:37:28.511844+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.717965542,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "TIMING {\"prepare_seconds\":0.275096,\"kernel_seconds\":0.427903625}\n",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T04:37:29.451452+00:00",
+      "valid_environment": true,
+      "canonical_full_workload": true,
+      "never_chart_eligible": false,
+      "wall_seconds": 0.717965542,
+      "timing": {
+        "wall_seconds": 0.717965542,
+        "prepare_seconds": 0.275096,
+        "kernel_seconds": 0.427903625,
+        "reported_seconds": 0.717965542
+      },
+      "prepare_seconds": 0.275096,
+      "kernel_seconds": 0.427903625,
+      "valid_source_timing": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 2,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/full-study/attempts/002-row16-jit.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 92187,
+        "pgid": 92187,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec",
+          "jit",
+          "16000",
+          "--fp-contract-loop"
+        ]
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "valid_source_timing": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true
+    },
+    {
+      "key": "mandelbrot:canonical-source-modes:row16-aot-control",
+      "id": "row16-aot-control",
+      "benchmark": "mandelbrot",
+      "language": "mech",
+      "source_sha256": "baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+        "16000",
+        "8"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"42a54ae5ab8902a4b71d031f3744a1da23c1da1fa26af6943fa3b77475691d8f\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma\", \"{n}\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde\", \"support\": {}}",
+      "started_at": "2026-10-12T04:54:43.744140+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.448068917,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T04:54:44.413112+00:00",
+      "valid_environment": true,
+      "canonical_full_workload": true,
+      "never_chart_eligible": false,
+      "wall_seconds": 0.448068917,
+      "valid_source_timing": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 3,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/full-study/attempts/003-row16-aot-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 93820,
+        "pgid": 93820,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+          "16000",
+          "8"
+        ]
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "valid_source_timing": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true
+    },
+    {
+      "key": "mandelbrot:canonical-source-modes:scalar11-aot-control",
+      "id": "scalar11-aot-control",
+      "benchmark": "mandelbrot",
+      "language": "mech",
+      "source_sha256": "4e4b881e9c2368ba9ddfcbd2b8df49f78e6fd759833b26e7a10374b432de7b3a",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/scalar11",
+        "16000",
+        "8"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"c74553ef6f51e3969edf257ef0083c8103f16bc4a3ef6a70e4a41ca8158aad0a\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/scalar11\", \"{n}\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"4e4b881e9c2368ba9ddfcbd2b8df49f78e6fd759833b26e7a10374b432de7b3a\", \"support\": {}}",
+      "started_at": "2026-10-12T04:54:50.540790+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 2.239451834,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 28608,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T04:54:53.013528+00:00",
+      "valid_environment": true,
+      "canonical_full_workload": true,
+      "never_chart_eligible": false,
+      "wall_seconds": 2.239451834,
+      "valid_source_timing": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 4,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/full-study/attempts/004-scalar11-aot-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 93897,
+        "pgid": 93897,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/scalar11",
+          "16000",
+          "8"
+        ]
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "valid_source_timing": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true
+    },
+    {
+      "key": "mandelbrot:canonical-source-modes:scalar11-jit",
+      "id": "scalar11-jit",
+      "benchmark": "mandelbrot",
+      "language": "mech-jit",
+      "source_sha256": "4e4b881e9c2368ba9ddfcbd2b8df49f78e6fd759833b26e7a10374b432de7b3a",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-scalar-canonical.mec",
+        "jit",
+        "16000",
+        "--scalar"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "RAYON_NUM_THREADS": "8",
+        "JULIA_NUM_THREADS": "8",
+        "OMP_NUM_THREADS": "8",
+        "OMP_DYNAMIC": "FALSE",
+        "CHPL_RT_NUM_THREADS_PER_LOCALE": "8",
+        "GOMAXPROCS": "8",
+        "OPENBLAS_NUM_THREADS": "1",
+        "PYTHONHASHSEED": "0",
+        "MECH_TIMINGS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"9e8d1360d80a6570327329b6eef2cee905b6972bd3f7909e51185f3913694dbc\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes\", \"{source}\", \"jit\", \"{n}\", \"--scalar\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"CHPL_RT_NUM_THREADS_PER_LOCALE\": \"8\", \"GOMAXPROCS\": \"8\", \"JULIA_NUM_THREADS\": \"8\", \"MECH_TIMINGS\": \"1\", \"OMP_DYNAMIC\": \"FALSE\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"PYTHONHASHSEED\": \"0\", \"RAYON_NUM_THREADS\": \"8\"}, \"source_sha256\": \"4e4b881e9c2368ba9ddfcbd2b8df49f78e6fd759833b26e7a10374b432de7b3a\", \"support\": {}}",
+      "started_at": "2026-10-12T05:35:41.396983+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 2.581435042,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 50496,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "TIMING {\"prepare_seconds\":0.164339666,\"kernel_seconds\":2.159905042}\n",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T05:35:44.206962+00:00",
+      "valid_environment": true,
+      "canonical_full_workload": true,
+      "never_chart_eligible": false,
+      "wall_seconds": 2.581435042,
+      "timing": {
+        "wall_seconds": 2.581435042,
+        "prepare_seconds": 0.164339666,
+        "kernel_seconds": 2.159905042,
+        "reported_seconds": 2.581435042
+      },
+      "prepare_seconds": 0.164339666,
+      "kernel_seconds": 2.159905042,
+      "valid_source_timing": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 5,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/full-study/attempts/005-scalar11-jit.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 99985,
+        "pgid": 99985,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-scalar-canonical.mec",
+          "jit",
+          "16000",
+          "--scalar"
+        ]
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "valid_source_timing": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true
+    },
+    {
+      "key": "mandelbrot:canonical-source-modes:row16-resident",
+      "id": "row16-resident",
+      "benchmark": "mandelbrot",
+      "language": "mech-resident",
+      "source_sha256": "baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec",
+        "resident",
+        "16000",
+        "--fp-contract-loop"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "RAYON_NUM_THREADS": "8",
+        "JULIA_NUM_THREADS": "8",
+        "OMP_NUM_THREADS": "8",
+        "OMP_DYNAMIC": "FALSE",
+        "CHPL_RT_NUM_THREADS_PER_LOCALE": "8",
+        "GOMAXPROCS": "8",
+        "OPENBLAS_NUM_THREADS": "1",
+        "PYTHONHASHSEED": "0",
+        "MECH_TIMINGS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"9e8d1360d80a6570327329b6eef2cee905b6972bd3f7909e51185f3913694dbc\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes\", \"{source}\", \"resident\", \"{n}\", \"--fp-contract-loop\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"CHPL_RT_NUM_THREADS_PER_LOCALE\": \"8\", \"GOMAXPROCS\": \"8\", \"JULIA_NUM_THREADS\": \"8\", \"MECH_TIMINGS\": \"1\", \"OMP_DYNAMIC\": \"FALSE\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"PYTHONHASHSEED\": \"0\", \"RAYON_NUM_THREADS\": \"8\"}, \"source_sha256\": \"baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde\", \"support\": {}}",
+      "started_at": "2026-10-12T05:57:56.284488+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 11.662957667,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 55088,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "TIMING {\"prepare_seconds\":0.274929583,\"kernel_seconds\":11.662957667}\n",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T05:58:08.455065+00:00",
+      "valid_environment": true,
+      "canonical_full_workload": true,
+      "never_chart_eligible": false,
+      "wall_seconds": 11.952630209,
+      "timing": {
+        "wall_seconds": 11.952630209,
+        "prepare_seconds": 0.274929583,
+        "kernel_seconds": 11.662957667,
+        "reported_seconds": 11.662957667
+      },
+      "prepare_seconds": 0.274929583,
+      "kernel_seconds": 11.662957667,
+      "valid_source_timing": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 6,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/full-study/attempts/006-row16-resident.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 2415,
+        "pgid": 2415,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec",
+          "resident",
+          "16000",
+          "--fp-contract-loop"
+        ]
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "valid_source_timing": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true
+    },
+    {
+      "key": "mandelbrot:canonical-source-modes:row16-jit",
+      "id": "row16-jit",
+      "benchmark": "mandelbrot",
+      "language": "mech-jit",
+      "source_sha256": "baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec",
+        "jit",
+        "16000",
+        "--fp-contract-loop"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "RAYON_NUM_THREADS": "8",
+        "JULIA_NUM_THREADS": "8",
+        "OMP_NUM_THREADS": "8",
+        "OMP_DYNAMIC": "FALSE",
+        "CHPL_RT_NUM_THREADS_PER_LOCALE": "8",
+        "GOMAXPROCS": "8",
+        "OPENBLAS_NUM_THREADS": "1",
+        "PYTHONHASHSEED": "0",
+        "MECH_TIMINGS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"9e8d1360d80a6570327329b6eef2cee905b6972bd3f7909e51185f3913694dbc\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes\", \"{source}\", \"jit\", \"{n}\", \"--fp-contract-loop\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"CHPL_RT_NUM_THREADS_PER_LOCALE\": \"8\", \"GOMAXPROCS\": \"8\", \"JULIA_NUM_THREADS\": \"8\", \"MECH_TIMINGS\": \"1\", \"OMP_DYNAMIC\": \"FALSE\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"PYTHONHASHSEED\": \"0\", \"RAYON_NUM_THREADS\": \"8\"}, \"source_sha256\": \"baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde\", \"support\": {}}",
+      "started_at": "2026-10-12T06:04:46.361595+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.74175025,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "TIMING {\"prepare_seconds\":0.272477792,\"kernel_seconds\":0.453034833}\n",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T06:04:47.324946+00:00",
+      "valid_environment": true,
+      "canonical_full_workload": true,
+      "never_chart_eligible": false,
+      "wall_seconds": 0.74175025,
+      "timing": {
+        "wall_seconds": 0.74175025,
+        "prepare_seconds": 0.272477792,
+        "kernel_seconds": 0.453034833,
+        "reported_seconds": 0.74175025
+      },
+      "prepare_seconds": 0.272477792,
+      "kernel_seconds": 0.453034833,
+      "valid_source_timing": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 7,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/full-study/attempts/007-row16-jit.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 3088,
+        "pgid": 3088,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec",
+          "jit",
+          "16000",
+          "--fp-contract-loop"
+        ]
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "valid_source_timing": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true
+    },
+    {
+      "key": "mandelbrot:canonical-source-modes:scalar11-resident",
+      "id": "scalar11-resident",
+      "benchmark": "mandelbrot",
+      "language": "mech-resident",
+      "source_sha256": "4e4b881e9c2368ba9ddfcbd2b8df49f78e6fd759833b26e7a10374b432de7b3a",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-scalar-canonical.mec",
+        "resident",
+        "16000",
+        "--scalar"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "RAYON_NUM_THREADS": "8",
+        "JULIA_NUM_THREADS": "8",
+        "OMP_NUM_THREADS": "8",
+        "OMP_DYNAMIC": "FALSE",
+        "CHPL_RT_NUM_THREADS_PER_LOCALE": "8",
+        "GOMAXPROCS": "8",
+        "OPENBLAS_NUM_THREADS": "1",
+        "PYTHONHASHSEED": "0",
+        "MECH_TIMINGS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"9e8d1360d80a6570327329b6eef2cee905b6972bd3f7909e51185f3913694dbc\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes\", \"{source}\", \"resident\", \"{n}\", \"--scalar\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"CHPL_RT_NUM_THREADS_PER_LOCALE\": \"8\", \"GOMAXPROCS\": \"8\", \"JULIA_NUM_THREADS\": \"8\", \"MECH_TIMINGS\": \"1\", \"OMP_DYNAMIC\": \"FALSE\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"PYTHONHASHSEED\": \"0\", \"RAYON_NUM_THREADS\": \"8\"}, \"source_sha256\": \"4e4b881e9c2368ba9ddfcbd2b8df49f78e6fd759833b26e7a10374b432de7b3a\", \"support\": {}}",
+      "started_at": "2026-10-12T06:32:49.918734+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 43.918998625,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 51760,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "TIMING {\"prepare_seconds\":0.134669,\"kernel_seconds\":43.918998625}\n",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T06:33:34.181730+00:00",
+      "valid_environment": true,
+      "canonical_full_workload": true,
+      "never_chart_eligible": false,
+      "wall_seconds": 44.060896584,
+      "timing": {
+        "wall_seconds": 44.060896584,
+        "prepare_seconds": 0.134669,
+        "kernel_seconds": 43.918998625,
+        "reported_seconds": 43.918998625
+      },
+      "prepare_seconds": 0.134669,
+      "kernel_seconds": 43.918998625,
+      "valid_source_timing": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 8,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/full-study/attempts/008-scalar11-resident.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 5664,
+        "pgid": 5664,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-scalar-canonical.mec",
+          "resident",
+          "16000",
+          "--scalar"
+        ]
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "valid_source_timing": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true
+    },
+    {
+      "key": "mandelbrot:canonical-source-modes:row16-resident",
+      "id": "row16-resident",
+      "benchmark": "mandelbrot",
+      "language": "mech-resident",
+      "source_sha256": "baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec",
+        "resident",
+        "16000",
+        "--fp-contract-loop"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "RAYON_NUM_THREADS": "8",
+        "JULIA_NUM_THREADS": "8",
+        "OMP_NUM_THREADS": "8",
+        "OMP_DYNAMIC": "FALSE",
+        "CHPL_RT_NUM_THREADS_PER_LOCALE": "8",
+        "GOMAXPROCS": "8",
+        "OPENBLAS_NUM_THREADS": "1",
+        "PYTHONHASHSEED": "0",
+        "MECH_TIMINGS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"9e8d1360d80a6570327329b6eef2cee905b6972bd3f7909e51185f3913694dbc\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes\", \"{source}\", \"resident\", \"{n}\", \"--fp-contract-loop\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"CHPL_RT_NUM_THREADS_PER_LOCALE\": \"8\", \"GOMAXPROCS\": \"8\", \"JULIA_NUM_THREADS\": \"8\", \"MECH_TIMINGS\": \"1\", \"OMP_DYNAMIC\": \"FALSE\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"PYTHONHASHSEED\": \"0\", \"RAYON_NUM_THREADS\": \"8\"}, \"source_sha256\": \"baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde\", \"support\": {}}",
+      "started_at": "2026-10-12T06:37:04.324108+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 11.222798792,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 55696,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "TIMING {\"prepare_seconds\":0.271324666,\"kernel_seconds\":11.222798792}\n",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T06:37:16.062663+00:00",
+      "valid_environment": true,
+      "canonical_full_workload": true,
+      "never_chart_eligible": false,
+      "wall_seconds": 11.51049775,
+      "timing": {
+        "wall_seconds": 11.51049775,
+        "prepare_seconds": 0.271324666,
+        "kernel_seconds": 11.222798792,
+        "reported_seconds": 11.222798792
+      },
+      "prepare_seconds": 0.271324666,
+      "kernel_seconds": 11.222798792,
+      "valid_source_timing": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 9,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/full-study/attempts/009-row16-resident.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 6082,
+        "pgid": 6082,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec",
+          "resident",
+          "16000",
+          "--fp-contract-loop"
+        ]
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "valid_source_timing": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true
+    },
+    {
+      "key": "mandelbrot:canonical-source-modes:scalar11-jit",
+      "id": "scalar11-jit",
+      "benchmark": "mandelbrot",
+      "language": "mech-jit",
+      "source_sha256": "4e4b881e9c2368ba9ddfcbd2b8df49f78e6fd759833b26e7a10374b432de7b3a",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-scalar-canonical.mec",
+        "jit",
+        "16000",
+        "--scalar"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "RAYON_NUM_THREADS": "8",
+        "JULIA_NUM_THREADS": "8",
+        "OMP_NUM_THREADS": "8",
+        "OMP_DYNAMIC": "FALSE",
+        "CHPL_RT_NUM_THREADS_PER_LOCALE": "8",
+        "GOMAXPROCS": "8",
+        "OPENBLAS_NUM_THREADS": "1",
+        "PYTHONHASHSEED": "0",
+        "MECH_TIMINGS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"9e8d1360d80a6570327329b6eef2cee905b6972bd3f7909e51185f3913694dbc\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes\", \"{source}\", \"jit\", \"{n}\", \"--scalar\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"CHPL_RT_NUM_THREADS_PER_LOCALE\": \"8\", \"GOMAXPROCS\": \"8\", \"JULIA_NUM_THREADS\": \"8\", \"MECH_TIMINGS\": \"1\", \"OMP_DYNAMIC\": \"FALSE\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"PYTHONHASHSEED\": \"0\", \"RAYON_NUM_THREADS\": \"8\"}, \"source_sha256\": \"4e4b881e9c2368ba9ddfcbd2b8df49f78e6fd759833b26e7a10374b432de7b3a\", \"support\": {}}",
+      "started_at": "2026-10-12T06:45:08.874636+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 2.307178833,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 52608,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "TIMING {\"prepare_seconds\":0.134055417,\"kernel_seconds\":2.157972667}\n",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T06:45:11.407835+00:00",
+      "valid_environment": true,
+      "canonical_full_workload": true,
+      "never_chart_eligible": false,
+      "wall_seconds": 2.307178833,
+      "timing": {
+        "wall_seconds": 2.307178833,
+        "prepare_seconds": 0.134055417,
+        "kernel_seconds": 2.157972667,
+        "reported_seconds": 2.307178833
+      },
+      "prepare_seconds": 0.134055417,
+      "kernel_seconds": 2.157972667,
+      "valid_source_timing": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 10,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/full-study/attempts/010-scalar11-jit.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 6915,
+        "pgid": 6915,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-scalar-canonical.mec",
+          "jit",
+          "16000",
+          "--scalar"
+        ]
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "valid_source_timing": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true
+    },
+    {
+      "key": "mandelbrot:canonical-source-modes:row16-aot-control",
+      "id": "row16-aot-control",
+      "benchmark": "mandelbrot",
+      "language": "mech",
+      "source_sha256": "baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+        "16000",
+        "8"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"42a54ae5ab8902a4b71d031f3744a1da23c1da1fa26af6943fa3b77475691d8f\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma\", \"{n}\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde\", \"support\": {}}",
+      "started_at": "2026-10-12T06:45:14.923393+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.460222709,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T06:45:15.609461+00:00",
+      "valid_environment": true,
+      "canonical_full_workload": true,
+      "never_chart_eligible": false,
+      "wall_seconds": 0.460222709,
+      "valid_source_timing": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 11,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/full-study/attempts/011-row16-aot-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 6973,
+        "pgid": 6973,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+          "16000",
+          "8"
+        ]
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "valid_source_timing": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true
+    },
+    {
+      "key": "mandelbrot:canonical-source-modes:scalar11-aot-control",
+      "id": "scalar11-aot-control",
+      "benchmark": "mandelbrot",
+      "language": "mech",
+      "source_sha256": "4e4b881e9c2368ba9ddfcbd2b8df49f78e6fd759833b26e7a10374b432de7b3a",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/scalar11",
+        "16000",
+        "8"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"c74553ef6f51e3969edf257ef0083c8103f16bc4a3ef6a70e4a41ca8158aad0a\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/scalar11\", \"{n}\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"4e4b881e9c2368ba9ddfcbd2b8df49f78e6fd759833b26e7a10374b432de7b3a\", \"support\": {}}",
+      "started_at": "2026-10-12T06:58:13.300979+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 2.15604575,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 16768,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T06:58:15.671807+00:00",
+      "valid_environment": true,
+      "canonical_full_workload": true,
+      "never_chart_eligible": false,
+      "wall_seconds": 2.15604575,
+      "valid_source_timing": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 12,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/full-study/attempts/012-scalar11-aot-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 8232,
+        "pgid": 8232,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/scalar11",
+          "16000",
+          "8"
+        ]
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "valid_source_timing": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true
+    },
+    {
+      "key": "mandelbrot:canonical-source-modes:row16-resident",
+      "id": "row16-resident",
+      "benchmark": "mandelbrot",
+      "language": "mech-resident",
+      "source_sha256": "baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec",
+        "resident",
+        "16000",
+        "--fp-contract-loop"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "RAYON_NUM_THREADS": "8",
+        "JULIA_NUM_THREADS": "8",
+        "OMP_NUM_THREADS": "8",
+        "OMP_DYNAMIC": "FALSE",
+        "CHPL_RT_NUM_THREADS_PER_LOCALE": "8",
+        "GOMAXPROCS": "8",
+        "OPENBLAS_NUM_THREADS": "1",
+        "PYTHONHASHSEED": "0",
+        "MECH_TIMINGS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"9e8d1360d80a6570327329b6eef2cee905b6972bd3f7909e51185f3913694dbc\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes\", \"{source}\", \"resident\", \"{n}\", \"--fp-contract-loop\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"CHPL_RT_NUM_THREADS_PER_LOCALE\": \"8\", \"GOMAXPROCS\": \"8\", \"JULIA_NUM_THREADS\": \"8\", \"MECH_TIMINGS\": \"1\", \"OMP_DYNAMIC\": \"FALSE\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"PYTHONHASHSEED\": \"0\", \"RAYON_NUM_THREADS\": \"8\"}, \"source_sha256\": \"baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde\", \"support\": {}}",
+      "started_at": "2026-10-12T07:04:02.453022+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 12.157588333,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 55968,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "TIMING {\"prepare_seconds\":0.272923917,\"kernel_seconds\":12.157588333}\n",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T07:04:15.123072+00:00",
+      "valid_environment": true,
+      "canonical_full_workload": true,
+      "never_chart_eligible": false,
+      "wall_seconds": 12.44630675,
+      "timing": {
+        "wall_seconds": 12.44630675,
+        "prepare_seconds": 0.272923917,
+        "kernel_seconds": 12.157588333,
+        "reported_seconds": 12.157588333
+      },
+      "prepare_seconds": 0.272923917,
+      "kernel_seconds": 12.157588333,
+      "valid_source_timing": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 13,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/full-study/attempts/013-row16-resident.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 8777,
+        "pgid": 8777,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec",
+          "resident",
+          "16000",
+          "--fp-contract-loop"
+        ]
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "valid_source_timing": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true
+    },
+    {
+      "key": "mandelbrot:canonical-source-modes:row16-aot-control",
+      "id": "row16-aot-control",
+      "benchmark": "mandelbrot",
+      "language": "mech",
+      "source_sha256": "baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+        "16000",
+        "8"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"42a54ae5ab8902a4b71d031f3744a1da23c1da1fa26af6943fa3b77475691d8f\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma\", \"{n}\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde\", \"support\": {}}",
+      "started_at": "2026-10-12T07:04:19.457890+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.460178167,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T07:04:20.144699+00:00",
+      "valid_environment": true,
+      "canonical_full_workload": true,
+      "never_chart_eligible": false,
+      "wall_seconds": 0.460178167,
+      "valid_source_timing": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 14,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/full-study/attempts/014-row16-aot-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 8859,
+        "pgid": 8859,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+          "16000",
+          "8"
+        ]
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "valid_source_timing": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true
+    },
+    {
+      "key": "mandelbrot:canonical-source-modes:row16-jit",
+      "id": "row16-jit",
+      "benchmark": "mandelbrot",
+      "language": "mech-jit",
+      "source_sha256": "baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec",
+        "jit",
+        "16000",
+        "--fp-contract-loop"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "RAYON_NUM_THREADS": "8",
+        "JULIA_NUM_THREADS": "8",
+        "OMP_NUM_THREADS": "8",
+        "OMP_DYNAMIC": "FALSE",
+        "CHPL_RT_NUM_THREADS_PER_LOCALE": "8",
+        "GOMAXPROCS": "8",
+        "OPENBLAS_NUM_THREADS": "1",
+        "PYTHONHASHSEED": "0",
+        "MECH_TIMINGS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"9e8d1360d80a6570327329b6eef2cee905b6972bd3f7909e51185f3913694dbc\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes\", \"{source}\", \"jit\", \"{n}\", \"--fp-contract-loop\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"CHPL_RT_NUM_THREADS_PER_LOCALE\": \"8\", \"GOMAXPROCS\": \"8\", \"JULIA_NUM_THREADS\": \"8\", \"MECH_TIMINGS\": \"1\", \"OMP_DYNAMIC\": \"FALSE\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"PYTHONHASHSEED\": \"0\", \"RAYON_NUM_THREADS\": \"8\"}, \"source_sha256\": \"baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde\", \"support\": {}}",
+      "started_at": "2026-10-12T07:29:06.926335+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.719230083,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "TIMING {\"prepare_seconds\":0.274268209,\"kernel_seconds\":0.429314333}\n",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T07:29:07.873577+00:00",
+      "valid_environment": true,
+      "canonical_full_workload": true,
+      "never_chart_eligible": false,
+      "wall_seconds": 0.719230083,
+      "timing": {
+        "wall_seconds": 0.719230083,
+        "prepare_seconds": 0.274268209,
+        "kernel_seconds": 0.429314333,
+        "reported_seconds": 0.719230083
+      },
+      "prepare_seconds": 0.274268209,
+      "kernel_seconds": 0.429314333,
+      "valid_source_timing": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 15,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/full-study/attempts/015-row16-jit.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 11097,
+        "pgid": 11097,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec",
+          "jit",
+          "16000",
+          "--fp-contract-loop"
+        ]
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "valid_source_timing": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true
+    },
+    {
+      "key": "mandelbrot:canonical-source-modes:scalar11-aot-control",
+      "id": "scalar11-aot-control",
+      "benchmark": "mandelbrot",
+      "language": "mech",
+      "source_sha256": "4e4b881e9c2368ba9ddfcbd2b8df49f78e6fd759833b26e7a10374b432de7b3a",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/scalar11",
+        "16000",
+        "8"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"c74553ef6f51e3969edf257ef0083c8103f16bc4a3ef6a70e4a41ca8158aad0a\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/scalar11\", \"{n}\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"4e4b881e9c2368ba9ddfcbd2b8df49f78e6fd759833b26e7a10374b432de7b3a\", \"support\": {}}",
+      "started_at": "2026-10-12T07:29:12.024573+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 2.175910083,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 30384,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T07:29:14.421679+00:00",
+      "valid_environment": true,
+      "canonical_full_workload": true,
+      "never_chart_eligible": false,
+      "wall_seconds": 2.175910083,
+      "valid_source_timing": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 16,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/full-study/attempts/016-scalar11-aot-control.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 11158,
+        "pgid": 11158,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/scalar11",
+          "16000",
+          "8"
+        ]
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "valid_source_timing": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true
+    },
+    {
+      "key": "mandelbrot:canonical-source-modes:scalar11-resident",
+      "id": "scalar11-resident",
+      "benchmark": "mandelbrot",
+      "language": "mech-resident",
+      "source_sha256": "4e4b881e9c2368ba9ddfcbd2b8df49f78e6fd759833b26e7a10374b432de7b3a",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-scalar-canonical.mec",
+        "resident",
+        "16000",
+        "--scalar"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "RAYON_NUM_THREADS": "8",
+        "JULIA_NUM_THREADS": "8",
+        "OMP_NUM_THREADS": "8",
+        "OMP_DYNAMIC": "FALSE",
+        "CHPL_RT_NUM_THREADS_PER_LOCALE": "8",
+        "GOMAXPROCS": "8",
+        "OPENBLAS_NUM_THREADS": "1",
+        "PYTHONHASHSEED": "0",
+        "MECH_TIMINGS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"9e8d1360d80a6570327329b6eef2cee905b6972bd3f7909e51185f3913694dbc\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes\", \"{source}\", \"resident\", \"{n}\", \"--scalar\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"CHPL_RT_NUM_THREADS_PER_LOCALE\": \"8\", \"GOMAXPROCS\": \"8\", \"JULIA_NUM_THREADS\": \"8\", \"MECH_TIMINGS\": \"1\", \"OMP_DYNAMIC\": \"FALSE\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"PYTHONHASHSEED\": \"0\", \"RAYON_NUM_THREADS\": \"8\"}, \"source_sha256\": \"4e4b881e9c2368ba9ddfcbd2b8df49f78e6fd759833b26e7a10374b432de7b3a\", \"support\": {}}",
+      "started_at": "2026-10-12T11:01:57.962625+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 40.551018667,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 51760,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "TIMING {\"prepare_seconds\":0.138495,\"kernel_seconds\":40.551018667}\n",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T11:02:38.886038+00:00",
+      "valid_environment": true,
+      "canonical_full_workload": true,
+      "never_chart_eligible": false,
+      "wall_seconds": 40.701713958,
+      "timing": {
+        "wall_seconds": 40.701713958,
+        "prepare_seconds": 0.138495,
+        "kernel_seconds": 40.551018667,
+        "reported_seconds": 40.551018667
+      },
+      "prepare_seconds": 0.138495,
+      "kernel_seconds": 40.551018667,
+      "valid_source_timing": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 17,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/full-study/attempts/017-scalar11-resident.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 30799,
+        "pgid": 30799,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-scalar-canonical.mec",
+          "resident",
+          "16000",
+          "--scalar"
+        ]
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "valid_source_timing": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true
+    },
+    {
+      "key": "mandelbrot:canonical-source-modes:scalar11-jit",
+      "id": "scalar11-jit",
+      "benchmark": "mandelbrot",
+      "language": "mech-jit",
+      "source_sha256": "4e4b881e9c2368ba9ddfcbd2b8df49f78e6fd759833b26e7a10374b432de7b3a",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-scalar-canonical.mec",
+        "jit",
+        "16000",
+        "--scalar"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "RAYON_NUM_THREADS": "8",
+        "JULIA_NUM_THREADS": "8",
+        "OMP_NUM_THREADS": "8",
+        "OMP_DYNAMIC": "FALSE",
+        "CHPL_RT_NUM_THREADS_PER_LOCALE": "8",
+        "GOMAXPROCS": "8",
+        "OPENBLAS_NUM_THREADS": "1",
+        "PYTHONHASHSEED": "0",
+        "MECH_TIMINGS": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"9e8d1360d80a6570327329b6eef2cee905b6972bd3f7909e51185f3913694dbc\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes\", \"{source}\", \"jit\", \"{n}\", \"--scalar\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"CHPL_RT_NUM_THREADS_PER_LOCALE\": \"8\", \"GOMAXPROCS\": \"8\", \"JULIA_NUM_THREADS\": \"8\", \"MECH_TIMINGS\": \"1\", \"OMP_DYNAMIC\": \"FALSE\", \"OMP_NUM_THREADS\": \"8\", \"OPENBLAS_NUM_THREADS\": \"1\", \"PYTHONHASHSEED\": \"0\", \"RAYON_NUM_THREADS\": \"8\"}, \"source_sha256\": \"4e4b881e9c2368ba9ddfcbd2b8df49f78e6fd759833b26e7a10374b432de7b3a\", \"support\": {}}",
+      "started_at": "2026-10-12T13:44:39.376560+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 2.323236417,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 51504,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "TIMING {\"prepare_seconds\":0.137258667,\"kernel_seconds\":2.180131833}\n",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T13:44:41.922733+00:00",
+      "valid_environment": true,
+      "canonical_full_workload": true,
+      "never_chart_eligible": false,
+      "wall_seconds": 2.323236417,
+      "timing": {
+        "wall_seconds": 2.323236417,
+        "prepare_seconds": 0.137258667,
+        "kernel_seconds": 2.180131833,
+        "reported_seconds": 2.323236417
+      },
+      "prepare_seconds": 0.137258667,
+      "kernel_seconds": 2.180131833,
+      "valid_source_timing": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 18,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/full-study/attempts/018-scalar11-jit.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 50899,
+        "pgid": 50899,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-scalar-canonical.mec",
+          "jit",
+          "16000",
+          "--scalar"
+        ]
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "no_supervisor_remaining_group": true,
+        "valid_environment": true,
+        "valid_source_timing": true,
+        "actual_full_workload": true,
+        "exact_command_and_group": true,
+        "complete_output_reference_match": true,
+        "complete_output_bytes_and_hash": true,
+        "pins_unchanged": true
+      },
+      "qualified": true
+    }
+  ],
+  "active": null,
+  "profiles": {
+    "scalar11-jit": {
+      "loc": 11,
+      "mode": "jit",
+      "state_layout": "1x3 numeric state",
+      "timing_boundary": "Fresh-process elapsed including startup, parsing, admission, JIT compilation, complete PBM and shutdown.",
+      "samples_seconds": [
+        2.581435042,
+        2.307178833,
+        2.323236417
+      ],
+      "sample_details": [
+        {
+          "seconds": 2.581435042,
+          "wall_seconds": 2.581435042,
+          "prepare_seconds": 0.164339666,
+          "kernel_seconds": 2.159905042,
+          "validation": {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          "supervised_native_group": {
+            "type": "native-group-started",
+            "pid": 99985,
+            "pgid": 99985,
+            "command": [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-scalar-canonical.mec",
+              "jit",
+              "16000",
+              "--scalar"
+            ]
+          }
+        },
+        {
+          "seconds": 2.307178833,
+          "wall_seconds": 2.307178833,
+          "prepare_seconds": 0.134055417,
+          "kernel_seconds": 2.157972667,
+          "validation": {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          "supervised_native_group": {
+            "type": "native-group-started",
+            "pid": 6915,
+            "pgid": 6915,
+            "command": [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-scalar-canonical.mec",
+              "jit",
+              "16000",
+              "--scalar"
+            ]
+          }
+        },
+        {
+          "seconds": 2.323236417,
+          "wall_seconds": 2.323236417,
+          "prepare_seconds": 0.137258667,
+          "kernel_seconds": 2.180131833,
+          "validation": {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          "supervised_native_group": {
+            "type": "native-group-started",
+            "pid": 50899,
+            "pgid": 50899,
+            "command": [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-scalar-canonical.mec",
+              "jit",
+              "16000",
+              "--scalar"
+            ]
+          }
+        }
+      ],
+      "median_seconds": 2.323236417,
+      "sample_stdev_seconds": 0.1539160182972407
+    },
+    "scalar11-resident": {
+      "loc": 11,
+      "mode": "resident",
+      "state_layout": "1x3 numeric state",
+      "timing_boundary": "Loaded typed interpretation after source loading, graph optimization and activation; image computation, PBM output and flush included. Preparation and whole-process time retained separately.",
+      "samples_seconds": [
+        44.751780292,
+        43.918998625,
+        40.551018667
+      ],
+      "sample_details": [
+        {
+          "seconds": 44.751780292,
+          "wall_seconds": 44.893752875,
+          "prepare_seconds": 0.134672458,
+          "kernel_seconds": 44.751780292,
+          "validation": {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          "supervised_native_group": {
+            "type": "native-group-started",
+            "pid": 89754,
+            "pgid": 89754,
+            "command": [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-scalar-canonical.mec",
+              "resident",
+              "16000",
+              "--scalar"
+            ]
+          }
+        },
+        {
+          "seconds": 43.918998625,
+          "wall_seconds": 44.060896584,
+          "prepare_seconds": 0.134669,
+          "kernel_seconds": 43.918998625,
+          "validation": {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          "supervised_native_group": {
+            "type": "native-group-started",
+            "pid": 5664,
+            "pgid": 5664,
+            "command": [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-scalar-canonical.mec",
+              "resident",
+              "16000",
+              "--scalar"
+            ]
+          }
+        },
+        {
+          "seconds": 40.551018667,
+          "wall_seconds": 40.701713958,
+          "prepare_seconds": 0.138495,
+          "kernel_seconds": 40.551018667,
+          "validation": {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          "supervised_native_group": {
+            "type": "native-group-started",
+            "pid": 30799,
+            "pgid": 30799,
+            "command": [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-scalar-canonical.mec",
+              "resident",
+              "16000",
+              "--scalar"
+            ]
+          }
+        }
+      ],
+      "median_seconds": 43.918998625,
+      "sample_stdev_seconds": 2.2242306734559407
+    },
+    "row16-jit": {
+      "loc": 16,
+      "mode": "jit",
+      "state_layout": "2x8 numeric state plus scalar iteration",
+      "timing_boundary": "Fresh-process elapsed including startup, parsing, admission, JIT compilation, complete PBM and shutdown.",
+      "samples_seconds": [
+        0.717965542,
+        0.74175025,
+        0.719230083
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.717965542,
+          "wall_seconds": 0.717965542,
+          "prepare_seconds": 0.275096,
+          "kernel_seconds": 0.427903625,
+          "validation": {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          "supervised_native_group": {
+            "type": "native-group-started",
+            "pid": 92187,
+            "pgid": 92187,
+            "command": [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec",
+              "jit",
+              "16000",
+              "--fp-contract-loop"
+            ]
+          }
+        },
+        {
+          "seconds": 0.74175025,
+          "wall_seconds": 0.74175025,
+          "prepare_seconds": 0.272477792,
+          "kernel_seconds": 0.453034833,
+          "validation": {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          "supervised_native_group": {
+            "type": "native-group-started",
+            "pid": 3088,
+            "pgid": 3088,
+            "command": [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec",
+              "jit",
+              "16000",
+              "--fp-contract-loop"
+            ]
+          }
+        },
+        {
+          "seconds": 0.719230083,
+          "wall_seconds": 0.719230083,
+          "prepare_seconds": 0.274268209,
+          "kernel_seconds": 0.429314333,
+          "validation": {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          "supervised_native_group": {
+            "type": "native-group-started",
+            "pid": 11097,
+            "pgid": 11097,
+            "command": [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec",
+              "jit",
+              "16000",
+              "--fp-contract-loop"
+            ]
+          }
+        }
+      ],
+      "median_seconds": 0.719230083,
+      "sample_stdev_seconds": 0.013382011061457593
+    },
+    "row16-resident": {
+      "loc": 16,
+      "mode": "resident",
+      "state_layout": "2x8 numeric state plus scalar iteration",
+      "timing_boundary": "Loaded typed interpretation after source loading, graph optimization and activation; image computation, PBM output and flush included. Preparation and whole-process time retained separately.",
+      "samples_seconds": [
+        11.662957667,
+        11.222798792,
+        12.157588333
+      ],
+      "sample_details": [
+        {
+          "seconds": 11.662957667,
+          "wall_seconds": 11.952630209,
+          "prepare_seconds": 0.274929583,
+          "kernel_seconds": 11.662957667,
+          "validation": {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          "supervised_native_group": {
+            "type": "native-group-started",
+            "pid": 2415,
+            "pgid": 2415,
+            "command": [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec",
+              "resident",
+              "16000",
+              "--fp-contract-loop"
+            ]
+          }
+        },
+        {
+          "seconds": 11.222798792,
+          "wall_seconds": 11.51049775,
+          "prepare_seconds": 0.271324666,
+          "kernel_seconds": 11.222798792,
+          "validation": {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          "supervised_native_group": {
+            "type": "native-group-started",
+            "pid": 6082,
+            "pgid": 6082,
+            "command": [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec",
+              "resident",
+              "16000",
+              "--fp-contract-loop"
+            ]
+          }
+        },
+        {
+          "seconds": 12.157588333,
+          "wall_seconds": 12.44630675,
+          "prepare_seconds": 0.272923917,
+          "kernel_seconds": 12.157588333,
+          "validation": {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          "supervised_native_group": {
+            "type": "native-group-started",
+            "pid": 8777,
+            "pgid": 8777,
+            "command": [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/source-modes-study/.build/mech-source-modes",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/mandelbrot-array-state-five-rows-canonical.mec",
+              "resident",
+              "16000",
+              "--fp-contract-loop"
+            ]
+          }
+        }
+      ],
+      "median_seconds": 11.662957667,
+      "sample_stdev_seconds": 0.4676592094235318
+    },
+    "scalar11-aot-control": {
+      "loc": 11,
+      "mode": "aot-control",
+      "state_layout": "1x3 numeric state",
+      "timing_boundary": "Fresh-process elapsed including startup, complete PBM output and shutdown; unchanged canonical-source AOT binary from the completed array-state study.",
+      "samples_seconds": [
+        2.239451834,
+        2.15604575,
+        2.175910083
+      ],
+      "sample_details": [
+        {
+          "seconds": 2.239451834,
+          "wall_seconds": 2.239451834,
+          "validation": {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          "supervised_native_group": {
+            "type": "native-group-started",
+            "pid": 93897,
+            "pgid": 93897,
+            "command": [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/scalar11",
+              "16000",
+              "8"
+            ]
+          }
+        },
+        {
+          "seconds": 2.15604575,
+          "wall_seconds": 2.15604575,
+          "validation": {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          "supervised_native_group": {
+            "type": "native-group-started",
+            "pid": 8232,
+            "pgid": 8232,
+            "command": [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/scalar11",
+              "16000",
+              "8"
+            ]
+          }
+        },
+        {
+          "seconds": 2.175910083,
+          "wall_seconds": 2.175910083,
+          "validation": {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          "supervised_native_group": {
+            "type": "native-group-started",
+            "pid": 11158,
+            "pgid": 11158,
+            "command": [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/scalar11",
+              "16000",
+              "8"
+            ]
+          }
+        }
+      ],
+      "median_seconds": 2.175910083,
+      "sample_stdev_seconds": 0.043567420346508
+    },
+    "row16-aot-control": {
+      "loc": 16,
+      "mode": "aot-control",
+      "state_layout": "2x8 numeric state plus scalar iteration",
+      "timing_boundary": "Fresh-process elapsed including startup, complete PBM output and shutdown; unchanged canonical-source AOT binary from the completed array-state study.",
+      "samples_seconds": [
+        0.448068917,
+        0.460222709,
+        0.460178167
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.448068917,
+          "wall_seconds": 0.448068917,
+          "validation": {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          "supervised_native_group": {
+            "type": "native-group-started",
+            "pid": 93820,
+            "pgid": 93820,
+            "command": [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+              "16000",
+              "8"
+            ]
+          }
+        },
+        {
+          "seconds": 0.460222709,
+          "wall_seconds": 0.460222709,
+          "validation": {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          "supervised_native_group": {
+            "type": "native-group-started",
+            "pid": 6973,
+            "pgid": 6973,
+            "command": [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+              "16000",
+              "8"
+            ]
+          }
+        },
+        {
+          "seconds": 0.460178167,
+          "wall_seconds": 0.460178167,
+          "validation": {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          "supervised_native_group": {
+            "type": "native-group-started",
+            "pid": 8859,
+            "pgid": 8859,
+            "command": [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+              "16000",
+              "8"
+            ]
+          }
+        }
+      ],
+      "median_seconds": 0.460178167,
+      "sample_stdev_seconds": 0.007004172322403367
+    }
+  },
+  "finished_at": "2026-10-12T13:44:42.686141+00:00",
+  "pins_unchanged_at_end": true
+}

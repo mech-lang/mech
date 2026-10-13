@@ -1,0 +1,12 @@
+{
+  "status": "failed-fixtures",
+  "updated_at": "2026-10-13T00:43:44.571395+00:00",
+  "pid": 83590,
+  "pgid": 83590,
+  "automatic_retry": false,
+  "source_counting_started": false,
+  "chart_admitted": false,
+  "tests_run": 19,
+  "failures": 2,
+  "errors": 0
+}

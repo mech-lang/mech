@@ -1,0 +1,24 @@
+{
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/fixture_runner_v6.py",
+    "--set",
+    "ownership",
+    "--receipt",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/proposal-seals/private-v6/ownership-fixtures-inventory.json"
+  ],
+  "started_at": "2026-10-13T00:42:56.253907+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 97295,
+  "identity": {
+    "pid": 97295,
+    "process_listing": "Mon Oct 12 20:42:56 2026     /opt/homebrew/opt/python@3.14/bin/python3.14 -B /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/fixture_runner_v6.py --set ownership --receipt /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/proposal-seals/private-v6/ownership-fixtures-inventory.json"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-13T00:42:56.629692+00:00",
+  "final_exit_status": 0
+}

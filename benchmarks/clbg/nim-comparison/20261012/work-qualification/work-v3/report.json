@@ -1,0 +1,204 @@
+{
+  "status": "stopped-unqualified",
+  "started_at": "2026-10-13T01:38:21.604162+00:00",
+  "attempts": [],
+  "active": null,
+  "prerequisite": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/qualification/private-v7/report.json",
+  "prerequisite_sha256": "6fb529f349ffaa8694d87a79c906ec86b84ecae2a23f5a7ab63a04f43a3f07da",
+  "full_performance_runs": 0,
+  "chart_admission": false,
+  "no_automatic_retry": true,
+  "qualification_revision": "private-v7",
+  "source_reviews": [
+    {
+      "profile": "nim-regexredux-compact",
+      "status": "passed",
+      "scored_source_sha256": "e9a20df433b5d2bfc6fd0f7393a454fa49b455cee4ae876d31348062da50647c",
+      "complete_bounded_cases": 5,
+      "worker_cap": 1,
+      "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v3/REQUIRED_SOURCE_REVIEW.md",
+      "counted_application_helpers": "All helper definitions in the application source; generic GMP ABI adapter audited separately"
+    },
+    {
+      "profile": "nim-regexredux-optimized",
+      "status": "passed",
+      "scored_source_sha256": "ed5d8982939c9f1ddb3006a1079ca8fb3001a971c519fa82840edd6062540129",
+      "complete_bounded_cases": 5,
+      "worker_cap": 8,
+      "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v3/REQUIRED_SOURCE_REVIEW.md",
+      "counted_application_helpers": "All helper definitions in the application source; generic GMP ABI adapter audited separately"
+    },
+    {
+      "profile": "nim-revcomp-compact",
+      "status": "passed",
+      "scored_source_sha256": "18a1bd6328dfc61660deb83d0bcecf80b71208a9f9f724dc5364c4cbce9cf016",
+      "complete_bounded_cases": 5,
+      "worker_cap": 1,
+      "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v3/REQUIRED_SOURCE_REVIEW.md",
+      "counted_application_helpers": "All helper definitions in the application source; generic GMP ABI adapter audited separately"
+    },
+    {
+      "profile": "nim-revcomp-optimized",
+      "status": "passed",
+      "scored_source_sha256": "52d354d69bbcb3f0ca14165d4fcfe05b17ebdf341d01aa8edf0fecba70ba25af",
+      "complete_bounded_cases": 5,
+      "worker_cap": 1,
+      "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v3/REQUIRED_SOURCE_REVIEW.md",
+      "counted_application_helpers": "All helper definitions in the application source; generic GMP ABI adapter audited separately"
+    },
+    {
+      "profile": "nim-pidigits-compact",
+      "status": "passed",
+      "scored_source_sha256": "5c1ba8e2ec741f1586f53d9099168f41ed94184d482c6652ad347851cc4f66bd",
+      "complete_bounded_cases": 9,
+      "worker_cap": 1,
+      "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v3/REQUIRED_SOURCE_REVIEW.md",
+      "counted_application_helpers": "All helper definitions in the application source; generic GMP ABI adapter audited separately"
+    },
+    {
+      "profile": "nim-pidigits-optimized",
+      "status": "passed",
+      "scored_source_sha256": "324208b9123f369bb21a509955a2d192752a315ae546e1aa515c260770217b12",
+      "complete_bounded_cases": 9,
+      "worker_cap": 1,
+      "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v3/REQUIRED_SOURCE_REVIEW.md",
+      "counted_application_helpers": "All helper definitions in the application source; generic GMP ABI adapter audited separately"
+    },
+    {
+      "profile": "nim-spectralnorm-compact",
+      "status": "passed",
+      "scored_source_sha256": "aa2cab891eb092dc8f5dce9633371f71dff89a506331c2a1d1fd160052ac3be8",
+      "complete_bounded_cases": 6,
+      "worker_cap": 1,
+      "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v3/REQUIRED_SOURCE_REVIEW.md",
+      "counted_application_helpers": "All helper definitions in the application source; generic GMP ABI adapter audited separately"
+    },
+    {
+      "profile": "nim-spectralnorm-optimized",
+      "status": "passed",
+      "scored_source_sha256": "ae870f723c4588b274c1b5e4512419b0d9419170dac5305f34cf2556532a1319",
+      "complete_bounded_cases": 6,
+      "worker_cap": 8,
+      "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v3/REQUIRED_SOURCE_REVIEW.md",
+      "counted_application_helpers": "All helper definitions in the application source; generic GMP ABI adapter audited separately"
+    },
+    {
+      "profile": "nim-mandelbrot-compact",
+      "status": "passed",
+      "scored_source_sha256": "36f46c4bae43b0417c8f6e97f6378908fadf3d6686aa7a6e1fbb8f30bf393efb",
+      "complete_bounded_cases": 13,
+      "worker_cap": 1,
+      "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v3/REQUIRED_SOURCE_REVIEW.md",
+      "counted_application_helpers": "All helper definitions in the application source; generic GMP ABI adapter audited separately"
+    },
+    {
+      "profile": "nim-mandelbrot-optimized",
+      "status": "passed",
+      "scored_source_sha256": "bad5606dfb97cda62517c2b1c8a2a7c4040c5ee2ae0928cbd3e5333cddcfdd3d",
+      "complete_bounded_cases": 13,
+      "worker_cap": 8,
+      "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v3/REQUIRED_SOURCE_REVIEW.md",
+      "counted_application_helpers": "All helper definitions in the application source; generic GMP ABI adapter audited separately"
+    },
+    {
+      "profile": "nim-fasta-compact",
+      "status": "passed",
+      "scored_source_sha256": "9cdf085f8ed7e9fbff81544f952fa8a2b97c95a4f8e1a59cf0206c89393f5693",
+      "complete_bounded_cases": 11,
+      "worker_cap": 1,
+      "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v3/REQUIRED_SOURCE_REVIEW.md",
+      "counted_application_helpers": "All helper definitions in the application source; generic GMP ABI adapter audited separately"
+    },
+    {
+      "profile": "nim-fasta-optimized",
+      "status": "passed",
+      "scored_source_sha256": "e5d53da87433e210ca0a989ca67294483945b8700ea5e96fd1a5a8d573b085f4",
+      "complete_bounded_cases": 11,
+      "worker_cap": 1,
+      "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v3/REQUIRED_SOURCE_REVIEW.md",
+      "counted_application_helpers": "All helper definitions in the application source; generic GMP ABI adapter audited separately"
+    },
+    {
+      "profile": "nim-knucleotide-compact",
+      "status": "passed",
+      "scored_source_sha256": "c9e05510b0d09ed88dea67ea5a7a478ad66d36f8e71186804c154b17d964bfbc",
+      "complete_bounded_cases": 12,
+      "worker_cap": 1,
+      "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v3/REQUIRED_SOURCE_REVIEW.md",
+      "counted_application_helpers": "All helper definitions in the application source; generic GMP ABI adapter audited separately"
+    },
+    {
+      "profile": "nim-knucleotide-optimized",
+      "status": "passed",
+      "scored_source_sha256": "9b5a250702745e4ade2bd0488444aa6a4c393c198da57be7fedd7bd8b04732a8",
+      "complete_bounded_cases": 12,
+      "worker_cap": 7,
+      "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v3/REQUIRED_SOURCE_REVIEW.md",
+      "counted_application_helpers": "All helper definitions in the application source; generic GMP ABI adapter audited separately"
+    },
+    {
+      "profile": "nim-binarytrees-compact",
+      "status": "passed",
+      "scored_source_sha256": "b18267a6d540e24c1db7aa002f2cc486f108e852c8d38bc3e0340a4ddcd5fabc",
+      "complete_bounded_cases": 4,
+      "worker_cap": 1,
+      "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v3/REQUIRED_SOURCE_REVIEW.md",
+      "counted_application_helpers": "All helper definitions in the application source; generic GMP ABI adapter audited separately"
+    },
+    {
+      "profile": "nim-binarytrees-optimized",
+      "status": "passed",
+      "scored_source_sha256": "958a643758bdb20a52da17cf3365e882b747f8d6cb42d7f2f26e272a4f73366f",
+      "complete_bounded_cases": 4,
+      "worker_cap": 8,
+      "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v3/REQUIRED_SOURCE_REVIEW.md",
+      "counted_application_helpers": "All helper definitions in the application source; generic GMP ABI adapter audited separately"
+    },
+    {
+      "profile": "nim-nbody-compact",
+      "status": "passed",
+      "scored_source_sha256": "1076b921d678c1111b6583205921ddbc785f44898f46bda4dae32231895539a2",
+      "complete_bounded_cases": 4,
+      "worker_cap": 1,
+      "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v3/REQUIRED_SOURCE_REVIEW.md",
+      "counted_application_helpers": "All helper definitions in the application source; generic GMP ABI adapter audited separately"
+    },
+    {
+      "profile": "nim-nbody-optimized",
+      "status": "passed",
+      "scored_source_sha256": "1ad2422f87034c2d99cfd6bd41ebf394a56b1b31f2e79f26a9a295bc2aefd097",
+      "complete_bounded_cases": 4,
+      "worker_cap": 1,
+      "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v3/REQUIRED_SOURCE_REVIEW.md",
+      "counted_application_helpers": "All helper definitions in the application source; generic GMP ABI adapter audited separately"
+    },
+    {
+      "profile": "nim-fannkuchredux-compact",
+      "status": "passed",
+      "scored_source_sha256": "57cc5adf96e38204127c5069077da3608bf1cd5c40965e968c3e9c3c4c894fcc",
+      "complete_bounded_cases": 8,
+      "worker_cap": 1,
+      "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v3/REQUIRED_SOURCE_REVIEW.md",
+      "counted_application_helpers": "All helper definitions in the application source; generic GMP ABI adapter audited separately"
+    },
+    {
+      "profile": "nim-fannkuchredux-optimized",
+      "status": "passed",
+      "scored_source_sha256": "8fc3d7d48313f9d311232cc088e62796db6a21ef1fcfde4faec3d20ff070f053",
+      "complete_bounded_cases": 8,
+      "worker_cap": 8,
+      "review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/revisions/work-full-v3/REQUIRED_SOURCE_REVIEW.md",
+      "counted_application_helpers": "All helper definitions in the application source; generic GMP ABI adapter audited separately"
+    }
+  ],
+  "tree_proofs": [],
+  "actual_mock_fixtures": {
+    "receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/work-qualification/work-v3/fixtures/actual-inventory.json",
+    "sha256": "889f2d3b249380fc967c5e0f235a9702de571004dc1c94725804a7d3702e9041",
+    "methods": 12,
+    "zero_skips": true
+  },
+  "finished_at": "2026-10-13T01:38:24.726899+00:00",
+  "error": "Final ARM path must allocate before any conditional/unconditional control or return",
+  "error_type": "AssertionError"
+}

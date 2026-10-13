@@ -1,0 +1,14 @@
+{
+  "receipt_sha256": "27c5e12049f9372a63c984cfda27eebbe968c0955fdca9ef6280f10a9c4ee74f",
+  "terminal_status": "passed",
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/native-platform-v1-fixtures/fixture-receipt.json": "27c5e12049f9372a63c984cfda27eebbe968c0955fdca9ef6280f10a9c4ee74f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/native-platform-v1-fixtures/fixtures.log": "8e347fc7d4b09eed150adcb3e0177ce830cf023f8e13f63e8b549b3d163d828b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/native-platform-v1-fixtures/snapshot/native_languages_data_v1.py": "27779d09a6cfea98d0377c58d4cdd459fc7f59aac46efdb8f61144070a871dc7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/native-platform-v1-fixtures/snapshot/native_platform_metadata_v1.py": "06cd026abd60d4e6cbe2a5fce53a78777b0b519b846bfc9c2150c7e34e022251",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/jobs/native-platform-v1-fixtures/snapshot/test_native_platform_metadata_v1.py": "7601447cdc8ced9fad90439456bc26566fa27e50de1e8de6fa3f04afc6b5aa4b"
+  },
+  "exclusive_common_timing_mutex_held": true,
+  "chart_admission": false,
+  "automatic_retry": false
+}

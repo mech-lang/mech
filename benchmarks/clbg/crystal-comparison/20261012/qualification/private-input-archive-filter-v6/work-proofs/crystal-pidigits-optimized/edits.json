@@ -1,0 +1,16 @@
+{
+  "status": "authored-unbuilt-unqualified-trace-copy",
+  "scheme": "TRACE_C1",
+  "benchmark": "pidigits",
+  "variant": "optimized",
+  "original_source_mutated": false,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "full_workload": false,
+  "full_performance_run": false,
+  "trace_environment": "MECH_CRYSTAL_WORK_TRACE",
+  "observation_only": true,
+  "retained_nodes_for_identity_audit": false,
+  "scored_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-input-archive-filter-v6/source-snapshot/sources/pidigits/optimized.cr",
+  "scored_source_sha256": "69ee8e46548eb3996393772df89a6a7a856e9f8f70560259a3b53af8bfb8a5ff"
+}

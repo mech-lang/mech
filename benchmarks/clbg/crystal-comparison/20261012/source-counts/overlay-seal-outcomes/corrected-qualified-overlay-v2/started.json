@@ -1,0 +1,16 @@
+{
+  "status": "started",
+  "revision": "corrected-qualified-overlay-v2",
+  "actual_common_mutex_held": true,
+  "common_timing_mutex": "/tmp/mech-clbg-timing.lock",
+  "reviewed_replay": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/crystal-brace-repair-v2/jobs/fixtures-replay-v1/source-proposals.json",
+    "sha256": "a255d719b1d78b19d10654daea28a3dd95bb45e74df4f6481ac162d06cd8877c"
+  },
+  "reviewed_source_semantics": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/source-counts/repaired-replay-semantic-review-v2.json",
+    "sha256": "3087d38fe95ab7d9cc1340291d361448367b8995f43da744124a5af8362303f0"
+  },
+  "original_source_report_timings_mutated": false,
+  "chart_admission": false
+}

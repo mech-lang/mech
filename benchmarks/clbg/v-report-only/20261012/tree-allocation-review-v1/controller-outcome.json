@@ -1,0 +1,18 @@
+{
+  "status": "sealed-awaiting-root-manifest-review",
+  "native_benchmark_processes": 0,
+  "compiler_processes": 0,
+  "chart_admission": false,
+  "allocation_review": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/tree-allocation-review-v1/qualified-allocation-review.json",
+  "allocation_review_sha256": "7c9e1ea0505a459b245d77c5e6da5c57dc2ee3fbb4a282a43fb112d07b96349a",
+  "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/studies/binarytrees/full-study/manifest.json",
+  "manifest_sha256": "8180cecca83fd5c6c48d19cdb613dd530bdeb2047962e80c6cd03c5eb77d88f3",
+  "actual_terminal_evidence_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/tree-allocation-review-v1/qualified-allocation-review.json": "7c9e1ea0505a459b245d77c5e6da5c57dc2ee3fbb4a282a43fb112d07b96349a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/tree-allocation-review-v1/source-review.json": "46c444aca57b64f65420c2a52bf0472f8a10c15a8b43235e3622768b37b6d569",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/tree-allocation-review-v1/owner.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/tree-allocation-review-v1/seal_tree.py": "626fe6d740ca85f87a44bf52190215502d10321c4a8fca585e51bc21856e750b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/tree-allocation-review-v1/REVIEW.md": "747928dc841ed0ad7b1a0eeb90bdfefd0f7f368f35c5da655f86b288b4c06301",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/studies/binarytrees/full-study/manifest.json": "8180cecca83fd5c6c48d19cdb613dd530bdeb2047962e80c6cd03c5eb77d88f3"
+  }
+}

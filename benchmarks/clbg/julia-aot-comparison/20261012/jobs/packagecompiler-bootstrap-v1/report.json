@@ -1,0 +1,27 @@
+{
+  "status": "failed",
+  "exclusive_common_timing_mutex_held": true,
+  "common_timing_mutex": "/tmp/mech-clbg-timing.lock",
+  "actual_benchmark_runs": 0,
+  "library_builds": 0,
+  "runtime_aot_proven": false,
+  "chart_admission": false,
+  "automatic_retry": false,
+  "started_at": "2026-10-13T02:14:11.547868+00:00",
+  "error": "('Owned command failed', 'packagecompiler-install', 1)",
+  "error_type": "AssertionError",
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/bootstrap_packagecompiler_v1.py": "e319c934c7d603777a4110832798abcda97193d390eeb89cc3fc578096fe2db5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012/revisions/private-v3/guarded_prepare.py": "f1290ab11e8a77ea1381f5cfab2033e2b709b2b2b9d419ddf2fa8a21410e04fd",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/remaining_owner.py": "55581d56609803243b3be264e6a2e37229be06789c22788bbf8cdb6ff6828544",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run.py": "5b2a038cfae4112e9e2eee79c3cd57ccc6a1521812828c47bf28986d6a8e139b",
+    "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/libjulia.1.13.1.dylib": "459753693d70784e22bf5b7a88013b78116bbe8037af129aa49fe7be55e31289",
+    "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-internal.1.13.1.dylib": "aaf25ba7ac705b5e0d564e6942da9d158bf59cf387fa9d5dca097a254764d816",
+    "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/libjulia-codegen.1.13.1.dylib": "030b316273f4b3c0ecf285e866a0a9653f37471f57e3d51be7476154f6aa9781",
+    "/private/tmp/mech-clbg-julia/julia-1.13.1/lib/julia/sys.dylib": "d70323d971242ed1a9b417e2683bbf5d81f6c525cc7207610354c6ed54a1b1e9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/jobs/runtime-symbols-v1/report.json": "66d1b3f9b89c3caf66bb6b1cff83eac81fbbfe3ae13f3e883d432a820fe36bdf",
+    "/private/tmp/mech-clbg-julia/julia-1.13.1/bin/julia": "81e48f60e1d484c6fb2ea64e7cd3986190ff0bb5d5125b66f51e8d793325e3a9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/packagecompiler-bootstrap-v1/install.jl": "224e892a383a8622ac239b2645bb4f3b1f7772beb86a233f966194e3643b2371"
+  },
+  "completed_at": "2026-10-13T02:14:13.205309+00:00"
+}

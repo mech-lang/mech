@@ -1,0 +1,13 @@
+{
+  "status": "verified-pretrial-waiter-cancellation",
+  "pid": 98722,
+  "identity": "Mon Oct 12 13:42:43 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3 -B guarded_prepare.py --prepare --proposal-sha256 a3354b41609710a22aeacb24ba3d5d4c66803b0acae92cfa065472d1f5912317",
+  "children": [],
+  "preparation_output_exists": false,
+  "build_root_exists": false,
+  "signal": "SIGINT",
+  "proposal_sha256": "a3354b41609710a22aeacb24ba3d5d4c66803b0acae92cfa065472d1f5912317",
+  "cancelled_at": "2026-10-12T17:46:25.841314+00:00",
+  "reason": "Root-prioritized foreground UI browser qualification before long FP build",
+  "native_or_compiler_signalled": false
+}

@@ -1,0 +1,32 @@
+test_absolute_and_parent_traversal_member_names_fail (__main__.ArchiveChecks.test_absolute_and_parent_traversal_member_names_fail) ... ok
+test_absolute_and_relative_escaping_symlink_targets_fail (__main__.ArchiveChecks.test_absolute_and_relative_escaping_symlink_targets_fail) ... ok
+test_changed_bytes_and_substituted_regular_or_parent_symlinks_fail (__main__.ArchiveChecks.test_changed_bytes_and_substituted_regular_or_parent_symlinks_fail) ... ok
+test_changed_link_metadata_fails_even_with_same_file_target (__main__.ArchiveChecks.test_changed_link_metadata_fails_even_with_same_file_target) ... ok
+test_hardlink_topology_and_unchanged_proved_functions (__main__.ArchiveChecks.test_hardlink_topology_and_unchanged_proved_functions) ... ERROR
+test_regular_payload_and_exact_foreign_target_cycles_pass (__main__.ArchiveChecks.test_regular_payload_and_exact_foreign_target_cycles_pass) ... FAIL
+
+======================================================================
+ERROR: test_hardlink_topology_and_unchanged_proved_functions (__main__.ArchiveChecks.test_hardlink_topology_and_unchanged_proved_functions)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/test_archive_v4.py", line 111, in test_hardlink_topology_and_unchanged_proved_functions
+    self.assertEqual(pins[str(alias)], pins[str(original)])
+                     ~~~~^^^^^^^^^^^^
+KeyError: '/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/crystal-archive-v4-mock-1ikblsda/release/package/compiler-copy'
+
+======================================================================
+FAIL: test_regular_payload_and_exact_foreign_target_cycles_pass (__main__.ArchiveChecks.test_regular_payload_and_exact_foreign_target_cycles_pass)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/test_archive_v4.py", line 59, in test_regular_payload_and_exact_foreign_target_cycles_pass
+    self.assertEqual(pins, {str(self.root / 'package/compiler'):
+AssertionError: {'/private/var/folders/m2/dzwv83md69n8qlq2nv[137 chars]6cd'} != {'/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c00[129 chars]6cd'}
+- {'/private/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/crystal-archive-v4-mock-hrx7kl92/release/package/compiler': '7af50331aca4927379964072aba43c48bfc808c21aa6491b73d630e6f23cc6cd'}
+?   --------
+
++ {'/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/crystal-archive-v4-mock-hrx7kl92/release/package/compiler': '7af50331aca4927379964072aba43c48bfc808c21aa6491b73d630e6f23cc6cd'}
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.015s
+
+FAILED (failures=1, errors=1)

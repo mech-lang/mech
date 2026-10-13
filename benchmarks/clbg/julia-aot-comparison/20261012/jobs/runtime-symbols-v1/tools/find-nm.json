@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/usr/bin/xcrun",
+    "--find",
+    "nm"
+  ],
+  "started_at": "2026-10-13T01:18:26.163736+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 10115,
+  "identity": {
+    "pid": 10115,
+    "process_listing": "Mon Oct 12 21:18:26 2026     /usr/bin/xcrun --find nm"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-13T01:18:26.173364+00:00",
+  "final_exit_status": 0
+}

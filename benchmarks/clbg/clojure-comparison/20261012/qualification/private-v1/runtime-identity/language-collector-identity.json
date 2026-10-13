@@ -1,0 +1,27 @@
+{
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/jdk/jdk-25.0.4.1+1/Contents/Home/bin/java",
+    "-XX:ActiveProcessorCount=8",
+    "-Xms64m",
+    "-Xmx8g",
+    "-XX:+UseG1GC",
+    "-cp",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/clojure-1.12.6.jar:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/spec.alpha-0.5.238.jar:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/core.specs.alpha-0.4.74.jar",
+    "clojure.main",
+    "-e",
+    "(assert (= \"1.12.6\" (clojure-version))) (assert (= 8 (.availableProcessors (Runtime/getRuntime)))) (doseq [g (java.lang.management.ManagementFactory/getGarbageCollectorMXBeans)] (println (.getName g)))"
+  ],
+  "started_at": "2026-10-13T01:04:03.082269+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 3264,
+  "identity": {
+    "pid": 3264,
+    "process_listing": "Mon Oct 12 21:04:03 2026     /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/jdk/jdk-25.0.4.1+1/Contents/Home/bin/java -XX:ActiveProcessorCount=8 -Xms64m -Xmx8g -XX:+UseG1GC -cp /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/clojure-1.12.6.jar:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/spec.alpha-0.5.238.jar:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/core.specs.alpha-0.4.74.jar clojure.main -e (assert (= \"1.12.6\" (clojure-version))) (assert (= 8 (.availableProcessors (Runtime/getRuntime)))) (doseq [g (java.lang.management.ManagementFactory/getGarbageCollectorMXBeans)] (println (.getName g)))"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-13T01:04:03.469604+00:00",
+  "final_exit_status": 0
+}

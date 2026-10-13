@@ -1,0 +1,50 @@
+{
+  "key": "pidigits:gmp-abi",
+  "id": "gmp-abi",
+  "benchmark": "pidigits",
+  "language": "nim",
+  "source_sha256": "7d36d439c8cf2b704a69e890f021d4d12d04be96a5418c08953697bd743f4f61",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v5/bin/gmp-abi",
+    "0"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012",
+  "runtime_environment": {
+    "LC_ALL": "C",
+    "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/pcre/8.45/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"29c12783f0292750f9f378660e96c7e62fdb2029bbed2b7bb82eec653c71b931\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012/.build/private-v5/bin/gmp-abi\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nim-comparison/20261012\", \"environment\": {\"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/pcre/8.45/lib:/opt/homebrew/Cellar/gmp/6.3.0/lib\", \"LC_ALL\": \"C\"}, \"source_sha256\": \"7d36d439c8cf2b704a69e890f021d4d12d04be96a5418c08953697bd743f4f61\", \"support\": {}}",
+  "started_at": "2026-10-12T22:53:08.789451+00:00",
+  "workload_n": 0,
+  "full_workload": false,
+  "timeout_seconds": 120,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.197410042,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 32,
+  "stdout_sha256": "e8b4fc247c293fbe52942b7af4f421906a44f9aa86d71137dfbcc6ff27903fe5",
+  "validation": {
+    "reference_match": true,
+    "bytes": 32,
+    "sha256": "e8b4fc247c293fbe52942b7af4f421906a44f9aa86d71137dfbcc6ff27903fe5"
+  },
+  "finished_at": "2026-10-12T22:53:09.209545+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true
+}

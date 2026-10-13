@@ -1,0 +1,20 @@
+{
+  "started_at": "2026-10-13T11:58:36.670330+00:00",
+  "command_pid": 99672,
+  "command_identity": {
+    "pid": 99672,
+    "listing": "99672 99668 Tue Oct 13 07:58:36 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u revisions/work-full-v3/launch_all.py --revision full-v1 --index-sha256 05ed934ffd9e81136b0a8bd802aff4adda31e8f6f364df345dc2141f57deeece"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+    "-B",
+    "-u",
+    "revisions/work-full-v3/launch_all.py",
+    "--revision",
+    "full-v1",
+    "--index-sha256",
+    "05ed934ffd9e81136b0a8bd802aff4adda31e8f6f364df345dc2141f57deeece"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/c3-comparison/20261012"
+}

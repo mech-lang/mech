@@ -1,0 +1,9 @@
+{
+  "status": "failed-stop",
+  "updated_at": "2026-10-12T14:26:51.480236+00:00",
+  "pid": 55754,
+  "error_type": "ModuleNotFoundError",
+  "error": "No module named 'pygments'",
+  "automatic_retry": false,
+  "chart_admitted": false
+}

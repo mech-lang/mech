@@ -1,0 +1,74 @@
+{
+  "status": "passed",
+  "flags": {
+    "actual_fresh_node_storage": true,
+    "actual_leaf_allocation": true,
+    "retained_identity_after_churn": true,
+    "all_iteration_graphs_verified": true,
+    "worker_cap_verified": true
+  },
+  "actual_ordered_trace": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/clojure-binarytrees-compact-work-observer/allocated-n9/actual-work.jsonl",
+  "actual_ordered_trace_sha256": "32ec6b4311912645f3c844ca4fdf0997cde694b6001cfd3ce5e3fea1b011a03a",
+  "native_fd_evidence": {
+    "descriptor": 64,
+    "common_device_inode": [
+      16777232,
+      79859134
+    ],
+    "native_observed": true,
+    "observations": [
+      {
+        "native_pid": 30667,
+        "native_pgid": 30667,
+        "inherited_fd": 64,
+        "native_command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/jdk/jdk-25.0.4.1+1/Contents/Home/bin/java",
+          "-XX:ActiveProcessorCount=8",
+          "-Xms64m",
+          "-Xmx8g",
+          "-XX:+UseG1GC",
+          "--add-opens=java.base/java.util=ALL-UNNAMED",
+          "-cp",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-binarytrees-compact:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/classes/clojure-binarytrees-compact:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/clojure-1.12.6.jar:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/spec.alpha-0.5.238.jar:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/core.specs.alpha-0.4.74.jar",
+          "clbg.binarytreesobserver.compact",
+          "9"
+        ],
+        "actual_files": [
+          {
+            "pid": 30667,
+            "files": [
+              {
+                "fd": 64,
+                "device": 16777232,
+                "inode": 79859134,
+                "path": "/private/tmp/mech-clbg-timing.lock"
+              }
+            ],
+            "command": "java"
+          }
+        ],
+        "receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/native-fd/clojure-binarytrees-compact/allocated-n9/0001-lsof.json"
+      }
+    ],
+    "errors": [],
+    "reviewed_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/jdk/jdk-25.0.4.1+1/Contents/Home/bin/java",
+      "-XX:ActiveProcessorCount=8",
+      "-Xms64m",
+      "-Xmx8g",
+      "-XX:+UseG1GC",
+      "--add-opens=java.base/java.util=ALL-UNNAMED",
+      "-cp",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/classes/clojure-binarytrees-compact:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/classes/clojure-binarytrees-compact:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/clojure-1.12.6.jar:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/spec.alpha-0.5.238.jar:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/.build/private-v1/vendor/core.specs.alpha-0.4.74.jar",
+      "clbg.binarytreesobserver.compact",
+      "9"
+    ],
+    "actual_native_pass_fds_contains_common_descriptor": true,
+    "actual_sampler_raw_result": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/clojure-comparison/20261012/work-qualification/jobs/work-v1/attempts/003-clojure-binarytrees-compact-work-observer.json",
+      "sha256": "b427c4033979bead58336a50032c2d9fe70fc2b4d615202d6129097e2a7d7cbf"
+    }
+  },
+  "source_sha256": "c0d24c626890964e21b58806f669619a7427f6729589c7283e438f917097c5c6",
+  "original_scored_source_sha256": "d3735e4f6e092583c76ababcdb39d159960073f1865d53230e92c2b7d3b2c7bf"
+}

@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+    "-B",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/test_compile_inputs_v3.py"
+  ],
+  "started_at": "2026-10-12T19:26:23.768078+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 30,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 13119,
+  "identity": {
+    "pid": 13119,
+    "process_listing": "Mon Oct 12 15:26:23 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3 -B /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/test_compile_inputs_v3.py"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-12T19:26:23.837509+00:00",
+  "final_exit_status": 0
+}

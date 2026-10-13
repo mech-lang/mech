@@ -1,0 +1,15 @@
+test_exact_fifteen_profiles_and_112_prior_cases_are_reusable (__main__.InputReuseChecks.test_exact_fifteen_profiles_and_112_prior_cases_are_reusable) ... ok
+test_five_fresh_builds_and_44_fresh_output_cases_required (__main__.InputReuseChecks.test_five_fresh_builds_and_44_fresh_output_cases_required) ... ok
+test_missing_duplicate_wrong_profile_and_size_are_rejected (__main__.InputReuseChecks.test_missing_duplicate_wrong_profile_and_size_are_rejected) ... ok
+test_missing_invented_false_and_truthy_gate_maps_rejected (__main__.InputReuseChecks.test_missing_invented_false_and_truthy_gate_maps_rejected) ... ok
+test_native_error_scored_probe_and_changed_fingerprint_are_rejected (__main__.InputReuseChecks.test_native_error_scored_probe_and_changed_fingerprint_are_rejected) ... ok
+test_new_source_or_binary_cannot_inherit_old_executions (__main__.InputReuseChecks.test_new_source_or_binary_cannot_inherit_old_executions) ... ok
+test_preflight_preserves_old_empty_record_and_new_zero_byte_case (__main__.InputReuseChecks.test_preflight_preserves_old_empty_record_and_new_zero_byte_case) ... ok
+test_preflight_rejects_duplicate_namespace_before_any_native_launch (__main__.InputReuseChecks.test_preflight_rejects_duplicate_namespace_before_any_native_launch) ... ok
+test_preflight_rejects_unsafe_names_and_nonbyte_payload (__main__.InputReuseChecks.test_preflight_rejects_unsafe_names_and_nonbyte_payload) ... ok
+test_proved_guard_and_trace_logic_remain_exact (__main__.InputReuseChecks.test_proved_guard_and_trace_logic_remain_exact) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.030s
+
+OK

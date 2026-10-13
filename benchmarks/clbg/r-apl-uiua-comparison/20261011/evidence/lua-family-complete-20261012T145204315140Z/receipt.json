@@ -1,0 +1,261 @@
+{
+  "status": "passed",
+  "created_at": "2026-10-12T14:52:04.315140+00:00",
+  "finished_at": "2026-10-12T14:52:04.439074+00:00",
+  "common_mutex": "/tmp/mech-clbg-timing.lock",
+  "actual_qualified_records": 36,
+  "studies": {
+    "lua": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/full-study/manifest.json",
+      "manifest_sha256": "aaf6af5fad6bb4d2f9008e8f91be7037025e117f2cb9532dfb14ae928f6f55dd",
+      "report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/results/full-study.json",
+      "report_sha256": "833761cabd812ff56d8f685097cbb664e87640e5d8a2f2043db945241315c789",
+      "input_pins_verified": 46,
+      "actual_qualified_records": 18,
+      "discarded_attempts": [],
+      "archived_raw_report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/lua-family-complete-20261012T145204315140Z/lua/report.json",
+      "archived_raw_report_sha256": "833761cabd812ff56d8f685097cbb664e87640e5d8a2f2043db945241315c789",
+      "profiles": {
+        "lua-listed-1": {
+          "loc": 62,
+          "producer_loc": 62,
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+          "source_sha256": "e2e0139198ef7b00dd616fdd82d756e079a96db64702c72c4f9bed0a2d9d1e82",
+          "samples_seconds": [
+            0.460448542,
+            0.461362625,
+            0.576623167
+          ],
+          "median_seconds": 0.461362625,
+          "sample_stdev_seconds": 0.0668111412662031,
+          "time_x_matched_mech_fast": 1.5153055715556665,
+          "loc_x_producer_mech_fast": 1.631578947368421,
+          "loc_x_producer_mech_compact": 1.7714285714285714
+        },
+        "lua-listed-5": {
+          "loc": 77,
+          "producer_loc": 77,
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+          "source_sha256": "00734d693c0968a606b8aef2cfeffa15da58e7f4ac81731c19fb7f1dde7a0c36",
+          "samples_seconds": [
+            0.569992625,
+            0.56942625,
+            0.573869708
+          ],
+          "median_seconds": 0.569992625,
+          "sample_stdev_seconds": 0.002418569557516665,
+          "time_x_matched_mech_fast": 1.8720913953707015,
+          "loc_x_producer_mech_fast": 2.026315789473684,
+          "loc_x_producer_mech_compact": 2.2
+        },
+        "lua-listed-6": {
+          "loc": 63,
+          "producer_loc": 63,
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+          "source_sha256": "ce34fae5e45f842c8b414b18fa368e90809165fda0781b8a00da2bc29d50d930",
+          "samples_seconds": [
+            0.351953125,
+            0.343833083,
+            0.343615875
+          ],
+          "median_seconds": 0.343833083,
+          "sample_stdev_seconds": 0.004752052170019588,
+          "time_x_matched_mech_fast": 1.1292899730554937,
+          "loc_x_producer_mech_fast": 1.6578947368421053,
+          "loc_x_producer_mech_compact": 1.8
+        },
+        "lua-listed-7": {
+          "loc": 57,
+          "producer_loc": 57,
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+          "source_sha256": "cca5f009f82162b0bdd50d839add97ef21859b5d8ddd047b3db9f286973c9c2c",
+          "samples_seconds": [
+            0.919005125,
+            0.687723416,
+            0.887403125
+          ],
+          "median_seconds": 0.887403125,
+          "sample_stdev_seconds": 0.12540727086064118,
+          "time_x_matched_mech_fast": 2.9145986836892335,
+          "loc_x_producer_mech_fast": 1.5,
+          "loc_x_producer_mech_compact": 1.6285714285714286
+        },
+        "mech-fast-control": {
+          "loc": 38,
+          "producer_loc": 38,
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits-advance.mec",
+          "source_sha256": "7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e",
+          "samples_seconds": [
+            0.305278,
+            0.304468375,
+            0.3043995
+          ],
+          "median_seconds": 0.304468375,
+          "sample_stdev_seconds": 0.0004885349964008002,
+          "time_x_matched_mech_fast": 1.0,
+          "loc_x_producer_mech_fast": 1.0,
+          "loc_x_producer_mech_compact": 1.0857142857142856
+        },
+        "mech-small-control": {
+          "loc": 35,
+          "producer_loc": 35,
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits.mec",
+          "source_sha256": "db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1",
+          "samples_seconds": [
+            0.396308542,
+            0.408467125,
+            0.404603
+          ],
+          "median_seconds": 0.404603,
+          "sample_stdev_seconds": 0.0062123618173401925,
+          "time_x_matched_mech_fast": 1.3288835006262965,
+          "loc_x_producer_mech_fast": 0.9210526315789473,
+          "loc_x_producer_mech_compact": 1.0
+        }
+      },
+      "matched_fast_control": "mech-fast-control",
+      "matched_fast_control_seconds": 0.304468375,
+      "matched_compact_control": "mech-small-control",
+      "matched_compact_control_seconds": 0.404603
+    },
+    "luajit": {
+      "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/full-study/manifest.json",
+      "manifest_sha256": "8d07430a48e9613460f1d927a92c4ae88ba65e1e48a5e846bdd4c83ddebeeb5a",
+      "report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/luajit-pidigits-comparison/20261012/results/full-study.json",
+      "report_sha256": "a5500a145c8b1bf60de106c1516127ed41cec626283825e510dc4d8f7d969cbe",
+      "input_pins_verified": 49,
+      "actual_qualified_records": 18,
+      "discarded_attempts": [],
+      "archived_raw_report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/lua-family-complete-20261012T145204315140Z/luajit/report.json",
+      "archived_raw_report_sha256": "a5500a145c8b1bf60de106c1516127ed41cec626283825e510dc4d8f7d969cbe",
+      "profiles": {
+        "luajit-listed-1": {
+          "loc": 62,
+          "producer_loc": 62,
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-1-normalized.lua",
+          "source_sha256": "e2e0139198ef7b00dd616fdd82d756e079a96db64702c72c4f9bed0a2d9d1e82",
+          "samples_seconds": [
+            0.480465875,
+            0.468903375,
+            0.465363583
+          ],
+          "median_seconds": 0.468903375,
+          "sample_stdev_seconds": 0.007898320046129285,
+          "time_x_matched_mech_fast": 1.5289467396492136,
+          "loc_x_producer_mech_fast": 1.631578947368421,
+          "loc_x_producer_mech_compact": 1.7714285714285714
+        },
+        "luajit-listed-5": {
+          "loc": 77,
+          "producer_loc": 77,
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-5-normalized.lua",
+          "source_sha256": "00734d693c0968a606b8aef2cfeffa15da58e7f4ac81731c19fb7f1dde7a0c36",
+          "samples_seconds": [
+            0.549153083,
+            0.543415125,
+            0.543174792
+          ],
+          "median_seconds": 0.543415125,
+          "sample_stdev_seconds": 0.0033843237936436225,
+          "time_x_matched_mech_fast": 1.7719061707432153,
+          "loc_x_producer_mech_fast": 2.026315789473684,
+          "loc_x_producer_mech_compact": 2.2
+        },
+        "luajit-listed-6": {
+          "loc": 63,
+          "producer_loc": 63,
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-6-normalized.lua",
+          "source_sha256": "ce34fae5e45f842c8b414b18fa368e90809165fda0781b8a00da2bc29d50d930",
+          "samples_seconds": [
+            0.334136666,
+            0.329260708,
+            0.325246042
+          ],
+          "median_seconds": 0.329260708,
+          "sample_stdev_seconds": 0.004452259812325578,
+          "time_x_matched_mech_fast": 1.0736158296817373,
+          "loc_x_producer_mech_fast": 1.6578947368421053,
+          "loc_x_producer_mech_compact": 1.8
+        },
+        "luajit-listed-7": {
+          "loc": 57,
+          "producer_loc": 57,
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lua-pidigits-comparison/20261012/sources/pidigits-lua-7-normalized.lua",
+          "source_sha256": "cca5f009f82162b0bdd50d839add97ef21859b5d8ddd047b3db9f286973c9c2c",
+          "samples_seconds": [
+            0.678734333,
+            0.67763725,
+            0.678790708
+          ],
+          "median_seconds": 0.678734333,
+          "sample_stdev_seconds": 0.0006502864250054212,
+          "time_x_matched_mech_fast": 2.213139637837611,
+          "loc_x_producer_mech_fast": 1.5,
+          "loc_x_producer_mech_compact": 1.6285714285714286
+        },
+        "mech-fast-control": {
+          "loc": 38,
+          "producer_loc": 38,
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits-advance.mec",
+          "source_sha256": "7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e",
+          "samples_seconds": [
+            0.306683917,
+            0.307536334,
+            0.306547708
+          ],
+          "median_seconds": 0.306683917,
+          "sample_stdev_seconds": 0.0005358092013403931,
+          "time_x_matched_mech_fast": 1.0,
+          "loc_x_producer_mech_fast": 1.0,
+          "loc_x_producer_mech_compact": 1.0857142857142856
+        },
+        "mech-small-control": {
+          "loc": 35,
+          "producer_loc": 35,
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits.mec",
+          "source_sha256": "db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1",
+          "samples_seconds": [
+            0.398637958,
+            0.396829042,
+            0.397511458
+          ],
+          "median_seconds": 0.397511458,
+          "sample_stdev_seconds": 0.0009134979421717376,
+          "time_x_matched_mech_fast": 1.2961601048026266,
+          "loc_x_producer_mech_fast": 0.9210526315789473,
+          "loc_x_producer_mech_compact": 1.0
+        }
+      },
+      "matched_fast_control": "mech-fast-control",
+      "matched_fast_control_seconds": 0.306683917,
+      "matched_compact_control": "mech-small-control",
+      "matched_compact_control_seconds": 0.397511458
+    }
+  },
+  "selected": {
+    "luajit": [
+      "pidigits:luajit-gmp-listed-6",
+      "pidigits:luajit-gmp-listed-7"
+    ],
+    "lua": [
+      "pidigits:lua-interpreted-gmp-listed-6",
+      "pidigits:lua-interpreted-gmp-listed-7"
+    ]
+  },
+  "dataset_sha256": "65bfa4d833f61fff69b16eb3c917e4fcd1eb21d5788bbbeed7e09e9f2382d32f",
+  "unrelated_endpoints_preserved": 722,
+  "importer_sha256": "920c9683c648fcecf716612f9f44b1f0880c6dcfe5c98b989b8f9de5476a7b4c",
+  "helper_sha256": "54f78787784d737cfa339ca5e8ea2e24401c5ead49f4b1a153abd7311efd84e4",
+  "fixture_receipt": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/lua-pidigits-import-fixtures.json",
+  "fixture_receipt_sha256": "cc9d6b2caf19bcfdd180ce995aa5bfc56a7e3aa26e18913fd356c941ceab4ea2",
+  "fixture_cases": 21,
+  "fixture_rerun": false,
+  "post_fixture_change": "Only the independently approved exact LuaJIT manifest constant was configured; restoring it to None reproduces the passed importer pin exactly.",
+  "dry_import_audit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/lua-family-complete-20261012T145204315140Z/dry-import-audit.json",
+  "dry_import_audit_sha256": "1eb68038d034e05cafdbfb44c2b6505a5450cdf6913c59b68b984b22c8dc8656",
+  "loc_policy": "All stated LOC and LOC multipliers retain producer receipt counts; canonical whole-source overlay review still required before data admission.",
+  "source_or_report_mutations": false,
+  "data_or_chart_write": false,
+  "git_or_publication": false,
+  "review_script_sha256": "969daf92a17084cb143247f099f90571bc7356af1d3b77c89c52e9c3b2fb6a5a"
+}

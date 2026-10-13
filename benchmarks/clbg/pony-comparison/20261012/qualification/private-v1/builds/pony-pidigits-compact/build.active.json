@@ -1,0 +1,35 @@
+{
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/release/0.74.0-95ad180/bin/ponyc",
+    "--strip",
+    "--triple",
+    "aarch64-apple-macosx14.4.0",
+    "--sysroot",
+    "/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk",
+    "--lib-path",
+    "/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/lib",
+    "--lib-path",
+    "/opt/homebrew/Cellar/pcre2/10.49/lib",
+    "--lib-path",
+    "/opt/homebrew/Cellar/gmp/6.3.0/lib",
+    "--path",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/regex/regex-589eb008db250aab17d4c073a41c5562ac5b8dc7",
+    "--path",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/gmp4pony/gmp4pony-b14db4ba347f6a2b840f135e1602e19f85625c39",
+    "--output",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/bin/pony-pidigits-compact",
+    "--bin-name",
+    "pony-pidigits-compact",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v1/source-snapshot/sources/pidigits/compact"
+  ],
+  "started_at": "2026-10-12T16:09:19.439976+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 600,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 74554,
+  "identity": {
+    "pid": 74554,
+    "process_listing": "Mon Oct 12 12:09:19 2026     /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/release/0.74.0-95ad180/bin/ponyc --strip --triple aarch64-apple-macosx14.4.0 --sysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk --lib-path /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/lib --lib-path /opt/homebrew/Cellar/pcre2/10.49/lib --lib-path /opt/homebrew/Cellar/gmp/6.3.0/lib --path /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/regex/regex-589eb008db250aab17d4c073a41c5562ac5b8dc7 --path /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/gmp4pony/gmp4pony-b14db4ba347f6a2b840f135e1602e19f85625c39 --output /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/.build/private-v1/bin/pony-pidigits-compact --bin-name pony-pidigits-compact /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pony-comparison/20261012/qualification/private-v1/source-snapshot/sources/pidigits/compact"
+  }
+}

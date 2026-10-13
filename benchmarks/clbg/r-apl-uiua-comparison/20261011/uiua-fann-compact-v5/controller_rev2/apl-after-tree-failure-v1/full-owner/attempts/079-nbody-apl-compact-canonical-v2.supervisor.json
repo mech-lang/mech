@@ -1,0 +1,103 @@
+{
+  "key": "nbody:nbody-apl-compact-canonical-v2",
+  "id": "nbody-apl-compact-canonical-v2",
+  "benchmark": "nbody",
+  "language": "apl",
+  "source_sha256": "f457238f6be864126d9ea967de7ce283056f48e8afb2917ac7643b1781f1726d",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+    "--cc",
+    "1",
+    "-f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+    "--",
+    "50000000"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+  "runtime_environment": {
+    "LC_ALL": "C"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh\", \"--cc\", \"1\", \"-f\", \"{source}\", \"--\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011\", \"environment\": {\"LC_ALL\": \"C\"}, \"source_sha256\": \"f457238f6be864126d9ea967de7ce283056f48e8afb2917ac7643b1781f1726d\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl\": \"ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh\": \"50c937c62df5095151dd766dcbd8bc2058e24a93ccefb6b5b601944a48cdadf4\", \"/opt/homebrew/Cellar/pcre2/10.49/lib/libpcre2-32.0.dylib\": \"ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9\", \"/opt/homebrew/opt/pcre2/lib/libpcre2-32.0.dylib\": \"ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9\"}}",
+  "started_at": "2026-10-13T02:33:24.235404+00:00",
+  "workload_n": 50000000,
+  "full_workload": true,
+  "timeout_seconds": 14400,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 294.333204625,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 5184,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+  "stdout_bytes": 26,
+  "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+  "validation": {
+    "bytes": 26,
+    "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+    "reference_match": true,
+    "energies": [
+      -0.169075164,
+      -0.169059907
+    ],
+    "tolerance": 1e-08
+  },
+  "finished_at": "2026-10-13T02:38:18.798578+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true,
+  "round": 2,
+  "attempt": 79,
+  "sampler_wait_status": 0,
+  "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/apl-after-tree-failure-v1/full-owner/attempts/079-nbody-apl-compact-canonical-v2.json",
+  "supervised_native_group": {
+    "type": "native-group-started",
+    "pid": 36054,
+    "pgid": 36054,
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+      "--cc",
+      "1",
+      "-f",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+      "--",
+      "50000000"
+    ],
+    "inherited_common_mutex": true
+  },
+  "supervisor_remaining_members": [],
+  "qualification_checks": {
+    "sampler_exited_normally": true,
+    "authoritative_native_group_received": true,
+    "native_inherited_common_mutex": true,
+    "native_exited_normally": true,
+    "no_execution_error": true,
+    "no_wrapper_integrity_error": true,
+    "no_resource_violation": true,
+    "no_resource_monitor_errors": true,
+    "no_compiler_power_monitor_errors": true,
+    "no_monitor_finish_error": true,
+    "no_execute_cleanup_error": true,
+    "no_remaining_execute_group": true,
+    "no_supervisor_cleanup": true,
+    "no_supervisor_remaining_group": true,
+    "valid_environment": true,
+    "actual_full_workload": true,
+    "exact_command_and_group": true,
+    "complete_output_reference_match": true,
+    "complete_output_bytes_and_hash": true,
+    "pins_unchanged": true
+  },
+  "qualified": true,
+  "supervisor_result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fann-compact-v5/controller_rev2/apl-after-tree-failure-v1/full-owner/attempts/079-nbody-apl-compact-canonical-v2.supervisor.json"
+}

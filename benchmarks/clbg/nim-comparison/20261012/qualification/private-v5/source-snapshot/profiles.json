@@ -1,0 +1,230 @@
+{
+  "status": "unqualified-proposal",
+  "language": "nim",
+  "version": "2.2.12",
+  "profiles": [
+    {
+      "id": "nim-regexredux-compact",
+      "benchmark": "regexredux",
+      "variant": "compact",
+      "source": "sources/regexredux/compact.nim",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 1,
+      "application_helpers": [],
+      "general_library_support": [],
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-regexredux-optimized",
+      "benchmark": "regexredux",
+      "variant": "optimized",
+      "source": "sources/regexredux/optimized.nim",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 8,
+      "application_helpers": [],
+      "general_library_support": [],
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-revcomp-compact",
+      "benchmark": "revcomp",
+      "variant": "compact",
+      "source": "sources/revcomp/compact.nim",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 1,
+      "application_helpers": [],
+      "general_library_support": [],
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-revcomp-optimized",
+      "benchmark": "revcomp",
+      "variant": "optimized",
+      "source": "sources/revcomp/optimized.nim",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 1,
+      "application_helpers": [],
+      "general_library_support": [],
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-pidigits-compact",
+      "benchmark": "pidigits",
+      "variant": "compact",
+      "source": "sources/pidigits/compact.nim",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 1,
+      "application_helpers": [],
+      "general_library_support": [],
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-pidigits-optimized",
+      "benchmark": "pidigits",
+      "variant": "optimized",
+      "source": "sources/pidigits/optimized.nim",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 1,
+      "application_helpers": [],
+      "general_library_support": [
+        "support/gmp_ops.nim"
+      ],
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-spectralnorm-compact",
+      "benchmark": "spectralnorm",
+      "variant": "compact",
+      "source": "sources/spectralnorm/compact.nim",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 1,
+      "application_helpers": [],
+      "general_library_support": [],
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-spectralnorm-optimized",
+      "benchmark": "spectralnorm",
+      "variant": "optimized",
+      "source": "sources/spectralnorm/optimized.nim",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 8,
+      "application_helpers": [],
+      "general_library_support": [],
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-mandelbrot-compact",
+      "benchmark": "mandelbrot",
+      "variant": "compact",
+      "source": "sources/mandelbrot/compact.nim",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 1,
+      "application_helpers": [],
+      "general_library_support": [],
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-mandelbrot-optimized",
+      "benchmark": "mandelbrot",
+      "variant": "optimized",
+      "source": "sources/mandelbrot/optimized.nim",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 8,
+      "application_helpers": [],
+      "general_library_support": [],
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-fasta-compact",
+      "benchmark": "fasta",
+      "variant": "compact",
+      "source": "sources/fasta/compact.nim",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 1,
+      "application_helpers": [],
+      "general_library_support": [],
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-fasta-optimized",
+      "benchmark": "fasta",
+      "variant": "optimized",
+      "source": "sources/fasta/optimized.nim",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 1,
+      "application_helpers": [],
+      "general_library_support": [],
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-knucleotide-compact",
+      "benchmark": "knucleotide",
+      "variant": "compact",
+      "source": "sources/knucleotide/compact.nim",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 1,
+      "application_helpers": [],
+      "general_library_support": [],
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-knucleotide-optimized",
+      "benchmark": "knucleotide",
+      "variant": "optimized",
+      "source": "sources/knucleotide/optimized.nim",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 7,
+      "application_helpers": [],
+      "general_library_support": [],
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-binarytrees-compact",
+      "benchmark": "binarytrees",
+      "variant": "compact",
+      "source": "sources/binarytrees/compact.nim",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 1,
+      "application_helpers": [],
+      "general_library_support": [],
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-binarytrees-optimized",
+      "benchmark": "binarytrees",
+      "variant": "optimized",
+      "source": "sources/binarytrees/optimized.nim",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 8,
+      "application_helpers": [],
+      "general_library_support": [],
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-nbody-compact",
+      "benchmark": "nbody",
+      "variant": "compact",
+      "source": "sources/nbody/compact.nim",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 1,
+      "application_helpers": [],
+      "general_library_support": [],
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-nbody-optimized",
+      "benchmark": "nbody",
+      "variant": "optimized",
+      "source": "sources/nbody/optimized.nim",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 1,
+      "application_helpers": [],
+      "general_library_support": [],
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-fannkuchredux-compact",
+      "benchmark": "fannkuchredux",
+      "variant": "compact",
+      "source": "sources/fannkuchredux/compact.nim",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 1,
+      "application_helpers": [],
+      "general_library_support": [],
+      "eligible_for_chart": false
+    },
+    {
+      "id": "nim-fannkuchredux-optimized",
+      "benchmark": "fannkuchredux",
+      "variant": "optimized",
+      "source": "sources/fannkuchredux/optimized.nim",
+      "status": "authored-unbuilt-unqualified",
+      "maximum_compute_workers": 8,
+      "application_helpers": [],
+      "general_library_support": [],
+      "eligible_for_chart": false
+    }
+  ],
+  "full_timings_authorized": false
+}

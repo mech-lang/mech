@@ -1,0 +1,21 @@
+{
+  "command": [
+    "/opt/homebrew/Cellar/llvm@22/22.1.8/bin/llvm-dis",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/explicit-f64-v5/.build/reduction/target/release/deps/mech_gpu-62cc587413a09552.mech_gpu.6b6111b49fc5a2a-cgu.01.rcgu.bc",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/explicit-f64-v5/.build/reduction/target/release/deps/mech_gpu-62cc587413a09552.mech_gpu.6b6111b49fc5a2a-cgu.01.rcgu.ll"
+  ],
+  "started_at": "2026-10-12T23:21:40.021568+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 120,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 80511,
+  "identity": {
+    "pid": 80511,
+    "process_listing": "Mon Oct 12 19:21:40 2026     /opt/homebrew/Cellar/llvm@22/22.1.8/bin/llvm-dis /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/explicit-f64-v5/.build/reduction/target/release/deps/mech_gpu-62cc587413a09552.mech_gpu.6b6111b49fc5a2a-cgu.01.rcgu.bc -o /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-algebraic/20261012/revisions/explicit-f64-v5/.build/reduction/target/release/deps/mech_gpu-62cc587413a09552.mech_gpu.6b6111b49fc5a2a-cgu.01.rcgu.ll"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-12T23:21:40.105018+00:00",
+  "final_exit_status": 0
+}

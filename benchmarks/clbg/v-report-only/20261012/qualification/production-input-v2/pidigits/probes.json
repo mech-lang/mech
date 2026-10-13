@@ -1,0 +1,14 @@
+{
+  "status": "stopped",
+  "created_at": "2026-10-12T17:59:23.548813+00:00",
+  "report_only": true,
+  "never_chart_eligible": true,
+  "benchmark": "pidigits",
+  "revision": "production-input-v2",
+  "attempts": [],
+  "active": null,
+  "profiles": [],
+  "error": "('V build failed; diagnostics retained', PosixPath('/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/v-report-only/20261012/qualification/production-input-v2/pidigits/v-pidigits-optimized-input-v2'))",
+  "error_type": "AssertionError",
+  "finished_at": "2026-10-12T17:59:25.288948+00:00"
+}

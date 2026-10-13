@@ -1,0 +1,13 @@
+# Guarded additive preparation
+
+All downloads/verification, hashing, fixtures, native compiler/process validation, disassembly, source normalization/audits and timings acquire /tmp/mech-clbg-timing.lock. Source authoring/static reading may happen while an existing timing owns that mutex. Every native child inherits its held FD and has an authoritative new process group, capped resources, complete retained raw outputs and proven cleanup. Never wait for another mutex-seeking process while holding the mutex.
+
+`revisions/private-v1/guarded_prepare.py --seal --proposal-file proposals/private-v1.json` is the proposed first command, after parent static review. It runs mocked ownership/restoration fixtures under the common mutex, verifies the frozen twenty-gate sampler, pins all application/helper/preparation sources, compiler release metadata, current SDK/LLVM/GMP/PCRE2 and required full-output oracle services. It preserves an additive immutable proposal and prints its exact digest. Parent reviews that concrete digest before native bootstrap.
+
+`... --run --proposal-file proposals/private-v1.json --proposal-sha256 <reviewed digest> --revision private-v1` privately downloads the exact official archive and verifies its publisher digest; records compiler version, host architecture, linked images and complete bundled stdlib pins; builds only explicit source bundles; retains all IR/objects/ASM and final measured ARM64 image receipts; performs the complete bounded output inventory through the frozen native sampler. No full timing is authorized by this proposal.
+
+The source-work phase must pass actual tree graph/retention and final original allocation lowering, seven actual heap map tables/growth/window counts, both real Pi extraction divisions and generic GMP/PCRE2 ABI proof. It uses separate instrumented copies whose times are never scored. Source and primitive failures preserve the failed revision. Routine source corrections live in new preserved revisions, never overwrite frozen source identities/evidence.
+
+After parent review of qualified source/work receipts, seal ten full-study manifests, each with compact/optimized C3 and a fresh unchanged Mech control from source-audit-r except current Mandelbrot row16-aot-control source-modes-study. Each has exact frozen runtime/source/binary/helper/work/oracle pins, three rotated rounds, canonical workload, nullable canonical LOC, and frozen twenty-gate guard. Parent approves exact full index digest, then the existing Nim-compatible per-benchmark controller launches independent studies. Root's native reconciliation adapter refuses failed/partial profiles. Publication remains separate.
+
+This candidate does not claim any fixture, compile, hash, disassembly, count or timing has passed.

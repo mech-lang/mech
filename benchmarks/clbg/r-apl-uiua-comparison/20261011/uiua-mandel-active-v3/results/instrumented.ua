@@ -16,7 +16,7 @@ Iterate ← (
   Prune Advance
   &p ⊂ "OUT=" json .
 )
-Bits ← ⍜⊏⋅1 ⊃M.Index(⋅↯N 0)
+Bits ← ⍜⊏(⋅1) ⊃M.Index(⋅(↯N 0))
 Pack ← ≡/+ ×⊙(¤⇌˜ⁿ2⇡8) ⬚0↯(⌈÷8 N)_8
 Row ← &p ⊂ "ROW=" json Pack Bits ⍢(Iterate|×⊃(<50M.Iter)(>0⧻M.Index)) M (↯N 0) (↯N 0) (⇡N) Cr ⊙0
 &p "P4"

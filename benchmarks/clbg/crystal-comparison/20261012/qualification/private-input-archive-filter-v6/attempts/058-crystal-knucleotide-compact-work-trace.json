@@ -1,0 +1,55 @@
+{
+  "key": "knucleotide:crystal-knucleotide-compact-work-trace",
+  "id": "crystal-knucleotide-compact-work-trace",
+  "benchmark": "knucleotide",
+  "language": "crystal",
+  "source_sha256": "67f6976626c790691727f27ecb866c6edca08615840629cde179f05e7cb17db8",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-input-archive-filter-v6/work-proofs/crystal-knucleotide-compact/work-trace",
+    "1000"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012",
+  "runtime_environment": {
+    "CRYSTAL_WORKERS": "8",
+    "DYLD_LIBRARY_PATH": "/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib",
+    "LC_ALL": "C",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1",
+    "MECH_CRYSTAL_WORK_TRACE": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-input-archive-filter-v6/work-proofs/crystal-knucleotide-compact-work-trace/arbitrary-widths/actual.trace"
+  },
+  "execution_fingerprint": "{\"binary_sha256\": \"5a1d038320a71544940ba0e58a47e13a6d8baca225101323d54ea5818c87feac\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-input-archive-filter-v6/work-proofs/crystal-knucleotide-compact/work-trace\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012\", \"environment\": {\"CRYSTAL_WORKERS\": \"8\", \"DYLD_LIBRARY_PATH\": \"/opt/homebrew/Cellar/gmp/6.3.0/lib:/opt/homebrew/Cellar/pcre2/10.49/lib:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/.build/private-layout-v2/release/crystal-1.21.1-1/embedded/lib\", \"LC_ALL\": \"C\", \"MECH_CRYSTAL_WORK_TRACE\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/crystal-comparison/20261012/qualification/private-input-archive-filter-v6/work-proofs/crystal-knucleotide-compact-work-trace/arbitrary-widths/actual.trace\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"67f6976626c790691727f27ecb866c6edca08615840629cde179f05e7cb17db8\", \"support\": {}}",
+  "started_at": "2026-10-12T22:42:39.151362+00:00",
+  "workload_n": 1000,
+  "full_workload": false,
+  "timeout_seconds": 300,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.015159583,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 243,
+  "stdout_sha256": "78e220a584e4ea619d9ca9b6feff7354cd4950c018b840ffd5f74287117dd930",
+  "validation": {
+    "reference_match": true,
+    "bytes": 243,
+    "sha256": "78e220a584e4ea619d9ca9b6feff7354cd4950c018b840ffd5f74287117dd930"
+  },
+  "finished_at": "2026-10-12T22:42:39.337163+00:00",
+  "valid_environment": true,
+  "pins_unchanged_at_end": true
+}

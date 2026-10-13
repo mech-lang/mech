@@ -1,0 +1,52 @@
+{
+  "key": "mandelbrot:canonical-source-modes:scalar11-aot-control",
+  "id": "scalar11-aot-control",
+  "benchmark": "mandelbrot",
+  "language": "mech",
+  "source_sha256": "4e4b881e9c2368ba9ddfcbd2b8df49f78e6fd759833b26e7a10374b432de7b3a",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/scalar11",
+    "65",
+    "8"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "runtime_environment": {},
+  "execution_fingerprint": "{\"binary_sha256\": \"c74553ef6f51e3969edf257ef0083c8103f16bc4a3ef6a70e4a41ca8158aad0a\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/scalar11\", \"{n}\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"4e4b881e9c2368ba9ddfcbd2b8df49f78e6fd759833b26e7a10374b432de7b3a\", \"support\": {}}",
+  "started_at": "2026-10-12T03:25:55.769221+00:00",
+  "workload_n": 65,
+  "full_workload": true,
+  "timeout_seconds": 90,
+  "maximum_rss_mib": 10240,
+  "power_at_start": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "seconds": 0.200404,
+  "exit_status": 0,
+  "remaining_group_members": [],
+  "competing_compilers": [],
+  "power_changes": [],
+  "power_at_end": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "monitor_errors": [],
+  "peak_process_group_rss_kib": 0,
+  "resource_violation": null,
+  "resource_monitor_errors": [],
+  "stderr": "",
+  "stdout_bytes": 594,
+  "stdout_sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c",
+  "validation": {
+    "bytes": 594,
+    "sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c",
+    "reference_match": true
+  },
+  "finished_at": "2026-10-12T03:25:56.184190+00:00",
+  "valid_environment": true,
+  "canonical_full_workload": false,
+  "never_chart_eligible": true,
+  "wall_seconds": 0.200404,
+  "valid_source_timing": true,
+  "pins_unchanged_at_end": true
+}

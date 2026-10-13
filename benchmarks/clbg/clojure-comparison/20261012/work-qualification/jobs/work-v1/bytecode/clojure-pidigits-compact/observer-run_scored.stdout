@@ -1,0 +1,300 @@
+Compiled from "compact.clj"
+public final class clbg.pidigitsobserver.compact$run_scored extends clojure.lang.RestFn {
+  public static final java.lang.Object const__1;
+
+  public static final java.lang.Object const__6;
+
+  public static final java.lang.Object const__7;
+
+  public static final java.lang.Object const__13;
+
+  public static final java.lang.Object const__17;
+
+  public clbg.pidigitsobserver.compact$run_scored();
+    Code:
+         0: aload_0
+         1: invokespecial #9                  // Method clojure/lang/RestFn."<init>":()V
+         4: return
+
+  public static java.lang.Object invokeStatic(clojure.lang.ISeq);
+    Code:
+         0: aload_0
+         1: aconst_null
+         2: astore_0
+         3: getstatic     #15                 // Field const__1:Ljava/lang/Object;
+         6: invokestatic  #20                 // Method clbg/work/support$argument.invokeStatic:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+         9: astore_1
+        10: getstatic     #26                 // Field java/math/BigInteger.ONE:Ljava/math/BigInteger;
+        13: astore_2
+        14: getstatic     #29                 // Field java/math/BigInteger.ZERO:Ljava/math/BigInteger;
+        17: astore_3
+        18: getstatic     #26                 // Field java/math/BigInteger.ONE:Ljava/math/BigInteger;
+        21: astore        4
+        23: lconst_1
+        24: lstore        5
+        26: lconst_0
+        27: lstore        7
+        29: ldc           #31                 // String
+        31: astore        9
+        33: lload         7
+        35: aload_1
+        36: invokestatic  #37                 // Method clojure/lang/Numbers.lt:(JLjava/lang/Object;)Z
+        39: ifeq          523
+        42: aload_2
+        43: checkcast     #22                 // class java/math/BigInteger
+        46: getstatic     #40                 // Field const__6:Ljava/lang/Object;
+        49: invokestatic  #45                 // Method clbg/pidigitsobserver/compact$integer.invokeStatic:(Ljava/lang/Object;)Ljava/lang/Object;
+        52: checkcast     #22                 // class java/math/BigInteger
+        55: invokevirtual #49                 // Method java/math/BigInteger.multiply:(Ljava/math/BigInteger;)Ljava/math/BigInteger;
+        58: checkcast     #22                 // class java/math/BigInteger
+        61: aload_3
+        62: checkcast     #22                 // class java/math/BigInteger
+        65: invokevirtual #52                 // Method java/math/BigInteger.add:(Ljava/math/BigInteger;)Ljava/math/BigInteger;
+        68: astore        10
+        70: aload_2
+        71: checkcast     #22                 // class java/math/BigInteger
+        74: getstatic     #55                 // Field const__7:Ljava/lang/Object;
+        77: invokestatic  #45                 // Method clbg/pidigitsobserver/compact$integer.invokeStatic:(Ljava/lang/Object;)Ljava/lang/Object;
+        80: checkcast     #22                 // class java/math/BigInteger
+        83: invokevirtual #49                 // Method java/math/BigInteger.multiply:(Ljava/math/BigInteger;)Ljava/math/BigInteger;
+        86: checkcast     #22                 // class java/math/BigInteger
+        89: aload_3
+        90: checkcast     #22                 // class java/math/BigInteger
+        93: invokevirtual #52                 // Method java/math/BigInteger.add:(Ljava/math/BigInteger;)Ljava/math/BigInteger;
+        96: astore        11
+        98: aload         10
+       100: checkcast     #22                 // class java/math/BigInteger
+       103: aload         4
+       105: checkcast     #22                 // class java/math/BigInteger
+       108: invokevirtual #58                 // Method java/math/BigInteger.divide:(Ljava/math/BigInteger;)Ljava/math/BigInteger;
+       111: astore        12
+       113: aload         11
+       115: checkcast     #22                 // class java/math/BigInteger
+       118: aload         4
+       120: checkcast     #22                 // class java/math/BigInteger
+       123: invokevirtual #58                 // Method java/math/BigInteger.divide:(Ljava/math/BigInteger;)Ljava/math/BigInteger;
+       126: astore        13
+       128: aload_2
+       129: aload_3
+       130: aload         4
+       132: lload         5
+       134: invokestatic  #62                 // Method clojure/lang/Numbers.num:(J)Ljava/lang/Number;
+       137: lload         7
+       139: invokestatic  #62                 // Method clojure/lang/Numbers.num:(J)Ljava/lang/Number;
+       142: aload         10
+       144: aconst_null
+       145: astore        10
+       147: aload         11
+       149: aconst_null
+       150: astore        11
+       152: aload         12
+       154: aload         13
+       156: invokestatic  #67                 // Method clbg/work/observer$pi_step.invokeStatic:(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+       159: pop
+       160: aload         12
+       162: checkcast     #22                 // class java/math/BigInteger
+       165: aload         13
+       167: aconst_null
+       168: astore        13
+       170: invokevirtual #71                 // Method java/math/BigInteger.equals:(Ljava/lang/Object;)Z
+       173: ifeq          397
+       176: lload         7
+       178: invokestatic  #75                 // Method clojure/lang/Numbers.inc:(J)J
+       181: lstore        14
+       183: aload         9
+       185: aconst_null
+       186: astore        9
+       188: iconst_1
+       189: anewarray     #77                 // class java/lang/Object
+       192: dup
+       193: iconst_0
+       194: aload         12
+       196: checkcast     #22                 // class java/math/BigInteger
+       199: invokevirtual #81                 // Method java/math/BigInteger.intValue:()I
+       202: invokestatic  #87                 // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;
+       205: aastore
+       206: invokestatic  #93                 // Method clojure/lang/ArraySeq.create:([Ljava/lang/Object;)Lclojure/lang/ArraySeq;
+       209: invokestatic  #98                 // Method clojure/core$str.invokeStatic:(Ljava/lang/Object;Lclojure/lang/ISeq;)Ljava/lang/Object;
+       212: astore        16
+       214: lload         14
+       216: invokestatic  #62                 // Method clojure/lang/Numbers.num:(J)Ljava/lang/Number;
+       219: getstatic     #101                // Field const__13:Ljava/lang/Object;
+       222: invokestatic  #104                // Method clojure/core$mod.invokeStatic:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+       225: invokestatic  #107                // Method clojure/lang/Numbers.isZero:(Ljava/lang/Object;)Z
+       228: istore        17
+       230: iload         17
+       232: ifeq          241
+       235: iload         17
+       237: goto          247
+       240: athrow
+       241: lload         14
+       243: aload_1
+       244: invokestatic  #112                // Method clojure/lang/Util.equiv:(JLjava/lang/Object;)Z
+       247: ifeq          280
+       250: ldc           #116                // String %-10s\t:%d\n
+       252: iconst_2
+       253: anewarray     #77                 // class java/lang/Object
+       256: dup
+       257: iconst_0
+       258: aload         16
+       260: aastore
+       261: dup
+       262: iconst_1
+       263: lload         14
+       265: invokestatic  #62                 // Method clojure/lang/Numbers.num:(J)Ljava/lang/Number;
+       268: aastore
+       269: invokestatic  #93                 // Method clojure/lang/ArraySeq.create:([Ljava/lang/Object;)Lclojure/lang/ArraySeq;
+       272: invokestatic  #119                // Method clbg/work/support$printf.invokeStatic:(Ljava/lang/Object;Lclojure/lang/ISeq;)Ljava/lang/Object;
+       275: pop
+       276: goto          282
+       279: athrow
+       280: aconst_null
+       281: pop
+       282: aload_2
+       283: aconst_null
+       284: astore_2
+       285: checkcast     #22                 // class java/math/BigInteger
+       288: getstatic     #101                // Field const__13:Ljava/lang/Object;
+       291: invokestatic  #45                 // Method clbg/pidigitsobserver/compact$integer.invokeStatic:(Ljava/lang/Object;)Ljava/lang/Object;
+       294: checkcast     #22                 // class java/math/BigInteger
+       297: invokevirtual #49                 // Method java/math/BigInteger.multiply:(Ljava/math/BigInteger;)Ljava/math/BigInteger;
+       300: aload_3
+       301: aconst_null
+       302: astore_3
+       303: checkcast     #22                 // class java/math/BigInteger
+       306: aload         4
+       308: checkcast     #22                 // class java/math/BigInteger
+       311: aload         12
+       313: aconst_null
+       314: astore        12
+       316: checkcast     #22                 // class java/math/BigInteger
+       319: invokevirtual #49                 // Method java/math/BigInteger.multiply:(Ljava/math/BigInteger;)Ljava/math/BigInteger;
+       322: checkcast     #22                 // class java/math/BigInteger
+       325: invokevirtual #122                // Method java/math/BigInteger.subtract:(Ljava/math/BigInteger;)Ljava/math/BigInteger;
+       328: checkcast     #22                 // class java/math/BigInteger
+       331: getstatic     #101                // Field const__13:Ljava/lang/Object;
+       334: invokestatic  #45                 // Method clbg/pidigitsobserver/compact$integer.invokeStatic:(Ljava/lang/Object;)Ljava/lang/Object;
+       337: checkcast     #22                 // class java/math/BigInteger
+       340: invokevirtual #49                 // Method java/math/BigInteger.multiply:(Ljava/math/BigInteger;)Ljava/math/BigInteger;
+       343: aload         4
+       345: aconst_null
+       346: astore        4
+       348: lload         5
+       350: lload         14
+       352: lload         14
+       354: invokestatic  #62                 // Method clojure/lang/Numbers.num:(J)Ljava/lang/Number;
+       357: getstatic     #101                // Field const__13:Ljava/lang/Object;
+       360: invokestatic  #104                // Method clojure/core$mod.invokeStatic:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+       363: invokestatic  #107                // Method clojure/lang/Numbers.isZero:(Ljava/lang/Object;)Z
+       366: ifeq          375
+       369: ldc           #31                 // String
+       371: goto          380
+       374: athrow
+       375: aload         16
+       377: aconst_null
+       378: astore        16
+       380: astore        9
+       382: lstore        7
+       384: lstore        5
+       386: astore        4
+       388: astore_3
+       389: astore_2
+       390: goto          33
+       393: nop
+       394: nop
+       395: athrow
+       396: athrow
+       397: ldc2_w        #126                // long 2l
+       400: lload         5
+       402: invokestatic  #130                // Method clojure/lang/Numbers.multiply:(JJ)J
+       405: invokestatic  #75                 // Method clojure/lang/Numbers.inc:(J)J
+       408: invokestatic  #62                 // Method clojure/lang/Numbers.num:(J)Ljava/lang/Number;
+       411: invokestatic  #45                 // Method clbg/pidigitsobserver/compact$integer.invokeStatic:(Ljava/lang/Object;)Ljava/lang/Object;
+       414: astore        18
+       416: aload_2
+       417: checkcast     #22                 // class java/math/BigInteger
+       420: lload         5
+       422: invokestatic  #62                 // Method clojure/lang/Numbers.num:(J)Ljava/lang/Number;
+       425: invokestatic  #45                 // Method clbg/pidigitsobserver/compact$integer.invokeStatic:(Ljava/lang/Object;)Ljava/lang/Object;
+       428: checkcast     #22                 // class java/math/BigInteger
+       431: invokevirtual #49                 // Method java/math/BigInteger.multiply:(Ljava/math/BigInteger;)Ljava/math/BigInteger;
+       434: aload_3
+       435: aconst_null
+       436: astore_3
+       437: checkcast     #22                 // class java/math/BigInteger
+       440: aload_2
+       441: aconst_null
+       442: astore_2
+       443: checkcast     #22                 // class java/math/BigInteger
+       446: getstatic     #133                // Field const__17:Ljava/lang/Object;
+       449: invokestatic  #45                 // Method clbg/pidigitsobserver/compact$integer.invokeStatic:(Ljava/lang/Object;)Ljava/lang/Object;
+       452: checkcast     #22                 // class java/math/BigInteger
+       455: invokevirtual #49                 // Method java/math/BigInteger.multiply:(Ljava/math/BigInteger;)Ljava/math/BigInteger;
+       458: checkcast     #22                 // class java/math/BigInteger
+       461: invokevirtual #52                 // Method java/math/BigInteger.add:(Ljava/math/BigInteger;)Ljava/math/BigInteger;
+       464: checkcast     #22                 // class java/math/BigInteger
+       467: aload         18
+       469: checkcast     #22                 // class java/math/BigInteger
+       472: invokevirtual #49                 // Method java/math/BigInteger.multiply:(Ljava/math/BigInteger;)Ljava/math/BigInteger;
+       475: aload         4
+       477: aconst_null
+       478: astore        4
+       480: checkcast     #22                 // class java/math/BigInteger
+       483: aload         18
+       485: aconst_null
+       486: astore        18
+       488: checkcast     #22                 // class java/math/BigInteger
+       491: invokevirtual #49                 // Method java/math/BigInteger.multiply:(Ljava/math/BigInteger;)Ljava/math/BigInteger;
+       494: lload         5
+       496: invokestatic  #75                 // Method clojure/lang/Numbers.inc:(J)J
+       499: lload         7
+       501: aload         9
+       503: aconst_null
+       504: astore        9
+       506: astore        9
+       508: lstore        7
+       510: lstore        5
+       512: astore        4
+       514: astore_3
+       515: astore_2
+       516: goto          33
+       519: nop
+       520: nop
+       521: athrow
+       522: athrow
+       523: aconst_null
+       524: areturn
+
+  public java.lang.Object doInvoke(java.lang.Object);
+    Code:
+         0: aload_1
+         1: checkcast     #152                // class clojure/lang/ISeq
+         4: aconst_null
+         5: astore_1
+         6: invokestatic  #154                // Method invokeStatic:(Lclojure/lang/ISeq;)Ljava/lang/Object;
+         9: areturn
+
+  public int getRequiredArity();
+    Code:
+         0: iconst_0
+         1: ireturn
+
+  public static {};
+    Code:
+         0: ldc2_w        #157                // long 27l
+         3: invokestatic  #163                // Method java/lang/Long.valueOf:(J)Ljava/lang/Long;
+         6: putstatic     #15                 // Field const__1:Ljava/lang/Object;
+         9: ldc2_w        #164                // long 3l
+        12: invokestatic  #163                // Method java/lang/Long.valueOf:(J)Ljava/lang/Long;
+        15: putstatic     #40                 // Field const__6:Ljava/lang/Object;
+        18: ldc2_w        #166                // long 4l
+        21: invokestatic  #163                // Method java/lang/Long.valueOf:(J)Ljava/lang/Long;
+        24: putstatic     #55                 // Field const__7:Ljava/lang/Object;
+        27: ldc2_w        #168                // long 10l
+        30: invokestatic  #163                // Method java/lang/Long.valueOf:(J)Ljava/lang/Long;
+        33: putstatic     #101                // Field const__13:Ljava/lang/Object;
+        36: ldc2_w        #126                // long 2l
+        39: invokestatic  #163                // Method java/lang/Long.valueOf:(J)Ljava/lang/Long;
+        42: putstatic     #133                // Field const__17:Ljava/lang/Object;
+        45: return
+}

@@ -1,0 +1,24 @@
+{
+  "reason": "Actual LLDB SBTarget.Launch stalled before returning; close only its observed exact native/debugserver children. Unscored calibration, no benchmark sample interrupted.",
+  "recorded_at": "2026-10-13T02:46:07.093758+00:00",
+  "known_owned_lldb_pid": 37324,
+  "known_owned_controller_pid": 37018,
+  "observations": [
+    {
+      "pid": 37328,
+      "actual_ps": "37328 37324 Mon Oct 12 22:43:31 2026     /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/canary-library-v1/canary 41 --julia-args --compile=no --threads=8,0 --startup-file=no --history-file=no -O3\n",
+      "exit_code": 0,
+      "signal": "SIGKILL to exact own launched child",
+      "post_signal_ps": "",
+      "post_signal_exit_code": 1
+    },
+    {
+      "pid": 37329,
+      "actual_ps": "37329 37324 Mon Oct 12 22:43:31 2026     /Library/Developer/CommandLineTools/Library/PrivateFrameworks/LLDB.framework/Resources/debugserver --fd=10 --native-regs --setsid\n",
+      "exit_code": 0,
+      "signal": "SIGKILL to exact own launched child",
+      "post_signal_ps": "",
+      "post_signal_exit_code": 1
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "status": "failed-preflight-or-replay",
+  "error": "[Errno 2] No such file or directory: '/private/tmp/mech-clbg-compact-libs/pygments/__init__.py'",
+  "error_type": "FileNotFoundError",
+  "error_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/loc-normalization/20261012/c3-source-replay-v1/jobs/c3-v4-source-replay-v1/terminal-error.log",
+  "exclusive_mutex_held": true,
+  "actual_native_subjects": 0,
+  "actual_signals_sent": 0,
+  "canonical_LOC_admitted": false,
+  "chart_admission": false
+}
