@@ -740,11 +740,15 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn('test "$DISTRIBUTION_RESULT" = success', aggregate)
 
     def test_helper_cargo_jobs_inherit_the_installed_toolchain(self):
-        for job in ("static-distribution", "changed-owner-tests"):
+        for workflow, job in (
+            (CI, "static-distribution"),
+            (CI, "changed-owner-tests"),
+            (FULL, "wasm-bytecode-v1"),
+        ):
             with self.subTest(job=job):
-                block = job_block(CI, job)
+                block = job_block(workflow, job)
                 # Installing a toolchain does not select it for plain Cargo
-                # commands spawned by Python helpers. A step-local setting
+                # commands spawned by Python helpers or wasm-pack. A step-local setting
                 # also would not survive into the later helper step.
                 header = block.split("    steps:\n", 1)[0]
                 environment = header.split("    env:\n", 1)[1]
