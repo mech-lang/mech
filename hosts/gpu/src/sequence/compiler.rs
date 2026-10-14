@@ -8,6 +8,14 @@ use cranelift_object::{ObjectBuilder, ObjectModule};
 pub use mech_engine::native_sequence::Constant;
 use mech_engine::native_sequence::{Program as Graph, SequenceKind};
 use std::collections::BTreeMap;
+
+fn validate_batch(batch: usize) -> Result<(), String> {
+    if !(1..=8192).contains(&batch) {
+        return Err("batch must be 1..8192".into());
+    }
+    Ok(())
+}
+
 #[derive(Clone)]
 pub struct Program {
     graph: Graph,
@@ -79,9 +87,7 @@ impl Program {
         if simd && !pack8 {
             return Err("SIMD packing requires pack8".into());
         }
-        if !(1..=8192).contains(&batch) {
-            return Err("batch must be 1..8192".into());
-        }
+        validate_batch(batch)?;
         let mut flags = settings::builder();
         flags.set("is_pic", "true").map_err(|e| e.to_string())?;
         flags.set("opt_level", "speed").map_err(|e| e.to_string())?;
@@ -658,6 +664,9 @@ pub struct JitProgram {
 }
 impl JitProgram {
     pub fn compile(program: &Program, batch: usize, array_simd: bool) -> Result<Self, String> {
+        // Histogram kernels use this length for native stack storage. Validate
+        // the public JIT entry just as the object emission entry does.
+        validate_batch(batch)?;
         let mut builder = cranelift_jit::JITBuilder::with_flags(
             &[("opt_level", "speed"), ("is_pic", "true")],
             default_libcall_names(),

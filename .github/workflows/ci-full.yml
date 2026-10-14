@@ -396,11 +396,23 @@ jobs:
             --test native_fused_regressions --test native_map_regressions \
             --test native_sequence_admission --test native_feature_admission \
             --test batched_array_cpu -- --test-threads=1
+          for filter in batched::aot::tests batched::jit::tests sequence::runtime::matrix_tests native_build::tests
+          do
+            cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+              --no-default-features --features native-build --lib "$filter" -- --test-threads=1
+          done
           cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
             --no-default-features --features full_compiler,resident-artifact,native-sequence \
             --lib native_sequence -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features full_compiler,resident-artifact,native-sequence \
+            --test native_sequence_effects -- --test-threads=1
           cargo +nightly-2026-03-03 check --locked --offline -p mech \
             --features cranelift_build
+          cargo +nightly-2026-03-03 test --locked --offline -p mech \
+            --features cranelift_build --lib \
+            cli::commands::build::tests::cranelift_kept_project_collision_precedes_emission_and_output_writes \
+            -- --exact --test-threads=1
 
   managed-memory-fixed-profiles:
     if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'numeric') }}
@@ -1256,6 +1268,18 @@ jobs:
             MECH_NATIVE_GENERATED_CASE="$case" \
               cargo +nightly-2026-03-03 test --locked --offline -p mech-build --features full-hosts --test native_generated_end_to_end -- --nocapture
           done
+
+      - name: Check native cache and input ownership on macOS
+        timeout-minutes: 20
+        env:
+          CARGO_INCREMENTAL: 0
+          CARGO_PROFILE_TEST_DEBUG: "0"
+          CARGO_BUILD_JOBS: "1"
+        run: |
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+            --no-default-features --features aot --lib batched::aot::tests -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+            --no-default-features --features aot --lib batched::jit::tests -- --test-threads=1
 
   wasm-bytecode-v1:
     if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'browser') }}

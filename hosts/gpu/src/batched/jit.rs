@@ -75,19 +75,14 @@ impl FixedShapeKernel {
 }
 
 impl BatchedJitCpuSession {
+    /// Validates every update before replacing any backing buffer.
     pub fn update_inputs(
         &mut self,
         updates: &BTreeMap<String, Vec<f32>>,
     ) -> Result<(), BatchedExecutionError> {
-        for (name, values) in updates {
-            let input = self
-                .program
-                .inputs
-                .iter()
-                .find(|input| input.name == *name)
-                .ok_or_else(|| BatchedExecutionError::MissingInput(name.clone()))?;
-            self.inputs
-                .insert(input.slot, self.program.expand_input(input, values)?);
+        let staged = stage_input_updates(&self.program, updates)?;
+        for (slot, values) in staged {
+            self.inputs.insert(slot, values);
         }
         self.input_pointers = self
             .program
@@ -157,6 +152,25 @@ impl BatchedJitCpuSession {
                 .push(self.next_state.get_mut(&state.slot).unwrap().as_mut_ptr());
         }
     }
+}
+
+/// Both native sessions retain raw pointers into these buffers. A failed
+/// update must leave the buffers and pointer table together at the old state.
+pub(super) fn stage_input_updates(
+    program: &FixedShapeKernel,
+    updates: &BTreeMap<String, Vec<f32>>,
+) -> Result<Vec<(CellSlotId, Vec<f32>)>, BatchedExecutionError> {
+    updates
+        .iter()
+        .map(|(name, values)| {
+            let input = program
+                .inputs
+                .iter()
+                .find(|input| input.name == *name)
+                .ok_or_else(|| BatchedExecutionError::MissingInput(name.clone()))?;
+            Ok((input.slot, program.expand_input(input, values)?))
+        })
+        .collect()
 }
 
 impl NativeKernel {
@@ -759,4 +773,114 @@ extern "C" fn mech_jit_atan2f(y: f32, x: f32) -> f32 {
 
 extern "C" fn mech_jit_fmodf(left: f32, right: f32) -> f32 {
     left % right
+}
+
+#[cfg(test)]
+pub(super) mod tests {
+    use super::*;
+    use mech_runtime::{RuntimeBuilder, RuntimeHostInputValue};
+    use std::collections::BTreeSet;
+
+    pub(crate) fn input_update_program() -> FixedShapeKernel {
+        let source = r#"
+native input updates @compute
+-------------------------------------------------------------------------------
+input := source-input
+scale := source-scale
+~result := 0f32
+result = result + input * scale
+result
+"#;
+        let document = mech_runtime::SourceDocument::parse_resolved(
+            "test://native-input-updates",
+            mech_syntax::document::Revision(0),
+            source,
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+        assert!(document.is_strictly_clean());
+        let artifact = RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_native_plan_catalog())
+            .build_compiler()
+            .unwrap()
+            .compile_document_artifact_with_inputs(
+                &document,
+                &BTreeMap::from([
+                    ("source-input".to_owned(), RuntimeHostInputValue::F32(1.0)),
+                    ("source-scale".to_owned(), RuntimeHostInputValue::F32(0.5)),
+                ]),
+                &BTreeSet::from(["input".to_owned(), "scale".to_owned()]),
+            )
+            .unwrap()
+            .into_artifact();
+        crate::ComputeLowerer.compile_batched(&artifact, 4).unwrap()
+    }
+
+    pub(crate) fn initial_inputs() -> BTreeMap<String, Vec<f32>> {
+        BTreeMap::from([
+            ("input".to_owned(), vec![1.0]),
+            ("scale".to_owned(), vec![0.5]),
+        ])
+    }
+
+    pub(crate) fn rejected_updates() -> [BTreeMap<String, Vec<f32>>; 2] {
+        [
+            BTreeMap::from([
+                ("input".to_owned(), vec![9.0]),
+                ("scale".to_owned(), vec![1.0, 2.0]),
+            ]),
+            BTreeMap::from([
+                ("input".to_owned(), vec![9.0]),
+                ("unknown".to_owned(), vec![1.0]),
+            ]),
+        ]
+    }
+
+    #[test]
+    fn jit_rejected_updates_preserve_backing_buffers_before_dispatch() {
+        let program = input_update_program();
+        let inputs = initial_inputs();
+        let mut session = program.prepare_jit_cpu(&inputs).unwrap();
+        let initial = session.inputs.clone();
+        let pointers = session.input_pointers.clone();
+        let addresses = session
+            .inputs
+            .iter()
+            .map(|(k, v)| (*k, v.as_ptr()))
+            .collect::<Vec<_>>();
+        for updates in rejected_updates() {
+            assert!(session.update_inputs(&updates).is_err());
+            // These assertions fail before native dispatch on the old bug;
+            // the regression never deliberately dereferences a stale pointer.
+            assert_eq!(session.inputs, initial);
+            assert_eq!(session.input_pointers, pointers);
+            assert_eq!(
+                session
+                    .inputs
+                    .iter()
+                    .map(|(k, v)| (*k, v.as_ptr()))
+                    .collect::<Vec<_>>(),
+                addresses
+            );
+        }
+        let mut scalar = program.prepare_cpu(&inputs).unwrap();
+        session.dispatch_turns(3).unwrap();
+        scalar.dispatch_turns(3).unwrap();
+        assert_eq!(session.state(), scalar.state());
+        let updates = BTreeMap::from([
+            ("input".to_owned(), vec![2.0]),
+            ("scale".to_owned(), vec![3.0]),
+        ]);
+        session.update_inputs(&updates).unwrap();
+        scalar.update_inputs(&updates).unwrap();
+        for (index, input) in program.inputs.iter().enumerate() {
+            assert_eq!(
+                session.input_pointers[index],
+                session.inputs[&input.slot].as_ptr()
+            );
+        }
+        session.dispatch_turns(2).unwrap();
+        scalar.dispatch_turns(2).unwrap();
+        assert_eq!(session.state(), scalar.state());
+    }
 }

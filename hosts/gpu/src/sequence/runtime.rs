@@ -977,7 +977,7 @@ impl Context {
                     output
                         .par_chunks_mut(chunk)
                         .enumerate()
-                        .try_for_each(|(index, part)| {
+                        .map(|(index, part)| {
                             let start = index * chunk;
                             numeric_status(unsafe {
                                 function(
@@ -989,6 +989,11 @@ impl Context {
                                 )
                             })
                         })
+                        // Kernels report their first failing row. Preserve
+                        // row order across chunks as well, regardless of which
+                        // worker finishes first.
+                        .find_first(Result::is_err)
+                        .unwrap_or(Ok(()))
                 };
                 if let Some(pool) = &self.pool {
                     pool.install(|| run(&mut output))?;
@@ -1466,6 +1471,103 @@ fn encoding_table(alphabet: &[u8], mode: &[u8]) -> Result<[u16; 256], String> {
         }
     }
     Ok(table)
+}
+
+#[cfg(test)]
+mod matrix_tests {
+    use super::*;
+    use std::sync::atomic::{AtomicBool, Ordering};
+
+    static LATER_CHUNK_VISITED: AtomicBool = AtomicBool::new(false);
+
+    unsafe extern "C" fn competing_errors(
+        _: *const f64,
+        _: usize,
+        start: usize,
+        end: usize,
+        _: *mut f64,
+    ) -> u32 {
+        if start != 0 {
+            LATER_CHUNK_VISITED.store(true, Ordering::Release);
+            return 2;
+        }
+        if end < 4 {
+            // Give a second worker a chance to encounter its competing error.
+            // The expected result must not depend on whether it is scheduled
+            // before the bounded wait ends. Never panic across the native ABI.
+            let deadline = std::time::Instant::now() + std::time::Duration::from_millis(100);
+            while !LATER_CHUNK_VISITED.load(Ordering::Acquire)
+                && std::time::Instant::now() < deadline
+            {
+                std::thread::sleep(std::time::Duration::from_millis(1));
+            }
+        }
+        1
+    }
+
+    unsafe extern "C" fn row_numbers(
+        _: *const f64,
+        _: usize,
+        start: usize,
+        end: usize,
+        output: *mut f64,
+    ) -> u32 {
+        for row in start..end {
+            // SAFETY: Context supplies an exclusive output slice of end-start
+            // elements for this invocation.
+            unsafe { output.add(row - start).write(row as f64) };
+        }
+        0
+    }
+
+    fn context(parallel: bool) -> Context {
+        let mut context = Context::new(&[], None, false);
+        context
+            .values
+            .push(Value::Numbers(Arc::new(vec![1.0]), false));
+        context.values.push(Value::Integer(4));
+        if parallel {
+            context.partitions = 2;
+            context.array_grain = 1;
+            context.pool = Some(Arc::new(
+                rayon::ThreadPoolBuilder::new()
+                    .num_threads(2)
+                    .build()
+                    .unwrap(),
+            ));
+        }
+        context
+    }
+
+    #[test]
+    fn parallel_matrix_reports_the_first_row_error_with_competing_failures() {
+        for op in [35, 36] {
+            let expected = context(false)
+                .op(op, [0, 1, 0, 0, 0], competing_errors as *const () as usize)
+                .err()
+                .unwrap();
+            assert_eq!(expected, "unsigned arithmetic overflow");
+            LATER_CHUNK_VISITED.store(false, Ordering::Release);
+            let actual = context(true)
+                .op(op, [0, 1, 0, 0, 0], competing_errors as *const () as usize)
+                .err()
+                .unwrap();
+            assert_eq!(actual, expected);
+        }
+    }
+
+    #[test]
+    fn parallel_matrix_keeps_all_successful_output_chunks() {
+        for op in [35, 36] {
+            let Value::Numbers(result, false) = context(true)
+                .op(op, [0, 1, 0, 0, 0], row_numbers as *const () as usize)
+                .unwrap()
+            else {
+                panic!("expected a matrix result vector")
+            };
+            assert_eq!(result.as_slice(), &[0.0, 1.0, 2.0, 3.0]);
+        }
+    }
 }
 
 #[cfg(test)]

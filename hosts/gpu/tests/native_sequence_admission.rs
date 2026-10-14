@@ -1,7 +1,7 @@
 //! Collection admission and numeric lowering on small, source-visible programs.
 #![cfg(feature = "sequence-cli")]
 
-use mech_gpu::sequence::compile;
+use mech_gpu::sequence::{Context, JitProgram, compile};
 #[test]
 fn checked_collection_admission_rejects_unsupported_and_invalid_shapes() {
     for source in [
@@ -34,6 +34,27 @@ fn generic_source_and_full_width_key_emit_valid_objects() {
     assert!(!program.object(256).unwrap().is_empty());
     assert!(program.object(0).is_err());
     assert!(program.object(8193).is_err());
+}
+
+#[test]
+fn public_jit_rejects_invalid_histogram_storage_lengths() {
+    let source = "b := bytes/encode(\"ABBA\", \"AB\", \"exact\")\nh := map/histogram(sequence/packed-windows(b, 1, 1))\nio/write(number/format(stats/sum(map/values(h)), 0))\n";
+    let program = compile(source, 256).unwrap();
+    for batch in [0, 8193, usize::MAX] {
+        for simd in [false, true] {
+            assert_eq!(
+                JitProgram::compile(&program, batch, simd).err().as_deref(),
+                Some("batch must be 1..8192"),
+                "batch={batch}, simd={simd}"
+            );
+        }
+    }
+    for batch in [1, 8192] {
+        let jit = JitProgram::compile(&program, batch, false).unwrap();
+        let mut context = Context::new(&program.constants, None, false);
+        jit.run(&mut context).unwrap();
+        assert_eq!(context.output, b"4");
+    }
 }
 
 #[test]

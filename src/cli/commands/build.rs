@@ -497,6 +497,13 @@ fn run_cranelift(options: BuildOptions) -> MResult<CliOutcome> {
         .output_path
         .clone()
         .unwrap_or_else(|| default_output_path(BuildEmit::Native, &name));
+    let project_output = if options.keep_project {
+        let destination = project_output_path(&output);
+        refuse_existing_project_output(&destination)?;
+        Some(destination)
+    } else {
+        None
+    };
     let project = tempfile::Builder::new()
         .prefix("mech-cranelift-")
         .tempdir()?;
@@ -518,9 +525,7 @@ fn run_cranelift(options: BuildOptions) -> MResult<CliOutcome> {
         options.offline,
     )
     .map_err(|e| MechError::new(GenericError { msg: e }, None))?;
-    if options.keep_project {
-        let destination = project_output_path(&output);
-        refuse_existing_project_output(&destination)?;
+    if let Some(destination) = project_output {
         fn copy_tree(from: &Path, to: &Path) -> std::io::Result<()> {
             fs::create_dir_all(to)?;
             for entry in fs::read_dir(from)? {
@@ -870,6 +875,61 @@ mod tests {
             project_output_path(Path::new("dist/demo.build-plan.json")),
             PathBuf::from("dist/demo.build-plan.json.project")
         );
+    }
+
+    #[cfg(feature = "cranelift_build")]
+    #[test]
+    fn cranelift_kept_project_collision_precedes_emission_and_output_writes() {
+        for existing_output in [false, true] {
+            let root = tempfile::tempdir().unwrap();
+            let source = root.path().join("demo.mec");
+            // A malformed source would fail admission if emission were reached.
+            fs::write(&source, "this is not a Mech source program {{{").unwrap();
+            let output = root.path().join("demo");
+            if existing_output {
+                fs::write(&output, b"existing executable").unwrap();
+            }
+            let project = project_output_path(&output);
+            fs::create_dir(&project).unwrap();
+            fs::write(project.join("keep.txt"), b"existing project").unwrap();
+            let result = run_cranelift(BuildOptions {
+                paths: vec![source.to_string_lossy().into_owned()],
+                emit: BuildEmit::Native,
+                cranelift: true,
+                native_scalar: false,
+                native_loop_fma: false,
+                name: Some("demo".into()),
+                output_path: Some(output.clone()),
+                target: None,
+                profile: BuildProfile::Release,
+                config_path: None,
+                no_config: true,
+                workspace_root: Some(root.path().to_path_buf()),
+                keep_project: true,
+                offline: true,
+                debug: false,
+                trace: false,
+                rounds_per_step: 10_000,
+            });
+            let error = match result {
+                Err(error) => error,
+                Ok(_) => panic!("an existing retained project must be rejected"),
+            };
+            assert!(
+                error
+                    .to_string()
+                    .contains("refusing to overwrite existing Cargo project")
+            );
+            if existing_output {
+                assert_eq!(fs::read(&output).unwrap(), b"existing executable");
+            } else {
+                assert!(!output.exists());
+            }
+            assert_eq!(
+                fs::read(project.join("keep.txt")).unwrap(),
+                b"existing project"
+            );
+        }
     }
 
     #[test]

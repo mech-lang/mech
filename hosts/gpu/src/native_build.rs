@@ -135,6 +135,51 @@ fn command(mut command: Command) -> Result<(), String> {
     }
 }
 
+fn cargo_application_build(
+    directory: &Path,
+    name: &str,
+    release: bool,
+    offline: bool,
+) -> Result<(Command, PathBuf), String> {
+    // The emitted object uses this host ISA. An explicit Cargo target also
+    // overrides both CARGO_BUILD_TARGET and a configured build.target.
+    let host = cranelift_native::builder()
+        .map_err(str::to_owned)?
+        .triple()
+        .to_string();
+    let mut cargo = Command::new("cargo");
+    cargo
+        .args(["build", "--manifest-path"])
+        .arg(directory.join("Cargo.toml"))
+        .args(["--target", &host])
+        .env_remove("CARGO_BUILD_TARGET");
+    if release {
+        cargo.arg("--release");
+    }
+    if offline {
+        cargo.arg("--offline");
+    }
+    let flags = std::env::var("RUSTFLAGS").unwrap_or_default();
+    cargo.env("RUSTFLAGS", format!("{flags} -C target-cpu=native"));
+    // A stable workspace cache shares library builds between programs.
+    let target = std::env::var_os("CARGO_TARGET_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| directory.join("target"));
+    let target = if target.is_absolute() {
+        target
+    } else {
+        std::env::current_dir()
+            .map_err(|e| e.to_string())?
+            .join(target)
+    };
+    cargo.env("CARGO_TARGET_DIR", &target);
+    let executable = target
+        .join(host)
+        .join(if release { "release" } else { "debug" })
+        .join(format!("{name}{}", std::env::consts::EXE_SUFFIX));
+    Ok((cargo, executable))
+}
+
 /// Link/build already-emitted application inputs on the current host.
 /// Cross compilation requires a separate target-aware object emission path.
 pub fn build_application(
@@ -157,34 +202,8 @@ pub fn build_application(
     }
     match kind {
         ApplicationKind::Sequence | ApplicationKind::Control => {
-            let mut cargo = Command::new("cargo");
-            cargo
-                .args(["build", "--manifest-path"])
-                .arg(directory.join("Cargo.toml"));
-            if release {
-                cargo.arg("--release");
-            }
-            if offline {
-                cargo.arg("--offline");
-            }
-            let flags = std::env::var("RUSTFLAGS").unwrap_or_default();
-            cargo.env("RUSTFLAGS", format!("{flags} -C target-cpu=native"));
-            // A stable workspace cache shares library builds between programs.
-            let target = std::env::var_os("CARGO_TARGET_DIR")
-                .map(PathBuf::from)
-                .unwrap_or_else(|| directory.join("target"));
-            let target = if target.is_absolute() {
-                target
-            } else {
-                std::env::current_dir()
-                    .map_err(|e| e.to_string())?
-                    .join(target)
-            };
-            cargo.env("CARGO_TARGET_DIR", &target);
+            let (cargo, executable) = cargo_application_build(directory, name, release, offline)?;
             command(cargo)?;
-            let executable = target
-                .join(if release { "release" } else { "debug" })
-                .join(format!("{name}{}", std::env::consts::EXE_SUFFIX));
             fs::copy(executable, output).map_err(|e| e.to_string())?;
         }
         ApplicationKind::Grid => {
@@ -218,4 +237,43 @@ pub fn build_application(
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::ffi::OsStr;
+
+    #[test]
+    fn cargo_target_and_artifact_path_use_the_emitted_host_triple() {
+        let host = cranelift_native::builder().unwrap().triple().to_string();
+        for release in [false, true] {
+            let (cargo, executable) =
+                cargo_application_build(Path::new("generated"), "demo", release, true).unwrap();
+            let arguments = cargo.get_args().collect::<Vec<_>>();
+            let targets = arguments
+                .windows(2)
+                .filter(|pair| pair[0] == OsStr::new("--target"))
+                .map(|pair| pair[1])
+                .collect::<Vec<_>>();
+            assert_eq!(targets, vec![OsStr::new(&host)]);
+            assert!(cargo.get_envs().any(|(key, value)| {
+                key == OsStr::new("CARGO_BUILD_TARGET") && value.is_none()
+            }));
+            let target_dir = cargo
+                .get_envs()
+                .find_map(|(key, value)| (key == OsStr::new("CARGO_TARGET_DIR")).then_some(value))
+                .flatten()
+                .unwrap();
+            assert_eq!(
+                executable,
+                Path::new(target_dir)
+                    .join(&host)
+                    .join(if release { "release" } else { "debug" })
+                    .join(format!("demo{}", std::env::consts::EXE_SUFFIX))
+            );
+            assert_eq!(arguments.contains(&OsStr::new("--release")), release);
+            assert!(arguments.contains(&OsStr::new("--offline")));
+        }
+    }
 }

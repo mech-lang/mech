@@ -980,8 +980,9 @@ impl Program {
     }
 
     /// Schedule independent immutable computations before blocking consumers.
-    /// Reads and writes retain their original effect order. Canonical constants
-    /// and handle renumbering make equivalent call graphs emit the same object.
+    /// IO and fallible regex calls retain their original effect order. Canonical
+    /// constants and handle renumbering make equivalent call graphs emit the
+    /// same object.
     pub fn scheduled(self) -> Result<Self, String> {
         if self.nodes.iter().any(|node| matches!(node.op, 9..=12)) {
             return Err("schedule must precede host IO fusion".into());
@@ -1006,7 +1007,10 @@ impl Program {
                 .iter()
                 .filter_map(|id| id.checked_sub(old_base))
                 .collect();
-            if matches!(node.op, 1 | 8 | 45 | 52 | 72 | 73) {
+            // Regex compilation can fail even when its output is unused. Keep
+            // that error behind earlier IO and ahead of later effects, rather
+            // than allowing the regex scheduling priority to move it across IO.
+            if matches!(node.op, 1 | 8 | 45 | 52 | 53 | 54 | 72 | 73) {
                 if let Some(parent) = previous_effect {
                     parents.insert(parent);
                 }
