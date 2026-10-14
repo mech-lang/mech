@@ -1,0 +1,12 @@
+{
+  "root_full_source_review": true,
+  "independent_peer": "/root/current_c3_review",
+  "peer_accepted": true,
+  "frozen_source_pins": {
+    "integrate.py": "38322763bfeef6dfddac657535d357a51d511a65457812b660812056d581613b",
+    "load_required_evidence.py": "2e6a9069cd96ac1b790b0c14ad58ea7c5291cffe638d7d43993a62171f10f3f9",
+    "REVIEW.md": "517d4da3944aeb2439b42a0e07b73c77f67a98fa254453f9f6b78578cef969d4"
+  },
+  "native_commands": 0,
+  "fixture_reexecutions": 0
+}

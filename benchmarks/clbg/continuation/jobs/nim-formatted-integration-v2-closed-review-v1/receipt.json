@@ -1,0 +1,30 @@
+{
+  "at": "2026-10-14T00:06:46.107995+00:00",
+  "status": "closed-qualified-Gleam-Nim-formatted-chart-candidate",
+  "worker_pid": 56473,
+  "command_pid": 56479,
+  "candidate": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/nim-formatted-chart-integration-v2/jobs/gleam-nim-native-formatted-v2/candidate-data.json",
+    "sha256": "3c86a24a2315d87043339e85e21f38abbe6970424ded82d7473abb4b1dce8932"
+  },
+  "body_terminal_sha256": "f827b08f6cc114fbabfe52880df7673cb44d7bb91d1389a224d9594fdc7ca72d",
+  "durable_terminal_sha256": "2209d483f4b594f05bf720e3c49743c216549b5cad1e6d90373be4a5e210e4eb",
+  "request_sha256": "8e2cf188322f323e45a20839f2aa48038542512db80c8bd62401f0bc0f398cda",
+  "receipt_sha256": "d1755c4b46213fbff00c720e56f8a614e2c4aa7d153db296ba0bdb874041f306",
+  "verified_pins": 54118,
+  "required_receipts": 64,
+  "upstream_nonreceipt_json_pins_preserved": 8,
+  "programs": 815,
+  "inventory": 100,
+  "qualified_formatted_inventory": 40,
+  "formatted_languages": {
+    "nim": 20,
+    "crystal": 20
+  },
+  "all_original_source_timing_and_canonical_values_preserved": true,
+  "common_mutex_held": true,
+  "native_processes": 0,
+  "benchmark_runs": 0,
+  "fixture_reexecutions": 0,
+  "chart_admission": false
+}

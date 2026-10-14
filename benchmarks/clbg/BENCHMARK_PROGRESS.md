@@ -1,6 +1,6 @@
-Benchmark progress as of **2026-10-13 23:53 UTC** (19:53 New York).
+Benchmark progress as of **2026-10-14 00:20 UTC** (20:20 New York, 2026-10-13).
 
-The previous remotely verified checkpoint is `1c333a02252012f3c1972c0b1a5aa255ad3a9bff`
+The previous remotely verified checkpoint is `0099344b50469e5341ac4364490515dce2b19a1d`
 on `codex/clbg-native-benchmarks`. The language overview and complete Crystal
 inventory are published. C3's exact source counts, runtime metadata and current
 chart candidate have qualified and are now published through GitLab Pages
@@ -14,16 +14,16 @@ actual request, process identity and exit.
 |---|---:|---|
 | Crystal | 90/90 | Published with 20 source forms and 60 candidate samples, plus 30 matched Mech samples in the complete study. |
 | C3 | 90/90 | Published through GitLab Pages. Source counts, runtime metadata and current dataset qualified; all 20 forms / 60 candidate samples passed browser inspection. |
-| Nim | 90/90 | Published through GitLab Pages with all 20 forms and 60 candidate samples. Exact LOC and runtime metadata passed. Native formatting now also passed for all 21 authored inputs, including GMP glue; its 20 complete formatted totals await the next dataset update. |
-| Gleam | 90/90 | Current chart candidate passed: all 20 forms, 60 recorded samples and 104 counted compiler inputs retain source-bound LOC owners. Root verified 53,558 pins. Publication remains. |
+| Nim | 90/90 | Published with all 20 forms and 60 candidate samples. Exact LOC, runtime metadata and native formatting of all 21 authored inputs, including GMP glue, passed. All 20 formatted totals are now on the public chart. |
+| Gleam | 90/90 | Published through GitLab Pages with all 20 forms, 60 recorded samples and 104 counted compiler inputs. The source inspector displays genuine per-source owners, including helpers. BEAM filtering and all 20 program rows passed browser checks. |
 | Clojure | 90/90 | Published. Full-suite, LOC, JVM metadata and current dataset admission passed. Root verified 5,276 candidate pins; 20 forms / 60 candidate samples are retained, with 18 selected endpoints. Public browser inspection confirmed all 20 forms and 60 runs. |
 | V | 90/90 | Full workload samples collected, including eight missing tree slots recovered additively. Independent all-ten reconciliation passed. Report-only; excluded from dataset, charts and Site. |
 | Pony | 0/90 | Work qualification passed for all 20 reviewed forms and six retained traces. Root verified the scored-tree allocation evidence and 10,217 pins; temporary-root stack/register promotion is explicitly recorded. LOC admission and full samples remain. |
 | Prolog | 0/90 | SWI-Prolog 10.0.2 ARM64 runtime qualified. All 156 bounded correctness cases across 20 source forms passed. The first successful case and compiled artifacts were reused; 155 new cases and 19 additional forms completed. Work/LOC checks and full samples remain. |
-| Julia AOT | 0 qualified | The concrete Core I/O repair compiled successfully with safe trimming and IR stripping, producing object/bitcode archives and no verifier diagnostics. A subsequent options-reader format mismatch stopped metadata qualification. The successful compile is retained; link/runtime/fallback/output validation and timings remain. |
+| Julia AOT | 0 qualified | Concrete Core I/O compiled successfully with safe trimming and IR stripping. A metadata-only correction sealed the actual15 build options and C ABI while retaining the original reader failure. Archives remain saved; member/native-owner/link/runtime/fallback/output checks and timings remain. |
 | Rebol | 0/90 | Publisher runtime and all five native image/version/feature commands succeeded. A narrow parser correction reused those outputs, then obtained the full-commit source archive and 898 source files without another native command. SDK, extension, pipe I/O, work/LOC and full samples remain. |
-| Elixir | 0/90 | Official compiler/archive and all 20 counted source bundles are retained. Both missing version/configuration probes passed: Elixir 1.20.4, OTP29/ERTS17.1, ARM64 JIT with eight schedulers. Root verified 7,765 pins. Subject compilation, stdio/work/LOC and full qualification remain. |
-| Kotlin | 0/90 | Reviewed source bundle is frozen and pushed. Actual toolchain and complete qualification remain. |
+| Elixir | 0/90 | Runtime probes passed for Elixir1.20.4/OTP29/ERTS17.1 ARM64 JIT. First N-body main/support compilation exited0 and produced two BEAM files; validation stopped on an unreachable defensive-arm warning. The empty compiler-options environment diagnostic is also retained. Owner/writer probe, remaining19 compiles, stdio/work/LOC/full checks remain. |
+| Kotlin | 0/90 | Original source bundle is frozen and pushed. A source-only compiler intake packet reuses the qualified Clojure JDK and counts20 main/helper bundles; native intake and complete qualification remain. |
 
 These are snapshots of completed qualified sample records, not forecasts or
 extrapolations. Each complete cohort comprises ten workloads, two source forms
@@ -57,6 +57,55 @@ qualifies 120 platform and 97 execution annotations across 133 retained rows;
 13 rows remain explicitly unclassified. Filters are now integrated into the published Site. Unproved aggregate backends remain Unclassified. Successful historical samples and
 original failures remain immutable; additive repairs reuse successful evidence
 instead of relabeling it as a fresh run.
+
+## Gleam and Nim formatting published — 2026-10-14 00:19 UTC
+
+Website commit `221f06f9846a62d2c31e9fc51a85900cd2a5d620` is pushed and
+GitLab Pages pipeline `2944707326` succeeded. All ten public assets match the
+reviewed publication. Data SHA is
+`3c86a24a2315d87043339e85e21f38abbe6970424ded82d7473abb4b1dce8932`.
+The chart has45 language families/51 variants,815 selected programs and100
+complete retained inventory records. Ordinary sample display and density
+contain2529 recorded runs; each new language overview retains all20 forms/60runs.
+Native-formatted LOC now covers Crystal20 and Nim20; other rows stay blank.
+
+Nim integration v2 verifies all original pins and loads only64 explicit receipt
+references. Eight intentionally invalid upstream JSON parser fixtures remain
+pinned source data. The metadata job closed56473/56479 at00:05:41; root checked
+54,118 pins and all815/100 original source, timing and canonical values. No
+formatter, source-count fixture or benchmark repeated. Root receipt SHA is
+`bb567a2b48b613db123f4677eff579a7e03a5428694be55227c53c12747b43d6`.
+
+Local and public browser checks reproduced Samples Off/Medians Highlight:
+zero recorded marks and zero stray endpoints;101 median endpoints remain.
+Density alone still renders1728 cells from actual samples; dim samples use
+opacity0.15. Medians versus All samples framing expands both axes correctly.
+At390px the page has no horizontal overflow. Gleam's real source-owner text,
+all20 rows/60runs, BEAM filter, and both formatted cohorts passed, with no
+console errors. Public data briefly served its old cache and was verified
+again after propagation. Evidence: `continuation/jobs/gleam-nim-publication-v1/`.
+
+Julia's metadata-only saved-build seal completed without another compiler
+command. Root checked9,839 resolved pins, all15 actual build options and the
+signed Cint/PtrPtrInt8 ABI. Root receipt SHA:
+`1ebe64084ffe2996ad4be7e0f5814d200bb61721a4a2bcae0cd3ab9ca9c19d84`.
+Archive membership, actual IR removal, native ownership and runtime fallback
+remain unqualified. No Julia AOT runtime or speed claim follows from compilation.
+
+Elixir's first subject compile exited0 at00:14:51 and retained two actual BEAMs.
+The controller closed58755/58761 with exit1 on its empty-stderr assertion: the
+compiler reports an unreachable defensive error arm after IO.binwrite. Stdout
+also records `Ignoring bad term in ERL_COMPILER_OPTIONS`; the explicitly empty
+environment value is parsed as a bad Erlang term and ignored. No writer probe
+or benchmark ran. Root verified7,776 pins and preserved both diagnostics and
+artifacts; receipt SHA is
+`34de9e98daefecee561002031de45ffdc051cd54521588b5758347979c779abb`.
+The next source repair will reuse that successful compile, retain its warning,
+and remove only the empty compiler-options variable before the missing probe.
+
+Pony LOC, Prolog work/reader, Kotlin intake and Julia archive/link proposals are
+source-only until their separate gates execute. No new Mech optimization or
+benchmark timing is claimed in this publication.
 
 ## Julia safe compilation and Elixir runtime probes — 2026-10-13 23:50 UTC
 

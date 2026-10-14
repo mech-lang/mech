@@ -1,0 +1,90 @@
+{
+  "at": "2026-10-14T00:18:05.717013+00:00",
+  "status": "all-ten-exact-public-assets-match-staged-bytes",
+  "assets": {
+    "app.mjs": {
+      "url": "https://mech-lang.org/benchmarks/app.mjs?v=20261013-gleam-owners",
+      "sha256": "c259df2da4db4d6fa33c1e31c937b0a5d8f074329e07ffe39eb535956b397e7c",
+      "bytes": 96507,
+      "last_modified": "Wed, 14 Oct 2026 00:11:56 GMT",
+      "match": true
+    },
+    "index.html": {
+      "url": "https://mech-lang.org/benchmarks/index.html",
+      "sha256": "ceecd95f0c2cd044eb6426046e235f6040abaaf758ac9f4e2b6352bae0bfc217",
+      "bytes": 29568,
+      "last_modified": "Wed, 14 Oct 2026 00:11:57 GMT",
+      "match": true
+    },
+    "math.mjs": {
+      "url": "https://mech-lang.org/benchmarks/math.mjs?v=20261013-combined2",
+      "sha256": "78713b14872cd5e27bf94e2d7250858500b7d35984a6a9f4e21a76d46b658da6",
+      "bytes": 17096,
+      "last_modified": "Wed, 14 Oct 2026 00:11:57 GMT",
+      "match": true
+    },
+    "rankings.mjs": {
+      "url": "https://mech-lang.org/benchmarks/rankings.mjs?v=20261013-combined2",
+      "sha256": "d55c74de5c3834e61b5b3c0a858413238ad8f094e786b21add04da034bc95266",
+      "bytes": 5554,
+      "last_modified": "Wed, 14 Oct 2026 00:11:57 GMT",
+      "match": true
+    },
+    "style.css": {
+      "url": "https://mech-lang.org/benchmarks/style.css?v=20261013-combined2",
+      "sha256": "19533f14286e5b81b3b8917d169a6c1ec00963940707604de0c2e300d3a98d65",
+      "bytes": 31837,
+      "last_modified": "Wed, 14 Oct 2026 00:11:57 GMT",
+      "match": true
+    },
+    "mech-palette.css": {
+      "url": "https://mech-lang.org/benchmarks/mech-palette.css",
+      "sha256": "999768eb3675a7e724faf4a0e9e42a09bba13ed6fdd72b115d8034836ea7f85a",
+      "bytes": 8359,
+      "last_modified": "Wed, 14 Oct 2026 00:11:57 GMT",
+      "match": true
+    },
+    "traits.mjs": {
+      "url": "https://mech-lang.org/benchmarks/traits.mjs?v=20261013-combined2",
+      "sha256": "8cb0328bd48c0a554bccda58a5080673412e325cbb1047661ca2cc40d488c300",
+      "bytes": 3824,
+      "last_modified": "Wed, 14 Oct 2026 00:11:57 GMT",
+      "match": true
+    },
+    "platform.mjs": {
+      "url": "https://mech-lang.org/benchmarks/platform.mjs",
+      "sha256": "016638bca2807fef252c3dfdde604d8412029091543e65af7de91ae682741468",
+      "bytes": 4876,
+      "last_modified": "Wed, 14 Oct 2026 00:11:57 GMT",
+      "match": true
+    },
+    "formatted_axis.mjs": {
+      "url": "https://mech-lang.org/benchmarks/formatted_axis.mjs?v=20261013-combined2",
+      "sha256": "c2f38fb3c581807dc15571d0387383b2147701c8ad2e9c0baa3ea980206c13da",
+      "bytes": 3325,
+      "last_modified": "Wed, 14 Oct 2026 00:11:57 GMT",
+      "match": true
+    },
+    "data.json": {
+      "url": "https://mech-lang.org/benchmarks/data.json",
+      "sha256": "3c86a24a2315d87043339e85e21f38abbe6970424ded82d7473abb4b1dce8932",
+      "bytes": 55187347,
+      "last_modified": "Wed, 14 Oct 2026 00:11:57 GMT",
+      "match": true
+    }
+  },
+  "mismatches": [],
+  "pipeline_id": 2944707326,
+  "website_sha": "221f06f9846a62d2c31e9fc51a85900cd2a5d620",
+  "common_mutex_held": true,
+  "rechecked": [
+    {
+      "name": "data.json",
+      "url": "https://mech-lang.org/benchmarks/data.json",
+      "sha256": "3c86a24a2315d87043339e85e21f38abbe6970424ded82d7473abb4b1dce8932",
+      "bytes": 55187347,
+      "last_modified": "Wed, 14 Oct 2026 00:11:57 GMT",
+      "match": true
+    }
+  ]
+}

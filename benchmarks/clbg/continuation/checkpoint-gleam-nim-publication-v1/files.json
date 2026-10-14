@@ -1,0 +1,420 @@
+{
+  "at": "2026-10-14T00:20:47.580392+00:00",
+  "prior_commit": "0099344b50469e5341ac4364490515dce2b19a1d",
+  "files": [
+    {
+      "path": "benchmarks/clbg/BENCHMARK_PROGRESS.md",
+      "sha256": "39bdce167cdc6cfd8f9782801dfccb8519fc74446009cc5e3d073fbe20545243",
+      "bytes": 44325
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/elixir-first-compile-warning-closed-review-v1/receipt.json",
+      "sha256": "34de9e98daefecee561002031de45ffdc051cd54521588b5758347979c779abb",
+      "bytes": 2015
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/elixir-first-compiler-stdio-owner-source-release-v1/receipt.json",
+      "sha256": "b0aeca003feb8fae6f376c9d49413a9f7d5fc9c3da9d6755bd67c6f7966e7ab6",
+      "bytes": 531
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/gleam-nim-publication-v1/browser-qa.json",
+      "sha256": "732d5a1e6e1f93cd4ba802a7dbc5fa8714033e9e8cf9d52c71733130844923d6",
+      "bytes": 1579
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/gleam-nim-publication-v1/pipeline-first.json",
+      "sha256": "fa8f42b8cce34db2c72e3cfe9339ab5780a6a4850ac0f8a88a8a50904e793909",
+      "bytes": 389
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/gleam-nim-publication-v1/pipeline-second.json",
+      "sha256": "04c7f483d0da7e3b56223e0aaef0886b5e37d871d2e0b79c5b2d4f7a4d0ac64b",
+      "bytes": 1351
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/gleam-nim-publication-v1/pipeline-third.json",
+      "sha256": "186f102a715e2e7b62072a6c7d042baf9938af39391082157d2eff8f48e98f62",
+      "bytes": 1368
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/gleam-nim-publication-v1/public-assets-first.json",
+      "sha256": "8dfcaa8df1ef93a93ae7fde7b2695403ca617d8db8e4e9700b11395e722db9e3",
+      "bytes": 3109
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/gleam-nim-publication-v1/public-assets-second.json",
+      "sha256": "b5b5cd6e8bf3a41d32d67a86a8ec95dd96002c68d10a839c892d2ecb703be291",
+      "bytes": 3410
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/gleam-nim-publication-v1/publication.json",
+      "sha256": "b434fded75478650b1a0a7b931732db966a7232c14a2f7e44d138022a93c734a",
+      "bytes": 847
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/gleam-nim-publication-v1/stage.json",
+      "sha256": "1d9218337e51284d7aa30a52eec8d323efbc9834af66dda72c743ac04cd59967",
+      "bytes": 1320
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/gleam-nim-publication-v1/website-commit.json",
+      "sha256": "ec29026c17f52ade6fc64e188ebf7f2e19b6d8f5511c9c75006a0b52b5e5653a",
+      "bytes": 622
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/gleam-nim-publication-v1/website-push.json",
+      "sha256": "fb922cfa9fdb2ced0b19739592a60deb740c28574ddf39818e141929e5cbc0ae",
+      "bytes": 576
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/julia-saved-safe-build-seal-closed-review-v1/receipt.json",
+      "sha256": "1ebe64084ffe2996ad4be7e0f5814d200bb61721a4a2bcae0cd3ab9ca9c19d84",
+      "bytes": 1077
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/julia-saved-safe-build-seal-root-release-v1/receipt.json",
+      "sha256": "4b447b4eec74d58fe17a1852fc4a839af8fce0cb183af6d017e0db5711c44d36",
+      "bytes": 1322
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/nim-formatted-integration-v2-closed-review-v1/receipt.json",
+      "sha256": "bb567a2b48b613db123f4677eff579a7e03a5428694be55227c53c12747b43d6",
+      "bytes": 1264
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/nim-formatted-integration-v2-source-release-v1/receipt.json",
+      "sha256": "325b969a797b556fa7a4d0d29c6f811cc75897b0239bbe15f811739a1732a9a4",
+      "bytes": 469
+    },
+    {
+      "path": "benchmarks/clbg/continuation/nim-formatted-chart-integration-v2/REVIEW.md",
+      "sha256": "517d4da3944aeb2439b42a0e07b73c77f67a98fa254453f9f6b78578cef969d4",
+      "bytes": 6255
+    },
+    {
+      "path": "benchmarks/clbg/continuation/nim-formatted-chart-integration-v2/integrate.py",
+      "sha256": "38322763bfeef6dfddac657535d357a51d511a65457812b660812056d581613b",
+      "bytes": 29192
+    },
+    {
+      "path": "benchmarks/clbg/continuation/nim-formatted-chart-integration-v2/jobs/gleam-nim-native-formatted-v2/candidate-data.json",
+      "sha256": "3c86a24a2315d87043339e85e21f38abbe6970424ded82d7473abb4b1dce8932",
+      "bytes": 55187347
+    },
+    {
+      "path": "benchmarks/clbg/continuation/nim-formatted-chart-integration-v2/jobs/gleam-nim-native-formatted-v2/receipt.json",
+      "sha256": "d1755c4b46213fbff00c720e56f8a614e2c4aa7d153db296ba0bdb874041f306",
+      "bytes": 12156587
+    },
+    {
+      "path": "benchmarks/clbg/continuation/nim-formatted-chart-integration-v2/jobs/gleam-nim-native-formatted-v2/terminal.json",
+      "sha256": "f827b08f6cc114fbabfe52880df7673cb44d7bb91d1389a224d9594fdc7ca72d",
+      "bytes": 24272420
+    },
+    {
+      "path": "benchmarks/clbg/continuation/nim-formatted-chart-integration-v2/load_required_evidence.py",
+      "sha256": "2e6a9069cd96ac1b790b0c14ad58ea7c5291cffe638d7d43993a62171f10f3f9",
+      "bytes": 5439
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/elixir-first-compiler-stdio-owner-v1/command-started.json",
+      "sha256": "a56d88145c7fc0b7d4ca75f37b43b9346edba933b636a6357380ef4b121b656b",
+      "bytes": 1467
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/elixir-first-compiler-stdio-owner-v1/command.stderr",
+      "sha256": "cde9b33ee70d410f6610cb6b050d16b27bcf607f5546c7107a0c7c7091d47365",
+      "bytes": 768
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/elixir-first-compiler-stdio-owner-v1/command.stdout",
+      "sha256": "a52d57eecc7ed03bc66970f4be0daf8ba86540f70ff8938022dbca16bccaf5e0",
+      "bytes": 76
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/elixir-first-compiler-stdio-owner-v1/launch.json",
+      "sha256": "7600975d29d4da75226ead93260dc71a9db20e326b2602f05285fef626e3137b",
+      "bytes": 1445
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/elixir-first-compiler-stdio-owner-v1/request.json",
+      "sha256": "ecf26bd43ddb0d08a7af3f26b5bcda5e68b49c3a80fe648230cbeb5f4580120d",
+      "bytes": 895
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/elixir-first-compiler-stdio-owner-v1/terminal.json",
+      "sha256": "7de451627c527ab882eb3444bbf2258aca1994312de327b01a98b0f1e59b7fbd",
+      "bytes": 1475
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/elixir-first-compiler-stdio-owner-v1/worker-started.json",
+      "sha256": "d6eddff89ed51648c602930d95332f29a871bab863ac71291db0ab1ad5f279af",
+      "bytes": 1403
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/elixir-first-compiler-stdio-owner-v1/worker.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/gleam-nim-native-formatted-chart-v2/command-started.json",
+      "sha256": "6b367764aab344cec772f360809a2d6641daa2b4e5bb5409ba4c9ee443c137e8",
+      "bytes": 1547
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/gleam-nim-native-formatted-chart-v2/command.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/gleam-nim-native-formatted-chart-v2/command.stdout",
+      "sha256": "ccd4e488b6e93b77672022e016fc1e42a2f5121a22337389234059772b820bc8",
+      "bytes": 76
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/gleam-nim-native-formatted-chart-v2/launch.json",
+      "sha256": "54099644d4430ba324e13a8c74570d8fa1bf38193b095a3424bc332274892bf9",
+      "bytes": 1563
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/gleam-nim-native-formatted-chart-v2/request.json",
+      "sha256": "8e2cf188322f323e45a20839f2aa48038542512db80c8bd62401f0bc0f398cda",
+      "bytes": 935
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/gleam-nim-native-formatted-chart-v2/terminal.json",
+      "sha256": "2209d483f4b594f05bf720e3c49743c216549b5cad1e6d90373be4a5e210e4eb",
+      "bytes": 1542
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/gleam-nim-native-formatted-chart-v2/worker-started.json",
+      "sha256": "508463e1209eadb19abb9e8c878b723550fa4c4e6221d6f580518f256fa2a461",
+      "bytes": 1442
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/gleam-nim-native-formatted-chart-v2/worker.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/julia-saved-safe-build-seal-v1/command-started.json",
+      "sha256": "39af429bd57a43baa01a6afa39d20a758b508187d07ae32e027a73a86863367f",
+      "bytes": 1311
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/julia-saved-safe-build-seal-v1/command.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/julia-saved-safe-build-seal-v1/command.stdout",
+      "sha256": "d9653304cc3e4e4f22c66089872e33c1a71f6f7a9d55ba81e614d3d80495a92c",
+      "bytes": 65
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/julia-saved-safe-build-seal-v1/launch.json",
+      "sha256": "41abc2ee87e771b11ba96dfbd0cf8a090af8a264f3ea537da8f277b977cdebad",
+      "bytes": 1428
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/julia-saved-safe-build-seal-v1/request.json",
+      "sha256": "fd111d09cbaefe13d1afcccde75b0ca0271d41764b2c205e607f70e31f12def3",
+      "bytes": 810
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/julia-saved-safe-build-seal-v1/terminal.json",
+      "sha256": "7d910d43046271197d8620cb85d77b3a19a0866c284eea92ad9e82e9d5fdba17",
+      "bytes": 1426
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/julia-saved-safe-build-seal-v1/worker-started.json",
+      "sha256": "60616b7f2f74888c94478ac4f9c7fbe7086c82dfd53df09402410abfd21d47dd",
+      "bytes": 1312
+    },
+    {
+      "path": "benchmarks/clbg/continuation/owned-jobs/julia-saved-safe-build-seal-v1/worker.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "benchmarks/clbg/elixir-comparison/20261013/.build/first-compiler-stdio-owner-v1/ebin/Elixir.Clbg.Main.beam",
+      "sha256": "038e5bff2af67b5f0a5d0ba80e67e4719c0112f420c89e8871b1fb4f88d957f7",
+      "bytes": 9968
+    },
+    {
+      "path": "benchmarks/clbg/elixir-comparison/20261013/.build/first-compiler-stdio-owner-v1/ebin/Elixir.Clbg.Support.beam",
+      "sha256": "eb007b1656cd8a33a02b7f7c42a892e01db06566f07741ac5b4db71961999f8f",
+      "bytes": 8008
+    },
+    {
+      "path": "benchmarks/clbg/elixir-comparison/20261013/jobs/first-compiler-stdio-owner-v1/actual-error.log",
+      "sha256": "94f440df67ad82fd92ad2f116ed578f6f46fb3d4f42cbc1bc659d3af1ffa0607",
+      "bytes": 521
+    },
+    {
+      "path": "benchmarks/clbg/elixir-comparison/20261013/jobs/first-compiler-stdio-owner-v1/compile/first-nbody-compact-compile.active.json",
+      "sha256": "599c187ae85c1a86e23c0f44580519ad8d8f46b0c2bdabd6c50e8f779939f81b",
+      "bytes": 1570
+    },
+    {
+      "path": "benchmarks/clbg/elixir-comparison/20261013/jobs/first-compiler-stdio-owner-v1/compile/first-nbody-compact-compile.json",
+      "sha256": "16331957ce01d78be080559e2f8f24e3db8b541b4b4c5082b6be496cd88f0243",
+      "bytes": 1669
+    },
+    {
+      "path": "benchmarks/clbg/elixir-comparison/20261013/jobs/first-compiler-stdio-owner-v1/compile/first-nbody-compact-compile.stderr",
+      "sha256": "ed2caac4185706609c30ae5d8d30d95258c0fa923f5d21ee51625ca61cd7be33",
+      "bytes": 654
+    },
+    {
+      "path": "benchmarks/clbg/elixir-comparison/20261013/jobs/first-compiler-stdio-owner-v1/compile/first-nbody-compact-compile.stdout",
+      "sha256": "f69bfbce7486f8b12f7a790372b30082df98caad90cc99d3aa5f44f9e10878e3",
+      "bytes": 42
+    },
+    {
+      "path": "benchmarks/clbg/elixir-comparison/20261013/jobs/first-compiler-stdio-owner-v1/outcome.json",
+      "sha256": "7ef7f235d4e84908b5f1e66656cdd3d4758723b0dbd60eba3510e9336c5ccdb3",
+      "bytes": 1506412
+    },
+    {
+      "path": "benchmarks/clbg/elixir-comparison/20261013/jobs/first-compiler-stdio-owner-v1/preparation-contract.json",
+      "sha256": "7a63016ea4d31e333631f75f841740584aa02407c6d66e5290bc7bb143d6c324",
+      "bytes": 4102
+    },
+    {
+      "path": "benchmarks/clbg/elixir-comparison/20261013/revisions/compiler-stdio-owner-v1/REVIEW.md",
+      "sha256": "d538030115364fde6dfa7c45e967005aedca408e8064b9a7cce7257700b323a8",
+      "bytes": 6604
+    },
+    {
+      "path": "benchmarks/clbg/elixir-comparison/20261013/revisions/compiler-stdio-owner-v1/prepare.py",
+      "sha256": "56f8ddb9a721c3095d6739bc21dc3e27df0009787bba5af9d23ea071a31414e2",
+      "bytes": 21415
+    },
+    {
+      "path": "benchmarks/clbg/elixir-comparison/20261013/revisions/compiler-stdio-owner-v1/probe.exs",
+      "sha256": "67327eb3b7b36fb08b8a530cee9c0280bc413ffdae3bf51a2e32af12109b573b",
+      "bytes": 2275
+    },
+    {
+      "path": "benchmarks/clbg/elixir-comparison/20261013/revisions/saved-first-compile-probe-v1/REVIEW.md",
+      "sha256": "8f68d56b28021db2f2681d2dd3868d824a8cd5daf5198c5eb443c4f3a87e318f",
+      "bytes": 6513
+    },
+    {
+      "path": "benchmarks/clbg/elixir-comparison/20261013/revisions/saved-first-compile-probe-v1/resume.py",
+      "sha256": "fc350e965282314456d858bb358faac720a6b7739ac30816385ad800b8076c50",
+      "bytes": 20891
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/jobs/official-static-io-safe-build-seal-v1/actual-build-options.json",
+      "sha256": "7ce0e355d1ac17c9d5f43cff91c58aa26529cbf52e778e345bc3f50451f7593c",
+      "bytes": 1588
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/jobs/official-static-io-safe-build-seal-v1/outcome.json",
+      "sha256": "08484dd6e7ce8834a98c299b08f58003d689606ae740707c0cb4814d95ae139f",
+      "bytes": 2384251
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/jobs/official-static-io-safe-build-seal-v1/safe-build-result.json",
+      "sha256": "90b03c6657e45b824406e948fd6721d0cbb8fb1035037d09c372e4f868a84f27",
+      "bytes": 2388219
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/revisions/archive-link-route-v1/REVIEW.md",
+      "sha256": "9416ae546ee666426c292c1665fc32cbba183f05390a74f8dddfa68bb71f5f02",
+      "bytes": 6731
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/revisions/archive-link-route-v1/direct_driver.c",
+      "sha256": "b3545da9b6fd44119e1316af7c8e0783aa6c4463d12e7e6c301b65edf6e31b1c",
+      "bytes": 501
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/revisions/archive-link-route-v1/inspect.py",
+      "sha256": "4ef47097b79626a0385243c5e85f6b1ff6d889f4632b97e800a667d111acf14e",
+      "bytes": 19325
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/revisions/saved-safe-build-seal-v1/REVIEW.md",
+      "sha256": "b0c9b76174573b1d6389d1c092d3fd221eeff84a87b4aa6c25feac3e8b41ecbf",
+      "bytes": 5142
+    },
+    {
+      "path": "benchmarks/clbg/julia-aot-comparison/20261012/revisions/saved-safe-build-seal-v1/seal.py",
+      "sha256": "4eafdd9b6de63ff8d480e74431f247ab6e6adc5ba15654546c62474fb652fc82",
+      "bytes": 17260
+    },
+    {
+      "path": "benchmarks/clbg/kotlin-comparison/20261013/revisions/retained-jdk-intake-v1/REVIEW.md",
+      "sha256": "7e0809a8d53642c3da95801f651d61c8d449a51fc8125fbdf975981be918657a",
+      "bytes": 7620
+    },
+    {
+      "path": "benchmarks/clbg/kotlin-comparison/20261013/revisions/retained-jdk-intake-v1/RuntimeProbe.java",
+      "sha256": "3bacd1050fc4bdc4ecafbad968ee3f19e3de72eddc83d4f64128b049a773ce45",
+      "bytes": 1787
+    },
+    {
+      "path": "benchmarks/clbg/kotlin-comparison/20261013/revisions/retained-jdk-intake-v1/intake.py",
+      "sha256": "834b139966b990660c3255cb7881db3e17ef6e306dcf73dd692e71bb3ed53c46",
+      "bytes": 26369
+    },
+    {
+      "path": "benchmarks/clbg/overview/explorer/dist/app.mjs",
+      "sha256": "c259df2da4db4d6fa33c1e31c937b0a5d8f074329e07ffe39eb535956b397e7c",
+      "bytes": 96507
+    },
+    {
+      "path": "benchmarks/clbg/overview/explorer/dist/data.json",
+      "sha256": "3c86a24a2315d87043339e85e21f38abbe6970424ded82d7473abb4b1dce8932",
+      "bytes": 55187347
+    },
+    {
+      "path": "benchmarks/clbg/overview/explorer/dist/index.html",
+      "sha256": "ceecd95f0c2cd044eb6426046e235f6040abaaf758ac9f4e2b6352bae0bfc217",
+      "bytes": 29568
+    },
+    {
+      "path": "benchmarks/clbg/pony-comparison/20261012/revisions/loc-reviewed-seal-v1/REVIEW.md",
+      "sha256": "06c36dd695698a22af89affa91302f2d00435fa5a5dd88df94d068023987d715",
+      "bytes": 8040
+    },
+    {
+      "path": "benchmarks/clbg/pony-comparison/20261012/revisions/loc-reviewed-seal-v1/meaning-review.json",
+      "sha256": "e1507b67a2334a915381acb84bcfbcce49f6edf771cd0c97885d451bdf269049",
+      "bytes": 7443
+    },
+    {
+      "path": "benchmarks/clbg/pony-comparison/20261012/revisions/loc-reviewed-seal-v1/seal.py",
+      "sha256": "2b6983388a4cbcb15a64903238026a2920ee811391fc104151cb79c85dc04604",
+      "bytes": 23935
+    },
+    {
+      "path": "benchmarks/clbg/rebol-comparison/20261013/revisions/sdk-builder-spec-v1/REVIEW.md",
+      "sha256": "ee8e91e62087aad54e05cf20068abf62e8bef9c140f9355b8e356dc1bc49aecc",
+      "bytes": 7742
+    },
+    {
+      "path": "benchmarks/clbg/rebol-comparison/20261013/revisions/sdk-builder-spec-v1/controller.py",
+      "sha256": "3f1b11ce2897c9f1998d4dba95010a95d53bc159bae4b55d15f60a9aeeca619f",
+      "bytes": 26965
+    },
+    {
+      "path": "benchmarks/clbg/rebol-comparison/20261013/revisions/sdk-builder-spec-v1/launch.py",
+      "sha256": "7796b1b98976e94dc7ff23b2bf12211b9c9022152eae4c0cf7ef9f1fc8a2d8db",
+      "bytes": 2034
+    },
+    {
+      "path": "benchmarks/clbg/continuation/checkpoint-gleam-nim-publication-v1/preserved-compiler-diagnostic.json",
+      "sha256": "95a7bc45ff1506c4227a301c5b32d61269578161b978a0822f58b6584f5d5d63",
+      "bytes": 434
+    }
+  ],
+  "scope": "Verified live Gleam/Nim-formatted publication; Julia saved-build metadata; actual Elixir compiler success and retained validation failure; unexecuted Kotlin, Pony LOC and Julia archive source proposals; unexecuted Rebol SDK and Elixir saved-compile resume proposals",
+  "benchmark_runs": 0,
+  "common_mutex_held": true,
+  "intentional_ignored_artifacts": "Two small actual Elixir BEAMs are deliberately preserved for successful-compile reuse."
+}

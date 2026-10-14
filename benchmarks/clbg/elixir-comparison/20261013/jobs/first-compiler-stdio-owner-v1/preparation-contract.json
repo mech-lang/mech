@@ -1,0 +1,74 @@
+{
+  "status": "first-Elixir-subject-compile-and-unscored-owner-writer-observation",
+  "retained_toolchain": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/jobs/retained-otp-probes-v1/intake-result.json",
+    "sha256": "ad8aca223866b085ba3e823538298b948bd427748909bff1913d874d608519d0"
+  },
+  "whole20_inventory": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/jobs/retained-otp-toolchain-v1/source-input-inventory.json",
+    "sha256": "80309d98f655c9d0894cf4c17c99d1909fcb3bd31d9408282b36bd0f5ecb6caf"
+  },
+  "selected_profile": "elixir-nbody-compact",
+  "original_compiler_inputs": [
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-nbody-compact/support.ex",
+      "sha256": "c9fbb60888c46fb50195245761a411716f1256145af367e03a23f70aea270e89",
+      "role": "application-helper",
+      "counted": true
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-nbody-compact/main.ex",
+      "sha256": "253d24ca9ce83817df37811d3101db561070d5f39b360b540fa8730d3b3a622c",
+      "role": "application",
+      "counted": true
+    }
+  ],
+  "complete_runtime_source_bundle": [
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-nbody-compact/main.ex",
+      "sha256": "253d24ca9ce83817df37811d3101db561070d5f39b360b540fa8730d3b3a622c",
+      "role": "application",
+      "counted": true
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-nbody-compact/support.ex",
+      "sha256": "c9fbb60888c46fb50195245761a411716f1256145af367e03a23f70aea270e89",
+      "role": "application-helper",
+      "counted": true
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-nbody-compact/runner.exs",
+      "sha256": "bdad2389d437fd4c69122e5d25b3065412b4bca0c272631667283273392ba8ff",
+      "role": "application-launcher",
+      "counted": true
+    }
+  ],
+  "unscored_probe": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/compiler-stdio-owner-v1/probe.exs",
+    "sha256": "67327eb3b7b36fb08b8a530cee9c0280bc413ffdae3bf51a2e32af12109b573b",
+    "counted_in_scored_application": false
+  },
+  "runtime_environment": {
+    "PATH": "/opt/homebrew/Cellar/erlang/29.1.1_2/bin:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+    "HOME": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/first-compiler-stdio-owner-v1/home",
+    "XDG_CONFIG_HOME": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/first-compiler-stdio-owner-v1/config",
+    "LC_ALL": "C",
+    "LANG": "C",
+    "TMPDIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/first-compiler-stdio-owner-v1/tmp/",
+    "ERL_FLAGS": "",
+    "ERL_AFLAGS": "",
+    "ERL_ZFLAGS": "",
+    "ERL_LIBS": "",
+    "ELIXIR_ERL_OPTIONS": "+S 8:8 +A 1 +SDcpu 1:1 +SDio 1",
+    "ERL_COMPILER_OPTIONS": "",
+    "ERL_CRASH_DUMP": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/jobs/first-compiler-stdio-owner-v1/erl-crash.dump",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "original_sources_preserved": true,
+  "old_ebin_unchanged": true,
+  "stdin": "existing-owned-service-DEVNULL",
+  "main_entry_executed": false,
+  "chart_admission": false
+}

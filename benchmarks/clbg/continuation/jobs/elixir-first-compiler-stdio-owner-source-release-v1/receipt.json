@@ -1,0 +1,14 @@
+{
+  "at": "2026-10-14T00:14:47.278039+00:00",
+  "root_full_source_review": true,
+  "independent_peer": "/root/apl_current_admission",
+  "peer_accepted": true,
+  "frozen_source_pins": {
+    "prepare.py": "56f8ddb9a721c3095d6739bc21dc3e27df0009787bba5af9d23ea071a31414e2",
+    "probe.exs": "67327eb3b7b36fb08b8a530cee9c0280bc413ffdae3bf51a2e32af12109b573b",
+    "REVIEW.md": "d538030115364fde6dfa7c45e967005aedca408e8064b9a7cce7257700b323a8"
+  },
+  "expected_native_commands": 2,
+  "benchmark_runs": 0,
+  "fixture_reexecutions": 0
+}

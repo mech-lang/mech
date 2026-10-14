@@ -1,0 +1,23 @@
+{
+  "at": "2026-10-14T00:20:07.632475+00:00",
+  "status": "published-and-live-browser-verified",
+  "url": "https://mech-lang.org/benchmarks/",
+  "website_sha": "221f06f9846a62d2c31e9fc51a85900cd2a5d620",
+  "pipeline_id": 2944707326,
+  "pipeline_status": "success",
+  "data_sha256": "3c86a24a2315d87043339e85e21f38abbe6970424ded82d7473abb4b1dce8932",
+  "all_ten_public_assets_match": true,
+  "live_families": 45,
+  "live_variants": 51,
+  "live_samples_off_recorded_marks": 0,
+  "live_samples_off_other_endpoints": 0,
+  "live_summary_endpoints": 101,
+  "live_formatted_languages": [
+    "Crystal",
+    "Nim"
+  ],
+  "live_console_errors": [],
+  "initial_live_load_wait_ms": 3000,
+  "initial_load_observation": "The first wait ended while data was still loading; next DOM snapshot showed all45 families before interaction.",
+  "benchmarks_rerun": 0
+}

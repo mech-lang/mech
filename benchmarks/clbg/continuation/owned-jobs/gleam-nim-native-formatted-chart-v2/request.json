@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-14T00:04:48.206730+00:00",
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/nim-formatted-chart-integration-v2/integrate.py",
+    "--worker-sha256",
+    "38322763bfeef6dfddac657535d357a51d511a65457812b660812056d581613b",
+    "--review-sha256",
+    "517d4da3944aeb2439b42a0e07b73c77f67a98fa254453f9f6b78578cef969d4",
+    "--loader-sha256",
+    "2e6a9069cd96ac1b790b0c14ad58ea7c5291cffe638d7d43993a62171f10f3f9",
+    "--formatter-review-sha256",
+    "f5797f675386522de8c66828d435c48ec919495145f483e0886be37a571bbfe6"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "common_mutex_owned_by_target_command": true,
+  "qualification_granted": false,
+  "automatic_retry": false
+}

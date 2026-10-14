@@ -1,0 +1,47 @@
+{
+  "status": "source-reviewed-meaning-awaiting-root-release",
+  "review_identity": "pony-exact20-original-compiler-inputs-owner-review-20261013",
+  "inventory_sha256": "008340b7e28051a6b042c15de713c6e35462cb8a2f108ed5114ed9342d52fb92",
+  "replay_sha256": "582d986ddccd9dd93b762f83ad8dca87445600a35286ff09b370b43faad2a511",
+  "source_read_scope": "All twenty actual original scored main sources and the loaded five-unit Pi alias helper; exact existing owner events and expansions remain verbatim in the generated review.",
+  "count_override": false,
+  "sources": {
+    "private-v1/source-snapshot/sources/regexredux/compact/main.pony": ["b809114852e6ba80148dc1c31b62acfbc10f71273b7571e450884a2beba9f633", 4393, 149, 152],
+    "private-v1/source-snapshot/sources/regexredux/optimized/main.pony": ["0f3814e512fde860b7a7cfad6421e7b99e08122ee60b15426a74c7f931f38b10", 4483, 151, 154],
+    "private-v1/source-snapshot/sources/revcomp/compact/main.pony": ["8c9672533d2e49c8cf704113b1ce5bfdfafb626532c3b04fcd35aca66f1096a1", 3145, 113, 117],
+    "private-v1/source-snapshot/sources/revcomp/optimized/main.pony": ["3263b8b468163c52cdca30be0a1d49dc31769c762c9a090326ea8f070a345956", 3147, 113, 117],
+    "private-v3/source-snapshot/sources/pidigits/compact/main.pony": ["a1bc3b479c995d5ecca520268a7f18ac545622b0dd1a2573045ddcbd9cb7c75b", 1643, 54, 51],
+    "private-v3/source-snapshot/sources/pidigits/optimized/main.pony": ["3018bd1f17589c13f0d4204f7de6653df1f3de8b5a27d062608493eccef9975d", 1729, 56, 53],
+    "private-v3/source-snapshot/support-v2/ponytest/aliases.pony": ["deccab60eac37f744832561ce145afb6bec0abce21a10c04298c7d668094bfbe", 243, 5, 5],
+    "private-v3/source-snapshot/sources/spectralnorm/compact/main.pony": ["d5814e6a76feb2319ed3139e3b17b9a999258785e37b4f2f605349e634fc9b3e", 3051, 101, 106],
+    "private-v3/source-snapshot/sources/spectralnorm/optimized/main.pony": ["e2be7b1cb47390abc2bd56c36e161520cc51f60ebada3209e85c44909a2d98ec", 3059, 101, 106],
+    "private-v3/source-snapshot/sources/mandelbrot/compact/main.pony": ["e56add2003cc205575e6493cbe19048d54e3856aaf908b2ee6c7b3e5496275d9", 2234, 82, 83],
+    "private-v3/source-snapshot/sources/mandelbrot/optimized/main.pony": ["7e72a7821d2afb1ab39338ddaafbab50ae28d5da1b0f7ff31cc27e1beb5914ff", 2249, 82, 83],
+    "private-v3/source-snapshot/sources/fasta/compact/main.pony": ["b9b0e5b715edb64a2ce8c54638d9e2d17202b51c18c4c48bb6131474fdfe527e", 3289, 106, 106],
+    "private-v3/source-snapshot/sources/fasta/optimized/main.pony": ["f1651d62d5104c03961ef0df52d320345c37a191f55dc3cb58dbbc88e2e31579", 3291, 106, 106],
+    "private-v4/source-snapshot/revisions/precedence-v4/sources/knucleotide/compact/main.pony": ["36f5c7b8bfd1ea57e7190b70fc200bc40bbb2d6985b26593c16e977820a13f0e", 4837, 158, 157],
+    "private-v6/source-snapshot/revisions/shift-types-v5/sources/knucleotide/optimized/main.pony": ["b2aef299eed92772a2d49c25bc64a3194010acf04d56fffc9b327bf53732d8d0", 5546, 192, 187],
+    "private-v6/source-snapshot/revisions/precedence-v4/sources/binarytrees/compact/main.pony": ["9fe1b9d288f21559aaf6d40706cd6fe3c969bfdddcbbaa0900fa3d97cc670a20", 2037, 73, 68],
+    "private-v6/source-snapshot/revisions/precedence-v4/sources/binarytrees/optimized/main.pony": ["351177026d084edcdabdb79651db63fffcb68edaee223b908f31e55f606f295a", 2054, 73, 68],
+    "private-v6/source-snapshot/sources/nbody/compact/main.pony": ["4c9a0a7b694d0be8164e1a8afa13f1b70ec25138a1f5092d945cd810cc837b93", 4352, 176, 171],
+    "private-v6/source-snapshot/sources/nbody/optimized/main.pony": ["950e394d6ade5611f8cf45ce4c895329b09d32076dc088525f14f7f66a2ae84c", 4353, 176, 171],
+    "private-v6/source-snapshot/sources/fannkuchredux/compact/main.pony": ["d0e745152e3faf4e875a7646c2152425abf1249de821acdd9b2fe18dadc7aad7", 3199, 115, 112],
+    "private-v6/source-snapshot/sources/fannkuchredux/optimized/main.pony": ["2449b71fae40d00ad7b4f7d2440fb889efc6d95de6895ed742920c666a3da96c", 3359, 120, 117]
+  },
+  "diagnostic_meaning": {
+    "aliases": "The loaded helper contains one written use declaration and four bodyless type aliases. Each alias retains one existing pony-type header; no member/body/close is invented. The comment is excluded and the import remains counted. All five units count separately in each Pi bundle even though the names are generic compatibility glue.",
+    "DNA_recover": "Both original DNA.apply bodies have the identical recover val source interval90..689. The existing header90..101 and written close686..689 remain, as do the two loops, branches, continue/break/error and string-building work inside. Partial String ? and val capability are signature/ownership syntax; the explicit error remains an independent body action. No recover body is collapsed into a pure return or omitted."
+  },
+  "benchmark_meaning": {
+    "regexredux": "Pattern/substitution data, authored regex calls, actor batching, InputNotify callbacks and parent result/output paths are counted. The independently pinned generic regex library is excluded; no authored stream/callback wrapper is dropped.",
+    "revcomp": "Complement-table construction, worker reversal/output wrapping, InputNotify and record parsing remain. Pure one-call callbacks retain the existing single expression-member unit rather than a synthetic close.",
+    "pidigits": "All immutable GMP-state declarations, numerator candidates, arithmetic/state updates, loops and output paths are retained. The loaded alias package is an authored helper despite generic names; it contributes five units to each profile. Generic GMP/pony_test implementation packages remain separately inventoried.",
+    "spectralnorm": "Worker multiply/transpose arithmetic, actor state, four match branches, result copies, rounds and reductions remain. Scalar conditional expressions compose with their existing receiving binding; imperative branch assignments retain separate owners.",
+    "mandelbrot": "Pixel iteration, early return, packed byte lanes, actor construction/result ordering and output remain. Existing scalar final selection composes as one value; no iteration body is removed.",
+    "fasta": "Probability-entry pushes, cumulative mutation, long ALU data literal, RNG, buffering and output phases are retained. The long literal remains one written data declaration; no size-based discount or expansion is added.",
+    "knucleotide": "DNA recover, comparisons, immutable queries/lengths, callbacks, map counts and output remain. Optimized Packed encode/decode/rolling-key work is authored and counted; tuple/formal and capability syntax are structural, not extra statements.",
+    "binarytrees": "Node fields, constructor branches, recursive check, actor iteration, stretch/long roots and worker joins are counted. The pure recursive check remains the existing expression-member composition; the constructor/body work remains independent. Compiler storage optimization does not change source LOC.",
+    "nbody": "Every written body field/constant, five constructors, pair interactions, integration, momentum offset, energy and actor/output methods remain. Multi-line cascade argument wrapping is structural; each independent written call/action remains under the unchanged policy.",
+    "fannkuchredux": "Permutation initialization/rotation, flips/swaps, rank/checksum/max, worker scheduling and result/output remain. Optimized reusable work-array declaration/copy loop is counted; no allocation or callback source is discounted."
+  }
+}

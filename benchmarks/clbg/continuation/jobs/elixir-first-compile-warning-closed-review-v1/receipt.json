@@ -1,0 +1,37 @@
+{
+  "at": "2026-10-14T00:17:29.669469+00:00",
+  "status": "closed-successful-Elixir-compile-with-retained-warning-controller-failure",
+  "worker_pid": 58755,
+  "command_pid": 58761,
+  "compiler_pid": 58763,
+  "outcome_sha256": "7ef7f235d4e84908b5f1e66656cdd3d4758723b0dbd60eba3510e9336c5ccdb3",
+  "durable_terminal_sha256": "7de451627c527ab882eb3444bbf2258aca1994312de327b01a98b0f1e59b7fbd",
+  "request_sha256": "ecf26bd43ddb0d08a7af3f26b5bcda5e68b49c3a80fe648230cbeb5f4580120d",
+  "compiler_receipt_sha256": "16331957ce01d78be080559e2f8f24e3db8b541b4b4c5082b6be496cd88f0243",
+  "compiler_stderr_sha256": "ed2caac4185706609c30ae5d8d30d95258c0fa923f5d21ee51625ca61cd7be33",
+  "compiler_stdout_sha256": "f69bfbce7486f8b12f7a790372b30082df98caad90cc99d3aa5f44f9e10878e3",
+  "compiler_exit_status": 0,
+  "compiler_warning": "One unreachable defensive error arm after IO.binwrite in Clbg.Support.write/1 line33",
+  "compiler_stdout": "Ignoring bad term in ERL_COMPILER_OPTIONS\n",
+  "controller_exit_status": 1,
+  "verified_pins": 7776,
+  "beams": [
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/first-compiler-stdio-owner-v1/ebin/Elixir.Clbg.Main.beam",
+      "sha256": "038e5bff2af67b5f0a5d0ba80e67e4719c0112f420c89e8871b1fb4f88d957f7",
+      "bytes": 9968
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/first-compiler-stdio-owner-v1/ebin/Elixir.Clbg.Support.beam",
+      "sha256": "eb007b1656cd8a33a02b7f7c42a892e01db06566f07741ac5b4db71961999f8f",
+      "bytes": 8008
+    }
+  ],
+  "source_owner_and_writer_probe_executed": false,
+  "subject_main_executions": 0,
+  "benchmark_runs": 0,
+  "fixture_reexecutions": 0,
+  "chart_admission": false,
+  "common_mutex_held": true,
+  "root_audit_note": "Initial read-only audit required empty compiler stdout and stopped; corrected to exact observed diagnostic bytes before any evidence write or command repetition."
+}

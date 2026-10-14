@@ -1,0 +1,62 @@
+{
+  "at": "2026-10-14T00:10:47.251236+00:00",
+  "status": "local-browser-QA-passed",
+  "url": "http://127.0.0.1:58302/benchmarks/",
+  "candidate_sha256": "3c86a24a2315d87043339e85e21f38abbe6970424ded82d7473abb4b1dce8932",
+  "canonical": {
+    "families": 45,
+    "variants": 51,
+    "programs": 815,
+    "ordinary_runs": 2529,
+    "SamplesOff_runs": 0,
+    "SamplesOff_extra_endpoints": 0,
+    "summary_endpoints": 101,
+    "density_without_samples_or_medians": true,
+    "density_cells": 1728,
+    "density_runs": 2529,
+    "dim_opacity": 0.15,
+    "median_domain_max": [
+      5.0015340594975894,
+      8.46134735637159
+    ],
+    "sample_domain_max": [
+      7.036637346111604,
+      14.870042696401296
+    ]
+  },
+  "Gleam": {
+    "catalog_rows": 20,
+    "recorded_runs": 60,
+    "formatted_coordinates": 0,
+    "source_audit_files": [
+      "benchmark.gleam",
+      "clbg_io.gleam",
+      "clbg_io_ffi.erl",
+      "clbg_runner.erl"
+    ],
+    "nbody_owner_spans": 161,
+    "real_original_Erlang_helper_source_rendered": true,
+    "undefined_audit_values": false
+  },
+  "formatted": {
+    "languages": 2,
+    "Nim_qualified_programs": 20,
+    "Nim_catalog_runs": 60,
+    "ordinary_runs": 114,
+    "unqualified_timings_and_sources_remain_inspectable": true
+  },
+  "platform_BEAM_filtered_labels": [
+    "Gleam"
+  ],
+  "mobile": {
+    "viewport": 390,
+    "document_width": 390,
+    "scroll_width": 390,
+    "SamplesOff_runs": 0,
+    "SamplesOff_extra_endpoints": 0,
+    "summary_endpoints": 101
+  },
+  "console_errors": [],
+  "common_mutex_held": true,
+  "benchmark_runs": 0
+}

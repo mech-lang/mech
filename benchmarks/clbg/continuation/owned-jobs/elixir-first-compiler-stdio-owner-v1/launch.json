@@ -1,0 +1,29 @@
+{
+  "status": "durable-job-launched",
+  "launched_at": "2026-10-14T00:14:47.369275+00:00",
+  "job": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/elixir-first-compiler-stdio-owner-v1",
+  "worker_identity": {
+    "pid": 58755,
+    "listing": "58755 58754 Tue Oct 13 20:14:47 2026     /opt/homebrew/opt/python@3.14/bin/python3.14 -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/elixir-first-compiler-stdio-owner-v1 --lease-fd 3 --go-fd 4"
+  },
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/compiler-stdio-owner-v1/prepare.py",
+    "--revision",
+    "first-compiler-stdio-owner-v1",
+    "--worker-sha256",
+    "56f8ddb9a721c3095d6739bc21dc3e27df0009787bba5af9d23ea071a31414e2",
+    "--probe-sha256",
+    "67327eb3b7b36fb08b8a530cee9c0280bc413ffdae3bf51a2e32af12109b573b",
+    "--review-sha256",
+    "d538030115364fde6dfa7c45e967005aedca408e8064b9a7cce7257700b323a8"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "detached_session": true,
+  "automatic_retry": false,
+  "qualification_granted": false
+}

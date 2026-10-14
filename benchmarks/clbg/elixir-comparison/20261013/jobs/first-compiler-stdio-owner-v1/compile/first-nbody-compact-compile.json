@@ -1,0 +1,22 @@
+{
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixirc",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/first-compiler-stdio-owner-v1/ebin",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-nbody-compact/support.ex",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-nbody-compact/main.ex"
+  ],
+  "started_at": "2026-10-14T00:14:51.094035+00:00",
+  "inherited_common_mutex": true,
+  "timeout_seconds": 180,
+  "preparation_only": true,
+  "never_chart_eligible": true,
+  "pid": 58763,
+  "identity": {
+    "pid": 58763,
+    "process_listing": "Tue Oct 13 20:14:51 2026     /bin/sh /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/elixir/bin/elixirc -o /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/first-compiler-stdio-owner-v1/ebin /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-nbody-compact/support.ex /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/.build/retained-otp-toolchain-v1/forms/elixir-nbody-compact/main.ex"
+  },
+  "exit_status": 0,
+  "finished_at": "2026-10-14T00:14:51.648596+00:00",
+  "final_exit_status": 0
+}

@@ -1,0 +1,28 @@
+{
+  "status": "reviewed-saved-successful-compile-metadata-only-release",
+  "at": "2026-10-13T23:58:18.121366+00:00",
+  "source_author": "current_c3_review",
+  "independent_full_source_reviewer": "root",
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/revisions/saved-safe-build-seal-v1/seal.py": "4eafdd9b6de63ff8d480e74431f247ab6e6adc5ba15654546c62474fb652fc82",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/revisions/saved-safe-build-seal-v1/REVIEW.md": "b0c9b76174573b1d6389d1c092d3fd221eeff84a87b4aa6c25feac3e8b41ecbf"
+  },
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/revisions/saved-safe-build-seal-v1/seal.py",
+    "--revision",
+    "official-static-io-safe-build-seal-v1",
+    "--worker-sha256",
+    "4eafdd9b6de63ff8d480e74431f247ab6e6adc5ba15654546c62474fb652fc82",
+    "--review-sha256",
+    "b0c9b76174573b1d6389d1c092d3fd221eeff84a87b4aa6c25feac3e8b41ecbf"
+  ],
+  "native_processes": 0,
+  "compile_reexecutions": 0,
+  "chart_admission": false,
+  "common_mutex_held": true
+}

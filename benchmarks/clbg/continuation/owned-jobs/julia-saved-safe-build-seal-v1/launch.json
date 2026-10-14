@@ -1,0 +1,27 @@
+{
+  "status": "durable-job-launched",
+  "launched_at": "2026-10-13T23:58:18.229869+00:00",
+  "job": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/julia-saved-safe-build-seal-v1",
+  "worker_identity": {
+    "pid": 55243,
+    "listing": "55243 55242 Tue Oct 13 19:58:18 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/launch_durable_v1.py --worker /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/continuation/owned-jobs/julia-saved-safe-build-seal-v1 --lease-fd 3 --go-fd 4"
+  },
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/revisions/saved-safe-build-seal-v1/seal.py",
+    "--revision",
+    "official-static-io-safe-build-seal-v1",
+    "--worker-sha256",
+    "4eafdd9b6de63ff8d480e74431f247ab6e6adc5ba15654546c62474fb652fc82",
+    "--review-sha256",
+    "b0c9b76174573b1d6389d1c092d3fd221eeff84a87b4aa6c25feac3e8b41ecbf"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+  "detached_session": true,
+  "automatic_retry": false,
+  "qualification_granted": false
+}

@@ -1,0 +1,7 @@
+{
+  "at": "2026-10-14T00:22:46.059942+00:00",
+  "reason": "Retain exact native stderr bytes, including final blank line, because the successful compile and warning receipt bind them.",
+  "path": "benchmarks/clbg/elixir-comparison/20261013/jobs/first-compiler-stdio-owner-v1/compile/first-nbody-compact-compile.stderr",
+  "sha256": "ed2caac4185706609c30ae5d8d30d95258c0fa923f5d21ee51625ca61cd7be33",
+  "source_whitespace_changes": 0
+}

@@ -1,0 +1,25 @@
+{
+  "format": "parsed-exact-saved-Julia-Dict-display-v1",
+  "original": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/actual-build-options.toml",
+    "sha256": "1093912c3d98ec83b114f783931d70bd9297cf5295938138dcca0e1489917f6f"
+  },
+  "options": {
+    "default_threads": 8,
+    "strip_ir": 1,
+    "input_image": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/packagecompiler-bootstrap-v2/restored-runtime/julia-1.13.1/lib/julia/sys.dylib",
+    "opt_level": 3,
+    "output_bc": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/nbody-safe.bc",
+    "incremental": 0,
+    "include_ccallable_roots": true,
+    "trim": 1,
+    "output_kind": "--output-lib",
+    "output_o": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/nbody-safe-o.a",
+    "strip_metadata": 0,
+    "app_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/ClbgNbodyPilot/src/ClbgNbodyPilot.jl",
+    "debug_level": 2,
+    "workload_state_initialized": false,
+    "abi_output": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/.build/official-static-io-safe-trim-nbody-v1/entry-abi.json"
+  },
+  "evaluation_used": false
+}

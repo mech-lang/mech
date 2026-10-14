@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/compiler-stdio-owner-v1/prepare.py", line 267, in <module>
+    if __name__ == '__main__': main()
+                               ^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/compiler-stdio-owner-v1/prepare.py", line 239, in main
+    run(args, output, build, pins, common.fileno(), base)
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/elixir-comparison/20261013/revisions/compiler-stdio-owner-v1/prepare.py", line 159, in run
+    assert compilation['stderr'] == b''
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

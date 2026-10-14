@@ -1,0 +1,24 @@
+{
+  "started_at": "2026-10-13T23:58:18.295806+00:00",
+  "command_pid": 55249,
+  "command_identity": {
+    "pid": 55249,
+    "listing": "55249 55243 Tue Oct 13 19:58:18 2026     /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -I -S -B -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/revisions/saved-safe-build-seal-v1/seal.py --revision official-static-io-safe-build-seal-v1 --worker-sha256 4eafdd9b6de63ff8d480e74431f247ab6e6adc5ba15654546c62474fb652fc82 --review-sha256 b0c9b76174573b1d6389d1c092d3fd221eeff84a87b4aa6c25feac3e8b41ecbf"
+  },
+  "command_identity_observation_missing": false,
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "-I",
+    "-S",
+    "-B",
+    "-u",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/julia-aot-comparison/20261012/revisions/saved-safe-build-seal-v1/seal.py",
+    "--revision",
+    "official-static-io-safe-build-seal-v1",
+    "--worker-sha256",
+    "4eafdd9b6de63ff8d480e74431f247ab6e6adc5ba15654546c62474fb652fc82",
+    "--review-sha256",
+    "b0c9b76174573b1d6389d1c092d3fd221eeff84a87b4aa6c25feac3e8b41ecbf"
+  ],
+  "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech"
+}
