@@ -1,0 +1,19 @@
+{
+  "at": "2026-10-14T00:37:21.912484+00:00",
+  "url": "https://gitlab.com/api/v4/projects/5692990/pipelines?sha=7f67aeb3d048c6ac5c0fe23b23ce6bd8f7982db7&per_page=5",
+  "pipelines": [
+    {
+      "id": 2944757145,
+      "iid": 804,
+      "project_id": 5692990,
+      "sha": "7f67aeb3d048c6ac5c0fe23b23ce6bd8f7982db7",
+      "ref": "main",
+      "status": "running",
+      "source": "push",
+      "created_at": "2026-10-14T00:37:12.318Z",
+      "updated_at": "2026-10-14T00:37:12.998Z",
+      "web_url": "https://gitlab.com/mech-lang/web/website/-/pipelines/2944757145",
+      "name": null
+    }
+  ]
+}

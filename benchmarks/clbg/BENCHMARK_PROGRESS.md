@@ -1,6 +1,6 @@
-Benchmark progress as of **2026-10-14 00:20 UTC** (20:20 New York, 2026-10-13).
+Benchmark progress as of **2026-10-14 00:38 UTC** (20:38 New York, 2026-10-13).
 
-The previous remotely verified checkpoint is `0099344b50469e5341ac4364490515dce2b19a1d`
+The previous remotely verified checkpoint is `362660915bb0c3617a78374d6a606affa09cbfcb`
 on `codex/clbg-native-benchmarks`. The language overview and complete Crystal
 inventory are published. C3's exact source counts, runtime metadata and current
 chart candidate have qualified and are now published through GitLab Pages
@@ -9,6 +9,31 @@ finished and passed independent reconciliation of all 90 timing runs each.
 The 23 formatted-LOC source fixtures and all 20 native Crystal formatting cases
 passed; the formatted axis and measured platform filters are now published. Durable jobs preserve their
 actual request, process identity and exit.
+
+The mobile filter controls now use a left drawer opened by a sticky **Filters**
+button. The same benchmark checkboxes, languages, platform filters, year sliders
+and decade buttons move into the drawer; desktop retains its sidebar. Done,
+outside tap and Escape dismiss it. Navigation closes it before focusing the
+language overview or program inspector. Body scroll is restored, selection
+changes preserve checkbox focus, and resizing transfers focus between layouts.
+Independent source review and browser checks at 320/390 px and desktop passed.
+Samples Off still removes all recorded dots; density alone still has all 1,728
+cells from 2,529 recorded runs. No measurement or timing data changed.
+Website commit `7f67aeb3d048c6ac5c0fe23b23ce6bd8f7982db7` is live; GitLab
+pipeline 2944757145 succeeded, all three changed assets match exactly, and the
+public mobile drawer passed a final browser check.
+Source: `overview/explorer/mobile-sidebar-v1/`; deployment and browser evidence:
+`continuation/jobs/mobile-sidebar-publication-v1/`.
+
+The independent Prolog source/WAM review now covers all 20 mains and both whole
+helpers, including fresh tree leaves and retained lifetimes, all seven complete
+nucleotide maps, and two separate Pi divisions. No unresolved source/WAM work
+mismatch was found. The note in
+`prolog-comparison/20261013/revisions/scored-work-review-v1/REVIEW.md`
+is source evidence only: the 30 native work probes, LOC admission and all 90
+full timing runs are still pending. Pony LOC, Julia archive inspection, Elixir
+saved-compile owner/writer probing and Rebol SDK control packets also passed
+independent source review; these acceptances do not claim execution.
 
 | Cohort | Actual full samples collected | Present state |
 |---|---:|---|

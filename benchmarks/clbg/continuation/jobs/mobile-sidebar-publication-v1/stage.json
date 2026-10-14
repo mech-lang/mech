@@ -1,0 +1,19 @@
+{
+  "at": "2026-10-14T00:36:39.788450+00:00",
+  "status": "browser-verified-ready-to-publish",
+  "source": "overview/explorer/mobile-sidebar-v1",
+  "runtime_assets": {
+    "index.html": "8607bef404d009fbc07c9b12ec5549298981d5ea5f0c106f881b50928a384791",
+    "style.css": "5a8a5e77418ef52e288d02786fd43c8abf0d20f1e3b3374efdc8e2eb6b062b4e",
+    "app.mjs": "2c0eb8b81c9db419726dfe1439fe570782a6fd84a44d2dc9c071e2b1be11aa92"
+  },
+  "unchanged_data_sha256": "3c86a24a2315d87043339e85e21f38abbe6970424ded82d7473abb4b1dce8932",
+  "previous_website_sha": "221f06f9846a62d2c31e9fc51a85900cd2a5d620",
+  "syntax_check": {
+    "exit": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "common_mutex_held": true,
+  "benchmark_runs": 0
+}

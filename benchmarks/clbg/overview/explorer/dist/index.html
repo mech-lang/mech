@@ -8,8 +8,8 @@
   <title>Mech Benchmark Explorer</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23151b21'/%3E%3Cpath d='M7 7v18h18M10 21l6-7 7-5' fill='none' stroke='%23f6c04e' stroke-width='2'/%3E%3Ccircle cx='16' cy='14' r='3' fill='%23f6c04e'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="./mech-palette.css">
-  <link rel="stylesheet" href="./style.css?v=20261013-combined2">
-  <script type="module" src="./app.mjs?v=20261013-gleam-owners"></script>
+  <link rel="stylesheet" href="./style.css?v=20261014-mobile-sidebar-v1">
+  <script type="module" src="./app.mjs?v=20261014-mobile-sidebar-v1"></script>
 </head>
 <body>
   <header class="masthead">
@@ -20,6 +20,10 @@
   <main>
     <div class="page-heading"><h1>Benchmark explorer</h1><div id="selection-summary" class="selection-summary" aria-live="polite">Loading measured results…</div></div>
     <div id="load-error" role="alert" hidden></div>
+    <div class="mobile-filter-bar">
+      <button id="open-filters" class="quiet-button" aria-haspopup="dialog" aria-controls="filter-drawer" aria-expanded="false"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14"/></svg>Filters</button>
+      <span>Languages · years · benchmarks</span>
+    </div>
     <div class="workspace">
       <aside class="controls" aria-label="Chart selections">
         <section><div class="section-heading"><h2><button id="toggle-benchmark-filters" class="filter-toggle" aria-expanded="true" aria-controls="benchmark-filter-body">Benchmarks <span id="benchmark-filter-count"></span></button></h2><div class="text-actions"><button id="all-benchmarks">All</button><button id="no-benchmarks">None</button></div></div>
@@ -134,6 +138,9 @@
     </div>
   </main>
 
+  <dialog id="filter-drawer" aria-labelledby="filter-drawer-title">
+    <div class="filter-drawer-header"><h2 id="filter-drawer-title">Filters</h2><button id="close-filters" class="quiet-button" aria-label="Close filters" autofocus>Done <span aria-hidden="true">×</span></button></div>
+  </dialog>
   <div id="sort-status" class="sr-only" role="status" aria-live="polite"></div>
   <footer>Mech Robotics Lab <span>Measured programs, complete source, recorded samples.</span></footer>
 </body>

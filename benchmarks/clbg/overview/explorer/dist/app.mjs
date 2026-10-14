@@ -4,6 +4,60 @@ import {renderRankingCharts} from './rankings.mjs?v=20261013-combined2';
 import {axisData,projectProgram,hasFormattedLOC,formattedText,formattedValue} from './formatted_axis.mjs?v=20261013-combined2';
 
 const $=selector=>document.querySelector(selector);
+// The same controls live in the desktop sidebar or the phone's modal drawer.
+// Native dialog supplies the focus boundary and makes the background inert.
+const filterDrawer=$('#filter-drawer'),filterTrigger=$('#open-filters');
+const filterControls=$('.controls'),filterAnchor=document.createComment('desktop filter sidebar');
+const mobileFilters=matchMedia('(max-width:720px)');
+let filterScroll=null,backdropPointer=false;
+filterControls.before(filterAnchor);
+function restoreFilterScroll(){
+  filterTrigger.setAttribute('aria-expanded','false');
+  if(!filterScroll)return;
+  const {x,y}=filterScroll;filterScroll=null;
+  document.documentElement.classList.remove('filters-open');
+  document.body.style.removeProperty('--filter-scroll-top');
+  window.scrollTo(x,y);
+}
+function closeFilterDrawer(){
+  if(filterDrawer.open)filterDrawer.close();
+  restoreFilterScroll();
+}
+function syncFilterPlacement(){
+  if(mobileFilters.matches){
+    const hadFocus=filterControls.contains(document.activeElement);
+    filterDrawer.append(filterControls);
+    if(hadFocus&&!filterDrawer.open)filterTrigger.focus({preventScroll:true});
+  }else{
+    const wasOpen=filterDrawer.open,active=document.activeElement;
+    closeFilterDrawer();filterAnchor.after(filterControls);
+    if(wasOpen)(filterControls.contains(active)?active:$('#toggle-benchmark-filters')).focus({preventScroll:true});
+  }
+}
+filterTrigger.addEventListener('click',()=>{
+  if(!mobileFilters.matches||filterDrawer.open)return;
+  filterScroll={x:window.scrollX,y:window.scrollY};
+  document.body.style.setProperty('--filter-scroll-top',`${-filterScroll.y}px`);
+  document.documentElement.classList.add('filters-open');
+  filterDrawer.showModal();filterTrigger.setAttribute('aria-expanded','true');
+});
+$('#close-filters').addEventListener('click',closeFilterDrawer);
+filterDrawer.addEventListener('cancel',event=>{event.preventDefault();closeFilterDrawer();});
+filterDrawer.addEventListener('close',()=>{if(!filterDrawer.open)restoreFilterScroll();});
+// Escape dismisses just this drawer, leaving an underlying program inspector open.
+filterDrawer.addEventListener('keydown',event=>{if(event.key==='Escape')event.stopPropagation();});
+const outsideDrawer=event=>{
+  const box=filterDrawer.getBoundingClientRect();
+  return event.clientX<box.left||event.clientX>box.right||event.clientY<box.top||event.clientY>box.bottom;
+};
+filterDrawer.addEventListener('pointerdown',event=>{backdropPointer=event.target===filterDrawer&&outsideDrawer(event);});
+filterDrawer.addEventListener('click',event=>{
+  if(backdropPointer&&event.target===filterDrawer&&outsideDrawer(event))closeFilterDrawer();
+  backdropPointer=false;
+});
+mobileFilters.addEventListener('change',syncFilterPlacement);
+syncFilterPlacement();
+
 const svgNS='http://www.w3.org/2000/svg';
 let data,model,traits,programCatalog;
 const state={benchmarks:new Set(),languages:new Set(),disabled:new Set(),ellipses:new Set(['mech']),
@@ -66,6 +120,7 @@ function comparisonData(){
   })};
 }
 function showLanguageOverview(key,{family=false,restoreProgram=false}={}){
+  closeFilterDrawer();
   pauseYears();
   const group=family?families().find(f=>f.key===key):null;
   const keys=group?group.members.map(l=>l.key):[key];
@@ -382,7 +437,7 @@ function renderControls(){
   $('#formatted-loc-note').hidden=state.locMetric!=='formatted';
   const allowed=yearKeys(),enabled=effectiveLanguages();
   const active=document.activeElement;
-  const focusAttribute=['data-language','data-family','data-open-language','data-open-family','data-trait-option','data-spread','data-benchmark'].find(attribute=>active?.hasAttribute(attribute));
+  const focusAttribute=filterControls.contains(active)?['data-language','data-family','data-open-language','data-open-family','data-trait-option','data-spread','data-benchmark'].find(attribute=>active.hasAttribute(attribute)):null;
   const focusValue=focusAttribute?active.getAttribute(focusAttribute):null;
   $('#benchmark-controls').innerHTML=data.benchmarks.map(b=>`<div class="control-row"><input type="checkbox" data-benchmark="${b.key}" aria-label="Include ${esc(b.title)}" ${state.benchmarks.has(b.key)?'checked':''}><button class="benchmark-name ${state.focus===b.key&&state.view==='benchmark'?'active':''}" data-inspect-benchmark="${b.key}">${esc(b.title)}</button></div>`).join('');
   const languageRow=(l,child=false)=>`<div class="control-row ${child?'variant-row':''} ${allowed.has(l.key)?'':'year-excluded'} ${matchesTraits(traits.get(l.key),state.traits)?'':'trait-excluded'}"><input type="checkbox" data-language="${l.key}" aria-label="Include ${esc(shortName(l.key))}" ${enabled.has(l.key)?'checked':''} ${!matchesTraits(traits.get(l.key),state.traits)||!allowed.has(l.key)||state.view==='mech'&&!isMechLanguage(l.key)?'disabled':''}><button class="language-name ${child?'':'family-name'} ${focusKeys().has(l.key)?'active':''}" data-open-language="${l.key}" title="Open ${esc(shortName(l.key))} timings and programs"><span class="color-key" style="${colorKeyStyle(l.key)}"></span><span>${esc(child?l.variant_label:shortName(l.key))}${child?'':`<small class="release-label">${l.release_year}</small>`}${l.timed_benchmarks.length<10?`<small class="coverage-label" title="${esc(l.coverage_note??'Incomplete measured coverage')}">${l.timed_benchmarks.length}/10 admitted</small>`:''}</span></button><button class="spread-toggle" data-spread="${l.key}" aria-label="Toggle ${esc(shortName(l.key))} standard deviation" aria-pressed="${state.ellipses.has(l.key)}" title="${esc(shortName(l.key))}: standard-deviation ellipses" ${!enabled.has(l.key)||state.view==='mech'&&!isMechLanguage(l.key)?'disabled':''}><svg viewBox="0 0 28 18" aria-hidden="true"><ellipse cx="14" cy="9" rx="11" ry="5.5" transform="rotate(-22 14 9)" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="14" cy="9" r="1.5" fill="currentColor"/></svg></button></div>`;
@@ -403,7 +458,7 @@ function renderControls(){
   }).join('')}${dimension.note?`<p>${esc(dimension.note)}</p>`:''}</fieldset>`).join('');
   $('#trait-filter-status').textContent=`${enabled.size} matching variants`;
   $('#clear-traits').disabled=state.view==='mech'||!traitDimensions.some(({key})=>state.traits[key].size);
-  if(focusAttribute)$(`[${focusAttribute}="${focusValue}"]`)?.focus({preventScroll:true});
+  if(focusAttribute)filterControls.querySelector(`[${focusAttribute}="${focusValue}"]`)?.focus({preventScroll:true});
 }
 function currentEntries(){
   if(state.view!=='benchmark')return model.entries;
@@ -426,6 +481,7 @@ function selectedPlotDomain(){
 }
 function currentDensityField(){return densityGrid(sampleDensityPoints(currentSampleInputs()),selectedPlotDomain());}
 function openPoint(info){
+  closeFilterDrawer();
   const explicit=catalogProgram(info.program);
   state.detail={language:explicit?.language??info.language,benchmark:explicit?.benchmark??info.benchmark??state.focus,kind:info.kind??'fast',
     program:info.program??null,aggregate:!!info.aggregate,file:0};
@@ -913,7 +969,7 @@ async function start(){
   for(const kind of ['benchmark','language']){
     const toggle=$(`#toggle-${kind}-filters`),body=$(`#${kind}-filter-body`);
     const setExpanded=value=>{toggle.setAttribute('aria-expanded',value);body.hidden=!value;};
-    setExpanded(innerWidth>720);
+    setExpanded(true);
     toggle.onclick=()=>setExpanded(body.hidden);
   }
   $('#all-benchmarks').onclick=()=>{leaveLanguageFocusForSelection();state.benchmarks=new Set(data.benchmarks.map(b=>b.key));update();};

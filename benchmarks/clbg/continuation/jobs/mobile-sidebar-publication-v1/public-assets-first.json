@@ -1,0 +1,39 @@
+{
+  "at": "2026-10-14T00:40:25.986365+00:00",
+  "all_match": true,
+  "assets": [
+    {
+      "name": "index.html",
+      "url": "https://mech-lang.org/benchmarks/",
+      "status": 200,
+      "bytes": 30209,
+      "expected_sha256": "8607bef404d009fbc07c9b12ec5549298981d5ea5f0c106f881b50928a384791",
+      "actual_sha256": "8607bef404d009fbc07c9b12ec5549298981d5ea5f0c106f881b50928a384791",
+      "matches": true,
+      "cache_control": "max-age=600",
+      "age": null
+    },
+    {
+      "name": "style.css",
+      "url": "https://mech-lang.org/benchmarks/style.css?v=20261014-mobile-sidebar-v1",
+      "status": 200,
+      "bytes": 33760,
+      "expected_sha256": "5a8a5e77418ef52e288d02786fd43c8abf0d20f1e3b3374efdc8e2eb6b062b4e",
+      "actual_sha256": "5a8a5e77418ef52e288d02786fd43c8abf0d20f1e3b3374efdc8e2eb6b062b4e",
+      "matches": true,
+      "cache_control": "max-age=600",
+      "age": null
+    },
+    {
+      "name": "app.mjs",
+      "url": "https://mech-lang.org/benchmarks/app.mjs?v=20261014-mobile-sidebar-v1",
+      "status": 200,
+      "bytes": 99359,
+      "expected_sha256": "2c0eb8b81c9db419726dfe1439fe570782a6fd84a44d2dc9c071e2b1be11aa92",
+      "actual_sha256": "2c0eb8b81c9db419726dfe1439fe570782a6fd84a44d2dc9c071e2b1be11aa92",
+      "matches": true,
+      "cache_control": "max-age=600",
+      "age": null
+    }
+  ]
+}

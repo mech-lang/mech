@@ -1,0 +1,29 @@
+{
+  "at": "2026-10-14T00:42:40.436508+00:00",
+  "status": "published-and-live-browser-verified",
+  "website_sha": "7f67aeb3d048c6ac5c0fe23b23ce6bd8f7982db7",
+  "pipeline_id": 2944757145,
+  "pipeline_status": "success",
+  "public_assets_all_match": true,
+  "public_browser": {
+    "url": "https://mech-lang.org/benchmarks/",
+    "viewport": [
+      390,
+      844
+    ],
+    "modal": true,
+    "controls_parent": "filter-drawer",
+    "drawer_bounds": [
+      0,
+      0,
+      354,
+      844
+    ],
+    "summary": "10/10 selected \u00b7 45 languages \u00b7 51 variants \u00b7 0 hidden",
+    "script": "./app.mjs?v=20261014-mobile-sidebar-v1",
+    "closed_with_done": true,
+    "viewport_reset": true
+  },
+  "benchmark_runs": 0,
+  "common_mutex_held": true
+}

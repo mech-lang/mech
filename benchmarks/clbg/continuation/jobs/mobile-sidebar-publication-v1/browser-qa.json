@@ -1,0 +1,68 @@
+{
+  "at": "2026-10-14T00:36:39.788897+00:00",
+  "url": "http://127.0.0.1:58302/benchmarks/",
+  "browser": "Codex in-app browser",
+  "assets": {
+    "index.html": "8607bef404d009fbc07c9b12ec5549298981d5ea5f0c106f881b50928a384791",
+    "style.css": "5a8a5e77418ef52e288d02786fd43c8abf0d20f1e3b3374efdc8e2eb6b062b4e",
+    "app.mjs": "2c0eb8b81c9db419726dfe1439fe570782a6fd84a44d2dc9c071e2b1be11aa92"
+  },
+  "phone_viewports": [
+    {
+      "width": 390,
+      "height": 844,
+      "document_width": 390,
+      "drawer_width": 354,
+      "drawer_x": 0,
+      "drawer_height": 844,
+      "drawer_content_horizontal_overflow": 0
+    },
+    {
+      "width": 320,
+      "height": 700,
+      "document_width": 320,
+      "drawer_width": 284,
+      "drawer_x": 0,
+      "drawer_height": 700,
+      "drawer_content_horizontal_overflow": 0
+    }
+  ],
+  "desktop": {
+    "width": 1280,
+    "height": 900,
+    "sidebar_width": 235,
+    "sidebar_parent": "workspace",
+    "trigger_display": "none",
+    "modal_open": false
+  },
+  "interaction_checks": [
+    "Same controls are inside the closed native dialog on mobile and restored to desktop workspace.",
+    "Opening uses a modal dialog and focuses Done; body position is fixed.",
+    "N-body deselection gives9/10 and restores checkbox focus; restored to10.",
+    "1990s button gives1990\u20131999; first-year ArrowRight gives1958\u20132026; full window restored.",
+    "Gleam deselection gives44 languages/50 variants; unchecked selection survives reopening; input retains focus after rerender.",
+    "Done, Escape and an outside tap at376,150 dismiss the390px drawer and restore Filters focus.",
+    "Language navigation closes drawer and focuses Gleam overview heading.",
+    "N-body navigation closes drawer and opens inspector; Escape in subsequently opened drawer preserves that inspector.",
+    "Resizing open drawer to desktop closes it, unlocks body and restores sidebar; desktop sidebar focus becomes Filters focus on phone after media-change handler settles.",
+    "A page scroll position2202 is retained through fixed-body lock and restored on close."
+  ],
+  "layers": {
+    "samples_off_raw_dots": 0,
+    "samples_off_summary_medians": 101,
+    "density_only_raw_dots": 0,
+    "density_only_medians": 0,
+    "density_only_cells": 1728,
+    "density_recorded_runs": 2529,
+    "density_programs": 815,
+    "density_variants": 51
+  },
+  "console_errors": [],
+  "limitations": [
+    "Screenshot capture timed out in the browser tool; DOM geometry and actual input interactions were inspected.",
+    "Native dialog Shift+Tab from its first control can move focus out of the document into browser chrome; background controls remain outside the native modal."
+  ],
+  "review": "Independent full source review plus both focus refinements accepted by formatted_source_review.",
+  "common_mutex_held": true,
+  "benchmark_runs": 0
+}

@@ -1,0 +1,14 @@
+{
+  "at": "2026-10-14T00:36:54.608547+00:00",
+  "status": "website-committed",
+  "old": "221f06f9846a62d2c31e9fc51a85900cd2a5d620",
+  "head": "7f67aeb3d048c6ac5c0fe23b23ce6bd8f7982db7",
+  "paths": [
+    "public/benchmarks/app.mjs",
+    "public/benchmarks/index.html",
+    "public/benchmarks/style.css"
+  ],
+  "commit_output": "[main 7f67aeb] Use a left filter drawer on mobile benchmark explorer\n 3 files changed, 99 insertions(+), 16 deletions(-)\n",
+  "bundle": "/tmp/website-mobile-sidebar-20261014-v1.bundle",
+  "common_mutex_held": true
+}

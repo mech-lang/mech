@@ -1,0 +1,90 @@
+{
+  "at": "2026-10-14T00:42:40.436508+00:00",
+  "files": [
+    {
+      "path": "benchmarks/clbg/BENCHMARK_PROGRESS.md",
+      "sha256": "25e24e5e2e97debccc4b0c1b0c2271cefd5602af5e9b325a717e2c995801acbb",
+      "bytes": 46003
+    },
+    {
+      "path": "benchmarks/clbg/overview/explorer/mobile-sidebar-v1/app.mjs",
+      "sha256": "2c0eb8b81c9db419726dfe1439fe570782a6fd84a44d2dc9c071e2b1be11aa92",
+      "bytes": 99359
+    },
+    {
+      "path": "benchmarks/clbg/overview/explorer/mobile-sidebar-v1/index.html",
+      "sha256": "8607bef404d009fbc07c9b12ec5549298981d5ea5f0c106f881b50928a384791",
+      "bytes": 30209
+    },
+    {
+      "path": "benchmarks/clbg/overview/explorer/mobile-sidebar-v1/style.css",
+      "sha256": "5a8a5e77418ef52e288d02786fd43c8abf0d20f1e3b3374efdc8e2eb6b062b4e",
+      "bytes": 33760
+    },
+    {
+      "path": "benchmarks/clbg/overview/explorer/dist/app.mjs",
+      "sha256": "2c0eb8b81c9db419726dfe1439fe570782a6fd84a44d2dc9c071e2b1be11aa92",
+      "bytes": 99359
+    },
+    {
+      "path": "benchmarks/clbg/overview/explorer/dist/index.html",
+      "sha256": "8607bef404d009fbc07c9b12ec5549298981d5ea5f0c106f881b50928a384791",
+      "bytes": 30209
+    },
+    {
+      "path": "benchmarks/clbg/overview/explorer/dist/style.css",
+      "sha256": "5a8a5e77418ef52e288d02786fd43c8abf0d20f1e3b3374efdc8e2eb6b062b4e",
+      "bytes": 33760
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/mobile-sidebar-publication-v1/browser-qa.json",
+      "sha256": "b240c74ac399684755777f66d20e03524eba65775ca4766cbdd23031b484a224",
+      "bytes": 2873
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/mobile-sidebar-publication-v1/pipeline-first.json",
+      "sha256": "330f28004770ba112eb0be1b09d339e82eeef94eddc21ddeec31592c8e9fccbf",
+      "bytes": 601
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/mobile-sidebar-publication-v1/pipeline-second.json",
+      "sha256": "639bc05cbe6cf9d7499e7d3e8144161528dabb624950635c2eec60e528ec2d9d",
+      "bytes": 1575
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/mobile-sidebar-publication-v1/pipeline-third.json",
+      "sha256": "aecdfc014ccb8e92c20db2be4a5f9d2c5c41ecd9d87de1820593c227154ab2a2",
+      "bytes": 1592
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/mobile-sidebar-publication-v1/public-assets-first.json",
+      "sha256": "d510f2454460e6fda5a614921b134679f891eb727f717d984e4f3bab3c7324e3",
+      "bytes": 1347
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/mobile-sidebar-publication-v1/publication.json",
+      "sha256": "6d19644849407030600291cab5e7ce2008b7433e0f5b21a37cd3568c870b9452",
+      "bytes": 757
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/mobile-sidebar-publication-v1/stage.json",
+      "sha256": "8cceebfc4edc719b100ec56150c3ca8a225d595699987b6830d23d79523457c8",
+      "bytes": 719
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/mobile-sidebar-publication-v1/website-commit.json",
+      "sha256": "629348d3b1486c34b108361db80c386fbe88f1e2b38d0107cb943231362e7c01",
+      "bytes": 545
+    },
+    {
+      "path": "benchmarks/clbg/continuation/jobs/mobile-sidebar-publication-v1/website-push.json",
+      "sha256": "af3cb12108e009c1bdbc0402106a3b26d78b98222c2ea0820fe74d1a3085d53e",
+      "bytes": 591
+    },
+    {
+      "path": "benchmarks/clbg/prolog-comparison/20261013/revisions/scored-work-review-v1/REVIEW.md",
+      "sha256": "6c41cf7b4e88c0dc019b4126f9ff52ebeba9ac50c36aca6ea7747fb409c7e04c",
+      "bytes": 10004
+    }
+  ]
+}

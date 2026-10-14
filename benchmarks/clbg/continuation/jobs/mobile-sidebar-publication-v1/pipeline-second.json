@@ -1,0 +1,48 @@
+{
+  "at": "2026-10-14T00:37:50.271830+00:00",
+  "url": "https://gitlab.com/api/v4/projects/5692990/pipelines/2944757145",
+  "pipeline": {
+    "id": 2944757145,
+    "iid": 804,
+    "project_id": 5692990,
+    "sha": "7f67aeb3d048c6ac5c0fe23b23ce6bd8f7982db7",
+    "ref": "main",
+    "status": "running",
+    "source": "push",
+    "created_at": "2026-10-14T00:37:12.318Z",
+    "updated_at": "2026-10-14T00:37:12.998Z",
+    "web_url": "https://gitlab.com/mech-lang/web/website/-/pipelines/2944757145",
+    "before_sha": "221f06f9846a62d2c31e9fc51a85900cd2a5d620",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 1865696,
+      "username": "cmontella",
+      "public_email": "",
+      "name": "Corey Montella",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/1865696/avatar.png?v=1791936679",
+      "web_url": "https://gitlab.com/cmontella"
+    },
+    "started_at": "2026-10-14T00:37:12.997Z",
+    "finished_at": null,
+    "committed_at": null,
+    "duration": null,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_running",
+      "text": "Running",
+      "label": "running",
+      "group": "running",
+      "tooltip": "running",
+      "has_details": true,
+      "details_path": "/mech-lang/web/website/-/pipelines/2944757145",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_running-9c635b2419a8e1ec991c993061b89cc5aefc0743bb238ecd0c381e7741a70e8c.png"
+    },
+    "archived": false,
+    "name": null
+  }
+}
