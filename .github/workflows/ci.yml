@@ -227,6 +227,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
+      RUSTUP_TOOLCHAIN: nightly-2026-03-03
       CARGO_INCREMENTAL: 0
       CARGO_PROFILE_TEST_DEBUG: "0"
       RUSTUP_TOOLCHAIN: nightly-2026-03-03
@@ -392,6 +393,7 @@ jobs:
       matrix:
         include: ${{ fromJSON(needs.impact.outputs.owner_shards) }}
     env:
+      RUSTUP_TOOLCHAIN: nightly-2026-03-03
       CARGO_TERM_COLOR: always
       CARGO_INCREMENTAL: 0
       CARGO_PROFILE_TEST_DEBUG: "0"

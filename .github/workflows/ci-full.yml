@@ -400,7 +400,7 @@ jobs:
             --no-default-features --features full_compiler,resident-artifact,native-sequence \
             --lib native_sequence -- --test-threads=1
           cargo +nightly-2026-03-03 check --locked --offline -p mech \
-            --no-default-features --features cranelift_build
+            --features cranelift_build
 
   managed-memory-fixed-profiles:
     if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'numeric') }}
