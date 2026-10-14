@@ -917,7 +917,7 @@ mod tests {
             };
             assert!(
                 error
-                    .to_string()
+                    .display_message()
                     .contains("refusing to overwrite existing Cargo project")
             );
             if existing_output {
