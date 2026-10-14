@@ -1,4 +1,4 @@
-//! General resource/effect inference and independent regex graph scheduling.
+//! General resource/effect inference and observable regex graph scheduling.
 #![cfg(feature = "sequence-cli")]
 
 #[cfg(test)]
@@ -23,7 +23,7 @@ mod tests {
         assert!(value.computation.entry.big_integer_values);
     }
     #[test]
-    fn independent_regex_nodes_are_scheduled_before_scalar_consumers() {
+    fn regex_nodes_preserve_source_order_with_io() {
         let source = "raw := io/read()\na := regex/count-bytes(raw, \"foo+\")\nio/write(number/format(a, 0))\nb := regex/count-bytes(raw, \"bar[0-9]+\")\nio/write(number/format(b, 0))\nx := regex/replace-bytes(raw, \"<[^>]*>\", \"-\")\nio/write(x)\n";
         let p = mech_gpu::sequence::compile(source, 256)
             .unwrap()
@@ -36,11 +36,30 @@ mod tests {
             .filter(|(_, n)| n.op == 53)
             .map(|(i, _)| i)
             .collect::<Vec<_>>();
-        let first_consumer = p.nodes.iter().position(|n| n.op == 24).unwrap();
         assert_eq!(counts.len(), 2);
-        assert!(counts.iter().all(|&i| i < first_consumer));
-        let replacement = p.nodes.iter().position(|n| n.op == 54).unwrap();
-        assert!(replacement < first_consumer);
+        // Pattern compilation can fail at execution time. A later regex must
+        // not move ahead of an earlier write, even with independent inputs.
+        let observable = p
+            .nodes
+            .iter()
+            .filter(|node| matches!(node.op, 8 | 53 | 54))
+            .map(|node| node.op)
+            .collect::<Vec<_>>();
+        assert_eq!(observable, [53, 8, 53, 8, 54, 8]);
+        let consumers = p
+            .nodes
+            .iter()
+            .enumerate()
+            .filter(|(_, node)| node.op == 24)
+            .map(|(index, _)| index)
+            .collect::<Vec<_>>();
+        assert_eq!(consumers.len(), 2);
+        assert!(
+            counts
+                .iter()
+                .zip(consumers)
+                .all(|(&count, consumer)| count < consumer)
+        );
         assert!(!p.object(256).unwrap().is_empty());
     }
 }
