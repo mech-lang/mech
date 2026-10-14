@@ -5469,10 +5469,13 @@ fn bind_scalar_access_1d(
         ChangeDetectionPolicy::KernelReported,
     )?;
     if request.inputs.len() != 2
-        || request.inputs[0].kind != ResidentValueKind::F64
+        || !matches!(
+            request.inputs[0].kind,
+            ResidentValueKind::F64 | ResidentValueKind::Bool
+        )
         || !numeric_positional_selector_layout(request, &request.inputs[1])
         || declared_selector_cardinality(request, &request.inputs[1])? != 1
-        || request.output.kind != ResidentValueKind::F64
+        || request.output.kind != request.inputs[0].kind
         || request.output.shape != ResidentShape::SCALAR
         || request.inputs[0].shape.len().is_none()
     {
@@ -5574,12 +5577,14 @@ fn bind_scalar_access_2d(
     let [source, row, column] = request.inputs else {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
-    if source.kind != ResidentValueKind::F64
-        || !numeric_positional_selector_layout(request, row)
+    if !matches!(
+        source.kind,
+        ResidentValueKind::F64 | ResidentValueKind::Bool
+    ) || !numeric_positional_selector_layout(request, row)
         || !numeric_positional_selector_layout(request, column)
         || declared_selector_cardinality(request, row)? != 1
         || declared_selector_cardinality(request, column)? != 1
-        || request.output.kind != ResidentValueKind::F64
+        || request.output.kind != source.kind
         || request.output.shape != ResidentShape::SCALAR
         || source.shape.len().is_none()
     {
@@ -14854,6 +14859,13 @@ fn scalar_access_1d(
     if inputs.len() != 2 {
         return Err(ResidentKernelError::InvalidInput);
     }
+    if let ResidentValueRef::Bool(source) = input(inputs, 0)? {
+        let index = checked_one_based(index_at(inputs, 1, 0)?, source.len())?;
+        if source.iter().any(|value| *value > 1) {
+            return Err(ResidentKernelError::InvalidInput);
+        }
+        return write_bool(output, source[index] != 0);
+    }
     let source = f64_input(inputs, 0)?;
     let index = checked_one_based(index_at(inputs, 1, 0)?, source.len())?;
     let output = f64_output(output)?;
@@ -15025,11 +15037,22 @@ fn scalar_access_2d(
     if inputs.len() != 3 || kernel.parameters().len() != 2 {
         return Err(ResidentKernelError::InvalidInput);
     }
-    let source = f64_input(inputs, 0)?;
     let rows =
         usize::try_from(kernel.parameters()[0]).map_err(|_| ResidentKernelError::InvalidShape)?;
     let columns =
         usize::try_from(kernel.parameters()[1]).map_err(|_| ResidentKernelError::InvalidShape)?;
+    if let ResidentValueRef::Bool(source) = input(inputs, 0)? {
+        if rows.checked_mul(columns) != Some(source.len()) {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        let row = checked_one_based(index_at(inputs, 1, 0)?, rows)?;
+        let column = checked_one_based(index_at(inputs, 2, 0)?, columns)?;
+        if source.iter().any(|value| *value > 1) {
+            return Err(ResidentKernelError::InvalidInput);
+        }
+        return write_bool(output, source[row + column * rows] != 0);
+    }
+    let source = f64_input(inputs, 0)?;
     if rows.checked_mul(columns) != Some(source.len()) {
         return Err(ResidentKernelError::InvalidShape);
     }
@@ -25278,6 +25301,64 @@ mod tests {
                     expected.canonical_data_draft().unwrap(),
                 );
             }
+        }
+    }
+
+    #[test]
+    fn boolean_scalar_access_validates_before_writing() {
+        let source = [0, 1, 0, 1];
+        let malformed = [0, 1, 2, 1];
+        let linear = BoundResidentKernel::new(scalar_access_1d, Box::new([]));
+        let matrix = BoundResidentKernel::new(scalar_access_2d, vec![2, 2].into_boxed_slice());
+        for (values, index, expected) in [
+            (&source[..], 2, Ok(true)),
+            (&source[..], 0, Err(ResidentKernelError::InvalidInput)),
+            (
+                &source[..],
+                5,
+                Err(ResidentKernelError::IndexOutOfRange {
+                    index: 5,
+                    upper_bound: 4,
+                }),
+            ),
+            (&malformed[..], 2, Err(ResidentKernelError::InvalidInput)),
+        ] {
+            let ordinal = [index];
+            let inputs = [
+                ResidentValueRef::Bool(values),
+                ResidentValueRef::Index(&ordinal),
+            ];
+            let mut selected = [0];
+            let result = linear.execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut selected));
+            assert_eq!(result, expected);
+            assert_eq!(selected, [u8::from(result.is_ok())]);
+        }
+        for (values, row, column, expected) in [
+            (&source[..], 2, 1, Ok(true)),
+            (&source[..], 1, 0, Err(ResidentKernelError::InvalidInput)),
+            (
+                &source[..],
+                3,
+                1,
+                Err(ResidentKernelError::IndexOutOfRange {
+                    index: 3,
+                    upper_bound: 2,
+                }),
+            ),
+            (&malformed[..], 2, 1, Err(ResidentKernelError::InvalidInput)),
+            (&source[..3], 2, 1, Err(ResidentKernelError::InvalidShape)),
+        ] {
+            let row = [row];
+            let column = [column];
+            let inputs = [
+                ResidentValueRef::Bool(values),
+                ResidentValueRef::Index(&row),
+                ResidentValueRef::Index(&column),
+            ];
+            let mut selected = [0];
+            let result = matrix.execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut selected));
+            assert_eq!(result, expected);
+            assert_eq!(selected, [u8::from(result.is_ok())]);
         }
     }
 

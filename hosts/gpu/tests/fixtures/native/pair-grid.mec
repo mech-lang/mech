@@ -1,0 +1,6 @@
+pixels(width<f64>, column<[f64]:2,1>, row<f64>) = (output<[bool]:1,3>) :=
+  flags := column + row < width
+  output := [flags[1], flags[2], true].
+size := io/argument-u64(1)
+image := grid/map-until(size, size, pixels)
+io/write(image/pbm(image))

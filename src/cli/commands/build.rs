@@ -61,6 +61,25 @@ pub(crate) fn command() -> Command {
                 .action(ArgAction::Append),
         )
         .arg(
+            Arg::new("build_backend")
+                .long("backend")
+                .value_parser(["resident", "cranelift"])
+                .default_value("resident")
+                .help("Execution compiler: resident application or Cranelift AOT source program."),
+        )
+        .arg(
+            Arg::new("native_scalar")
+                .long("scalar")
+                .action(ArgAction::SetTrue)
+                .help("Disable Cranelift vector lowering."),
+        )
+        .arg(
+            Arg::new("native_loop_fma")
+                .long("fp-contract-loop")
+                .action(ArgAction::SetTrue)
+                .help("Opt in to FMA contraction of state-dependent recurrence arithmetic."),
+        )
+        .arg(
             Arg::new("build_emit")
                 .long("emit")
                 .value_name("EMIT")
@@ -148,6 +167,9 @@ pub(crate) fn validate_build_bytecode_inputs(paths: &[String]) -> MResult<usize>
 pub(crate) struct BuildOptions {
     pub paths: Vec<String>,
     pub emit: BuildEmit,
+    pub cranelift: bool,
+    pub native_scalar: bool,
+    pub native_loop_fma: bool,
     pub name: Option<String>,
     pub output_path: Option<PathBuf>,
     pub target: Option<String>,
@@ -183,6 +205,11 @@ impl BuildOptions {
                 .get_many::<String>("mech_build_file_paths")
                 .map_or_else(Vec::new, |files| files.cloned().collect()),
             emit,
+            cranelift: matches
+                .get_one::<String>("build_backend")
+                .is_some_and(|b| b == "cranelift"),
+            native_scalar: matches.get_flag("native_scalar"),
+            native_loop_fma: matches.get_flag("native_loop_fma"),
             name: matches.get_one::<String>("build_name").cloned(),
             output_path: matches.get_one::<String>("output_path").map(PathBuf::from),
             target: matches.get_one::<String>("build_target").cloned(),
@@ -214,6 +241,12 @@ impl BuildOptions {
 }
 
 pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
+    if options.cranelift {
+        return run_cranelift(options);
+    }
+    if options.native_scalar || options.native_loop_fma {
+        return build_error("`--scalar` and `--fp-contract-loop` require `--backend cranelift`");
+    }
     let bytecode_count = validate_build_bytecode_inputs(&options.paths)?;
     let binary_name = options
         .name
@@ -425,6 +458,90 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
             builder.generate_at(&request, &plan, project_output)?;
         }
     }
+    Ok(CliOutcome::success())
+}
+
+#[cfg(not(feature = "cranelift_build"))]
+fn run_cranelift(_: BuildOptions) -> MResult<CliOutcome> {
+    build_error(
+        "Cranelift builds require this CLI to be compiled with `--features cranelift_build`",
+    )
+}
+
+#[cfg(feature = "cranelift_build")]
+fn run_cranelift(options: BuildOptions) -> MResult<CliOutcome> {
+    if options.emit != BuildEmit::Native || options.target.is_some() {
+        return build_error(
+            "Cranelift currently emits native applications for the current host; use --emit native without --target",
+        );
+    }
+    if options.config_path.is_some() || options.debug || options.trace {
+        return build_error(
+            "Cranelift standalone IO programs do not admit resident host configuration, --debug or --trace yet",
+        );
+    }
+    validate_build_bytecode_inputs(&options.paths)?;
+    let sources = discover_source_roots(&options.paths)?;
+    enforce_production_build_source_shape(&sources)?;
+    let name = options
+        .name
+        .clone()
+        .unwrap_or_else(|| inferred_binary_name(&options.paths[0]));
+    mech_build::validate_project_binary_name(&name)?;
+    let workspace = options
+        .workspace_root
+        .clone()
+        .unwrap_or_else(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")))
+        .canonicalize()?;
+    let output = options
+        .output_path
+        .clone()
+        .unwrap_or_else(|| default_output_path(BuildEmit::Native, &name));
+    let project = tempfile::Builder::new()
+        .prefix("mech-cranelift-")
+        .tempdir()?;
+    let kind = mech_gpu::native_build::emit_application(
+        &sources[0],
+        project.path(),
+        &workspace,
+        &name,
+        !options.native_scalar,
+        options.native_loop_fma,
+    )
+    .map_err(|e| MechError::new(GenericError { msg: e }, None))?;
+    mech_gpu::native_build::build_application(
+        kind,
+        project.path(),
+        &output,
+        &name,
+        options.profile == BuildProfile::Release,
+        options.offline,
+    )
+    .map_err(|e| MechError::new(GenericError { msg: e }, None))?;
+    if options.keep_project {
+        let destination = project_output_path(&output);
+        refuse_existing_project_output(&destination)?;
+        fn copy_tree(from: &Path, to: &Path) -> std::io::Result<()> {
+            fs::create_dir_all(to)?;
+            for entry in fs::read_dir(from)? {
+                let entry = entry?;
+                if entry.file_name() == "target" {
+                    continue;
+                }
+                if entry.file_type()?.is_dir() {
+                    copy_tree(&entry.path(), &to.join(entry.file_name()))?;
+                } else {
+                    fs::copy(entry.path(), to.join(entry.file_name()))?;
+                }
+            }
+            Ok(())
+        }
+        copy_tree(project.path(), &destination)?;
+    }
+    println!(
+        "[Output] Cranelift AOT Mech application written to: {}",
+        output.display()
+    );
     Ok(CliOutcome::success())
 }
 

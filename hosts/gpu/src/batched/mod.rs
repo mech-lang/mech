@@ -26,10 +26,17 @@ use super::{
     UnaryOperation, WORKGROUP_SIZE, display_operation, turn_required_nodes,
 };
 
+mod array_cpu;
+pub use array_cpu::*;
+
 #[cfg(feature = "jit")]
 mod jit;
 #[cfg(feature = "jit")]
 pub use jit::*;
+#[cfg(feature = "aot")]
+pub(crate) mod aot;
+#[cfg(feature = "aot")]
+pub use aot::*;
 
 const SIMD_LANES: usize = 4;
 const FIXED_SHAPE_INTEGRITY_WORDS: usize = 2;

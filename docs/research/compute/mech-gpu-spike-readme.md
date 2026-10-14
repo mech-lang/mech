@@ -183,7 +183,7 @@ The checked GPU figures include validation before every publication. The old
 unchecked 120-turn batched figure is not comparable because it crosses the
 host publication boundary only after all 120 turns. Raw checked samples are
 recorded in
-[`apple-m1-checked-integrity-2026-08-14.json`](benchmarks/parallel-ekf/results/apple-m1-checked-integrity-2026-08-14.json).
+[`apple-m1-checked-integrity-2026-08-14.json`](https://github.com/mech-lang/benchmarks/blob/main/benchmarks/archive/compute/parallel-ekf/results/apple-m1-checked-integrity-2026-08-14.json).
 
 Commit `efc85d48e562fe4ccc1af535e04f9bf4617e05a6` optimizes the generic
 checked path without removing a constraint or changing publication behavior.
@@ -207,9 +207,9 @@ synchronization, so their apparent change is not a kernel-only result. The
 stable native measurements still trail the older unchecked reference by
 22.6% for scalar, 13.6% for SIMD, and 15.6% for JIT. Raw optimized samples and
 the exact validation record are in
-[`apple-m1-checked-integrity-optimized-2026-08-14.json`](benchmarks/parallel-ekf/results/apple-m1-checked-integrity-optimized-2026-08-14.json).
+[`apple-m1-checked-integrity-optimized-2026-08-14.json`](https://github.com/mech-lang/benchmarks/blob/main/benchmarks/archive/compute/parallel-ekf/results/apple-m1-checked-integrity-optimized-2026-08-14.json).
 
-[`benchmarks/parallel-ekf`](benchmarks/parallel-ekf) contains the reproducible
+[the benchmark archive](https://github.com/mech-lang/benchmarks/tree/main/benchmarks/archive/compute/parallel-ekf) contains the reproducible
 two-panel comparison: Mech scalar versus SIMD versus JIT versus GPU, and scalar
 outer-loop Mech/JIT versus optimized Rust, NumPy, Julia, and LuaJIT. The latter
 comparison uses matching inputs and checksums and keeps setup outside timing.

@@ -38,4 +38,8 @@ Cargo.lock
 
 # Mac Files
 .DS_Store
+.apl.history
 /src/wasm/pkg
+
+# Regenerated local example verification reports
+/examples/function-application-prototype/*-current.json
