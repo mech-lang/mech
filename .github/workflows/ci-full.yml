@@ -317,7 +317,7 @@ jobs:
     if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'memory') || contains(fromJSON(inputs.contract_families), 'numeric') }}
     name: Managed memory runtime
     runs-on: ubuntu-latest
-    timeout-minutes: 50
+    timeout-minutes: 75
     env:
       CARGO_INCREMENTAL: 0
       CARGO_PROFILE_DEV_DEBUG: "0"
@@ -407,6 +407,9 @@ jobs:
           cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
             --no-default-features --features full_compiler,resident-artifact,native-sequence \
             --test native_sequence_effects -- --test-threads=1
+      - name: Check CLI kept-project collision before native build
+        timeout-minutes: 25
+        run: |
           cargo +nightly-2026-03-03 check --locked --offline -p mech \
             --features cranelift_build
           cargo +nightly-2026-03-03 test --locked --offline -p mech \
