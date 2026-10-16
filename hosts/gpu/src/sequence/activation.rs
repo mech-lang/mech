@@ -4,9 +4,9 @@ use mech_core::{ExecutionResourceRequest, ResourceDelivery, ResourceIntent, Valu
 use mech_engine::native_sequence::{NativeResourceIntent, NativeResourceRequirement};
 use mech_runtime::{
     ConfigValue, HostInstanceConfig, MechRuntime, NativeResourceBindings, RunResourceGrantConfig,
-    RuntimeBuilder, RuntimeCapabilityOperation, RuntimeContext, RuntimeHostInputValue,
-    RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteCommand,
-    RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
+    RuntimeAfterCommitEffect, RuntimeBuilder, RuntimeCapabilityOperation, RuntimeContext,
+    RuntimeHostInputValue, RuntimeResourceProvider, RuntimeResourceReadRequest,
+    RuntimeResourceWriteCommand, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
 };
 use mech_terminal::{CliBackend, CliHostFactory, CliResourceProvider, StdCliBackend};
 use serde::{Deserialize, Serialize};
@@ -36,7 +36,10 @@ enum Mode<B: CliBackend + Clone + 'static> {
         bindings: NativeResourceBindings,
         context: RuntimeContext,
     },
-    Trusted(CliResourceProvider<B>),
+    Trusted {
+        provider: CliResourceProvider<B>,
+        effects: Vec<Box<dyn RuntimeAfterCommitEffect>>,
+    },
     Finished,
 }
 
@@ -165,7 +168,10 @@ impl<B: CliBackend + Clone + 'static> CliHostIo<B> {
                             .map_err(message)?,
                     }
                 }
-                Mode::Trusted(provider)
+                Mode::Trusted {
+                    provider,
+                    effects: Vec::new(),
+                }
             }
         };
         Ok(Self {
@@ -227,7 +233,9 @@ impl<B: CliBackend + Clone + 'static> NativeHostIo for CliHostIo<B> {
             } => runtime
                 .read_native_resource_with_context(bindings, index, context)
                 .map_err(message)?,
-            Mode::Trusted(provider) => provider.read(read_request(request)).map_err(message)?,
+            Mode::Trusted { provider, .. } => {
+                provider.read(read_request(request)).map_err(message)?
+            }
             Mode::Finished => return Err("native host resources have been shut down".into()),
         };
         string_bytes(value)
@@ -250,8 +258,8 @@ impl<B: CliBackend + Clone + 'static> NativeHostIo for CliHostIo<B> {
             } => runtime
                 .write_native_resource_with_context(bindings, index, value, context)
                 .map_err(message),
-            Mode::Trusted(provider) => {
-                let mut effect = provider
+            Mode::Trusted { provider, effects } => {
+                let effect = provider
                     .prepare_output(RuntimeResourceWriteCommand {
                         base_uri: request.base_uri.clone(),
                         context_name: request.context_name.clone(),
@@ -261,40 +269,66 @@ impl<B: CliBackend + Clone + 'static> NativeHostIo for CliHostIo<B> {
                         value,
                     })
                     .map_err(message)?;
-                effect.deliver().map_err(message)
+                effects.push(effect);
+                Ok(())
             }
             Mode::Finished => Err("native host resources have been shut down".into()),
         }
     }
 
     fn finish(&mut self, success: bool) -> Result<(), String> {
-        if let Mode::Secure {
-            mut runtime,
-            mut context,
-            ..
-        } = std::mem::replace(&mut self.mode, Mode::Finished)
-        {
-            let mut errors = Vec::new();
-            if success {
-                if let Err(error) = runtime.commit_runtime_transaction(&mut context) {
-                    errors.push(message(error));
+        let mode = std::mem::replace(&mut self.mode, Mode::Finished);
+        let mut errors = Vec::new();
+        match mode {
+            Mode::Secure {
+                mut runtime,
+                mut context,
+                ..
+            } => {
+                if success {
+                    match runtime.commit_runtime_transaction_detailed(&mut context) {
+                        Ok(outcome) => {
+                            errors.extend(outcome.delivery_failures.into_iter().map(|failure| {
+                                format!(
+                                    "native secure effect delivery failed for {:?}: {}",
+                                    failure.effect_id, failure.message
+                                )
+                            }));
+                            errors.extend(outcome.audit_failures.into_iter().map(|failure| {
+                                format!(
+                                    "native secure effect audit failed for {:?}: {}",
+                                    failure.effect_id, failure.message
+                                )
+                            }));
+                        }
+                        Err(error) => errors.push(message(error)),
+                    }
                 }
-            }
-            // Failed entries never publish staged effects. A failed commit can
-            // also retain a transaction that still needs cleanup.
-            if context.transaction_id().is_some() {
-                if let Err(error) = runtime
-                    .abort_runtime_transaction(&mut context, "native execution did not commit")
+                // Failed entries never publish staged effects. A failed commit can
+                // also retain a transaction that still needs cleanup.
+                if context.transaction_id().is_some()
+                    && let Err(error) = runtime
+                        .abort_runtime_transaction(&mut context, "native execution did not commit")
                 {
                     errors.push(message(error));
                 }
+                if let Err(error) = runtime.shutdown() {
+                    errors.push(message(error));
+                }
             }
-            if let Err(error) = runtime.shutdown() {
-                errors.push(message(error));
+            Mode::Trusted { mut effects, .. } => {
+                if success {
+                    for effect in &mut effects {
+                        if let Err(error) = effect.deliver() {
+                            errors.push(message(error));
+                        }
+                    }
+                }
             }
-            if !errors.is_empty() {
-                return Err(errors.join("; "));
-            }
+            Mode::Finished => {}
+        }
+        if !errors.is_empty() {
+            return Err(errors.join("; "));
         }
         Ok(())
     }
