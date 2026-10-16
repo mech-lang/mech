@@ -1,0 +1,28 @@
+{
+  "schema": "mech.portable-source-candidate.coordinator.v1",
+  "status": "INCOMPLETE_SOURCE_ONLY_UNRUN",
+  "depends_on": "resource-input-schema-api-partial/manifest.json",
+  "scope": "Draft runtime observation binding, actual shape facts, migration and replay payload validation. Not composed with the current compiler; no build or test qualification.",
+  "files": [
+    {
+      "path": "resource-input-schema-api-partial/coordinator-follow-up/base/src/runtime/src/runtime/program/external/coordinator.rs",
+      "sha256": "875975f3f87cd26d40f5a1a953cc1882b6a2b6a284fc6e06630f6772ecfdbbaf",
+      "bytes": 124770
+    },
+    {
+      "path": "resource-input-schema-api-partial/coordinator-follow-up/candidate/src/runtime/src/runtime/program/external/coordinator.rs",
+      "sha256": "2ef0d6ede25a9ebfcdd712eaa6299cbc2351e28e963075ae4d26f7254e3bb0de",
+      "bytes": 126558
+    },
+    {
+      "path": "resource-input-schema-api-partial/coordinator-follow-up/candidate.patch",
+      "sha256": "81c52b1ed2d83d800f8783635ece611a38bd74d4e49b9ab1203c687f3de46de6",
+      "bytes": 9770
+    }
+  ],
+  "remaining": [
+    "Compose additively with current frontend/compiler and coordinator changes.",
+    "Validate fixed/Activation/Turn lifetime authority, bounded shapes, replay, migration, sampled evidence, rollback and output publication.",
+    "Do not admit the borrowed structural Match draft until persistent projection metadata is included in every runtime memory baseline."
+  ]
+}
