@@ -107,5 +107,6 @@
     "timing_dataset_changed_in_native_scalar_qualification": false
   },
   "benchmark_measurements_in_native_scalar_qualification": 0,
-  "release_policy": "Keep draft compiler PRs unmerged until their full qualification requirements are met."
+  "release_policy": "Keep draft compiler PRs unmerged until their full qualification requirements are met.",
+  "continuation_record": "benchmark-agent-handoff-v1.json"
 }
