@@ -267,7 +267,10 @@ fn contains_pipe(source: &str) -> bool {
             b'|' => match pipe_at(&code, i) {
                 Ok(Some(pipe)) => {
                     let counted = pipe.repetitions.is_some();
-                    let comprehension = counted && stack.last() == Some(&b'[');
+                    let comprehension = counted
+                        && stack
+                            .last()
+                            .is_some_and(|delimiter| matches!(*delimiter, b'[' | b'{'));
                     let match_arm = counted
                         && bytes[..i]
                             .iter()
@@ -904,7 +907,7 @@ mod tests {
     }
     #[test]
     fn counted_detection_preserves_comprehension_and_match_comparisons() {
-        let source = "x := [x | x > 0]\ny := [x | 1 > 0]\nz := [x |1>0]\na := (value ? | n > 0 => n | * => 0)\nb := (value ? | 1 > 0 => 1 | * => 0)\nc := (value ? |1>0 => 1 | * => 0)\n";
+        let source = "x := [x | x > 0]\ny := [x | 1 > 0]\nz := [x |1>0]\nlimit := 2\nvalues := {limit |1>limit}\na := (value ? | n > 0 => n | * => 0)\nb := (value ? | 1 > 0 => 1 | * => 0)\nc := (value ? |1>0 => 1 | * => 0)\n";
         assert_eq!(normalize(source).unwrap(), source);
 
         let normalized = normalize("r := source |> filter([x | x > 0], _)\n").unwrap();
