@@ -1316,6 +1316,7 @@ pub fn numeric_binary_for_predicate(
 
 pub fn maintained_source_scheme_template(name: &str) -> Option<SourceSchemeTemplate> {
     match name {
+        "math/add" => Some(SourceSchemeTemplate::Addition),
         "compare/lt" | "compare/lte" | "compare/gt" | "compare/gte" => {
             Some(SourceSchemeTemplate::OrderedComparison)
         }
@@ -1338,6 +1339,25 @@ pub fn instantiate_source_scheme_template(
     template: SourceSchemeTemplate,
     inputs: &[ResolvedType],
 ) -> Result<Vec<KindScheme>, SemanticModelError> {
+    if template == SourceSchemeTemplate::Addition {
+        // An exact scalar interval pair keeps its declared bounds. Resident
+        // execution checks the sum; interval addition grants neither numeric
+        // promotion nor scalar/matrix broadcasting to interval kinds.
+        let mut schemes =
+            maintained_source_schemes("math/add")?.expect("addition has maintained source schemes");
+        if let [left, right] = inputs
+            && let KindExpr::IntegerInterval(interval) = left.kind()
+            && interval.is_valid()
+            && left.kind() == right.kind()
+        {
+            schemes.push(exact_binary(
+                left.kind().clone(),
+                right.kind().clone(),
+                left.kind().clone(),
+            )?);
+        }
+        return Ok(schemes);
+    }
     if template == SourceSchemeTemplate::OrderedComparison {
         // Preserve the existing numeric, Index and String declarations. Only
         // an identical valid interval pair adds its exact resident-capable
@@ -1393,6 +1413,9 @@ pub fn instantiate_source_scheme_template(
         SourceSchemeTemplate::TableJoin(mode) => instantiate_table_join_scheme(inputs, mode)?,
         SourceSchemeTemplate::OrderedComparison => {
             unreachable!("ordering returns its scheme family above")
+        }
+        SourceSchemeTemplate::Addition => {
+            unreachable!("addition returns its scheme family above")
         }
     };
     Ok(vec![scheme])

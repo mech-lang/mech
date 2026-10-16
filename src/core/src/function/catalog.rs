@@ -689,7 +689,12 @@ pub fn maintained_source_type_declaration(
     canonical_name: &str,
 ) -> MResult<FunctionTypeDeclaration> {
     if let Some(template) = crate::type_system::maintained_source_scheme_template(canonical_name) {
-        return Ok(FunctionTypeDeclaration::from_template(template));
+        let mut declaration = FunctionTypeDeclaration::from_template(template);
+        if template == SourceSchemeTemplate::Addition {
+            declaration.parameter_names =
+                Some(vec!["left".into(), "right".into()].into_boxed_slice());
+        }
+        return Ok(declaration);
     }
     let Some(schemes) = crate::type_system::maintained_source_schemes(canonical_name)? else {
         return Err(MechError::new(
@@ -2242,7 +2247,9 @@ fn validate_type_declaration(
     }
     if let Some(names) = &declaration.parameter_names {
         let unique = names.iter().collect::<BTreeSet<_>>();
-        if declaration.template.is_some() || unique.len() != names.len() || names.iter().any(|name| name.is_empty())
+        if declaration.template.is_some_and(|template| {
+            template != SourceSchemeTemplate::Addition || names.len() != 2
+        }) || unique.len() != names.len() || names.iter().any(|name| name.is_empty())
             || declaration.overloads.iter().any(|overload| {
                 !matches!(overload.scheme.inputs(), InputKindScheme::Fixed(inputs) if inputs.len() == names.len())
                     || overload.input_layout.iter().any(|input| *input != SourceInputKind::Value)
