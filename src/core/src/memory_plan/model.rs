@@ -130,6 +130,42 @@ pub struct DimensionCapacity {
     pub evolution: ExtentEvolution,
 }
 
+/// Additional implementation work and allocator-backed scratch for one call.
+/// This augments, rather than replaces, its maintained implementation memory class.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct PlannedExecutionDemand {
+    pub temporary_bytes: u64,
+    pub cloned_bytes: u64,
+    pub retained_nodes: u64,
+    pub work: super::WorkDemand,
+}
+
+/// Current input authorities shared by prospective output and execution planning.
+/// No published-output footprint or reconstructed input payload is substituted.
+#[cfg(feature = "functions")]
+pub struct ExecutionDemandPlanningRequest<'a> {
+    pub inputs: &'a [ResolvedValueDescriptor],
+    pub input_witnesses: &'a [MemoryFootprintWitness],
+}
+
+#[cfg(feature = "functions")]
+impl ExecutionDemandPlanningRequest<'_> {
+    pub fn input_footprint(
+        &self,
+        input: usize,
+    ) -> Result<CurrentMemoryFootprint, super::MemoryPlanError> {
+        if self.inputs.len() != self.input_witnesses.len() || input >= self.inputs.len() {
+            return Err(super::MemoryPlanError::DescriptorArityMismatch);
+        }
+        match self.input_witnesses[input] {
+            MemoryFootprintWitness::Known(footprint) => Ok(footprint),
+            MemoryFootprintWitness::Deferred(stage) => {
+                Err(super::MemoryPlanError::MissingFootprintWitness { stage })
+            }
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct CurrentMemoryFootprint {
     pub logical_elements: u64,

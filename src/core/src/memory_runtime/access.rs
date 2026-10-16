@@ -2242,6 +2242,54 @@ impl KernelMemoryFrame<'_> {
             })
     }
 
+    /// Reads the current input footprint through its semantic lease without
+    /// traversing or reconstructing the input payload. Deferred witnesses have
+    /// no execution authority and cannot fall back to a published output.
+    #[cfg(feature = "functions")]
+    pub fn input_cell_footprint(
+        &self,
+        input: &crate::ValueCell,
+        semantic_input: usize,
+    ) -> crate::MResult<crate::CurrentMemoryFootprint> {
+        let lease = self.port_lease(
+            input.reactive_cell_id(),
+            ManagedPortRole::Input(semantic_input),
+            false,
+        )?;
+        self.realized.binding(lease.object)?;
+        {
+            let state = self.domain.state.borrow();
+            let region = state
+                .regions
+                .get(&lease.object)
+                .ok_or(MemoryRuntimeError::UnknownPlanObject { key: lease.object })?;
+            if region.incarnation != lease.incarnation {
+                return Err(MemoryRuntimeError::StaleRegionIncarnation {
+                    key: lease.object,
+                    expected: lease.incarnation,
+                    actual: region.incarnation,
+                }
+                .into());
+            }
+        }
+        let witness = self
+            .realized
+            .call_plan()
+            .and_then(|plan| plan.input_witnesses.get(semantic_input))
+            .ok_or_else(|| MemoryRuntimeError::CandidateValidationFailed {
+                object: Some(lease.object.object()),
+                reason: "input footprint is absent from the active call plan".into(),
+            })?;
+        match witness {
+            crate::MemoryFootprintWitness::Known(footprint) => Ok(*footprint),
+            crate::MemoryFootprintWitness::Deferred(stage) => Err(crate::MechError::new(
+                crate::MemoryPlanError::MissingFootprintWitness { stage: *stage },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+
     /// Borrows one fixed-width input through its semantic lease. The view
     /// retains the current matrix geometry and strides without reconstructing
     /// a canonical value or exposing a backing allocation.
