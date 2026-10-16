@@ -9,12 +9,13 @@ use cranelift_codegen::{
     settings::{self, Configurable},
 };
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
-use cranelift_module::{FuncId, Linkage, Module, default_libcall_names};
+use cranelift_module::{DataDescription, FuncId, Linkage, Module, default_libcall_names};
 use cranelift_object::{ObjectBuilder, ObjectModule};
 use mech_core::{ConstantId, InputId, ManagedMemoryBudget, NodeId};
 use mech_engine::native_artifact::{
     NativeArtifactPlan, NativeScalarKind, NativeScalarOp, NativeScalarValue, NativeValueRef,
 };
+use sha2::Digest;
 use std::collections::BTreeMap;
 
 #[derive(Clone, Copy, Debug)]
@@ -137,7 +138,10 @@ impl JitArtifact {
     ) -> Result<NativeExecutionReport, NativeExecutionError> {
         super::runtime::execute(
             &self.descriptor,
-            self.entry,
+            |frame| {
+                // SAFETY: this module owns the code and its exact private ABI.
+                unsafe { (self.entry)(frame) }
+            },
             inputs,
             outputs,
             limits,
@@ -151,8 +155,12 @@ impl JitArtifact {
 pub struct NativeObject {
     bytes: Vec<u8>,
     descriptor: NativeAbiDescriptor,
+    identity: super::identity::NativeObjectIdentity,
 }
 impl NativeObject {
+    pub fn identity(&self) -> &super::identity::NativeObjectIdentity {
+        &self.identity
+    }
     pub fn bytes(&self) -> &[u8] {
         &self.bytes
     }
@@ -168,6 +176,11 @@ impl NativeObject {
         };
         serde_json::json!({
             "schema": "mech.canonical-native-object.v1",
+            "typed_ir_sha256": super::identity::hex(self.descriptor.typed_ir_sha256()),
+            "identity_symbol": self.identity.symbol(),
+            "identity_sha256": super::identity::hex(&sha2::Sha256::digest(self.identity.bytes())),
+            "work_policy_version": super::identity::NATIVE_WORK_POLICY_VERSION,
+            "target_tag": super::identity::host_target_tag(),
             "abi_version": ABI_VERSION, "entry_symbol": NATIVE_ARTIFACT_ENTRY_SYMBOL,
             "program_revision": self.descriptor.revision().as_bytes().iter().map(|b| format!("{b:02x}")).collect::<String>(),
             "inputs": self.descriptor.inputs().iter().map(ty).collect::<Vec<_>>(),
@@ -205,8 +218,21 @@ pub fn emit_object_with_limits(
             .map_err(backend)?,
     );
     let (_, descriptor) = define(plan, &mut module, limits)?;
+    let identity = super::identity::NativeObjectIdentity::from_descriptor(&descriptor)
+        .ok_or(NativeCompileError::UnsupportedHost)?;
+    let data = module
+        .declare_data(identity.symbol(), Linkage::Export, false, false)
+        .map_err(backend)?;
+    let mut description = DataDescription::new();
+    description.define(identity.bytes().to_vec().into_boxed_slice());
+    description.set_align(8);
+    module.define_data(data, &description).map_err(backend)?;
     let bytes = module.finish().emit().map_err(backend)?;
-    Ok(NativeObject { bytes, descriptor })
+    Ok(NativeObject {
+        bytes,
+        descriptor,
+        identity,
+    })
 }
 
 struct Sources {
@@ -779,7 +805,7 @@ mod tests {
         // entry-counter fixture is substituted to prove setup denies first.
         let error = super::super::runtime::execute(
             jit.descriptor(),
-            never_admitted_entry,
+            |frame| unsafe { never_admitted_entry(frame) },
             &[NativeScalarValue::Bool(true)],
             &mut output,
             NativeExecutionLimits {

@@ -12,7 +12,8 @@ rust-version = "1.92"
 
 [features]
 default = []
-canonical-native = ["aot", "mech-engine/native-artifact"]
+canonical-native-runtime = ["mech-engine/native-artifact"]
+canonical-native = ["canonical-native-runtime", "aot"]
 native-build = ["sequence-cli", "fused-cli"]
 system-gmp = ["dep:gmp-mpfr-sys", "gmp-mpfr-sys/use-system-libs"]
 sequence-cli = ["aot", "dep:hashbrown", "dep:fxhash", "dep:rayon", "dep:memchr", "dep:regex", "dep:rug", "dep:mech-stdlib", "mech-stdlib/native-sequence"]
@@ -119,6 +120,7 @@ path = "tests/particle_source.rs"
 required-features = ["native"]
 
 [dev-dependencies]
+mech-build = { path = "../../src/build", default-features = false, features = ["process-supervision"] }
 mech-core = { version = "0.3.5", path = "../../src/core", default-features = false, features = ["f32", "matrixd"] }
 mech-engine = { version = "0.3.5", path = "../../src/engine", default-features = false, features = ["full_compiler"] }
 mech-stdlib = { version = "0.3.5", path = "../../src/stdlib", default-features = false, features = ["full_compiler", "native-plan"] }
@@ -132,4 +134,9 @@ required-features = ["fused-cli"]
 
 [[test]]
 name = "canonical_artifact_native"
+required-features = ["canonical-native"]
+
+[[test]]
+name = "canonical_artifact_application"
+path = "tests/canonical_artifact_application.rs"
 required-features = ["canonical-native"]

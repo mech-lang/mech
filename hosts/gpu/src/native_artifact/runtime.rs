@@ -1,6 +1,6 @@
 //! Checked invocation boundary for the private nonprinting native scalar ABI.
 use super::abi::{
-    ABI_VERSION, NO_NODE, NativeAbiDescriptor, NativeEntryFrame as Frame, RawEntry, STATUS_ABI,
+    ABI_VERSION, NO_NODE, NativeAbiDescriptor, NativeEntryFrame as Frame, STATUS_ABI,
     STATUS_ADMISSION, STATUS_ARITHMETIC, STATUS_OK, primitive_work,
 };
 use super::memory::{NativeWordStorage, transport_bytes};
@@ -218,14 +218,17 @@ unsafe extern "C" fn admit_next(context: *mut c_void, ordinal: u64) -> u64 {
 
 /// Safe callers reach this only through a compiled artifact bound to the
 /// immutable descriptor and this module's private native entry signature.
-pub(super) fn execute(
+pub(super) fn execute<F>(
     descriptor: &NativeAbiDescriptor,
-    entry: RawEntry,
+    entry: F,
     inputs: &[NativeScalarValue],
     outputs: &mut [NativeScalarValue],
     limits: NativeExecutionLimits,
     budget: Option<&ManagedMemoryBudget>,
-) -> Result<NativeExecutionReport, NativeExecutionError> {
+) -> Result<NativeExecutionReport, NativeExecutionError>
+where
+    F: FnOnce(*mut Frame) -> u64,
+{
     if inputs.len() != descriptor.inputs().len() {
         return Err(NativeExecutionError::InvalidInputs {
             expected: descriptor.inputs().len(),
@@ -313,7 +316,7 @@ pub(super) fn execute(
     // SAFETY: the code/descriptor association is constructor-private. All word
     // pointers are disjoint, initialized, bounds-checked managed transport,
     // and retained with this context until the synchronous call returns.
-    let status = unsafe { entry(&mut frame) };
+    let status = entry(&mut frame);
     if let Some(error) = context.error.take() {
         return Err(error);
     }

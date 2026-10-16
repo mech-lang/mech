@@ -34,7 +34,7 @@ use mech_engine::{
 use serde::{Deserialize, Serialize};
 
 mod batched;
-#[cfg(feature = "canonical-native")]
+#[cfg(feature = "canonical-native-runtime")]
 pub mod native_artifact;
 pub use batched::*;
 /// Experimental autonomous f64 extension of the Cranelift CPU backends.

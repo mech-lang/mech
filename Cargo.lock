@@ -2776,6 +2776,7 @@ dependencies = [
  "gmp-mpfr-sys",
  "hashbrown 0.15.5",
  "libloading 0.8.9",
+ "mech-build",
  "mech-compute",
  "mech-core",
  "mech-engine",

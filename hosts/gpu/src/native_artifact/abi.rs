@@ -50,6 +50,7 @@ pub struct NativeAbiDescriptor {
     lets: Box<[(NodeId, NativeScalarOp)]>,
     stack_bytes: u64,
     code_bytes: u64,
+    typed_ir_sha256: [u8; 32],
 }
 impl NativeAbiDescriptor {
     pub(super) fn from_compiled(
@@ -64,7 +65,11 @@ impl NativeAbiDescriptor {
             lets: plan.lets().iter().map(|v| (v.node(), v.op())).collect(),
             stack_bytes,
             code_bytes,
+            typed_ir_sha256: super::identity::typed_ir_sha256(plan),
         }
+    }
+    pub fn typed_ir_sha256(&self) -> &[u8; 32] {
+        &self.typed_ir_sha256
     }
     pub const fn revision(&self) -> ProgramRevision {
         self.revision
@@ -105,4 +110,5 @@ pub(super) struct NativeEntryFrame {
     pub admit_next: unsafe extern "C" fn(*mut c_void, u64) -> u64,
     pub error_node: u64,
 }
+#[cfg(feature = "canonical-native")]
 pub(super) type RawEntry = unsafe extern "C" fn(*mut NativeEntryFrame) -> u64;
