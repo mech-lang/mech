@@ -280,12 +280,30 @@ fn fold_declaration(
     if footprint.node_count > mech_core::RESIDENT_MAX_RETAINED_NODES {
         return Ok(None);
     }
-    let sort = if control.kind == ComprehensionKind::Set {
+    let string_set = control.kind == ComprehensionKind::Set
+        && matches!(schema.body(), SchemaBody::Set { element, .. }
+            if matches!(element.as_ref(), SchemaBody::String));
+    if string_set && charge(analysis, 0, count.checked_mul(2).unwrap_or(u64::MAX)).is_none() {
+        return Ok(None);
+    }
+    let sort = if string_set {
+        collection::collection_canonicalization_work(control.kind, &values).ok()
+    } else if control.kind == ComprehensionKind::Set {
         count.checked_mul(count.max(1).ilog2() as u64 + 1)
     } else {
         Some(0)
     };
-    let Some(work) = sort.and_then(|sort| sort.checked_add(finalization_work)) else {
+    let Some(sort) = sort else {
+        return Ok(None);
+    };
+    let Ok(normalization_bytes) = (if control.kind == ComprehensionKind::Set {
+        collection::collection_set_normalization_bytes(&values)
+    } else {
+        Ok(0)
+    }) else {
+        return Ok(None);
+    };
+    let Some(work) = sort.checked_add(finalization_work) else {
         return Ok(None);
     };
     let Some(bytes) = footprint
@@ -294,9 +312,8 @@ fn fold_declaration(
         .and_then(|bytes| {
             bytes.checked_add(count.checked_mul(core::mem::size_of::<ValueDataDraft>() as u64)?)
         })
-        .and_then(|bytes| {
-            bytes.checked_add(schema.clone_allocation_bound_bytes()?.checked_mul(4)?)
-        })
+        .and_then(|bytes| bytes.checked_add(schema.clone_allocation_bound_bytes()?.checked_mul(4)?))
+        .and_then(|bytes| bytes.checked_add(normalization_bytes))
     else {
         return Ok(None);
     };

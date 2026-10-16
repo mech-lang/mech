@@ -329,14 +329,30 @@ enum ResidentKernelDispatch {
     F64Output4(ResidentKernelF64OutputExecutor4),
 }
 
+/// Work-accounting contract declared by the selected bound implementation.
+///
+/// This is a trusted implementation contract, not a semantic identity or a
+/// native-lowering witness. `RuntimeMetered` means the executor admits its
+/// data-dependent compute, comparison and materialization demand through the
+/// resident budget before performing that work or publishing output. A
+/// caller may therefore account only for dispatch overhead around that call.
+/// It does not waive the call's memory plan or its input/output validation.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum ResidentKernelWorkAccounting {
+    #[default]
+    Unclassified,
+    RuntimeMetered,
+}
+
 #[derive(Clone)]
 pub struct BoundResidentKernel {
     dispatch: ResidentKernelDispatch,
     parameters: Box<[u64]>,
     snapshot_output: Option<ResidentSnapshotOutput>,
-    snapshot_schemas: Option<SchemaTable>,
+    snapshot_schemas: Option<Arc<SchemaTable>>,
     retained_state: Option<Arc<dyn Any + Send + Sync>>,
     bound_call: Option<BoundCall>,
+    work_accounting: ResidentKernelWorkAccounting,
 }
 
 #[derive(Clone, Debug)]
@@ -358,6 +374,7 @@ impl core::fmt::Debug for BoundResidentKernel {
             .field("snapshot_schemas", &self.snapshot_schemas.is_some())
             .field("retained_state", &self.retained_state.is_some())
             .field("bound_call", &self.bound_call)
+            .field("work_accounting", &self.work_accounting)
             .finish()
     }
 }
@@ -371,6 +388,7 @@ impl BoundResidentKernel {
             snapshot_schemas: None,
             retained_state: None,
             bound_call: None,
+            work_accounting: ResidentKernelWorkAccounting::Unclassified,
         }
     }
 
@@ -382,6 +400,7 @@ impl BoundResidentKernel {
             snapshot_schemas: None,
             retained_state: None,
             bound_call: None,
+            work_accounting: ResidentKernelWorkAccounting::Unclassified,
         }
     }
 
@@ -393,6 +412,7 @@ impl BoundResidentKernel {
             snapshot_schemas: None,
             retained_state: None,
             bound_call: None,
+            work_accounting: ResidentKernelWorkAccounting::Unclassified,
         }
     }
 
@@ -404,6 +424,7 @@ impl BoundResidentKernel {
             snapshot_schemas: None,
             retained_state: None,
             bound_call: None,
+            work_accounting: ResidentKernelWorkAccounting::Unclassified,
         }
     }
 
@@ -415,6 +436,7 @@ impl BoundResidentKernel {
             snapshot_schemas: None,
             retained_state: None,
             bound_call: None,
+            work_accounting: ResidentKernelWorkAccounting::Unclassified,
         }
     }
 
@@ -429,6 +451,7 @@ impl BoundResidentKernel {
             snapshot_schemas: None,
             retained_state: None,
             bound_call: None,
+            work_accounting: ResidentKernelWorkAccounting::Unclassified,
         }
     }
 
@@ -443,6 +466,7 @@ impl BoundResidentKernel {
             snapshot_schemas: None,
             retained_state: None,
             bound_call: None,
+            work_accounting: ResidentKernelWorkAccounting::Unclassified,
         }
     }
 
@@ -457,6 +481,7 @@ impl BoundResidentKernel {
             snapshot_schemas: None,
             retained_state: None,
             bound_call: None,
+            work_accounting: ResidentKernelWorkAccounting::Unclassified,
         }
     }
 
@@ -471,16 +496,33 @@ impl BoundResidentKernel {
             snapshot_schemas: None,
             retained_state: None,
             bound_call: None,
+            work_accounting: ResidentKernelWorkAccounting::Unclassified,
         }
+    }
+
+    /// Declares the finished implementation's accounting contract. Call this
+    /// after constructing all execution metadata. Replacing retained state,
+    /// schemas, output metadata or a bound call clears the declaration, so a
+    /// delegated kernel cannot accidentally retain it after semantic mutation.
+    /// Cloning an unchanged bound kernel preserves the declaration.
+    pub fn with_work_accounting(mut self, accounting: ResidentKernelWorkAccounting) -> Self {
+        self.work_accounting = accounting;
+        self
+    }
+
+    pub const fn work_accounting(&self) -> ResidentKernelWorkAccounting {
+        self.work_accounting
     }
 
     pub fn with_snapshot_output(mut self, output: ResidentSnapshotOutput) -> Self {
         self.snapshot_output = Some(output);
+        self.work_accounting = ResidentKernelWorkAccounting::Unclassified;
         self
     }
 
     pub fn with_bound_call(mut self, bound_call: BoundCall) -> Self {
         self.bound_call = Some(bound_call);
+        self.work_accounting = ResidentKernelWorkAccounting::Unclassified;
         self
     }
 
@@ -493,11 +535,18 @@ impl BoundResidentKernel {
     }
 
     pub fn with_snapshot_schemas(mut self, schemas: SchemaTable) -> Self {
-        self.snapshot_schemas = Some(schemas);
+        self.snapshot_schemas = Some(Arc::new(schemas));
+        self.work_accounting = ResidentKernelWorkAccounting::Unclassified;
         self
     }
 
     pub fn snapshot_schemas(&self) -> Option<&SchemaTable> {
+        self.snapshot_schemas.as_deref()
+    }
+
+    /// Shares the immutable bound schema arena with produced snapshots. This
+    /// avoids a per-result clone of unrelated artifact schema metadata.
+    pub fn shared_snapshot_schemas(&self) -> Option<&Arc<SchemaTable>> {
         self.snapshot_schemas.as_ref()
     }
 
@@ -510,6 +559,7 @@ impl BoundResidentKernel {
         T: Any + Send + Sync,
     {
         self.retained_state = Some(state);
+        self.work_accounting = ResidentKernelWorkAccounting::Unclassified;
         self
     }
 

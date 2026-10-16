@@ -14,10 +14,11 @@ use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, ChangeDetectionPolicy, CurrentMemoryFootprint,
     DeliveryMode, ExternalInteraction, FunctionCatalogBuilder, ImplementationMemoryClass,
     IntegerWidth, MResult, OutputConstruction, RegionPolicy, ResidentKernelBindError,
-    ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs, ResidentShape,
-    ResidentSnapshotOutput, ResidentValueKind, ResidentValueMut, ResidentValueRef,
-    ResolvedOperationContract, ResolvedSelectionMode, ResolvedSourceRouting, SchemaBody, SchemaId,
-    ShapeContractReference, ShapeInstance, ShapeRule, ValueData,
+    ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs,
+    ResidentKernelWorkAccounting, ResidentShape, ResidentSnapshotOutput, ResidentValueKind,
+    ResidentValueMut, ResidentValueRef, ResolvedOperationContract, ResolvedSelectionMode,
+    ResolvedSourceRouting, SchemaBody, SchemaId, ShapeContractReference, ShapeInstance, ShapeRule,
+    ValueData,
 };
 use std::sync::Arc;
 
@@ -2359,11 +2360,28 @@ fn bind_snapshot_comparison(
     }
     let kernel = bound(snapshot_comparison, parameters.into_boxed_slice())?
         .with_snapshot_schemas(request.schemas.clone());
-    if snapshot_output {
-        Ok(kernel.with_snapshot_output(snapshot_output_metadata(request)))
+    let kernel = if snapshot_output {
+        kernel.with_snapshot_output(snapshot_output_metadata(request))
     } else {
-        Ok(kernel)
-    }
+        kernel
+    };
+    // Only exact scalar Snapshot U64 operands are qualified here. Mixed
+    // dense paths perform additional input scans, and Snapshot outputs have
+    // separate finalization ownership; those keep their existing policy.
+    let metered_u64_guard = request.output.kind == ResidentValueKind::Bool
+        && request.output.shape == ResidentShape::SCALAR
+        && request.inputs.iter().all(|input| {
+            input.kind == ResidentValueKind::Snapshot
+                && input.shape == ResidentShape::SCALAR
+                && request.schemas.get(input.schema_id).is_some_and(|schema| {
+                    schema.body() == &SchemaBody::UnsignedInteger(IntegerWidth::W64)
+                })
+        });
+    Ok(if metered_u64_guard {
+        kernel.with_work_accounting(ResidentKernelWorkAccounting::RuntimeMetered)
+    } else {
+        kernel
+    })
 }
 
 fn bind_snapshot_equality(
@@ -3887,6 +3905,21 @@ fn bind_matrix_constructor(
     if expected != output_dimensions {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
+    let dense_string = request.output.kind == ResidentValueKind::String;
+    if dense_string
+        && (output_element.as_ref() != &SchemaBody::String
+            || !request
+                .inputs
+                .iter()
+                .zip(&dimensions)
+                .all(|(input, &(rows, columns))| {
+                    input.kind == ResidentValueKind::String
+                        && usize::try_from(input.shape.rows).ok() == Some(rows)
+                        && usize::try_from(input.shape.columns).ok() == Some(columns)
+                }))
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
     let mut parameters = Vec::with_capacity(1 + dimensions.len() * 2);
     parameters.push(dimensions.len() as u64);
     for (rows, columns) in dimensions {
@@ -3911,14 +3944,19 @@ fn bind_matrix_constructor(
         })
         && dense_output_shape_matches
     {
-        return bound(
+        let kernel = bound(
             if horizontal {
                 concatenate_horizontal
             } else {
                 concatenate_vertical
             },
             parameters.into_boxed_slice(),
-        );
+        )?;
+        return Ok(if dense_string {
+            kernel.with_work_accounting(ResidentKernelWorkAccounting::RuntimeMetered)
+        } else {
+            kernel
+        });
     }
     Err(ResidentKernelBindError::UnsupportedLayout)
 }
@@ -12813,6 +12851,15 @@ pub(crate) fn prepare_dense_concatenation(
     output_len: usize,
     string_payload_bytes: usize,
 ) -> Result<super::budget::PreparedKernel<()>, ResidentKernelError> {
+    prepare_dense_concatenation_with_metadata(kind, output_len, string_payload_bytes, 0)
+}
+
+fn prepare_dense_concatenation_with_metadata(
+    kind: ResidentValueKind,
+    output_len: usize,
+    string_payload_bytes: usize,
+    metadata_work: u64,
+) -> Result<super::budget::PreparedKernel<()>, ResidentKernelError> {
     let element_bytes = match kind {
         ResidentValueKind::Bool => core::mem::size_of::<u8>(),
         ResidentValueKind::Index => core::mem::size_of::<u64>(),
@@ -12824,12 +12871,42 @@ pub(crate) fn prepare_dense_concatenation(
         .checked_mul(element_bytes)
         .and_then(|bytes| bytes.checked_add(string_payload_bytes))
         .ok_or(ResidentKernelError::InvalidShape)?;
+    // A String stage owns one Vec<String> header array and exactly the new
+    // payload. Cloning and equality each visit at most the new payload bytes:
+    // unequal String lengths reject before comparing contents. The four lane
+    // visits also cover vertical initialization, cloning and final publication.
+    let (compute_work, comparison_work) = if kind == ResidentValueKind::String {
+        let payload = super::budget::checked_u64(string_payload_bytes)?;
+        let elements = super::budget::checked_u64(output_len)?;
+        (
+            elements
+                .checked_mul(4)
+                .and_then(|work| {
+                    payload
+                        .checked_mul(2)
+                        .and_then(|bytes| work.checked_add(bytes))
+                })
+                .and_then(|work| work.checked_add(metadata_work))
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            elements
+                .checked_add(payload)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+        )
+    } else {
+        (
+            super::budget::checked_u64(
+                output_len
+                    .checked_mul(2)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+            )?,
+            0,
+        )
+    };
     Ok(super::budget::PreparedKernel::new(
         (),
         super::budget::resident_cost! {
-            compute_work: output_len
-                .checked_mul(2)
-                .ok_or(ResidentKernelError::InvalidShape)?,
+            compute_work,
+            comparison_work,
             output_elements: output_len,
             output_bytes: resident_bytes,
             temporary_bytes: if kind == ResidentValueKind::String {
@@ -12851,11 +12928,17 @@ pub(crate) fn prepare_dense_concatenation(
     ))
 }
 
-fn concat_string_payload(inputs: &dyn ResidentKernelInputs) -> Result<usize, ResidentKernelError> {
+fn concat_string_payload(
+    inputs: &dyn ResidentKernelInputs,
+    metadata: &mut super::budget::ResidentBudgetMeter,
+) -> Result<usize, ResidentKernelError> {
     (0..inputs.len()).try_fold(0usize, |bytes, ordinal| {
         let ResidentValueRef::String(values) = input(inputs, ordinal)? else {
             return Err(ResidentKernelError::InvalidInput);
         };
+        // Reading String headers is work even when every string is empty.
+        // Admit this whole length scan before inspecting its first header.
+        metadata.charge_compute_work(super::budget::checked_u64(values.len())?)?;
         values.iter().try_fold(bytes, |bytes, value| {
             bytes
                 .checked_add(value.len())
@@ -12869,12 +12952,28 @@ fn concatenate_horizontal(
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    if kernel.parameters().first().copied() != Some(inputs.len() as u64) {
+    if kernel.parameters().first().copied() != Some(inputs.len() as u64)
+        || inputs
+            .len()
+            .checked_mul(2)
+            .and_then(|count| count.checked_add(1))
+            != Some(kernel.parameters().len())
+    {
         return Err(ResidentKernelError::InvalidInput);
     }
     let rows = kernel.parameters().get(1).copied().unwrap_or(1) as usize;
     let output_kind = output.kind();
     let output_len = output.len();
+    let mut string_metadata = super::budget::ResidentBudgetMeter::default();
+    if output_kind == ResidentValueKind::String {
+        // Bound all per-input geometry/kind/header lookups before visiting any
+        // input. Length scans and byte work are admitted separately below.
+        let input_work = inputs
+            .len()
+            .checked_mul(4)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        string_metadata.charge_compute_work(super::budget::checked_u64(input_work)?)?;
+    }
     let mut expected_output = 0usize;
     for ordinal in 0..inputs.len() {
         let source = input(inputs, ordinal)?;
@@ -12945,8 +13044,15 @@ fn concatenate_horizontal(
             Ok(changed)
         }
         ResidentValueMut::String(output) if output_kind == ResidentValueKind::String => {
-            let payload_bytes = concat_string_payload(inputs)?;
-            admit_dense_concatenation(output_kind, output_len, payload_bytes)?;
+            let payload_bytes = concat_string_payload(inputs, &mut string_metadata)?;
+            prepare_dense_concatenation_with_metadata(
+                output_kind,
+                output_len,
+                payload_bytes,
+                string_metadata.estimate().compute_work(),
+            )?
+            .admit()?
+            .into_plan();
             let mut next = Vec::with_capacity(output_len);
             for ordinal in 0..inputs.len() {
                 let ResidentValueRef::String(values) = input(inputs, ordinal)? else {
@@ -12969,12 +13075,28 @@ fn concatenate_vertical(
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    if kernel.parameters().first().copied() != Some(inputs.len() as u64) {
+    if kernel.parameters().first().copied() != Some(inputs.len() as u64)
+        || inputs
+            .len()
+            .checked_mul(2)
+            .and_then(|count| count.checked_add(1))
+            != Some(kernel.parameters().len())
+    {
         return Err(ResidentKernelError::InvalidInput);
     }
     let columns = kernel.parameters().get(2).copied().unwrap_or(0) as usize;
     let output_kind = output.kind();
     let output_len = output.len();
+    let mut string_metadata = super::budget::ResidentBudgetMeter::default();
+    if output_kind == ResidentValueKind::String {
+        // Bound all per-input geometry/kind/header lookups before visiting any
+        // input. Length scans and byte work are admitted separately below.
+        let input_work = inputs
+            .len()
+            .checked_mul(4)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        string_metadata.charge_compute_work(super::budget::checked_u64(input_work)?)?;
+    }
     let mut output_rows = 0usize;
     for ordinal in 0..inputs.len() {
         let source = input(inputs, ordinal)?;
@@ -13047,8 +13169,15 @@ fn concatenate_vertical(
             Ok(changed)
         }
         ResidentValueMut::String(output) if output_kind == ResidentValueKind::String => {
-            let payload_bytes = concat_string_payload(inputs)?;
-            admit_dense_concatenation(output_kind, output_len, payload_bytes)?;
+            let payload_bytes = concat_string_payload(inputs, &mut string_metadata)?;
+            prepare_dense_concatenation_with_metadata(
+                output_kind,
+                output_len,
+                payload_bytes,
+                string_metadata.estimate().compute_work(),
+            )?
+            .admit()?
+            .into_plan();
             let next = stage_vertical!(String, String::new());
             let changed = output != next;
             for (target, value) in output.iter_mut().zip(next) {
@@ -20546,6 +20675,279 @@ mod tests {
 
         fn get(&self, index: usize) -> Option<ResidentValueRef<'_>> {
             self.0.get(index).copied()
+        }
+    }
+
+    fn test_dense_string_concatenation(
+        horizontal: bool,
+        dimensions: &[(u32, u32)],
+        output_shape: ResidentShape,
+        first_shape_override: Option<ResidentShape>,
+    ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+        let matrix = |rows, columns| SchemaBody::Matrix {
+            element: Box::new(SchemaBody::String),
+            dimensions: Box::new([
+                mech_core::DimensionExpr::Constant(u64::from(rows)),
+                mech_core::DimensionExpr::Constant(u64::from(columns)),
+            ]),
+        };
+        let (schemas, ids) = test_schema_table(
+            dimensions
+                .iter()
+                .map(|&(rows, columns)| matrix(rows, columns))
+                .chain(core::iter::once(matrix(
+                    output_shape.rows,
+                    output_shape.columns,
+                ))),
+        );
+        let output_schema = *ids.last().unwrap();
+        let input_ids = &ids[..dimensions.len()];
+        let contract = test_contract(
+            input_ids,
+            output_schema,
+            OutputConstruction::Build {
+                postcondition: ShapeContractReference {
+                    module_path: vec!["matrix".into(), "concatenate".into()].into_boxed_slice(),
+                    contract_name: if horizontal {
+                        "horizontal-output"
+                    } else {
+                        "vertical-output"
+                    }
+                    .into(),
+                },
+            },
+            AccessMode::Write,
+            AliasPolicy::NoAlias,
+            ChangeDetectionPolicy::KernelReported,
+        );
+        let layouts = input_ids
+            .iter()
+            .zip(dimensions)
+            .enumerate()
+            .map(|(ordinal, (&id, &(rows, columns)))| {
+                let shape = if ordinal == 0 {
+                    first_shape_override.unwrap_or(ResidentShape { rows, columns })
+                } else {
+                    ResidentShape { rows, columns }
+                };
+                test_layout(&schemas, id, ResidentValueKind::String, shape)
+            })
+            .collect::<Vec<_>>();
+        let request = ResidentKernelBindRequest {
+            contract: &contract,
+            schemas: &schemas,
+            inputs: &layouts,
+            output: test_layout(
+                &schemas,
+                output_schema,
+                ResidentValueKind::String,
+                output_shape,
+            ),
+        };
+        if horizontal {
+            bind_horizontal(&request)
+        } else {
+            bind_vertical(&request)
+        }
+    }
+
+    #[test]
+    fn dense_string_concatenation_binds_only_exact_geometry_and_preserves_unicode_order() {
+        for horizontal in [true, false] {
+            let dimensions = if horizontal {
+                [(2, 1), (2, 2)]
+            } else {
+                [(2, 2), (1, 2)]
+            };
+            let output_shape = if horizontal {
+                ResidentShape {
+                    rows: 2,
+                    columns: 3,
+                }
+            } else {
+                ResidentShape {
+                    rows: 3,
+                    columns: 2,
+                }
+            };
+            let kernel =
+                test_dense_string_concatenation(horizontal, &dimensions, output_shape, None)
+                    .unwrap();
+            assert_eq!(
+                kernel.work_accounting(),
+                ResidentKernelWorkAccounting::RuntimeMetered
+            );
+            let left = if horizontal {
+                vec!["é", "🧑‍🚀"]
+            } else {
+                vec!["é", "🧑‍🚀", "", "A"]
+            }
+            .into_iter()
+            .map(str::to_owned)
+            .collect::<Vec<_>>();
+            let right = if horizontal {
+                vec!["", "A", "é", "Z"]
+            } else {
+                vec!["é", "Z"]
+            }
+            .into_iter()
+            .map(str::to_owned)
+            .collect::<Vec<_>>();
+            let inputs = [
+                ResidentValueRef::String(&left),
+                ResidentValueRef::String(&right),
+            ];
+            let mut output = vec!["previous".to_owned(); 6];
+            assert_eq!(
+                kernel.execute(&Inputs(&inputs), ResidentValueMut::String(&mut output)),
+                Ok(true)
+            );
+            let expected = if horizontal {
+                ["é", "🧑‍🚀", "", "A", "é", "Z"]
+            } else {
+                ["é", "🧑‍🚀", "é", "", "A", "Z"]
+            };
+            assert_eq!(output, expected);
+            assert_eq!(
+                kernel.execute(&Inputs(&inputs), ResidentValueMut::String(&mut output)),
+                Ok(false)
+            );
+            assert!(
+                test_dense_string_concatenation(
+                    horizontal,
+                    &dimensions,
+                    output_shape,
+                    Some(ResidentShape {
+                        rows: dimensions[0].1,
+                        columns: dimensions[0].0
+                    }),
+                )
+                .is_err()
+                    || dimensions[0].0 == dimensions[0].1
+            );
+        }
+        // Equal element counts do not authorize a different matrix geometry.
+        assert!(
+            test_dense_string_concatenation(
+                false,
+                &[(2, 1)],
+                ResidentShape {
+                    rows: 2,
+                    columns: 1
+                },
+                Some(ResidentShape {
+                    rows: 1,
+                    columns: 2
+                }),
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn dense_string_concatenation_admits_header_scan_before_length_measurement() {
+        let values = vec![String::new(); 8];
+        let inputs = [ResidentValueRef::String(&values)];
+        let mut denied = super::super::budget::ResidentBudgetMeter::for_closed_analysis(7, 0);
+        assert_eq!(
+            concat_string_payload(&Inputs(&inputs), &mut denied),
+            Err(ResidentKernelError::InvalidShape)
+        );
+        assert_eq!(denied.estimate().compute_work(), 0);
+        let mut exact = super::super::budget::ResidentBudgetMeter::for_closed_analysis(8, 0);
+        assert_eq!(concat_string_payload(&Inputs(&inputs), &mut exact), Ok(0));
+        assert_eq!(exact.estimate().compute_work(), 8);
+    }
+
+    #[test]
+    fn dense_string_concatenation_denies_byte_work_before_publication_and_recovers() {
+        for horizontal in [true, false] {
+            let shape = if horizontal {
+                ResidentShape {
+                    rows: 1,
+                    columns: 2,
+                }
+            } else {
+                ResidentShape {
+                    rows: 2,
+                    columns: 1,
+                }
+            };
+            let kernel =
+                test_dense_string_concatenation(horizontal, &[(1, 1), (1, 1)], shape, None)
+                    .unwrap();
+            let left = ["x".repeat(40_000)];
+            let right = ["y".repeat(40_000)];
+            let inputs = [
+                ResidentValueRef::String(&left),
+                ResidentValueRef::String(&right),
+            ];
+            let mut output = ["hold".to_owned(), "é".to_owned()];
+            let previous = output.clone();
+            assert_eq!(
+                kernel.execute(&Inputs(&inputs), ResidentValueMut::String(&mut output)),
+                Err(ResidentKernelError::InvalidShape)
+            );
+            assert_eq!(output, previous);
+            let small_left = ["🧑‍🚀".to_owned()];
+            let small_right = ["é".to_owned()];
+            let inputs = [
+                ResidentValueRef::String(&small_left),
+                ResidentValueRef::String(&small_right),
+            ];
+            assert_eq!(
+                kernel.execute(&Inputs(&inputs), ResidentValueMut::String(&mut output)),
+                Ok(true)
+            );
+            assert_eq!(output, ["🧑‍🚀", "é"]);
+        }
+    }
+
+    #[test]
+    fn dense_string_concatenation_cost_includes_headers_copy_comparison_and_metadata() {
+        let payload = 7_usize;
+        let headers = 2 * core::mem::size_of::<String>();
+        prepare_dense_concatenation_with_metadata(ResidentValueKind::String, 2, payload, 11)
+            .unwrap()
+            .prepare_for_analysis(|cost| {
+                let expected = super::super::budget::resident_cost! {
+                    compute_work: 33_u64,
+                    comparison_work: 9_u64,
+                    output_elements: 2_u64,
+                    output_bytes: headers + payload,
+                    temporary_bytes: headers + payload,
+                    cloned_bytes: payload,
+                    retained_nodes: 2_u64,
+                    ..super::super::budget::KernelCostEstimate::default()
+                };
+                assert_eq!(cost, expected);
+                Ok(())
+            })
+            .unwrap();
+    }
+
+    #[test]
+    fn dense_string_concatenation_rejects_malformed_parameters_before_input_lookup() {
+        struct UnreadableInputs;
+        impl ResidentKernelInputs for UnreadableInputs {
+            fn len(&self) -> usize {
+                2
+            }
+            fn get(&self, _: usize) -> Option<ResidentValueRef<'_>> {
+                panic!("malformed concatenation parameters reached input lookup")
+            }
+        }
+        for executor in [
+            concatenate_horizontal as mech_core::ResidentKernelExecutor,
+            concatenate_vertical as mech_core::ResidentKernelExecutor,
+        ] {
+            let kernel = BoundResidentKernel::new(executor, vec![2, 1, 1].into_boxed_slice());
+            let mut output = ["hold".to_owned()];
+            assert_eq!(
+                kernel.execute(&UnreadableInputs, ResidentValueMut::String(&mut output)),
+                Err(ResidentKernelError::InvalidInput)
+            );
+            assert_eq!(output, ["hold"]);
         }
     }
 

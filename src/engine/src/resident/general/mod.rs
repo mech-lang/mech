@@ -12687,8 +12687,14 @@ fn bind_resident_operation(
     .map_err(|error| ResidentActivationError::KernelBind {
         node: node_id,
         error,
-    })?
-    .with_bound_call(resident_context.bound_call);
+    })?;
+    // The selected binder's declaration covers this request. Attaching the
+    // engine's descriptor for that same request is not a factory mutation;
+    // preserve only the finished binder's claim across this final attachment.
+    let work_accounting = kernel.work_accounting();
+    let kernel = kernel
+        .with_bound_call(resident_context.bound_call)
+        .with_work_accounting(work_accounting);
     Ok((kernel, memory_plan))
 }
 

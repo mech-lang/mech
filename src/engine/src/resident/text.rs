@@ -2,8 +2,9 @@ use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, ChangeDetectionPolicy, DeliveryMode,
     ExternalInteraction, FunctionCatalogBuilder, ImplementationMemoryClass, MResult,
     OutputConstruction, RegionPolicy, ResidentKernelBindError, ResidentKernelBindRequest,
-    ResidentKernelError, ResidentKernelInputs, ResidentShape, ResidentValueKind, ResidentValueMut,
-    ResidentValueRef, ResolvedOperationContract, SchemaBody, ShapeRule, ValueData,
+    ResidentKernelError, ResidentKernelInputs, ResidentKernelWorkAccounting, ResidentShape,
+    ResidentValueKind, ResidentValueMut, ResidentValueRef, ResolvedOperationContract, SchemaBody,
+    ShapeRule, ValueData,
 };
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
@@ -416,7 +417,8 @@ fn bind_string_scalar_comparison(
     {
         return Err(ResidentKernelBindError::UnsupportedContract);
     }
-    Ok(BoundResidentKernel::new(executor, Box::new([])))
+    Ok(BoundResidentKernel::new(executor, Box::new([]))
+        .with_work_accounting(ResidentKernelWorkAccounting::RuntimeMetered))
 }
 
 fn string_equal(
@@ -524,7 +526,8 @@ pub(super) fn bind_string_scalar_access(
     {
         return Err(ResidentKernelBindError::UnsupportedContract);
     }
-    Ok(BoundResidentKernel::new(string_scalar_access, Box::new([])))
+    Ok(BoundResidentKernel::new(string_scalar_access, Box::new([]))
+        .with_work_accounting(ResidentKernelWorkAccounting::RuntimeMetered))
 }
 
 fn string_scalar_access(
@@ -626,10 +629,10 @@ fn bind_canonical_string_selection(
         return Err(ResidentKernelBindError::UnsupportedContract);
     }
     let Some(selector) = request.inputs.get(1) else {
-        return Ok(BoundResidentKernel::new(
-            canonical_string_selection,
-            Box::new([0, 0, 0]),
-        ));
+        return Ok(
+            BoundResidentKernel::new(canonical_string_selection, Box::new([0, 0, 0]))
+                .with_work_accounting(ResidentKernelWorkAccounting::RuntimeMetered),
+        );
     };
     let schema = request
         .schemas
@@ -680,7 +683,8 @@ fn bind_canonical_string_selection(
             u64::from(rows),
             u64::from(columns),
         ]),
-    ))
+    )
+    .with_work_accounting(ResidentKernelWorkAccounting::RuntimeMetered))
 }
 
 // Dense resident matrices store columns contiguously, whereas canonical
@@ -1004,7 +1008,8 @@ fn bind_concat(
     {
         return Err(ResidentKernelBindError::UnsupportedContract);
     }
-    Ok(BoundResidentKernel::new(concat, Box::new([])))
+    Ok(BoundResidentKernel::new(concat, Box::new([]))
+        .with_work_accounting(ResidentKernelWorkAccounting::RuntimeMetered))
 }
 
 fn concat(

@@ -93,10 +93,133 @@ pub(in crate::resident::general) fn completed_matrix_shape(
         .map_err(|_| ResidentKernelError::InvalidShape)
 }
 
+pub(in crate::resident::general) fn collection_set_element_supported(element: &SchemaBody) -> bool {
+    matches!(
+        element,
+        SchemaBody::Bool
+            | SchemaBody::Index
+            | SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+            | SchemaBody::String
+    )
+}
+
+/// Extra storage needed to pass owned String keys through the core key
+/// relation. The drafts keep their existing backing array; the canonical
+/// sidecar takes ownership of each payload. A String-to-box shrink can overlap
+/// one payload allocation, so reserve the largest current capacity as well.
+pub(in crate::resident::general) fn collection_set_normalization_bytes(
+    values: &[ValueDataDraft],
+) -> Result<u64, ResidentKernelError> {
+    if !matches!(values.first(), Some(ValueDataDraft::String(_))) {
+        return Ok(0);
+    }
+    let largest_string = values
+        .iter()
+        .filter_map(|value| match value {
+            ValueDataDraft::String(value) => Some(value.capacity()),
+            _ => None,
+        })
+        .max();
+    let Some(largest_string) = largest_string else {
+        return Ok(0);
+    };
+    allocation_capacity_bytes::<ValueData>(values.len())?
+        .checked_add(budget::checked_u64(largest_string)?)
+        .ok_or(ResidentKernelError::InvalidShape)
+}
+
+fn canonical_key_sift_down(
+    element: &SchemaBody,
+    values: &mut [ValueData],
+    mut root: usize,
+    end: usize,
+) -> Result<(), ResidentKernelError> {
+    loop {
+        let Some(mut child) = root.checked_mul(2).and_then(|root| root.checked_add(1)) else {
+            return Ok(());
+        };
+        if child >= end {
+            return Ok(());
+        }
+        if child + 1 < end
+            && mech_core::snapshot::compare_key_data(element, &values[child], &values[child + 1])
+                .map_err(|_| ResidentKernelError::InvalidInput)?
+                .is_lt()
+        {
+            child += 1;
+        }
+        if !mech_core::snapshot::compare_key_data(element, &values[root], &values[child])
+            .map_err(|_| ResidentKernelError::InvalidInput)?
+            .is_lt()
+        {
+            return Ok(());
+        }
+        values.swap(root, child);
+        root = child;
+    }
+}
+
+/// Called only after admitting normalization storage and work. Heapsort has a
+/// bounded number of comparisons without allocating comparator-owned Strings;
+/// ordering and key identity still come from the core canonical key relation.
+fn normalize_string_collection_set(
+    element: &SchemaBody,
+    values: &mut Vec<ValueDataDraft>,
+) -> Result<(), ResidentKernelError> {
+    let mut keys = Vec::new();
+    keys.try_reserve_exact(values.len())
+        .map_err(|_| ResidentKernelError::InvalidShape)?;
+    for value in values.drain(..) {
+        let ValueDataDraft::String(value) = value else {
+            return Err(ResidentKernelError::InvalidInput);
+        };
+        keys.push(ValueData::String(value.into_boxed_str()));
+    }
+    for start in (0..keys.len() / 2).rev() {
+        let end = keys.len();
+        canonical_key_sift_down(element, &mut keys, start, end)?;
+    }
+    for end in (1..keys.len()).rev() {
+        keys.swap(0, end);
+        canonical_key_sift_down(element, &mut keys, 0, end)?;
+    }
+    let mut retained = 0;
+    for next in 0..keys.len() {
+        if retained == 0
+            || !mech_core::snapshot::compare_key_data(element, &keys[retained - 1], &keys[next])
+                .map_err(|_| ResidentKernelError::InvalidInput)?
+                .is_eq()
+        {
+            keys.swap(retained, next);
+            retained += 1;
+        }
+    }
+    keys.truncate(retained);
+    for value in keys {
+        let ValueData::String(value) = value else {
+            return Err(ResidentKernelError::InvalidInput);
+        };
+        values.push(ValueDataDraft::String(value.into_string()));
+    }
+    Ok(())
+}
+
 pub(in crate::resident::general) fn normalize_collection_set(
     element: &SchemaBody,
     values: &mut Vec<ValueDataDraft>,
 ) -> Result<(), ResidentKernelError> {
+    if !collection_set_element_supported(element) {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    if matches!(element, SchemaBody::String) {
+        if values
+            .iter()
+            .any(|value| !matches!(value, ValueDataDraft::String(_)))
+        {
+            return Err(ResidentKernelError::InvalidInput);
+        }
+        return normalize_string_collection_set(element, values);
+    }
     if values.iter().any(|value| Item::from_draft(value).is_none()) {
         return Err(ResidentKernelError::InvalidInput);
     }
@@ -4034,16 +4157,32 @@ fn schema_root_requires_import(
     Ok(!component_closure_is_addressable(owner, root, plan, meter)?)
 }
 
-fn collection_canonicalization_work(
+pub(in crate::resident::general) fn collection_canonicalization_work(
     kind: crate::ComprehensionKind,
-    count: usize,
+    values: &[ValueDataDraft],
 ) -> Result<u64, ResidentKernelError> {
     if kind != crate::ComprehensionKind::Set {
         return Ok(0);
     }
-    (count as u64)
+    // The core charges String key comparisons by the larger UTF-8 byte
+    // length, not by one scalar step. Heapsort performs at most two
+    // comparisons at each heap level; the retained factor also covers heap
+    // construction, deduplication, payload moves and canonical finalization.
+    let key_work = if matches!(values.first(), Some(ValueDataDraft::String(_))) {
+        values.iter().try_fold(1u64, |largest, value| {
+            Ok::<_, ResidentKernelError>(match value {
+                ValueDataDraft::String(value) => largest.max(budget::checked_u64(value.len())?),
+                _ => largest,
+            })
+        })?
+    } else {
+        1
+    };
+    let count = values.len();
+    budget::checked_u64(count)?
         .checked_mul((count.max(1).ilog2() as u64 + 1) * 64)
         .and_then(|work| work.checked_add(64))
+        .and_then(|work| work.checked_mul(key_work))
         .ok_or(ResidentKernelError::InvalidShape)
 }
 
@@ -4767,8 +4906,25 @@ impl ReactiveInstance {
             .map_err(fail)?;
         let draft_count = values.len();
         let draft_capacity = values.capacity();
+        if control.kind == crate::ComprehensionKind::Set
+            && matches!(values.first(), Some(ValueDataDraft::String(_)))
+        {
+            // Two metadata-only passes determine comparison work and the
+            // sidecar/shrink storage before either can be allocated.
+            meter
+                .charge_compute_work(
+                    budget::checked_u64(draft_count)
+                        .map_err(fail)?
+                        .checked_mul(2)
+                        .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?,
+                )
+                .map_err(fail)?;
+            meter
+                .charge_temporary_bytes(collection_set_normalization_bytes(&values).map_err(fail)?)
+                .map_err(fail)?;
+        }
         let canonical_work =
-            collection_canonicalization_work(control.kind, draft_count).map_err(fail)?;
+            collection_canonicalization_work(control.kind, &values).map_err(fail)?;
         if control.kind == crate::ComprehensionKind::Set {
             meter.charge_compute_work(canonical_work).map_err(fail)?;
             meter.charge_comparison_work(canonical_work).map_err(fail)?;
@@ -4889,6 +5045,7 @@ impl ReactiveInstance {
                             ValueDataDraft::Index(_) | ValueDataDraft::F64(_) => {
                                 scalar_footprint(8)
                             }
+                            ValueDataDraft::String(value) => scalar_footprint(value.len()),
                             _ => Err(ResidentKernelError::InvalidInput),
                         }?;
                         total
@@ -8297,13 +8454,112 @@ mod tests {
 
     #[test]
     fn matrix_results_do_not_pay_set_sorting_work() {
+        let values = vec![ValueDataDraft::Bool(false); 20_000];
         assert_eq!(
-            collection_canonicalization_work(crate::ComprehensionKind::Matrix, 20_000).unwrap(),
+            collection_canonicalization_work(crate::ComprehensionKind::Matrix, &values).unwrap(),
             0
         );
         assert!(
-            collection_canonicalization_work(crate::ComprehensionKind::Set, 20_000).unwrap() > 0
+            collection_canonicalization_work(crate::ComprehensionKind::Set, &values).unwrap() > 0
         );
+    }
+
+    #[test]
+    fn string_set_normalization_uses_canonical_utf8_key_identity() {
+        let mut values = ["🧑‍🚀", "é", "e\u{301}", "A", "é", "", "A"]
+            .map(|value| ValueDataDraft::String(value.to_owned()))
+            .to_vec();
+        let capacity = values.capacity();
+        let maximum_capacity = values
+            .iter()
+            .map(|value| match value {
+                ValueDataDraft::String(value) => value.capacity(),
+                _ => unreachable!(),
+            })
+            .max()
+            .unwrap();
+        let expected_temporary =
+            allocation_capacity_bytes::<ValueData>(values.len()).unwrap() + maximum_capacity as u64;
+        assert_eq!(
+            collection_set_normalization_bytes(&values).unwrap(),
+            expected_temporary
+        );
+        normalize_collection_set(&SchemaBody::String, &mut values).unwrap();
+        assert_eq!(
+            values.capacity(),
+            capacity,
+            "the draft backing remains reusable"
+        );
+        assert_eq!(
+            values,
+            ["", "A", "e\u{301}", "é", "🧑‍🚀"].map(|value| ValueDataDraft::String(value.to_owned()))
+        );
+        // Combining sequences stay distinct: canonical keys do not perform
+        // Unicode normalization or reinterpret UTF-8 bytes as characters.
+        assert_eq!(values.len(), 5);
+    }
+
+    #[test]
+    fn string_set_heap_sort_agrees_with_core_relation_for_every_rotation() {
+        let initial = ["z", "a", "é", "", "e\u{301}", "z", "🦀", "a"];
+        for rotation in 0..initial.len() {
+            let mut values = initial
+                .iter()
+                .cycle()
+                .skip(rotation)
+                .take(initial.len())
+                .map(|value| ValueDataDraft::String((*value).to_owned()))
+                .collect::<Vec<_>>();
+            normalize_collection_set(&SchemaBody::String, &mut values).unwrap();
+            assert_eq!(values.len(), 6);
+            for pair in values.windows(2) {
+                let [ValueDataDraft::String(left), ValueDataDraft::String(right)] = pair else {
+                    panic!("String key kind must be preserved");
+                };
+                assert!(
+                    mech_core::snapshot::compare_key_data(
+                        &SchemaBody::String,
+                        &ValueData::String(left.clone().into_boxed_str()),
+                        &ValueData::String(right.clone().into_boxed_str()),
+                    )
+                    .unwrap()
+                    .is_lt()
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn string_set_comparison_work_is_byte_aware_and_admitted_before_sorting() {
+        let short = vec![ValueDataDraft::String("x".to_owned())];
+        let long = vec![ValueDataDraft::String("x".repeat(1024))];
+        let short_work =
+            collection_canonicalization_work(crate::ComprehensionKind::Set, &short).unwrap();
+        let long_work =
+            collection_canonicalization_work(crate::ComprehensionKind::Set, &long).unwrap();
+        assert_eq!(long_work, short_work * 1024);
+        let mut meter = ResidentBudgetMeter::default();
+        assert!(meter.charge_comparison_work(long_work).is_err());
+        assert_eq!(long.len(), 1);
+        assert!(matches!(&long[0], ValueDataDraft::String(value) if value.len() == 1024));
+    }
+
+    #[test]
+    fn string_set_empty_and_invalid_drafts_do_not_panic_or_drain_on_validation_error() {
+        let mut empty = Vec::new();
+        normalize_collection_set(&SchemaBody::String, &mut empty).unwrap();
+        assert!(empty.is_empty());
+        assert_eq!(collection_set_normalization_bytes(&empty).unwrap(), 0);
+        let mut invalid = vec![
+            ValueDataDraft::String("kept".to_owned()),
+            ValueDataDraft::Bool(true),
+        ];
+        let before = invalid.clone();
+        assert!(normalize_collection_set(&SchemaBody::String, &mut invalid).is_err());
+        assert_eq!(invalid, before);
+        assert!(!collection_set_element_supported(
+            &SchemaBody::UnsignedInteger(IntegerWidth::W64)
+        ));
     }
 
     #[test]

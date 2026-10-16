@@ -581,6 +581,21 @@ pub(super) fn bind(
     )
 }
 
+// Binding appends each nested control and all its descendants to the same
+// step inventory. New String Set results may use a nested control only when
+// every child kernel declares its own runtime accounting. Older controls keep
+// their existing fixed-work compatibility paths. Recursion and live effects
+// are not admitted by this collection slice.
+fn runtime_metered_descendants(steps: &[ActivatedTurnStep]) -> bool {
+    steps.iter().all(|step| match step {
+        ActivatedTurnStep::Kernel(node) => {
+            node.kernel.work_accounting() == mech_core::ResidentKernelWorkAccounting::RuntimeMetered
+        }
+        ActivatedTurnStep::Match(_) | ActivatedTurnStep::Comprehension(_) => true,
+        _ => false,
+    })
+}
+
 pub(super) fn bind_inner(
     artifact: &ProgramArtifact,
     catalog: &FunctionCatalog,
@@ -611,12 +626,21 @@ pub(super) fn bind_inner(
             .get(output.schema_id)
             .is_some_and(|schema| match schema.body() {
                 SchemaBody::Matrix { .. } => true,
-                SchemaBody::Set { element, .. } => primitive(element),
+                SchemaBody::Set { element, .. } => {
+                    super::execution::comprehension_execution::collection_set_element_supported(
+                        element,
+                    )
+                }
                 _ => false,
             })
     {
         return Err(unsupported());
     }
+    // String Set results are newly supported here. Do not extend the old
+    // blanket Snapshot-work fallback to their unclassified body kernels.
+    let string_set = artifact.schemas().get(output.schema_id).is_some_and(|schema| {
+        matches!(schema.body(), SchemaBody::Set { element, .. } if element.as_ref() == &SchemaBody::String)
+    });
     let source = |value: crate::ComprehensionValue| match value {
         crate::ComprehensionValue::Constant(id) => ArtifactSource::Constant(id),
         crate::ComprehensionValue::Input(ordinal) => captures[ordinal as usize],
@@ -766,6 +790,11 @@ pub(super) fn bind_inner(
                             calls,
                             &[index],
                         )?;
+                        if string_set
+                            && !runtime_metered_descendants(&steps[index.get() as usize + 1..])
+                        {
+                            return Err(unsupported());
+                        }
                         let ActivatedTurnStep::Match(prepared) = &mut steps[index.get() as usize]
                         else {
                             unreachable!()
@@ -821,6 +850,11 @@ pub(super) fn bind_inner(
                             reads,
                             calls,
                         )?;
+                        if string_set
+                            && !runtime_metered_descendants(&steps[index.get() as usize + 1..])
+                        {
+                            return Err(unsupported());
+                        }
                         let ActivatedTurnStep::Comprehension(prepared) =
                             &mut steps[index.get() as usize]
                         else {
@@ -885,6 +919,7 @@ pub(super) fn bind_inner(
                 };
                 let policy = &contract.outputs[0];
                 let index = ActivatedNodeIndex(steps.len() as u32);
+                let work_accounting = kernel.work_accounting();
                 steps.push(ActivatedTurnStep::Kernel(ActivatedKernelNode {
                     artifact_node: owner,
                     memory_node,
@@ -937,63 +972,72 @@ pub(super) fn bind_inner(
                         total.checked_add(input.shape.len()? as u64)
                     })
                     .ok_or_else(unsupported)?;
-                let work = if output.region.kind == ResidentValueKind::Snapshot {
-                    // Snapshot-producing kernels carry their complete retained
-                    // and transient demand in the bound call plan. The control
-                    // meter owns only the repeated dispatch overhead here.
-                    0
-                } else if fixed_scalar {
-                    256
-                } else if name == "convert/kind"
-                    && input_layouts.len() == 1
-                    && crate::is_control_scalar_schema(
-                        artifact.schemas().get(input_layouts[0].schema_id).unwrap(),
-                    )
-                    && crate::is_control_scalar_schema(
-                        artifact.schemas().get(output.schema).unwrap(),
-                    )
-                {
-                    // Scalar conversion takes fixed work even when the source
-                    // uses a canonical snapshot lane (for example, u8).
-                    256
-                } else if matches!(name.as_str(), "stats/sum/column" | "stats/sum/row") {
-                    // Reduction kernels admit their complete scan before execution.
-                    0
-                } else if name == "access/scalar"
-                    && input_layouts
-                        .first()
-                        .is_some_and(|port| port.kind == ResidentValueKind::Snapshot)
-                {
-                    // Turn-shaped pattern bindings live in canonical snapshot
-                    // storage. The managed access kernel and its bound call
-                    // plan own selection materialization and admission.
-                    0
-                } else if matches!(
-                    name.as_str(),
-                    "matrix/horzcat" | "matrix/vertcat" | "access/scalar"
-                ) && output.region.kind != ResidentValueKind::Snapshot
-                    && input_layouts.iter().all(|port| {
-                        matches!(
-                            port.kind,
-                            ResidentValueKind::Bool
-                                | ResidentValueKind::Index
-                                | ResidentValueKind::F64
+                let work =
+                    if work_accounting == mech_core::ResidentKernelWorkAccounting::RuntimeMetered {
+                        // The actual selected implementation admits its variable
+                        // demand. The collection still meters repeated dispatch
+                        // and supplies the same call plan and retained-live demand.
+                        0
+                    } else if output.region.kind == ResidentValueKind::Snapshot && !string_set {
+                        // Legacy Snapshot-producing kernels carry their complete retained
+                        // and transient demand in the bound call plan. The control
+                        // meter owns only the repeated dispatch overhead here.
+                        0
+                    } else if fixed_scalar {
+                        256
+                    } else if name == "convert/kind"
+                        && input_layouts.len() == 1
+                        && crate::is_control_scalar_schema(
+                            artifact.schemas().get(input_layouts[0].schema_id).unwrap(),
                         )
-                    })
-                {
-                    elements.checked_mul(64).ok_or_else(unsupported)?
-                } else if name == "set/define"
-                    && input_layouts.iter().all(|port| {
-                        primitive(artifact.schemas().get(port.schema_id).unwrap().body())
-                    })
-                {
-                    elements
-                        .checked_mul(elements)
-                        .and_then(|work| work.checked_mul(64))
-                        .ok_or_else(unsupported)?
-                } else {
-                    return Err(unsupported());
-                };
+                        && crate::is_control_scalar_schema(
+                            artifact.schemas().get(output.schema).unwrap(),
+                        )
+                    {
+                        // Scalar conversion takes fixed work even when the source
+                        // uses a canonical snapshot lane (for example, u8).
+                        256
+                    } else if !string_set
+                        && matches!(name.as_str(), "stats/sum/column" | "stats/sum/row")
+                    {
+                        // Reduction kernels admit their complete scan before execution.
+                        0
+                    } else if !string_set
+                        && name == "access/scalar"
+                        && input_layouts
+                            .first()
+                            .is_some_and(|port| port.kind == ResidentValueKind::Snapshot)
+                    {
+                        // Turn-shaped pattern bindings live in canonical snapshot
+                        // storage. The managed access kernel and its bound call
+                        // plan own selection materialization and admission.
+                        0
+                    } else if matches!(
+                        name.as_str(),
+                        "matrix/horzcat" | "matrix/vertcat" | "access/scalar"
+                    ) && output.region.kind != ResidentValueKind::Snapshot
+                        && input_layouts.iter().all(|port| {
+                            matches!(
+                                port.kind,
+                                ResidentValueKind::Bool
+                                    | ResidentValueKind::Index
+                                    | ResidentValueKind::F64
+                            )
+                        })
+                    {
+                        elements.checked_mul(64).ok_or_else(unsupported)?
+                    } else if name == "set/define"
+                        && input_layouts.iter().all(|port| {
+                            primitive(artifact.schemas().get(port.schema_id).unwrap().body())
+                        })
+                    {
+                        elements
+                            .checked_mul(elements)
+                            .and_then(|work| work.checked_mul(64))
+                            .ok_or_else(unsupported)?
+                    } else {
+                        return Err(unsupported());
+                    };
                 instructions.push(ActivatedCollectionStep::Operation {
                     node: index,
                     work,

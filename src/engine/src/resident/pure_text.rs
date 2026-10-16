@@ -7,10 +7,10 @@ use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, ChangeDetectionPolicy, DeliveryMode,
     ExternalInteraction, FloatWidth, FunctionCatalogBuilder, ImplementationMemoryClass,
     IntegerWidth, MResult, OutputConstruction, ResidentKernelBindError, ResidentKernelBindRequest,
-    ResidentKernelError, ResidentKernelExecutor, ResidentKernelInputs, ResidentPortLayout,
-    ResidentShape, ResidentSnapshotOutput, ResidentValueKind, ResidentValueMut, ResidentValueRef,
-    ResolvedOperationContract, SchemaBody, SchemaId, SchemaKey, ShapeInstance, ShapeRule, Value,
-    ValueData, ValueDataDraft, ValueDraft,
+    ResidentKernelError, ResidentKernelExecutor, ResidentKernelInputs,
+    ResidentKernelWorkAccounting, ResidentPortLayout, ResidentShape, ResidentSnapshotOutput,
+    ResidentValueKind, ResidentValueMut, ResidentValueRef, ResolvedOperationContract, SchemaBody,
+    SchemaId, SchemaKey, ShapeInstance, ShapeRule, Value, ValueData, ValueDataDraft, ValueDraft,
 };
 
 use crate::intrinsics::pure_text as primitives;
@@ -220,6 +220,14 @@ fn bound(
     executor: ResidentKernelExecutor,
     plan: PureTextPlan,
 ) -> BoundResidentKernel {
+    // Scalar sources have no unadmitted recursive input validation scan.
+    // Matrix-source execution keeps its previous policy until its complete
+    // validation/geometry pass has its own metered contract.
+    let accounting = if plan.source.dimensions.is_none() {
+        ResidentKernelWorkAccounting::RuntimeMetered
+    } else {
+        ResidentKernelWorkAccounting::Unclassified
+    };
     BoundResidentKernel::new(executor, Box::new([]))
         .with_retained_state(Arc::new(plan))
         .with_snapshot_output(ResidentSnapshotOutput {
@@ -230,6 +238,7 @@ fn bound(
             maximum_cardinality: None,
         })
         .with_snapshot_schemas(request.schemas.clone())
+        .with_work_accounting(accounting)
 }
 
 fn is_u64(body: &SchemaBody) -> bool {
@@ -394,10 +403,11 @@ fn finalize(
         .snapshot_output()
         .ok_or(ResidentKernelError::InvalidOutput)?;
     let schemas = kernel
-        .snapshot_schemas()
+        .shared_snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidOutput)?;
     let budget = SnapshotCanonicalizationBudget::new(work);
-    let context = SnapshotValidationContext::new(schemas).with_canonicalization_budget(&budget);
+    let context = SnapshotValidationContext::with_shared_schemas(schemas)
+        .with_canonicalization_budget(&budget);
     let next = ValueDraft {
         schema: metadata.schema,
         shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
@@ -744,5 +754,165 @@ fn execute_format(
             Ok(changed)
         }
         _ => Err(ResidentKernelError::InvalidOutput),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct Inputs<'a>(&'a [ResidentValueRef<'a>]);
+    impl ResidentKernelInputs for Inputs<'_> {
+        fn len(&self) -> usize {
+            self.0.len()
+        }
+        fn get(&self, index: usize) -> Option<ResidentValueRef<'_>> {
+            self.0.get(index).copied()
+        }
+    }
+
+    #[test]
+    fn scalar_results_share_a_large_schema_arena_under_a_small_turn_budget() {
+        use mech_core::{
+            AllocationPlan, AllocationRole, ArenaPlacement, DeclaredOperationContract,
+            DimensionExpr, MemoryArenaId, MemoryLifetime, MemoryObjectId, MemoryObjectOwner,
+            MemoryPlanPoint, MemorySpace, NodeId, ResolvedInputPort, ResolvedOutputPort,
+            SchemaDraft, SchemaTableBuilder, TargetMemoryProfile,
+        };
+
+        let mut builder = SchemaTableBuilder::new();
+        let mut add = |body| {
+            builder
+                .insert(
+                    SchemaDraft {
+                        dimension_parameters: Box::new([]),
+                        body,
+                    }
+                    .finalize()
+                    .unwrap(),
+                )
+                .unwrap()
+        };
+        let text = add(SchemaBody::String);
+        let integer = add(SchemaBody::UnsignedInteger(IntegerWidth::W64));
+        for columns in 0..512 {
+            add(SchemaBody::Matrix {
+                element: Box::new(SchemaBody::Bool),
+                dimensions: Box::new([
+                    DimensionExpr::Constant(1),
+                    DimensionExpr::Constant(columns),
+                ]),
+            });
+        }
+        let build = builder.finish().unwrap();
+        let text = build.resolve(text).unwrap();
+        let integer = build.resolve(integer).unwrap();
+        let (schemas, _) = build.into_parts();
+        let arena_clone = schemas.clone_allocation_bound_bytes().unwrap();
+        assert!(
+            arena_clone > 4096,
+            "the unrelated arena must exceed the turn allowance"
+        );
+        let layout = |schema_id, kind| {
+            let schema = schemas.get(schema_id).unwrap();
+            ResidentPortLayout {
+                schema_id,
+                schema_key: schema.key(),
+                kind,
+                shape: ResidentShape::SCALAR,
+                shape_instance: schema.instantiate_shape(Box::new([])).unwrap(),
+                activation_fixed_shape: true,
+                resolved_selector: None,
+            }
+        };
+        let contract = ResolvedOperationContract::Declared(DeclaredOperationContract {
+            inputs: Box::new([ResolvedInputPort {
+                schema: text,
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            }]),
+            outputs: Box::new([ResolvedOutputPort {
+                schema: integer,
+                access: AccessMode::Write,
+                delivery: DeliveryMode::Signal,
+                construction: OutputConstruction::FullWrite {
+                    shape: ShapeRule::Declared,
+                },
+                alias: AliasPolicy::NoAlias,
+                change_detection: ChangeDetectionPolicy::ExactScalar,
+            }]),
+            interaction: ExternalInteraction::Pure,
+        });
+        let kernel = bind_parse_u64(&ResidentKernelBindRequest {
+            contract: &contract,
+            schemas: &schemas,
+            inputs: &[layout(text, ResidentValueKind::String)],
+            output: layout(integer, ResidentValueKind::Snapshot),
+        })
+        .unwrap();
+        assert_eq!(
+            kernel.work_accounting(),
+            ResidentKernelWorkAccounting::RuntimeMetered
+        );
+        let owner = kernel.shared_snapshot_schemas().unwrap().clone();
+        assert!(Arc::ptr_eq(
+            &owner,
+            kernel.clone().shared_snapshot_schemas().unwrap()
+        ));
+
+        let node = NodeId::new(0);
+        let mut limits = TargetMemoryProfile::current_resident_cpu().unwrap().limits;
+        limits.max_output_bytes = Some(4096);
+        limits.max_temporary_bytes = Some(4096);
+        limits.max_cloned_bytes = Some(4096);
+        let program = crate::memory_planner::ProgramMemoryPlan {
+            allocations: Box::new([AllocationPlan {
+                id: MemoryObjectId::new(0),
+                owner: MemoryObjectOwner::TransactionStage { node, output: 0 },
+                role: AllocationRole::TransactionStage,
+                slot: None,
+                space: MemorySpace::ResidentCpu,
+                current_bytes: 0,
+                capacity_bytes: 0,
+                payload_block_capacity: 0,
+                alignment: 1,
+                lifetime: MemoryLifetime::Transaction {
+                    first: MemoryPlanPoint::new(0),
+                    last: MemoryPlanPoint::new(1),
+                },
+                placement: ArenaPlacement {
+                    arena: MemoryArenaId::new(0),
+                    offset: 0,
+                },
+                reuse_group: None,
+            }]),
+            budget_limits: limits,
+            ..crate::memory_planner::ProgramMemoryPlan::default()
+        };
+        let turn = crate::memory_planner::plan_turn_memory(
+            &program,
+            node,
+            &crate::memory_planner::TurnMemoryFacts::default(),
+        )
+        .unwrap();
+        super::super::budget::with_resident_turn_plan(turn, || -> Result<(), ResidentKernelError> {
+            // A real copy of the arena would exceed the admitted workspace.
+            assert!(super::super::budget::PreparedKernel::new((),
+                super::super::budget::resident_cost! {
+                    temporary_bytes: arena_clone, cloned_bytes: arena_clone,
+                    ..super::super::budget::KernelCostEstimate::default()
+                }).admit().is_err());
+            let mut output = [None];
+            for text in ["19", "18446744073709551615", "0"] {
+                let input = [text.to_owned()];
+                kernel.execute(&Inputs(&[ResidentValueRef::String(&input)]),
+                    ResidentValueMut::Snapshot(&mut output)).unwrap();
+                let value = output[0].as_ref().unwrap();
+                assert!(matches!(value.data(), ValueData::U64(actual) if *actual == text.parse::<u64>().unwrap()));
+                assert!(Arc::ptr_eq(&owner, &value.schemas().unwrap()),
+                    "each result must retain the existing owner without cloning the arena");
+            }
+            Ok(())
+        }).unwrap();
     }
 }
