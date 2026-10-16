@@ -26,6 +26,7 @@ pub(in crate::resident::general) struct PlanPatternSource {
     schema: SchemaId,
     key: SchemaKey,
     body: Arc<SchemaBody>,
+    borrowed_body: bool,
     metadata_bytes: u64,
     max_shape_parameters: usize,
 }
@@ -101,6 +102,7 @@ impl PlanPatternSource {
             schema,
             key: entry.key(),
             body: Arc::new(entry.schema().body().clone()),
+            borrowed_body: borrowed_plan_pattern_body_supported(entry.schema().body()),
             metadata_bytes,
             max_shape_parameters,
         })
@@ -3482,7 +3484,7 @@ fn resident_pattern_item_with_source(
             // typed component schema; no per-value schema closure is built.
             if !array
                 && definition.schema().dimension_parameters().is_empty()
-                && borrowed_plan_pattern_body_supported(&source.body)
+                && source.borrowed_body
             {
                 return Some(PatternItem::canonical(
                     schema,
@@ -3917,7 +3919,7 @@ fn prepare_pattern_item_materialization_with_source(
             && schemas.get(schema).is_some_and(|schema| {
                 schema.dimension_parameters().is_empty()
                     && matches!(schema.body(), SchemaBody::Enum { .. })
-                    && borrowed_plan_pattern_body_supported(&source.body)
+                    && source.borrowed_body
             })
     });
     let mut source_context_bound = SourceContextMaterializationBound::default();
@@ -7973,7 +7975,10 @@ mod tests {
         let certificate = PlanPatternSource::new(schema, &plan, &projections).unwrap();
         assert!(Arc::ptr_eq(&certificate.body, &certificate.clone().body));
         assert!(
-            certificate.retained_metadata_demand().unwrap().persistent_bytes
+            certificate
+                .retained_metadata_demand()
+                .unwrap()
+                .persistent_bytes
                 >= certificate.body.clone_allocation_bound_bytes().unwrap()
                     + core::mem::size_of::<SchemaBody>() as u64
         );
