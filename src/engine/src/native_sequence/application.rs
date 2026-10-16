@@ -208,19 +208,10 @@ fn pipe_at(code: &str, start: usize) -> Result<Option<Pipe>, String> {
         close += 1;
     }
     if tail_bytes.get(close) != Some(&b'>') {
-        // A directly attached numeric token followed by a function name is a
-        // likely counted pipe with a missing terminator. Spaced table cells,
-        // standalone punctuation such as `|.`, and match arms are not pipes.
-        let token = &tail[token_start..end];
-        let next = tail_bytes.get(close).copied();
-        let missing_close = token_start == 0
-            && token.bytes().any(|byte| byte.is_ascii_digit())
-            && next.is_some_and(|byte| byte.is_ascii_alphabetic() || byte == b'_');
-        return if missing_close {
-            Err("repeated application count requires a closing `>`".into())
-        } else {
-            Ok(None)
-        };
+        // A counted pipe exists only when its complete attached token is
+        // present. Guessing that a numeric table cell omitted `>` makes valid
+        // compact rows such as `|9 false|` look like malformed applications.
+        return Ok(None);
     }
     let end = close;
     let count = &tail[..end];
@@ -804,7 +795,6 @@ mod tests {
             ("|_>", "nonnegative decimal"),
             ("|1 >", "nonnegative decimal"),
             ("|18446744073709551616>", "exceeds u64::MAX"),
-            ("|19", "closing `>`"),
         ] {
             let error = normalize(&format!("x := 1.0\nr := x {operator} step\n")).unwrap_err();
             assert!(error.contains("line 2"), "{error}");
@@ -852,6 +842,9 @@ mod tests {
 
         let table = "a := |id<u64> hw1<u8>| 1 10 | 2 20 | 3 30 |\n";
         assert_eq!(normalize(table).unwrap(), table);
+
+        let compact_table = "x := |a<f64> b<bool>|9 false|\n";
+        assert_eq!(normalize(compact_table).unwrap(), compact_table);
 
         let rows = "| left | right |\n".repeat(4_096);
         assert_eq!(normalize(&rows).unwrap(), rows);
