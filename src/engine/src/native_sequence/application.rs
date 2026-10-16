@@ -269,49 +269,59 @@ fn bar_starts_match_arm(code: &str, start: usize) -> bool {
     false
 }
 
-fn bar_is_in_table_literal(code: &str, start: usize) -> bool {
+/// Collect table separators in one forward pass. Inspect a statement's first
+/// header at most once; rescanning the prefix at each row is quadratic for
+/// inline tables.
+fn table_bar_offsets(code: &str) -> Vec<usize> {
     let bytes = code.as_bytes();
-    // An ordinary application after a table is still an application; the
-    // ambiguity here concerns attached counts and compact cell comparisons.
-    if bytes.get(start + 1) == Some(&b'>') {
-        return false;
+    let mut first_bar = None;
+    let mut inspected_header = false;
+    let mut in_table = false;
+    let mut offsets = Vec::new();
+    for (index, byte) in bytes.iter().copied().enumerate() {
+        match byte {
+            b'\n' | b'\r' | b';' => {
+                first_bar = None;
+                inspected_header = false;
+                in_table = false;
+            }
+            b'|' => {
+                if !inspected_header {
+                    if let Some(start) = first_bar {
+                        let header = code[start + 1..index].trim();
+                        in_table = header
+                            .as_bytes()
+                            .first()
+                            .is_some_and(|byte| byte.is_ascii_alphabetic() || *byte == b'_')
+                            && header.contains('<')
+                            && header.contains('>');
+                        inspected_header = true;
+                    } else {
+                        first_bar = Some(index);
+                    }
+                }
+                // An ordinary application after a table remains a pipeline.
+                if in_table && bytes.get(index + 1) != Some(&b'>') {
+                    offsets.push(index);
+                }
+            }
+            _ => {}
+        }
     }
-    let statement_start = bytes[..start]
-        .iter()
-        .rposition(|byte| matches!(*byte, b'\n' | b'\r' | b';'))
-        .map_or(0, |index| index + 1);
-    let Some(header_start) = bytes[statement_start..start]
-        .iter()
-        .position(|byte| *byte == b'|')
-        .map(|index| statement_start + index)
-    else {
-        return false;
-    };
-    let Some(header_end) = bytes[header_start + 1..]
-        .iter()
-        .position(|byte| *byte == b'|')
-        .map(|index| header_start + 1 + index)
-    else {
-        return false;
-    };
-    if start < header_end {
-        return false;
-    }
-    let header = code[header_start + 1..header_end].trim();
-    header
-        .as_bytes()
-        .first()
-        .is_some_and(|byte| byte.is_ascii_alphabetic() || *byte == b'_')
-        && header.contains('<')
-        && header.contains('>')
+    offsets
 }
 
 fn pipe_offsets(source: &str) -> Result<Vec<Pipe>, String> {
     let code = mask(source);
+    let mut table_bars = table_bar_offsets(&code).into_iter().peekable();
     top_offsets(source, "|")?
         .into_iter()
         .filter_map(|offset| {
-            (!bar_starts_match_arm(&code, offset) && !bar_is_in_table_literal(&code, offset))
+            while table_bars.peek().is_some_and(|next| *next < offset) {
+                table_bars.next();
+            }
+            let in_table = table_bars.next_if_eq(&offset).is_some();
+            (!in_table && !bar_starts_match_arm(&code, offset))
                 .then(|| pipe_at(&code, offset).transpose())
                 .flatten()
         })
@@ -321,6 +331,7 @@ fn pipe_offsets(source: &str) -> Result<Vec<Pipe>, String> {
 fn contains_pipe(source: &str) -> bool {
     let code = mask(source);
     let bytes = code.as_bytes();
+    let mut table_bars = table_bar_offsets(&code).into_iter().peekable();
     let mut stack = Vec::new();
     for (i, byte) in bytes.iter().copied().enumerate() {
         match byte {
@@ -329,16 +340,17 @@ fn contains_pipe(source: &str) -> bool {
                 stack.pop();
             }
             b'|' => {
+                let in_table = table_bars.next_if_eq(&i).is_some();
                 // Classify canonical expression separators before attempting
                 // counted-pipe validation. Compact comparisons can look like
                 // complete counts (`|1>`) or malformed counts (`|name>` and
                 // `|-1>`), and every match arm—not only the first—owns its
                 // separator through the same-depth `=>` that follows it.
-                if stack
-                    .last()
-                    .is_some_and(|delimiter| matches!(*delimiter, b'[' | b'{'))
+                if in_table
+                    || stack
+                        .last()
+                        .is_some_and(|delimiter| matches!(*delimiter, b'[' | b'{'))
                     || bar_starts_match_arm(&code, i)
-                    || bar_is_in_table_literal(&code, i)
                 {
                     continue;
                 }
@@ -974,6 +986,12 @@ mod tests {
 
         let rows = "| left | right |\n".repeat(4_096);
         assert_eq!(normalize(&rows).unwrap(), rows);
+
+        for count in [4_000, 8_000] {
+            let inline = format!("x := |a<u64>|{}\n", " 0 |".repeat(count));
+            assert_eq!(table_bar_offsets(&inline).len(), count + 1);
+            assert_eq!(normalize(&inline).unwrap(), inline);
+        }
     }
     #[test]
     fn counted_detection_preserves_comprehension_and_match_comparisons() {
