@@ -65,6 +65,10 @@ fn compact_unicode_operator_holes_execute() {
             "same(x<f64>) => <f64> := x + 1.0 - 1.0\nr := 4.0 |> same(_{operator}2.0)\nio/write(number/format(r, 0))\n"
         );
         check(&source, expected, 0);
+        let multiline = format!(
+            "Scale(x<f64>, y<f64>) => <f64> :=\n  x {operator}\n  y\nr := 4.0 |> Scale(_, 2.0)\nio/write(number/format(r, 0))\n"
+        );
+        check(&multiline, expected, 0);
     }
 }
 
