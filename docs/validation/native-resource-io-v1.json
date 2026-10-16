@@ -1,0 +1,43 @@
+{
+  "activated_legacy_fallback_rejected": true,
+  "attempts": [
+    {
+      "exit_code": 0,
+      "mode": "trusted",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "995dea495af75b720afa10fa0c4ca7d8c8c79f6ccab72a9183b59d1b25714019"
+    },
+    {
+      "exit_code": 0,
+      "mode": "secure",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "995dea495af75b720afa10fa0c4ca7d8c8c79f6ccab72a9183b59d1b25714019"
+    },
+    {
+      "exit_code": 1,
+      "mode": "default-denied",
+      "stderr_sha256": "117a4b0cc5c644f5219c5ab9e66ca0d9ae93403378ce34c1f0c286a4867d622b",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "exit_code": 1,
+      "mode": "invalid-policy",
+      "stderr_sha256": "4e5d62988f70f6d2933776924c79f7dc13609b0870a052bfba68d3d5552f34ff",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "benchmark_measurements": 0,
+  "binary_sha256": "449d06cc476875c83f6719e17f4f2b4239b2d6ea4e8f63c7b22b3698f1725fea",
+  "build_count": 1,
+  "constants_sha256": "bbd8ccb744a7cfd7bdac538acaf07179a37f3cb753ebfe90fec15f23c2a84a6c",
+  "object_sha256": "753ed7c7b654b0ed27067ab6362b4d873e72e416d6d8ef2df83f44d91ee8ae66",
+  "requirements_sha256": "7de59211c723212a7aa1ecc32d49739d41a3cd57f5dd424cba183f5bab0eae49",
+  "same_executable_for_all_attempts": true,
+  "schema": "native-host-application-qualification-v1",
+  "source_sha256": "253771653444a77ce577f45ba1cc0f73547fa6655ea28ee5537672d294754660",
+  "compiler_source_commit": "824e1c52a51bc6e85d9b75aa45ef43dd309f3482",
+  "host": "aarch64-apple-darwin",
+  "rustc": "1.96.0-nightly (ec818fda3 2026-03-02)",
+  "application_profile": "dev; debug=0; incremental=false; target-cpu=native",
+  "application_lock_sha256": "5fc4d5f299b0ceb4bf901d30d6a599e830b75f961549576ae4858f29b1e74891"
+}
