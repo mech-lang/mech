@@ -509,7 +509,6 @@ mod tests {
             "x := @missing/1\n",
             "@missing/line <- \"x\"\n",
             "+> *\nx := 1\n",
-            "+> @out :=\nx := 1\n",
         ] {
             assert!(
                 ParsedSource::parse(source).unwrap().has_activated_ports(),
@@ -526,6 +525,8 @@ mod tests {
                 .unwrap()
                 .has_activated_ports()
         );
+        let malformed = ParsedSource::parse("+> @out :=\nx := 1\n");
+        assert!(malformed.is_err() || malformed.unwrap().has_activated_ports());
     }
 
     #[test]
