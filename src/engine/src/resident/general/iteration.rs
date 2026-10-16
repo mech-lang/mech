@@ -64,11 +64,10 @@ pub(super) fn prepare(
     if output.schema != control.carrier {
         return Err(invalid());
     }
-    let carrier_slot = layout
+    let &(carrier_slot, carrier_memory_node) = layout
         .control_carriers
         .get(&(owner, control.body.id.0))
-        .ok_or_else(invalid)?
-        .0;
+        .ok_or_else(invalid)?;
     let carrier = &layout.slots[carrier_slot.get() as usize];
     if carrier.schema != control.carrier || carrier.storage != ResidentStorageClass::Scratch {
         return Err(invalid());
@@ -91,8 +90,8 @@ pub(super) fn prepare(
         ArtifactSource::Slot(slot) => slot_port_layout(&layout.slots[slot.get() as usize]),
     };
     let mut locals = Vec::new();
-    for (pattern, implicit, block, local, _) in all_local_definitions(control) {
-        let slot = if implicit {
+    for (pattern, _, block, local, _) in all_local_definitions(control) {
+        let slot = if local == CARRIER_LOCAL {
             layout.control_carriers[&(owner, block)].0
         } else if pattern {
             layout.match_bindings[&(owner, block, local)].0
@@ -107,6 +106,7 @@ pub(super) fn prepare(
     Ok(ActivatedIterationNode {
         artifact_node: owner,
         budget_node,
+        carrier_memory_node,
         count: control.count,
         seed: *input_reads.get(control.seed as usize).ok_or_else(invalid)?,
         seed_layout,
@@ -129,6 +129,7 @@ pub(super) fn bind_body(
     artifact: &ProgramArtifact,
     catalog: &FunctionCatalog,
     owner: NodeId,
+    budget_node: NodeId,
     control: &crate::IterationDeclaration,
     inputs: &[ArtifactSource],
     input_reads: &[ResidentReadLocation],
@@ -143,13 +144,30 @@ pub(super) fn bind_body(
     )>,
     recursive_roots: &[ActivatedNodeIndex],
 ) -> Result<ActivatedControlBlock, ResidentActivationError> {
-    let _output = &layout.slots[output_slot.get() as usize];
-    let carrier_slot = layout
+    let &(carrier_slot, carrier_memory_node) = layout
         .control_carriers
         .get(&(owner, control.body.id.0))
-        .ok_or(ResidentActivationError::UnsupportedControlLayout { node: owner })?
-        .0;
+        .ok_or(ResidentActivationError::UnsupportedControlLayout { node: owner })?;
     let carrier = &layout.slots[carrier_slot.get() as usize];
+    // The private carrier and enclosing result are distinct publication
+    // boundaries. Give each its actual output slot and transaction staging;
+    // neither may borrow a body kernel's unrelated memory contract.
+    for (node, slot, name) in [
+        (carrier_memory_node, carrier_slot, "iteration-carrier"),
+        (budget_node, output_slot, "iteration-result"),
+    ] {
+        let output = slot_port_layout(&layout.slots[slot.get() as usize]);
+        let memory = comprehension::control_materialization_memory(artifact, name, &[], &output)?;
+        calls.push((
+            owner,
+            crate::memory_planner::CallSiteMemoryTemplate {
+                node,
+                input_sources: Box::new([]),
+                output_slots: vec![slot].into_boxed_slice(),
+            },
+            memory,
+        ));
+    }
     let scope = ControlBlockInputScope::Iteration {
         captures: &control.captures,
         carrier_slot,

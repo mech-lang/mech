@@ -243,6 +243,7 @@ pub struct ActivatedMatchNode {
 pub struct ActivatedIterationNode {
     pub artifact_node: NodeId,
     pub budget_node: NodeId,
+    pub carrier_memory_node: NodeId,
     pub count: u64,
     pub seed: ResidentReadLocation,
     pub seed_layout: ResidentPortLayout,
@@ -12514,16 +12515,20 @@ fn slot_shape(
             .instantiate_shape(Box::new([]))
             .map_err(|_| ResidentActivationError::UnresolvedShape { slot });
     }
-    // Snapshot-backed aggregate outputs carry their canonical shape inside
-    // the published value. Their arena is one scalar snapshot cell, so a
-    // durable artifact may start turn-varying parameters at their declared
-    // lower bounds without serializing compilation-instance shape hints.
+    // Snapshot-backed aggregates carry their current canonical shape inside
+    // the value. An input whose parameters are all turn-lived can also use a
+    // scalar snapshot lane seeded at the declared lower bounds. This does not
+    // invent an activation witness for an activation-lived parameter.
     let requires_dense_matrix_shape = matches!(
         schema.body(),
         SchemaBody::Matrix { element, dimensions }
             if dimensions.len() == 2 && dense_resident_kind(element).is_some()
     );
     if !requires_dense_matrix_shape
+        || schema
+            .dimension_parameters()
+            .iter()
+            .all(|parameter| parameter.lifetime() == DimensionLifetime::Turn)
         || comprehension::owns_output(artifact, slot)
         || matches!(declaration.producer, ProducerReference::NodeOutput { .. })
     {
@@ -12649,7 +12654,12 @@ fn schema_layout(
     if needs_dense_shape
         && !schema_entry.schema().dimension_parameters().is_empty()
         && !has_activation_shape_fact
-        && produced_without_shape_fact
+        && (produced_without_shape_fact
+            || schema_entry
+                .schema()
+                .dimension_parameters()
+                .iter()
+                .all(|parameter| parameter.lifetime() == DimensionLifetime::Turn))
     {
         return Ok((ResidentValueKind::Snapshot, ResidentShape::SCALAR));
     }
@@ -13281,6 +13291,7 @@ fn build_plan(
             let body = iteration::bind_body(
                 artifact,
                 catalog,
+                node.node,
                 node.node,
                 control,
                 &sources,
@@ -23734,7 +23745,9 @@ fn prepare_match_node(
         locals: comprehension::all_match_local_definitions(control)
             .into_iter()
             .map(|(pattern_binding, _, block, local, _)| {
-                let slot = if pattern_binding {
+                let slot = if local == iteration::CARRIER_LOCAL {
+                    layout.control_carriers[&(owner, block)].0
+                } else if pattern_binding {
                     layout.match_bindings[&(owner, block, local)].0
                 } else {
                     layout.control_locals[&(owner, block, local)].0
@@ -24318,6 +24331,7 @@ fn bind_control_block(
                         artifact,
                         catalog,
                         owner,
+                        physical_node,
                         nested,
                         &inputs,
                         &input_reads,

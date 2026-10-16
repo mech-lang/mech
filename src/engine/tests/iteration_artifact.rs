@@ -356,3 +356,141 @@ fn zero_count_keeps_all_ordinary_body_contracts_and_operation_references() {
     control.body.operations[1].schema = SchemaId::new(u32::MAX);
     assert!(build(&schemas, control, &[carrier, carrier]).is_err());
 }
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn iteration_snapshot_inputs_preserve_turn_geometry_and_activation_authority() {
+    use mech_core::{
+        DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+        DimensionParameterOrigin, FloatWidth, FunctionCatalogBuilder, ReactiveInstanceId,
+        ResidentValueKind, ValueDataDraft,
+        snapshot::{F64Bits, SnapshotValidationContext, ValueDraft},
+    };
+    use mech_engine::resident::{ActivationFacts, CapturedValueInput, activate};
+
+    let catalog = FunctionCatalogBuilder::new().build().unwrap();
+    for lifetime in [DimensionLifetime::Turn, DimensionLifetime::Activation] {
+        let mut builder = SchemaTableBuilder::new();
+        let matrix = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                        dimensions: vec![
+                            DimensionExpr::Constant(1),
+                            DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                        ]
+                        .into_boxed_slice(),
+                    },
+                    dimension_parameters: vec![DimensionParameterDeclaration {
+                        id: DimensionParameterId::new(0),
+                        origin: DimensionParameterOrigin::Explicit,
+                        lifetime,
+                        lower_bound: DimensionExpr::Constant(0),
+                        upper_bound: Some(DimensionExpr::Constant(8)),
+                    }]
+                    .into_boxed_slice(),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let schemas = builder.finish().unwrap();
+        let matrix = schemas.resolve(matrix).unwrap();
+        let original = if lifetime == DimensionLifetime::Turn {
+            build(&schemas.table, identity(matrix, 3, 0), &[matrix]).unwrap()
+        } else {
+            // Activation-lived carriers remain outside the bounded Iteration
+            // slice. A plain input/output graph still checks storage planning.
+            invalid(build(&schemas.table, identity(matrix, 3, 0), &[matrix]));
+            let constants = ConstantStoreBuilder::new(&schemas.table)
+                .finish()
+                .unwrap()
+                .into_parts()
+                .0;
+            let graph = SourceProgram {
+                inputs: vec![SourceInput {
+                    name: "input".into(),
+                    schema: matrix,
+                }]
+                .into_boxed_slice(),
+                outputs: vec![SourceOutput {
+                    name: "result".into(),
+                    interactive_symbol: None,
+                    source: SourceValue::Input(0),
+                    schema: matrix,
+                }]
+                .into_boxed_slice(),
+                ..SourceProgram::default()
+            };
+            compile_source_program_with_control_contracts(
+                &graph,
+                &mut ArtifactBuildContext::new(&schemas.table, &constants),
+                &[],
+            )
+            .unwrap()
+        };
+        let encoded = encode_program_artifact_bytecode_v1(&original).unwrap();
+        let decoded = decode_program_artifact_bytecode_v1(&encoded).unwrap();
+        for artifact in [&original, &decoded] {
+            let activation = activate(
+                ReactiveInstanceId::new(0x49544552, 0),
+                artifact,
+                &catalog,
+                &ActivationFacts::default(),
+            );
+            if lifetime == DimensionLifetime::Activation {
+                assert!(matches!(
+                    activation,
+                    Err(mech_engine::resident::ResidentActivationError::UnresolvedShape { slot })
+                        if slot == artifact.inputs()[0].slot
+                ));
+                continue;
+            }
+            let mut instance = activation.unwrap();
+            assert_eq!(
+                instance.plan.inputs[0].region.kind,
+                ResidentValueKind::Snapshot
+            );
+            for width in [0, 3, 1, 8, 0] {
+                let data = ValueDataDraft::Matrix(
+                    (0..width)
+                        .map(|i| ValueDataDraft::F64(F64Bits::from_f64(i as f64 + 0.5)))
+                        .collect(),
+                );
+                let value = ValueDraft {
+                    schema: matrix,
+                    shape_values: vec![width].into_boxed_slice(),
+                    data: data.clone(),
+                }
+                .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+                .unwrap();
+                let input = CapturedValueInput {
+                    slot: instance.plan.inputs[0].slot,
+                    value: &value,
+                };
+                instance
+                    .prepare_turn_values(&[input])
+                    .unwrap()
+                    .publish()
+                    .unwrap();
+                let output = instance.copied_output(0).unwrap();
+                assert_eq!(output.shape().parameter_values(), &[width]);
+                assert_eq!(output.canonical_data_draft().unwrap(), data);
+            }
+            assert!(
+                ValueDraft {
+                    schema: matrix,
+                    shape_values: vec![9].into_boxed_slice(),
+                    data: ValueDataDraft::Matrix(
+                        (0..9)
+                            .map(|_| ValueDataDraft::F64(F64Bits::from_f64(0.0)))
+                            .collect(),
+                    ),
+                }
+                .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+                .is_err()
+            );
+        }
+    }
+}

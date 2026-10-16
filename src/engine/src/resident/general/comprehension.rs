@@ -865,6 +865,7 @@ pub(super) fn bind_inner(
                             artifact,
                             catalog,
                             owner,
+                            memory_node,
                             nested,
                             &input_sources,
                             &input_reads,
@@ -1191,6 +1192,17 @@ fn materialization_memory(
         }
         crate::ComprehensionKind::Set => "set-comprehension",
     };
+    control_materialization_memory(artifact, name, inputs, output)
+}
+
+/// A typed control boundary uses the ordinary planner for its actual output
+/// representation. Its body retains its own semantic operation contracts.
+pub(super) fn control_materialization_memory(
+    artifact: &ProgramArtifact,
+    name: &str,
+    inputs: &[ResidentPortLayout],
+    output: &ResidentPortLayout,
+) -> Result<mech_core::CallMemoryPlan, ResidentActivationError> {
     let declaration = mech_core::OperationContractDeclaration {
         inputs: mech_core::InputPortLayout::Fixed(
             vec![

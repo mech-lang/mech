@@ -4,6 +4,7 @@
 //! complete body candidate is checked and admitted before replacing the
 //! carrier; only the final carrier reaches the ordinary result region.
 use super::*;
+use crate::resident::general::live;
 use mech_core::{CurrentMemoryFootprint, ResidentPortLayout};
 
 fn checked_add(left: u64, right: u64) -> Result<u64, ResidentKernelError> {
@@ -46,7 +47,19 @@ impl ReactiveInstance {
         let control = std::sync::Arc::clone(control);
         let node = control.artifact_node;
         let fail = |error| ResidentExecutionError::Kernel { node, error };
-        let mut facts = crate::memory_planner::TurnMemoryFacts::default();
+        let current = if control.write.storage == ResidentStorageClass::Constant {
+            self.activation.read(control.write.region)
+        } else {
+            self.workspace.scratch.read(control.write.region)
+        };
+        let call = self
+            .plan
+            .memory_plan
+            .call_for_node(control.budget_node)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        let mut facts = live::facts(call, control.budget_node, &[], current, &self.plan.schemas)
+            .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
+        let measurement_work = facts.additional_demand.work;
         facts.additional_demand.turn_peak_bytes = live_bytes;
         facts.additional_demand.retained_nodes = live_nodes;
         let turn_plan = crate::memory_planner::plan_current_resident_turn(
@@ -61,6 +74,14 @@ impl ReactiveInstance {
         budget::with_control_work_budget(|| {
             budget::with_resident_turn_plan(turn_plan, || {
                 let result = (|| {
+                    admit(|| {
+                        Ok(budget::resident_cost! {
+                            compute_work: measurement_work.compute,
+                            comparison_work: measurement_work.comparison,
+                            ..budget::KernelCostEstimate::default()
+                        })
+                    })
+                    .map_err(fail)?;
                     // The old enclosing result survives every iteration and
                     // every failure. Measure it before staging the first seed.
                     let old = if control.write.storage == ResidentStorageClass::Constant {
@@ -91,6 +112,7 @@ impl ReactiveInstance {
                     );
                     self.iteration_copy_boundary(
                         node,
+                        control.carrier_memory_node,
                         control.seed,
                         &control.seed_layout,
                         control.carrier,
@@ -143,6 +165,7 @@ impl ReactiveInstance {
                         admit(|| Ok(local_meter.estimate())).map_err(fail)?;
                         self.iteration_copy_boundary(
                             node,
+                            control.carrier_memory_node,
                             body.yield_value,
                             &body.yield_layout,
                             control.carrier,
@@ -173,6 +196,7 @@ impl ReactiveInstance {
                     );
                     self.iteration_copy_boundary(
                         node,
+                        control.budget_node,
                         ResidentReadLocation::Scratch(control.carrier.region),
                         &carrier_layout,
                         control.write,
@@ -200,6 +224,62 @@ impl ReactiveInstance {
     }
 
     fn iteration_copy_boundary(
+        &mut self,
+        node: NodeId,
+        memory_node: NodeId,
+        source_location: ResidentReadLocation,
+        source_layout: &ResidentPortLayout,
+        target: super::super::ResidentWriteLocation,
+        epoch: InstanceEpoch,
+        live: (u64, u64),
+    ) -> Result<(), ResidentExecutionError> {
+        let fail = || ResidentExecutionError::Kernel {
+            node,
+            error: ResidentKernelError::InvalidShape,
+        };
+        let current = if target.storage == ResidentStorageClass::Constant {
+            self.activation.read(target.region)
+        } else {
+            self.workspace.scratch.read(target.region)
+        };
+        let call = self
+            .plan
+            .memory_plan
+            .call_for_node(memory_node)
+            .ok_or_else(fail)?;
+        let facts =
+            live::facts(call, memory_node, &[], current, &self.plan.schemas).map_err(|_| fail())?;
+        let measurement_work = facts.additional_demand.work;
+        let plan = crate::memory_planner::plan_current_resident_turn(
+            &self.plan.memory_plan,
+            memory_node,
+            &facts,
+        )
+        .map_err(|_| fail())?;
+        if !plan.budget_violations.is_empty() {
+            return Err(fail());
+        }
+        budget::with_resident_turn_plan(plan, || {
+            admit(|| {
+                Ok(budget::resident_cost! {
+                    compute_work: measurement_work.compute,
+                    comparison_work: measurement_work.comparison,
+                    ..budget::KernelCostEstimate::default()
+                })
+            })
+            .map_err(|_| fail())?;
+            self.iteration_copy_boundary_planned(
+                node,
+                source_location,
+                source_layout,
+                target,
+                epoch,
+                live,
+            )
+        })
+    }
+
+    fn iteration_copy_boundary_planned(
         &mut self,
         node: NodeId,
         source_location: ResidentReadLocation,
