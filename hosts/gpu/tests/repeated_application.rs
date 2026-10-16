@@ -43,6 +43,22 @@ fn vector_seed_and_mixed_chains_keep_order_and_captures() {
 }
 
 #[test]
+fn typed_results_and_canonical_symbolic_callbacks_execute() {
+    for name in [
+        "step+fast",
+        "step*fast",
+        "step#fast",
+        "step~fast",
+        "step^fast",
+    ] {
+        let source = format!(
+            "{name}(x<f64>) => <f64> := x + 1.0\nr<f64> := 2.0 |3> {name}\nio/write(number/format(r, 0))\n"
+        );
+        check(&source, b"5", 1);
+    }
+}
+
+#[test]
 fn unsigned_counters_use_existing_checked_integer_callbacks() {
     for (count, result) in [(0, "2"), (1, "5"), (19, "59")] {
         let source = format!(

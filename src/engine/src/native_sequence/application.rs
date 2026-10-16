@@ -7,12 +7,57 @@
 //! Normalization creates ordinary bindings/functions and adds no native kernel.
 
 fn identifier_char(ch: char) -> bool {
-    ch.is_alphanumeric() || matches!(ch, '_' | '-' | '/')
+    ch.is_alphanumeric()
+        || !ch.is_ascii()
+        || matches!(
+            ch,
+            '_' | '&' | '$' | '%' | '/' | '#' | '\\' | '~' | '+' | '-' | '*' | '^'
+        )
 }
 fn identifier(source: &str) -> bool {
     !source.is_empty()
         && source.chars().all(identifier_char)
-        && source.chars().any(|c| c.is_alphabetic() || c == '_')
+        && canonical_fragment(
+            &format!("{source} := 0\n"),
+            mech_syntax::document::SyntaxKind::Identifier,
+            source,
+        )
+}
+
+/// Let the canonical grammar validate names, annotations and table headers.
+/// The surrounding binding only supplies a complete document for that parser.
+fn canonical_fragment(
+    source: &str,
+    kind: mech_syntax::document::SyntaxKind,
+    expected: &str,
+) -> bool {
+    use mech_syntax::document::{
+        DocumentId, ParseConfig, Revision, SyntaxNode, TextSnapshot, parse_canonical_document,
+    };
+    fn contains(node: SyntaxNode, kind: mech_syntax::document::SyntaxKind, expected: &str) -> bool {
+        (node.kind() == kind && node.text().is_ok_and(|text| text.trim() == expected.trim()))
+            || node.children().any(|child| contains(child, kind, expected))
+    }
+    let Ok(snapshot) = TextSnapshot::new(DocumentId(0x415050), Revision(0), source) else {
+        return false;
+    };
+    let parsed = parse_canonical_document(snapshot, ParseConfig::default());
+    parsed.is_strictly_clean() && contains(parsed.syntax(), kind, expected)
+}
+
+fn binding_head(source: &str) -> bool {
+    if identifier(source) {
+        return true;
+    }
+    if !source.contains('<') {
+        return false;
+    }
+    let probe = format!("{source} := 0\n");
+    canonical_fragment(
+        &probe,
+        mech_syntax::document::SyntaxKind::VariableDefine,
+        &probe,
+    )
 }
 
 /// Code bytes, with strings and comments masked, retain their original offsets.
@@ -273,35 +318,46 @@ fn bar_starts_match_arm(code: &str, start: usize) -> bool {
 /// header at most once; rescanning the prefix at each row is quadratic for
 /// inline tables.
 fn table_bar_offsets(code: &str) -> Vec<usize> {
+    #[derive(Default)]
+    struct Context {
+        first_bar: Option<usize>,
+        inspected_header: bool,
+        in_table: bool,
+    }
     let bytes = code.as_bytes();
-    let mut first_bar = None;
-    let mut inspected_header = false;
-    let mut in_table = false;
+    let mut contexts = vec![Context::default()];
     let mut offsets = Vec::new();
     for (index, byte) in bytes.iter().copied().enumerate() {
         match byte {
+            b'(' | b'[' | b'{' => contexts.push(Context::default()),
+            b')' | b']' | b'}' => {
+                if contexts.len() > 1 {
+                    contexts.pop();
+                }
+            }
             b'\n' | b'\r' | b';' => {
-                first_bar = None;
-                inspected_header = false;
-                in_table = false;
+                *contexts.last_mut().unwrap() = Context::default();
             }
             b'|' => {
-                if !inspected_header {
-                    if let Some(start) = first_bar {
+                let context = contexts.last_mut().unwrap();
+                if !context.inspected_header {
+                    if let Some(start) = context.first_bar {
                         let header = code[start + 1..index].trim();
-                        in_table = header
-                            .as_bytes()
-                            .first()
-                            .is_some_and(|byte| byte.is_ascii_alphabetic() || *byte == b'_')
-                            && header.contains('<')
-                            && header.contains('>');
-                        inspected_header = true;
+                        let table = format!("|{header}| 0 |");
+                        context.in_table = header.contains('<')
+                            && header.contains('>')
+                            && canonical_fragment(
+                                &format!("application-table := {table}\n"),
+                                mech_syntax::document::SyntaxKind::Table,
+                                &table,
+                            );
+                        context.inspected_header = true;
                     } else {
-                        first_bar = Some(index);
+                        context.first_bar = Some(index);
                     }
                 }
                 // An ordinary application after a table remains a pipeline.
-                if in_table && bytes.get(index + 1) != Some(&b'>') {
+                if context.in_table && bytes.get(index + 1) != Some(&b'>') {
                     offsets.push(index);
                 }
             }
@@ -501,6 +557,13 @@ fn is_candidate(source: &str) -> bool {
             || code[initial.len()..].trim_start().starts_with('(')
             || starts_pipe(&code[initial.len()..]));
     if named_statement {
+        return true;
+    }
+    if top_offsets(code, ":=").is_ok_and(|offsets| {
+        offsets
+            .first()
+            .is_some_and(|offset| binding_head(code[..*offset].trim()))
+    }) {
         return true;
     }
     let Ok(pipes) = pipe_offsets(code) else {
@@ -745,7 +808,7 @@ fn normalize_statement(
     let signature = split_top(head.trim(), "=>")?;
     // Canonical match-arm functions use => but do not have := after the kind.
     // Canonical statement functions have their own := in the header; retain it.
-    if signature.len() == 1 && !head.trim().is_empty() && !identifier(head.trim()) {
+    if signature.len() == 1 && !head.trim().is_empty() && !binding_head(head.trim()) {
         return Ok(None);
     }
     let expression = expression.trim();
@@ -1005,6 +1068,44 @@ mod tests {
 
         let normalized = normalize("r := source |> filter([x | x > 0], _)\n").unwrap();
         assert!(normalized.contains("r := filter([x | x > 0], application-temp-0)"));
+    }
+
+    #[test]
+    fn match_comparison_seed_does_not_hide_a_later_counted_stage() {
+        let normalized =
+            normalize("r := (value ? | flag < limit => 1 | * => 2) |1> step\n").unwrap();
+        assert!(
+            normalized.contains("application-temp-0 := (value ? | flag < limit => 1 | * => 2)")
+        );
+        assert!(normalized.contains("r := sequence/iterate(application-temp-0, 1, step)"));
+        let table = normalize("r := (|a<bool>|1>limit|) |1> step\n").unwrap();
+        assert!(table.contains("r := sequence/iterate(application-temp-0, 1, step)"));
+        let nested = "x := value ? | true => (|a<bool>|1>limit|) | * => (|a<bool>|0>limit|)\n";
+        assert_eq!(normalize(nested).unwrap(), nested);
+    }
+
+    #[test]
+    fn counted_stages_use_canonical_identifier_symbols_and_typed_bindings() {
+        for name in [
+            "step+fast",
+            "step*fast",
+            "step#fast",
+            "step~fast",
+            "step^fast",
+            "step&fast",
+            "step$fast",
+            "step%fast",
+            "step\\fast",
+            "step-🙂",
+        ] {
+            assert!(identifier(name), "{name}");
+            let source = format!("{name}(x<f64>) => <f64> := x + 1.0\nr<f64> := 2.0 |1> {name}\n");
+            let normalized = normalize(&source).unwrap();
+            assert!(normalized.contains(&format!(
+                "r<f64> := sequence/iterate(application-temp-0, 1, {name})"
+            )));
+            super::super::ParsedSource::parse(&source).unwrap();
+        }
     }
     #[test]
     fn standalone_counted_literal_and_vector_seeds_are_normalized() {
