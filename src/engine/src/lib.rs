@@ -23,6 +23,9 @@ pub mod intrinsics;
 pub mod memory_planner;
 #[cfg(any(feature = "semantic-compiler", feature = "resident-artifact"))]
 pub mod memory_runtime;
+#[cfg(feature = "native-sequence")]
+pub mod native_sequence;
+pub mod numeric_optimizations;
 #[cfg(feature = "semantic-compiler")]
 pub mod program;
 #[cfg(all(feature = "resident-ekf", not(feature = "resident-artifact")))]

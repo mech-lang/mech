@@ -8,6 +8,7 @@ license = "Apache-2.0"
 publish = false
 
 [features]
+native-sequence = ["std", "mech-engine/native-sequence"]
 default = []
 
 std = ["mech-core/std", "mech-engine/std"]

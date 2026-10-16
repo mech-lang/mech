@@ -36,6 +36,16 @@ implementations for tests and benchmarks. The shipping mixed-application
 compiler currently emits the elementwise kernel form, not the fixed-shape form
 those prototypes require, so they are not stable v0.4 application backends.
 
+Fixed-shape `cpu-simd` sessions use component-major batch storage and interpret
+each operation across a cache-sized tile of independent instances. The array
+executor predecodes operands, reuses temporary columns, and fuses short
+sum-of-products loops without changing the source equations. Input updates are
+atomic, and a failed integrity check rejects the entire candidate batch.
+`FixedShapeKernel::prepare_array_cpu` exposes this executor directly;
+`prepare_array_cpu_with_tile` permits an explicit tile-size limit. The older
+`prepare_simd_cpu` API is retained as a four-instance-at-a-time control.
+
+
 The current product scope is one configured compute host, one executable
 region, fixed-shape `f32` values, persistent state, declaration defaults, live
 input updates, requested output readback, and integrity rejection before
@@ -100,5 +110,22 @@ cargo check -p mech --features compute_backends_native --locked
 
 The end-to-end particle application is under `examples/gpu-particles`.
 Historical prototype notes and performance data live under
-`docs/research/compute` and `benchmarks/archive/compute`; benchmarks are not
-correctness gates.
+`docs/research/compute` and the separate
+[benchmark repository](https://github.com/mech-lang/benchmarks/tree/main/benchmarks/archive/compute);
+benchmarks are not correctness gates.
+
+The general f64, map, collection and resource-inference regressions now live in
+this crate and use local fixtures:
+
+```sh
+cargo test -p mech-gpu --locked --features native-build \
+  --test native_fused_regressions --test native_map_regressions \
+  --test native_sequence_admission --test native_feature_admission
+```
+
+The root CLI's native source build uses `cargo build -p mech --release --locked
+--features cranelift_build`. Function-application and matrix conformance checks
+are documented in
+[`examples/function-application-prototype`](../../examples/function-application-prototype/README.md).
+Recorded workload timings, compiler snapshots and optimization ledgers remain
+in the benchmark repository.

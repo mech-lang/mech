@@ -61,6 +61,25 @@ pub(crate) fn command() -> Command {
                 .action(ArgAction::Append),
         )
         .arg(
+            Arg::new("build_backend")
+                .long("backend")
+                .value_parser(["resident", "cranelift"])
+                .default_value("resident")
+                .help("Execution compiler: resident application or Cranelift AOT source program."),
+        )
+        .arg(
+            Arg::new("native_scalar")
+                .long("scalar")
+                .action(ArgAction::SetTrue)
+                .help("Disable Cranelift vector lowering."),
+        )
+        .arg(
+            Arg::new("native_loop_fma")
+                .long("fp-contract-loop")
+                .action(ArgAction::SetTrue)
+                .help("Opt in to FMA contraction of state-dependent recurrence arithmetic."),
+        )
+        .arg(
             Arg::new("build_emit")
                 .long("emit")
                 .value_name("EMIT")
@@ -148,6 +167,9 @@ pub(crate) fn validate_build_bytecode_inputs(paths: &[String]) -> MResult<usize>
 pub(crate) struct BuildOptions {
     pub paths: Vec<String>,
     pub emit: BuildEmit,
+    pub cranelift: bool,
+    pub native_scalar: bool,
+    pub native_loop_fma: bool,
     pub name: Option<String>,
     pub output_path: Option<PathBuf>,
     pub target: Option<String>,
@@ -183,6 +205,11 @@ impl BuildOptions {
                 .get_many::<String>("mech_build_file_paths")
                 .map_or_else(Vec::new, |files| files.cloned().collect()),
             emit,
+            cranelift: matches
+                .get_one::<String>("build_backend")
+                .is_some_and(|b| b == "cranelift"),
+            native_scalar: matches.get_flag("native_scalar"),
+            native_loop_fma: matches.get_flag("native_loop_fma"),
             name: matches.get_one::<String>("build_name").cloned(),
             output_path: matches.get_one::<String>("output_path").map(PathBuf::from),
             target: matches.get_one::<String>("build_target").cloned(),
@@ -214,6 +241,12 @@ impl BuildOptions {
 }
 
 pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
+    if options.cranelift {
+        return run_cranelift(options);
+    }
+    if options.native_scalar || options.native_loop_fma {
+        return build_error("`--scalar` and `--fp-contract-loop` require `--backend cranelift`");
+    }
     let bytecode_count = validate_build_bytecode_inputs(&options.paths)?;
     let binary_name = options
         .name
@@ -425,6 +458,95 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
             builder.generate_at(&request, &plan, project_output)?;
         }
     }
+    Ok(CliOutcome::success())
+}
+
+#[cfg(not(feature = "cranelift_build"))]
+fn run_cranelift(_: BuildOptions) -> MResult<CliOutcome> {
+    build_error(
+        "Cranelift builds require this CLI to be compiled with `--features cranelift_build`",
+    )
+}
+
+#[cfg(feature = "cranelift_build")]
+fn run_cranelift(options: BuildOptions) -> MResult<CliOutcome> {
+    if options.emit != BuildEmit::Native || options.target.is_some() {
+        return build_error(
+            "Cranelift currently emits native applications for the current host; use --emit native without --target",
+        );
+    }
+    if options.config_path.is_some() || options.debug || options.trace {
+        return build_error(
+            "Cranelift standalone IO programs do not admit resident host configuration, --debug or --trace yet",
+        );
+    }
+    validate_build_bytecode_inputs(&options.paths)?;
+    let sources = discover_source_roots(&options.paths)?;
+    enforce_production_build_source_shape(&sources)?;
+    let name = options
+        .name
+        .clone()
+        .unwrap_or_else(|| inferred_binary_name(&options.paths[0]));
+    mech_build::validate_project_binary_name(&name)?;
+    let workspace = options
+        .workspace_root
+        .clone()
+        .unwrap_or_else(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")))
+        .canonicalize()?;
+    let output = options
+        .output_path
+        .clone()
+        .unwrap_or_else(|| default_output_path(BuildEmit::Native, &name));
+    let project_output = if options.keep_project {
+        let destination = project_output_path(&output);
+        refuse_existing_project_output(&destination)?;
+        Some(destination)
+    } else {
+        None
+    };
+    let project = tempfile::Builder::new()
+        .prefix("mech-cranelift-")
+        .tempdir()?;
+    let kind = mech_gpu::native_build::emit_application(
+        &sources[0],
+        project.path(),
+        &workspace,
+        &name,
+        !options.native_scalar,
+        options.native_loop_fma,
+    )
+    .map_err(|e| MechError::new(GenericError { msg: e }, None))?;
+    mech_gpu::native_build::build_application(
+        kind,
+        project.path(),
+        &output,
+        &name,
+        options.profile == BuildProfile::Release,
+        options.offline,
+    )
+    .map_err(|e| MechError::new(GenericError { msg: e }, None))?;
+    if let Some(destination) = project_output {
+        fn copy_tree(from: &Path, to: &Path) -> std::io::Result<()> {
+            fs::create_dir_all(to)?;
+            for entry in fs::read_dir(from)? {
+                let entry = entry?;
+                if entry.file_name() == "target" {
+                    continue;
+                }
+                if entry.file_type()?.is_dir() {
+                    copy_tree(&entry.path(), &to.join(entry.file_name()))?;
+                } else {
+                    fs::copy(entry.path(), to.join(entry.file_name()))?;
+                }
+            }
+            Ok(())
+        }
+        copy_tree(project.path(), &destination)?;
+    }
+    println!(
+        "[Output] Cranelift AOT Mech application written to: {}",
+        output.display()
+    );
     Ok(CliOutcome::success())
 }
 
@@ -753,6 +875,61 @@ mod tests {
             project_output_path(Path::new("dist/demo.build-plan.json")),
             PathBuf::from("dist/demo.build-plan.json.project")
         );
+    }
+
+    #[cfg(feature = "cranelift_build")]
+    #[test]
+    fn cranelift_kept_project_collision_precedes_emission_and_output_writes() {
+        for existing_output in [false, true] {
+            let root = tempfile::tempdir().unwrap();
+            let source = root.path().join("demo.mec");
+            // A malformed source would fail admission if emission were reached.
+            fs::write(&source, "this is not a Mech source program {{{").unwrap();
+            let output = root.path().join("demo");
+            if existing_output {
+                fs::write(&output, b"existing executable").unwrap();
+            }
+            let project = project_output_path(&output);
+            fs::create_dir(&project).unwrap();
+            fs::write(project.join("keep.txt"), b"existing project").unwrap();
+            let result = run_cranelift(BuildOptions {
+                paths: vec![source.to_string_lossy().into_owned()],
+                emit: BuildEmit::Native,
+                cranelift: true,
+                native_scalar: false,
+                native_loop_fma: false,
+                name: Some("demo".into()),
+                output_path: Some(output.clone()),
+                target: None,
+                profile: BuildProfile::Release,
+                config_path: None,
+                no_config: true,
+                workspace_root: Some(root.path().to_path_buf()),
+                keep_project: true,
+                offline: true,
+                debug: false,
+                trace: false,
+                rounds_per_step: 10_000,
+            });
+            let error = match result {
+                Err(error) => error,
+                Ok(_) => panic!("an existing retained project must be rejected"),
+            };
+            assert!(
+                error
+                    .display_message()
+                    .contains("refusing to overwrite existing Cargo project")
+            );
+            if existing_output {
+                assert_eq!(fs::read(&output).unwrap(), b"existing executable");
+            } else {
+                assert!(!output.exists());
+            }
+            assert_eq!(
+                fs::read(project.join("keep.txt")).unwrap(),
+                b"existing project"
+            );
+        }
     }
 
     #[test]

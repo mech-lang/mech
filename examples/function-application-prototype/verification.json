@@ -1,0 +1,22 @@
+{
+  "spectralnorm_source_loc": 7,
+  "baseline_source_loc": 13,
+  "identical_output_sizes": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    8,
+    9,
+    15,
+    16,
+    17,
+    31,
+    100,
+    5500
+  ],
+  "generic_scalar_vector_rectangular_and_kind_change": true,
+  "invalid_types_forward_captures_and_effects_rejected": true,
+  "all_passed": true
+}

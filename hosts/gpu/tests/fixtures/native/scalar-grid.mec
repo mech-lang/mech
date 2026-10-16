@@ -1,0 +1,5 @@
+pixels(width<f64>, column<f64>, row<f64>) = (output<[bool]:1,2>) :=
+  output := [column + row < width, true].
+size := io/argument-u64(1)
+image := grid/map-until(size, size, pixels)
+io/write(image/pbm(image))

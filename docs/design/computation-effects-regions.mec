@@ -1,0 +1,197 @@
+Computation Types, Effects, Coeffects, and Inferred Regions
+===============================================================================
+
+1. Objective and authority
+-------------------------------------------------------------------------------
+
+Programs should express recursive data construction, field access, matching,
+iteration, and parallel reduction with ordinary Mech forms. The compiler should
+infer the storage obligations needed to execute them safely. Explicit memory
+controls remain an optional way to state resource constraints.
+
+The benchmarks-game directive applies throughout this work: algorithms stay in
+Mech; new operations and optimizations must generalize across programs. There
+is no tree, nbody, EKF, or other domain recognition in semantic analysis or
+allocation. Benchmark construction and traversal must remain measurable work.
+
+Schema and validated ShapeInstance remain the semantic type authority. The
+type-memory contract describes obligations. The memory planner chooses capacity,
+layout, lifetimes, and reuse; MemoryDomain and RealizedMemoryPlan realize that
+plan. Computation facts do not introduce another allocator or another schema
+identity. Runtime capabilities remain unforgeable; inferred requirements are
+compiler facts, not permission tokens.
+
+Relevant existing contracts:
+- docs/design/semantic-type-authority.md
+- docs/design/type-system-v1.md
+- docs/design/type-memory-boundary.md
+- docs/design/memory-planner.md
+- docs/design/memory-runtime.md
+
+2. Distinct semantic questions
+-------------------------------------------------------------------------------
+
+Value types describe data structure, nullability, and any observable identity.
+Effects describe what evaluating an expression may do to observable state.
+Coeffects describe what its calling context must provide.
+Lifetime and escape facts describe which values remain reachable and when.
+Resource bounds describe how much planned storage a computation needs.
+
+These facts must compose through calls and control flow. They must not collapse
+into one Boolean called pure. A pure value may require physical allocation.
+An explicitly identity-bearing reference must not be folded or shared merely
+because its allocation has no IO effect. Effect ordering remains source ordering;
+set-valued may-effect summaries do not authorize reordering or common-subexpression
+elimination of calls.
+
+3. First implemented slice: native computation summaries
+-------------------------------------------------------------------------------
+
+The experimental native control IR now infers per-function and entry summaries:
+- observable entry input, output, and scheduling effects;
+- ambient arena requirements for read, allocate, and frame retirement;
+- the source layout required by a managed read or allocation;
+- whether a computation uses managed memory, including locally supplied memory;
+- whether a computation may allocate, without claiming a count or bound.
+
+Inference computes a deterministic least fixed point over the admitted finite
+fact set. Recursive and mutually recursive calls propagate facts to every caller.
+Matches, loop callbacks, reductions, argument expressions, and unused statements
+participate. Branch facts are conservative unions; this stage does not prove
+conditions unreachable or reason about path correlations.
+
+A full arena supplies matching requirements only for its callback. Capacity and
+argument expressions execute outside that arena. A frame requires an existing
+arena and cannot supply it. Equal field counts do not establish layout equality.
+An incompatible inner arena is recorded as a conflict; a matching outer arena
+cannot repair it because the inner arena replaces the active context.
+Locally supplied arenas discharge resource requirements but cannot discharge IO
+or scheduling effects.
+
+Independent parallel callbacks must have no host effects and no unmet ambient
+arena requirements. They may create private arenas. Coordinator arenas cannot
+be inherited by workers. Streaming callbacks retain their existing restriction
+against managed storage. Null is a pure value requiring no arena.
+
+This replaces the native compiler's ad hoc callback traversal. Summaries are
+retained on the typed native Program for subsequent analyses. Existing native
+transforms refresh them before use; context-dependent native entries consume
+the inferred layout requirements. Existing native execution and effect sequencing
+are unchanged. Missing callees, undeclared IO
+primitives, and unknown managed actions fail analysis.
+
+This is NOT a complete language-wide effect/coeffect type system. It is
+monomorphic, uses the native IR's admitted layouts, and has no region variables,
+typed link provenance, inferred reclamation, effect polymorphism, or capacity
+inference. Entry operations outside an arena still receive existing runtime
+guards. Only worker resource independence is newly enforced at compilation.
+
+4. Milestones and acceptance criteria
+-------------------------------------------------------------------------------
+
+(4.1) Computation facts and operation contracts -- started
+
+The native summary and callback validation slice above is implemented.
+Next, express general operation effects and contextual requirements alongside
+KindScheme/operation declarations and attach facts to authoritative semantic HIR.
+Carry facts through semantic binding without selecting semantics from storage.
+Define region variables, instantiation, and structured source diagnostics.
+
+Acceptance: direct, transitive, and mutually recursive effects agree; unknown
+contracts cannot be treated as pure; private resources discharge only correctly
+scoped obligations; IO order and native objects remain unchanged for admitted
+programs. Facts are consumed by a real compiler decision, not merely printed.
+
+(4.2) Recursive semantic values and typed links -- next major milestone
+
+Specify finite recursive value graphs within the single Schema authority,
+including canonical encoding, equality, nullability, and nominal versus structural
+identity. Extend schema validation and type-memory contracts together. KindExpr
+already has Reference and Option forms, but SchemaBody has no corresponding
+recursive link representation; a new native-only kind enum is insufficient.
+
+Start with immutable, acyclic construction. Use existing canonical declarations,
+record literals, match forms, and field access wherever possible. Resolve the
+precise source type spelling from canonical grammar and semantic commitments
+before adding syntax. Distinguish optional payloads from null handles. Preserve
+typed pointee information and reject incompatible fields or links at compilation.
+
+Acceptance: non-tree linked records and recursive trees compile using ordinary
+construction and typed field access; opaque ref and explicit typed reads are
+unnecessary for the ordinary path; malformed recursive schemas and illegal
+nullable access produce structured errors; codecs and schema identity agree.
+
+(4.3) Region, escape, and retention inference
+
+Track allocation provenance through record fields, calls, return values, matches,
+loops, and captures. Infer region obligations separately from physical placement.
+Distinguish a consumed temporary graph from a graph returned to its caller or
+retained by state, feedback, a published output, or an incremental cache.
+Compute recursive function summaries to a fixed point or conservatively retain
+storage when escape information cannot be proved.
+
+Acceptance: temporary construction consumed to a scalar is reclaimed at its
+proved boundary; returned data stays live; the long-lived benchmark tree remains
+live through all temporary work; references cannot outlive their owners. Apply
+the same rules to non-tree record graphs and caller-owned values. No syntax
+shape, function name, or benchmark identifier selects a region strategy.
+
+(4.4) Resource bounds and existing planner integration
+
+Infer checked allocation bounds from ordinary expression and recurrence facts
+where possible. When a bound is unavailable, use an explicit measured witness
+and revised plan under the existing planner/runtime contract. Never interpret
+unknown as zero or silently grow a fixed reservation. Expose source diagnostics
+or an optional general budget constraint when no admitted plan is available.
+
+Lower inferred region obligations to existing memory plans. Reuse storage only
+after escape, retention, alias, and effect obligations permit it. Allocation
+failure and overflow remain checked. Physical allocation counts remain distinct
+from semantic type identity.
+
+Acceptance: ordinary source does not need the tree capacity formula or frame
+callback wrappers; capacity overflow and exhaustion have deterministic behavior;
+reuse is validated against retained values; all existing memory contract tests
+pass. Benchmark validation verifies complete construction and traversal.
+
+(4.5) Parallel comprehensions and capture analysis
+
+Infer free variables and contextual requirements for a general parallel consumer
+of a comprehension. Transfer copied immutable values or proven safe shared reads;
+reject conflicting writes and borrowed capabilities that cannot cross workers.
+Give worker-local inferred regions independent realizations and planned reuse.
+Reduction scheduling must preserve the language's ordering and numeric rules.
+
+Acceptance: range callbacks, manual tuple captures, and worker arena wrappers are
+unnecessary for the benchmark; non-tree parallel workloads pass isolation and
+capture tests; the algorithm remains in Mech. Compare complete implementations
+and report repeated full-size timing and source-size results.
+
+(4.6) Broader language rollout
+
+Add mutation and ownership permissions, cyclic graphs, effect/coeffect scheme
+polymorphism, retained reactive values and turn transactions, closure escape,
+serialization/publishing boundaries, and non-native backend lowering as separate
+reviewable extensions. GPU placement remains the compute planner's authority;
+effects and resource facts constrain admissible placement rather than replacing
+that planner. External transactional effect journals are a separate runtime
+protocol and must not be mistaken for source computation-type inference.
+
+5. Planning estimate
+-------------------------------------------------------------------------------
+
+These are rough engineer-effort estimates, not delivery dates:
+- computation facts and semantic operation contracts: 1-2 weeks;
+- recursive schemas, typing, and native representation: 2-3 weeks;
+- escape/retention inference and initial planner lowering: 2-3 weeks;
+- bounds, parallel captures, and benchmark validation: 1-2 weeks.
+
+The first ordinary-source native benchmark target is approximately 6-10
+engineer-weeks. A language-wide rollout including mutation, polymorphism,
+reactivity, codecs, and multiple backends is a multi-month project, provisionally
+3-6 months. Re-estimate after the recursive schema design and the first region
+inference prototype; those contain the largest unresolved semantic decisions.
+
+Completion is determined by the acceptance criteria, not source line count alone.
+The approximately 0.7-second Rust arena measurement is the performance target,
+not a promise that a syntax or typing change will automatically meet it.

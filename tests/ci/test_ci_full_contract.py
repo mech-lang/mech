@@ -739,6 +739,29 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn('test "$MUTATIONS_RESULT" = success', aggregate)
         self.assertIn('test "$DISTRIBUTION_RESULT" = success', aggregate)
 
+    def test_helper_cargo_jobs_inherit_the_installed_toolchain(self):
+        for workflow, job in (
+            (CI, "static-distribution"),
+            (CI, "changed-owner-tests"),
+            (FULL, "wasm-bytecode-v1"),
+        ):
+            with self.subTest(job=job):
+                block = job_block(workflow, job)
+                # Installing a toolchain does not select it for plain Cargo
+                # commands spawned by Python helpers or wasm-pack. A step-local setting
+                # also would not survive into the later helper step.
+                header = block.split("    steps:\n", 1)[0]
+                environment = header.split("    env:\n", 1)[1]
+                self.assertEqual(
+                    re.findall(r"(?m)^      RUSTUP_TOOLCHAIN: (.+)$", environment),
+                    ["nightly-2026-03-03"],
+                    "the job must select its toolchain once; duplicate YAML keys invalidate CI",
+                )
+                self.assertIn(
+                    "rustup toolchain install nightly-2026-03-03 --profile minimal",
+                    block,
+                )
+
     def test_ci_tool_installs_ignore_unrelated_apt_sources(self):
         for workflow_name, workflow in (("CI", CI), ("Full CI", FULL)):
             installs = workflow.count("sudo apt-get install --yes ripgrep")

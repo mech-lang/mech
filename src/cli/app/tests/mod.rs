@@ -234,6 +234,9 @@ mod build_input_tests {
                 .map(|path| path.display().to_string())
                 .collect(),
             emit: BuildEmit::Bytecode,
+            cranelift: false,
+            native_scalar: false,
+            native_loop_fma: false,
             name: Some("output".to_string()),
             output_path: Some(output_path.join("output.mecb")),
             target: None,

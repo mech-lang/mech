@@ -1,0 +1,69 @@
+-- General immutable lexical capture and application conformance, not a benchmark.
+AddGlobal(x<f64>) => <f64> := x + offset
+-- The global may follow a function definition, but must precede its application.
+offset := number/to-f64(io/argument-u64(1))
+direct := 2.0 |> AddGlobal
+io/write(string/concat(number/format(direct, 3), "\n"))
+scalar := sequence/iterate(1.0, 3, AddGlobal)
+io/write(string/concat(number/format(scalar, 3), "\n"))
+Nested(x<f64>) => <f64> := sequence/iterate(x, 2, AddGlobal)
+nested := sequence/iterate(1.0, 3, Nested)
+io/write(string/concat(number/format(nested, 3), "\n"))
+ArgumentShadow(offset<f64>) => <f64> := offset + 1.0
+argument-shadow := sequence/iterate(1.0, 3, ArgumentShadow)
+io/write(string/concat(number/format(argument-shadow, 3), "\n"))
+CallWithShadow(offset<f64>) => <f64> := AddGlobal(offset)
+call-shadow := sequence/iterate(1.0, 2, CallWithShadow)
+io/write(string/concat(number/format(call-shadow, 3), "\n"))
+LocalShadow(x<f64>) = (out<f64>) :=
+  offset := x * 2.0
+  out := AddGlobal(offset) + offset.
+local-shadow := sequence/iterate(1.0, 2, LocalShadow)
+io/write(string/concat(number/format(local-shadow, 3), "\n"))
+LocalInitializer(x<f64>) = (out<f64>) :=
+  offset := offset + 1.0
+  out := AddGlobal(x) + offset.
+initializer := sequence/iterate(1.0, 2, LocalInitializer)
+io/write(string/concat(number/format(initializer, 3), "\n"))
+bias := sequence/fill(3, 2.0)
+Vector(x<[f64]>) => <[f64]> := x + bias
+vector := sequence/iterate(sequence/fill(3, 1.0), 2, Vector)
+io/write(string/concat(number/format(stats/dot(vector, sequence/fill(3, 1.0)), 3), "\n"))
+alias-vector := sequence/iterate(bias, 2, Vector)
+io/write(string/concat(number/format(stats/dot(alias-vector, sequence/fill(3, 1.0)), 3), "\n"))
+io/write(string/concat(number/format(stats/dot(bias, sequence/fill(3, 1.0)), 3), "\n"))
+a := 1.0
+b := 2.0
+c := 3.0
+d := 4.0
+Several(x<f64>) => <f64> := x + a + b + c + d
+several := sequence/iterate(1.0, 2, Several)
+io/write(string/concat(number/format(several, 3), "\n"))
+e := 5.0
+f := 6.0
+g := 7.0
+h := 8.0
+i := 9.0
+Many(x<f64>) => <f64> := x + a + b + c + d + e + f + g + h + i
+many := sequence/iterate(1.0, 2, Many)
+io/write(string/concat(number/format(many, 3), "\n"))
+precision := io/argument-u64(2)
+newline := "\n"
+Format(x<f64>) => <string> := string/concat(number/format(x, precision), newline)
+formatted := 2.5 |> Format
+formatted |> io/write
+-- records/map retains its captures while its output is serialized later.
+header := "ROOT:"
+separator := ""
+table := bytes/table("ACGT", "TGCA", "error")
+Prefix(x<string>) => <string> := string/concat(header, x)
+Transform(header<string>, data<[u8]>) = (out<string>) :=
+  title := string/concat(string/concat(Prefix(header), separator), newline)
+  translated := data |> bytes/translate(_, table)
+  wrapped := text/wrap(translated, precision, newline)
+  out := string/concat(title, wrapped).
+records := text/records(">one\nACGT\n>two\nTGCA\n", ">", "")
+mapped := records/map(records, Transform)
+ShadowHeader(header<string>) => <string> := string/concat(header, "local\n")
+ignored-shadow := "OTHER:" |> ShadowHeader
+io/write-each(mapped)

@@ -317,7 +317,7 @@ jobs:
     if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'memory') || contains(fromJSON(inputs.contract_families), 'numeric') }}
     name: Managed memory runtime
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 75
     env:
       CARGO_INCREMENTAL: 0
       CARGO_PROFILE_DEV_DEBUG: "0"
@@ -339,6 +339,15 @@ jobs:
         run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Install CI and bundled native arithmetic build tools
+        run: |
+          if ! command -v rg >/dev/null 2>&1 || ! command -v cc >/dev/null 2>&1 || ! command -v make >/dev/null 2>&1 || ! command -v m4 >/dev/null 2>&1
+          then
+            sudo apt-get update \
+              -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources \
+              -o Dir::Etc::sourceparts=-
+            sudo apt-get install --yes ripgrep build-essential m4
+          fi
       - name: Fetch locked managed-memory dependencies
         run: cargo +nightly-2026-03-03 fetch --locked
       - name: Execute the complete managed-memory conformance boundary
@@ -376,6 +385,37 @@ jobs:
           cargo +nightly-2026-03-03 test --locked -p mech-gpu \
             --features jit --test memory_runtime
           cargo +nightly-2026-03-03 check --locked -p mech-gpu --features native
+      - name: Execute native compiler and batched array regressions
+        timeout-minutes: 25
+        run: |
+          # native-build enables the general sequence and fused compiler paths.
+          # GMP is built from the locked dependency; no system-gmp installation
+          # or benchmark repository is needed for these local-fixture tests.
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+            --no-default-features --features native-build \
+            --test native_fused_regressions --test native_map_regressions \
+            --test native_sequence_admission --test native_feature_admission \
+            --test batched_array_cpu -- --test-threads=1
+          for filter in batched::aot::tests batched::jit::tests sequence::runtime::matrix_tests native_build::tests
+          do
+            cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+              --no-default-features --features native-build --lib "$filter" -- --test-threads=1
+          done
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features full_compiler,resident-artifact,native-sequence \
+            --lib native_sequence -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features full_compiler,resident-artifact,native-sequence \
+            --test native_sequence_effects -- --test-threads=1
+      - name: Check CLI kept-project collision before native build
+        timeout-minutes: 25
+        run: |
+          cargo +nightly-2026-03-03 check --locked --offline -p mech \
+            --features cranelift_build
+          cargo +nightly-2026-03-03 test --locked --offline -p mech \
+            --features cranelift_build --lib \
+            cli::commands::build::tests::cranelift_kept_project_collision_precedes_emission_and_output_writes \
+            -- --exact --test-threads=1
 
   managed-memory-fixed-profiles:
     if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'numeric') }}
@@ -1231,6 +1271,18 @@ jobs:
             MECH_NATIVE_GENERATED_CASE="$case" \
               cargo +nightly-2026-03-03 test --locked --offline -p mech-build --features full-hosts --test native_generated_end_to_end -- --nocapture
           done
+
+      - name: Check native cache and input ownership on macOS
+        timeout-minutes: 20
+        env:
+          CARGO_INCREMENTAL: 0
+          CARGO_PROFILE_TEST_DEBUG: "0"
+          CARGO_BUILD_JOBS: "1"
+        run: |
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+            --no-default-features --features aot --lib batched::aot::tests -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+            --no-default-features --features aot --lib batched::jit::tests -- --test-threads=1
 
   wasm-bytecode-v1:
     if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'browser') }}
