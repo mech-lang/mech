@@ -172,6 +172,82 @@ fn join_composes_with_dynamic_lines_and_uses_canonical_matrix_order() {
     }
 }
 
+#[test]
+fn join_admits_length_changes_across_the_comparison_boundary_and_recovers() {
+    let source = "+> text\ntext/join(text/lines(input<string>), \"\")\n";
+    let (original, output) = compile(source);
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+    for (ordinal, artifact) in [&original, &decoded].into_iter().enumerate() {
+        for (case, length) in [65_535, 65_536, 65_537, 70_000].into_iter().enumerate() {
+            let mut instance = activate(
+                ReactiveInstanceId::new(0x54455857, (ordinal * 4 + case) as u32),
+                artifact,
+                &mech_stdlib::source_catalog(),
+                &ActivationFacts::default(),
+            )
+            .unwrap();
+            let slot = instance.plan.inputs[0].slot;
+            let text = "x".repeat(length);
+            instance
+                .turn(&[CapturedSignalInput {
+                    slot,
+                    value: ResidentValueRef::String(&[text.clone()]),
+                }])
+                .unwrap_or_else(|error| panic!("length {length}: {error:?}"));
+            assert!(
+                matches!(instance.copied_output(output).unwrap().data(), ValueData::String(actual) if actual.as_ref() == text),
+                "length {length}"
+            );
+        }
+    }
+}
+
+#[test]
+fn join_equal_length_comparison_denial_is_atomic_and_recoverable() {
+    let source = "+> text\ntext/join(signal<[string]:1,1>, \"\")\n";
+    let (original, output) = compile(source);
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+    for (ordinal, artifact) in [&original, &decoded].into_iter().enumerate() {
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x54455858, ordinal as u32),
+            artifact,
+            &mech_stdlib::source_catalog(),
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        let slot = instance.plan.inputs[0].slot;
+        let run = |instance: &mut mech_engine::resident::ReactiveInstance, text: String| {
+            instance
+                .turn(&[CapturedSignalInput {
+                    slot,
+                    value: ResidentValueRef::String(&[text]),
+                }])
+                .map(|_| ())
+        };
+        run(&mut instance, "seed".into()).unwrap();
+        let accepted = "a".repeat(70_000);
+        run(&mut instance, accepted.clone()).unwrap();
+        let epoch = instance.published_epoch();
+        let previous = instance.copied_output(output).unwrap();
+        assert!(run(&mut instance, "b".repeat(70_000)).is_err());
+        assert_eq!(instance.published_epoch(), epoch);
+        assert_eq!(
+            instance
+                .copied_output(output)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            previous.canonical_data_draft().unwrap()
+        );
+        run(&mut instance, "recovered".into()).unwrap();
+        assert!(
+            matches!(instance.copied_output(output).unwrap().data(), ValueData::String(actual) if actual.as_ref() == "recovered")
+        );
+    }
+}
+
 fn text(value: &str) -> ValueCell {
     ValueCell::from_schema_data(SchemaBody::String, ValueDataDraft::String(value.into())).unwrap()
 }

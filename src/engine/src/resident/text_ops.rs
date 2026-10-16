@@ -390,7 +390,13 @@ fn execute_join(
                 .ok_or(ResidentKernelError::InvalidShape)?,
         )
         .ok_or(ResidentKernelError::InvalidShape)?;
-    let comparison = target.len().max(payload);
+    // String equality first compares lengths. Unequal lengths are decided
+    // without traversing either payload; equal lengths may compare every byte.
+    let comparison = if target.len() == payload {
+        payload.max(1)
+    } else {
+        1
+    };
     let compute = scan
         .checked_add(
             payload
