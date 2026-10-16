@@ -59,7 +59,10 @@ fn managed_runtime_family(entry: &mech_core::RuntimeFunctionEntry) -> Option<&'s
             _ => Some("F02"),
         };
     }
-    if name.starts_with("Concat") {
+    if name.starts_with("Concat")
+        || name.starts_with("NumberFormat")
+        || matches!(name, "number/parse-u64" | "sequence/length")
+    {
         return Some("F03");
     }
     if name.starts_with("HorizontalConcatenate")
@@ -139,7 +142,12 @@ fn managed_source_family(name: &str, intrinsic: bool) -> Option<&'static str> {
             None
         };
     }
-    if name.starts_with("string/") {
+    if name.starts_with("string/")
+        || matches!(
+            name,
+            "number/parse-u64" | "number/format" | "sequence/length"
+        )
+    {
         Some("F03")
     } else if name.starts_with("table/")
         || name.starts_with("set/")

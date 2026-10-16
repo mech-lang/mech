@@ -17,6 +17,8 @@ mod kernel;
 pub(crate) mod matrix_literal;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod numeric;
+#[cfg(all(feature = "resident-artifact", feature = "pure_text"))]
+pub(crate) mod pure_text;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod set;
 #[cfg(all(feature = "resident-artifact", feature = "table"))]

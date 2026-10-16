@@ -1718,14 +1718,128 @@ fn builtin_schema_for_body(body: &SchemaBody) -> Option<BuiltinSchema> {
 enum ExpectedSchema<'schema> {
     Value(&'schema SchemaDraft),
     MatrixElement(&'schema SchemaDraft),
+    CallArgument(&'schema SchemaDraft),
 }
 
 impl<'schema> ExpectedSchema<'schema> {
     fn schema(self) -> &'schema SchemaDraft {
         match self {
-            Self::Value(schema) | Self::MatrixElement(schema) => schema,
+            Self::Value(schema) | Self::MatrixElement(schema) | Self::CallArgument(schema) => {
+                schema
+            }
         }
     }
+}
+
+fn call_numeric_context(expected: Option<ExpectedSchema<'_>>) -> Option<BuiltinSchema> {
+    let ExpectedSchema::CallArgument(schema) = expected? else {
+        return None;
+    };
+    let builtin = builtin_schema_for_body(&schema.body)?;
+    builtin_kind(builtin)
+        .is_some_and(is_numeric)
+        .then_some(builtin)
+}
+
+fn value_overload_accepts_arity(overload: &mech_core::FunctionTypeOverload, arity: usize) -> bool {
+    let accepts_arity = match overload.scheme.inputs() {
+        InputKindScheme::Fixed(inputs) => inputs.len() == arity,
+        InputKindScheme::Variadic {
+            prefix,
+            min_repetitions,
+            ..
+        } => arity >= prefix.len().saturating_add(*min_repetitions as usize),
+    };
+    accepts_arity
+        && overload
+            .input_layout
+            .iter()
+            .all(|kind| *kind == SourceInputKind::Value)
+}
+
+fn concrete_call_context_kind(kind: &KindExpr) -> bool {
+    match kind {
+        KindExpr::Wildcard | KindExpr::Never | KindExpr::Hole | KindExpr::Parameter(_) => false,
+        KindExpr::Matrix { element, .. }
+        | KindExpr::Option(element)
+        | KindExpr::Set { element, .. }
+        | KindExpr::Reference(element)
+        | KindExpr::TypeOf(element) => concrete_call_context_kind(element),
+        KindExpr::Tuple(items) => items.iter().all(concrete_call_context_kind),
+        KindExpr::Record(fields)
+        | KindExpr::Table {
+            columns: fields, ..
+        } => fields
+            .iter()
+            .all(|field| concrete_call_context_kind(&field.kind)),
+        KindExpr::Map { key, value, .. } => {
+            concrete_call_context_kind(key) && concrete_call_context_kind(value)
+        }
+        _ => true,
+    }
+}
+
+fn declared_call_argument_contexts(
+    declaration: &mech_core::FunctionTypeDeclaration,
+    names: &[String],
+    anchor: SourceSemanticAnchor,
+) -> Vec<Option<SchemaDraft>> {
+    let none = || vec![None; names.len()];
+    if declaration.template.is_some() {
+        return none();
+    }
+    let ordinals = if names.iter().any(|name| !name.is_empty()) {
+        let Some(parameters) = declaration.parameter_names.as_ref() else {
+            return none();
+        };
+        let mut bound = vec![false; parameters.len()];
+        let mut ordinals = Vec::with_capacity(names.len());
+        for name in names {
+            let ordinal = if name.is_empty() {
+                bound.iter().position(|bound| !bound)
+            } else {
+                parameters.iter().position(|parameter| parameter == name)
+            };
+            let Some(ordinal) = ordinal else {
+                return none();
+            };
+            if core::mem::replace(&mut bound[ordinal], true) {
+                return none();
+            }
+            ordinals.push(ordinal);
+        }
+        if bound.iter().any(|bound| !bound) {
+            return none();
+        }
+        ordinals
+    } else {
+        (0..names.len()).collect()
+    };
+    ordinals
+        .into_iter()
+        .map(|ordinal| {
+            let mut common = None;
+            for overload in declaration
+                .overloads
+                .iter()
+                .filter(|overload| value_overload_accepts_arity(overload, names.len()))
+            {
+                let kind = match overload.scheme.inputs() {
+                    InputKindScheme::Fixed(inputs) => inputs.get(ordinal)?,
+                    InputKindScheme::Variadic {
+                        prefix, repeated, ..
+                    } => prefix.get(ordinal).unwrap_or(repeated),
+                };
+                if !concrete_call_context_kind(kind) || common.is_some_and(|common| common != kind)
+                {
+                    return None;
+                }
+                common = Some(kind);
+            }
+            let resolved = ResolvedType::new(common?.clone(), Box::new([])).ok()?;
+            schema_draft_from_resolved(&resolved, anchor, &[]).ok()
+        })
+        .collect()
 }
 
 fn require_keyable_map_key(
@@ -4008,9 +4122,7 @@ impl SemanticBuilder {
                 )
             }
             FactorValueSyntax::Structure(value) => self.structure(&value, expected)?,
-            FactorValueSyntax::Literal(value) => {
-                self.literal(&value, expected.map(ExpectedSchema::schema))?
-            }
+            FactorValueSyntax::Literal(value) => self.literal(&value, expected)?,
             FactorValueSyntax::Call(value) => {
                 let function =
                     self.required(value.function(), value.syntax(), "a function name")?;
@@ -4040,7 +4152,7 @@ impl SemanticBuilder {
                     value.syntax(),
                     "a function argument list",
                 )?;
-                let mut inputs = Vec::new();
+                let mut values = Vec::new();
                 let mut names = Vec::new();
                 for argument in arguments.arguments() {
                     match argument {
@@ -4050,7 +4162,7 @@ impl SemanticBuilder {
                                 argument.syntax(),
                                 "an argument value",
                             )?;
-                            inputs.push(self.expression(&value)?.0);
+                            values.push(value);
                             names.push(String::new());
                         }
                         AnyCallArgumentSyntax::Bound(argument) => {
@@ -4065,10 +4177,34 @@ impl SemanticBuilder {
                                 "a bound argument value",
                             )?;
                             names.push(node_text(name.syntax())?);
-                            inputs.push(self.expression(&value)?.0);
+                            values.push(value);
                         }
                     }
                 }
+                let contexts = declaration.as_ref().map_or_else(
+                    || vec![None; values.len()],
+                    |(_, declaration)| {
+                        declared_call_argument_contexts(
+                            declaration,
+                            &names,
+                            SourceSemanticAnchor::for_node(value.syntax()),
+                        )
+                    },
+                );
+                // Lower in source order, applying only metadata shared by all
+                // arity-compatible overloads. Named inputs are reordered below
+                // after their producing operations have retained that order.
+                let mut inputs = values
+                    .iter()
+                    .zip(&contexts)
+                    .map(|(value, context)| {
+                        self.expression_with_expected(
+                            value,
+                            context.as_ref().map(ExpectedSchema::CallArgument),
+                        )
+                        .map(|value| value.0)
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
                 if let Some((function_name, declaration)) = declaration {
                     if names.iter().any(|name| !name.is_empty()) {
                         let parameters = declaration.parameter_names.as_ref().ok_or_else(|| {
@@ -4314,21 +4450,7 @@ impl SemanticBuilder {
         let overloads = declaration
             .overloads
             .iter()
-            .filter(|overload| {
-                let accepts_arity = match overload.scheme.inputs() {
-                    InputKindScheme::Fixed(expected) => expected.len() == inputs.len(),
-                    InputKindScheme::Variadic {
-                        prefix,
-                        min_repetitions,
-                        ..
-                    } => inputs.len() >= prefix.len().saturating_add(*min_repetitions as usize),
-                };
-                accepts_arity
-                    && overload
-                        .input_layout
-                        .iter()
-                        .all(|kind| *kind == SourceInputKind::Value)
-            })
+            .filter(|overload| value_overload_accepts_arity(overload, inputs.len()))
             .collect::<Vec<_>>();
         if overloads.is_empty() {
             return Err(SourceSemanticError {
@@ -4792,8 +4914,10 @@ impl SemanticBuilder {
     fn literal(
         &mut self,
         literal: &LiteralSyntax,
-        contextual: Option<&SchemaDraft>,
+        contextual: Option<ExpectedSchema<'_>>,
     ) -> Result<PendingValue, SourceSemanticError> {
+        let numeric_context = call_numeric_context(contextual);
+        let contextual = contextual.map(ExpectedSchema::schema);
         // Source empty has no runtime schema. An explicit optional annotation
         // may resolve it here; otherwise its source anchor travels in compiler IR.
         if let Some(LiteralValueSyntax::Empty(value)) = literal.value() {
@@ -4945,6 +5069,13 @@ impl SemanticBuilder {
             }
             LiteralValueSyntax::Number(value) => {
                 let source = canonical_number_source(&value)?;
+                let annotation = if literal.annotation().is_none()
+                    && selected_integer_suffix(&value)?.is_none()
+                {
+                    annotation.or(numeric_context)
+                } else {
+                    annotation
+                };
                 self.number_literal(&value, annotation, source)
             }
             LiteralValueSyntax::Empty(_) => {
@@ -5108,6 +5239,17 @@ impl SemanticBuilder {
                 return Ok(Some(value));
             }
         }
+        if literal.annotation().is_none()
+            && selected_integer_suffix(&number)?.is_none()
+            && let Some(annotation) = call_numeric_context(expected)
+        {
+            let source = canonical_number_source(&number)?;
+            if !source.ends_with(['i', 'j']) {
+                return self
+                    .number_literal(&number, Some(annotation), format!("-{source}"))
+                    .map(Some);
+            }
+        }
         let annotation = literal
             .annotation()
             .map(|annotation| self.scalar_annotation_schema(&annotation))
@@ -5215,7 +5357,7 @@ impl SemanticBuilder {
         }
         let matrix_element = expected.and_then(|context| match context {
             ExpectedSchema::MatrixElement(element) => Some(element.clone()),
-            ExpectedSchema::Value(schema) => {
+            ExpectedSchema::Value(schema) | ExpectedSchema::CallArgument(schema) => {
                 let body = match &schema.body {
                     SchemaBody::Option(payload) => payload.as_ref(),
                     body => body,

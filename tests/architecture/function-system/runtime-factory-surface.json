@@ -48582,6 +48582,26 @@
       "name": "YnVDS<f64>",
       "id_hex": "00794344d5179172",
       "owner": "mech-math"
+    },
+    {
+      "name": "NumberFormatMatrixCanonical",
+      "id_hex": "00417c7a5c2d07f0",
+      "owner": "mech-engine::stdlib"
+    },
+    {
+      "name": "NumberFormatScalarCanonical",
+      "id_hex": "00986ef101094a31",
+      "owner": "mech-engine::stdlib"
+    },
+    {
+      "name": "number/parse-u64",
+      "id_hex": "00375c524331ece1",
+      "owner": "mech-engine::stdlib"
+    },
+    {
+      "name": "sequence/length",
+      "id_hex": "005230d27927cb75",
+      "owner": "mech-engine::stdlib"
     }
   ]
 }

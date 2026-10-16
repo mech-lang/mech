@@ -713,6 +713,19 @@ pub fn maintained_source_type_declaration(
     ) {
         declaration.parameter_names = Some(vec!["left".into(), "right".into()].into_boxed_slice());
     }
+    match canonical_name {
+        "number/parse-u64" => {
+            declaration.parameter_names = Some(vec!["text".into()].into_boxed_slice())
+        }
+        "number/format" => {
+            declaration.parameter_names =
+                Some(vec!["value".into(), "precision".into()].into_boxed_slice())
+        }
+        "sequence/length" => {
+            declaration.parameter_names = Some(vec!["value".into()].into_boxed_slice())
+        }
+        _ => {}
+    }
     validate_type_declaration(canonical_name, &declaration)?;
     let output_rule = match canonical_name {
         "matrix/transpose" => Some(ResolvedOutputSchemaRule::TransposeOfInput(0)),

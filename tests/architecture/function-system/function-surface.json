@@ -351,6 +351,14 @@
       "id_hex": "0028eceed65f65d6"
     },
     {
+      "name": "number/format",
+      "id_hex": "00d7b83fabed9e8d"
+    },
+    {
+      "name": "number/parse-u64",
+      "id_hex": "00375c524331ece1"
+    },
+    {
       "name": "range/exclusive",
       "id_hex": "00034d8ea099c892"
     },
@@ -365,6 +373,10 @@
     {
       "name": "range/inclusive-increment",
       "id_hex": "00bca71b7f93e1bd"
+    },
+    {
+      "name": "sequence/length",
+      "id_hex": "005230d27927cb75"
     },
     {
       "name": "set/cartesian-product",
@@ -981,6 +993,24 @@
       "item": "trunc",
       "canonical_name": "math/trunc",
       "id_hex": "00d77a78dae3dbc2"
+    },
+    {
+      "module": "number",
+      "item": "format",
+      "canonical_name": "number/format",
+      "id_hex": "00d7b83fabed9e8d"
+    },
+    {
+      "module": "number",
+      "item": "parse-u64",
+      "canonical_name": "number/parse-u64",
+      "id_hex": "00375c524331ece1"
+    },
+    {
+      "module": "sequence",
+      "item": "length",
+      "canonical_name": "sequence/length",
+      "id_hex": "005230d27927cb75"
     },
     {
       "module": "stats",

@@ -2215,13 +2215,58 @@ impl KernelMemoryFrame<'_> {
         self.snapshot_input_cell(input.cell(), index)
     }
 
+    /// Borrows metadata from the current realized input plan after validating
+    /// the logical cell, semantic ordinal and live region incarnation. This
+    /// does not observe or reconstruct the input payload.
+    #[cfg(feature = "functions")]
+    pub fn input_cell_descriptor(
+        &self,
+        input: &crate::ValueCell,
+        semantic_input: usize,
+    ) -> crate::MResult<&crate::ResolvedValueDescriptor> {
+        let lease = self.port_lease(
+            input.reactive_cell_id(),
+            ManagedPortRole::Input(semantic_input),
+            false,
+        )?;
+        self.realized
+            .call_plan()
+            .and_then(|plan| plan.inputs.get(semantic_input))
+            .map(|port| &port.descriptor)
+            .ok_or_else(|| {
+                MemoryRuntimeError::CandidateValidationFailed {
+                    object: Some(lease.object.object()),
+                    reason: "input descriptor is absent from the active call plan".into(),
+                }
+                .into()
+            })
+    }
+
+    /// Borrows one fixed-width input through its semantic lease. The view
+    /// retains the current matrix geometry and strides without reconstructing
+    /// a canonical value or exposing a backing allocation.
+    #[cfg(feature = "functions")]
+    pub fn with_input_cell_value_view<T: ManagedElement, R>(
+        &self,
+        input: &crate::ValueCell,
+        semantic_input: usize,
+        access: impl FnOnce(ManagedValueView<'_, T>) -> crate::MResult<R>,
+    ) -> crate::MResult<R> {
+        let lease = self.port_lease(
+            input.reactive_cell_id(),
+            ManagedPortRole::Input(semantic_input),
+            false,
+        )?;
+        self.validate_managed_element::<T>(lease, false)?;
+        access(self.read_view::<T>(lease)?)
+    }
+
     /// Snapshots one logical input by its semantic call-plan ordinal.
     ///
     /// Aggregate source implementations retain heterogeneous [`ValueCell`]
-    /// identities rather than a single typed [`FunctionValueInput`].  They
-    /// still must resolve every read through the live call frame so a revised
-    /// binding or region incarnation cannot be bypassed by reading the cell
-    /// directly.
+    /// identities rather than a single typed [`FunctionValueInput`]. They
+    /// resolve every read through the live call frame so a revised binding or
+    /// region incarnation cannot be bypassed by reading the cell directly.
     #[cfg(feature = "functions")]
     pub fn snapshot_input_cell(
         &self,

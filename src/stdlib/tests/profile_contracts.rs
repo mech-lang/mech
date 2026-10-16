@@ -8,44 +8,44 @@ use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
 #[cfg(feature = "full_runtime")]
-const EXPECTED_RUNTIME_FACTORIES: usize = 9_716;
+const EXPECTED_RUNTIME_FACTORIES: usize = 9_720;
 #[cfg(feature = "full_source")]
-const EXPECTED_SOURCE_ENABLED_RUNTIME_FACTORIES: usize = 9_718;
+const EXPECTED_SOURCE_ENABLED_RUNTIME_FACTORIES: usize = 9_722;
 #[cfg(feature = "full_source")]
 const EXPECTED_SOURCE_ENABLED_RUNTIME_SURFACE_DIGEST: &str =
     "ab6547f38932ef29a675a3aef0e6c11a6db59e7fc712adc2f4a51bb85b961793";
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
-const EXPECTED_STANDARD_COMPILER_RUNTIME_FACTORIES: usize = 1_415;
+const EXPECTED_STANDARD_COMPILER_RUNTIME_FACTORIES: usize = 1_419;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
-const EXPECTED_STANDARD_SOURCE_SPECIALIZERS: usize = 64;
+const EXPECTED_STANDARD_SOURCE_SPECIALIZERS: usize = 67;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
 const EXPECTED_STANDARD_COMPILER_RUNTIME_SURFACE_DIGEST: &str =
     "a5c6a86ad547f744aeb16abb17ccd4a2faa54509d58b69e7fc1715e165a49bde";
 #[cfg(all(feature = "full_source", not(feature = "full_compiler")))]
-const EXPECTED_FULL_SOURCE_RUNTIME_FACTORIES: usize = 15_695;
+const EXPECTED_FULL_SOURCE_RUNTIME_FACTORIES: usize = 15_699;
 #[cfg(all(feature = "full_source", not(feature = "full_compiler")))]
 const EXPECTED_FULL_SOURCE_RUNTIME_SURFACE_DIGEST: &str =
     "c5c2bae913e4482925289b54e58559b7676bb9ad66aede1e2ce6caf9501f2745";
 #[cfg(feature = "full_compiler")]
-const EXPECTED_FULL_COMPILER_RUNTIME_FACTORIES: usize = 15_699;
+const EXPECTED_FULL_COMPILER_RUNTIME_FACTORIES: usize = 15_703;
 #[cfg(feature = "full_compiler")]
 const EXPECTED_FULL_COMPILER_RUNTIME_SURFACE_DIGEST: &str =
     "3b4c4ee4f6c5978e8bc5bbe7800630a25664cd1ddaf69aa8a5b03b426ad89740";
 #[cfg(feature = "full_runtime")]
-const EXPECTED_EXTENDED_RUNTIME_FACTORIES: usize = 122_083;
+const EXPECTED_EXTENDED_RUNTIME_FACTORIES: usize = 122_087;
 #[cfg(feature = "full_source")]
-const EXPECTED_NAMED_SPECIALIZERS: usize = 120;
+const EXPECTED_NAMED_SPECIALIZERS: usize = 123;
 #[cfg(feature = "full_source")]
 const EXPECTED_INTRINSIC_SPECIALIZERS: usize = 13;
 #[cfg(feature = "full_source")]
 const EXPECTED_PRELUDE_EXPORTS: usize = 52;
 #[cfg(feature = "full_source")]
-const EXPECTED_MODULE_EXPORTS: usize = 51;
+const EXPECTED_MODULE_EXPORTS: usize = 54;
 #[cfg(feature = "full_source")]
-const EXPECTED_ALL_EXPORTS: usize = 121;
+const EXPECTED_ALL_EXPORTS: usize = 124;
 #[cfg(feature = "full_runtime")]
 const EXPECTED_RUNTIME_SURFACE_FILE_SHA256: &str =
-    "cccc5a0bc5b06689e202504d226fe9ce02f12061e2af89ec6f3bdd36720cc397";
+    "19884c79dad7ec969de6b01981d28bc6473a6185689bfb738f6956b83773d305";
 #[cfg(feature = "full_runtime")]
 const EXPECTED_EXTENDED_RUNTIME_SURFACE_DIGEST: &str =
     "34db793ac637b3b1bc532978c6e8a6e0be1b8be63c33ec5f3043045f765616f5";
@@ -118,14 +118,165 @@ fn canonical_runtime_surface_digest(catalog: &FunctionCatalog) -> String {
         .collect()
 }
 
+/// Preserve every historical profile digest as an independent compatibility
+/// check. Only these four exact, separately validated additions are removed
+/// from that historical projection; the current fixture includes them too.
+#[cfg(any(feature = "full_runtime", feature = "standard_compiler"))]
+fn retained_runtime_surface_digest(catalog: &FunctionCatalog) -> String {
+    use mech_core::{
+        AccessMode, AliasPolicy, ChangeDetectionPolicy, DeliveryMode, ExternalInteraction,
+        FunctionMatrixElement, FunctionMatrixStoragePattern, FunctionValueRepresentation as Value,
+        ImplementationMemoryClass, InputPortLayout, InputPortPolicy, OperationContractDeclaration,
+        OperationId, OutputConstruction, OutputPortPolicy, RuntimeFunctionId,
+        RuntimeFunctionSignature, RuntimeOperationBinding, ShapeRule,
+    };
+    let additions = [
+        (
+            "number/parse-u64",
+            "number/parse-u64",
+            1,
+            false,
+            RuntimeFunctionSignature::unary(Value::AnyValue, Value::String),
+        ),
+        (
+            "NumberFormatScalarCanonical",
+            "number/format",
+            2,
+            false,
+            RuntimeFunctionSignature::binary(Value::String, Value::AnyValue, Value::AnyValue),
+        ),
+        (
+            "NumberFormatMatrixCanonical",
+            "number/format",
+            2,
+            true,
+            RuntimeFunctionSignature::binary(
+                Value::Matrix {
+                    element: FunctionMatrixElement::String,
+                    storage: FunctionMatrixStoragePattern::AnyStorage,
+                },
+                Value::AnyValue,
+                Value::AnyValue,
+            ),
+        ),
+        (
+            "sequence/length",
+            "sequence/length",
+            1,
+            false,
+            RuntimeFunctionSignature::unary(Value::AnyValue, Value::AnyValue),
+        ),
+    ];
+    for (factory, operation, arity, matrix, signature) in &additions {
+        let entry = catalog
+            .runtime_entry(RuntimeFunctionId::from_name(factory))
+            .unwrap_or_else(|| panic!("profile omitted new factory {factory}"));
+        assert_eq!(entry.name, *factory);
+        assert_eq!(
+            entry.id.raw(),
+            match *factory {
+                "number/parse-u64" => 0x0037_5c52_4331_ece1,
+                "NumberFormatScalarCanonical" => 0x0098_6ef1_0109_4a31,
+                "NumberFormatMatrixCanonical" => 0x0041_7c7a_5c2d_07f0,
+                "sequence/length" => 0x0052_30d2_7927_cb75,
+                _ => unreachable!(),
+            }
+        );
+        assert_eq!(entry.signature(), *signature);
+        assert!(
+            matches!(entry.operation_binding(), RuntimeOperationBinding::Fixed(ids)
+            if ids.as_ref() == [OperationId::from_name(operation)])
+        );
+        assert_eq!(
+            entry.implementation_memory_class(),
+            ImplementationMemoryClass::CanonicalFinalize
+        );
+        let expected = OperationContractDeclaration {
+            inputs: InputPortLayout::Fixed(
+                vec![
+                    InputPortPolicy {
+                        access: AccessMode::Read,
+                        delivery: DeliveryMode::Signal
+                    };
+                    *arity
+                ]
+                .into_boxed_slice(),
+            ),
+            outputs: Box::new([OutputPortPolicy {
+                access: AccessMode::Write,
+                delivery: DeliveryMode::Signal,
+                construction: OutputConstruction::FullWrite {
+                    shape: if *operation == "number/format" {
+                        ShapeRule::SameAsInput { input: 0 }
+                    } else {
+                        ShapeRule::Declared
+                    },
+                },
+                alias: AliasPolicy::NoAlias,
+                change_detection: if *matrix {
+                    ChangeDetectionPolicy::KernelReported
+                } else {
+                    ChangeDetectionPolicy::ExactScalar
+                },
+            }]),
+            interaction: ExternalInteraction::Pure,
+        };
+        assert_eq!(
+            entry.operation_contract(OperationId::from_name(operation)),
+            Some(&expected)
+        );
+    }
+    let mut retained = catalog
+        .runtime_entries()
+        .filter(|entry| !additions.iter().any(|(name, ..)| entry.name == *name))
+        .map(|entry| format!("{}\t{}\n", id_hex(entry.id.raw()), entry.name))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        retained.len() + additions.len(),
+        catalog.runtime_factory_count()
+    );
+    retained.sort_unstable();
+    Sha256::digest(retained.concat().as_bytes())
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
+}
+
+#[cfg(any(feature = "full_source", feature = "standard_compiler"))]
+fn assert_pure_text_source_exports(catalog: &FunctionCatalog) {
+    let additions = [
+        ("number", "format"),
+        ("number", "parse-u64"),
+        ("sequence", "length"),
+    ];
+    for (module, item) in additions {
+        let name = format!("{module}/{item}");
+        let operation = mech_core::OperationId::from_name(&name);
+        assert!(
+            catalog.specializer(operation).is_some(),
+            "missing {name} specializer"
+        );
+        let export = catalog.module_export(module, item).unwrap();
+        assert_eq!(export.operation, operation);
+        assert_eq!(export.canonical_name, name);
+        assert_eq!(export.exposure, FunctionExposure::ModuleOnly);
+        assert_eq!(
+            catalog.exports_for_operation(operation).len(),
+            1,
+            "{name} gained another exposure"
+        );
+    }
+}
+
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
 fn assert_standard_compiler_surface(catalog: &FunctionCatalog) {
+    assert_pure_text_source_exports(catalog);
     assert_eq!(
         catalog.runtime_factory_count(),
         EXPECTED_STANDARD_COMPILER_RUNTIME_FACTORIES
     );
     assert_eq!(
-        canonical_runtime_surface_digest(catalog),
+        retained_runtime_surface_digest(catalog),
         EXPECTED_STANDARD_COMPILER_RUNTIME_SURFACE_DIGEST
     );
     assert_eq!(
@@ -246,7 +397,7 @@ fn assert_runtime_surface(catalog: &FunctionCatalog) {
     #[cfg(feature = "full_source")]
     if count == EXPECTED_SOURCE_ENABLED_RUNTIME_FACTORIES {
         assert_eq!(
-            canonical_runtime_surface_digest(catalog),
+            retained_runtime_surface_digest(catalog),
             EXPECTED_SOURCE_ENABLED_RUNTIME_SURFACE_DIGEST,
             "source-enabled runtime catalog diverged from its frozen contract",
         );
@@ -254,7 +405,7 @@ fn assert_runtime_surface(catalog: &FunctionCatalog) {
     }
     if count == EXPECTED_EXTENDED_RUNTIME_FACTORIES {
         assert_eq!(
-            canonical_runtime_surface_digest(catalog),
+            retained_runtime_surface_digest(catalog),
             EXPECTED_EXTENDED_RUNTIME_SURFACE_DIGEST,
             "extended runtime catalog diverged from the exhaustive all-features contract",
         );
@@ -290,7 +441,7 @@ fn assert_source_runtime_surface(
     expected_digest: &str,
 ) {
     assert_eq!(catalog.runtime_factory_count(), expected_count);
-    assert_eq!(canonical_runtime_surface_digest(catalog), expected_digest);
+    assert_eq!(retained_runtime_surface_digest(catalog), expected_digest);
 
     let actual = catalog
         .runtime_entries()
@@ -307,6 +458,7 @@ fn assert_source_runtime_surface(
 
 #[cfg(feature = "full_source")]
 fn assert_source_surface(catalog: &FunctionCatalog) {
+    assert_pure_text_source_exports(catalog);
     assert_eq!(catalog.specializer_count(), EXPECTED_NAMED_SPECIALIZERS);
     assert_eq!(
         catalog.intrinsic_specializer_count(),

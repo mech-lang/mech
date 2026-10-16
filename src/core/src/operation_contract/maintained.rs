@@ -138,6 +138,20 @@ pub fn maintained_operation_contract(
         )
     };
     match name {
+        "number/parse-u64" | "sequence/length" if input_count == 1 => Some(declaration(
+            fixed(),
+            OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            ChangeDetectionPolicy::ExactScalar,
+        )),
+        "number/format" if input_count == 2 => Some(declaration(
+            fixed(),
+            OutputConstruction::FullWrite {
+                shape: ShapeRule::SameAsInput { input: 0 },
+            },
+            change_detection,
+        )),
         "compare/neq" | "compare/eq" | "compare/sneq" | "compare/seq" | "compare/gt"
         | "compare/lt" | "compare/gte" | "compare/lte" | "compare/min" | "compare/max"
         | "logic/or" | "logic/and" | "logic/xor" | "string/concat"

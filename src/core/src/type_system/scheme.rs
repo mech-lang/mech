@@ -1081,6 +1081,57 @@ pub fn string_binary() -> Result<KindScheme, SemanticModelError> {
     exact_binary(string.clone(), string.clone(), string)
 }
 
+fn number_format() -> Result<Vec<KindScheme>, SemanticModelError> {
+    let precision = BuiltinScalarKind::U64.kind_expr();
+    let string = BuiltinScalarKind::String.kind_expr();
+    let mut schemes = Vec::new();
+    // These are the exact scalar families implemented by the canonical
+    // formatter. Rational/complex values do not inherit a made-up format.
+    for scalar in [
+        BuiltinScalarKind::U8,
+        BuiltinScalarKind::U16,
+        BuiltinScalarKind::U32,
+        BuiltinScalarKind::U64,
+        BuiltinScalarKind::U128,
+        BuiltinScalarKind::I8,
+        BuiltinScalarKind::I16,
+        BuiltinScalarKind::I32,
+        BuiltinScalarKind::I64,
+        BuiltinScalarKind::I128,
+        BuiltinScalarKind::F32,
+        BuiltinScalarKind::F64,
+    ] {
+        let numeric = scalar.kind_expr();
+        schemes.push(exact_binary(
+            numeric.clone(),
+            precision.clone(),
+            string.clone(),
+        )?);
+        schemes.push(make(
+            0,
+            2,
+            vec![matrix(numeric, dim(0), dim(1)), precision.clone()],
+            vec![matrix(string.clone(), dim(0), dim(1))],
+            Vec::new(),
+        )?);
+    }
+    Ok(schemes)
+}
+
+fn sequence_length() -> Result<Vec<KindScheme>, SemanticModelError> {
+    let count = BuiltinScalarKind::U64.kind_expr();
+    Ok(vec![
+        exact_unary(BuiltinScalarKind::String.kind_expr(), count.clone())?,
+        make(
+            1,
+            2,
+            vec![matrix(kind(0), dim(0), dim(1))],
+            vec![count],
+            Vec::new(),
+        )?,
+    ])
+}
+
 fn absolute_value() -> Result<Vec<KindScheme>, SemanticModelError> {
     let mut schemes = predicate_unary_same(BuiltinKindPredicate::Real)?;
     for complex in [BuiltinScalarKind::C32, BuiltinScalarKind::C64] {
@@ -1563,6 +1614,12 @@ pub fn maintained_source_schemes(
             Vec::new(),
         )?],
         "string/concat" => vec![string_binary()?],
+        "number/parse-u64" => vec![exact_unary(
+            BuiltinScalarKind::String.kind_expr(),
+            BuiltinScalarKind::U64.kind_expr(),
+        )?],
+        "number/format" => number_format()?,
+        "sequence/length" => sequence_length()?,
         "stats/sum/column" => vec![reduction_axis(true)?],
         "stats/sum/row" => vec![reduction_axis(false)?],
         "combinatorics/n-choose-k" => n_choose_k_schemes()?,
