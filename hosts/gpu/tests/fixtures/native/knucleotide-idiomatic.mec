@@ -33,6 +33,39 @@ lookup(counts<{string:u64}>, query<string>) => (output<string>) :=
     | false => 0u64.
   output := number/format(count, 0u64) + "\t" + query + "\n".
 
+is-header(line<string>) => (found<bool>) :=
+  found := (sequence/length(line)?
+    | 0u64 => false
+    | * => line[1u64] == ">"
+  ).
+
+is-three(line<string>) => (found<bool>) :=
+  found := (sequence/length(line)?
+    | size, size < 6u64 => false
+    | 6u64 => line == ">THREE"
+    | * => (line[1u64..=6u64] == ">THREE")?
+      | false => false
+      | true => line[7u64]?
+        | " " => true
+        | "\t" => true
+        | * => false
+  ).
+
+#RecordBounds(lines<[string]>, count<u64>) => <(u64,u64)>
+  | :Seek(index<u64>)
+  | :Read(first<u64>, index<u64>)
+  | :Done(first<u64>, end<u64>).
+#RecordBounds(lines, count) -> :Seek(1u64)
+  :Seek(index)
+    | index > count -> :Done(1u64, 1u64)
+    | is-three(lines[index]) -> :Read(index + 1u64, index + 1u64)
+    | * -> :Seek(index + 1u64)
+  :Read(first, index)
+    | index > count -> :Done(first, count + 1u64)
+    | is-header(lines[index]) -> :Done(first, index)
+    | * -> :Read(first, index + 1u64)
+  :Done(first, end) => (first, end).
+
 uppercase := {
   "a": "A", "A": "A",
   "c": "C", "C": "C",
@@ -40,11 +73,12 @@ uppercase := {
   "t": "T", "T": "T"
 }
 
-record := text/record(@in/text, ">THREE", ">")
-sequence := text/join([
-  uppercase{record[i]}
-  | i <- 1u64..=sequence/length(record)
-], "")
+input-lines := text/lines(@in/text)
+bounds := #RecordBounds(input-lines, sequence/length(input-lines))
+record := bounds?
+  | (first, end), first < end => text/join(input-lines[first..end], "")
+  | * => "".
+sequence := text/join([uppercase{char} | char <- record], "")
 
 queries := ["GGT" "GGTA" "GGTATT" "GGTATTTTAATT" "GGTATTTTAATTTATAGT"]
 
