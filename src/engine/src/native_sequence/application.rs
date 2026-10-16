@@ -181,6 +181,11 @@ fn pipe_at(code: &str, start: usize) -> Result<Option<Pipe>, String> {
     if matches!(first, b'\n' | b'\r' | b'|') {
         return Ok(None);
     }
+    if token_start > 0 && (first.is_ascii_alphabetic() || first == b'_') {
+        // Comprehension predicates and match-arm conditions use `| name >`.
+        // Named malformed counts remain diagnostic only when attached to `|`.
+        return Ok(None);
+    }
 
     let count_like =
         first.is_ascii_alphanumeric() || matches!(first, b'_' | b'+' | b'-' | b'.' | b'>');
@@ -851,6 +856,14 @@ mod tests {
 
         let rows = "| left | right |\n".repeat(4_096);
         assert_eq!(normalize(&rows).unwrap(), rows);
+    }
+    #[test]
+    fn counted_detection_preserves_comprehension_and_match_comparisons() {
+        let source = "x := [x | x > 0]\ny := (value ? | n > 0 => n | * => 0)\n";
+        assert_eq!(normalize(source).unwrap(), source);
+
+        let normalized = normalize("r := source |> filter([x | x > 0], _)\n").unwrap();
+        assert!(normalized.contains("r := filter([x | x > 0], application-temp-0)"));
     }
     #[test]
     fn holes_share_one_evaluation_and_ignore_strings_and_identifiers() {
