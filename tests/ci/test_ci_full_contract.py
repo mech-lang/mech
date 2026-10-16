@@ -752,9 +752,10 @@ class FullWorkflowContractTests(unittest.TestCase):
                 # also would not survive into the later helper step.
                 header = block.split("    steps:\n", 1)[0]
                 environment = header.split("    env:\n", 1)[1]
-                self.assertRegex(
-                    environment,
-                    r"(?m)^      RUSTUP_TOOLCHAIN: nightly-2026-03-03$",
+                self.assertEqual(
+                    re.findall(r"(?m)^      RUSTUP_TOOLCHAIN: (.+)$", environment),
+                    ["nightly-2026-03-03"],
+                    "the job must select its toolchain once; duplicate YAML keys invalidate CI",
                 )
                 self.assertIn(
                     "rustup toolchain install nightly-2026-03-03 --profile minimal",
