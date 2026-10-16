@@ -222,12 +222,26 @@ fn pipe_at(code: &str, start: usize) -> Result<Option<Pipe>, String> {
     if count.is_empty() || !count.bytes().all(|b| b.is_ascii_digit()) {
         return Err("repeated application count must be a nonnegative decimal u64 integer literal, without spaces".into());
     }
+    let pipe_end = start + end + 2;
+    let next = bytes[pipe_end..]
+        .iter()
+        .copied()
+        .find(|byte| !matches!(byte, b' ' | b'\t'));
+    if next.is_some_and(|byte| {
+        byte.is_ascii_digit() || matches!(byte, b'.' | b'+' | b'-' | b'"' | b'[' | b'{')
+    }) {
+        // Compact comparison predicates can spell their separator and left
+        // operand exactly like a counted pipe (`|1>0`). A repeated stage must
+        // begin with a function name (or continue on the following line), so
+        // retain literal-led right operands for the canonical parser.
+        return Ok(None);
+    }
     let repetitions = count
         .parse::<u64>()
         .map_err(|_| "repeated application count exceeds u64::MAX")?;
     Ok(Some(Pipe {
         start,
-        end: start + end + 2,
+        end: pipe_end,
         repetitions: Some(repetitions),
     }))
 }
@@ -242,9 +256,36 @@ fn pipe_offsets(source: &str) -> Result<Vec<Pipe>, String> {
 
 fn contains_pipe(source: &str) -> bool {
     let code = mask(source);
-    code.bytes()
-        .enumerate()
-        .any(|(i, byte)| byte == b'|' && !matches!(pipe_at(&code, i), Ok(None)))
+    let bytes = code.as_bytes();
+    let mut stack = Vec::new();
+    for (i, byte) in bytes.iter().copied().enumerate() {
+        match byte {
+            b'(' | b'[' | b'{' => stack.push(byte),
+            b')' | b']' | b'}' => {
+                stack.pop();
+            }
+            b'|' => match pipe_at(&code, i) {
+                Ok(Some(pipe)) => {
+                    let counted = pipe.repetitions.is_some();
+                    let comprehension = counted && stack.last() == Some(&b'[');
+                    let match_arm = counted
+                        && bytes[..i]
+                            .iter()
+                            .rev()
+                            .copied()
+                            .find(|byte| !byte.is_ascii_whitespace())
+                            == Some(b'?');
+                    if !comprehension && !match_arm {
+                        return true;
+                    }
+                }
+                Ok(None) => {}
+                Err(_) => return true,
+            },
+            _ => {}
+        }
+    }
+    false
 }
 
 fn starts_pipe(source: &str) -> bool {
@@ -377,10 +418,22 @@ fn is_candidate(source: &str) -> bool {
         .next()
         .unwrap_or("");
     // Documentation/prose is not a definition just because it quotes an operator.
-    identifier(initial)
+    let named_statement = identifier(initial)
         && (code[initial.len()..].trim_start().starts_with(":=")
             || code[initial.len()..].trim_start().starts_with('(')
-            || starts_pipe(&code[initial.len()..]))
+            || starts_pipe(&code[initial.len()..]));
+    if named_statement {
+        return true;
+    }
+    let Ok(pipes) = pipe_offsets(code) else {
+        return false;
+    };
+    let Some(pipe) = pipes.first().filter(|pipe| pipe.repetitions.is_some()) else {
+        return false;
+    };
+    let seed = code[..pipe.start].trim();
+    seed.parse::<f64>().is_ok()
+        || (seed.starts_with('[') && seed.ends_with(']') && top_offsets(seed, "|").is_ok())
 }
 
 fn arrow_definition(source: &str) -> bool {
@@ -851,11 +904,19 @@ mod tests {
     }
     #[test]
     fn counted_detection_preserves_comprehension_and_match_comparisons() {
-        let source = "x := [x | x > 0]\ny := [x | 1 > 0]\na := (value ? | n > 0 => n | * => 0)\nb := (value ? | 1 > 0 => 1 | * => 0)\n";
+        let source = "x := [x | x > 0]\ny := [x | 1 > 0]\nz := [x |1>0]\na := (value ? | n > 0 => n | * => 0)\nb := (value ? | 1 > 0 => 1 | * => 0)\nc := (value ? |1>0 => 1 | * => 0)\n";
         assert_eq!(normalize(source).unwrap(), source);
 
         let normalized = normalize("r := source |> filter([x | x > 0], _)\n").unwrap();
         assert!(normalized.contains("r := filter([x | x > 0], application-temp-0)"));
+    }
+    #[test]
+    fn standalone_counted_literal_and_vector_seeds_are_normalized() {
+        let normalized = normalize("2.0 |1> step\n[1.0] |1> step\n").unwrap();
+        assert!(normalized.contains("application-temp-0 := 2.0"));
+        assert!(normalized.contains("sequence/iterate(application-temp-0, 1, step)"));
+        assert!(normalized.contains("application-temp-1 := [1.0]"));
+        assert!(normalized.contains("sequence/iterate(application-temp-1, 1, step)"));
     }
     #[test]
     fn holes_share_one_evaluation_and_ignore_strings_and_identifiers() {
