@@ -258,7 +258,12 @@ fn plan_specialized_call(
         .outputs()
         .iter()
         .map(|_| match output_cell {
-            Some(cell) => cell_physical_storage_descriptor(cell, &target, lifetime),
+            Some(cell) => output_cell_physical_storage_descriptor(
+                cell,
+                &target,
+                lifetime,
+                implementation_memory,
+            ),
             None => Ok(physical_storage_descriptor(
                 output_representation,
                 &target,
@@ -324,6 +329,29 @@ fn cell_physical_storage_descriptor(
     let mut storage = physical_storage_descriptor(planned_representation, target, lifetime);
     if cell.has_managed_canonical_storage()?
         && !matches!(storage.slot, PlannedSlotKind::FixedScalar(_))
+    {
+        storage.capabilities = cell.storage_capabilities();
+        storage.slot = PlannedSlotKind::CanonicalValueHandle;
+    }
+    Ok(storage)
+}
+
+fn output_cell_physical_storage_descriptor(
+    cell: &ValueCell,
+    target: &TargetMemoryProfile,
+    lifetime: MemoryLifetime,
+    implementation_memory: ImplementationMemoryClass,
+) -> MResult<PhysicalStorageDescriptor> {
+    let mut storage = cell_physical_storage_descriptor(cell, target, lifetime)?;
+    // Numeric inputs retain their fixed-width import layout. An output that
+    // is actually canonical needs its payload transaction when the installed
+    // implementation constructs through the canonical lifecycle instead.
+    if matches!(
+        implementation_memory,
+        ImplementationMemoryClass::CanonicalFinalize
+            | ImplementationMemoryClass::CanonicalSortUnique
+            | ImplementationMemoryClass::CanonicalCloneInput { .. }
+    ) && cell.has_managed_canonical_storage()?
     {
         storage.capabilities = cell.storage_capabilities();
         storage.slot = PlannedSlotKind::CanonicalValueHandle;

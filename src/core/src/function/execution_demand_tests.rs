@@ -149,7 +149,12 @@ macro_rules! compiler_stub {
     )*};
 }
 #[cfg(feature = "semantic-compiler")]
-compiler_stub!(DemandFunction, DefaultFunction, CanonicalWorkspaceFunction);
+compiler_stub!(
+    DemandFunction,
+    DefaultFunction,
+    CanonicalWorkspaceFunction,
+    CanonicalIndexRowCopy
+);
 
 fn instance(
     input: &ValueCell,
@@ -279,6 +284,10 @@ fn execution_demand_defaults_preserve_legacy_hooks_and_fixed_plan() {
         }),
         ImplementationMemoryClass::NoAdditionalScratch,
         MemoryBudgetLimits::default(),
+    );
+    assert_eq!(
+        function.memory_plan().output_storage[0].slot,
+        PlannedSlotKind::FixedScalar(ScalarMemoryKind::Unsigned(IntegerWidth::W64))
     );
     let revision = function.managed_plan_revision();
     for _ in 0..3 {
@@ -642,5 +651,260 @@ fn execution_demand_payload_hooks_and_frame_share_refreshed_string_witnesses() {
                 executed.borrow()[turn - 1].footprint.payload_bytes
             );
         }
+    }
+}
+
+// This fixture deliberately retains a logical numeric representation over a
+// canonical root, exactly as an explicitly canonical factory result does.
+struct CanonicalIndexRowCopy {
+    input: ValueCell,
+    output: ValueCell,
+}
+impl CanonicalIndexRowCopy {
+    fn output_footprint(&self, input: CurrentMemoryFootprint) -> CurrentMemoryFootprint {
+        CurrentMemoryFootprint {
+            schema_bytes: self
+                .output
+                .retained_schema_table()
+                .clone_allocation_bound_bytes()
+                .unwrap(),
+            ..input
+        }
+    }
+}
+impl MechFunctionImpl for CanonicalIndexRowCopy {
+    fn planned_output_shapes(&self) -> MResult<Option<Box<[ShapeInstance]>>> {
+        let extents = self.input.resolved_descriptor()?.current_extents()?;
+        let schemas = self.output.retained_schema_table();
+        let schema = schemas.get(self.output.schema()).unwrap();
+        Ok(Some(Box::new([shape_for_resolved_extents(
+            schema, &extents,
+        )?])))
+    }
+    fn planned_output_footprints_with_request(
+        &self,
+        request: &ExecutionDemandPlanningRequest<'_>,
+    ) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        Ok(Some(Box::new([self.output_footprint(
+            request
+                .input_footprint(0)
+                .map_err(|error| MechError::new(error, None).with_compiler_loc())?,
+        )])))
+    }
+    fn planned_execution_demand(
+        &self,
+        request: &ExecutionDemandPlanningRequest<'_>,
+    ) -> MResult<PlannedExecutionDemand> {
+        let count = request
+            .input_footprint(0)
+            .map_err(|error| MechError::new(error, None).with_compiler_loc())?
+            .logical_elements;
+        Ok(PlannedExecutionDemand {
+            temporary_bytes: count
+                .checked_mul(core::mem::size_of::<ValueDataDraft>() as u64)
+                .and_then(|bytes| bytes.checked_add(16))
+                .unwrap(),
+            work: WorkDemand {
+                compute: count.checked_mul(2).unwrap(),
+                ..WorkDemand::default()
+            },
+            ..PlannedExecutionDemand::default()
+        })
+    }
+    fn solve_managed(
+        &self,
+        frame: &mut KernelMemoryFrame<'_>,
+        _: &mut dyn MechExecutionServices,
+    ) -> MResult<ReactiveSolveStatus> {
+        let footprint = self.output_footprint(frame.input_cell_footprint(&self.input, 0)?);
+        frame.with_admitted_canonical_output(&self.output, footprint, |frame, construction| {
+            frame.with_input_cell_value_view::<usize, _>(&self.input, 0, |view| {
+                let elements = construction.try_boxed_slice_with(view.len(), |_, index| {
+                    Ok(ValueDataDraft::Index(
+                        view.get_column_major(index).unwrap() as u64
+                    ))
+                })?;
+                let dimensions = construction.try_boxed_slice_with(2, |_, axis| {
+                    Ok(if axis == 0 {
+                        view.rows()
+                    } else {
+                        view.columns()
+                    } as u64)
+                })?;
+                let value =
+                    construction.try_rebuild_matrix_drafts(&self.output, dimensions, elements)?;
+                Ok(((), value))
+            })
+        })?;
+        Ok(ReactiveSolveStatus::Changed)
+    }
+    fn to_string(&self) -> String {
+        "canonical numeric output fixture".into()
+    }
+}
+
+fn canonical_index_row(domain: &MemoryDomain, values: &[u64]) -> ValueCell {
+    use crate::snapshot::SnapshotValidationContext;
+    let schema = SchemaDraft {
+        dimension_parameters: Box::new([DimensionParameterDeclaration {
+            id: DimensionParameterId::new(0),
+            origin: DimensionParameterOrigin::Explicit,
+            lifetime: DimensionLifetime::Turn,
+            lower_bound: DimensionExpr::Constant(0),
+            upper_bound: Some(DimensionExpr::Constant(16)),
+        }]),
+        body: SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Index),
+            dimensions: Box::new([
+                DimensionExpr::Constant(1),
+                DimensionExpr::Parameter(DimensionParameterId::new(0)),
+            ]),
+        },
+    }
+    .finalize()
+    .unwrap();
+    let mut builder = SchemaTableBuilder::new();
+    let handle = builder.insert(schema).unwrap();
+    let build = builder.finish().unwrap();
+    let id = build.resolve(handle).unwrap();
+    let (schemas, _) = build.into_parts();
+    let value = ValueDraft {
+        schema: id,
+        shape_values: Box::new([values.len() as u64]),
+        data: ValueDataDraft::Matrix(values.iter().copied().map(ValueDataDraft::Index).collect()),
+    }
+    .finalize(&SnapshotValidationContext::new(&schemas))
+    .unwrap();
+    ValueCell::from_snapshot_in(domain, value).unwrap()
+}
+
+fn assert_canonical_output_envelope(function: &FunctionInstance, output: &ValueCell) {
+    let current = function.managed.current.borrow();
+    assert_eq!(
+        current.plan.output_storage[0].slot,
+        PlannedSlotKind::CanonicalValueHandle
+    );
+    assert_eq!(
+        current.plan.output_storage[0].capabilities,
+        output.storage_capabilities()
+    );
+    let header = current
+        .plan
+        .allocations
+        .iter()
+        .find(|allocation| allocation.id == current.plan.outputs[0].object)
+        .unwrap();
+    assert!(current.plan.allocations.iter().any(|allocation| {
+        allocation.role == AllocationRole::VariablePayload
+            && allocation.owner == header.owner
+            && allocation.lifetime == header.lifetime
+    }));
+}
+
+#[test]
+fn canonical_numeric_outputs_keep_factory_construction_authority() {
+    for class in [
+        ImplementationMemoryClass::CanonicalFinalize,
+        ImplementationMemoryClass::CanonicalSortUnique,
+        ImplementationMemoryClass::CanonicalCloneInput { input: 0 },
+    ] {
+        let domain = MemoryDomain::new().unwrap();
+        let source = ValueCell::from_exact_in(&domain, 1_u64).unwrap();
+        let input = ValueCell::from_snapshot_in(&domain, source.snapshot().unwrap()).unwrap();
+        let output = ValueCell::from_snapshot_in(&domain, source.snapshot().unwrap()).unwrap();
+        assert_eq!(output.representation(), FunctionValueRepresentation::U64);
+        assert!(output.requires_canonical_output_builder().unwrap());
+        let function = instance(
+            &input,
+            &output,
+            Box::new(CanonicalWorkspaceFunction {
+                output: output.clone(),
+                footprint: output.current_memory_footprint().unwrap(),
+                observed_remaining: Rc::new(Cell::new((0, 0))),
+            }),
+            class,
+            MemoryBudgetLimits::default(),
+        );
+        assert_eq!(
+            function.memory_plan().input_storage[0].slot,
+            PlannedSlotKind::FixedScalar(ScalarMemoryKind::Unsigned(IntegerWidth::W64))
+        );
+        assert_canonical_output_envelope(&function, &output);
+        if class == ImplementationMemoryClass::CanonicalFinalize {
+            function.solve_result().unwrap();
+            assert!(matches!(
+                output.snapshot().unwrap().data(),
+                ValueData::U64(29)
+            ));
+            assert_canonical_output_envelope(&function, &output);
+        }
+    }
+}
+
+#[test]
+fn canonical_index_matrix_output_refreshes_empty_nonempty_empty() {
+    use crate::snapshot::SequenceView;
+    let domain = MemoryDomain::new().unwrap();
+    let input = canonical_index_row(&domain, &[]);
+    let output = canonical_index_row(&domain, &[]);
+    assert!(matches!(
+        output.representation(),
+        FunctionValueRepresentation::Matrix {
+            element: FunctionMatrixElement::Index,
+            ..
+        }
+    ));
+    assert!(output.requires_canonical_output_builder().unwrap());
+    let function = instance(
+        &input,
+        &output,
+        Box::new(CanonicalIndexRowCopy {
+            input: input.clone(),
+            output: output.clone(),
+        }),
+        ImplementationMemoryClass::CanonicalFinalize,
+        MemoryBudgetLimits::default(),
+    );
+    assert_eq!(
+        function.memory_plan().input_storage[0].slot,
+        PlannedSlotKind::FixedScalar(ScalarMemoryKind::Index)
+    );
+    assert_canonical_output_envelope(&function, &output);
+    let mut revision = function.managed_plan_revision();
+    for (turn, expected) in [&[][..], &[3, 1, 2][..], &[][..]].into_iter().enumerate() {
+        if turn != 0 {
+            input
+                .replace(&canonical_index_row(&domain, expected).snapshot().unwrap())
+                .unwrap();
+        }
+        function.solve_result().unwrap();
+        assert_canonical_output_envelope(&function, &output);
+        let current = function.managed.current.borrow();
+        assert_eq!(
+            current.plan.outputs[0]
+                .descriptor
+                .current_extents()
+                .unwrap()
+                .as_ref(),
+            &[1, expected.len() as u64]
+        );
+        if turn != 0 {
+            assert_ne!(function.managed_plan_revision(), revision);
+        }
+        revision = function.managed_plan_revision();
+        drop(current);
+        let value = output.snapshot().unwrap();
+        let ValueData::Matrix(matrix) = value.data() else {
+            panic!("{value:?}")
+        };
+        let SequenceView::Index(values) = matrix.elements() else {
+            panic!("{value:?}")
+        };
+        assert_eq!(values, expected);
+        let descriptor = output.resolved_descriptor().unwrap();
+        assert_eq!(
+            descriptor.current_extents().unwrap().as_ref(),
+            &[1, expected.len() as u64]
+        );
     }
 }
