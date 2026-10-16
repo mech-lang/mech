@@ -23261,8 +23261,10 @@ fn prepare_match_node(
         let supported = matches!(
             region.kind,
             ResidentValueKind::Bool | ResidentValueKind::Index | ResidentValueKind::F64
-        ) || (region.kind == ResidentValueKind::Snapshot
-            && crate::is_control_scalar_schema(schema));
+        ) || (region.kind == ResidentValueKind::String
+            && matches!(schema.body(), SchemaBody::String))
+            || (region.kind == ResidentValueKind::Snapshot
+                && crate::is_control_literal_schema(schema));
         if !supported || region.len != 1 {
             return Err(ResidentActivationError::UnsupportedControlLayout { node: owner });
         }

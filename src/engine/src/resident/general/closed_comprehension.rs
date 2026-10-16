@@ -1028,7 +1028,7 @@ fn fold_match(
                 let Some(schema) = schemas.get(scrutinee.schema()) else {
                     return Ok(None);
                 };
-                if !crate::is_control_scalar_schema(schema) {
+                if !crate::is_control_literal_schema(schema) {
                     return Ok(None);
                 }
                 let remaining = mech_core::RESIDENT_MAX_COMPARISON_WORK

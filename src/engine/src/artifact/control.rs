@@ -677,7 +677,7 @@ pub(super) fn validate_match_inner(
         draft
             .schemas
             .get(schema)
-            .is_some_and(is_control_scalar_schema)
+            .is_some_and(is_control_literal_schema)
     };
     let closed_value = |schema| {
         draft
@@ -1439,6 +1439,14 @@ pub(crate) fn is_control_scalar_schema(schema: &mech_core::Schema) -> bool {
     schema.dimension_parameters().is_empty()
         && (is_builtin_control_scalar_body(schema.body())
             || matches!(schema.body(), SchemaBody::Option(payload) if is_optional_control_scalar_body(payload)))
+}
+
+/// Literal patterns include exact raw UTF-8 Strings without broadening the
+/// fixed numeric/Boolean scalar execution class used by ordinary kernels.
+pub(crate) fn is_control_literal_schema(schema: &mech_core::Schema) -> bool {
+    is_control_scalar_schema(schema)
+        || (schema.dimension_parameters().is_empty()
+            && matches!(schema.body(), mech_core::SchemaBody::String))
 }
 
 fn is_builtin_control_scalar_body(body: &mech_core::SchemaBody) -> bool {

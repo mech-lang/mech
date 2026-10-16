@@ -42,6 +42,46 @@ use super::{
     output_materialization_depends_on_match,
 };
 
+fn literal_string_text<'a>(
+    value: ResidentValueRef<'a>,
+    schema: mech_core::SchemaKey,
+) -> Option<&'a str> {
+    match value {
+        ResidentValueRef::String([text]) => Some(text),
+        ResidentValueRef::Snapshot([Some(value)]) if value.schema_key() == schema => {
+            match value.data() {
+                mech_core::ValueData::String(text) => Some(text),
+                _ => None,
+            }
+        }
+        _ => None,
+    }
+}
+
+fn string_literal_matches(left: &str, right: &str) -> Result<bool, ResidentKernelError> {
+    // String equality first checks byte lengths. Unequal lengths need no
+    // payload traversal; equal lengths compare raw UTF-8 with no normalization.
+    // Charge only this attempted arm before its first byte comparison. Later
+    // arms and their guards/bodies remain lazy under the same control budget.
+    let bytes = if left.len() == right.len() {
+        left.len().max(1)
+    } else {
+        1
+    };
+    let comparison = budget::checked_u64(bytes)?;
+    budget::PreparedKernel::new(
+        (),
+        budget::resident_cost! {
+            comparison_work: comparison,
+            compute_work: comparison.checked_add(4).ok_or(ResidentKernelError::InvalidShape)?,
+            ..budget::KernelCostEstimate::default()
+        },
+    )
+    .admit_control()?
+    .into_plan();
+    Ok(left.as_bytes() == right.as_bytes())
+}
+
 // This is a host-stack safety ceiling, not the language's recursion budget.
 // Every call is independently admitted through the cumulative resident work
 // and frame-memory budget below. Keeping the emergency ceiling modest ensures
@@ -2659,40 +2699,58 @@ impl ReactiveInstance {
                         .map(|value| value.as_ref())
                         .or_else(|| self.read_location(scrutinee_source, working_epoch))
                         .ok_or_else(fail)?;
-                    match (
-                        scrutinee,
-                        self.read_location(literal, working_epoch)
-                            .ok_or_else(fail)?,
-                    ) {
-                        (
-                            ResidentValueRef::Bool([left @ (0 | 1)]),
-                            ResidentValueRef::Bool([right @ (0 | 1)]),
-                        ) => left == right,
-                        (ResidentValueRef::Index([left]), ResidentValueRef::Index([right])) => {
-                            left == right
-                        }
-                        (ResidentValueRef::F64([left]), ResidentValueRef::F64([right])) => {
-                            left == right
-                        }
-                        (
-                            ResidentValueRef::Snapshot([Some(left)]),
-                            ResidentValueRef::Snapshot([Some(right)]),
-                        ) => {
-                            let left_schema = left
-                                .validate_against(&self.plan.schemas)
-                                .map_err(|_| fail())?;
-                            let right_schema = right
-                                .validate_against(&self.plan.schemas)
-                                .map_err(|_| fail())?;
-                            if !crate::is_control_scalar_schema(left_schema)
-                                || left_schema != right_schema
-                            {
-                                return Err(fail());
+                    let peer = self
+                        .read_location(literal, working_epoch)
+                        .ok_or_else(fail)?;
+                    if self
+                        .plan
+                        .schemas
+                        .get(scrutinee_schema)
+                        .is_some_and(|schema| {
+                            matches!(schema.body(), mech_core::SchemaBody::String)
+                        })
+                    {
+                        let key = self
+                            .plan
+                            .schemas
+                            .entry(scrutinee_schema)
+                            .ok_or_else(fail)?
+                            .key();
+                        let left = literal_string_text(scrutinee, key).ok_or_else(fail)?;
+                        let right = literal_string_text(peer, key).ok_or_else(fail)?;
+                        string_literal_matches(left, right).map_err(kernel_fail)?
+                    } else {
+                        match (scrutinee, peer) {
+                            (
+                                ResidentValueRef::Bool([left @ (0 | 1)]),
+                                ResidentValueRef::Bool([right @ (0 | 1)]),
+                            ) => left == right,
+                            (ResidentValueRef::Index([left]), ResidentValueRef::Index([right])) => {
+                                left == right
                             }
-                            left.language_eq(&self.plan.schemas, right, &self.plan.schemas)
-                                .map_err(|_| fail())?
+                            (ResidentValueRef::F64([left]), ResidentValueRef::F64([right])) => {
+                                left == right
+                            }
+                            (
+                                ResidentValueRef::Snapshot([Some(left)]),
+                                ResidentValueRef::Snapshot([Some(right)]),
+                            ) => {
+                                let left_schema = left
+                                    .validate_against(&self.plan.schemas)
+                                    .map_err(|_| fail())?;
+                                let right_schema = right
+                                    .validate_against(&self.plan.schemas)
+                                    .map_err(|_| fail())?;
+                                if !crate::is_control_scalar_schema(left_schema)
+                                    || left_schema != right_schema
+                                {
+                                    return Err(fail());
+                                }
+                                left.language_eq(&self.plan.schemas, right, &self.plan.schemas)
+                                    .map_err(|_| fail())?
+                            }
+                            _ => return Err(fail()),
                         }
-                        _ => return Err(fail()),
                     }
                 }
                 super::ActivatedMatchPattern::Wildcard | super::ActivatedMatchPattern::Bind => true,

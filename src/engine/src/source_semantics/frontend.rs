@@ -9764,6 +9764,12 @@ impl SemanticBuilder {
             anchor: SourceSemanticAnchor::for_node(syntax),
         };
         let scrutinee_schema = self.schema_draft_of(scrutinee)?;
+        // A selected scalar can carry unused source-axis declarations in its
+        // draft. Literal compatibility follows the same finalized schema
+        // identity later used by the artifact, not those unused declarations.
+        let literal_scrutinee_schema = scrutinee_schema.clone().finalize().map_err(|error| {
+            internal(SourceSemanticAnchor::for_node(syntax), format!("{error:?}"))
+        })?;
         let mut inputs = vec![scrutinee];
         let mut captures = Vec::new();
         let mut lowered = Vec::new();
@@ -9861,7 +9867,15 @@ impl SemanticBuilder {
                                         expression.syntax(),
                                     ));
                                 };
-                                if self.constants[index].schema != scrutinee_schema {
+                                if self.constants[index].schema != scrutinee_schema
+                                    && self.constants[index]
+                                        .schema
+                                        .clone()
+                                        .finalize()
+                                        .ok()
+                                        .as_ref()
+                                        != Some(&literal_scrutinee_schema)
+                                {
                                     return Err(error(
                                         "match literal pattern must have the scrutinee schema",
                                         expression.syntax(),
@@ -9928,10 +9942,7 @@ impl SemanticBuilder {
                     },
                 };
                 if matches!(pattern, crate::MatchPattern::Literal(_))
-                    && !scrutinee_schema
-                        .clone()
-                        .finalize()
-                        .is_ok_and(|schema| crate::is_control_scalar_schema(&schema))
+                    && !crate::is_control_literal_schema(&literal_scrutinee_schema)
                 {
                     return Err(error(
                         "literal patterns require a concrete scalar scrutinee",
