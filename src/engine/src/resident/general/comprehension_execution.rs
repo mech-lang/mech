@@ -2218,6 +2218,14 @@ impl PatternItem {
     }
 
     pub(in crate::resident::general) fn scalar(&self) -> Option<Item> {
+        if let Self::Canonical { value, path, .. } = self {
+            return match canonical_pattern_data(value, path)? {
+                ValueData::Bool(value) => Some(Item::Bool(*value)),
+                ValueData::Index(value) => Some(Item::Index(*value)),
+                ValueData::F64(value) => Some(Item::F64(value.to_f64())),
+                _ => None,
+            };
+        }
         self.data().and_then(Item::from_draft)
     }
 
@@ -2708,6 +2716,9 @@ impl PatternItem {
 
     #[cfg(test)]
     pub(in crate::resident::general) fn is_atom(&self) -> bool {
+        if let Self::Canonical { value, path, .. } = self {
+            return matches!(canonical_pattern_data(value, path), Some(ValueData::Atom));
+        }
         matches!(self.data(), Some(ValueDataDraft::Atom))
     }
 
@@ -2728,6 +2739,9 @@ impl PatternItem {
         };
         match self {
             Self::Plain(_) => true,
+            Self::Canonical { body, .. } => peer_schema
+                .closed_body(peer.shape())
+                .is_ok_and(|peer| peer == **body),
             Self::Component { body, .. } => peer_schema
                 .closed_body(peer.shape())
                 .is_ok_and(|peer| peer == *body),
@@ -8025,6 +8039,60 @@ mod tests {
     }
 
     #[test]
+    fn borrowed_scalar_patterns_preserve_dense_comparison_values() {
+        for (body, data) in [
+            (SchemaBody::Bool, ValueDataDraft::Bool(true)),
+            (SchemaBody::Index, ValueDataDraft::Index(19)),
+            (
+                SchemaBody::FloatingPoint(FloatWidth::W64),
+                ValueDataDraft::F64(F64Bits::from_f64(7.0)),
+            ),
+        ] {
+            let mut builder = SchemaTableBuilder::new();
+            let handle = builder
+                .insert(
+                    SchemaDraft {
+                        body,
+                        dimension_parameters: Box::new([]),
+                    }
+                    .finalize()
+                    .unwrap(),
+                )
+                .unwrap();
+            let built = builder.finish().unwrap();
+            let schema = built.resolve(handle).unwrap();
+            let value = ValueDraft {
+                schema,
+                shape_values: Box::new([]),
+                data: data.clone(),
+            }
+            .finalize(&SnapshotValidationContext::new(&built.table))
+            .unwrap();
+            let (plan, projections) = structural_projection_schema_context(&built.table).unwrap();
+            let certificate = PlanPatternSource::new(schema, &plan, &projections).unwrap();
+            let storage = [Some(value)];
+            let item = resident_pattern_item_from_plan(
+                ResidentValueRef::Snapshot(&storage),
+                snapshot_pattern_region(),
+                schema,
+                &[],
+                &plan,
+                false,
+                Some(&certificate),
+            )
+            .unwrap();
+            assert!(matches!(item, PatternItem::Canonical { .. }));
+            assert!(match (item.scalar(), data) {
+                (Some(Item::Bool(actual)), ValueDataDraft::Bool(expected)) => actual == expected,
+                (Some(Item::Index(actual)), ValueDataDraft::Index(expected)) => actual == expected,
+                (Some(Item::F64(actual)), ValueDataDraft::F64(expected)) =>
+                    actual.to_bits() == expected.to_f64().to_bits(),
+                _ => false,
+            });
+        }
+    }
+
+    #[test]
     fn plan_pattern_source_rejects_identity_drift_and_keeps_foreign_owner_route() {
         let (original, schema, value) = typed_pattern_source_fixture(false);
         let (plan, projections) = structural_projection_schema_context(&original).unwrap();
@@ -8356,18 +8424,25 @@ mod tests {
             assert!(cost.retained_nodes() >= expansion.nodes);
             assert!(cost.compute_work() >= cost.cloned_bytes());
             assert_eq!(cost.comparison_work(), 1);
+            let item = resident_pattern_item_from_plan(
+                ResidentValueRef::Snapshot(&storage),
+                snapshot_pattern_region(),
+                schema,
+                &[],
+                &plan,
+                array,
+                Some(&certificate),
+            )
+            .unwrap();
             assert!(matches!(
-                resident_pattern_item_from_plan(
-                    ResidentValueRef::Snapshot(&storage),
-                    snapshot_pattern_region(),
-                    schema,
-                    &[],
-                    &plan,
-                    array,
-                    Some(&certificate),
-                ),
-                Some(PatternItem::Component { .. })
+                item,
+                PatternItem::Component { .. } | PatternItem::Canonical { .. }
             ));
+            let binding = item
+                .into_binding(schema, &[], &plan, &projections)
+                .unwrap()
+                .unwrap();
+            assert_eq!(binding.data, value.canonical_data_draft().unwrap());
             assert_eq!(
                 value.resident_token(),
                 before,
@@ -10295,6 +10370,21 @@ mod tests {
         .finalize(&SnapshotValidationContext::with_shared_schemas(&foreign))
         .unwrap();
         assert!(matching.atom_matches(&foreign_peer, &schemas));
+        for (schema, expected) in [(left, true), (right, false)] {
+            let value = ValueDraft {
+                schema,
+                shape_values: Box::new([]),
+                data: ValueDataDraft::Atom,
+            }
+            .finalize(&SnapshotValidationContext::with_shared_schemas(&schemas))
+            .unwrap();
+            let item = PatternItem::canonical(
+                schema,
+                Arc::new(schemas.get(schema).unwrap().body().clone()),
+                &value,
+            );
+            assert_eq!(item.atom_matches(&foreign_peer, &schemas), expected);
+        }
     }
 
     #[test]

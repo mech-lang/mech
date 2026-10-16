@@ -6521,9 +6521,15 @@ mod tests {
             matches!(
                 error,
                 ResidentExecutionError::Kernel {
-                    error: ResidentKernelError::InvalidShape,
+                    error: ResidentKernelError::ResourceLimit {
+                        phase: mech_core::ResidentResourcePhase::Admission,
+                        dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                        required,
+                        limit,
+                    },
                     ..
-                }
+                } if required == mech_core::RESIDENT_MAX_COMPARISON_WORK + 1
+                    && limit == mech_core::RESIDENT_MAX_COMPARISON_WORK
             ),
             "{error:?}"
         );
@@ -7351,9 +7357,14 @@ mod tests {
             assert!(matches!(
                 instance.turn(&inputs(&[1])),
                 Err(ResidentExecutionError::Kernel {
-                    error: ResidentKernelError::InvalidShape,
+                    error: ResidentKernelError::ResourceLimit {
+                        phase: mech_core::ResidentResourcePhase::Admission,
+                        dimension: mech_core::MemoryBudgetDimension::ComputeWork,
+                        required,
+                        limit,
+                    },
                     ..
-                })
+                }) if required > limit && limit == mech_core::RESIDENT_MAX_COMPUTE_WORK
             ));
             assert_eq!(instance.published_epoch(), epoch);
             assert_eq!(

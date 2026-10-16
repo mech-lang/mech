@@ -2027,7 +2027,13 @@ mod tests {
                 assert!(PreparedKernel::new((), cost).admit_control().is_ok());
                 assert!(matches!(
                     PreparedKernel::new((), cost).admit_control(),
-                    Err(ResidentKernelError::InvalidShape),
+                    Err(ResidentKernelError::ResourceLimit {
+                        phase: mech_core::ResidentResourcePhase::Admission,
+                        dimension: mech_core::MemoryBudgetDimension::ComputeWork,
+                        required,
+                        limit,
+                    }) if required == MAX_RESIDENT_COMPUTE_WORK + 2
+                        && limit == MAX_RESIDENT_COMPUTE_WORK
                 ));
             });
         });
@@ -2050,7 +2056,13 @@ mod tests {
                 assert!(PreparedKernel::new((), cost).admit_control().is_ok());
                 assert!(matches!(
                     PreparedKernel::new((), cost).admit_control(),
-                    Err(ResidentKernelError::InvalidShape),
+                    Err(ResidentKernelError::ResourceLimit {
+                        phase: mech_core::ResidentResourcePhase::Admission,
+                        dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                        required,
+                        limit,
+                    }) if required == MAX_RESIDENT_COMPARISON_WORK + 2
+                        && limit == MAX_RESIDENT_COMPARISON_WORK
                 ));
             });
         });
