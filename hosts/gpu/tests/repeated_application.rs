@@ -59,6 +59,22 @@ fn typed_results_and_canonical_symbolic_callbacks_execute() {
 }
 
 #[test]
+fn compact_unicode_operator_holes_execute() {
+    for (operator, expected) in [("×", b"8".as_slice()), ("÷", b"2".as_slice())] {
+        let source = format!(
+            "same(x<f64>) => <f64> := x + 1.0 - 1.0\nr := 4.0 |> same(_{operator}2.0)\nio/write(number/format(r, 0))\n"
+        );
+        check(&source, expected, 0);
+    }
+}
+
+#[test]
+fn quoted_counted_application_examples_in_prose_do_not_change_execution() {
+    let source = "Use `|1> step` in examples.\nstep(x<f64>) => <f64> := x + 1.0\nr := 2.0 |1> step\nio/write(number/format(r, 0))\n";
+    check(source, b"3", 1);
+}
+
+#[test]
 fn unsigned_counters_use_existing_checked_integer_callbacks() {
     for (count, result) in [(0, "2"), (1, "5"), (19, "59")] {
         let source = format!(

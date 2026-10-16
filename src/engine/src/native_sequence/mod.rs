@@ -638,11 +638,13 @@ pub fn compile_parsed(
                     active,
                 )?;
                 for pair in children[1..].chunks(2) {
-                    let mut op = match text(&pair[0])?.trim() {
-                        "*" => 20,
-                        "/" => 21,
-                        "+" => 22,
-                        "-" => 23,
+                    // Canonical operation identity owns aliases such as ×/÷;
+                    // source spelling must not select a different native path.
+                    let mut op = match pair[0].kind() {
+                        SyntaxKind::MultiplyOperation => 20,
+                        SyntaxKind::DivideOperation => 21,
+                        SyntaxKind::AddOperation => 22,
+                        SyntaxKind::SubtractOperation => 23,
                         _ => return Err("unsupported numeric operator".into()),
                     };
                     let mut rhs = lower(
