@@ -36,7 +36,19 @@ pub(super) const fn primitive_work(op: NativeScalarOp) -> u64 {
         | NativeScalarOp::BoolXor
         | NativeScalarOp::BoolNot
         | NativeScalarOp::BoolEq
-        | NativeScalarOp::BoolNe => 256,
+        | NativeScalarOp::BoolNe
+        | NativeScalarOp::I64Add
+        | NativeScalarOp::I64Sub
+        | NativeScalarOp::I64Mul
+        | NativeScalarOp::I64Div
+        | NativeScalarOp::I64Rem
+        | NativeScalarOp::I64Neg
+        | NativeScalarOp::I64Eq
+        | NativeScalarOp::I64Ne
+        | NativeScalarOp::I64Lt
+        | NativeScalarOp::I64Le
+        | NativeScalarOp::I64Gt
+        | NativeScalarOp::I64Ge => 256,
     }
 }
 
@@ -97,6 +109,7 @@ impl NativeAbiDescriptor {
 /// transport regions and the callback context for the entire invocation.
 /// Bool transport uses U64 words restricted to 0/1; semantic Bool storage in
 /// the artifact/call plan remains a distinct one-byte scalar representation.
+/// Signed I64 values retain their two's-complement bits in one eight-byte lane.
 #[repr(C)]
 pub(super) struct NativeEntryFrame {
     pub version: u64,

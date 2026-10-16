@@ -39,6 +39,7 @@ use sha2::{Digest, Sha256};
 
 const MIXED: &str = "increment := left<u64> + step<u64>\nflag := !enabled<bool>\nincrement\n";
 const ORDERED: &str = "quotient := left<u64> / divisor<u64>\nlast := left<u64> + 1u64\nlast\n";
+const SIGNED: &str = "sum := left<i64> + right<i64>\nnegative := -right<i64>\nsum\n";
 const PROCESS_DEADLINE: Duration = Duration::from_secs(15);
 const WORKER_DEADLINE: Duration = Duration::from_secs(20 * 60);
 
@@ -177,6 +178,7 @@ fn arguments(values: &[NativeScalarValue]) -> Vec<String> {
         .map(|value| match value {
             NativeScalarValue::Bool(value) => value.to_string(),
             NativeScalarValue::U64(value) => value.to_string(),
+            NativeScalarValue::I64(value) => value.to_string(),
         })
         .collect()
 }
@@ -209,6 +211,7 @@ fn resident(
                 data: match value {
                     NativeScalarValue::Bool(value) => ValueDataDraft::Bool(*value),
                     NativeScalarValue::U64(value) => ValueDataDraft::U64(*value),
+                    NativeScalarValue::I64(value) => ValueDataDraft::I64(*value),
                 },
             }
             .finalize(&SnapshotValidationContext::new(artifact.schemas()))
@@ -223,7 +226,7 @@ fn resident(
             let ordinal = artifact
                 .inputs()
                 .iter()
-                .position(|value| value.slot.get() == input.slot.get())
+                .position(|value| value.slot == input.artifact_slot)
                 .unwrap();
             CapturedValueInput {
                 slot: input.slot,
@@ -240,6 +243,7 @@ fn resident(
             |index| match instance.copied_output(index).unwrap().data() {
                 ValueData::Bool(value) => NativeScalarValue::Bool(*value),
                 ValueData::U64(value) => NativeScalarValue::U64(*value),
+                ValueData::I64(value) => NativeScalarValue::I64(*value),
                 value => panic!("unexpected scalar {value:?}"),
             },
         )
@@ -308,6 +312,9 @@ fn with_limit(limit: &str, arguments: &[NativeScalarValue]) -> Vec<String> {
 }
 
 fn reference_cases(name: &str, artifacts: &[ProgramArtifact; 2], result: usize) -> Vec<Value> {
+    if name == "canonical-linked-signed" {
+        return signed_reference_cases(artifacts, result);
+    }
     let plans = artifacts.each_ref().map(|artifact| {
         lower_pure_native_artifact(artifact, &mech_stdlib::source_catalog()).unwrap()
     });
@@ -573,6 +580,112 @@ fn reference_cases(name: &str, artifacts: &[ProgramArtifact; 2], result: usize) 
     cases
 }
 
+fn signed_reference_cases(artifacts: &[ProgramArtifact; 2], result: usize) -> Vec<Value> {
+    let plans = artifacts.each_ref().map(|artifact| {
+        lower_pure_native_artifact(artifact, &mech_stdlib::source_catalog()).unwrap()
+    });
+    let jits = plans
+        .each_ref()
+        .map(|plan| JitArtifact::compile(plan).unwrap());
+    assert!(
+        plans[0]
+            .inputs()
+            .iter()
+            .all(|input| input.ty().kind() == NativeScalarKind::I64)
+    );
+    let mut cases = Vec::new();
+    for (label, left, right) in [
+        ("i64-minimum", i64::MIN, 0),
+        ("i64-maximum", i64::MAX, 0),
+        ("negative-sum", -7, 3),
+    ] {
+        let args = inputs(
+            &artifacts[0],
+            &[
+                ("left", NativeScalarValue::I64(left)),
+                ("right", NativeScalarValue::I64(right)),
+            ],
+        );
+        let expected = resident(&artifacts[0], &args).unwrap();
+        assert_eq!(expected[result], NativeScalarValue::I64(left + right));
+        let negative = plans[0]
+            .outputs()
+            .iter()
+            .position(|output| {
+                output
+                    .interactive_binding()
+                    .is_some_and(|binding| binding.lexical_name == "negative")
+            })
+            .unwrap();
+        assert_eq!(expected[negative], NativeScalarValue::I64(-right));
+        for index in 0..2 {
+            assert_eq!(resident(&artifacts[index], &args).unwrap(), expected);
+            assert_eq!(jit_success(&jits[index], &args).0, expected);
+        }
+        cases.push(success_case(label, arguments(&args), &expected));
+        if label == "negative-sum" {
+            for (label, invalid) in [
+                ("i64-input-overflow", "9223372036854775808"),
+                ("i64-input-underflow", "-9223372036854775809"),
+                ("i64-input-plus", "+1"),
+                ("i64-input-whitespace", " 1"),
+                ("i64-input-empty", ""),
+            ] {
+                let mut invalid_args = arguments(&args);
+                invalid_args[0] = invalid.into();
+                let mut case = failure_case(label, invalid_args, "invalid I64 argument");
+                case["stderr"] = json!("invalid I64 argument\n");
+                cases.push(case);
+            }
+        }
+    }
+    for (label, left, right) in [
+        ("signed-add-overflow", i64::MAX, 1),
+        ("signed-add-underflow", i64::MIN, -1),
+        ("signed-neg-minimum", 0, i64::MIN),
+    ] {
+        let args = inputs(
+            &artifacts[0],
+            &[
+                ("left", NativeScalarValue::I64(left)),
+                ("right", NativeScalarValue::I64(right)),
+            ],
+        );
+        let expected_node =
+            plans[0].lets()[if label == "signed-neg-minimum" { 1 } else { 0 }].node();
+        for index in 0..2 {
+            assert!(
+                resident(&artifacts[index], &args)
+                    .unwrap_err()
+                    .contains("Arithmetic")
+            );
+            assert!(
+                matches!(jit_error(&jits[index],&args,NativeExecutionLimits::default()),NativeExecutionError::Arithmetic{node} if node==expected_node)
+            );
+        }
+        cases.push(exact_failure_case(
+            label,
+            arguments(&args),
+            &jit_error(&jits[0], &args, NativeExecutionLimits::default()),
+        ));
+        if label == "signed-neg-minimum" {
+            let limit = NativeExecutionLimits {
+                max_work: 400,
+                ..NativeExecutionLimits::default()
+            };
+            assert!(
+                matches!(jit_error(&jits[0],&args,limit),NativeExecutionError::WorkLimit{phase:NativeExecutionPhase::Node(node),..} if node==expected_node)
+            );
+            cases.push(exact_failure_case(
+                "signed-node-denial-before-min-negation",
+                with_limit("--work=400", &args),
+                &jit_error(&jits[0], &args, limit),
+            ));
+        }
+    }
+    cases
+}
+
 /// Only called in the contained worker. Subprocesses inherit its owned group;
 /// they do not open another process group that could escape its deadline.
 fn worker_command(mut command: Command, root: &Path, label: &str) -> Captured {
@@ -693,7 +806,7 @@ fn canonical_native_link_build_worker() {
     let name = std::env::var("MECH_CANONICAL_NATIVE_WORKER_NAME").unwrap();
     assert!(matches!(
         name.as_str(),
-        "canonical-linked-mixed" | "canonical-linked-ordered"
+        "canonical-linked-mixed" | "canonical-linked-ordered" | "canonical-linked-signed"
     ));
     let evidence = PathBuf::from(std::env::var_os("MECH_CANONICAL_NATIVE_EVIDENCE_DIR").unwrap());
     let root = evidence.join(&name);
@@ -980,6 +1093,7 @@ fn linked_canonical_artifact_scalar_applications_are_typed_bounded_and_atomic() 
     let applications = [
         qualify(&evidence, "canonical-linked-mixed", MIXED),
         qualify(&evidence, "canonical-linked-ordered", ORDERED),
+        qualify(&evidence, "canonical-linked-signed", SIGNED),
     ];
     assert_eq!(pin(&workspace.join("Cargo.lock")), lock);
     clean(&workspace, &evidence, &commit, "after");

@@ -98,6 +98,7 @@ fn reference(
                 data: match value {
                     NativeScalarValue::Bool(v) => ValueDataDraft::Bool(*v),
                     NativeScalarValue::U64(v) => ValueDataDraft::U64(*v),
+                    NativeScalarValue::I64(v) => ValueDataDraft::I64(*v),
                 },
             }
             .finalize(&SnapshotValidationContext::new(artifact.schemas()))
@@ -112,7 +113,7 @@ fn reference(
             let ordinal = artifact
                 .inputs()
                 .iter()
-                .position(|v| v.slot.get() == input.slot.get())
+                .position(|v| v.slot == input.artifact_slot)
                 .unwrap();
             CapturedValueInput {
                 slot: input.slot,
@@ -129,6 +130,7 @@ fn reference(
             |index| match instance.copied_output(index).unwrap().data() {
                 ValueData::Bool(v) => NativeScalarValue::Bool(*v),
                 ValueData::U64(v) => NativeScalarValue::U64(*v),
+                ValueData::I64(v) => NativeScalarValue::I64(*v),
                 v => panic!("unexpected scalar {v:?}"),
             },
         )

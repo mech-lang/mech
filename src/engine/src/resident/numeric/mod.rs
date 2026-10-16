@@ -2412,13 +2412,22 @@ fn bind_snapshot_comparison(
     } else {
         kernel
     };
-    let op = match comparison {
-        SemanticComparison::Equal => super::native_semantics::NativeScalarOp::U64Eq,
-        SemanticComparison::NotEqual => super::native_semantics::NativeScalarOp::U64Ne,
-        SemanticComparison::Less => super::native_semantics::NativeScalarOp::U64Lt,
-        SemanticComparison::LessEqual => super::native_semantics::NativeScalarOp::U64Le,
-        SemanticComparison::Greater => super::native_semantics::NativeScalarOp::U64Gt,
-        SemanticComparison::GreaterEqual => super::native_semantics::NativeScalarOp::U64Ge,
+    let op = match (
+        left_element == &SchemaBody::SignedInteger(IntegerWidth::W64),
+        comparison,
+    ) {
+        (false, SemanticComparison::Equal) => super::native_semantics::NativeScalarOp::U64Eq,
+        (false, SemanticComparison::NotEqual) => super::native_semantics::NativeScalarOp::U64Ne,
+        (false, SemanticComparison::Less) => super::native_semantics::NativeScalarOp::U64Lt,
+        (false, SemanticComparison::LessEqual) => super::native_semantics::NativeScalarOp::U64Le,
+        (false, SemanticComparison::Greater) => super::native_semantics::NativeScalarOp::U64Gt,
+        (false, SemanticComparison::GreaterEqual) => super::native_semantics::NativeScalarOp::U64Ge,
+        (true, SemanticComparison::Equal) => super::native_semantics::NativeScalarOp::I64Eq,
+        (true, SemanticComparison::NotEqual) => super::native_semantics::NativeScalarOp::I64Ne,
+        (true, SemanticComparison::Less) => super::native_semantics::NativeScalarOp::I64Lt,
+        (true, SemanticComparison::LessEqual) => super::native_semantics::NativeScalarOp::I64Le,
+        (true, SemanticComparison::Greater) => super::native_semantics::NativeScalarOp::I64Gt,
+        (true, SemanticComparison::GreaterEqual) => super::native_semantics::NativeScalarOp::I64Ge,
     };
     Ok(super::native_semantics::certify(request, kernel, op))
 }
@@ -3309,13 +3318,21 @@ fn bind_snapshot_numeric_binary(
     } else {
         kernel
     };
-    let op = match arithmetic {
-        SemanticArithmetic::Add => super::native_semantics::NativeScalarOp::U64Add,
-        SemanticArithmetic::Subtract => super::native_semantics::NativeScalarOp::U64Sub,
-        SemanticArithmetic::Multiply => super::native_semantics::NativeScalarOp::U64Mul,
-        SemanticArithmetic::Divide => super::native_semantics::NativeScalarOp::U64Div,
-        SemanticArithmetic::Remainder => super::native_semantics::NativeScalarOp::U64Rem,
-        SemanticArithmetic::Power => return Ok(kernel),
+    let op = match (
+        output_element == &SchemaBody::SignedInteger(IntegerWidth::W64),
+        arithmetic,
+    ) {
+        (false, SemanticArithmetic::Add) => super::native_semantics::NativeScalarOp::U64Add,
+        (false, SemanticArithmetic::Subtract) => super::native_semantics::NativeScalarOp::U64Sub,
+        (false, SemanticArithmetic::Multiply) => super::native_semantics::NativeScalarOp::U64Mul,
+        (false, SemanticArithmetic::Divide) => super::native_semantics::NativeScalarOp::U64Div,
+        (false, SemanticArithmetic::Remainder) => super::native_semantics::NativeScalarOp::U64Rem,
+        (true, SemanticArithmetic::Add) => super::native_semantics::NativeScalarOp::I64Add,
+        (true, SemanticArithmetic::Subtract) => super::native_semantics::NativeScalarOp::I64Sub,
+        (true, SemanticArithmetic::Multiply) => super::native_semantics::NativeScalarOp::I64Mul,
+        (true, SemanticArithmetic::Divide) => super::native_semantics::NativeScalarOp::I64Div,
+        (true, SemanticArithmetic::Remainder) => super::native_semantics::NativeScalarOp::I64Rem,
+        (_, SemanticArithmetic::Power) => return Ok(kernel),
     };
     Ok(super::native_semantics::certify(request, kernel, op))
 }
@@ -3347,12 +3364,17 @@ fn bind_snapshot_numeric_negate(
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
-    Ok(bound(
+    let kernel = bound(
         snapshot_numeric_negate,
         vec![output_shape.rows as u64, output_shape.columns as u64].into_boxed_slice(),
     )?
     .with_snapshot_output(snapshot_output_metadata(request))
-    .with_snapshot_schemas(request.schemas.clone()))
+    .with_snapshot_schemas(request.schemas.clone());
+    Ok(super::native_semantics::certify(
+        request,
+        kernel,
+        super::native_semantics::NativeScalarOp::I64Neg,
+    ))
 }
 
 fn bind_snapshot_numeric_abs(

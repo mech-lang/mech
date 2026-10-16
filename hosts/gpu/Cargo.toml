@@ -141,3 +141,8 @@ required-features = ["canonical-native"]
 name = "canonical_artifact_application"
 path = "tests/canonical_artifact_application.rs"
 required-features = ["canonical-native"]
+
+[[test]]
+name = "canonical_artifact_i64"
+path = "tests/canonical_artifact_i64.rs"
+required-features = ["canonical-native"]

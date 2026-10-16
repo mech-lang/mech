@@ -248,6 +248,7 @@ impl Sources {
             NativeValueRef::Constant(id) => self.constants.get(&id).map(|v| match v {
                 NativeScalarValue::Bool(_) => NativeScalarKind::Bool,
                 NativeScalarValue::U64(_) => NativeScalarKind::U64,
+                NativeScalarValue::I64(_) => NativeScalarKind::I64,
             }),
         }
     }
@@ -289,6 +290,7 @@ impl Sources {
                     })? {
                     NativeScalarValue::Bool(value) => u64::from(*value),
                     NativeScalarValue::U64(value) => *value,
+                    NativeScalarValue::I64(value) => *value as u64,
                 };
                 return Ok(b.ins().iconst(types::I64, word as i64));
             }
@@ -340,11 +342,14 @@ fn admit(
     guard(b, valid, error, STATUS_ADMISSION);
 }
 fn signature(op: NativeScalarOp) -> (&'static [NativeScalarKind], NativeScalarKind) {
-    use NativeScalarKind::{Bool, U64};
+    use NativeScalarKind::{Bool, I64, U64};
     use NativeScalarOp::*;
     match op {
         U64Add | U64Sub | U64Mul | U64Div | U64Rem => (&[U64, U64], U64),
         U64Eq | U64Ne | U64Lt | U64Le | U64Gt | U64Ge => (&[U64, U64], Bool),
+        I64Add | I64Sub | I64Mul | I64Div | I64Rem => (&[I64, I64], I64),
+        I64Eq | I64Ne | I64Lt | I64Le | I64Gt | I64Ge => (&[I64, I64], Bool),
+        I64Neg => (&[I64], I64),
         BoolNot => (&[Bool], Bool),
         BoolAnd | BoolOr | BoolXor | BoolEq | BoolNe => (&[Bool, Bool], Bool),
     }
@@ -359,6 +364,11 @@ fn primitive(
     let a = args[0];
     if op == BoolNot {
         return b.ins().bxor_imm(a, 1);
+    }
+    if op == I64Neg {
+        let valid = b.ins().icmp_imm(IntCC::NotEqual, a, i64::MIN);
+        guard(b, valid, error, STATUS_ARITHMETIC);
+        return b.ins().ineg(a);
     }
     let c = args[1];
     match op {
@@ -381,6 +391,44 @@ fn primitive(
                 b.ins().urem(a, c)
             }
         }
+        I64Add | I64Sub | I64Mul => {
+            let (value, overflow) = match op {
+                I64Add => b.ins().sadd_overflow(a, c),
+                I64Sub => b.ins().ssub_overflow(a, c),
+                _ => b.ins().smul_overflow(a, c),
+            };
+            let valid = b.ins().icmp_imm(IntCC::Equal, overflow, 0);
+            guard(b, valid, error, STATUS_ARITHMETIC);
+            value
+        }
+        I64Div | I64Rem => {
+            let nonzero = b.ins().icmp_imm(IntCC::NotEqual, c, 0);
+            guard(b, nonzero, error, STATUS_ARITHMETIC);
+            // Rust checked_div AND checked_rem reject MIN/-1. Guard before
+            // either machine operation so the native entry cannot trap.
+            let minimum = b.ins().icmp_imm(IntCC::Equal, a, i64::MIN);
+            let negative_one = b.ins().icmp_imm(IntCC::Equal, c, -1);
+            let overflow = b.ins().band(minimum, negative_one);
+            let valid = b.ins().icmp_imm(IntCC::Equal, overflow, 0);
+            guard(b, valid, error, STATUS_ARITHMETIC);
+            if op == I64Div {
+                b.ins().sdiv(a, c)
+            } else {
+                b.ins().srem(a, c)
+            }
+        }
+        I64Eq | I64Ne | I64Lt | I64Le | I64Gt | I64Ge => {
+            let cc = match op {
+                I64Eq => IntCC::Equal,
+                I64Ne => IntCC::NotEqual,
+                I64Lt => IntCC::SignedLessThan,
+                I64Le => IntCC::SignedLessThanOrEqual,
+                I64Gt => IntCC::SignedGreaterThan,
+                _ => IntCC::SignedGreaterThanOrEqual,
+            };
+            let value = b.ins().icmp(cc, a, c);
+            b.ins().uextend(types::I64, value)
+        }
         BoolAnd => b.ins().band(a, c),
         BoolOr => b.ins().bor(a, c),
         BoolXor => b.ins().bxor(a, c),
@@ -396,7 +444,7 @@ fn primitive(
             let value = b.ins().icmp(cc, a, c);
             b.ins().uextend(types::I64, value)
         }
-        BoolNot => unreachable!(),
+        BoolNot | I64Neg => unreachable!(),
     }
 }
 

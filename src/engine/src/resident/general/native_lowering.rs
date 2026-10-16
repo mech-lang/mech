@@ -77,7 +77,7 @@ impl From<ResidentActivationError> for NativeArtifactLoweringError {
 /// metadata; it never activates a program, observes an input, runs a kernel,
 /// folds a computation, or reconstructs a program from source names.
 ///
-/// The initial slice is stateless Turn-only Bool/U64. Computed Activation
+/// The scalar slice is stateless Turn-only Bool/U64/I64. Computed Activation
 /// nodes are rejected even when their result could have been constant-folded.
 pub fn lower_pure_native_artifact(
     artifact: &ProgramArtifact,
@@ -237,6 +237,9 @@ pub fn lower_pure_native_artifact(
             (NativeScalarKind::U64, mech_core::ValueData::U64(value)) => {
                 NativeScalarValue::U64(*value)
             }
+            (NativeScalarKind::I64, mech_core::ValueData::I64(value)) => {
+                NativeScalarValue::I64(*value)
+            }
             _ => {
                 return Err(NativeArtifactLoweringError::UnsupportedSchema {
                     schema: value.schema(),
@@ -369,6 +372,7 @@ fn scalar_type(
     let kind = match schema.body() {
         SchemaBody::Bool => NativeScalarKind::Bool,
         SchemaBody::UnsignedInteger(IntegerWidth::W64) => NativeScalarKind::U64,
+        SchemaBody::SignedInteger(IntegerWidth::W64) => NativeScalarKind::I64,
         _ => return Err(NativeArtifactLoweringError::UnsupportedSchema { schema: id }),
     };
     let shape = schema
@@ -390,7 +394,7 @@ fn port_layout(ty: &NativeScalarType) -> ResidentPortLayout {
         schema_key: ty.schema_key,
         kind: match ty.kind {
             NativeScalarKind::Bool => ResidentValueKind::Bool,
-            NativeScalarKind::U64 => ResidentValueKind::Snapshot,
+            NativeScalarKind::U64 | NativeScalarKind::I64 => ResidentValueKind::Snapshot,
         },
         shape: ResidentShape::SCALAR,
         shape_instance: ty.descriptor.shape().clone(),
@@ -416,6 +420,7 @@ fn public_kind(kind: native_semantics::NativeScalarKind) -> NativeScalarKind {
     match kind {
         native_semantics::NativeScalarKind::Bool => NativeScalarKind::Bool,
         native_semantics::NativeScalarKind::U64 => NativeScalarKind::U64,
+        native_semantics::NativeScalarKind::I64 => NativeScalarKind::I64,
     }
 }
 fn public_op(op: native_semantics::NativeScalarOp) -> NativeScalarOp {
@@ -438,5 +443,17 @@ fn public_op(op: native_semantics::NativeScalarOp) -> NativeScalarOp {
         Private::BoolNot => NativeScalarOp::BoolNot,
         Private::BoolEq => NativeScalarOp::BoolEq,
         Private::BoolNe => NativeScalarOp::BoolNe,
+        Private::I64Add => NativeScalarOp::I64Add,
+        Private::I64Sub => NativeScalarOp::I64Sub,
+        Private::I64Mul => NativeScalarOp::I64Mul,
+        Private::I64Div => NativeScalarOp::I64Div,
+        Private::I64Rem => NativeScalarOp::I64Rem,
+        Private::I64Neg => NativeScalarOp::I64Neg,
+        Private::I64Eq => NativeScalarOp::I64Eq,
+        Private::I64Ne => NativeScalarOp::I64Ne,
+        Private::I64Lt => NativeScalarOp::I64Lt,
+        Private::I64Le => NativeScalarOp::I64Le,
+        Private::I64Gt => NativeScalarOp::I64Gt,
+        Private::I64Ge => NativeScalarOp::I64Ge,
     }
 }

@@ -14126,8 +14126,8 @@ fn operation_call_memory_plan(
 }
 
 // Native scalar slots are planned as actual host scalar storage, not relabeled
-// resident canonical handles. The first native artifact slice admits only these
-// two exact scalar schemas; other backends/layouts need their own derivation.
+// resident canonical handles. Only the certified exact scalar schemas are
+// admitted; other backends/layouts need their own derivation.
 fn operation_storage_descriptor(
     descriptor: &mech_core::ResolvedValueDescriptor,
     resident_kind: ResidentValueKind,
@@ -14147,6 +14147,9 @@ fn operation_storage_descriptor(
         SchemaBody::Bool => mech_core::FunctionValueRepresentation::Bool,
         SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64) => {
             mech_core::FunctionValueRepresentation::U64
+        }
+        SchemaBody::SignedInteger(mech_core::IntegerWidth::W64) => {
+            mech_core::FunctionValueRepresentation::I64
         }
         _ => return Err(MemoryPlanError::UnsupportedStorageLayout),
     };

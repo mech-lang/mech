@@ -26,6 +26,13 @@ fn unsigned(text: &str) -> Result<u64, String> {
     }
     text.parse().map_err(|_| "invalid U64 argument".into())
 }
+fn signed(text: &str) -> Result<i64, String> {
+    let digits = text.strip_prefix('-').unwrap_or(text);
+    if digits.is_empty() || !digits.bytes().all(|byte| byte.is_ascii_digit()) {
+        return Err("invalid I64 argument".into());
+    }
+    text.parse().map_err(|_| "invalid I64 argument".into())
+}
 fn options(
     arguments: Vec<OsString>,
 ) -> Result<(NativeExecutionLimits, Option<u64>, Vec<OsString>), String> {
@@ -111,6 +118,7 @@ fn run() -> Result<(), String> {
         let text = argument.to_str().ok_or("argument is not Unicode")?;
         inputs.push(match input.ty().kind() {
             NativeScalarKind::U64 => NativeScalarValue::U64(unsigned(text)?),
+            NativeScalarKind::I64 => NativeScalarValue::I64(signed(text)?),
             NativeScalarKind::Bool => NativeScalarValue::Bool(match text {
                 "true" => true,
                 "false" => false,
@@ -130,6 +138,7 @@ fn run() -> Result<(), String> {
         match value {
             NativeScalarValue::Bool(v) => writeln!(&mut result, "{v}"),
             NativeScalarValue::U64(v) => writeln!(&mut result, "{v}"),
+            NativeScalarValue::I64(v) => writeln!(&mut result, "{v}"),
         }
         .unwrap();
     }

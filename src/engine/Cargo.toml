@@ -30,7 +30,7 @@ resident-artifact = [
   "dep:libm",
   "f64", "matrixd", "row_vectord",
 ]
-native-artifact = ["std", "resident-artifact", "bool", "u64"]
+native-artifact = ["std", "resident-artifact", "bool", "u64", "i64"]
 native-plan = ["runtime", "mech-core/native-plan"]
 native-link = ["runtime"]
 source = ["runtime", "artifact-codec", "dep:mech-syntax", "mech-core/range"]

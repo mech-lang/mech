@@ -17,6 +17,7 @@ use mech_core::{
 pub(crate) enum NativeScalarKind {
     Bool,
     U64,
+    I64,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -38,6 +39,18 @@ pub(crate) enum NativeScalarOp {
     BoolNot,
     BoolEq,
     BoolNe,
+    I64Add,
+    I64Sub,
+    I64Mul,
+    I64Div,
+    I64Rem,
+    I64Neg,
+    I64Eq,
+    I64Ne,
+    I64Lt,
+    I64Le,
+    I64Gt,
+    I64Ge,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -51,18 +64,23 @@ impl NativeScalarSemantics {
         self.op
     }
     pub(crate) fn inputs(&self) -> &'static [NativeScalarKind] {
-        use NativeScalarKind::{Bool, U64};
+        use NativeScalarKind::{Bool, I64, U64};
         use NativeScalarOp::*;
         match self.op {
             BoolNot => &[Bool],
             BoolAnd | BoolOr | BoolXor | BoolEq | BoolNe => &[Bool, Bool],
-            _ => &[U64, U64],
+            U64Add | U64Sub | U64Mul | U64Div | U64Rem | U64Eq | U64Ne | U64Lt | U64Le | U64Gt
+            | U64Ge => &[U64, U64],
+            I64Neg => &[I64],
+            I64Add | I64Sub | I64Mul | I64Div | I64Rem | I64Eq | I64Ne | I64Lt | I64Le | I64Gt
+            | I64Ge => &[I64, I64],
         }
     }
     pub(crate) fn output(self) -> NativeScalarKind {
         use NativeScalarOp::*;
         match self.op {
             U64Add | U64Sub | U64Mul | U64Div | U64Rem => NativeScalarKind::U64,
+            I64Add | I64Sub | I64Mul | I64Div | I64Rem | I64Neg => NativeScalarKind::I64,
             _ => NativeScalarKind::Bool,
         }
     }
@@ -93,6 +111,7 @@ fn scalar_port(
     let expected = match kind {
         NativeScalarKind::Bool => SchemaBody::Bool,
         NativeScalarKind::U64 => SchemaBody::UnsignedInteger(IntegerWidth::W64),
+        NativeScalarKind::I64 => SchemaBody::SignedInteger(IntegerWidth::W64),
     };
     entry.key() == port.schema_key
         && entry.schema().body() == &expected
@@ -103,7 +122,7 @@ fn scalar_port(
         && port.kind
             == match kind {
                 NativeScalarKind::Bool => ResidentValueKind::Bool,
-                NativeScalarKind::U64 => ResidentValueKind::Snapshot,
+                NativeScalarKind::U64 | NativeScalarKind::I64 => ResidentValueKind::Snapshot,
             }
 }
 
@@ -116,6 +135,14 @@ fn scalar_request(
     };
     let [output] = contract.outputs.as_ref() else {
         return false;
+    };
+    // Unary negation has the maintained SameAsInput contract. Keep that
+    // authority specific to this checked signed operation; binary arithmetic,
+    // comparisons and BoolNot retain their exact Declared contract.
+    let shape = if semantics.op == NativeScalarOp::I64Neg {
+        ShapeRule::SameAsInput { input: 0 }
+    } else {
+        ShapeRule::Declared
     };
     request.inputs.len() == semantics.inputs().len()
         && contract.inputs.len() == request.inputs.len()
@@ -132,10 +159,7 @@ fn scalar_request(
         && output.schema == request.output.schema_id
         && output.access == AccessMode::Write
         && output.delivery == DeliveryMode::Signal
-        && output.construction
-            == (OutputConstruction::FullWrite {
-                shape: ShapeRule::Declared,
-            })
+        && output.construction == (OutputConstruction::FullWrite { shape })
         && output.alias == AliasPolicy::NoAlias
         && output.change_detection == ChangeDetectionPolicy::ExactScalar
         && request
@@ -269,6 +293,7 @@ mod tests {
             let handles = [
                 SchemaBody::Bool,
                 SchemaBody::UnsignedInteger(IntegerWidth::W64),
+                SchemaBody::SignedInteger(IntegerWidth::W64),
             ]
             .into_iter()
             .map(|body| {
@@ -295,13 +320,16 @@ mod tests {
                 let schema_id = match kind {
                     NativeScalarKind::Bool => ids[0],
                     NativeScalarKind::U64 => ids[1],
+                    NativeScalarKind::I64 => ids[2],
                 };
                 ResidentPortLayout {
                     schema_id,
                     schema_key: schemas.entry(schema_id).unwrap().key(),
                     kind: match kind {
                         NativeScalarKind::Bool => ResidentValueKind::Bool,
-                        NativeScalarKind::U64 => ResidentValueKind::Snapshot,
+                        NativeScalarKind::U64 | NativeScalarKind::I64 => {
+                            ResidentValueKind::Snapshot
+                        }
                     },
                     shape: ResidentShape::SCALAR,
                     shape_instance: schemas
@@ -336,7 +364,11 @@ mod tests {
                     access: AccessMode::Write,
                     delivery: DeliveryMode::Signal,
                     construction: OutputConstruction::FullWrite {
-                        shape: ShapeRule::Declared,
+                        shape: if op == NativeScalarOp::I64Neg {
+                            ShapeRule::SameAsInput { input: 0 }
+                        } else {
+                            ShapeRule::Declared
+                        },
                     },
                     alias: AliasPolicy::NoAlias,
                     change_detection: ChangeDetectionPolicy::ExactScalar,
@@ -435,6 +467,78 @@ mod tests {
             assert_eq!(validated_scalar(&sealed.clone()).map(|s| s.op()), Some(op));
             assert_eq!(sealed.parameters(), kernel.parameters());
         }
+    }
+
+    #[test]
+    #[cfg(feature = "i64")]
+    fn signed_scalar_branches_seal_only_their_exact_finished_contracts() {
+        use NativeScalarOp::*;
+        let catalog = catalog();
+        for (module, name, op) in [
+            ("math", "add", I64Add),
+            ("math", "sub", I64Sub),
+            ("math", "mul", I64Mul),
+            ("math", "div", I64Div),
+            ("math", "mod", I64Rem),
+            ("math", "neg", I64Neg),
+            ("compare", "eq", I64Eq),
+            ("compare", "neq", I64Ne),
+            ("compare", "lt", I64Lt),
+            ("compare", "lte", I64Le),
+            ("compare", "gt", I64Gt),
+            ("compare", "gte", I64Ge),
+        ] {
+            let binding = Binding::scalar(op);
+            let kernel = binding.bind(&catalog, module, name);
+            assert!(validated_scalar(&kernel).is_none());
+            let sealed = bind_call(
+                kernel.clone(),
+                &binding.request(),
+                binding.call(module, name),
+            );
+            assert_eq!(validated_scalar(&sealed).map(|value| value.op()), Some(op));
+            assert_eq!(
+                validated_scalar(&sealed.clone()).map(|value| value.op()),
+                Some(op)
+            );
+            assert!(validated_scalar(&sealed.with_retained_state(Arc::new(0u64))).is_none());
+            let changed = kernel
+                .clone()
+                .with_snapshot_schemas(binding.schemas.clone());
+            assert!(
+                validated_scalar(&bind_call(
+                    changed,
+                    &binding.request(),
+                    binding.call(module, name)
+                ))
+                .is_none()
+            );
+        }
+        let mut unary = Binding::scalar(I64Neg);
+        let semantics = NativeScalarSemantics { op: I64Neg };
+        assert!(scalar_request(&unary.request(), semantics));
+        let ResolvedOperationContract::Declared(contract) = &mut unary.contract else {
+            unreachable!()
+        };
+        contract.outputs[0].construction = OutputConstruction::FullWrite {
+            shape: ShapeRule::Declared,
+        };
+        assert!(!scalar_request(&unary.request(), semantics));
+        let mut binary = Binding::scalar(I64Add);
+        let ResolvedOperationContract::Declared(contract) = &mut binary.contract else {
+            unreachable!()
+        };
+        contract.outputs[0].construction = OutputConstruction::FullWrite {
+            shape: ShapeRule::SameAsInput { input: 0 },
+        };
+        assert!(!scalar_request(
+            &binary.request(),
+            NativeScalarSemantics { op: I64Add }
+        ));
+        assert!(!scalar_request(
+            &Binding::scalar(U64Add).request(),
+            NativeScalarSemantics { op: I64Add }
+        ));
     }
 
     #[test]

@@ -3,11 +3,12 @@ use mech_core::{
     SchemaId, SchemaKey,
 };
 
-/// Exact semantic kinds supported by the first canonical native adapter.
+/// Exact semantic kinds supported by the canonical scalar native adapter.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum NativeScalarKind {
     Bool,
     U64,
+    I64,
 }
 
 /// Checked operations certified by the actual selected maintained binder.
@@ -31,12 +32,25 @@ pub enum NativeScalarOp {
     BoolNot,
     BoolEq,
     BoolNe,
+    I64Add,
+    I64Sub,
+    I64Mul,
+    I64Div,
+    I64Rem,
+    I64Neg,
+    I64Eq,
+    I64Ne,
+    I64Lt,
+    I64Le,
+    I64Gt,
+    I64Ge,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum NativeScalarValue {
     Bool(bool),
     U64(u64),
+    I64(i64),
 }
 
 /// An artifact value identity. A local is evaluated by its one ordered Let;
