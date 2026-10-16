@@ -15,7 +15,7 @@ use crate::*;
 use mech_core::matrix::Matrix;
 
 #[cfg(any(
-    feature = "access",
+    all(feature = "access", feature = "matrix"),
     feature = "convert",
     feature = "variable_define",
     feature = "matrix_horzcat",

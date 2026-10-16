@@ -28,12 +28,9 @@ pub use self::table::*;
 #[cfg(feature = "tuple")]
 pub use self::tuple::*;
 
-#[cfg(all(
-    feature = "semantic-compiler",
-    any(feature = "record", feature = "table")
-))]
+#[cfg(all(feature = "semantic-compiler", feature = "assign", feature = "record"))]
 use crate::UndefinedRecordFieldError;
-#[cfg(all(feature = "semantic-compiler", feature = "table"))]
+#[cfg(all(feature = "semantic-compiler", feature = "assign", feature = "table"))]
 use crate::UndefinedTableColumnError;
 #[cfg(feature = "semantic-compiler")]
 use crate::intrinsics::canonical_access::{
@@ -187,11 +184,11 @@ declare_structural_access_alias!(
 );
 
 /// Installs every enabled concrete access factory into the supplied catalog.
-pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+pub(crate) fn install_runtime(_builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "matrix")]
-    matrix::install_runtime(builder)?;
+    matrix::install_runtime(_builder)?;
     #[cfg(feature = "tuple")]
-    tuple::install_runtime(builder)?;
+    tuple::install_runtime(_builder)?;
     Ok(())
 }
 
@@ -210,7 +207,7 @@ mod managed_string;
 
 pub struct AccessScalar {}
 
-#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
+#[cfg(feature = "semantic-compiler")]
 fn canonical_matrix_dimensions(value: &ValueCell) -> MResult<(usize, usize)> {
     let crate::SchemaBody::Matrix { dimensions, .. } = value.closed_schema_body()? else {
         return Err(MechError::new(
@@ -482,6 +479,7 @@ fn canonical_selector_cardinality_bound(
 
 #[cfg(feature = "semantic-compiler")]
 impl CanonicalAccess {
+    #[cfg(feature = "matrix")]
     fn typed_matrix(
         source: ValueCell,
         selectors: Vec<CanonicalAccessSelector>,
@@ -673,8 +671,21 @@ fn canonical_access_result(
                 .iter()
                 .position(|field| hash_str(&field.name) == field_id)
                 .ok_or_else(|| {
-                    MechError::new(UndefinedRecordFieldError { id: field_id }, None)
+                    #[cfg(all(feature = "assign", feature = "record"))]
+                    {
+                        MechError::new(UndefinedRecordFieldError { id: field_id }, None)
+                            .with_compiler_loc()
+                    }
+                    #[cfg(not(all(feature = "assign", feature = "record")))]
+                    {
+                        MechError::new(
+                            GenericError {
+                                msg: format!("record field {field_id:?} is not defined"),
+                            },
+                            None,
+                        )
                         .with_compiler_loc()
+                    }
                 })?;
             let ValueDataDraft::Record(values) = canonical_draft(source)? else {
                 unreachable!()
@@ -740,8 +751,21 @@ fn canonical_access_result(
                 .iter()
                 .position(|column| hash_str(&column.name) == column_id)
                 .ok_or_else(|| {
-                    MechError::new(UndefinedTableColumnError { id: column_id }, None)
+                    #[cfg(all(feature = "assign", feature = "table"))]
+                    {
+                        MechError::new(UndefinedTableColumnError { id: column_id }, None)
+                            .with_compiler_loc()
+                    }
+                    #[cfg(not(all(feature = "assign", feature = "table")))]
+                    {
+                        MechError::new(
+                            GenericError {
+                                msg: format!("table column {column_id:?} is not defined"),
+                            },
+                            None,
+                        )
                         .with_compiler_loc()
+                    }
                 })?;
             let ValueDataDraft::Table(values) = canonical_draft(source)? else {
                 unreachable!()
