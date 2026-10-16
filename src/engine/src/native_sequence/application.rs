@@ -400,6 +400,13 @@ fn table_bar_offsets(code: &str) -> Vec<usize> {
                     if bar_starts_match_arm(code, index) {
                         continue;
                     }
+                    // Only an apparent application can end table ownership.
+                    // Ordinary row separators need no parser probe per row.
+                    if matches!(pipe_at(code, index), Ok(None)) {
+                        offsets.push(index);
+                        context.first_bar = Some(index);
+                        continue;
+                    }
                     let start = context.first_bar.unwrap();
                     let row = code[start + 1..index].trim();
                     let table = format!("|application-cell<u64>| {row} |");
