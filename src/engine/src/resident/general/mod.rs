@@ -230,6 +230,7 @@ pub struct ActivatedMatchNode {
     pub scrutinee: ResidentReadLocation,
     pub scrutinee_schema: SchemaId,
     pub scrutinee_shape_values: Box<[u64]>,
+    structural_source: Option<execution::comprehension_execution::PlanPatternSource>,
     pub write: ResidentWriteLocation,
     pub arms: Box<[ActivatedMatchArm]>,
     pub locals: Box<[ResidentRegion]>,
@@ -13741,6 +13742,15 @@ fn build_plan(
             execution::StructuralProjectionTable::default(),
         )
     };
+    for step in &mut steps {
+        if let ActivatedTurnStep::Match(matched) = step {
+            matched.structural_source = execution::comprehension_execution::PlanPatternSource::new(
+                matched.scrutinee_schema,
+                &schemas,
+                &structural_projections,
+            );
+        }
+    }
     let plan = ActivatedPlan {
         program_revision: artifact.revision(),
         activation_facts_fingerprint,
@@ -23381,6 +23391,8 @@ fn prepare_match_node(
         scrutinee,
         scrutinee_schema,
         scrutinee_shape_values,
+        // Bound only after the genuine projection arena has been constructed.
+        structural_source: None,
         write: ResidentWriteLocation {
             slot: output_slot,
             storage: output.storage,

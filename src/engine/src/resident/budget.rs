@@ -1155,6 +1155,154 @@ pub(crate) fn measure_canonical_value_footprint(
     measure_canonical_value_footprint_with(meter, value, schemas, None)
 }
 
+// These are logical metadata-inspection units, not a serialized-byte scan or
+// machine instruction count. Each schema node and data chunk needs a bounded
+// number of variant, slice-length, checked-size and child-selection operations.
+const BORROWED_FOOTPRINT_METADATA_WORK: u64 = 64;
+// This is only a fast-path eligibility cutoff. Deeper schemas keep the existing
+// full measurement path; the cutoff does not make a value ineligible to execute.
+const BORROWED_FOOTPRINT_SCHEMA_DEPTH: usize = 32;
+
+fn borrowed_footprint_schema_supported(
+    meter: &mut ResidentBudgetMeter,
+    schema: &SchemaBody,
+    depth: usize,
+) -> Result<bool, ResidentKernelError> {
+    meter.charge_compute_work(BORROWED_FOOTPRINT_METADATA_WORK)?;
+    if depth > BORROWED_FOOTPRINT_SCHEMA_DEPTH {
+        return Ok(false);
+    }
+    let child = |meter: &mut ResidentBudgetMeter, schema: &SchemaBody| {
+        borrowed_footprint_schema_supported(meter, schema, depth + 1)
+    };
+    match schema {
+        // These branches are deliberately outside the initial metadata-only
+        // proof. Their old traversal and comparison allowance remain intact.
+        SchemaBody::Dynamic | SchemaBody::ReifiedType | SchemaBody::IntegerInterval(_) => Ok(false),
+        SchemaBody::Bool
+        | SchemaBody::UnsignedInteger(_)
+        | SchemaBody::SignedInteger(_)
+        | SchemaBody::FloatingPoint(_)
+        | SchemaBody::Complex(_)
+        | SchemaBody::Rational64
+        | SchemaBody::String
+        | SchemaBody::Id
+        | SchemaBody::Index
+        | SchemaBody::Atom(_) => Ok(true),
+        SchemaBody::Option(element)
+        | SchemaBody::Matrix { element, .. }
+        | SchemaBody::Set { element, .. } => child(meter, element),
+        SchemaBody::Tuple(elements) => {
+            for element in elements {
+                if !child(meter, element)? {
+                    return Ok(false);
+                }
+            }
+            Ok(true)
+        }
+        SchemaBody::Record(fields)
+        | SchemaBody::Table {
+            columns: fields, ..
+        } => {
+            for field in fields {
+                if !child(meter, &field.schema)? {
+                    return Ok(false);
+                }
+            }
+            Ok(true)
+        }
+        SchemaBody::Enum { variants, .. } => {
+            for variant in variants {
+                // Payload-free variants still require a header inspection.
+                meter.charge_compute_work(BORROWED_FOOTPRINT_METADATA_WORK)?;
+                if let Some(payload) = &variant.payload
+                    && !child(meter, payload)?
+                {
+                    return Ok(false);
+                }
+            }
+            Ok(true)
+        }
+        SchemaBody::Map { key, value, .. } => Ok(child(meter, key)? && child(meter, value)?),
+    }
+}
+
+fn measure_proven_borrowed_canonical_data_footprint(
+    meter: &mut ResidentBudgetMeter,
+    schema: &SchemaBody,
+    data: &ValueData,
+) -> Result<ValueFootprint, ResidentKernelError> {
+    let mut footprint = ValueFootprint::zero();
+    mech_core::snapshot::visit_canonical_data_work(schema, data, |chunk| {
+        // The core visitor reports retained/encoded sizes before descent. For
+        // the proven schema branches it reads lengths and container metadata;
+        // packed numeric bytes and String UTF-8 payloads are not traversed.
+        meter.charge_compute_work(checked_cost_product(&[
+            BORROWED_FOOTPRINT_METADATA_WORK,
+            chunk.node_count.max(1),
+        ])?)?;
+        meter.charge_retained_nodes(chunk.node_count)?;
+        footprint = footprint
+            .checked_add(ValueFootprint {
+                encoded_bytes: chunk.encoded_bytes,
+                retained_bytes: chunk.retained_bytes,
+                node_count: chunk.node_count,
+            })
+            .map_err(|_| ResidentKernelError::InvalidShape)?;
+        Ok(())
+    })
+    .map_err(|error| match error {
+        mech_core::snapshot::CanonicalDataWorkError::Visitor(error) => error,
+        mech_core::snapshot::CanonicalDataWorkError::ArithmeticOverflow
+        | mech_core::snapshot::CanonicalDataWorkError::UnknownDynamicSchema
+        | mech_core::snapshot::CanonicalDataWorkError::InvalidValue => {
+            ResidentKernelError::InvalidInput
+        }
+    })?;
+    Ok(footprint)
+}
+
+/// Measures already-finalized borrowed data for retention bookkeeping. This
+/// does not authorize payload comparison, encoding, cloning or reconstruction.
+/// Unsupported/deep schemas retain the older conservative full-work path.
+#[cfg(test)]
+pub(crate) fn measure_borrowed_canonical_data_footprint(
+    meter: &mut ResidentBudgetMeter,
+    schema: &SchemaBody,
+    data: &ValueData,
+) -> Result<ValueFootprint, ResidentKernelError> {
+    if !borrowed_footprint_schema_supported(meter, schema, 0)? {
+        return measure_canonical_data_footprint(meter, schema, data);
+    }
+    measure_proven_borrowed_canonical_data_footprint(meter, schema, data)
+}
+
+/// Measures an immutable root and its actual owned shape using metadata-only
+/// work for the proven data layouts. The caller supplies its semantic schema
+/// owner. Equal schema id/key owners are valid even when separately allocated;
+/// an unproved root identity receives no metadata-only fast path.
+pub(crate) fn measure_borrowed_canonical_value_footprint(
+    meter: &mut ResidentBudgetMeter,
+    value: &Value,
+    schemas: &SchemaTable,
+) -> Result<ValueFootprint, ResidentKernelError> {
+    meter.charge_compute_work(BORROWED_FOOTPRINT_METADATA_WORK)?;
+    let entry = schemas
+        .entry(value.schema())
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let schema = entry.schema();
+    if entry.key() != value.schema_key()
+        || !borrowed_footprint_schema_supported(meter, schema.body(), 0)?
+    {
+        return measure_canonical_value_footprint(meter, value, schemas);
+    }
+    let shape_parameters = value.shape().parameter_values().len();
+    meter.charge_retained_nodes(1)?;
+    let data =
+        measure_proven_borrowed_canonical_data_footprint(meter, schema.body(), value.data())?;
+    projected_canonical_value_footprint(data, shape_parameters)
+}
+
 impl<P> AdmittedMutationPlan<P> {
     /// Consumes the complete post-state admission immediately before staging.
     pub(crate) fn into_plan(self) -> P {
@@ -1344,6 +1492,271 @@ pub(crate) fn checked_cost_sum(values: &[u64]) -> Result<u64, ResidentKernelErro
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn borrowed_retention_value(
+        body: SchemaBody,
+        data: mech_core::ValueDataDraft,
+    ) -> (Value, Arc<SchemaTable>) {
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let handle = builder
+            .insert(
+                mech_core::SchemaDraft {
+                    body,
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let schema = build.resolve(handle).unwrap();
+        let schemas = Arc::new(build.table);
+        let value = mech_core::ValueDraft {
+            schema,
+            shape_values: Box::new([]),
+            data,
+        }
+        .finalize(&mech_core::snapshot::SnapshotValidationContext::with_shared_schemas(&schemas))
+        .unwrap();
+        (value, schemas)
+    }
+
+    fn borrowed_retention_matrix(element: SchemaBody, count: usize) -> SchemaBody {
+        SchemaBody::Matrix {
+            element: Box::new(element),
+            dimensions: Box::new([
+                mech_core::DimensionExpr::Constant(1),
+                mech_core::DimensionExpr::Constant(count as u64),
+            ]),
+        }
+    }
+
+    #[test]
+    fn borrowed_retention_preserves_exact_sizes_and_semantic_schema_owner_identity() {
+        use mech_core::{ValueDataDraft, snapshot::OptionDraft};
+
+        let (value, owner) = borrowed_retention_value(
+            SchemaBody::Tuple(
+                vec![
+                    SchemaBody::String,
+                    SchemaBody::Option(Box::new(borrowed_retention_matrix(
+                        SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64),
+                        6,
+                    ))),
+                ]
+                .into_boxed_slice(),
+            ),
+            ValueDataDraft::Tuple(
+                vec![
+                    ValueDataDraft::String("e\u{301}👩‍👩‍👧‍👦".to_owned()),
+                    ValueDataDraft::Option(OptionDraft {
+                        present: true,
+                        value: Some(Box::new(ValueDataDraft::Matrix(
+                            (0..6).map(ValueDataDraft::U64).collect(),
+                        ))),
+                    }),
+                ]
+                .into_boxed_slice(),
+            ),
+        );
+        let mut old = ResidentBudgetMeter::for_closed_analysis(
+            MAX_RESIDENT_COMPUTE_WORK,
+            MAX_RESIDENT_COMPARISON_WORK,
+        );
+        let expected = measure_canonical_value_footprint(&mut old, &value, &owner).unwrap();
+        let separate_owner = Arc::new((*owner).clone());
+        assert!(!Arc::ptr_eq(&owner, &separate_owner));
+        let mut borrowed = ResidentBudgetMeter::for_closed_analysis(4_096, 0);
+        assert_eq!(
+            measure_borrowed_canonical_value_footprint(&mut borrowed, &value, &separate_owner)
+                .unwrap(),
+            expected,
+        );
+        assert_eq!(expected, value.retained_footprint(&owner).unwrap());
+        assert_eq!(borrowed.estimate().comparison_work(), 0);
+        assert_eq!(borrowed.estimate().retained_nodes(), expected.node_count);
+        assert!(borrowed.estimate().compute_work() > 0);
+        assert!(old.estimate().comparison_work() > 0);
+    }
+
+    #[test]
+    fn borrowed_retention_packed_numeric_inspection_is_independent_of_payload_length() {
+        use mech_core::ValueDataDraft;
+
+        let mut compute = None;
+        for count in [1usize, 100_000] {
+            let (value, schemas) = borrowed_retention_value(
+                borrowed_retention_matrix(
+                    SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64),
+                    count,
+                ),
+                ValueDataDraft::Matrix(vec![ValueDataDraft::U64(7); count].into_boxed_slice()),
+            );
+            let mut meter = ResidentBudgetMeter::for_closed_analysis(512, 0);
+            let footprint =
+                measure_borrowed_canonical_value_footprint(&mut meter, &value, &schemas).unwrap();
+            assert_eq!(footprint, value.retained_footprint(&schemas).unwrap());
+            assert_eq!(footprint.encoded_bytes, count as u64 * 8);
+            assert_eq!(footprint.node_count, 3);
+            assert_eq!(meter.estimate().comparison_work(), 0);
+            let observed = meter.estimate().compute_work();
+            assert_eq!(observed, BORROWED_FOOTPRINT_METADATA_WORK * 5);
+            assert_eq!(*compute.get_or_insert(observed), observed);
+        }
+    }
+
+    #[test]
+    fn borrowed_retention_string_inspection_counts_headers_not_utf8_bytes() {
+        use mech_core::ValueDataDraft;
+
+        let mut scalar_work = None;
+        for text in [String::new(), "e\u{301}é".to_owned(), "é".repeat(40_000)] {
+            let bytes = text.len() as u64;
+            let (value, schemas) =
+                borrowed_retention_value(SchemaBody::String, ValueDataDraft::String(text));
+            let mut meter = ResidentBudgetMeter::for_closed_analysis(512, 0);
+            let footprint =
+                measure_borrowed_canonical_value_footprint(&mut meter, &value, &schemas).unwrap();
+            assert_eq!(footprint, value.retained_footprint(&schemas).unwrap());
+            assert_eq!(footprint.encoded_bytes, bytes + 8);
+            let observed = meter.estimate().compute_work();
+            assert_eq!(observed, BORROWED_FOOTPRINT_METADATA_WORK * 3);
+            assert_eq!(*scalar_work.get_or_insert(observed), observed);
+        }
+        let mut matrix_work = None;
+        for strings in [
+            vec![String::new(), String::new(), String::new()],
+            vec!["e\u{301}".to_owned(), "é".to_owned(), String::new()],
+            vec!["é".repeat(40_000), "👩‍👩‍👧‍👦".to_owned(), String::new()],
+        ] {
+            let bytes = strings.iter().map(|text| text.len() as u64).sum::<u64>();
+            let (value, schemas) = borrowed_retention_value(
+                borrowed_retention_matrix(SchemaBody::String, strings.len()),
+                ValueDataDraft::Matrix(strings.into_iter().map(ValueDataDraft::String).collect()),
+            );
+            let mut meter = ResidentBudgetMeter::for_closed_analysis(1_024, 0);
+            let footprint =
+                measure_borrowed_canonical_value_footprint(&mut meter, &value, &schemas).unwrap();
+            assert_eq!(footprint, value.retained_footprint(&schemas).unwrap());
+            assert_eq!(footprint.encoded_bytes, bytes + 3 * 8);
+            assert_eq!(footprint.node_count, 6);
+            let observed = meter.estimate().compute_work();
+            assert_eq!(observed, BORROWED_FOOTPRINT_METADATA_WORK * 8);
+            assert_eq!(*matrix_work.get_or_insert(observed), observed);
+        }
+    }
+
+    #[test]
+    fn borrowed_retention_schema_inspection_denies_before_unfunded_tree_descent() {
+        use mech_core::ValueDataDraft;
+
+        let (value, schemas) = borrowed_retention_value(
+            SchemaBody::Tuple(
+                vec![SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64); 32]
+                    .into_boxed_slice(),
+            ),
+            ValueDataDraft::Tuple(vec![ValueDataDraft::U64(1); 32].into_boxed_slice()),
+        );
+        let limit = BORROWED_FOOTPRINT_METADATA_WORK * 4;
+        let mut denied = ResidentBudgetMeter::for_closed_analysis(limit, 0);
+        assert_eq!(
+            measure_borrowed_canonical_value_footprint(&mut denied, &value, &schemas),
+            Err(ResidentKernelError::InvalidShape),
+        );
+        // No data chunk or retained node was visited after schema inspection
+        // exhausted the allowance, and the failed charge is not accumulated.
+        assert_eq!(denied.estimate().compute_work(), limit);
+        assert_eq!(denied.estimate().comparison_work(), 0);
+        assert_eq!(denied.estimate().retained_nodes(), 0);
+        let mut recovered = ResidentBudgetMeter::for_closed_analysis(8_192, 0);
+        let footprint =
+            measure_borrowed_canonical_value_footprint(&mut recovered, &value, &schemas).unwrap();
+        assert_eq!(footprint, value.retained_footprint(&schemas).unwrap());
+        assert_eq!(footprint.node_count, 34);
+        assert_eq!(recovered.estimate().comparison_work(), 0);
+    }
+
+    #[test]
+    fn borrowed_retention_unproved_and_deep_schemas_keep_full_measurement_charges() {
+        use mech_core::{ValueDataDraft, snapshot::OptionDraft};
+
+        let reified = borrowed_retention_value(
+            SchemaBody::ReifiedType,
+            ValueDataDraft::Type(mech_core::snapshot::ReifiedTypeDraft::Kind {
+                kind: mech_core::KindExpr::Index,
+                dimension_parameters: Box::new([]),
+            }),
+        );
+        let mut body = SchemaBody::Bool;
+        let mut data = ValueDataDraft::Bool(true);
+        for _ in 0..40 {
+            body = SchemaBody::Option(Box::new(body));
+            data = ValueDataDraft::Option(OptionDraft {
+                present: true,
+                value: Some(Box::new(data)),
+            });
+        }
+        let deep = borrowed_retention_value(body, data);
+        for (value, schemas) in [reified, deep] {
+            let mut old = ResidentBudgetMeter::for_closed_analysis(16_384, 16_384);
+            let expected = measure_canonical_value_footprint(&mut old, &value, &schemas).unwrap();
+            let mut borrowed = ResidentBudgetMeter::for_closed_analysis(16_384, 16_384);
+            assert_eq!(
+                measure_borrowed_canonical_value_footprint(&mut borrowed, &value, &schemas)
+                    .unwrap(),
+                expected,
+            );
+            assert_eq!(
+                borrowed.estimate().comparison_work(),
+                old.estimate().comparison_work(),
+            );
+            assert!(borrowed.estimate().comparison_work() > 0);
+            assert!(borrowed.estimate().compute_work() > old.estimate().compute_work());
+            assert_eq!(borrowed.estimate().retained_nodes(), expected.node_count);
+        }
+        let mut meter = ResidentBudgetMeter::for_closed_analysis(128, 0);
+        assert!(!borrowed_footprint_schema_supported(&mut meter, &SchemaBody::Dynamic, 0).unwrap());
+    }
+
+    #[test]
+    fn borrowed_retention_never_authorizes_real_comparison_or_finalization_scans() {
+        use mech_core::ValueDataDraft;
+
+        let (value, schemas) = borrowed_retention_value(
+            SchemaBody::String,
+            ValueDataDraft::String("x".repeat(MAX_RESIDENT_COMPARISON_WORK as usize + 1)),
+        );
+        let body = schemas.get(value.schema()).unwrap().body();
+        let mut metadata = ResidentBudgetMeter::for_closed_analysis(512, 0);
+        let measured =
+            measure_borrowed_canonical_data_footprint(&mut metadata, body, value.data()).unwrap();
+        assert_eq!(measured.encoded_bytes, MAX_RESIDENT_COMPARISON_WORK + 9);
+        assert_eq!(metadata.estimate().comparison_work(), 0);
+        let mut compare = ResidentBudgetMeter::for_closed_analysis(
+            MAX_RESIDENT_COMPUTE_WORK,
+            MAX_RESIDENT_COMPARISON_WORK,
+        );
+        assert_eq!(
+            measure_canonical_data_comparison_work(&mut compare, body, value.data()),
+            Err(ResidentKernelError::InvalidShape),
+        );
+        let mut finalization = ResidentBudgetMeter::for_closed_analysis(
+            MAX_RESIDENT_COMPUTE_WORK,
+            MAX_RESIDENT_COMPARISON_WORK,
+        );
+        assert_eq!(
+            preflight_canonical_data_finalization(&mut finalization, body, value.data()),
+            Err(ResidentKernelError::InvalidShape),
+        );
+        let mut clone = ResidentBudgetMeter::for_closed_analysis(
+            MAX_RESIDENT_COMPUTE_WORK,
+            MAX_RESIDENT_COMPARISON_WORK,
+        );
+        assert_eq!(
+            charge_canonical_value_footprint(&mut clone, &value, &schemas),
+            Err(ResidentKernelError::InvalidShape),
+        );
+    }
 
     #[test]
     fn nested_turn_authority_restores_previous_plan_after_panic() {

@@ -16,6 +16,111 @@ use mech_core::{
 };
 use std::{collections::HashMap, sync::Arc};
 
+/// Binding-time evidence that structural pattern data is typed entirely by the
+/// activated program arena. These bodies have no nested owner-local schema IDs.
+/// Runtime source identity is checked again; this is not a native-lowering or
+/// implementation-cost certificate.
+#[derive(Clone, Debug)]
+pub(in crate::resident::general) struct PlanPatternSource {
+    schema: SchemaId,
+    key: SchemaKey,
+    metadata_bytes: u64,
+    max_shape_parameters: usize,
+}
+
+impl PlanPatternSource {
+    pub(in crate::resident::general) fn new(
+        schema: SchemaId,
+        schemas: &SchemaTable,
+        projections: &StructuralProjectionTable,
+    ) -> Option<Self> {
+        fn supported(body: &SchemaBody, depth: usize) -> bool {
+            if depth >= 32 {
+                return false;
+            }
+            match body {
+                SchemaBody::Bool
+                | SchemaBody::Id
+                | SchemaBody::Index
+                | SchemaBody::Atom(_)
+                | SchemaBody::String
+                | SchemaBody::UnsignedInteger(_)
+                | SchemaBody::SignedInteger(_)
+                | SchemaBody::FloatingPoint(_)
+                | SchemaBody::Complex(_)
+                | SchemaBody::Rational64 => true,
+                SchemaBody::Option(child)
+                | SchemaBody::Matrix { element: child, .. }
+                | SchemaBody::Set { element: child, .. } => supported(child, depth + 1),
+                SchemaBody::Tuple(children) => {
+                    children.iter().all(|child| supported(child, depth + 1))
+                }
+                SchemaBody::Record(fields)
+                | SchemaBody::Table {
+                    columns: fields, ..
+                } => fields
+                    .iter()
+                    .all(|field| supported(&field.schema, depth + 1)),
+                SchemaBody::Map { key, value, .. } => {
+                    supported(key, depth + 1) && supported(value, depth + 1)
+                }
+                SchemaBody::Enum { variants, .. } => variants.iter().all(|variant| {
+                    variant
+                        .payload
+                        .as_ref()
+                        .is_none_or(|body| supported(body, depth + 1))
+                }),
+                // Dynamic owns nested arenas. Reified metadata and interval
+                // base-body expansion are outside this certified source slice.
+                SchemaBody::Dynamic | SchemaBody::ReifiedType | SchemaBody::IntegerInterval(_) => {
+                    false
+                }
+            }
+        }
+        // Only the activation-built projection table can supply this evidence.
+        // Its entries are private and cover the same immutable schema arena.
+        projections.entries.get(schema.get() as usize)?;
+        let entry = schemas.entry(schema)?;
+        if !supported(entry.schema().body(), 0) {
+            return None;
+        }
+        let max_shape_parameters = entry.schema().dimension_parameters().len().checked_add(1)?;
+        let metadata_bytes = entry
+            .schema()
+            .body()
+            .clone_allocation_bound_bytes()?
+            .checked_add(core::mem::size_of::<SchemaBody>() as u64)?
+            .checked_add(
+                u64::try_from(max_shape_parameters)
+                    .ok()?
+                    .checked_mul(core::mem::size_of::<u64>() as u64)?,
+            )?;
+        Some(Self {
+            schema,
+            key: entry.key(),
+            metadata_bytes,
+            max_shape_parameters,
+        })
+    }
+
+    /// Finalized values are immutable. Equivalent separately allocated owners
+    /// are valid, but both owner and current plan must validate this exact ID/key.
+    fn matches(&self, value: &Value, schema: SchemaId, schemas: &SchemaTable) -> bool {
+        if schema != self.schema || value.schema() != self.schema || value.schema_key() != self.key
+        {
+            return false;
+        }
+        let Some(owner) = value.schemas() else {
+            return false;
+        };
+        value.validate_against(&owner).is_ok()
+            && value.validate_against(schemas).is_ok()
+            && schemas
+                .entry(schema)
+                .is_some_and(|entry| entry.key() == self.key)
+    }
+}
+
 /// One-level horizontal construction. Widths retain the geometry of empty
 /// blocks too; data alone cannot distinguish 0xW matrices.
 #[derive(Default)]
@@ -3047,6 +3152,7 @@ pub(super) fn retained_item(value: ResidentValueRef<'_>) -> Option<ValueDataDraf
     }
 }
 
+#[cfg(test)]
 pub(in crate::resident::general) fn resident_pattern_item(
     value: ResidentValueRef<'_>,
     region: ResidentRegion,
@@ -3079,12 +3185,75 @@ pub(in crate::resident::general) fn resident_pattern_item_with_admission(
         &mut dyn FnMut(budget::KernelCostEstimate) -> Result<(), ResidentKernelError>,
     >,
 ) -> Option<PatternItem> {
+    resident_pattern_item_with_source(
+        value,
+        region,
+        schema,
+        shape_values,
+        schemas,
+        array,
+        meter,
+        admit,
+        None,
+    )
+}
+
+pub(in crate::resident::general) fn resident_pattern_item_from_plan(
+    value: ResidentValueRef<'_>,
+    region: ResidentRegion,
+    schema: SchemaId,
+    shape_values: &[u64],
+    schemas: &SchemaTable,
+    array: bool,
+    source: Option<&PlanPatternSource>,
+) -> Option<PatternItem> {
+    resident_pattern_item_with_source(
+        value,
+        region,
+        schema,
+        shape_values,
+        schemas,
+        array,
+        &mut ResidentBudgetMeter::default(),
+        &mut None,
+        source,
+    )
+}
+
+fn resident_pattern_item_with_source(
+    value: ResidentValueRef<'_>,
+    region: ResidentRegion,
+    schema: SchemaId,
+    shape_values: &[u64],
+    schemas: &SchemaTable,
+    array: bool,
+    meter: &mut ResidentBudgetMeter,
+    admit: &mut Option<
+        &mut dyn FnMut(budget::KernelCostEstimate) -> Result<(), ResidentKernelError>,
+    >,
+    source: Option<&PlanPatternSource>,
+) -> Option<PatternItem> {
     if let ResidentValueRef::Snapshot([Some(value)]) = value {
         let definition = schemas.entry(schema)?;
         let owner = value.schemas()?;
-        let source = value.validate_against(&owner).ok()?;
-        if value.schema_key() != definition.key() || source != definition.schema() {
+        let source_schema_definition = value.validate_against(&owner).ok()?;
+        let plan_source = source.is_some_and(|source| source.matches(value, schema, schemas));
+        if value.schema_key() != definition.key()
+            || (!plan_source && source_schema_definition != definition.schema())
+        {
             return None;
+        }
+        if plan_source {
+            // All allocation/copy/finalization work was admitted by the paired
+            // preflight. The activated projection arena already contains every
+            // typed component schema; no per-value schema closure is built.
+            let body = definition.schema().closed_body(value.shape()).ok()?;
+            return Some(PatternItem::component(
+                Some(schema),
+                body,
+                value.shape().parameter_values().to_vec().into_boxed_slice(),
+                value.canonical_data_draft().ok()?,
+            ));
         }
         let (context, contexts) =
             source_schema_contexts_with_admission(value, schemas, meter, admit)?;
@@ -3219,6 +3388,7 @@ fn pattern_item_metadata_bound(
         .ok_or(ResidentKernelError::InvalidShape)
 }
 
+#[cfg(test)]
 pub(super) fn admit_pattern_item_materialization(
     value: ResidentValueRef<'_>,
     region: ResidentRegion,
@@ -3251,7 +3421,214 @@ pub(super) fn admit_pattern_item_materialization(
     .into_plan())
 }
 
+/// Canonical packed containers retain few nodes even when materializing them
+/// needs one owned draft per element. Keep this construction-only expansion
+/// separate from the immutable source footprint. Scalar packed lengths need no
+/// payload scan; recursive containers charge metadata before each descent.
+#[derive(Clone, Copy, Default)]
+struct PatternDraftExpansion {
+    bytes: u64,
+    nodes: u64,
+    intermediate_depth: u64,
+}
+
+impl PatternDraftExpansion {
+    fn checked_add(self, other: Self) -> Result<Self, ResidentKernelError> {
+        Ok(Self {
+            bytes: self
+                .bytes
+                .checked_add(other.bytes)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            nodes: self
+                .nodes
+                .checked_add(other.nodes)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            intermediate_depth: self.intermediate_depth.max(other.intermediate_depth),
+        })
+    }
+
+    fn include_intermediate_payloads(
+        self,
+        source: ValueFootprint,
+    ) -> Result<Self, ResidentKernelError> {
+        // Table columns and Values-backed matrices call to_values before
+        // drafting, which deep-clones canonical payloads. At most one such
+        // intermediate per lexical nesting depth overlaps the draft. The whole
+        // immutable source bounds each subtree, without rescanning its bytes.
+        Ok(Self {
+            bytes: source
+                .retained_bytes
+                .checked_mul(self.intermediate_depth)
+                .and_then(|bytes| bytes.checked_add(self.bytes))
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            nodes: source
+                .node_count
+                .checked_mul(self.intermediate_depth)
+                .and_then(|nodes| nodes.checked_add(self.nodes))
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            intermediate_depth: self.intermediate_depth,
+        })
+    }
+}
+
+fn pattern_draft_expansion(
+    value: &ValueData,
+    meter: &mut ResidentBudgetMeter,
+) -> Result<PatternDraftExpansion, ResidentKernelError> {
+    use mech_core::snapshot::SequenceView;
+    fn sequence(
+        values: SequenceView<'_>,
+        table: bool,
+        meter: &mut ResidentBudgetMeter,
+    ) -> Result<PatternDraftExpansion, ResidentKernelError> {
+        meter.charge_compute_work(64)?;
+        let count = match values {
+            // SequenceView::len intentionally saturates when Unit exceeds the
+            // host width. Its actual u64 count remains authoritative here.
+            SequenceView::Unit(count) => count,
+            _ => budget::checked_u64(values.len())?,
+        };
+        let intermediate = table || matches!(values, SequenceView::Values(_));
+        let width = (core::mem::size_of::<ValueDataDraft>() as u64)
+            .checked_add(if intermediate {
+                core::mem::size_of::<ValueData>() as u64
+            } else {
+                0
+            })
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        let mut bound = PatternDraftExpansion {
+            bytes: count
+                .checked_mul(width)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            nodes: count
+                .checked_mul(if intermediate { 2 } else { 1 })
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            intermediate_depth: 0,
+        };
+        if let SequenceView::Values(values) = values {
+            for value in values {
+                bound = bound.checked_add(pattern_draft_expansion(value, meter)?)?;
+            }
+        }
+        bound.intermediate_depth = bound
+            .intermediate_depth
+            .checked_add(u64::from(intermediate))
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        Ok(bound)
+    }
+    fn children<'a>(
+        values: impl IntoIterator<Item = &'a ValueData>,
+        meter: &mut ResidentBudgetMeter,
+    ) -> Result<PatternDraftExpansion, ResidentKernelError> {
+        values
+            .into_iter()
+            .try_fold(PatternDraftExpansion::default(), |total, value| {
+                total.checked_add(pattern_draft_expansion(value, meter)?)
+            })
+    }
+    meter.charge_compute_work(64)?;
+    match value {
+        ValueData::Matrix(value) => sequence(value.elements(), false, meter),
+        ValueData::Table(value) => {
+            let mut bound = PatternDraftExpansion::default();
+            for column in 0..value.len() {
+                meter.charge_compute_work(64)?;
+                bound = bound.checked_add(sequence(
+                    value
+                        .column(column)
+                        .ok_or(ResidentKernelError::InvalidInput)?,
+                    true,
+                    meter,
+                )?)?;
+            }
+            Ok(bound)
+        }
+        ValueData::Tuple(values) => children(values.iter(), meter),
+        ValueData::Record(value) => children(value.fields().iter(), meter),
+        ValueData::Enum(value) => children(value.payload(), meter),
+        ValueData::Option(value) => children(value.as_deref(), meter),
+        ValueData::Set(value) => children(value.elements().iter().map(|key| key.data()), meter),
+        ValueData::Map(value) => children(
+            value
+                .entries()
+                .iter()
+                .flat_map(|entry| [entry.key().data(), entry.value()]),
+            meter,
+        ),
+        // These cannot occur beneath the activation-issued typed source proof.
+        ValueData::Dynamic(_) | ValueData::Type(_) => Err(ResidentKernelError::InvalidInput),
+        _ => Ok(PatternDraftExpansion::default()),
+    }
+}
+
+pub(super) fn admit_pattern_item_materialization_from_plan(
+    value: ResidentValueRef<'_>,
+    region: ResidentRegion,
+    schema: SchemaId,
+    array: bool,
+    pattern_work: u64,
+    binding_count: u64,
+    equality_count: u64,
+    snapshot_finalization_count: u64,
+    clone_multiplicity: u64,
+    dynamic_target_depth: u64,
+    schemas: &SchemaTable,
+    source: Option<&PlanPatternSource>,
+) -> Result<u64, ResidentKernelError> {
+    Ok(prepare_pattern_item_materialization_with_source(
+        value,
+        region,
+        schema,
+        array,
+        pattern_work,
+        binding_count,
+        equality_count,
+        snapshot_finalization_count,
+        clone_multiplicity,
+        dynamic_target_depth,
+        schemas,
+        ResidentBudgetMeter::default(),
+        None,
+        source,
+    )?
+    .admit_control()?
+    .into_plan())
+}
+
 pub(in crate::resident::general) fn prepare_pattern_item_materialization(
+    value: ResidentValueRef<'_>,
+    region: ResidentRegion,
+    schema: SchemaId,
+    array: bool,
+    pattern_work: u64,
+    binding_count: u64,
+    equality_count: u64,
+    snapshot_finalization_count: u64,
+    clone_multiplicity: u64,
+    dynamic_target_depth: u64,
+    schemas: &mech_core::SchemaTable,
+    meter: ResidentBudgetMeter,
+    admit: Option<&mut dyn FnMut(budget::KernelCostEstimate) -> Result<(), ResidentKernelError>>,
+) -> Result<PreparedKernel<u64>, ResidentKernelError> {
+    prepare_pattern_item_materialization_with_source(
+        value,
+        region,
+        schema,
+        array,
+        pattern_work,
+        binding_count,
+        equality_count,
+        snapshot_finalization_count,
+        clone_multiplicity,
+        dynamic_target_depth,
+        schemas,
+        meter,
+        admit,
+        None,
+    )
+}
+
+fn prepare_pattern_item_materialization_with_source(
     value: ResidentValueRef<'_>,
     _region: ResidentRegion,
     schema: SchemaId,
@@ -3267,20 +3644,40 @@ pub(in crate::resident::general) fn prepare_pattern_item_materialization(
     mut admit: Option<
         &mut dyn FnMut(budget::KernelCostEstimate) -> Result<(), ResidentKernelError>,
     >,
+    source: Option<&PlanPatternSource>,
 ) -> Result<PreparedKernel<u64>, ResidentKernelError> {
     meter.charge_compute_work(pattern_work)?;
     meter.charge_comparison_work(pattern_work)?;
     let mut canonical_finalization_work = 0;
     let mut canonical_finalization_bytes = 0;
     let mut pattern_metadata_bytes = 0;
+    let mut draft_expansion = PatternDraftExpansion::default();
+    // Fixed metadata bound for both preflight and materialization identity
+    // checks: two owner/plan lookups and exact 32-byte keys at each check.
+    // No schema/payload traversal is authorized by this allowance.
+    let planned_source = if source.is_some() {
+        match value {
+            ResidentValueRef::Snapshot([Some(value)]) => {
+                meter.charge_compute_work(512)?;
+                source.filter(|source| source.matches(value, schema, schemas))
+            }
+            _ => None,
+        }
+    } else {
+        None
+    };
     let mut source_context_bound = SourceContextMaterializationBound::default();
-    source_context_bound.max_shape_parameters = schemas
-        .entries()
-        .map(|entry| entry.schema().dimension_parameters().len())
-        .max()
-        .unwrap_or(0)
-        .saturating_add(1);
-    meter.charge_comparison_work(budget::checked_u64(schemas.len())?)?;
+    if let Some(source) = planned_source {
+        source_context_bound.max_shape_parameters = source.max_shape_parameters;
+    } else {
+        source_context_bound.max_shape_parameters = schemas
+            .entries()
+            .map(|entry| entry.schema().dimension_parameters().len())
+            .max()
+            .unwrap_or(0)
+            .saturating_add(1);
+        meter.charge_comparison_work(budget::checked_u64(schemas.len())?)?;
+    }
     let dense_array = array
         && matches!(
             value,
@@ -3299,13 +3696,24 @@ pub(in crate::resident::general) fn prepare_pattern_item_materialization(
             let source = value
                 .validate_against(&owner)
                 .map_err(|_| ResidentKernelError::InvalidInput)?;
-            if value.schema_key() != expected.key() || source != expected.schema() {
+            if value.schema_key() != expected.key()
+                || (planned_source.is_none() && source != expected.schema())
+            {
                 return Err(ResidentKernelError::InvalidInput);
             }
-            source_context_bound =
-                source_context_materialization_bound(value, schemas, &mut meter, &mut admit)?;
-            pattern_metadata_bytes = pattern_item_metadata_bound(value, &mut meter)?;
-            let footprint = budget::measure_canonical_value_footprint(&mut meter, value, &owner)?;
+            let footprint = if let Some(source) = planned_source {
+                pattern_metadata_bytes = source.metadata_bytes;
+                draft_expansion = pattern_draft_expansion(value.data(), &mut meter)?;
+                let footprint =
+                    budget::measure_borrowed_canonical_value_footprint(&mut meter, value, &owner)?;
+                draft_expansion = draft_expansion.include_intermediate_payloads(footprint)?;
+                footprint
+            } else {
+                source_context_bound =
+                    source_context_materialization_bound(value, schemas, &mut meter, &mut admit)?;
+                pattern_metadata_bytes = pattern_item_metadata_bound(value, &mut meter)?;
+                budget::measure_canonical_value_footprint(&mut meter, value, &owner)?
+            };
             if finalization_count > 0 {
                 let mut finalization_meter = meter.preflight_meter()?;
                 canonical_finalization_work = budget::preflight_canonical_data_finalization(
@@ -3507,6 +3915,7 @@ pub(in crate::resident::general) fn prepare_pattern_item_materialization(
     meter.charge_temporary_bytes(
         item_clone_bytes(footprint)?
             .checked_add(pattern_metadata_bytes)
+            .and_then(|bytes| bytes.checked_add(draft_expansion.bytes))
             .ok_or(ResidentKernelError::InvalidShape)?
             .checked_mul(copies)
             .and_then(|bytes| bytes.checked_add(canonical_finalization_bytes))
@@ -3525,19 +3934,27 @@ pub(in crate::resident::general) fn prepare_pattern_item_materialization(
         })
         .and_then(|visits| visits.checked_add(1))
         .ok_or(ResidentKernelError::InvalidShape)?;
-    meter.charge_cloned_bytes(
-        footprint
-            .retained_bytes
-            .checked_add(pattern_metadata_bytes)
-            .ok_or(ResidentKernelError::InvalidShape)?
-            .checked_mul(clone_visits)
-            .and_then(|bytes| bytes.checked_add(source_context_bound.retained_bytes))
-            .ok_or(ResidentKernelError::InvalidShape)?,
-    )?;
+    let clone_bytes = footprint
+        .retained_bytes
+        .checked_add(pattern_metadata_bytes)
+        .and_then(|bytes| bytes.checked_add(draft_expansion.bytes))
+        .ok_or(ResidentKernelError::InvalidShape)?
+        .checked_mul(clone_visits)
+        .and_then(|bytes| bytes.checked_add(source_context_bound.retained_bytes))
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    if planned_source.is_some() {
+        // Borrowed metadata inspection did not scan/copy the payload. Reserve
+        // the complete conservative draft/parent/child copy traffic as compute
+        // before the first actual canonical_data_draft or descent clone. The
+        // separate clone dimension is also retained; neither grants the other.
+        meter.charge_compute_work(clone_bytes)?;
+    }
+    meter.charge_cloned_bytes(clone_bytes)?;
     meter.charge_retained_nodes(
         footprint
             .node_count
-            .checked_mul(copies)
+            .checked_add(draft_expansion.nodes)
+            .and_then(|nodes| nodes.checked_mul(copies))
             .and_then(|nodes| nodes.checked_add(source_context_bound.retained_nodes))
             .and_then(|nodes| adapted_candidate_nodes.checked_mul(3)?.checked_add(nodes))
             .ok_or(ResidentKernelError::InvalidShape)?,
@@ -4601,7 +5018,7 @@ fn measure_owned_canonical_value_footprint(
     // the arena of an imported value, so measure them against their owner
     // rather than the comprehension plan's arena.
     let owner = value.schemas();
-    budget::measure_canonical_value_footprint(
+    budget::measure_borrowed_canonical_value_footprint(
         meter,
         value,
         owner.as_deref().unwrap_or(fallback_schemas),
@@ -4633,6 +5050,13 @@ impl ReactiveInstance {
                     let mut local_meter = ResidentBudgetMeter::default();
                     let local =
                         measure_owned_canonical_value_footprint(&mut local_meter, value, schemas)?;
+                    meter.charge_compute_work(
+                        local_meter
+                            .estimate()
+                            .compute_work()
+                            .checked_sub(local_meter.estimate().comparison_work())
+                            .ok_or(ResidentKernelError::InvalidShape)?,
+                    )?;
                     meter.charge_comparison_work(local_meter.estimate().comparison_work())?;
                     footprint = footprint
                         .checked_add(local)
@@ -5916,6 +6340,15 @@ impl ReactiveInstance {
                         )
                         .map_err(fail)?;
                         meter
+                            .charge_compute_work(
+                                previous_meter
+                                    .estimate()
+                                    .compute_work()
+                                    .checked_sub(previous_meter.estimate().comparison_work())
+                                    .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?,
+                            )
+                            .map_err(fail)?;
+                        meter
                             .charge_comparison_work(previous_meter.estimate().comparison_work())
                             .map_err(fail)?;
                         footprint
@@ -7176,6 +7609,463 @@ mod tests {
         DimensionParameterDeclaration, DimensionParameterId, DimensionParameterOrigin, FloatWidth,
         IntegerWidth, NominalKey, NominalKind, ResidentShape, SchemaDraft, SchemaTableBuilder,
     };
+
+    fn typed_pattern_source_fixture(prefix: bool) -> (SchemaTable, SchemaId, Value) {
+        let mut builder = SchemaTableBuilder::new();
+        if prefix {
+            builder
+                .insert(
+                    SchemaDraft {
+                        body: SchemaBody::Bool,
+                        dimension_parameters: Box::new([]),
+                    }
+                    .finalize()
+                    .unwrap(),
+                )
+                .unwrap();
+        }
+        let handle = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Tuple(
+                        vec![
+                            SchemaBody::UnsignedInteger(IntegerWidth::W64),
+                            SchemaBody::String,
+                        ]
+                        .into_boxed_slice(),
+                    ),
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let built = builder.finish().unwrap();
+        let schema = built.resolve(handle).unwrap();
+        let owner = Arc::new(built.table);
+        let value = ValueDraft {
+            schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Tuple(
+                vec![
+                    ValueDataDraft::U64(19),
+                    ValueDataDraft::String("typed e\u{301} 🧑‍🚀".to_owned()),
+                ]
+                .into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::with_shared_schemas(&owner))
+        .unwrap();
+        ((*owner).clone(), schema, value)
+    }
+
+    fn snapshot_pattern_region() -> ResidentRegion {
+        ResidentRegion {
+            kind: ResidentValueKind::Snapshot,
+            offset: 0,
+            len: 1,
+            shape: ResidentShape::SCALAR,
+        }
+    }
+
+    #[test]
+    fn plan_pattern_source_reuses_genuine_projected_arena_for_equivalent_owner() {
+        let (original, schema, value) = typed_pattern_source_fixture(false);
+        let (plan, projections) = structural_projection_schema_context(&original).unwrap();
+        let certificate = PlanPatternSource::new(schema, &plan, &projections).unwrap();
+        // Projection construction extended a separate immutable arena; neither
+        // owner pointer coincidence nor a public operation name certifies it.
+        assert!(!core::ptr::eq(value.schemas().unwrap().as_ref(), &plan));
+        assert!(certificate.matches(&value, schema, &plan));
+        assert!(
+            PlanPatternSource::new(schema, &plan, &StructuralProjectionTable::default()).is_none()
+        );
+        let storage = [Some(value)];
+        let fast = resident_pattern_item_from_plan(
+            ResidentValueRef::Snapshot(&storage),
+            snapshot_pattern_region(),
+            schema,
+            &[],
+            &plan,
+            false,
+            Some(&certificate),
+        )
+        .unwrap();
+        let old = resident_pattern_item(
+            ResidentValueRef::Snapshot(&storage),
+            snapshot_pattern_region(),
+            schema,
+            &[],
+            &plan,
+            false,
+        )
+        .unwrap();
+        assert!(matches!(old, PatternItem::SourceComponent { .. }));
+        assert!(matches!(fast, PatternItem::Component { .. }));
+        let child_schema = projections.tuple_child(schema, 0).unwrap();
+        for child in [
+            fast.child(0, &plan, &projections).unwrap(),
+            old.child(0, &plan, &projections).unwrap(),
+        ] {
+            let binding = child
+                .into_binding(child_schema, &[], &plan, &projections)
+                .unwrap()
+                .unwrap();
+            assert!(matches!(binding.data, ValueDataDraft::U64(19)));
+        }
+    }
+
+    #[test]
+    fn plan_pattern_source_rejects_identity_drift_and_keeps_foreign_owner_route() {
+        let (original, schema, value) = typed_pattern_source_fixture(false);
+        let (plan, projections) = structural_projection_schema_context(&original).unwrap();
+        let certificate = PlanPatternSource::new(schema, &plan, &projections).unwrap();
+        assert!(!certificate.matches(&value, SchemaId::new(schema.get() + 1), &plan));
+        let (_, foreign_schema, foreign) = typed_pattern_source_fixture(true);
+        assert_ne!(
+            schema, foreign_schema,
+            "extra earlier Bool schema changes the arena-local root ID"
+        );
+        assert!(!certificate.matches(&foreign, schema, &plan));
+        let storage = [Some(foreign)];
+        let fallback = resident_pattern_item_from_plan(
+            ResidentValueRef::Snapshot(&storage),
+            snapshot_pattern_region(),
+            schema,
+            &[],
+            &plan,
+            false,
+            Some(&certificate),
+        )
+        .unwrap();
+        assert!(matches!(fallback, PatternItem::SourceComponent { .. }));
+        let mut wrong = SchemaTableBuilder::new();
+        let bool_handle = wrong
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Bool,
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let wrong = wrong.finish().unwrap();
+        let bool_schema = wrong.resolve(bool_handle).unwrap();
+        let wrong_value = ValueDraft {
+            schema: bool_schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Bool(true),
+        }
+        .finalize(&SnapshotValidationContext::new(&wrong.table))
+        .unwrap();
+        assert_eq!(schema, bool_schema);
+        assert!(!certificate.matches(&wrong_value, schema, &plan));
+        assert!(
+            resident_pattern_item_from_plan(
+                ResidentValueRef::Snapshot(&[Some(wrong_value)]),
+                snapshot_pattern_region(),
+                schema,
+                &[],
+                &plan,
+                false,
+                Some(&certificate)
+            )
+            .is_none()
+        );
+    }
+
+    #[test]
+    fn plan_pattern_source_excludes_unproved_nested_owner_and_metadata_forms() {
+        for body in [
+            SchemaBody::Dynamic,
+            SchemaBody::ReifiedType,
+            SchemaBody::Option(Box::new(SchemaBody::Dynamic)),
+        ] {
+            let mut builder = SchemaTableBuilder::new();
+            let handle = builder
+                .insert(
+                    SchemaDraft {
+                        body,
+                        dimension_parameters: Box::new([]),
+                    }
+                    .finalize()
+                    .unwrap(),
+                )
+                .unwrap();
+            let built = builder.finish().unwrap();
+            let schema = built.resolve(handle).unwrap();
+            let (plan, projections) = structural_projection_schema_context(&built.table).unwrap();
+            assert!(PlanPatternSource::new(schema, &plan, &projections).is_none());
+        }
+    }
+
+    #[test]
+    fn plan_pattern_source_has_finite_preflight_and_preserves_actual_copy_bounds() {
+        let (original, schema, value) = typed_pattern_source_fixture(false);
+        let (plan, projections) = structural_projection_schema_context(&original).unwrap();
+        let certificate = PlanPatternSource::new(schema, &plan, &projections).unwrap();
+        let storage = [Some(value)];
+        let prepare = |meter| {
+            prepare_pattern_item_materialization_with_source(
+                ResidentValueRef::Snapshot(&storage),
+                snapshot_pattern_region(),
+                schema,
+                false,
+                4,
+                2,
+                0,
+                0,
+                2,
+                0,
+                &plan,
+                meter,
+                None,
+                Some(&certificate),
+            )
+        };
+        assert!(prepare(ResidentBudgetMeter::for_closed_analysis(1, 1)).is_err());
+        let mut observed = None;
+        prepare(ResidentBudgetMeter::for_closed_analysis(
+            1_000_000, 1_000_000,
+        ))
+        .unwrap()
+        .prepare_for_analysis(|cost| {
+            observed = Some(cost);
+            Ok(())
+        })
+        .unwrap();
+        let cost = observed.unwrap();
+        assert!(cost.compute_work() > 4);
+        assert_eq!(
+            cost.comparison_work(),
+            4,
+            "no equality was requested; retention sizes are not comparisons"
+        );
+        assert!(cost.cloned_bytes() > 0);
+        assert!(cost.temporary_bytes() > 0);
+        assert!(cost.retained_nodes() > 0);
+    }
+
+    #[test]
+    fn plan_pattern_source_payload_copy_keeps_finite_compute_without_equality_or_finalization() {
+        let payload_bytes = 4_096u64;
+        let packed_count = payload_bytes / 8;
+        let matrix = |element, columns| SchemaBody::Matrix {
+            element: Box::new(element),
+            dimensions: Box::new([DimensionExpr::Constant(1), DimensionExpr::Constant(columns)]),
+        };
+        let packed_data = || {
+            ValueDataDraft::Matrix(
+                vec![ValueDataDraft::U64(u64::MAX); packed_count as usize / 2].into_boxed_slice(),
+            )
+        };
+        for (body, data, array, retained_payload_lower_bound, draft_slots, intermediate_depth) in [
+            (
+                SchemaBody::String,
+                ValueDataDraft::String("x".repeat(payload_bytes as usize)),
+                false,
+                payload_bytes,
+                0,
+                0,
+            ),
+            (
+                matrix(SchemaBody::UnsignedInteger(IntegerWidth::W64), packed_count),
+                ValueDataDraft::Matrix(
+                    vec![ValueDataDraft::U64(u64::MAX); packed_count as usize].into_boxed_slice(),
+                ),
+                true,
+                payload_bytes,
+                packed_count,
+                0,
+            ),
+            (
+                matrix(
+                    SchemaBody::Atom(NominalKey::from_bytes([0x79; 32])),
+                    packed_count,
+                ),
+                ValueDataDraft::Matrix(
+                    vec![ValueDataDraft::Atom; packed_count as usize].into_boxed_slice(),
+                ),
+                true,
+                0,
+                packed_count,
+                0,
+            ),
+            (
+                SchemaBody::Tuple(
+                    vec![matrix(
+                        matrix(
+                            SchemaBody::UnsignedInteger(IntegerWidth::W64),
+                            packed_count / 2,
+                        ),
+                        2,
+                    )]
+                    .into_boxed_slice(),
+                ),
+                ValueDataDraft::Tuple(
+                    vec![ValueDataDraft::Matrix(
+                        vec![packed_data(), packed_data()].into_boxed_slice(),
+                    )]
+                    .into_boxed_slice(),
+                ),
+                false,
+                payload_bytes,
+                packed_count + 2,
+                1,
+            ),
+            (
+                SchemaBody::Table {
+                    columns: vec![mech_core::SchemaField {
+                        name: "text".to_owned(),
+                        schema: SchemaBody::String,
+                    }]
+                    .into_boxed_slice(),
+                    rows: CardinalitySpec::Exact(DimensionExpr::Constant(1)),
+                },
+                ValueDataDraft::Table(
+                    vec![mech_core::snapshot::TableColumnDraft {
+                        name: "text".to_owned(),
+                        values: vec![ValueDataDraft::String("x".repeat(payload_bytes as usize))]
+                            .into_boxed_slice(),
+                    }]
+                    .into_boxed_slice(),
+                ),
+                false,
+                payload_bytes,
+                1,
+                1,
+            ),
+            (
+                SchemaBody::Tuple(
+                    vec![matrix(matrix(matrix(SchemaBody::String, 1), 1), 1)].into_boxed_slice(),
+                ),
+                ValueDataDraft::Tuple(
+                    vec![ValueDataDraft::Matrix(
+                        vec![ValueDataDraft::Matrix(
+                            vec![ValueDataDraft::Matrix(
+                                vec![ValueDataDraft::String("x".repeat(payload_bytes as usize))]
+                                    .into_boxed_slice(),
+                            )]
+                            .into_boxed_slice(),
+                        )]
+                        .into_boxed_slice(),
+                    )]
+                    .into_boxed_slice(),
+                ),
+                false,
+                payload_bytes,
+                3,
+                2,
+            ),
+        ] {
+            let mut builder = SchemaTableBuilder::new();
+            let handle = builder
+                .insert(
+                    SchemaDraft {
+                        body,
+                        dimension_parameters: Box::new([]),
+                    }
+                    .finalize()
+                    .unwrap(),
+                )
+                .unwrap();
+            let built = builder.finish().unwrap();
+            let schema = built.resolve(handle).unwrap();
+            let owner = Arc::new(built.table);
+            let value = ValueDraft {
+                schema,
+                shape_values: Box::new([]),
+                data,
+            }
+            .finalize(&SnapshotValidationContext::with_shared_schemas(&owner))
+            .unwrap();
+            let before = value.resident_token();
+            let (plan, projections) = structural_projection_schema_context(&owner).unwrap();
+            let certificate = PlanPatternSource::new(schema, &plan, &projections).unwrap();
+            // Header-only retention genuinely fits this allowance. Actual
+            // draft copying must not inherit that cheap measurement policy.
+            let measured = budget::measure_borrowed_canonical_value_footprint(
+                &mut ResidentBudgetMeter::for_closed_analysis(payload_bytes, 0),
+                &value,
+                &owner,
+            )
+            .unwrap();
+            assert!(measured.retained_bytes >= retained_payload_lower_bound);
+            if matches!(owner.get(schema).unwrap().body(), SchemaBody::Matrix { element, .. } if matches!(element.as_ref(), SchemaBody::Atom(_)))
+            {
+                assert_eq!(
+                    measured.encoded_bytes, 0,
+                    "Unit has no payload bytes but still needs every draft slot"
+                );
+                assert!(
+                    matches!(value.data(), ValueData::Matrix(value) if matches!(value.elements(), mech_core::snapshot::SequenceView::Unit(count) if count == packed_count))
+                );
+            }
+            let mut expansion_meter = ResidentBudgetMeter::for_closed_analysis(payload_bytes, 0);
+            let slots = pattern_draft_expansion(value.data(), &mut expansion_meter).unwrap();
+            assert!(slots.bytes >= draft_slots * core::mem::size_of::<ValueDataDraft>() as u64);
+            assert!(slots.nodes >= draft_slots);
+            assert_eq!(slots.intermediate_depth, intermediate_depth);
+            let expansion = slots.include_intermediate_payloads(measured).unwrap();
+            assert!(expansion.bytes >= slots.bytes + intermediate_depth * measured.retained_bytes);
+            assert!(expansion.nodes >= slots.nodes + intermediate_depth * measured.node_count);
+            let storage = [Some(value.clone())];
+            let prepare = |meter| {
+                prepare_pattern_item_materialization_with_source(
+                    ResidentValueRef::Snapshot(&storage),
+                    snapshot_pattern_region(),
+                    schema,
+                    array,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    &plan,
+                    meter,
+                    None,
+                    Some(&certificate),
+                )
+            };
+            assert!(
+                prepare(ResidentBudgetMeter::for_closed_analysis(payload_bytes, 64)).is_err(),
+                "actual payload/draft-slot copies need compute even without equality or finalization"
+            );
+            let mut observed = None;
+            prepare(ResidentBudgetMeter::for_closed_analysis(1_000_000, 64))
+                .unwrap()
+                .prepare_for_analysis(|cost| {
+                    observed = Some(cost);
+                    Ok(())
+                })
+                .unwrap();
+            let cost = observed.unwrap();
+            assert!(cost.cloned_bytes() >= expansion.bytes + retained_payload_lower_bound);
+            assert!(cost.temporary_bytes() >= expansion.bytes);
+            assert!(cost.retained_nodes() >= expansion.nodes);
+            assert!(cost.compute_work() >= cost.cloned_bytes());
+            assert_eq!(cost.comparison_work(), 1);
+            assert!(matches!(
+                resident_pattern_item_from_plan(
+                    ResidentValueRef::Snapshot(&storage),
+                    snapshot_pattern_region(),
+                    schema,
+                    &[],
+                    &plan,
+                    array,
+                    Some(&certificate),
+                ),
+                Some(PatternItem::Component { .. })
+            ));
+            assert_eq!(
+                value.resident_token(),
+                before,
+                "denial/recovery never mutates the borrowed input"
+            );
+        }
+    }
 
     #[test]
     fn horizontal_block_assembly_is_row_major_and_one_level_only() {

@@ -2862,6 +2862,7 @@ impl ReactiveInstance {
             None
         };
         let scrutinee_schema = matched.scrutinee_schema;
+        let structural_source = matched.structural_source.clone();
         let scrutinee_shape_values = matched.scrutinee_shape_values.clone();
         let structural_work = matched.arms.iter().try_fold(0u64, |total, arm| {
             let super::ActivatedMatchPattern::Structural { work, .. } = &arm.pattern else {
@@ -3020,7 +3021,7 @@ impl ReactiveInstance {
                             mech_core::SchemaBody::Matrix { .. }
                         );
                         let canonical_finalization_work =
-                            comprehension_execution::admit_pattern_item_materialization(
+                            comprehension_execution::admit_pattern_item_materialization_from_plan(
                                 scrutinee,
                                 scrutinee_source.region(),
                                 scrutinee_schema,
@@ -3032,15 +3033,17 @@ impl ReactiveInstance {
                                 clone_multiplicity,
                                 dynamic_target_depth,
                                 &self.plan.schemas,
+                                structural_source.as_ref(),
                             )
                             .map_err(kernel_fail)?;
-                        let item = comprehension_execution::resident_pattern_item(
+                        let item = comprehension_execution::resident_pattern_item_from_plan(
                             scrutinee,
                             scrutinee_source.region(),
                             scrutinee_schema,
                             &shape_values,
                             &self.plan.schemas,
                             structural_array,
+                            structural_source.as_ref(),
                         )
                         .ok_or_else(fail)?;
                         structural_scrutinee =
@@ -5908,7 +5911,7 @@ fn resident_frame_value_footprint(
                     // necessarily the enclosing program's arena. The snapshot
                     // owns both that immutable arena and its concrete shape.
                     let owner = value.schemas();
-                    let footprint = budget::measure_canonical_value_footprint(
+                    let footprint = budget::measure_borrowed_canonical_value_footprint(
                         meter,
                         value,
                         owner.as_deref().unwrap_or(schemas),
@@ -6592,14 +6595,25 @@ mod tests {
         .unwrap()
         .snapshot()
         .unwrap();
+        let owner = large.schemas().unwrap();
+        let mut metadata_meter = budget::ResidentBudgetMeter::default();
+        let measured = resident_frame_value_footprint(
+            ResidentValueRef::Snapshot(&[Some(large.clone())]),
+            &fallback,
+            &mut metadata_meter,
+        )
+        .expect("borrowed retention reads headers, not UTF-8 payload bytes");
+        assert!(measured.0 > mech_core::RESIDENT_MAX_COMPARISON_WORK);
+        assert_eq!(metadata_meter.estimate().comparison_work(), 0);
+        assert!(metadata_meter.estimate().compute_work() > 0);
         assert!(
-            resident_frame_value_footprint(
-                ResidentValueRef::Snapshot(&[Some(large)]),
-                &fallback,
+            budget::charge_canonical_value_footprint(
                 &mut budget::ResidentBudgetMeter::default(),
+                &large,
+                &owner,
             )
-            .is_none(),
-            "retention is refused before an over-budget snapshot clone"
+            .is_err(),
+            "a separate payload materialization still requires its full original allowance"
         );
     }
 
