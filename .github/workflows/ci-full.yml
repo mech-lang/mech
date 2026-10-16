@@ -417,6 +417,94 @@ jobs:
             cli::commands::build::tests::cranelift_kept_project_collision_precedes_emission_and_output_writes \
             -- --exact --test-threads=1
 
+  canonical-applications:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'native') || contains(fromJSON(inputs.contract_families), 'language') }}
+    name: Canonical applications and linked qualification
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      RUSTUP_TOOLCHAIN: nightly-2026-03-03
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+      CARGO_BUILD_JOBS: "1"
+    steps:
+      - uses: actions/checkout@v7.0.1
+        id: checkout
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
+          fetch-depth: 0
+      - name: Record exact-ref checkout identity
+        env:
+          VALIDATION_KIND: exact-ref
+          REQUESTED_REF: ${{ inputs.validation_ref || github.sha }}
+          CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
+          CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
+        shell: bash
+        run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"
+      - name: Install pinned compiler and native arithmetic tools
+        run: |
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          sudo apt-get update -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources -o Dir::Etc::sourceparts=-
+          sudo apt-get install --yes ripgrep build-essential m4
+      - name: Fetch locked application dependencies
+        run: cargo +nightly-2026-03-03 fetch --locked
+      - name: Execute canonical resident applications and retained tail controls
+        run: |
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-stdlib \
+            --no-default-features --features full_compiler \
+            --test applications --test tail_control -- --test-threads=1
+      - name: Execute canonical native lowering and selected implementation witnesses
+        run: |
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-stdlib \
+            --no-default-features --features full_compiler,native-artifact \
+            --test native_artifact_lowering --test native_artifact_i64_lowering \
+            --test native_artifact_output_initializers -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+            --no-default-features --features canonical-native \
+            --test canonical_artifact_native --test canonical_artifact_i64 -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+            --no-default-features --features canonical-native --lib native_artifact:: -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features full_compiler,native-artifact \
+            --lib resident::native_semantics::tests -- --test-threads=1
+          cargo +nightly-2026-03-03 check --locked --offline -p mech-gpu \
+            --no-default-features --features canonical-native-runtime --lib
+      - name: Execute canonical CLI byte contracts
+        run: >-
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-build
+          --no-default-features --features standard-hosts
+          --test canonical_cli_bytes -- --test-threads=1
+      - name: Qualify linked canonical native applications
+        env:
+          MECH_CANONICAL_NATIVE_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}
+          MECH_CANONICAL_NATIVE_EVIDENCE_DIR: ${{ runner.temp }}/canonical-native-evidence
+        run: >-
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu
+          --no-default-features --features canonical-native
+          --test canonical_artifact_application -- --ignored --exact
+          linked_canonical_artifact_scalar_applications_are_typed_bounded_and_atomic
+          --test-threads=1
+      - name: Qualify linked canonical resident CLI applications
+        env:
+          MECH_CANONICAL_CLI_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}
+          MECH_CANONICAL_CLI_EVIDENCE_DIR: ${{ runner.temp }}/canonical-cli-evidence
+        run: >-
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-build
+          --no-default-features --features standard-hosts
+          --test canonical_cli_application -- --ignored --exact
+          linked_canonical_cli_arguments_and_stdin_finish_without_drivers
+          --test-threads=1
+      - name: Retain linked application evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: canonical-linked-applications-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/canonical-native-evidence
+            ${{ runner.temp }}/canonical-cli-evidence
+          if-no-files-found: warn
+
   managed-memory-fixed-profiles:
     if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'numeric') }}
     name: Managed memory fixed profile (${{ matrix.feature }})
@@ -1368,6 +1456,7 @@ jobs:
       - bytecode-v1-determinism
       - bytecode-v1-format
       - bytecode-v1-values
+      - canonical-applications
       - cargo-features
       - cargo-language
       - cargo-runtime
@@ -1414,13 +1503,13 @@ jobs:
           groups = {
               'architecture': ['architecture-contracts', 'architecture-mutations'],
               'artifact': ['artifact-closure', 'bytecode-v1-format', 'bytecode-v1-values', 'bytecode-v1-determinism'],
-              'language': ['cargo-language'],
+              'language': ['cargo-language', 'canonical-applications'],
               'memory': ['memory-planner-contract', 'managed-memory-runtime', 'managed-memory-miri'],
               'numeric': ['function-system-contracts', 'engine-catalog', 'managed-memory-fixed-profiles', 'managed-memory-runtime', 'cargo-runtime'],
               'runtime': ['cargo-runtime', 'macos-runtime', 'windows-runtime-paths', 'windows-cli', 'dynamic-modules'],
               'cli': ['cargo-runtime', 'run-only', 'windows-cli-contracts', 'windows-cli'],
               'linkage': ['native-linkage-owners', 'native-linkage-surfaces', 'native-linkage', 'native-linkage-closures', 'catalog-closure'],
-              'native': ['native-plan', 'native-engine', 'native-hosted', 'native-live', 'native-windows', 'native-macos', 'project-native'],
+              'native': ['native-plan', 'native-engine', 'native-hosted', 'native-live', 'native-windows', 'native-macos', 'project-native', 'canonical-applications'],
               'browser': ['wasm-source-profile', 'wasm-bytecode-v1', 'project-browser'],
               'distribution': ['cargo-features', 'distribution-contracts', 'package-validation', 'release-package-dry-run'],
           }
@@ -1495,7 +1584,7 @@ jobs:
 
       - name: Run syntax grammar suites
         run: |
-          cargo +nightly-2026-03-03 test --locked -p mech-syntax --lib --tests --no-default-features --features full
+          cargo +nightly-2026-03-03 test --locked -p mech-syntax --lib --tests --no-default-features --features full -- --test-threads=1
           # Exhaustive streaming/growth runs once above. Reduced profiles prove
           # their feature boundary without repeating the same parser algorithm.
           for suite in canonical_document_root canonical_base_contracts
