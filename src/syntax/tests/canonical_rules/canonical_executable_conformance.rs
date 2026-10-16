@@ -929,7 +929,7 @@ fn clean_tree_evidence_covers_flags_and_ignores_snapshot_identity() {
 fn certification_table_executes_every_direct_accept_reject_and_recovery_case() {
     let rows = certification_rows();
     let contracts = inventory_contracts();
-    assert_eq!(contracts.len(), 80);
+    assert_eq!(contracts.len(), 81);
     assert_certified_inventory(rows.iter().map(|row| row.name.as_str()), &contracts);
     let mut stale_hashes = Vec::new();
     for row in rows {

@@ -162,3 +162,19 @@ fn committed_application_recovery_retains_operator_and_never_consumes_other_bars
         2
     );
 }
+
+#[test]
+fn numeric_table_rows_and_comprehension_comparisons_are_not_counted_stages() {
+    for text in [
+        "(|a<u8> l<u8>|1u8 7u8|2u8 8u8|)",
+        "(|a<f64> b<bool>|signal<f64> true|9 false|)",
+        "table/join((|a<u8> l<u8>|1u8 7u8|2u8 8u8|), (|a<u8> r<u8>|1u8 9u8|3u8 10u8|))",
+        "[x | x <- [1u64 2u64], x > 0u64]",
+    ] {
+        let value = expression(text);
+        assert!(
+            find(value.syntax(), SyntaxKind::ApplicationExpression).is_none(),
+            "{text}"
+        );
+    }
+}

@@ -1396,15 +1396,24 @@ impl Continuation {
                     }
                 }
                 Frame::RecoverOperand(index) => {
-                    self.push(Frame::Required(Box::new(Required::new(
-                        parser.current_rule().unwrap_or(rules::EXPRESSION),
-                        "syntax/missing-operator-operand",
-                        "missing expression after operator",
-                        "expression",
-                        &[],
-                        &[],
-                        Some(index),
-                    ))));
+                    // Application owns the surrounding stages, while an
+                    // ordinary delimited seed retains its expression diagnostic.
+                    let owner = match parser.current_rule() {
+                        Some(rules::APPLICATION_EXPRESSION) | None => rules::EXPRESSION,
+                        Some(rule) => rule,
+                    };
+                    self.push(Frame::Required(Box::new(
+                        Required::new(
+                            owner,
+                            "syntax/missing-operator-operand",
+                            "missing expression after operator",
+                            "expression",
+                            &[],
+                            &[],
+                            Some(index),
+                        )
+                        .with_diagnostic_rule(owner),
+                    )));
                 }
                 Frame::Required(mut child) => {
                     let before = *allowance;

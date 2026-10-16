@@ -48,6 +48,7 @@ enum Phase {
 }
 pub(crate) struct AbandonContinuation<'a> {
     target: RuleId,
+    diagnostic_rule: Option<RuleId>,
     code: &'a str,
     message: &'a str,
     start: TextSize,
@@ -64,6 +65,7 @@ impl<'a> AbandonContinuation<'a> {
     pub fn new(target: RuleId, code: &'a str, message: &'a str) -> Self {
         Self {
             target,
+            diagnostic_rule: None,
             code,
             message,
             start: TextSize::ZERO,
@@ -76,6 +78,10 @@ impl<'a> AbandonContinuation<'a> {
             phase: Phase::Start,
             work: 0,
         }
+    }
+    pub fn with_diagnostic_rule(mut self, rule: Option<RuleId>) -> Self {
+        self.diagnostic_rule = rule;
+        self
     }
     fn exhausted(&mut self, parser: &mut Parser<'_>, stopped: bool) {
         if remaining_recovery_bytes(parser) == 0 && !parser.is_eof() && !stopped {
@@ -366,7 +372,7 @@ impl<'a> AbandonContinuation<'a> {
                             code: DiagnosticCode::from(self.code),
                             phase: DiagnosticPhase::Syntax,
                             severity: Severity::Error,
-                            rule: parser.current_rule(),
+                            rule: self.diagnostic_rule.or_else(|| parser.current_rule()),
                             context: parser.current_context(),
                             primary: DiagnosticAnchor::Absolute {
                                 revision: parser.source().revision(),

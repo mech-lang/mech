@@ -8,7 +8,7 @@ call-arg	functions	SCC-0001	81	true	expression	none	none
 call-arg-with-binding	functions	SCC-0001	81	true	expression	none	colon|identifier|whitespace0
 comprehension-qualifier	expressions	SCC-0001	81	true	expression|generator|variable-define	none	none
 expression	expressions	SCC-0001	81	true	application-expression|match-arm	none	period|question|whitespace0
-factor	expressions	SCC-0001	81	true	function-call|literal|matrix-comprehension|negate-factor|not-factor|parenthetical-term|slice|structure|var	none	transpose
+factor	expressions	SCC-0001	81	true	function-call|literal|matrix-comprehension|negate-factor|not-factor|parenthetical-term|set-comprehension|slice|structure|var	none	transpose
 fancy-table	structures	SCC-0001	81	true	fancy-table-header|table-row2	none	new-line|row-separator|table-separator|table-top
 fancy-table-header	structures	SCC-0001	81	true	field	none	table-separator|whitespace0
 field	structures	SCC-0001	81	true	kind-annotation	none	identifier
@@ -51,7 +51,7 @@ mapping	structures	SCC-0001	81	true	expression	none	colon|comma|whitespace0
 match-arm	expressions	SCC-0001	81	true	expression|pattern	none	guard-operator|list-separator|output-operator|statement-separator|whitespace0|whitespace1
 matrix	structures	SCC-0001	81	true	matrix-row	none	box-drawing-char|matrix-end|matrix-start|whitespace|whitespace0
 matrix-column	structures	SCC-0001	81	true	expression	none	box-vert|box-vert-bold|comma|space-tab0
-matrix-comprehension	expressions	SCC-0001	81	true	comprehension-qualifier|expression	none	bar|left-bracket|list-separator|right-bracket|space-tab0
+matrix-comprehension	expressions	SCC-0001	81	true	comprehension-qualifier|expression	none	bar|left-bracket|list-separator|right-bracket|whitespace0
 matrix-row	structures	SCC-0001	81	true	matrix-column	none	box-drawing-char|new-line|semicolon|space-tab0|table-separator
 negate-factor	expressions	SCC-0001	81	true	factor	none	dash
 not-factor	expressions	SCC-0001	81	true	factor	none	not
@@ -68,8 +68,8 @@ range-subscript	expressions	SCC-0001	81	true	range-expression	none	none
 record	structures	SCC-0001	81	true	binding	none	table-end|table-start|whitespace0
 regular-table	structures	SCC-0001	81	true	table-header|table-row	none	table-separator|whitespace0
 set	structures	SCC-0001	81	true	expression	none	left-brace|list-separator|right-brace|whitespace0|whitespace1
-set-comprehension	expressions	SCC-0001	81	true	comprehension-qualifier|expression	none	bar|left-brace|list-separator|right-brace|space-tab0
-slice	expressions	SCC-0001	81	true	subscript	none	identifier|prefixed-context-path
+set-comprehension	expressions	SCC-0001	81	true	comprehension-qualifier|expression	none	bar|left-brace|list-separator|right-brace|space-tab0|whitespace0
+slice	expressions	SCC-0001	81	true	function-call|parenthetical-term|subscript	none	identifier|prefixed-context-path
 structure	structures	SCC-0001	81	true	map|matrix|record|set|table|tuple|tuple-struct	none	empty-map|empty-set
 subscript	expressions	SCC-0001	81	true	brace-subscript|bracket-subscript	none	dot-subscript|dot-subscript-int|swizzle-subscript
 table	structures	SCC-0001	81	true	fancy-table|inline-table|regular-table	none	none

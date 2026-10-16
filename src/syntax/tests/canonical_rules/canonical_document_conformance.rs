@@ -156,7 +156,7 @@ fn document_dispositions_cover_the_exact_remaining_inventory() {
     let rows = lines
         .map(|line| line.split('\t').collect::<Vec<_>>())
         .collect::<Vec<_>>();
-    assert_eq!(rows.len(), 131);
+    assert_eq!(rows.len(), 132);
     let disposition_names = rows.iter().map(|row| row[0]).collect::<BTreeSet<_>>();
     assert_eq!(disposition_names.len(), rows.len());
 
@@ -184,7 +184,7 @@ fn document_dispositions_cover_the_exact_remaining_inventory() {
         rows.iter()
             .filter(|row| row[1] == "document-dependency")
             .count(),
-        110
+        111
     );
     assert_eq!(
         rows.iter()

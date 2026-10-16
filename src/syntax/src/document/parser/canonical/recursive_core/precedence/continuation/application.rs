@@ -124,11 +124,14 @@ impl Continuation {
                 if digit {
                     self.application(Phase::OperatorDigit(node));
                     self.base(rules::DIGIT_TOKEN);
-                } else if counted || parser.cursor().starts_with(">") {
+                } else if parser.cursor().starts_with(">") || counted && parser.is_eof() {
                     self.application(Phase::OperatorAngle(node));
                     self.base(rules::RIGHT_ANGLE);
                 } else {
-                    // A comprehension/match/table bar is not an application.
+                    // Digits alone do not commit an application: numeric and
+                    // typed-literal table rows follow the same bar. Only `>`
+                    // distinguishes a complete local counted token; EOF may
+                    // recover its missing terminator.
                     node.abandon(parser);
                     self.result = Attempt::NoMatch;
                 }

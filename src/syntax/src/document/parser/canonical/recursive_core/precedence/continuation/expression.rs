@@ -112,7 +112,15 @@ impl Continuation {
             }
             Phase::ApplicationLoop(node, seed, stages, committed) => {
                 if parser.is_halted() {
-                    node.complete(parser, SyntaxKind::ApplicationExpression);
+                    if stages {
+                        node.complete(parser, SyntaxKind::ApplicationExpression);
+                    } else {
+                        super::super::super::finish_provisional_marker(
+                            parser,
+                            node,
+                            SyntaxKind::ApplicationExpression,
+                        );
+                    }
                     self.expression_result(FactAttempt::Committed);
                     return None;
                 }
@@ -129,7 +137,15 @@ impl Continuation {
             }
             Phase::ApplicationNext(node, seed, stages, committed, before) => {
                 if parser.is_halted() {
-                    node.complete(parser, SyntaxKind::ApplicationExpression);
+                    if stages {
+                        node.complete(parser, SyntaxKind::ApplicationExpression);
+                    } else {
+                        super::super::super::finish_provisional_marker(
+                            parser,
+                            node,
+                            SyntaxKind::ApplicationExpression,
+                        );
+                    }
                     self.expression_result(FactAttempt::Committed);
                 } else if self.result != Attempt::NoMatch && parser.offset() > before {
                     self.expression(Phase::ApplicationLoop(
