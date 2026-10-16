@@ -61,3 +61,7 @@ checks complete outputs for several bounded inputs, including a negative signed
 checksum and a rejected input. Optional retained evidence pins source, object,
 descriptor and executable hashes. Qualification establishes correctness and
 linkage; it records no benchmark timings.
+
+The [linked qualification receipt](../validation/native-control-v1.json) records
+the exact compiler source commit, dependency lock, object and executable hashes,
+and complete-output checks for inputs 2 through 5 and rejected input 0.

@@ -1,0 +1,83 @@
+{
+  "activated_resource_io": false,
+  "application_kind": "control",
+  "application_lock_sha256": "781f3cddda0d505c1a5cf81c87c89c65c147024e7ef000e50176f45d084fa580",
+  "application_profile": "dev; debug=0; incremental=false; target-cpu=native",
+  "attempts": [
+    {
+      "arguments": [
+        "2"
+      ],
+      "exit_code": 0,
+      "expected_stdout": "-1\nPfannkuchen(2) = 1\n",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_validation": "empty",
+      "stdout_sha256": "1056da674bb6ac2820a0d95b58eb146905291edd7019f1f5146db3c67596779a",
+      "stdout_validation": "exact-complete-bytes"
+    },
+    {
+      "arguments": [
+        "3"
+      ],
+      "exit_code": 0,
+      "expected_stdout": "2\nPfannkuchen(3) = 2\n",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_validation": "empty",
+      "stdout_sha256": "773fd4dac2ff800cc6f45e905bbdcc6ae1016192af8bd4ab802cd33740e3c6d3",
+      "stdout_validation": "exact-complete-bytes"
+    },
+    {
+      "arguments": [
+        "4"
+      ],
+      "exit_code": 0,
+      "expected_stdout": "4\nPfannkuchen(4) = 4\n",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_validation": "empty",
+      "stdout_sha256": "890d8d8d321817f27ab4b2d922865a014c08b4f5064b41eb070ad475c72c0553",
+      "stdout_validation": "exact-complete-bytes"
+    },
+    {
+      "arguments": [
+        "5"
+      ],
+      "exit_code": 0,
+      "expected_stdout": "11\nPfannkuchen(5) = 7\n",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_validation": "empty",
+      "stdout_sha256": "e9a8b35247e69dddecaf5a1d4427d747d7690dee1f9366bd0f1a5617ee550578",
+      "stdout_validation": "exact-complete-bytes"
+    },
+    {
+      "arguments": [
+        "0"
+      ],
+      "exit_code": 1,
+      "expected_stdout": "",
+      "stderr_sha256": "d09562610e46f03aa933ead8da047ed0222467b4ca2c6bfe2adcf193cb2bec5a",
+      "stderr_validation": "nonempty",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_validation": "exact-complete-bytes"
+    }
+  ],
+  "benchmark_measurements": 0,
+  "binary_sha256": "ee3436ae41f203da89ae60eb4d052684f3f7f50f5251cb2816b96b87a0bf6502",
+  "build_count": 1,
+  "compiler_source_commit": "91fd774f232317206a6cfdbfc1a9243a25a8ef23",
+  "cranelift_codegen": "0.131.3",
+  "descriptor_sha256": "dab9276b52eca2143c4aac681b17d55009522bea9aaea46b50f00ca450987389",
+  "emission_environment": {
+    "MECH_CONTROL_INLINE": "0"
+  },
+  "execution_environment": {
+    "RAYON_NUM_THREADS": "2"
+  },
+  "host": "aarch64-apple-darwin",
+  "object_sha256": "7fb49b806b8617d4967b528c57c4b1285c4c29b0bd6c3c9d037b6acc982fe45e",
+  "qualification_command": "MECH_CONTROL_INLINE=0 CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_BUILD_JOBS=2 RUST_MIN_STACK=67108864 cargo test -p mech-gpu --features native-build,native-io --test control_application --offline --locked -- --ignored --nocapture --test-threads=1",
+  "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)",
+  "same_executable_for_all_attempts": true,
+  "schema": "native-control-application-qualification-v1",
+  "source_fixture": "hosts/gpu/tests/fixtures/native/fannkuch-idiomatic.mec",
+  "source_sha256": "247533ea7f73a161e513bf7f49e45b9add5dfd3c38b538bbb399ee1cf6123093"
+}
