@@ -9,6 +9,20 @@ use mech_syntax::document::{
     FsmArmBodySyntax, FsmBodyTransitionSyntax, FsmValueSyntax, IdentifierSyntax,
 };
 
+pub(super) fn fsm_nominal_key(
+    namespace: &[String],
+    name: &str,
+) -> Result<NominalKey, mech_core::SemanticModelError> {
+    let path = CanonicalNominalPath::new(
+        namespace
+            .iter()
+            .cloned()
+            .chain(["fsm".to_owned(), name.to_owned()])
+            .collect::<Vec<_>>(),
+    )?;
+    Ok(NominalKey::from_path(NominalKind::Enum, &path))
+}
+
 #[derive(Clone)]
 struct DeclaredFsmParameter {
     name: String,
@@ -311,14 +325,7 @@ impl SemanticBuilder {
                 anchor: SourceSemanticAnchor::for_node(specification.syntax()),
             })?;
             let output = self.annotation_schema_draft(&output)?;
-            let path = CanonicalNominalPath::new(
-                nominal_namespace
-                    .iter()
-                    .cloned()
-                    .chain(["fsm".to_owned(), name.clone()])
-                    .collect::<Vec<_>>(),
-            )
-            .map_err(|error| {
+            let key = fsm_nominal_key(nominal_namespace, &name).map_err(|error| {
                 internal(
                     SourceSemanticAnchor::for_node(specification.syntax()),
                     format!("invalid FSM nominal path: {error:?}"),
@@ -390,11 +397,18 @@ impl SemanticBuilder {
             }
             let state_schema = SchemaDraft {
                 body: SchemaBody::Enum {
-                    key: NominalKey::from_path(NominalKind::Enum, &path),
+                    key,
                     variants: variants.into_boxed_slice(),
                 },
                 dimension_parameters: Box::new([]),
             };
+            self.declaration_schemas.push(PendingNominalDeclaration {
+                document_id: SourceSemanticAnchor::for_node(specification.syntax())
+                    .document
+                    .0,
+                relative_path: vec!["fsm".to_owned(), name.clone()].into_boxed_slice(),
+                schema: state_schema.clone(),
+            });
             self.local_fsms.insert(
                 name.clone(),
                 DeclaredFsm {

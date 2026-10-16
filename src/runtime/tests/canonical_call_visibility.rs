@@ -414,3 +414,76 @@ fn ordered_roots_do_not_share_callable_imports() {
         )
         .expect("independent roots may reuse an import alias");
 }
+
+#[test]
+fn ordered_roots_reject_fsm_dependency_provenance_changes_at_one_uri() {
+    #[derive(Debug)]
+    struct ChangingResolver {
+        roots: InMemorySourceResolver,
+        calls: std::sync::atomic::AtomicUsize,
+        change_origin: bool,
+        change_package: bool,
+    }
+    impl mech_runtime::SourceResolver for ChangingResolver {
+        fn resolve(&self, request: &SourceRequest) -> mech_core::MResult<Option<ResolvedSource>> {
+            if request.specifier != "./dep.mec" {
+                return self.roots.resolve(request);
+            }
+            let second = self.calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst) > 0;
+            let origin = if second && self.change_origin {
+                "owner-b"
+            } else {
+                "owner-a"
+            };
+            let package = if second && self.change_package {
+                "package-b"
+            } else {
+                "package-a"
+            };
+            Ok(Some(ResolvedSource::new("dep.mec", "memory:app/dep.mec", MechSourceCode::String(
+                "#Drive() => <f64>\n  | :Done.\n#Drive() -> :Done\n  :Done => 1.0.\nvalue := 1\n<+ value\nvalue\n".to_owned(),
+            )).with_kind(SourceKind::Mech)
+                .retain_source_document(Revision(0), ParseConfig::default())?
+                .with_nominal_origin(CanonicalNominalPath::new([origin.to_owned()])?)
+                .with_nominal_package_id(package)))
+        }
+    }
+    for (change_origin, change_package) in [(false, false), (true, false), (false, true)] {
+        let resolver = ChangingResolver {
+            roots: InMemorySourceResolver::new()
+                .with_string(
+                    "app/first.mec",
+                    "+> ./dep.mec\nfirst-result := dep/value\nfirst-result\n",
+                )
+                .with_string(
+                    "app/second.mec",
+                    "+> ./dep.mec\nsecond-result := dep/value + 1\nsecond-result\n",
+                ),
+            calls: std::sync::atomic::AtomicUsize::new(0),
+            change_origin,
+            change_package,
+        };
+        let mut compiler = RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_catalog())
+            .source_resolver(resolver)
+            .build_compiler()
+            .unwrap();
+        let result = compiler.compile_canonical_roots(
+            &[
+                SourceRequest::new("app/first.mec"),
+                SourceRequest::new("app/second.mec"),
+            ],
+            ModuleBuildOptions::new("test", "v0.4", "native", &[], &[]),
+        );
+        if change_origin || change_package {
+            assert!(
+                result
+                    .unwrap_err()
+                    .kind_message()
+                    .contains("changed during compilation")
+            );
+        } else {
+            assert_eq!(result.unwrap().source_dependencies().len(), 1);
+        }
+    }
+}

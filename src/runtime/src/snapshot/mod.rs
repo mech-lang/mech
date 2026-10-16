@@ -13,6 +13,9 @@ use crate::CapabilityId;
 #[path = "tests.rs"]
 mod tests;
 
+/// Shared element budget for bounded terminal and document value projections.
+pub const DEFAULT_REPL_VALUE_ELEMENT_LIMIT: usize = 500;
+
 /// An owned immutable canonical runtime value.
 #[derive(Clone)]
 pub struct RuntimeValueSnapshot {

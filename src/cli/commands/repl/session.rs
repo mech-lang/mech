@@ -33,6 +33,14 @@ impl ResidentReplRuntimeFactory for CliReplRuntimeFactory {
         )?
         .build()
     }
+
+    fn activate_document(
+        &self,
+        events: MechEventBuffer,
+        document: &mech_runtime::SourceDocument,
+    ) -> MResult<(MechRuntime, mech_runtime::RuntimeProgramLoadOutcome)> {
+        self.activate_standalone_document(events, document)
+    }
 }
 
 /// CLI adapter around the shared durable resident REPL session.
@@ -244,6 +252,30 @@ mod tests {
 
         let value = repl.submit("x\n").unwrap();
         assert_eq!(value.to_string(), "1");
+        repl.shutdown().unwrap();
+    }
+
+    #[test]
+    fn resident_enum_identity_survives_submissions_and_reset() {
+        const SOURCE: &str = "<color> := :red | :green\nmy-color<color> := :red\n";
+        let mut repl = ResidentRepl::new().unwrap();
+        let red = repl.submit(SOURCE).unwrap();
+        let origin = repl
+            .session
+            .source_document()
+            .unwrap()
+            .nominal_origin()
+            .unwrap()
+            .clone();
+        let green = repl.submit("other-color<color> := :green\n").unwrap();
+        assert_eq!(green.schema_key(), red.schema_key());
+        assert_eq!(
+            repl.session.source_document().unwrap().nominal_origin(),
+            Some(&origin)
+        );
+        repl.session.reset().unwrap();
+        let restored = repl.submit(SOURCE).unwrap();
+        assert_eq!(restored.schema_key(), red.schema_key());
         repl.shutdown().unwrap();
     }
 

@@ -3,10 +3,15 @@
 from __future__ import annotations
 
 import contextlib
+from collections.abc import Callable
 import io
 import itertools
+import json
 from pathlib import Path
+import socket
 import tempfile
+import threading
+import time
 import unittest
 from unittest import mock
 
@@ -139,6 +144,87 @@ class ChromeSessionStartupTests(unittest.TestCase):
                 self.assertIn(str(self.session.log), diagnostics.getvalue())
                 self.assertIsNone(self.session.process)
                 self.assertIsNone(self.session._log_handle)
+
+
+class ChromeSessionNavigationTests(unittest.TestCase):
+    def setUp(self) -> None:
+        with mock.patch.object(chrome, "find_browser", return_value=Path("fixture-browser")):
+            self.session = chrome.ChromeSession(None, "fixture-profile", "fixture.log")
+        client_socket, peer_socket = socket.socketpair()
+        client_socket.settimeout(0.01)
+        peer_socket.settimeout(1)
+        self.client_socket = client_socket
+        self.peer_socket = peer_socket
+        self.addCleanup(self.close_socket, client_socket)
+        self.addCleanup(self.close_socket, peer_socket)
+        client = chrome.WebSocket.__new__(chrome.WebSocket)
+        client.socket = client_socket
+        self.peer = chrome.WebSocket.__new__(chrome.WebSocket)
+        self.peer.socket = peer_socket
+        process = mock.Mock()
+        process.poll.return_value = None
+        with mock.patch.object(chrome, "WebSocket", return_value=client):
+            self.session.devtools = chrome.DevTools(process, "ws://fixture")
+        self.session.session_id = "fixture-session"
+
+    @staticmethod
+    def close_socket(connection: socket.socket) -> None:
+        try:
+            connection.shutdown(socket.SHUT_RDWR)
+        except OSError:
+            pass
+        connection.close()
+
+    def respond(
+        self, send_response: Callable[[dict[str, object]], None],
+    ) -> tuple[threading.Thread, list[Exception]]:
+        errors = []
+
+        def run() -> None:
+            try:
+                request = self.peer.receive()
+                self.assertEqual(request["method"], "Page.navigate")
+                self.assertEqual(request["sessionId"], "fixture-session")
+                send_response(request)
+            except Exception as error:
+                errors.append(error)
+
+        worker = threading.Thread(target=run, daemon=True)
+        worker.start()
+        self.addCleanup(worker.join, 1)
+        return worker, errors
+
+    def test_navigation_accepts_a_reply_after_the_receive_idle_timeout(self) -> None:
+        def reply(request: dict[str, object]) -> None:
+            time.sleep(0.06)
+            self.peer.send(json.dumps({"id": request["id"], "result": {"frameId": "ready"}}))
+
+        worker, errors = self.respond(reply)
+        self.session.navigate("http://fixture", timeout=0.5)
+        worker.join(1)
+        self.assertFalse(worker.is_alive())
+        self.assertEqual(errors, [])
+
+    def test_navigation_preserves_partial_header_and_payload_across_receive_timeouts(self) -> None:
+        def reply(request: dict[str, object]) -> None:
+            payload = json.dumps({"id": request["id"], "result": {"frameId": "ready"}}).encode()
+            self.assertLess(len(payload), 126)
+            frame = b"\x81" + bytes([len(payload)]) + payload
+            for chunk in (frame[:1], frame[1:2], frame[2:5], frame[5:]):
+                self.peer_socket.sendall(chunk)
+                time.sleep(0.04)
+
+        worker, errors = self.respond(reply)
+        self.session.navigate("http://fixture", timeout=0.5)
+        worker.join(1)
+        self.assertFalse(worker.is_alive())
+        self.assertEqual(errors, [])
+
+    def test_navigation_deadline_remains_bounded_without_a_reply(self) -> None:
+        started = time.monotonic()
+        with self.assertRaisesRegex(chrome.BrowserFailure, "Page.navigate timed out"):
+            self.session.navigate("http://fixture", timeout=0.03)
+        self.assertLess(time.monotonic() - started, 1)
 
 
 if __name__ == "__main__":
