@@ -163,27 +163,60 @@ fn pipe_at(code: &str, start: usize) -> Result<Option<Pipe>, String> {
             repetitions: None,
         }));
     }
-    let Some(first) = tail.trim_start().bytes().next() else {
+
+    // A counted pipe is one local token. Do not search beyond whitespace or a
+    // structural delimiter: ordinary prose and table rows can contain many
+    // unrelated bars, and an unbounded search from each one is quadratic.
+    let tail_bytes = tail.as_bytes();
+    let mut token_start = 0;
+    while tail_bytes
+        .get(token_start)
+        .is_some_and(|byte| byte.is_ascii_whitespace() && *byte != b'\n' && *byte != b'\r')
+    {
+        token_start += 1;
+    }
+    let Some(&first) = tail_bytes.get(token_start) else {
         return Ok(None);
     };
-    if !first.is_ascii_digit() && !matches!(first, b'+' | b'-' | b'.') {
-        // An identifier immediately closed by `>` is a malformed count, not a
-        // generator or a match arm. Those retain their `<-`, `=>` and `->` forms.
-        let named_count = tail.find('>').is_some_and(|end| {
-            first == b'>'
-                || (!tail[..end].is_empty()
-                    && tail[..end]
-                        .bytes()
-                        .all(|b| b.is_ascii_alphanumeric() || b == b'_'))
-        });
-        if !named_count {
-            return Ok(None);
-        }
+    if matches!(first, b'\n' | b'\r' | b'|') {
+        return Ok(None);
     }
-    let end = tail.find(['>', '\n', '|', '(', ')', '[', ']', '{', '}', ',', ';']);
-    let Some(end) = end.filter(|&end| tail.as_bytes()[end] == b'>') else {
-        return Err("repeated application count requires a closing `>`".into());
-    };
+
+    let count_like =
+        first.is_ascii_alphanumeric() || matches!(first, b'_' | b'+' | b'-' | b'.' | b'>');
+    if !count_like {
+        return Ok(None);
+    }
+
+    let mut end = token_start;
+    while tail_bytes.get(end).is_some_and(|byte| {
+        byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'+' | b'-' | b'.')
+    }) {
+        end += 1;
+    }
+    let mut close = end;
+    while tail_bytes
+        .get(close)
+        .is_some_and(|byte| byte.is_ascii_whitespace() && *byte != b'\n' && *byte != b'\r')
+    {
+        close += 1;
+    }
+    if tail_bytes.get(close) != Some(&b'>') {
+        // A directly attached numeric token followed by a function name is a
+        // likely counted pipe with a missing terminator. Spaced table cells,
+        // standalone punctuation such as `|.`, and match arms are not pipes.
+        let token = &tail[token_start..end];
+        let next = tail_bytes.get(close).copied();
+        let missing_close = token_start == 0
+            && token.bytes().any(|byte| byte.is_ascii_digit())
+            && next.is_some_and(|byte| byte.is_ascii_alphabetic() || byte == b'_');
+        return if missing_close {
+            Err("repeated application count requires a closing `>`".into())
+        } else {
+            Ok(None)
+        };
+    }
+    let end = close;
     let count = &tail[..end];
     // A numeric match arm/transition is not an application operator.
     if count.ends_with('=') || count.ends_with('-') {
@@ -807,6 +840,17 @@ mod tests {
         assert_eq!(normalize(source).unwrap(), source);
         let n = normalize("r := seed |18446744073709551615> step\n").unwrap();
         assert!(n.contains("18446744073709551615, step)"));
+    }
+    #[test]
+    fn counted_detection_preserves_prose_numeric_tables_and_bar_heavy_documents() {
+        let prose = "use |. Prefix each native application with its host.\n";
+        assert_eq!(normalize(prose).unwrap(), prose);
+
+        let table = "a := |id<u64> hw1<u8>| 1 10 | 2 20 | 3 30 |\n";
+        assert_eq!(normalize(table).unwrap(), table);
+
+        let rows = "| left | right |\n".repeat(4_096);
+        assert_eq!(normalize(&rows).unwrap(), rows);
     }
     #[test]
     fn holes_share_one_evaluation_and_ignore_strings_and_identifiers() {
