@@ -724,6 +724,22 @@ pub fn maintained_source_type_declaration(
         "sequence/length" => {
             declaration.parameter_names = Some(vec!["value".into()].into_boxed_slice())
         }
+        "sequence/sort-indices" => {
+            declaration.parameter_names = Some(
+                vec![
+                    "primary".into(),
+                    "primary-order".into(),
+                    "secondary".into(),
+                    "secondary-order".into(),
+                ]
+                .into_boxed_slice(),
+            )
+        }
+        "text/lines" => declaration.parameter_names = Some(vec!["text".into()].into_boxed_slice()),
+        "text/join" => {
+            declaration.parameter_names =
+                Some(vec!["values".into(), "separator".into()].into_boxed_slice())
+        }
         "map/histogram" | "map/keys" | "map/values" => {
             declaration.parameter_names = Some(vec!["value".into()].into_boxed_slice())
         }

@@ -106,8 +106,12 @@ pub mod horzcat;
 pub(crate) mod map_ops;
 #[cfg(feature = "pure_text")]
 pub(crate) mod pure_text;
+#[cfg(feature = "sequence_sort")]
+pub(crate) mod sequence_sort;
 #[cfg(feature = "table")]
 pub mod table_ops;
+#[cfg(feature = "pure_text")]
+pub(crate) mod text_ops;
 #[cfg(feature = "matrix_vertcat")]
 pub mod vertcat;
 

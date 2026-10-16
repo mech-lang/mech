@@ -1132,6 +1132,57 @@ fn sequence_length() -> Result<Vec<KindScheme>, SemanticModelError> {
     ])
 }
 
+fn sequence_sort_indices() -> Result<KindScheme, SemanticModelError> {
+    let primary_length = DimensionExpr::Multiply(vec![dim(0), dim(1)].into_boxed_slice());
+    let secondary_length = DimensionExpr::Multiply(vec![dim(2), dim(3)].into_boxed_slice());
+    make(
+        0,
+        4,
+        vec![
+            matrix(BuiltinScalarKind::U64.kind_expr(), dim(0), dim(1)),
+            BuiltinScalarKind::String.kind_expr(),
+            matrix(BuiltinScalarKind::String.kind_expr(), dim(2), dim(3)),
+            BuiltinScalarKind::String.kind_expr(),
+        ],
+        vec![matrix(
+            KindExpr::Index,
+            DimensionExpr::Constant(1),
+            primary_length.clone(),
+        )],
+        vec![KindConstraint::DimensionEqual(
+            primary_length,
+            secondary_length,
+        )],
+    )
+}
+
+fn text_lines() -> Result<KindScheme, SemanticModelError> {
+    make_with_dimensions(
+        0,
+        bounded_dimensions(0, None),
+        vec![BuiltinScalarKind::String.kind_expr()],
+        vec![matrix(
+            BuiltinScalarKind::String.kind_expr(),
+            DimensionExpr::Constant(1),
+            dim(0),
+        )],
+        Vec::new(),
+    )
+}
+
+fn text_join() -> Result<KindScheme, SemanticModelError> {
+    make(
+        0,
+        2,
+        vec![
+            matrix(BuiltinScalarKind::String.kind_expr(), dim(0), dim(1)),
+            BuiltinScalarKind::String.kind_expr(),
+        ],
+        vec![BuiltinScalarKind::String.kind_expr()],
+        Vec::new(),
+    )
+}
+
 fn string_count_map(cardinality: DimensionExpr) -> KindExpr {
     KindExpr::Map {
         key: Box::new(BuiltinScalarKind::String.kind_expr()),
@@ -1661,6 +1712,9 @@ pub fn maintained_source_schemes(
         )?],
         "number/format" => number_format()?,
         "sequence/length" => sequence_length()?,
+        "sequence/sort-indices" => vec![sequence_sort_indices()?],
+        "text/lines" => vec![text_lines()?],
+        "text/join" => vec![text_join()?],
         "map/histogram" => vec![string_histogram()?],
         "map/keys" => vec![string_count_projection(true)?],
         "map/values" => vec![string_count_projection(false)?],

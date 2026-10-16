@@ -126,8 +126,12 @@ pub mod __mech_native {
         install_number_format_matrix, install_number_format_scalar, install_parse_u64,
         install_sequence_length,
     };
+    #[cfg(feature = "sequence_sort")]
+    pub use crate::intrinsics::sequence_sort::install_sequence_sort_indices;
     #[cfg(feature = "table")]
     pub use crate::intrinsics::table_ops::__mech_native::*;
+    #[cfg(feature = "pure_text")]
+    pub use crate::intrinsics::text_ops::{install_text_join, install_text_lines};
     #[cfg(feature = "matrix_vertcat")]
     pub use crate::intrinsics::vertcat::__mech_native::*;
 }

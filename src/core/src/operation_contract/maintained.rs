@@ -138,9 +138,18 @@ pub fn maintained_operation_contract(
         )
     };
     match name {
+        "sequence/sort-indices" if input_count == 4 => Some(full(ShapeRule::Declared)),
         "map/histogram" | "map/keys" | "map/values" if input_count == 1 => {
             Some(full(ShapeRule::Declared))
         }
+        "text/lines" if input_count == 1 => Some(full(ShapeRule::Declared)),
+        "text/join" if input_count == 2 => Some(declaration(
+            fixed(),
+            OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            ChangeDetectionPolicy::ExactScalar,
+        )),
         "number/parse-u64" | "sequence/length" if input_count == 1 => Some(declaration(
             fixed(),
             OutputConstruction::FullWrite {

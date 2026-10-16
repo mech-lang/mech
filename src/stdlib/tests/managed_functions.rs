@@ -61,7 +61,10 @@ fn managed_runtime_family(entry: &mech_core::RuntimeFunctionEntry) -> Option<&'s
     }
     if name.starts_with("Concat")
         || name.starts_with("NumberFormat")
-        || matches!(name, "number/parse-u64" | "sequence/length")
+        || matches!(
+            name,
+            "number/parse-u64" | "sequence/length" | "text/lines" | "text/join"
+        )
     {
         return Some("F03");
     }
@@ -76,6 +79,7 @@ fn managed_runtime_family(entry: &mech_core::RuntimeFunctionEntry) -> Option<&'s
                 | "map/histogram"
                 | "map/keys"
                 | "map/values"
+                | "sequence/sort-indices"
                 | "matrix/comprehension"
                 | "matrix/horzcat"
                 | "matrix/vertcat"
@@ -148,7 +152,7 @@ fn managed_source_family(name: &str, intrinsic: bool) -> Option<&'static str> {
     if name.starts_with("string/")
         || matches!(
             name,
-            "number/parse-u64" | "number/format" | "sequence/length"
+            "number/parse-u64" | "number/format" | "sequence/length" | "text/lines" | "text/join"
         )
     {
         Some("F03")
@@ -162,6 +166,7 @@ fn managed_source_family(name: &str, intrinsic: bool) -> Option<&'static str> {
                 | "map/histogram"
                 | "map/keys"
                 | "map/values"
+                | "sequence/sort-indices"
         )
     {
         Some("F06")
@@ -320,6 +325,56 @@ fn ordinary_map_additions_have_exact_aggregate_families_and_memory_classes() {
         assert_eq!(catalog.exports_for_operation(operation).len(), 1);
     }
     assert_eq!(catalog.module_exports("map").len(), 3);
+}
+
+#[cfg(any(feature = "standard_compiler", feature = "full_compiler"))]
+#[test]
+fn ordinary_sort_text_additions_have_exact_families_and_memory_classes() {
+    let catalog = mech_stdlib::source_catalog();
+    for (name, family, arity) in [
+        ("sequence/sort-indices", "F06", 4),
+        ("text/lines", "F03", 1),
+        ("text/join", "F03", 2),
+    ] {
+        let operation = OperationId::from_name(name);
+        let entries = catalog
+            .runtime_entries_for_binding(
+                RuntimeBindingSelector::Operation(operation),
+                ExecutionTarget::DirectRuntime,
+            )
+            .collect::<Vec<_>>();
+        let [entry] = entries.as_slice() else {
+            panic!("expected one ordinary factory {name}")
+        };
+        assert_eq!(entry.name, name);
+        assert_eq!(entry.id.raw(), operation.raw());
+        use mech_core::{FunctionValueRepresentation as Value, RuntimeFunctionSignature};
+        let signature = match arity {
+            1 => RuntimeFunctionSignature::unary(Value::AnyValue, Value::AnyValue),
+            2 => {
+                RuntimeFunctionSignature::binary(Value::AnyValue, Value::AnyValue, Value::AnyValue)
+            }
+            4 => RuntimeFunctionSignature::quaternary(
+                Value::AnyValue,
+                Value::AnyValue,
+                Value::String,
+                Value::AnyValue,
+                Value::String,
+            ),
+            _ => unreachable!(),
+        };
+        assert_eq!(entry.signature(), signature);
+        assert_eq!(managed_runtime_family(entry), Some(family));
+        assert_eq!(managed_source_family(name, false), Some(family));
+        assert_eq!(
+            entry.implementation_memory_class(),
+            ImplementationMemoryClass::CanonicalFinalize
+        );
+        let (module, item) = name.split_once('/').unwrap();
+        let export = catalog.module_export(module, item).unwrap();
+        assert_eq!(export.exposure, mech_core::FunctionExposure::ModuleOnly);
+        assert_eq!(catalog.exports_for_operation(operation).len(), 1);
+    }
 }
 
 #[cfg(any(feature = "standard_compiler", feature = "full_compiler"))]

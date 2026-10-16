@@ -391,6 +391,10 @@
       "id_hex": "005230d27927cb75"
     },
     {
+      "name": "sequence/sort-indices",
+      "id_hex": "0042124eb130c9e5"
+    },
+    {
       "name": "set/cartesian-product",
       "id_hex": "005908183ef9538a"
     },
@@ -505,6 +509,14 @@
     {
       "name": "table/right-outer-join",
       "id_hex": "0075a7a07bcfd366"
+    },
+    {
+      "name": "text/join",
+      "id_hex": "00e3a6bc3d9d2070"
+    },
+    {
+      "name": "text/lines",
+      "id_hex": "00b0f523a4736fda"
     }
   ],
   "prelude_source_specializers": [
@@ -1043,6 +1055,12 @@
       "id_hex": "005230d27927cb75"
     },
     {
+      "module": "sequence",
+      "item": "sort-indices",
+      "canonical_name": "sequence/sort-indices",
+      "id_hex": "0042124eb130c9e5"
+    },
+    {
       "module": "stats",
       "item": "sum/column",
       "canonical_name": "stats/sum/column",
@@ -1059,6 +1077,18 @@
       "item": "concat",
       "canonical_name": "string/concat",
       "id_hex": "0017216086cc0361"
+    },
+    {
+      "module": "text",
+      "item": "join",
+      "canonical_name": "text/join",
+      "id_hex": "00e3a6bc3d9d2070"
+    },
+    {
+      "module": "text",
+      "item": "lines",
+      "canonical_name": "text/lines",
+      "id_hex": "00b0f523a4736fda"
     }
   ]
 }

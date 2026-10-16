@@ -8,44 +8,44 @@ use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
 #[cfg(feature = "full_runtime")]
-const EXPECTED_RUNTIME_FACTORIES: usize = 9_723;
+const EXPECTED_RUNTIME_FACTORIES: usize = 9_726;
 #[cfg(feature = "full_source")]
-const EXPECTED_SOURCE_ENABLED_RUNTIME_FACTORIES: usize = 9_725;
+const EXPECTED_SOURCE_ENABLED_RUNTIME_FACTORIES: usize = 9_728;
 #[cfg(feature = "full_source")]
 const EXPECTED_SOURCE_ENABLED_RUNTIME_SURFACE_DIGEST: &str =
     "ab6547f38932ef29a675a3aef0e6c11a6db59e7fc712adc2f4a51bb85b961793";
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
-const EXPECTED_STANDARD_COMPILER_RUNTIME_FACTORIES: usize = 1_422;
+const EXPECTED_STANDARD_COMPILER_RUNTIME_FACTORIES: usize = 1_425;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
-const EXPECTED_STANDARD_SOURCE_SPECIALIZERS: usize = 70;
+const EXPECTED_STANDARD_SOURCE_SPECIALIZERS: usize = 73;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
 const EXPECTED_STANDARD_COMPILER_RUNTIME_SURFACE_DIGEST: &str =
     "a5c6a86ad547f744aeb16abb17ccd4a2faa54509d58b69e7fc1715e165a49bde";
 #[cfg(all(feature = "full_source", not(feature = "full_compiler")))]
-const EXPECTED_FULL_SOURCE_RUNTIME_FACTORIES: usize = 15_702;
+const EXPECTED_FULL_SOURCE_RUNTIME_FACTORIES: usize = 15_705;
 #[cfg(all(feature = "full_source", not(feature = "full_compiler")))]
 const EXPECTED_FULL_SOURCE_RUNTIME_SURFACE_DIGEST: &str =
     "c5c2bae913e4482925289b54e58559b7676bb9ad66aede1e2ce6caf9501f2745";
 #[cfg(feature = "full_compiler")]
-const EXPECTED_FULL_COMPILER_RUNTIME_FACTORIES: usize = 15_706;
+const EXPECTED_FULL_COMPILER_RUNTIME_FACTORIES: usize = 15_709;
 #[cfg(feature = "full_compiler")]
 const EXPECTED_FULL_COMPILER_RUNTIME_SURFACE_DIGEST: &str =
     "3b4c4ee4f6c5978e8bc5bbe7800630a25664cd1ddaf69aa8a5b03b426ad89740";
 #[cfg(feature = "full_runtime")]
-const EXPECTED_EXTENDED_RUNTIME_FACTORIES: usize = 122_090;
+const EXPECTED_EXTENDED_RUNTIME_FACTORIES: usize = 122_093;
 #[cfg(feature = "full_source")]
-const EXPECTED_NAMED_SPECIALIZERS: usize = 126;
+const EXPECTED_NAMED_SPECIALIZERS: usize = 129;
 #[cfg(feature = "full_source")]
 const EXPECTED_INTRINSIC_SPECIALIZERS: usize = 13;
 #[cfg(feature = "full_source")]
 const EXPECTED_PRELUDE_EXPORTS: usize = 52;
 #[cfg(feature = "full_source")]
-const EXPECTED_MODULE_EXPORTS: usize = 57;
+const EXPECTED_MODULE_EXPORTS: usize = 60;
 #[cfg(feature = "full_source")]
-const EXPECTED_ALL_EXPORTS: usize = 127;
+const EXPECTED_ALL_EXPORTS: usize = 130;
 #[cfg(feature = "full_runtime")]
 const EXPECTED_RUNTIME_SURFACE_FILE_SHA256: &str =
-    "33f7a4dff94aad1aa757a068eb6267f01120e646d84e5011af02c414dc8ad285";
+    "bcd742d6c4857b06d538f087c7024fd4d82fbf9d292699c0619868b967b073da";
 #[cfg(feature = "full_runtime")]
 const EXPECTED_EXTENDED_RUNTIME_SURFACE_DIGEST: &str =
     "34db793ac637b3b1bc532978c6e8a6e0be1b8be63c33ec5f3043045f765616f5";
@@ -54,13 +54,13 @@ const EXPECTED_EXTENDED_RUNTIME_SURFACE_DIGEST: &str =
 // Historical retained projections remain independently asserted below.
 #[cfg(feature = "full_runtime")]
 const EXPECTED_CURRENT_RUNTIME_SURFACE_DIGEST: &str =
-    "237ca1ba4b1c5dc6e9a3efd04fc123c231c017d48697fe4a6ca52908c8458433";
+    "3ab7408f06e6a8459a410804854e35ee751ad08092e4fdb33a3152878b1ec21e";
 #[cfg(feature = "full_source")]
 const EXPECTED_CURRENT_SOURCE_ENABLED_RUNTIME_SURFACE_DIGEST: &str =
-    "e1448e26371c64753bdc7b39fad87d60d20c1d5014e6fa8e9e97b01b9274dcdd";
+    "a74bcef6119bd7a06ad15a4c95f3d32851e8ce12136a40ce7812593bbfe50da9";
 #[cfg(feature = "full_compiler")]
 const EXPECTED_CURRENT_FULL_COMPILER_RUNTIME_SURFACE_DIGEST: &str =
-    "24ee663fb79d26b6c3af510dba9cfcd2f3fd6821f16bbf54f5d5d0d4f8a84282";
+    "2ab905a5774fbe6fccc6ce7c5df3a3a5d7536d136816d0b10be26cd4e2438923";
 
 static CATALOG_TEST_LOCK: Mutex<()> = Mutex::new(());
 
@@ -131,9 +131,10 @@ fn canonical_runtime_surface_digest(catalog: &FunctionCatalog) -> String {
 }
 
 /// Preserve every historical profile digest as an independent compatibility
-/// check. Only the four exact text/number additions and the three exact map
-/// additions, independently checked below, are removed from that historical
-/// projection; the current fixture includes them too.
+/// check. Only the four exact text/number additions, the three exact map
+/// additions, and the three exact ordinary sort/text additions, independently
+/// checked below, are removed from the historical projection; current fixtures
+/// include every addition too.
 #[cfg(any(feature = "full_runtime", feature = "standard_compiler"))]
 fn retained_runtime_surface_digest(catalog: &FunctionCatalog) -> String {
     use mech_core::{
@@ -240,16 +241,18 @@ fn retained_runtime_surface_digest(catalog: &FunctionCatalog) -> String {
         );
     }
     let map_additions = assert_map_runtime_additions(catalog);
+    let collection_text_additions = assert_collection_text_runtime_additions(catalog);
     let mut retained = catalog
         .runtime_entries()
         .filter(|entry| {
             !additions.iter().any(|(name, ..)| entry.name == *name)
                 && !map_additions.contains(&entry.name.as_str())
+                && !collection_text_additions.contains(&entry.name.as_str())
         })
         .map(|entry| format!("{}\t{}\n", id_hex(entry.id.raw()), entry.name))
         .collect::<Vec<_>>();
     assert_eq!(
-        retained.len() + additions.len() + map_additions.len(),
+        retained.len() + additions.len() + map_additions.len() + collection_text_additions.len(),
         catalog.runtime_factory_count()
     );
     retained.sort_unstable();
@@ -391,6 +394,169 @@ fn assert_map_source_exports(catalog: &FunctionCatalog) {
     assert_eq!(catalog.module_exports("map").len(), 3);
 }
 
+#[cfg(any(feature = "full_runtime", feature = "standard_compiler"))]
+fn assert_collection_text_runtime_additions(catalog: &FunctionCatalog) -> [&'static str; 3] {
+    use mech_core::{
+        ExecutionTarget, FunctionValueRepresentation as Value, ImplementationMemoryClass,
+        OperationId, RuntimeFunctionId, RuntimeFunctionSignature, RuntimeOperationBinding,
+        RuntimeOutputAliasPolicy,
+    };
+    let additions = [
+        (
+            "sequence/sort-indices",
+            4,
+            false,
+            "install_sequence_sort_indices",
+            "sequence_sort",
+            RuntimeFunctionSignature::quaternary(
+                Value::AnyValue,
+                Value::AnyValue,
+                Value::String,
+                Value::AnyValue,
+                Value::String,
+            ),
+        ),
+        (
+            "text/lines",
+            1,
+            false,
+            "install_text_lines",
+            "pure_text",
+            RuntimeFunctionSignature::unary(Value::AnyValue, Value::AnyValue),
+        ),
+        (
+            "text/join",
+            2,
+            true,
+            "install_text_join",
+            "pure_text",
+            RuntimeFunctionSignature::binary(Value::AnyValue, Value::AnyValue, Value::AnyValue),
+        ),
+    ];
+    for (name, arity, scalar, installer, feature, signature) in additions {
+        let operation = OperationId::from_name(name);
+        let entry = catalog
+            .runtime_entry(RuntimeFunctionId::from_name(name))
+            .unwrap_or_else(|| panic!("profile omitted ordinary factory {name}"));
+        assert_eq!(entry.name, name);
+        assert_eq!(entry.id.raw(), operation.raw());
+        assert_eq!(entry.signature(), signature);
+        assert!(
+            matches!(entry.operation_binding(), RuntimeOperationBinding::Fixed(ids)
+            if ids.as_ref() == [operation])
+        );
+        assert_eq!(entry.contract_kind(), name);
+        assert_eq!(
+            entry.output_alias_policy(),
+            RuntimeOutputAliasPolicy::DisallowInputAlias
+        );
+        assert_eq!(
+            entry.implementation_memory_class(),
+            ImplementationMemoryClass::CanonicalFinalize
+        );
+        assert_eq!(
+            entry.operation_contract(operation),
+            Some(&collection_text_operation_contract(arity, scalar))
+        );
+        assert!(entry.supports_target(ExecutionTarget::DirectRuntime));
+        #[cfg(feature = "native-plan")]
+        {
+            assert!(entry.supports_target(ExecutionTarget::Native));
+            let linkage = entry
+                .native_linkage
+                .as_ref()
+                .expect("ordinary factory native linkage");
+            assert_eq!(linkage.package, "mech-engine");
+            assert_eq!(linkage.crate_name, "mech_engine");
+            assert_eq!(
+                linkage.installer_path,
+                format!("mech_engine::__mech_native::{installer}")
+            );
+            let mut features = vec![feature, "native-link", "runtime"];
+            if name == "sequence/sort-indices" {
+                features.push("string"); // The two direction ports are concrete Strings.
+            }
+            features.sort_unstable();
+            assert_eq!(linkage.cargo_features, features);
+        }
+        #[cfg(not(feature = "native-plan"))]
+        let _ = (installer, feature);
+    }
+    ["sequence/sort-indices", "text/lines", "text/join"]
+}
+
+#[cfg(any(feature = "full_runtime", feature = "standard_compiler"))]
+fn collection_text_operation_contract(
+    arity: usize,
+    scalar: bool,
+) -> mech_core::OperationContractDeclaration {
+    use mech_core::{
+        AccessMode, AliasPolicy, ChangeDetectionPolicy, DeliveryMode, ExternalInteraction,
+        InputPortLayout, InputPortPolicy, OperationContractDeclaration, OutputConstruction,
+        OutputPortPolicy, ShapeRule,
+    };
+    OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                };
+                arity
+            ]
+            .into_boxed_slice(),
+        ),
+        outputs: Box::new([OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: if scalar {
+                ChangeDetectionPolicy::ExactScalar
+            } else {
+                ChangeDetectionPolicy::KernelReported
+            },
+        }]),
+        interaction: ExternalInteraction::Pure,
+    }
+}
+
+#[cfg(any(feature = "full_source", feature = "standard_compiler"))]
+fn assert_collection_text_source_exports(catalog: &FunctionCatalog) {
+    for (module, item, arity, scalar) in [
+        ("sequence", "sort-indices", 4, false),
+        ("text", "lines", 1, false),
+        ("text", "join", 2, true),
+    ] {
+        let name = format!("{module}/{item}");
+        let operation = mech_core::OperationId::from_name(&name);
+        let specializer = catalog
+            .specializer(operation)
+            .expect("ordinary specializer");
+        assert_eq!(specializer.operation.id, operation);
+        assert_eq!(specializer.operation.canonical_name.as_ref(), name.as_str());
+        assert_eq!(
+            catalog.source_type_declaration(&name),
+            Some(&mech_core::maintained_source_type_declaration(&name).unwrap())
+        );
+        let export = catalog
+            .module_export(module, item)
+            .expect("ordinary module export");
+        assert_eq!(export.operation, operation);
+        assert_eq!(export.canonical_name, name);
+        assert_eq!(export.exposure, FunctionExposure::ModuleOnly);
+        assert_eq!(catalog.exports_for_operation(operation).len(), 1);
+        assert_eq!(
+            catalog.source_operation_contract(&name, arity, !scalar),
+            Some(&collection_text_operation_contract(arity, scalar))
+        );
+    }
+    assert_eq!(catalog.module_exports("text").len(), 2);
+    assert_eq!(catalog.module_exports("sequence").len(), 2);
+}
+
 #[cfg(any(feature = "full_source", feature = "standard_compiler"))]
 fn assert_pure_text_source_exports(catalog: &FunctionCatalog) {
     let additions = [
@@ -421,6 +587,7 @@ fn assert_pure_text_source_exports(catalog: &FunctionCatalog) {
 fn assert_standard_compiler_surface(catalog: &FunctionCatalog) {
     assert_pure_text_source_exports(catalog);
     assert_map_source_exports(catalog);
+    assert_collection_text_source_exports(catalog);
     assert_eq!(
         catalog.runtime_factory_count(),
         EXPECTED_STANDARD_COMPILER_RUNTIME_FACTORIES
@@ -544,6 +711,7 @@ fn frozen_runtime_surface() -> BTreeMap<String, String> {
 #[cfg(feature = "full_runtime")]
 fn assert_runtime_surface(catalog: &FunctionCatalog) {
     assert_map_runtime_additions(catalog);
+    assert_collection_text_runtime_additions(catalog);
     let count = catalog.runtime_factory_count();
     #[cfg(feature = "full_source")]
     if count == EXPECTED_SOURCE_ENABLED_RUNTIME_FACTORIES {
@@ -624,6 +792,7 @@ fn assert_source_runtime_surface(
 fn assert_source_surface(catalog: &FunctionCatalog) {
     assert_pure_text_source_exports(catalog);
     assert_map_source_exports(catalog);
+    assert_collection_text_source_exports(catalog);
     assert_eq!(catalog.specializer_count(), EXPECTED_NAMED_SPECIALIZERS);
     assert_eq!(
         catalog.intrinsic_specializer_count(),

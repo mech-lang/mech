@@ -123,6 +123,7 @@ full_values = [
 standard_operations = [
   "pure_text",
   "map_ops",
+  "sequence_sort",
   "access", "assign", "convert", "variable_define", "invariant_define", "variables",
   "subscript_default",
   "matrix_horzcat", "matrix_vertcat", "matrix_comprehensions",
@@ -145,6 +146,7 @@ standard_operations = [
 full_operations = [
   "pure_text",
   "map_ops",
+  "sequence_sort",
   "access", "assign", "convert", "variable_define", "invariant_define", "variables",
   "subscript_default",
   "matrix_horzcat", "matrix_vertcat", "matrix_comprehensions",
@@ -173,6 +175,7 @@ assign = ["mech-engine/assign"]
 convert = ["mech-engine/convert"]
 pure_text = ["mech-engine/pure_text"]
 map_ops = ["mech-engine/map_ops"]
+sequence_sort = ["mech-engine/sequence_sort"]
 variable_define = ["mech-engine/variable_define"]
 invariant_define = ["mech-engine/invariant_define"]
 variables = ["mech-engine/variables"]
