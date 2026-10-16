@@ -6,6 +6,11 @@ mod captures;
 pub mod control;
 pub mod grid;
 mod matrix;
+mod ports;
+pub use ports::{
+    NativeResourceIntent, NativeResourceRequirement, PARSE_U64_OP, RESOURCE_READ_OP,
+    RESOURCE_SEND_OP,
+};
 
 use mech_syntax::document::{
     AnyCallArgumentSyntax, AstNode, CanonicalOperator, DocumentId, FunctionCallSyntax,
@@ -142,12 +147,33 @@ impl ParsedSource {
         }
         Ok(parsed.syntax())
     }
-    fn matrix_syntax(&self) -> Result<SyntaxNode, String> {
-        let source = matrix::normalize_parsed(&self.source, &self.syntax)?;
-        if source == self.source {
-            Ok(self.syntax.clone())
+    /// Activated source must use checked sequence admission exclusively. Even
+    /// an unbound port attempt must not fall back to a trusted legacy frontend.
+    pub fn has_activated_ports(&self) -> bool {
+        fn activated(node: &SyntaxNode) -> bool {
+            matches!(
+                node.kind(),
+                SyntaxKind::ModuleImportContextAlias
+                    | SyntaxKind::ContextSend
+                    | SyntaxKind::PrefixedContextPath
+            ) || node.children().any(|child| activated(&child))
+        }
+        activated(&self.syntax)
+    }
+
+    fn matrix_syntax(&self, catalog: Catalog) -> Result<SyntaxNode, String> {
+        let imports = ports::SourceBindings::collect(&self.syntax, catalog)?;
+        let source = imports.canonical_calls(&self.source, &self.syntax)?;
+        let syntax = if source == self.source {
+            self.syntax.clone()
         } else {
-            Self::parse_syntax(&source)
+            Self::parse_syntax(&source)?
+        };
+        let normalized = matrix::normalize_parsed(&source, &syntax)?;
+        if normalized == source {
+            Ok(syntax)
+        } else {
+            Self::parse_syntax(&normalized)
         }
     }
 }
@@ -337,7 +363,8 @@ pub fn compile_parsed(
     if !(1..=8192).contains(&batch) {
         return Err("batch must be 1..8192".into());
     }
-    let syntax = parsed.matrix_syntax()?;
+    let syntax = parsed.matrix_syntax(catalog)?;
+    let bindings = ports::SourceBindings::collect(&syntax, catalog)?;
     // Constants are collected first, then native instructions reference their
     // stable value IDs. Lowering uses a temporary interleaved instruction list.
     let mut program = Program {
@@ -372,6 +399,7 @@ pub fn compile_parsed(
         program.kinds.push(value.kind());
         program.constants.push(value);
     }
+    bindings.append_constants(&mut program);
     let lengths: Vec<_> = program
         .constants
         .iter()
@@ -402,6 +430,7 @@ pub fn compile_parsed(
         }
     }
     let functions = collect_functions(&syntax)?;
+    bindings.validate_function_names(functions.keys())?;
     let mut globals = BTreeMap::new();
     for item in &all {
         let mut definitions = Vec::new();
@@ -431,6 +460,7 @@ pub fn compile_parsed(
         literals: &BTreeMap<(u32, u32), usize>,
         functions: &BTreeMap<String, SourceFunction>,
         catalog: Catalog,
+        bindings: &ports::SourceBindings,
         active: &mut Vec<String>,
     ) -> Result<usize, String> {
         if let Some(id) = literals.get(&(node.range().start.0, node.range().end.0)) {
@@ -439,6 +469,7 @@ pub fn compile_parsed(
         if node.kind() == SyntaxKind::FunctionCall {
             let call = FunctionCallSyntax::cast(node).ok_or("invalid call")?;
             let name = text(call.function().ok_or("missing function")?.syntax())?;
+            let name = bindings.resolve_name(&name).to_string();
             let arguments = call.arguments().ok_or("missing arguments")?.arguments();
             if let Some(function) = functions.get(&name) {
                 if active.contains(&name) {
@@ -459,6 +490,7 @@ pub fn compile_parsed(
                         literals,
                         functions,
                         catalog,
+                        bindings,
                         active,
                     )?;
                     if p.kinds[value] != *kind {
@@ -492,6 +524,7 @@ pub fn compile_parsed(
                         literals,
                         functions,
                         catalog,
+                        bindings,
                         active,
                     )?;
                     if locals.insert(variable, value).is_some() {
@@ -512,6 +545,9 @@ pub fn compile_parsed(
                 .find(|s| s.name == name)
                 .ok_or_else(|| format!("unsupported library operation {name}"))?;
             let (op, inputs) = (signature.op, signature.inputs);
+            if matches!(op, RESOURCE_READ_OP | RESOURCE_SEND_OP) {
+                return Err("resource operations require canonical activated ports".into());
+            }
             if arguments.len() != inputs.len() {
                 return Err(format!("{name}: incorrect arity"));
             }
@@ -529,6 +565,7 @@ pub fn compile_parsed(
                     literals,
                     functions,
                     catalog,
+                    bindings,
                     active,
                 )?;
                 if !expected.contains(&p.kinds[id]) {
@@ -680,6 +717,22 @@ pub fn compile_parsed(
             return Ok(id);
         }
         if node.kind() == SyntaxKind::Variable {
+            let variable = mech_syntax::document::VariableSyntax::cast(node.clone())
+                .ok_or("invalid variable")?;
+            if let Some(request) = bindings.read(&variable)? {
+                if !active.is_empty() {
+                    return Err("native callable cannot read resources".into());
+                }
+                let args = request.arguments(p)?;
+                let id = p.kinds.len();
+                p.nodes.push(Node {
+                    op: RESOURCE_READ_OP,
+                    args,
+                    kernel: None,
+                });
+                p.kinds.push(SequenceKind::Text);
+                return Ok(id);
+            }
             let name = text(&node)?.trim().to_string();
             return vars
                 .get(&name)
@@ -701,6 +754,7 @@ pub fn compile_parsed(
                     literals,
                     functions,
                     catalog,
+                    bindings,
                     active,
                 )?;
                 for pair in children[1..].chunks(2) {
@@ -722,11 +776,19 @@ pub fn compile_parsed(
                         literals,
                         functions,
                         catalog,
+                        bindings,
                         active,
                     )?;
+                    let concatenate = op == 22
+                        && p.kinds[value] == SequenceKind::Text
+                        && p.kinds[rhs] == SequenceKind::Text;
+                    if concatenate {
+                        op = 27;
+                    }
                     let integer = p.kinds[value] == SequenceKind::Integer
                         && p.kinds[rhs] == SequenceKind::Integer;
                     if !integer
+                        && !concatenate
                         && (!matches!(p.kinds[value], SequenceKind::Float | SequenceKind::Numbers)
                             || !matches!(p.kinds[rhs], SequenceKind::Float | SequenceKind::Numbers))
                     {
@@ -744,7 +806,9 @@ pub fn compile_parsed(
                             }
                         }
                     }
-                    let output = if integer {
+                    let output = if concatenate {
+                        SequenceKind::Text
+                    } else if integer {
                         SequenceKind::Integer
                     } else if p.kinds[value] == SequenceKind::Float
                         && p.kinds[rhs] == SequenceKind::Float
@@ -776,6 +840,7 @@ pub fn compile_parsed(
             literals,
             functions,
             catalog,
+            bindings,
             active,
         )
     }
@@ -785,11 +850,13 @@ pub fn compile_parsed(
         node: &SyntaxNode,
         functions: &BTreeMap<String, SourceFunction>,
         catalog: Catalog,
+        bindings: &ports::SourceBindings,
         visited: &mut BTreeSet<String>,
         out: &mut BTreeSet<String>,
     ) -> Result<(), String> {
         if let Some(call) = FunctionCallSyntax::cast(node.clone()) {
             let name = text(call.function().ok_or("missing function")?.syntax())?;
+            let name = bindings.resolve_name(&name).to_string();
             if let Some(signature) = catalog.iter().find(|s| s.name == name) {
                 let args = call.arguments().ok_or("missing arguments")?.arguments();
                 for (arg, kinds) in args.into_iter().zip(signature.inputs) {
@@ -808,12 +875,12 @@ pub fn compile_parsed(
                 }
             } else if let Some(function) = functions.get(&name) {
                 if visited.insert(name) {
-                    references(&function.body, functions, catalog, visited, out)?;
+                    references(&function.body, functions, catalog, bindings, visited, out)?;
                 }
             }
         }
         for child in node.children() {
-            references(&child, functions, catalog, visited, out)?;
+            references(&child, functions, catalog, bindings, visited, out)?;
         }
         Ok(())
     }
@@ -825,10 +892,18 @@ pub fn compile_parsed(
         literals: &BTreeMap<(u32, u32), usize>,
         functions: &BTreeMap<String, SourceFunction>,
         catalog: Catalog,
+        bindings: &ports::SourceBindings,
         active: &mut Vec<String>,
     ) -> Result<(), String> {
         let mut refs = BTreeSet::new();
-        references(node, functions, catalog, &mut BTreeSet::new(), &mut refs)?;
+        references(
+            node,
+            functions,
+            catalog,
+            bindings,
+            &mut BTreeSet::new(),
+            &mut refs,
+        )?;
         for name in refs {
             if p.functions.contains_key(&name) {
                 continue;
@@ -847,6 +922,7 @@ pub fn compile_parsed(
                 literals,
                 functions,
                 catalog,
+                bindings,
                 active,
             )?;
             let mut parameters = Vec::new();
@@ -861,6 +937,7 @@ pub fn compile_parsed(
                     globals,
                     functions,
                     catalog,
+                    bindings,
                     &mut BTreeSet::new(),
                 )?;
                 let id = graph.kinds.len();
@@ -896,6 +973,7 @@ pub fn compile_parsed(
                     literals,
                     functions,
                     catalog,
+                    bindings,
                     &mut active.clone(),
                 )?;
                 if locals.insert(name, id).is_some() {
@@ -908,11 +986,12 @@ pub fn compile_parsed(
             if graph.kinds[output] != source.output.1 {
                 return Err("callable output kind mismatch".into());
             }
-            if graph
-                .nodes
-                .iter()
-                .any(|n| matches!(n.op, 1 | 8 | 32 | 45 | 52))
-            {
+            if graph.nodes.iter().any(|n| {
+                matches!(
+                    n.op,
+                    1 | 8 | 32 | 45 | 52 | RESOURCE_READ_OP | RESOURCE_SEND_OP
+                )
+            }) {
                 return Err("native callable must be pure and cannot perform IO".into());
             }
             let callable = Callable {
@@ -938,6 +1017,7 @@ pub fn compile_parsed(
         &literal_ids,
         &functions,
         catalog,
+        &bindings,
         &mut Vec::new(),
     )?;
     for item in all {
@@ -957,7 +1037,43 @@ pub fn compile_parsed(
             return Err("unsupported code item".into());
         }
         let owner = &owners[0];
-        if owner.kind() == SyntaxKind::Statement {
+        if owner.kind() == SyntaxKind::ModuleImport {
+            // Every import was structurally resolved before lowering.
+            continue;
+        }
+        if let Some(send) =
+            mech_syntax::document::ContextSendSyntax::cast(owner.clone()).or_else(|| {
+                owner
+                    .children()
+                    .find_map(mech_syntax::document::ContextSendSyntax::cast)
+            })
+        {
+            let request = bindings.send(&send)?;
+            let value = lower(
+                send.expression()
+                    .ok_or("missing resource payload")?
+                    .syntax()
+                    .clone(),
+                &mut program,
+                &variables,
+                &literal_ids,
+                &functions,
+                catalog,
+                &bindings,
+                &mut Vec::new(),
+            )?;
+            if program.kinds[value] != SequenceKind::Text {
+                return Err("resource send requires text payload".into());
+            }
+            let mut args = request.arguments(&program)?;
+            args.push(value);
+            program.nodes.push(Node {
+                op: RESOURCE_SEND_OP,
+                args,
+                kernel: None,
+            });
+            program.kinds.push(SequenceKind::Unit);
+        } else if owner.kind() == SyntaxKind::Statement {
             let statements: Vec<_> = owner.children().collect();
             if statements.len() != 1 || statements[0].kind() != SyntaxKind::VariableDefine {
                 return Err("only immutable definitions are admitted statements".into());
@@ -980,6 +1096,7 @@ pub fn compile_parsed(
                 &literal_ids,
                 &functions,
                 catalog,
+                &bindings,
                 &mut Vec::new(),
             )?;
             variables.insert(captures::global_key(&name), value);
@@ -995,6 +1112,7 @@ pub fn compile_parsed(
                 &literal_ids,
                 &functions,
                 catalog,
+                &bindings,
                 &mut Vec::new(),
             )?;
             if program.kinds[value] != SequenceKind::Unit {
@@ -1005,6 +1123,7 @@ pub fn compile_parsed(
     if program.nodes.is_empty() {
         return Err("source contains no admitted executable operations".into());
     }
+    program.resource_requirements()?;
     Ok(program)
 }
 

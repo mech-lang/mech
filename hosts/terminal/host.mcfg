@@ -3,6 +3,7 @@ config := {
     provider: "cli"
     contexts: [
       { name: "env" base-uri: "cli://{instance}/env" operations: ["read"] }
+      { name: "args" base-uri: "cli://{instance}/args" operations: ["read"] }
       { name: "stdout" base-uri: "cli://{instance}/stdout" operations: ["write"] }
       { name: "stderr" base-uri: "cli://{instance}/stderr" operations: ["write"] }
     ]

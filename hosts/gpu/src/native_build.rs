@@ -33,16 +33,19 @@ pub fn emit_application(
     }
     let source = source.canonicalize().map_err(|e| e.to_string())?;
     let text = fs::read_to_string(&source).map_err(|e| e.to_string())?;
-    let library_features = if cfg!(feature = "system-gmp") {
-        "[\"sequence-cli\",\"system-gmp\"]"
-    } else {
-        "[\"sequence-cli\"]"
+    let parsed = mech_engine::native_sequence::ParsedSource::parse(&text)?;
+    let activated = parsed.has_activated_ports();
+    let library_features = match (activated, cfg!(feature = "system-gmp")) {
+        (true, true) => "[\"native-io\",\"system-gmp\"]",
+        (true, false) => "[\"native-io\"]",
+        (false, true) => "[\"sequence-cli\",\"system-gmp\"]",
+        (false, false) => "[\"sequence-cli\"]",
     };
     fs::create_dir_all(directory).map_err(|e| e.to_string())?;
     fs::write(directory.join("source.mec"), &text).map_err(|e| e.to_string())?;
     // Admission is semantic in both frontends. A failed collection compilation
     // does not execute anything; the grid path then reports both diagnostics.
-    match crate::sequence::compile(&text, 4096) {
+    match crate::sequence::compile_parsed(&parsed, 4096) {
         Ok(_) => {
             crate::sequence::emit_program_with_array_simd(
                 &text, directory, 4096, true, false, true, true, simd,
@@ -50,7 +53,11 @@ pub fn emit_application(
             fs::create_dir_all(directory.join("src")).map_err(|e| e.to_string())?;
             fs::write(
                 directory.join("src/main.rs"),
-                include_str!("sequence/application.rs.in"),
+                if activated {
+                    include_str!("sequence/activated-application.rs.in")
+                } else {
+                    include_str!("sequence/application.rs.in")
+                },
             )
             .map_err(|e| e.to_string())?;
             fs::write(directory.join("build.rs"), "fn main() { let root = std::env::var(\"CARGO_MANIFEST_DIR\").unwrap(); println!(\"cargo:rustc-link-arg={root}/mech-sequence.o\"); println!(\"cargo:rerun-if-changed=mech-sequence.o\"); println!(\"cargo:rerun-if-changed=constants.json\"); }\n").map_err(|e| e.to_string())?;
@@ -67,6 +74,8 @@ pub fn emit_application(
                 ("engine", "src/engine"),
                 ("syntax", "src/syntax"),
                 ("stdlib", "src/stdlib"),
+                ("runtime", "src/runtime"),
+                ("terminal", "hosts/terminal"),
             ] {
                 manifest.push_str(&format!(
                     "mech-{component} = {{ path = {} }}\n",
@@ -78,6 +87,11 @@ pub fn emit_application(
             Ok(ApplicationKind::Sequence)
         }
         Err(sequence_error) => {
+            if activated {
+                return Err(format!(
+                    "activated native source admission: {sequence_error}"
+                ));
+            }
             if mech_engine::native_sequence::control::compile(
                 &text,
                 mech_stdlib::native_control_catalog(),
