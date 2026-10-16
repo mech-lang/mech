@@ -592,29 +592,32 @@ fn worker_command(mut command: Command, root: &Path, label: &str) -> Captured {
     }
 }
 
-fn feature_closure(metadata: &Value) -> Vec<Value> {
+fn compiled_feature_closure(metadata: &Value, build_stdout: &[u8]) -> Vec<Value> {
     let packages = metadata["packages"]
         .as_array()
         .unwrap()
         .iter()
         .map(|package| (package["id"].as_str().unwrap(), package))
         .collect::<BTreeMap<_, _>>();
-    let nodes = metadata["resolve"]["nodes"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|node| (node["id"].as_str().unwrap(), node))
-        .collect::<BTreeMap<_, _>>();
     let root = metadata["resolve"]["root"].as_str().unwrap();
-    let mut pending = vec![root];
+    // Metadata can retain weak optional dependency edges that Cargo does not
+    // build. Every actual compiler-artifact unit (including fresh units) is
+    // authoritative for the successful build's selected packages/features.
     let mut seen = BTreeSet::new();
+    let mut seen_packages = BTreeSet::new();
     let mut result = Vec::new();
-    while let Some(id) = pending.pop() {
-        if !seen.insert(id) {
+    for line in build_stdout.split(|byte| *byte == b'\n') {
+        if line.is_empty() {
             continue;
         }
+        let message: Value = serde_json::from_slice(line).unwrap();
+        if message["reason"] != "compiler-artifact" {
+            continue;
+        }
+        let id = message["package_id"].as_str().unwrap();
         let package = packages[id];
         let name = package["name"].as_str().unwrap();
+        seen_packages.insert(name.to_owned());
         if name.starts_with("mech-") {
             assert!(package["source"].is_null(), "registry Mech crate {name}");
             let manifest = Path::new(package["manifest_path"].as_str().unwrap())
@@ -630,7 +633,6 @@ fn feature_closure(metadata: &Value) -> Vec<Value> {
             !name.starts_with("cranelift-"),
             "runtime graph contains compiler crate {name}"
         );
-        let node = nodes[id];
         let forbidden: &[&str] = match name {
             "mech-gpu" => &[
                 "canonical-native",
@@ -650,16 +652,26 @@ fn feature_closure(metadata: &Value) -> Vec<Value> {
             ],
             _ => &[],
         };
-        for feature in node["features"].as_array().unwrap() {
+        for feature in message["features"].as_array().unwrap() {
             assert!(
                 !forbidden.contains(&feature.as_str().unwrap()),
                 "runtime-only graph enabled {name}/{feature}"
             );
         }
-        result.push(json!({"id":id, "name":name, "version":package["version"], "features":node["features"]}));
-        for dependency in node["deps"].as_array().unwrap() {
-            pending.push(dependency["pkg"].as_str().unwrap());
+        if seen.insert((
+            id.to_owned(),
+            message["target"].to_string(),
+            message["features"].to_string(),
+        )) {
+            result.push(json!({"id":id, "name":name, "version":package["version"], "features":message["features"], "target_name":message["target"]["name"], "target_kind":message["target"]["kind"]}));
         }
+    }
+    assert!(result.iter().any(|unit| unit["id"] == root));
+    for required in ["mech-core", "mech-engine", "mech-gpu", "mech-stdlib"] {
+        assert!(
+            seen_packages.contains(required),
+            "missing compiled {required}"
+        );
     }
     result.sort_by(|a, b| a["id"].as_str().cmp(&b["id"].as_str()));
     result
@@ -768,7 +780,6 @@ fn canonical_native_link_build_worker() {
         String::from_utf8_lossy(&locked.stderr)
     );
     let metadata: Value = serde_json::from_slice(&locked.stdout).unwrap();
-    let closure = feature_closure(&metadata);
     let mut command = CargoInvocation::build(
         generated.manifest_path(),
         &name,
@@ -792,6 +803,7 @@ fn canonical_native_link_build_worker() {
     );
     let messages = parse_cargo_build_messages(Cursor::new(&built.stdout)).unwrap();
     assert_eq!(messages.build_finished, Some(true));
+    let closure = compiled_feature_closure(&metadata, &built.stdout);
     let executable = messages.select_binary(&name).unwrap().executable;
     let mut pins = BTreeMap::new();
     for (label, project) in [("original", &generated), ("decoded", &decoded)] {
