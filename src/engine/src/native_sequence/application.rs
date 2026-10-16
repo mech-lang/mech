@@ -246,14 +246,6 @@ fn pipe_at(code: &str, start: usize) -> Result<Option<Pipe>, String> {
     }))
 }
 
-fn pipe_offsets(source: &str) -> Result<Vec<Pipe>, String> {
-    let code = mask(source);
-    top_offsets(source, "|")?
-        .into_iter()
-        .filter_map(|offset| pipe_at(&code, offset).transpose())
-        .collect()
-}
-
 fn bar_starts_match_arm(code: &str, start: usize) -> bool {
     let bytes = code.as_bytes();
     let mut delimiters = Vec::new();
@@ -277,6 +269,55 @@ fn bar_starts_match_arm(code: &str, start: usize) -> bool {
     false
 }
 
+fn bar_is_in_table_literal(code: &str, start: usize) -> bool {
+    let bytes = code.as_bytes();
+    // An ordinary application after a table is still an application; the
+    // ambiguity here concerns attached counts and compact cell comparisons.
+    if bytes.get(start + 1) == Some(&b'>') {
+        return false;
+    }
+    let statement_start = bytes[..start]
+        .iter()
+        .rposition(|byte| matches!(*byte, b'\n' | b'\r' | b';'))
+        .map_or(0, |index| index + 1);
+    let Some(header_start) = bytes[statement_start..start]
+        .iter()
+        .position(|byte| *byte == b'|')
+        .map(|index| statement_start + index)
+    else {
+        return false;
+    };
+    let Some(header_end) = bytes[header_start + 1..]
+        .iter()
+        .position(|byte| *byte == b'|')
+        .map(|index| header_start + 1 + index)
+    else {
+        return false;
+    };
+    if start < header_end {
+        return false;
+    }
+    let header = code[header_start + 1..header_end].trim();
+    header
+        .as_bytes()
+        .first()
+        .is_some_and(|byte| byte.is_ascii_alphabetic() || *byte == b'_')
+        && header.contains('<')
+        && header.contains('>')
+}
+
+fn pipe_offsets(source: &str) -> Result<Vec<Pipe>, String> {
+    let code = mask(source);
+    top_offsets(source, "|")?
+        .into_iter()
+        .filter_map(|offset| {
+            (!bar_starts_match_arm(&code, offset) && !bar_is_in_table_literal(&code, offset))
+                .then(|| pipe_at(&code, offset).transpose())
+                .flatten()
+        })
+        .collect()
+}
+
 fn contains_pipe(source: &str) -> bool {
     let code = mask(source);
     let bytes = code.as_bytes();
@@ -297,6 +338,7 @@ fn contains_pipe(source: &str) -> bool {
                     .last()
                     .is_some_and(|delimiter| matches!(*delimiter, b'[' | b'{'))
                     || bar_starts_match_arm(&code, i)
+                    || bar_is_in_table_literal(&code, i)
                 {
                     continue;
                 }
@@ -923,6 +965,13 @@ mod tests {
         let compact_table = "x := |a<f64> b<bool>|9 false|\n";
         assert_eq!(normalize(compact_table).unwrap(), compact_table);
 
+        let comparison_table = "limit := 2; x := |a<bool>|1>limit|\n";
+        assert_eq!(normalize(comparison_table).unwrap(), comparison_table);
+        super::super::ParsedSource::parse(comparison_table).unwrap();
+        let table_pipe = normalize("x := |a<bool>|1>limit| |> Next\n").unwrap();
+        assert!(table_pipe.contains("application-temp-0 := |a<bool>|1>limit|"));
+        assert!(table_pipe.contains("x := Next(application-temp-0)"));
+
         let rows = "| left | right |\n".repeat(4_096);
         assert_eq!(normalize(&rows).unwrap(), rows);
     }
@@ -930,6 +979,11 @@ mod tests {
     fn counted_detection_preserves_comprehension_and_match_comparisons() {
         let source = "x := [x | x > 0]\ny := [x | 1 > 0]\nz := [x |1>0]\nby_name := [x |limit>zero]\nlimit := 2\nvalues := {limit |1>limit}\na := (value ? | n > 0 => n | * => 0)\nb := (value ? | 1 > 0 => 1 | * => 0)\nc := (value ? |1>0 => 1 | * => 0)\nd := value ? | true => 0 |1>limit => 1 | * => 2\ne := value ? |-1>limit => 1 | * => 0\n";
         assert_eq!(normalize(source).unwrap(), source);
+
+        let arrow =
+            normalize("F(value<u64>) => <u64> := value ? |1>limit => 1 | * => 0\n").unwrap();
+        assert!(arrow.contains("value ? |1>limit => 1 | * => 0"));
+        assert!(!arrow.contains("sequence/iterate"));
 
         let normalized = normalize("r := source |> filter([x | x > 0], _)\n").unwrap();
         assert!(normalized.contains("r := filter([x | x > 0], application-temp-0)"));
