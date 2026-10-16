@@ -1,6 +1,6 @@
 {
   "schema": "mech.validation.resource-input-schema.v1",
-  "status": "RUNTIME_SCHEMA_AND_OBSERVATION_CHECKS_PASSED_CLI_GATE_PENDING",
+  "status": "RUNTIME_AND_CANONICAL_CLI_BYTE_CHECKS_PASSED",
   "source_parent": "a9fb18bc1fd5c52490a43e2d53e4422cb4a50018",
   "source_files": {
     "src/engine/src/resident/general/mod.rs": "efd21c079347cd16a53cf0ca757ff111cebfeac2e8152de32f7810f738e3de02",
@@ -105,11 +105,42 @@
       "serial_preflight": true,
       "benchmark_measurements": 0,
       "log_sha256": "94802a7a9d7c3ef5cf91a065f99317b045116662610f95b6a3cad29c411707af"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "mech-build",
+        "--no-default-features",
+        "--features",
+        "standard-hosts",
+        "--test",
+        "canonical_cli_bytes",
+        "--offline",
+        "--locked",
+        "--target-dir",
+        "/private/tmp/mech-build-cache",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "source_commit": "4ef7ef70455b153f51e9006201e6120dde9b1098",
+      "started_utc": "2026-10-16T19:10:18.818847+00:00",
+      "finished_utc": "2026-10-16T19:14:35.768170+00:00",
+      "exit_code": 0,
+      "test_results": [
+        "test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.23s"
+      ],
+      "sources_unchanged_during_run": true,
+      "serial_preflight": true,
+      "benchmark_measurements": 0,
+      "log_sha256": "161f4ff515ce2ec2d77792024ccce053966d08f9acffd9039d06f07893360430"
     }
   ],
   "distinct_runtime_test_cases": 44,
   "prepared_new_test_cases": 8,
-  "transport_contract": "The existing numeric-matrix host transport requires positive dimensions. Empty provider planning values are retained; changing host packet widths 3,1,8,1 exercise actual geometry. Empty raw-byte provider input is a separate unchanged CLI session gate.",
+  "transport_contract": "The existing numeric-matrix host transport requires positive dimensions. Empty provider planning values are retained; changing host packet widths 3,1,8,1 exercise actual geometry. The unchanged canonical CLI byte sessions separately qualify empty raw-byte reads, byte/text views, grants, delivery errors, and shutdown.",
   "fixture_corrections": [
     "New sequence/length fixtures use an explicit +> sequence source import and the source native-plan catalog.",
     "The portable selector test no longer executes a representative planning payload as real input. This follows the existing compiler contract introduced by e73a80732. It retains the original source and source/bytecode oversized-input rejection checks, and now adds actual valid input, rejection with unchanged publication, and successful recovery."
@@ -137,7 +168,8 @@
   "product_resource_limits_changed": false,
   "benchmark_measurements": 0,
   "remaining": [
-    "Retained eight-case canonical CLI byte session gate.",
     "Canonical Cranelift AOT lowering, same-binary secured/trusted lifecycle, full idiomatic benchmark qualification and serial Mech timing runs remain separate work."
-  ]
+  ],
+  "canonical_cli_test_cases": 8,
+  "canonical_cli_fixtures_and_expected_streams_unchanged": true
 }
