@@ -2,7 +2,7 @@
   "schema": "mech.validation.application-recovery.v1",
   "source_parent": "4a71d5dc9bc0b1ea7e408c695723a5ebfbe0b0a5",
   "scope": "Canonical expression diagnostic ownership and selected typed bodies during bounded recovery.",
-  "status": "TARGETED_CHECKS_PASSED_FULL_LIBRARY_PENDING",
+  "status": "FULL_SYNTAX_LIBRARY_PASSED",
   "source_files": {
     "src/syntax/src/document/ast/recursive_core/expressions.rs": "0b77f8173bdb6c9d283ec0e7b71eb8ef5dd5554e1e3b39c368a82be587218bd9",
     "src/syntax/src/document/parser/canonical/recursive_core/precedence/continuation/expression.rs": "786d4bed1280e3cdecac562c9f7a9f9982c6080e57a1bd37af1203610dc6dc35",
@@ -59,7 +59,36 @@
   "product_resource_limits_changed": false,
   "benchmark_measurements": 0,
   "limits": [
-    "The previous full library result was 499 passed and 7 failed. No full-library qualification is claimed by this receipt.",
     "Native AOT application lowering and resource-schema integration are separate pending work."
-  ]
+  ],
+  "full_library_validation": {
+    "source_commit": "f8b8eb61195d6eabc24834bad7fa58a0f3efe40e",
+    "command": [
+      "cargo",
+      "test",
+      "-p",
+      "mech-syntax",
+      "--no-default-features",
+      "--features",
+      "full",
+      "--lib",
+      "--offline",
+      "--locked",
+      "--target-dir",
+      "/private/tmp/mech-build-cache",
+      "--",
+      "--test-threads=1",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-16T18:47:14.237102+00:00",
+    "finished_utc": "2026-10-16T18:57:02.974914+00:00",
+    "exit_code": 0,
+    "test_results": [
+      "test result: ok. 506 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 588.47s"
+    ],
+    "sources_unchanged_during_run": true,
+    "serial_preflight": true,
+    "benchmark_measurements": 0,
+    "log_sha256": "da80405f5cdf3def2afa78f07a83aebfd721ec56670ab1d69c3d3438b366e05f"
+  }
 }
