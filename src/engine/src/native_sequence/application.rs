@@ -26,7 +26,42 @@ fn hole_identifier_char(ch: char) -> bool {
 fn unicode_operator(ch: char) -> bool {
     matches!(
         ch,
-        '×' | '÷' | '·' | '•' | '⨯' | '≠' | '≥' | '≤' | '∨' | '∧' | '¬' | '⊗'
+        '×' | '÷'
+            | '·'
+            | '•'
+            | '⨯'
+            | '≠'
+            | '⩵'
+            | '≡'
+            | '≥'
+            | '≤'
+            | '∨'
+            | '⋁'
+            | '∧'
+            | '⋀'
+            | '¬'
+            | '⊕'
+            | '⊻'
+            | '⋈'
+            | '⟕'
+            | '⟖'
+            | '⟗'
+            | '⋉'
+            | '▷'
+            | '∪'
+            | '∩'
+            | '∖'
+            | '∁'
+            | '⊆'
+            | '⊇'
+            | '⊊'
+            | '⊂'
+            | '⊋'
+            | '⊃'
+            | '∈'
+            | '∉'
+            | 'Δ'
+            | '⊗'
     )
 }
 fn identifier(source: &str) -> bool {
@@ -329,14 +364,13 @@ fn bar_starts_match_arm(code: &str, start: usize) -> bool {
     false
 }
 
-/// Collect table separators in one forward pass. Inspect a statement's first
-/// header at most once; rescanning the prefix at each row is quadratic for
-/// inline tables.
+/// Collect table separators in a forward pass. Header candidates slide over
+/// disjoint intervals; rows are checked independently, never by reparsing an
+/// ever-growing table prefix. The canonical parser owns both decisions.
 fn table_bar_offsets(code: &str) -> Vec<usize> {
     #[derive(Default)]
     struct Context {
         first_bar: Option<usize>,
-        inspected_header: bool,
         in_table: bool,
     }
     let bytes = code.as_bytes();
@@ -354,8 +388,38 @@ fn table_bar_offsets(code: &str) -> Vec<usize> {
                 *contexts.last_mut().unwrap() = Context::default();
             }
             b'|' => {
+                if bytes.get(index + 1) == Some(&b'|')
+                    || index
+                        .checked_sub(1)
+                        .is_some_and(|previous| bytes[previous] == b'|')
+                {
+                    continue;
+                }
                 let context = contexts.last_mut().unwrap();
-                if !context.inspected_header {
+                if context.in_table {
+                    if bar_starts_match_arm(code, index) {
+                        continue;
+                    }
+                    let start = context.first_bar.unwrap();
+                    let row = code[start + 1..index].trim();
+                    let table = format!("|application-cell<u64>| {row} |");
+                    if !row.is_empty()
+                        && canonical_fragment(
+                            &format!("application-table := {table}\n"),
+                            mech_syntax::document::SyntaxKind::Table,
+                            &table,
+                        )
+                    {
+                        offsets.push(index);
+                        context.first_bar = Some(index);
+                        continue;
+                    }
+                    // A projection or an empty gap after the last closing row
+                    // ends the table. A following |N> is a stage, not a row.
+                    context.in_table = false;
+                    context.first_bar = None;
+                }
+                if !context.in_table {
                     if let Some(start) = context.first_bar {
                         let header = code[start + 1..index].trim();
                         let table = format!("|{header}| 0 |");
@@ -366,13 +430,12 @@ fn table_bar_offsets(code: &str) -> Vec<usize> {
                                 mech_syntax::document::SyntaxKind::Table,
                                 &table,
                             );
-                        context.inspected_header = true;
-                    } else {
-                        context.first_bar = Some(index);
                     }
+                    // Failed headers must not hide a later genuine table in
+                    // this context (including after a boolean OR expression).
+                    context.first_bar = Some(index);
                 }
-                // An ordinary application after a table remains a pipeline.
-                if context.in_table && bytes.get(index + 1) != Some(&b'>') {
+                if context.in_table {
                     offsets.push(index);
                 }
             }
@@ -654,6 +717,7 @@ fn body_statements(source: &str) -> Result<Vec<String>, String> {
                     let previous = mask(previous);
                     let previous = previous.trim_end();
                     ends_pipe(previous)
+                        || previous.chars().next_back().is_some_and(unicode_operator)
                         || [
                             "|>", "+", "-", "*", "/", "·", "&&", "||", "==", "!=", "<", ">", "<=",
                             ">=", ":=", "=", "+=", "-=", "*=", "/=", "^=",
@@ -1112,7 +1176,11 @@ mod tests {
 
     #[test]
     fn compact_unicode_operators_do_not_hide_argument_holes() {
-        for operator in ["×", "÷", "·", "•", "⨯", "≠", "≥", "≤", "∨", "∧", "⊗"] {
+        for operator in [
+            "×", "÷", "·", "•", "⨯", "≠", "⩵", "≡", "≥", "≤", "∨", "⋁", "∧", "⋀", "⊕", "⊻", "⋈",
+            "⟕", "⟖", "⟗", "⋉", "▷", "∪", "∩", "∖", "∁", "⊆", "⊇", "⊊", "⊂", "⊋", "⊃", "∈", "∉",
+            "Δ", "⊗",
+        ] {
             let source = format!("r := x |> f(_{operator}2.0, 2.0{operator}_)\n");
             let normalized = normalize(&source).unwrap();
             assert!(
@@ -1124,6 +1192,19 @@ mod tests {
         }
         let normalized = normalize("r := x |> f(¬_, some_🙂)\n").unwrap();
         assert!(normalized.contains("f(¬ application-temp-0, some_🙂)"));
+    }
+
+    #[test]
+    fn unicode_arithmetic_continues_across_arrow_body_lines() {
+        for operator in ["×", "÷", "·", "•", "⨯"] {
+            let source = format!("F(x<f64>, y<f64>) => <f64> :=\n  x {operator}\n  y\n");
+            let normalized = normalize(&source).unwrap();
+            assert!(
+                normalized.contains(&format!("application-temp-result := x {operator} y.")),
+                "{normalized}"
+            );
+            assert!(!normalized.contains("effect-"));
+        }
     }
     #[test]
     fn counted_detection_preserves_prose_numeric_tables_and_bar_heavy_documents() {
@@ -1150,6 +1231,33 @@ mod tests {
             let inline = format!("x := |a<u64>|{}\n", " 0 |".repeat(count));
             assert_eq!(table_bar_offsets(&inline).len(), count + 1);
             assert_eq!(normalize(&inline).unwrap(), inline);
+        }
+    }
+
+    #[test]
+    fn table_detection_survives_earlier_bars_and_allows_counted_projection_seeds() {
+        for source in [
+            "r := Pair(true || false, |a<bool>|1>limit|)\n",
+            "r := Pair((true || false), |a<bool>|1>limit|)\n",
+            "r := Pair(value ? | true => 0 | * => 1, |a<bool>|1>limit|)\n",
+        ] {
+            assert_eq!(normalize(source).unwrap(), source);
+        }
+        for operator in ["|>", "|0>", "|1>", "|19>"] {
+            let source = format!("r := |a<bool>|1>limit|.a {operator} step\n");
+            let normalized = normalize(&source).unwrap();
+            assert!(
+                normalized.contains("application-temp-0 := |a<bool>|1>limit|.a"),
+                "{normalized}"
+            );
+            if operator == "|>" {
+                assert!(normalized.contains("r := step(application-temp-0)"));
+            } else {
+                assert!(
+                    normalized.contains("r := sequence/iterate(application-temp-0,"),
+                    "{normalized}"
+                );
+            }
         }
     }
     #[test]
