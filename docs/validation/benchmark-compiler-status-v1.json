@@ -1,0 +1,111 @@
+{
+  "schema": "mech.benchmark-compiler-status.v1",
+  "as_of_utc": "2026-10-16",
+  "status": "IN_PROGRESS_NOT_BENCHMARK_QUALIFIED",
+  "integration": {
+    "repository": "https://github.com/mech-lang/mech",
+    "branch": "codex/idiomatic-native-programs",
+    "pull_request": "https://github.com/mech-lang/mech/pull/901",
+    "pull_request_status": "OPEN_DRAFT",
+    "qualified_source_commit": "099e17b7b76e27c1426d4fa546eec66d03203f02",
+    "qualification_receipts_commit": "6ffc5e0e8febaf6b9718753e2037840548c5bd4d"
+  },
+  "qualified": [
+    {
+      "feature": "Canonical integer kind suffix boundary",
+      "evidence": "numeric-kind-suffix-v1.json",
+      "result": "507 complete parser-library tests pass; integer suffixes consume in full and complex arithmetic remains supported."
+    },
+    {
+      "feature": "Canonical native Bool/U64/I64 scalar graph",
+      "evidence": [
+        "canonical-native-i64-v1.json",
+        "canonical-native-i64-linked-v1.json"
+      ],
+      "result": "27 integration checks,6 private selected-semantics checks,4 private native ABI/identity checks, runtime-only build,3 actual linked executables and35 fresh-process launches. Original and decoded resident/JIT results, complete output streams and failures agree; runtime compiled units exclude parser and code generators.",
+      "limits": "Stateless Turn-only scalar graph; not full workload support."
+    },
+    {
+      "feature": "Full resource input schemas and actual observation geometry",
+      "source_commit": "4ef7ef70455b153f51e9006201e6120dde9b1098",
+      "result": "44 distinct runtime cases and8 retained CLI byte-stream cases passed. Native resource machine-code lowering remains separate."
+    }
+  ],
+  "preserved_candidates": {
+    "branch": "codex/compiler-pending-work",
+    "commit": "69bbfb71e8f3e4b422aec2bed844bbb9bf9558b7",
+    "status": "SOURCE_ONLY_UNRUN_UNLESS_SEPARATELY_QUALIFIED_ON_INTEGRATION_BRANCH",
+    "composed_index": "native-scalar/composed-candidates-v1.json",
+    "next_layers": [
+      {
+        "feature": "F64",
+        "path": "native-scalar/f64/composed-i64-v1",
+        "source_files": 21,
+        "baseline": "099e17b7b76e27c1426d4fa546eec66d03203f02"
+      },
+      {
+        "feature": "checked numeric casts",
+        "path": "native-scalar/casts/composed-i64-v1",
+        "source_files": 14,
+        "baseline": "F64 composed layer; recompose after any F64 qualification fix."
+      }
+    ],
+    "other_features": [
+      "native Match and linked Match",
+      "native Iteration",
+      "native matrix engine/GPU and constant-output consistency",
+      "strict CLI argument count",
+      "packed U8 snapshot constructor",
+      "borrowed structural Match projections",
+      "nbody and six other idiomatic workload source candidates"
+    ],
+    "application_rule": "Check exact before hashes and compose additive changes. Archived whole files target older source compositions and must not overwrite current fixes."
+  },
+  "remaining": [
+    {
+      "requirement": "Qualify all ten canonical idiomatic Mech programs",
+      "work": "Parse, compile, execute full input/output and required-work contracts; validate publication LOC. Named-output =>, ordinary functions and captures, pipelines, repeated application syntax, match and state-machine control must use general language semantics."
+    },
+    {
+      "requirement": "Complete canonical Cranelift AOT lowering",
+      "work": "F64, checked casts, computed activation/state, Match/Iteration, matrix/collection and resource execution. No whole-program interpreter fallback or benchmark-sized Rust bridge."
+    },
+    {
+      "requirement": "Close collection and ownership gaps",
+      "work": "Borrowed structural Match projections still require persistent metadata memory charges in initial and refined plans, including budget None. Keep cumulative work limits; do not raise or discount them. Tree/arena references, bigint and byte operations require genuine compiler/runtime support."
+    },
+    {
+      "requirement": "Native capability and CLI lifecycle",
+      "work": "Typed argv/stdin/stdout/raw-byte ABI, strict payload argument boundary/count, ordered errors and output staging. Hosted resident CLI byte success does not establish native AOT resource support."
+    },
+    {
+      "requirement": "Same AOT binary trusted and secured",
+      "work": "Qualify both modes across complete process startup, arguments, inputs, work, output/flush, shutdown and errors. AOT first."
+    },
+    {
+      "requirement": "Serial Mech-only timing and publication",
+      "work": "Measure only after correctness/admission gates pass; preserve all other language cohorts and historical optimization evidence. Never overlap benchmark measurements."
+    }
+  ],
+  "known_gaps": [
+    "Structural Match v3 does not yet charge its persistent projection metadata baseline; source preservation is not execution qualification.",
+    "Source CLI has no explicit parsed payload-vector boundary in current run options. Generated hosted applications already receive immutable payload OsStrings; preserve the custom factory seam.",
+    "Pidigits source requires general bigint support. Replacing its algorithm with a Rust whole-program helper would not close that language gap.",
+    "Archived native Match/Iteration control supports Bool/U64 only until wider scalar kinds, identities and transport are explicitly composed."
+  ],
+  "website": {
+    "repository": "https://github.com/mech-lang/benchmarks",
+    "branch": "main",
+    "commit": "00db6bdc9473d0fb2391eecf7a4dab452b890140",
+    "url": "https://mech-lang.org/benchmarks/",
+    "last_verified_build": "21dcbb5405ae1684",
+    "last_verified_pipeline": "2956249210",
+    "status": "Published and desktop/mobile verified; Fastest/Fewest LOC compose samples, summaries and sample-density selection. Independent brightness controls retained.",
+    "selected_runs": 2877,
+    "execution_variants": 59,
+    "language_families": 52,
+    "timing_dataset_changed_in_native_scalar_qualification": false
+  },
+  "benchmark_measurements_in_native_scalar_qualification": 0,
+  "release_policy": "Keep draft compiler PRs unmerged until their full qualification requirements are met."
+}
