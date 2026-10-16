@@ -259,9 +259,9 @@ fn factor(value: &FactorSyntax) -> MResult<ConfigExpr> {
         FactorValueSyntax::Slice(_) => Err(ConfigProfileViolation::error(
             "slice expressions are not supported in Mech config v1",
         )),
-        FactorValueSyntax::MatrixComprehension(_) => Err(ConfigProfileViolation::error(
-            "comprehensions are not allowed in Mech config",
-        )),
+        FactorValueSyntax::MatrixComprehension(_) | FactorValueSyntax::SetComprehension(_) => Err(
+            ConfigProfileViolation::error("comprehensions are not allowed in Mech config"),
+        ),
     }
 }
 fn literal(value: &LiteralSyntax) -> MResult<ConfigExpr> {
