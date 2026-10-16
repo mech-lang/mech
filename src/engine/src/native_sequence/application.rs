@@ -181,9 +181,10 @@ fn pipe_at(code: &str, start: usize) -> Result<Option<Pipe>, String> {
     if matches!(first, b'\n' | b'\r' | b'|') {
         return Ok(None);
     }
-    if token_start > 0 && (first.is_ascii_alphabetic() || first == b'_') {
-        // Comprehension predicates and match-arm conditions use `| name >`.
-        // Named malformed counts remain diagnostic only when attached to `|`.
+    if token_start > 0 {
+        // Comprehension predicates and match-arm conditions use `| value >`.
+        // Counted pipes and their malformed-count diagnostics require the
+        // count token to be attached directly to `|`.
         return Ok(None);
     }
 
@@ -801,8 +802,6 @@ mod tests {
             ("|1e2>", "nonnegative decimal"),
             ("|abc>", "nonnegative decimal"),
             ("|_>", "nonnegative decimal"),
-            ("| >", "nonnegative decimal"),
-            ("| 1>", "nonnegative decimal"),
             ("|1 >", "nonnegative decimal"),
             ("|18446744073709551616>", "exceeds u64::MAX"),
             ("|19", "closing `>`"),
@@ -859,7 +858,7 @@ mod tests {
     }
     #[test]
     fn counted_detection_preserves_comprehension_and_match_comparisons() {
-        let source = "x := [x | x > 0]\ny := (value ? | n > 0 => n | * => 0)\n";
+        let source = "x := [x | x > 0]\ny := [x | 1 > 0]\na := (value ? | n > 0 => n | * => 0)\nb := (value ? | 1 > 0 => 1 | * => 0)\n";
         assert_eq!(normalize(source).unwrap(), source);
 
         let normalized = normalize("r := source |> filter([x | x > 0], _)\n").unwrap();
