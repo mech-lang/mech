@@ -12,6 +12,7 @@ rust-version = "1.92"
 
 [features]
 default = []
+canonical-native = ["aot", "mech-engine/native-artifact"]
 native-build = ["sequence-cli", "fused-cli"]
 system-gmp = ["dep:gmp-mpfr-sys", "gmp-mpfr-sys/use-system-libs"]
 sequence-cli = ["aot", "dep:hashbrown", "dep:fxhash", "dep:rayon", "dep:memchr", "dep:regex", "dep:rug", "dep:mech-stdlib", "mech-stdlib/native-sequence"]
@@ -128,3 +129,7 @@ mech-runtime = { version = "0.3.5", path = "../../src/runtime", default-features
 name = "mech-native-map"
 path = "src/bin/mech-native-map.rs"
 required-features = ["fused-cli"]
+
+[[test]]
+name = "canonical_artifact_native"
+required-features = ["canonical-native"]
