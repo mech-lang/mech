@@ -299,9 +299,7 @@ impl CanonicalSourceProgram {
                 crate::SourceNodeBody::Comprehension(declaration) => {
                     relocation.comprehension(declaration)
                 }
-                crate::SourceNodeBody::Iteration(declaration) => {
-                    relocation.iteration(declaration)
-                }
+                crate::SourceNodeBody::Iteration(declaration) => relocation.iteration(declaration),
                 crate::SourceNodeBody::Operation { .. } | crate::SourceNodeBody::Fsm(_) => {}
             }
             for input in &mut node.inputs {
@@ -379,9 +377,7 @@ impl BindingRelocation<'_> {
                 crate::ControlOperationBody::Comprehension(declaration) => {
                     self.comprehension(declaration)
                 }
-                crate::ControlOperationBody::Iteration(declaration) => {
-                    self.iteration(declaration)
-                }
+                crate::ControlOperationBody::Iteration(declaration) => self.iteration(declaration),
                 crate::ControlOperationBody::Operation { .. }
                 | crate::ControlOperationBody::Recur(_)
                 | crate::ControlOperationBody::Suspend

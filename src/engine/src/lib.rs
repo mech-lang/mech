@@ -28,11 +28,6 @@ pub mod native_artifact;
 #[cfg(feature = "native-sequence")]
 pub mod native_sequence;
 pub mod numeric_optimizations;
-#[cfg(any(
-    feature = "resident-artifact",
-    all(feature = "semantic-compiler", feature = "access")
-))]
-mod text_index;
 #[cfg(feature = "semantic-compiler")]
 pub mod program;
 #[cfg(all(feature = "resident-ekf", not(feature = "resident-artifact")))]
@@ -41,6 +36,11 @@ mod resident;
 pub mod resident;
 #[cfg(feature = "resident-artifact")]
 mod resident_value_adapter;
+#[cfg(any(
+    feature = "resident-artifact",
+    all(feature = "semantic-compiler", feature = "access")
+))]
+mod text_index;
 #[cfg(feature = "resident-ekf")]
 #[doc(hidden)]
 pub mod __resident_ekf {

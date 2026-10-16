@@ -591,9 +591,8 @@ fn bound_document_inputs_relocate_iteration_captures_and_body_constants_recursiv
         ),
         ("[(seed |2> step) | seed <- values<[u64]>]", 2, true),
     ] {
-        let source = format!(
-            "step(x<u64>) => <u64> := x + A + 1u64\nA := bias<u64>\n{expression}\n"
-        );
+        let source =
+            format!("step(x<u64>) => <u64> := x + A + 1u64\nA := bias<u64>\n{expression}\n");
         let product = CanonicalSourceFrontend
             .compile_document_with_catalog(&syntax(&source), Arc::clone(&catalog))
             .unwrap();

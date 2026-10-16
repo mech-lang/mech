@@ -3,14 +3,14 @@ use std::fs;
 use std::path::PathBuf;
 
 use crate::document::parser::canonical::{
-    parse_canonical_executable_rule_for_test, CanonicalRuleOutcome,
+    CanonicalRuleOutcome, parse_canonical_executable_rule_for_test,
 };
 use crate::document::parser::{canonical_rule_id, canonical_rule_name, rules};
 use crate::document::{
-    executable_node_kind, normalize_diagnostics, reconstruct_source_range, validate_lossless_range,
     ArrayPatternSyntax, AstNode, DocumentId, ExpectedSyntax, FormulaSyntax, KindSyntax,
     KindValueSyntax, NodeFlags, ParseConfig, PatternArrayItemSyntax, RecursiveCoreSyntax, Revision,
     SyntaxElement, SyntaxKind, SyntaxNode, SyntaxToken, TextRange, TextSize, TextSnapshot,
+    executable_node_kind, normalize_diagnostics, reconstruct_source_range, validate_lossless_range,
 };
 
 #[derive(Debug)]
