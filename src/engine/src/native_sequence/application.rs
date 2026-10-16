@@ -254,6 +254,29 @@ fn pipe_offsets(source: &str) -> Result<Vec<Pipe>, String> {
         .collect()
 }
 
+fn bar_starts_match_arm(code: &str, start: usize) -> bool {
+    let bytes = code.as_bytes();
+    let mut delimiters = Vec::new();
+    let mut index = start + 1;
+    while let Some(&byte) = bytes.get(index) {
+        match byte {
+            b'(' | b'[' | b'{' => delimiters.push(byte),
+            b')' | b']' | b'}' => {
+                if delimiters.pop().is_none() {
+                    return false;
+                }
+            }
+            b'=' if delimiters.is_empty() && bytes.get(index + 1) == Some(&b'>') => {
+                return true;
+            }
+            b'|' | b'\n' | b'\r' | b';' if delimiters.is_empty() => return false,
+            _ => {}
+        }
+        index += 1;
+    }
+    false
+}
+
 fn contains_pipe(source: &str) -> bool {
     let code = mask(source);
     let bytes = code.as_bytes();
@@ -264,27 +287,25 @@ fn contains_pipe(source: &str) -> bool {
             b')' | b']' | b'}' => {
                 stack.pop();
             }
-            b'|' => match pipe_at(&code, i) {
-                Ok(Some(pipe)) => {
-                    let counted = pipe.repetitions.is_some();
-                    let comprehension = counted
-                        && stack
-                            .last()
-                            .is_some_and(|delimiter| matches!(*delimiter, b'[' | b'{'));
-                    let match_arm = counted
-                        && bytes[..i]
-                            .iter()
-                            .rev()
-                            .copied()
-                            .find(|byte| !byte.is_ascii_whitespace())
-                            == Some(b'?');
-                    if !comprehension && !match_arm {
-                        return true;
-                    }
+            b'|' => {
+                // Classify canonical expression separators before attempting
+                // counted-pipe validation. Compact comparisons can look like
+                // complete counts (`|1>`) or malformed counts (`|name>` and
+                // `|-1>`), and every match arm—not only the first—owns its
+                // separator through the same-depth `=>` that follows it.
+                if stack
+                    .last()
+                    .is_some_and(|delimiter| matches!(*delimiter, b'[' | b'{'))
+                    || bar_starts_match_arm(&code, i)
+                {
+                    continue;
                 }
-                Ok(None) => {}
-                Err(_) => return true,
-            },
+                match pipe_at(&code, i) {
+                    Ok(Some(_)) => return true,
+                    Ok(None) => {}
+                    Err(_) => return true,
+                }
+            }
             _ => {}
         }
     }
@@ -907,7 +928,7 @@ mod tests {
     }
     #[test]
     fn counted_detection_preserves_comprehension_and_match_comparisons() {
-        let source = "x := [x | x > 0]\ny := [x | 1 > 0]\nz := [x |1>0]\nlimit := 2\nvalues := {limit |1>limit}\na := (value ? | n > 0 => n | * => 0)\nb := (value ? | 1 > 0 => 1 | * => 0)\nc := (value ? |1>0 => 1 | * => 0)\n";
+        let source = "x := [x | x > 0]\ny := [x | 1 > 0]\nz := [x |1>0]\nby_name := [x |limit>zero]\nlimit := 2\nvalues := {limit |1>limit}\na := (value ? | n > 0 => n | * => 0)\nb := (value ? | 1 > 0 => 1 | * => 0)\nc := (value ? |1>0 => 1 | * => 0)\nd := value ? | true => 0 |1>limit => 1 | * => 2\ne := value ? |-1>limit => 1 | * => 0\n";
         assert_eq!(normalize(source).unwrap(), source);
 
         let normalized = normalize("r := source |> filter([x | x > 0], _)\n").unwrap();
