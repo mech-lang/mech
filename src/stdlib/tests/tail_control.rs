@@ -114,7 +114,8 @@ fn synchronous_state_transitions_exceed_the_non_tail_frame_ceiling_and_refresh()
         let mut instance = instance(artifact, ordinal);
         for n in [0, 1, 24, 32, 64, 256, 1024, 3] {
             let value = u64_input(artifact, n);
-            turn(&mut instance, ResidentValueRef::Snapshot(&[Some(value)])).unwrap();
+            turn(&mut instance, ResidentValueRef::Snapshot(&[Some(value)]))
+                .unwrap_or_else(|error| panic!("artifact {ordinal}, n={n}: {error:?}"));
             assert!(!instance.has_ready_continuation());
             u64_output(&instance, output, n);
         }
@@ -235,7 +236,9 @@ fn actual_record_bounds_machine_scans_long_fasta_prefix_and_body_in_source_order
                 "ignored\n".repeat(prefix),
                 "acgt\n".repeat(body)
             );
-            turn(&mut instance, ResidentValueRef::String(&[text])).unwrap();
+            turn(&mut instance, ResidentValueRef::String(&[text])).unwrap_or_else(|error| {
+                panic!("artifact {ordinal}, prefix={prefix}, body={body}: {error:?}")
+            });
             let value = instance.copied_output(output).unwrap();
             let ValueData::Tuple(parts) = value.data() else {
                 panic!("{value:?}")

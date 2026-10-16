@@ -1,8 +1,8 @@
 use core::any::Any;
 
 use crate::{
-    BoundCall, ImplementationMemoryClass, ResolvedOperationContract, SchemaId, SchemaKey,
-    SchemaTable, ShapeInstance, Value,
+    BoundCall, ImplementationMemoryClass, MemoryBudgetDimension, ResolvedOperationContract,
+    SchemaId, SchemaKey, SchemaTable, ShapeInstance, Value,
 };
 
 #[cfg(feature = "no_std")]
@@ -136,6 +136,14 @@ pub enum ResidentKernelBindError {
     InvalidParameters,
 }
 
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub enum ResidentResourcePhase {
+    Planning,
+    Admission,
+    Execution,
+    Publication,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ResidentKernelError {
     InvalidInput,
@@ -150,6 +158,12 @@ pub enum ResidentKernelError {
     IndexOutOfRange {
         index: u64,
         upper_bound: u64,
+    },
+    ResourceLimit {
+        phase: ResidentResourcePhase,
+        dimension: MemoryBudgetDimension,
+        required: u64,
+        limit: u64,
     },
     IncompleteOutput,
 }

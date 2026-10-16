@@ -30,9 +30,10 @@ use core::sync::atomic::Ordering;
 use mech_core::snapshot::ValueFootprint;
 use mech_core::{
     ApplicationRequirementId, CellSlotId, ChangeDetectionPolicy, ExternalInteraction,
-    InstanceEpoch, IntegrityConstraintId, MResult, MechError, MechErrorKind, NodeId,
-    OutputConstruction, ProgramRevision, ReactiveInstanceId, ResidentKernelError,
-    ResidentKernelInputs, ResidentValueKind, ResidentValueMut, ResidentValueRef, SlotIndex, Value,
+    InstanceEpoch, IntegrityConstraintId, MResult, MechError, MechErrorKind, MemoryBudgetViolation,
+    MemoryPlanError, NodeId, OutputConstruction, ProgramRevision, ReactiveInstanceId,
+    ResidentKernelError, ResidentKernelInputs, ResidentValueKind, ResidentValueMut,
+    ResidentValueRef, SlotIndex, Value,
 };
 
 use super::{
@@ -265,6 +266,14 @@ pub enum ResidentExecutionError {
     },
     MemoryRuntime {
         error: mech_core::MemoryRuntimeError,
+    },
+    MemoryPlan {
+        node: NodeId,
+        error: MemoryPlanError,
+    },
+    ResourceAdmission {
+        node: NodeId,
+        violation: MemoryBudgetViolation,
     },
     ActiveCandidate,
     EpochExhausted,
@@ -2382,6 +2391,7 @@ impl ReactiveInstance {
                     live_bytes,
                     live_nodes,
                     None,
+                    None,
                 )
                 .map(|outcome| match outcome {
                     MatchOutcome::Complete(changed) => changed,
@@ -2597,6 +2607,7 @@ impl ReactiveInstance {
         live_bytes: u64,
         live_nodes: u64,
         forwarded_tail: Option<TailContext>,
+        tail_schema_proof: Option<&mut Option<budget::BorrowedFootprintSchemaProof>>,
     ) -> Result<MatchOutcome, ResidentExecutionError> {
         // Every entry, including a forwarded terminal Match, may select a
         // different lexical/capture frame. Keep enclosing indices live but
@@ -2707,6 +2718,8 @@ impl ReactiveInstance {
             let result = budget::with_control_work_budget(|| {
                 if let Some(tail) = forwarded_tail {
                     let resume_state = self.workspace.active_resume_state.take();
+                    let tail_schema_proof = tail_schema_proof
+                        .expect("forwarded tail execution carries its schema proof");
                     let result = self.execute_match_expression_with_state(
                         node_index,
                         before_epoch,
@@ -2718,6 +2731,7 @@ impl ReactiveInstance {
                         resume_state.as_ref(),
                         tail,
                         None,
+                        tail_schema_proof,
                     );
                     self.workspace.active_resume_state = resume_state;
                     result
@@ -2775,6 +2789,7 @@ impl ReactiveInstance {
         let resume_state = self.workspace.active_resume_state.take();
         let result = (|| {
             let mut current: Option<OwnedTailJump> = None;
+            let mut carrier_schema_proof = None;
             loop {
                 let (carrier_bytes, carrier_nodes) = current
                     .as_ref()
@@ -2785,16 +2800,18 @@ impl ReactiveInstance {
                 };
                 let owner = root.artifact_node;
                 let budget_node = root.budget_node;
-                let fail = || ResidentExecutionError::Kernel {
-                    node: owner,
-                    error: ResidentKernelError::InvalidShape,
-                };
-                let iteration_bytes = body_live_bytes
-                    .checked_add(carrier_bytes)
-                    .ok_or_else(fail)?;
-                let iteration_nodes = body_live_nodes
-                    .checked_add(carrier_nodes)
-                    .ok_or_else(fail)?;
+                let iteration_bytes = body_live_bytes.checked_add(carrier_bytes).ok_or(
+                    ResidentExecutionError::Kernel {
+                        node: owner,
+                        error: ResidentKernelError::InvalidShape,
+                    },
+                )?;
+                let iteration_nodes = body_live_nodes.checked_add(carrier_nodes).ok_or(
+                    ResidentExecutionError::Kernel {
+                        node: owner,
+                        error: ResidentKernelError::InvalidShape,
+                    },
+                )?;
                 // The next invocation owns one carrier, not an accumulating
                 // frame stack. The old carrier and live locals were included
                 // in admission before the next carrier was copied.
@@ -2806,9 +2823,12 @@ impl ReactiveInstance {
                     budget_node,
                     &facts,
                 )
-                .map_err(|_| fail())?;
-                if !plan.budget_violations.is_empty() {
-                    return Err(fail());
+                .map_err(|error| ResidentExecutionError::MemoryPlan { node: owner, error })?;
+                if let Some(violation) = plan.budget_violations.first() {
+                    return Err(ResidentExecutionError::ResourceAdmission {
+                        node: owner,
+                        violation: violation.clone(),
+                    });
                 }
                 let outcome = budget::with_resident_turn_plan(plan, || {
                     self.execute_match_expression_with_state(
@@ -2822,6 +2842,7 @@ impl ReactiveInstance {
                         resume_state.as_ref(),
                         TailContext { target: node_index },
                         current.as_ref(),
+                        &mut carrier_schema_proof,
                     )
                 })?;
                 match outcome {
@@ -2859,6 +2880,7 @@ impl ReactiveInstance {
         resume_state: Option<&super::OwnedResidentValue>,
         tail: TailContext,
         tail_argument: Option<&OwnedTailJump>,
+        tail_schema_proof: &mut Option<budget::BorrowedFootprintSchemaProof>,
     ) -> Result<MatchOutcome, ResidentExecutionError> {
         let index = node_index.get() as usize;
         let ActivatedTurnStep::Match(matched) = &self.plan.steps[index] else {
@@ -3170,6 +3192,7 @@ impl ReactiveInstance {
                                 working_epoch,
                                 live_bytes,
                                 live_nodes,
+                                tail_schema_proof,
                             )?;
                             return Ok(MatchOutcome::TailJump(jump));
                         }
@@ -3181,6 +3204,7 @@ impl ReactiveInstance {
                             live_bytes,
                             live_nodes,
                             Some(tail),
+                            Some(tail_schema_proof),
                         )? {
                             MatchOutcome::TailJump(jump) => {
                                 return Ok(MatchOutcome::TailJump(jump));
@@ -3227,9 +3251,12 @@ impl ReactiveInstance {
                     budget_node,
                     &facts,
                 )
-                .map_err(|_| kernel_fail(ResidentKernelError::InvalidShape))?;
-                if !publication_plan.budget_violations.is_empty() {
-                    return Err(kernel_fail(ResidentKernelError::InvalidShape));
+                .map_err(|error| ResidentExecutionError::MemoryPlan { node, error })?;
+                if let Some(violation) = publication_plan.budget_violations.first() {
+                    return Err(ResidentExecutionError::ResourceAdmission {
+                        node,
+                        violation: violation.clone(),
+                    });
                 }
                 return budget::with_resident_turn_plan(publication_plan, || {
                     if write.region.kind == ResidentValueKind::Snapshot {
@@ -3668,6 +3695,7 @@ impl ReactiveInstance {
         working_epoch: InstanceEpoch,
         live_bytes: u64,
         live_nodes: u64,
+        schema_proof: &mut Option<budget::BorrowedFootprintSchemaProof>,
     ) -> Result<OwnedTailJump, ResidentExecutionError> {
         let fail = |error| ResidentExecutionError::Kernel {
             node: call.artifact_node,
@@ -3677,9 +3705,13 @@ impl ReactiveInstance {
             .read_location(call.argument, working_epoch)
             .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
         let mut meter = budget::ResidentBudgetMeter::default();
-        let (payload_bytes, payload_nodes) =
-            resident_frame_value_footprint(argument, &self.plan.schemas, &mut meter)
-                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        let (payload_bytes, payload_nodes) = resident_frame_value_footprint_with_schema_proof(
+            argument,
+            &self.plan.schemas,
+            &mut meter,
+            schema_proof,
+        )
+        .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
         let bytes = payload_bytes
             .checked_add(core::mem::size_of::<OwnedTailJump>() as u64)
             .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
@@ -5892,6 +5924,24 @@ fn resident_frame_value_footprint(
     schemas: &mech_core::SchemaTable,
     meter: &mut budget::ResidentBudgetMeter,
 ) -> Option<(u64, u64)> {
+    resident_frame_value_footprint_impl(value, schemas, meter, None)
+}
+
+fn resident_frame_value_footprint_with_schema_proof(
+    value: ResidentValueRef<'_>,
+    schemas: &mech_core::SchemaTable,
+    meter: &mut budget::ResidentBudgetMeter,
+    schema_proof: &mut Option<budget::BorrowedFootprintSchemaProof>,
+) -> Option<(u64, u64)> {
+    resident_frame_value_footprint_impl(value, schemas, meter, Some(schema_proof))
+}
+
+fn resident_frame_value_footprint_impl(
+    value: ResidentValueRef<'_>,
+    schemas: &mech_core::SchemaTable,
+    meter: &mut budget::ResidentBudgetMeter,
+    mut schema_proof: Option<&mut Option<budget::BorrowedFootprintSchemaProof>>,
+) -> Option<(u64, u64)> {
     // The frame Vec owns one entry and one boxed slice per local. Include an
     // allocator allowance per box so many small scalar locals cannot evade
     // the byte ceiling. The entry contains the enum and its slice header.
@@ -5944,11 +5994,20 @@ fn resident_frame_value_footprint(
                     // necessarily the enclosing program's arena. The snapshot
                     // owns both that immutable arena and its concrete shape.
                     let owner = value.schemas();
-                    let footprint = budget::measure_borrowed_canonical_value_footprint(
-                        meter,
-                        value,
-                        owner.as_deref().unwrap_or(schemas),
-                    )
+                    let footprint = if let Some(proof) = schema_proof.as_deref_mut() {
+                        budget::measure_borrowed_canonical_value_footprint_with_proof(
+                            meter,
+                            value,
+                            owner.as_deref().unwrap_or(schemas),
+                            proof,
+                        )
+                    } else {
+                        budget::measure_borrowed_canonical_value_footprint(
+                            meter,
+                            value,
+                            owner.as_deref().unwrap_or(schemas),
+                        )
+                    }
                     .ok()?;
                     Some((
                         bytes.checked_add(footprint.retained_bytes)?,

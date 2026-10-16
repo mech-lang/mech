@@ -323,10 +323,21 @@ fn observe_control_work(demand: ResourceDemand) -> Result<(), ResidentKernelErro
                     .saturating_sub(scope.observed.comparison),
             )
             .ok_or(ResidentKernelError::InvalidShape)?;
-        if compute > mech_core::RESIDENT_MAX_COMPUTE_WORK
-            || comparison > mech_core::RESIDENT_MAX_COMPARISON_WORK
-        {
-            return Err(ResidentKernelError::InvalidShape);
+        if compute > mech_core::RESIDENT_MAX_COMPUTE_WORK {
+            return Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComputeWork,
+                required: compute,
+                limit: mech_core::RESIDENT_MAX_COMPUTE_WORK,
+            });
+        }
+        if comparison > mech_core::RESIDENT_MAX_COMPARISON_WORK {
+            return Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                required: comparison,
+                limit: mech_core::RESIDENT_MAX_COMPARISON_WORK,
+            });
         }
         total.compute = compute;
         total.comparison = comparison;
@@ -1256,6 +1267,17 @@ const BORROWED_FOOTPRINT_METADATA_WORK: u64 = 64;
 // full measurement path; the cutoff does not make a value ineligible to execute.
 const BORROWED_FOOTPRINT_SCHEMA_DEPTH: usize = 32;
 
+/// Execution-local proof that a semantic schema supports metadata-only
+/// borrowed footprint measurement. The proof is keyed by semantic identity,
+/// so an equal schema in another immutable owner can reuse it safely. Callers
+/// must still measure each concrete value; this only avoids walking the same
+/// immutable schema definition for every tail carrier.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) struct BorrowedFootprintSchemaProof {
+    key: mech_core::SchemaKey,
+    supported: bool,
+}
+
 fn borrowed_footprint_schema_supported(
     meter: &mut ResidentBudgetMeter,
     schema: &SchemaBody,
@@ -1381,20 +1403,60 @@ pub(crate) fn measure_borrowed_canonical_value_footprint(
     value: &Value,
     schemas: &SchemaTable,
 ) -> Result<ValueFootprint, ResidentKernelError> {
+    let mut proof = None;
+    measure_borrowed_canonical_value_footprint_with_proof(meter, value, schemas, &mut proof)
+}
+
+/// Measures a borrowed value while reusing only the immutable schema-support
+/// proof. Concrete shape, retained nodes, and selected data are charged on
+/// every call.
+pub(crate) fn measure_borrowed_canonical_value_footprint_with_proof(
+    meter: &mut ResidentBudgetMeter,
+    value: &Value,
+    schemas: &SchemaTable,
+    proof: &mut Option<BorrowedFootprintSchemaProof>,
+) -> Result<ValueFootprint, ResidentKernelError> {
     meter.charge_compute_work(BORROWED_FOOTPRINT_METADATA_WORK)?;
     let entry = schemas
         .entry(value.schema())
         .ok_or(ResidentKernelError::InvalidInput)?;
     let schema = entry.schema();
-    if entry.key() != value.schema_key()
-        || !borrowed_footprint_schema_supported(meter, schema.body(), 0)?
-    {
+    if entry.key() != value.schema_key() {
+        return measure_canonical_value_footprint(meter, value, schemas);
+    }
+    let supported = match proof {
+        Some(proof) if proof.key == entry.key() => proof.supported,
+        proof => {
+            let supported = borrowed_footprint_schema_supported(meter, schema.body(), 0)?;
+            *proof = Some(BorrowedFootprintSchemaProof {
+                key: entry.key(),
+                supported,
+            });
+            supported
+        }
+    };
+    if !supported {
         return measure_canonical_value_footprint(meter, value, schemas);
     }
     let shape_parameters = value.shape().parameter_values().len();
     meter.charge_retained_nodes(1)?;
     let data =
         measure_proven_borrowed_canonical_data_footprint(meter, schema.body(), value.data(), true)?;
+    projected_canonical_value_footprint(data, shape_parameters)
+}
+
+/// Measures a borrowed value whose exact schema identity and supported body
+/// were already proven by an internal activation certificate and rechecked at
+/// this execution boundary. Concrete shape, retained nodes, and selected data
+/// are still charged on every call.
+pub(crate) fn measure_certified_borrowed_canonical_value_footprint(
+    meter: &mut ResidentBudgetMeter,
+    value: &Value,
+    schema: &SchemaBody,
+) -> Result<ValueFootprint, ResidentKernelError> {
+    let shape_parameters = value.shape().parameter_values().len();
+    meter.charge_retained_nodes(1)?;
+    let data = measure_proven_borrowed_canonical_data_footprint(meter, schema, value.data(), true)?;
     projected_canonical_value_footprint(data, shape_parameters)
 }
 

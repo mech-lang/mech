@@ -44,6 +44,7 @@ use crate::memory_planner::{
     attach_resident_call_memory_template, finalize_resident_current_footprints,
     plan_program_memory_template, plan_resident_arenas, plan_resident_effect_payload,
     resident_arena_id, resident_payload_arena_id, resident_storage_descriptor, schedule_points,
+    set_resident_metadata_demand,
 };
 use crate::memory_runtime::ManagedProgramMemory;
 use crate::{
@@ -13989,9 +13990,23 @@ fn build_plan(
         | ActivatedTurnStep::Publish(_)
         | ActivatedTurnStep::External(_) => None,
     });
+    let mut structural_metadata = mech_core::ResourceDemand::default();
     let (schemas, structural_projections) = if let Some(node) = structural_match {
-        execution::structural_projection_schema_context(artifact.schemas())
-            .map_err(|_| ResidentActivationError::UnsupportedControlLayout { node })?
+        let (schemas, structural_projections) =
+            execution::structural_projection_schema_context(artifact.schemas())
+                .map_err(|_| ResidentActivationError::UnsupportedControlLayout { node })?;
+        structural_metadata =
+            execution::comprehension_execution::structural_projection_metadata_demand(
+                artifact.schemas(),
+                &schemas,
+                &structural_projections,
+            )
+            .ok_or(ResidentActivationError::ResidentMemoryPlanRejected {
+                error: MemoryPlanError::ArithmeticOverflow {
+                    field: "structural projection metadata",
+                },
+            })?;
+        (schemas, structural_projections)
     } else {
         (
             artifact.schemas().clone(),
@@ -14005,7 +14020,33 @@ fn build_plan(
                 &schemas,
                 &structural_projections,
             );
+            if let Some(source) = &matched.structural_source {
+                let demand = source.retained_metadata_demand().ok_or(
+                    ResidentActivationError::ResidentMemoryPlanRejected {
+                        error: MemoryPlanError::ArithmeticOverflow {
+                            field: "structural source metadata",
+                        },
+                    },
+                )?;
+                structural_metadata =
+                    crate::memory_planner::checked_demand_add(structural_metadata, demand)
+                        .map_err(
+                            |error| ResidentActivationError::ResidentMemoryPlanRejected { error },
+                        )?;
+            }
         }
+    }
+    if let Some(node) = structural_match {
+        set_resident_metadata_demand(
+            &mut layout.memory_plan,
+            mech_core::MemoryObjectOwner::NodeScratch {
+                node,
+                ordinal: u16::MAX,
+            },
+            structural_metadata,
+        )
+        .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })?;
+        ensure_resident_plan_admitted(&layout.memory_plan)?;
     }
     // Static binding/write proof only; no String bytes are read or indexed.
     for index in 0..steps.len() {

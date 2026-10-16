@@ -38,9 +38,11 @@ struct CompositePackPlan {
     table: Option<CompositeTablePlan>,
     output: mech_core::ResidentPortLayout,
     schemas: Arc<mech_core::SchemaTable>,
-    // Only the shape-independent allocation containers are read from this
-    // activation binding. Current values use a newly witnessed constructor.
+    // Activation-fixed shapes reuse this exact constructor. Turn-varying
+    // shapes use it only for shape-independent allocation-container bounds
+    // and bind a newly witnessed constructor per execution.
     constructor: mech_core::snapshot::CompositeSnapshotConstructor,
+    constructor_is_fixed: bool,
     normalization: mech_core::snapshot::CompositeBindingCost,
 }
 
@@ -270,6 +272,11 @@ fn composite_pack_plan(request: &ResidentKernelBindRequest<'_>) -> Option<Compos
         children,
         table,
         constructor,
+        constructor_is_fixed: request.output.activation_fixed_shape
+            && request
+                .inputs
+                .iter()
+                .all(|input| input.activation_fixed_shape),
         output: request.output.clone(),
         schemas: Arc::new(request.schemas.clone()),
     })
@@ -1067,9 +1074,16 @@ fn composite_pack(
     if plan.children.len() != inputs.len() {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let normalization_bytes = checked_cost_usize(plan.normalization.temporary_bytes)?;
-    let normalization_nodes = plan.normalization.metadata_nodes;
-    let normalization_work = plan.normalization.compute_work;
+    let (normalization_bytes, normalization_nodes, normalization_work) =
+        if plan.constructor_is_fixed {
+            (0, 0, 0)
+        } else {
+            (
+                checked_cost_usize(plan.normalization.temporary_bytes)?,
+                plan.normalization.metadata_nodes,
+                plan.normalization.compute_work,
+            )
+        };
     let mut footprint_meter = super::budget::ResidentBudgetMeter::default();
     let mut child_bytes = 0usize;
     // Eight bytes conservatively cover the aggregate map length prefix.
@@ -1265,7 +1279,13 @@ fn composite_pack(
     )
     .admit()?
     .into_plan();
-    let constructor = current_constructor(plan, inputs)?;
+    let dynamic_constructor;
+    let constructor = if plan.constructor_is_fixed {
+        &plan.constructor
+    } else {
+        dynamic_constructor = current_constructor(plan, inputs)?;
+        &dynamic_constructor
+    };
     let context =
         mech_core::snapshot::SnapshotValidationContext::with_shared_schemas(&plan.schemas);
     let children = (0..admitted_children)
@@ -1927,6 +1947,7 @@ mod tests {
 
         let mismatched = CompositePackPlan {
             normalization: mech_core::snapshot::CompositeBindingCost::default(),
+            constructor_is_fixed: true,
             children: vec![CompositeChildPlan {
                 matrix_dimensions: Some(dimensions.clone()),
                 input_is_matrix: true,
@@ -1957,6 +1978,7 @@ mod tests {
 
         let matching = CompositePackPlan {
             normalization: mech_core::snapshot::CompositeBindingCost::default(),
+            constructor_is_fixed: true,
             children: vec![CompositeChildPlan {
                 matrix_dimensions: Some(dimensions),
                 input_is_matrix: true,

@@ -9,6 +9,10 @@ use crate::memory_planner::{ProgramMemoryPlan, TurnMemoryPlan};
 pub struct ManagedProgramMemory {
     domain: MemoryDomain,
     realized: RealizedMemoryPlan,
+    // The plan's metadata is owned outside the arenas. Keep its capacity
+    // reservation separate from backing realization to charge it exactly once.
+    // An unbounded private account still records it when no budget is supplied.
+    _metadata_reservation: Option<mech_core::ManagedMemoryReservation>,
 }
 
 impl core::fmt::Debug for ManagedProgramMemory {
@@ -32,6 +36,14 @@ impl ManagedProgramMemory {
         plan: &ProgramMemoryPlan,
         budget: Option<&mech_core::ManagedMemoryBudget>,
     ) -> MemoryRuntimeResult<Self> {
+        let metadata_reservation = if plan.metadata_demand.persistent_bytes == 0 {
+            None
+        } else {
+            let metadata_budget = budget
+                .cloned()
+                .unwrap_or_else(|| mech_core::ManagedMemoryBudget::new(u64::MAX));
+            Some(metadata_budget.reserve_capacity(plan.metadata_demand.persistent_bytes)?)
+        };
         let domain = match budget {
             Some(budget) => MemoryDomain::with_memory_budget(budget.clone())?,
             None => MemoryDomain::new()?,
@@ -50,7 +62,11 @@ impl ManagedProgramMemory {
         );
         let reservation = domain.prepare_realization(view)?;
         let realized = domain.materialize(reservation)?;
-        Ok(Self { domain, realized })
+        Ok(Self {
+            domain,
+            realized,
+            _metadata_reservation: metadata_reservation,
+        })
     }
 
     pub const fn domain(&self) -> &MemoryDomain {
