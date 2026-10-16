@@ -1,6 +1,7 @@
 //! Application syntax normalized before canonical parsing in the opt-in AOT
 //! frontends. `value |> f(_, bound)` evaluates value once; all holes in a stage
 //! refer to that value. `f(x<T>) => <U> := expression` is a typed function body.
+//! `value |N> f` uses the same pipeline order and lowers to sequence/iterate.
 //! Indented bodies use the same signature: local definitions and mutations
 //! precede the final expression, binding, or local assignment result.
 //! Normalization creates ordinary bindings/functions and adds no native kernel.
@@ -137,6 +138,97 @@ fn split_top<'a>(source: &'a str, token: &str) -> Result<Vec<&'a str>, String> {
     Ok(parts)
 }
 
+#[derive(Clone, Copy)]
+struct Pipe {
+    start: usize,
+    end: usize,
+    repetitions: Option<u64>,
+}
+
+/// Recognize the same surface pipeline at every detection/continuation site.
+/// Other bars (boolean OR, comprehensions, match arms) keep their meaning.
+fn pipe_at(code: &str, start: usize) -> Result<Option<Pipe>, String> {
+    let bytes = code.as_bytes();
+    if bytes[start] != b'|'
+        || bytes.get(start + 1) == Some(&b'|')
+        || start.checked_sub(1).is_some_and(|i| bytes[i] == b'|')
+    {
+        return Ok(None);
+    }
+    let tail = &code[start + 1..];
+    if tail.starts_with('>') {
+        return Ok(Some(Pipe {
+            start,
+            end: start + 2,
+            repetitions: None,
+        }));
+    }
+    let Some(first) = tail.trim_start().bytes().next() else {
+        return Ok(None);
+    };
+    if !first.is_ascii_digit() && !matches!(first, b'+' | b'-' | b'.') {
+        // An identifier immediately closed by `>` is a malformed count, not a
+        // generator or a match arm. Those retain their `<-`, `=>` and `->` forms.
+        let named_count = tail.find('>').is_some_and(|end| {
+            first == b'>'
+                || (!tail[..end].is_empty()
+                    && tail[..end]
+                        .bytes()
+                        .all(|b| b.is_ascii_alphanumeric() || b == b'_'))
+        });
+        if !named_count {
+            return Ok(None);
+        }
+    }
+    let end = tail.find(['>', '\n', '|', '(', ')', '[', ']', '{', '}', ',', ';']);
+    let Some(end) = end.filter(|&end| tail.as_bytes()[end] == b'>') else {
+        return Err("repeated application count requires a closing `>`".into());
+    };
+    let count = &tail[..end];
+    // A numeric match arm/transition is not an application operator.
+    if count.ends_with('=') || count.ends_with('-') {
+        return Ok(None);
+    }
+    if count.is_empty() || !count.bytes().all(|b| b.is_ascii_digit()) {
+        return Err("repeated application count must be a nonnegative decimal u64 integer literal, without spaces".into());
+    }
+    let repetitions = count
+        .parse::<u64>()
+        .map_err(|_| "repeated application count exceeds u64::MAX")?;
+    Ok(Some(Pipe {
+        start,
+        end: start + end + 2,
+        repetitions: Some(repetitions),
+    }))
+}
+
+fn pipe_offsets(source: &str) -> Result<Vec<Pipe>, String> {
+    let code = mask(source);
+    top_offsets(source, "|")?
+        .into_iter()
+        .filter_map(|offset| pipe_at(&code, offset).transpose())
+        .collect()
+}
+
+fn contains_pipe(source: &str) -> bool {
+    let code = mask(source);
+    code.bytes()
+        .enumerate()
+        .any(|(i, byte)| byte == b'|' && !matches!(pipe_at(&code, i), Ok(None)))
+}
+
+fn starts_pipe(source: &str) -> bool {
+    let code = mask(source);
+    let code = code.trim_start();
+    code.starts_with('|') && !matches!(pipe_at(code, 0), Ok(None))
+}
+
+fn ends_pipe(source: &str) -> bool {
+    let code = mask(source);
+    let code = code.trim_end();
+    pipe_offsets(code).is_ok_and(|pipes| pipes.last().is_some_and(|pipe| pipe.end == code.len()))
+}
+
 fn substitute(stage: &str, value: &str) -> Result<String, String> {
     let code = mask(stage);
     let mut output = String::new();
@@ -201,31 +293,45 @@ fn pipeline(
     serial: &mut usize,
 ) -> Result<(Vec<String>, String), String> {
     let expression = unparenthesized(expression)?;
-    let stages = split_top(expression, "|>")?;
+    let pipes = pipe_offsets(expression)?;
+    let mut stages = Vec::new();
+    let mut start = 0;
+    for pipe in &pipes {
+        stages.push(expression[start..pipe.start].trim());
+        start = pipe.end;
+    }
+    stages.push(expression[start..].trim());
     if stages.iter().any(|s| s.is_empty()) {
         return Err("empty pipeline stage".into());
     }
     let mut definitions = Vec::new();
     let mut value = stages[0].to_string();
-    if mask(&value).contains("|>") {
+    if contains_pipe(&value) {
         // Parenthesized initial pipelines can be flattened without moving them
         // across another operation or changing its evaluation/branch order.
         let input = unparenthesized(&value)?;
-        if top_offsets(input, "|>")?.is_empty() {
+        if pipe_offsets(input)?.is_empty() {
             return Err("a nested pipeline must be a complete parenthesized expression".into());
         }
         let (nested, result) = pipeline(input, prefix, serial)?;
         definitions.extend(nested);
         value = result;
     }
-    for stage in &stages[1..] {
-        if mask(stage).contains("|>") {
+    for (pipe, stage) in pipes.iter().zip(&stages[1..]) {
+        if contains_pipe(stage) {
             return Err("pipelines inside stage arguments require a separate binding".into());
         }
         let name = format!("{prefix}{}", *serial);
         *serial += 1;
         definitions.push(format!("{name} := {value}"));
-        value = substitute(stage, &name)?;
+        value = if let Some(count) = pipe.repetitions {
+            if !identifier(stage) || *stage == "_" {
+                return Err("repeated application stage requires a function name".into());
+            }
+            format!("sequence/iterate({name}, {count}, {stage})")
+        } else {
+            substitute(stage, &name)?
+        };
     }
     Ok((definitions, value))
 }
@@ -244,7 +350,7 @@ fn is_candidate(source: &str) -> bool {
     identifier(initial)
         && (code[initial.len()..].trim_start().starts_with(":=")
             || code[initial.len()..].trim_start().starts_with('(')
-            || code[initial.len()..].trim_start().starts_with("|>"))
+            || starts_pipe(&code[initial.len()..]))
 }
 
 fn arrow_definition(source: &str) -> bool {
@@ -278,16 +384,17 @@ fn body_statements(source: &str) -> Result<Vec<String>, String> {
             if part.is_empty() {
                 continue;
             }
-            let continuation = part.starts_with("|>")
+            let continuation = starts_pipe(&part)
                 || statements.last().is_some_and(|previous| {
                     let previous = mask(previous);
                     let previous = previous.trim_end();
-                    [
-                        "|>", "+", "-", "*", "/", "·", "&&", "||", "==", "!=", "<", ">", "<=",
-                        ">=", ":=", "=", "+=", "-=", "*=", "/=", "^=",
-                    ]
-                    .iter()
-                    .any(|token| previous.ends_with(token))
+                    ends_pipe(previous)
+                        || [
+                            "|>", "+", "-", "*", "/", "·", "&&", "||", "==", "!=", "<", ">", "<=",
+                            ">=", ":=", "=", "+=", "-=", "*=", "/=", "^=",
+                        ]
+                        .iter()
+                        .any(|token| previous.ends_with(token))
                 });
             if continuation && !statements.is_empty() {
                 let previous = statements.last_mut().unwrap();
@@ -459,7 +566,7 @@ fn normalize_statement(
     serial: &mut usize,
 ) -> Result<Option<String>, String> {
     let code = mask(source);
-    if !code.contains("|>") && !code.contains("=>") {
+    if !contains_pipe(&code) && !code.contains("=>") {
         return Ok(None);
     }
     let original = source;
@@ -469,7 +576,7 @@ fn normalize_statement(
     let (head, expression) = if let Some(&i) = assignments.first() {
         (&source[..i], &source[i + 2..])
     } else {
-        if top_offsets(source, "|>")?.is_empty() {
+        if pipe_offsets(source)?.is_empty() {
             return Ok(None);
         }
         ("", source)
@@ -487,7 +594,7 @@ fn normalize_statement(
     } else {
         expression
     };
-    if signature.len() == 1 && !mask(expression).contains("|>") {
+    if signature.len() == 1 && !contains_pipe(expression) {
         return Ok(None);
     }
     if signature.len() == 2 {
@@ -542,7 +649,7 @@ fn normalize_statement(
 /// Parenthesized/multiline expressions and leading continuation pipes are allowed;
 /// arbitrary pipelines inside conditionals/call arguments are rejected explicitly.
 pub(super) fn normalize(source: &str) -> Result<String, String> {
-    if !source.contains("|>") && !source.contains("=>") {
+    if !contains_pipe(source) && !source.contains("=>") {
         return Ok(source.to_string());
     }
     let mut prefix = "application-temp-".to_string();
@@ -587,7 +694,7 @@ pub(super) fn normalize(source: &str) -> Result<String, String> {
                 && lines.get(index + 1).is_some_and(|next| {
                     mask(next).trim().is_empty() || indentation(next) > header_indent
                 });
-            let continuation = code.trim_end().ends_with("|>")
+            let continuation = ends_pipe(&code)
                 || (!arrow
                     && code.trim_end().ends_with(":=")
                     && (code.contains("=>")
@@ -595,9 +702,7 @@ pub(super) fn normalize(source: &str) -> Result<String, String> {
                             .split(":=")
                             .next()
                             .is_some_and(|s| identifier(s.trim()))))
-                || lines
-                    .get(index + 1)
-                    .is_some_and(|s| mask(s).trim_start().starts_with("|>"));
+                || lines.get(index + 1).is_some_and(|s| starts_pipe(s));
             if !(unbalanced || continuation || arrow_continuation) || index + 1 >= lines.len() {
                 break;
             }
@@ -625,6 +730,84 @@ pub(super) fn normalize(source: &str) -> Result<String, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn counted_stages_lower_to_one_iteration_with_once_evaluated_inputs() {
+        let source =
+            "application-temp-0 := 2.0\nr := (Input() |0> step) |> twice |1> step |19> finish\n";
+        let n = normalize(source).unwrap();
+        assert_eq!(n.matches("Input()").count(), 1);
+        assert!(n.contains("application-temp-local-0 := Input()"));
+        assert!(n.contains("sequence/iterate(application-temp-local-0, 0, step)"));
+        assert!(n.contains("twice(application-temp-local-1)"));
+        assert!(n.contains("sequence/iterate(application-temp-local-2, 1, step)"));
+        assert!(n.contains("r := sequence/iterate(application-temp-local-3, 19, finish)"));
+        assert_eq!(n.matches("sequence/iterate(").count(), 3);
+        assert_eq!(normalize(&n).unwrap(), n);
+    }
+    #[test]
+    fn counted_continuations_work_in_documents_and_arrow_bodies() {
+        let source = "step(x<f64>) => <f64> :=\n  x |1>\n    next\n  |19> finish\nr := Input()\n  |0> step\n  |> next\n";
+        let n = normalize(source).unwrap();
+        assert!(n.contains("sequence/iterate(application-temp-0, 1, next)"));
+        assert!(n.contains("sequence/iterate(application-temp-1, 19, finish)"));
+        assert!(n.contains("sequence/iterate(application-temp-2, 0, step)"));
+        assert!(n.contains("r := next(application-temp-3)"));
+        assert_eq!(n.lines().count(), source.lines().count());
+    }
+    #[test]
+    fn counted_diagnostics_reject_invalid_counts_targets_and_nested_stages() {
+        for (operator, message) in [
+            ("|-1>", "nonnegative decimal"),
+            ("|+1>", "nonnegative decimal"),
+            ("|1.5>", "nonnegative decimal"),
+            ("|1e2>", "nonnegative decimal"),
+            ("|abc>", "nonnegative decimal"),
+            ("|_>", "nonnegative decimal"),
+            ("| >", "nonnegative decimal"),
+            ("| 1>", "nonnegative decimal"),
+            ("|1 >", "nonnegative decimal"),
+            ("|18446744073709551616>", "exceeds u64::MAX"),
+            ("|19", "closing `>`"),
+        ] {
+            let error = normalize(&format!("x := 1.0\nr := x {operator} step\n")).unwrap_err();
+            assert!(error.contains("line 2"), "{error}");
+            assert!(error.contains(message), "{operator}: {error}");
+        }
+        for stage in ["_", "step(_)", "step(_, bound)"] {
+            assert!(
+                normalize(&format!("r := x |19> {stage}\n"))
+                    .unwrap_err()
+                    .contains("function name")
+            );
+        }
+        assert!(
+            normalize("r := x |19>\n")
+                .unwrap_err()
+                .contains("empty pipeline stage")
+        );
+        assert!(
+            normalize("r := f(x |19> step)\n")
+                .unwrap_err()
+                .contains("nested pipeline")
+        );
+        assert!(
+            normalize("r := x |> f(_, (y |19> step))\n")
+                .unwrap_err()
+                .contains("stage arguments")
+        );
+        assert!(
+            normalize("r := x |19> (y |> step)\n")
+                .unwrap_err()
+                .contains("stage arguments")
+        );
+    }
+    #[test]
+    fn counted_operators_leave_other_bars_comments_and_prose_unchanged() {
+        let source = "Make(depth<u64>) => <ref>\n  | 0 => memory/null().\nx := (value ? | 1.5 => 1 | * => 2).\nx := (value ? | 0 -> 1 | * => 2).\nx := [number/to-f64(i) | i <- 0..3]\nb := true || false\nlabel := \"|19> =>\"\n-- r := x |19> f\n// r := x |19> f\n%% r := x |19> f\nUse `r := x |19> f` in examples.\n```rust\nr := x |19> f\n```\n(x |19> f) |> g\n";
+        assert_eq!(normalize(source).unwrap(), source);
+        let n = normalize("r := seed |18446744073709551615> step\n").unwrap();
+        assert!(n.contains("18446744073709551615, step)"));
+    }
     #[test]
     fn holes_share_one_evaluation_and_ignore_strings_and_identifiers() {
         let n = normalize("r := input() |> f(_, g(_), \"_|>\", some_name)\n").unwrap();

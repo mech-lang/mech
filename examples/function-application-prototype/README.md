@@ -1,13 +1,18 @@
-# Function application and matrix AOT
+# Function application and native matrices
 
-This is an opt-in front end for the v0.4 native AOT path. It normalizes application
+This is an opt-in front end for the v0.4 native source path. It normalizes application
 syntax into ordinary canonical source, then uses typed graph lowering and native
-kernels. Canonical parser/formatter integration for the surface syntax is still
-separate work; the interpreter is unchanged.
+kernels for AOT, JIT and the sequence resident executor. Canonical parser/formatter
+integration for the surface syntax is still separate work; the legacy interpreter
+is unchanged.
 
 * `value |> f` applies a unary function.
 * `value |> f(_, bound)` fills each standalone `_` with the same left value,
   evaluated once even when the stage repeats the hole.
+* `seed |19> step` applies the named unary function `step` exactly 19 times at
+  runtime and returns the final value. It lowers to `sequence/iterate(seed, 19,
+  step)` with a once-evaluated seed. `seed |0> step` returns the seed through the
+  same evaluation and callable/capture validation rules; it does not erase them.
 * Stages associate left to right. Bracketed multiline calls and continuation
   pipeline stages are supported, including standalone effect pipelines.
 * `<[T]>` denotes a vector of elements of kind `T`, with any length.
@@ -21,6 +26,14 @@ The compiler tracks capture dependencies in its graph. Small environments use
 existing argument slots; larger environments use generic runtime storage without
 changing the normal operation ABI. Function bodies and iteration remain AOT code.
 IO inside iteration callbacks and undefined/forward captures are rejected.
+
+Counted stages accept a decimal `u64` literal without signs, fractions or spaces
+inside `|19>`, followed by a function name. The callback must preserve the seed
+kind: `u64`, `f64` or an `f64` vector. Integer arithmetic retains checked overflow.
+Repeated stages can mix with ordinary pipes, for example
+`seed |> prepare |19> step |> finish`. Bound arguments and `_` holes remain
+available on ordinary stages; define a named unary function to repeat them.
+See `repeated-application.mec` for a small captured-function example.
 
 The named function/application syntax uses hygienic intermediate bindings and
 retains original physical lines. Arbitrary pipelines nested inside conditional or

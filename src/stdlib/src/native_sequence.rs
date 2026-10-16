@@ -96,7 +96,7 @@ const OPERATIONS: Catalog = &[
     operation!(
         "sequence/iterate",
         39,
-        [[Numbers, Float], [Integer], [Function]],
+        [[Numbers, Float, Integer], [Integer], [Function]],
         Input(0)
     ),
     operation!("text/records", 40, [[Text], [Text], [Text]], Fixed(Records)),
