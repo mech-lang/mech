@@ -13,9 +13,9 @@ pub use ports::{
 };
 
 use mech_syntax::document::{
-    AnyCallArgumentSyntax, AstNode, CanonicalOperator, DocumentId, FunctionCallSyntax, OperatorSyntax,
-    ParseConfig, Revision, StringLiteralSyntax, SyntaxKind, SyntaxNode, TextSnapshot, VariableDefineSyntax,
-    parse_canonical_document,
+    AnyCallArgumentSyntax, AstNode, CanonicalOperator, DocumentId, FunctionCallSyntax,
+    OperatorSyntax, ParseConfig, Revision, StringLiteralSyntax, SyntaxKind, SyntaxNode,
+    TextSnapshot, VariableDefineSyntax, parse_canonical_document,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
