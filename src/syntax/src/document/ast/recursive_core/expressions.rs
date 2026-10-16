@@ -134,7 +134,7 @@ pub enum ApplicationCountError {
 
 impl ApplicationExpressionSyntax {
     pub fn seed(&self) -> Option<ExpressionBodySyntax> {
-        child(self.syntax())
+        selected_expression_body(self.syntax())
     }
 
     pub fn stages(&self) -> Vec<ApplicationStageSyntax> {
@@ -180,11 +180,23 @@ impl ApplicationStageSyntax {
     }
 }
 
+fn selected_expression_body(syntax: &SyntaxNode) -> Option<ExpressionBodySyntax> {
+    syntax.children().find_map(|node| {
+        if node.kind() == SyntaxKind::Expression
+            || node
+                .flags()
+                .contains(crate::document::NodeFlags::PROVISIONAL)
+        {
+            selected_expression_body(&node)
+        } else {
+            ExpressionBodySyntax::cast(node)
+        }
+    })
+}
+
 impl ExpressionSyntax {
     pub fn body(&self) -> Option<ExpressionBodySyntax> {
-        child(self.syntax()).or_else(|| {
-            child::<ExpressionSyntax>(self.syntax()).and_then(|expression| expression.body())
-        })
+        selected_expression_body(self.syntax())
     }
 
     pub fn match_arms(&self) -> Vec<MatchArmSyntax> {

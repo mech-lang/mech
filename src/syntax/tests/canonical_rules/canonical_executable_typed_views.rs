@@ -58,11 +58,18 @@ fn find_kind(node: &SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {
 }
 
 fn find_recovery_wrapped_expression(node: &SyntaxNode) -> Option<ExpressionSyntax> {
-    if node.kind() == SyntaxKind::Expression
-        && node
-            .children()
-            .any(|child| child.kind() == SyntaxKind::Expression)
-    {
+    fn retained_child(node: &SyntaxNode) -> Option<SyntaxNode> {
+        node.children().find_map(|child| {
+            if child.kind() == SyntaxKind::Expression {
+                Some(child)
+            } else if child.flags().contains(NodeFlags::PROVISIONAL) {
+                retained_child(&child)
+            } else {
+                None
+            }
+        })
+    }
+    if node.kind() == SyntaxKind::Expression && retained_child(node).is_some() {
         return ExpressionSyntax::cast(node.clone());
     }
     node.children()
@@ -356,7 +363,18 @@ fn expression_body_descends_through_a_recovery_wrapper() {
     .unwrap();
     let expression = find_recovery_wrapped_expression(&parsed.syntax())
         .expect("resource recovery retains a nested Expression wrapper");
-    assert!(expression.body().is_some());
+    let body = expression.body().expect("recovery keeps its selected body");
+    assert!(matches!(
+        body,
+        crate::document::ExpressionBodySyntax::Formula(_)
+    ));
+    let formula = find_kind(expression.syntax(), SyntaxKind::LogicExpression).unwrap();
+    assert_eq!(body.syntax().id(), formula.id());
+    assert_eq!(body.syntax().range(), formula.range());
+    assert!(Arc::ptr_eq(body.syntax().green(), formula.green()));
+    assert_eq!(parsed.stats.parser_steps, limits.fuel);
+    crate::document::validate_lossless_range(&parsed.root, &parsed.source, parsed.consumed)
+        .unwrap();
 }
 
 #[test]

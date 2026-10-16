@@ -85,7 +85,14 @@ impl Continuation {
                 }
             }
             Phase::ApplicationEnter => {
-                self.transaction(parser, rules::APPLICATION_EXPRESSION);
+                // The seed still belongs to the surrounding expression until
+                // an application stage is selected. Keep its diagnostics on
+                // that owner; direct application-rule parsing owns itself.
+                let owner = match parser.current_rule() {
+                    Some(rules::EXPRESSION) => rules::EXPRESSION,
+                    _ => rules::APPLICATION_EXPRESSION,
+                };
+                self.transaction(parser, owner);
                 let node = parser.start();
                 self.expression(Phase::ApplicationFirst(node));
                 self.expression(Phase::Body);
