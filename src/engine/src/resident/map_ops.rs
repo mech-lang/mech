@@ -179,16 +179,15 @@ fn bind(
             maximum_cardinality: None,
         })
         .with_snapshot_schemas(request.schemas.clone())
-        // Only the maintained canonical Keys path has been audited here.
-        // Its entry scan, payload construction and comparison are admitted
-        // before work, and finalization retains the existing schema owner.
-        .with_work_accounting(
-            if operation == Operation::Keys && request.output.kind == ResidentValueKind::Snapshot {
-                ResidentKernelWorkAccounting::RuntimeMetered
-            } else {
-                ResidentKernelWorkAccounting::Unclassified
-            },
-        ))
+        // These selected Snapshot implementations admit entry scans, bounded
+        // histogram sorting, drafts, payload copies, finalization and equality.
+        // Finalization retains the bound schema owner. The dense String output
+        // bridge has additional copies and does not carry this contract.
+        .with_work_accounting(if request.output.kind == ResidentValueKind::Snapshot {
+            ResidentKernelWorkAccounting::RuntimeMetered
+        } else {
+            ResidentKernelWorkAccounting::Unclassified
+        }))
 }
 
 #[derive(Clone, Copy)]
@@ -471,17 +470,13 @@ fn execute(
         ValueDataDraft::Matrix(values.into_boxed_slice())
     };
     let finalization_budget = SnapshotCanonicalizationBudget::new(finalization_work);
-    let context = if plan.operation == Operation::Keys {
-        // Reuse the immutable owner retained by the actual bound kernel. A
-        // whole-arena clone is not part of the per-key materialization demand.
-        SnapshotValidationContext::with_shared_schemas(
-            kernel
-                .shared_snapshot_schemas()
-                .ok_or(ResidentKernelError::InvalidOutput)?,
-        )
-    } else {
-        SnapshotValidationContext::new(schemas)
-    }
+    // Every result shares the immutable owner retained by its selected kernel;
+    // unrelated schemas therefore add no per-call arena clone or traversal.
+    let context = SnapshotValidationContext::with_shared_schemas(
+        kernel
+            .shared_snapshot_schemas()
+            .ok_or(ResidentKernelError::InvalidOutput)?,
+    )
     .with_canonicalization_budget(&finalization_budget);
     let next = ValueDraft {
         schema: metadata.schema,
@@ -554,6 +549,20 @@ mod tests {
 
     #[test]
     fn canonical_keys_share_large_schema_owner_and_deny_payload_before_publication() {
+        canonical_maps_share_large_schema_owner(Operation::Keys);
+    }
+
+    #[test]
+    fn canonical_values_share_large_schema_owner_and_recover_after_denial() {
+        canonical_maps_share_large_schema_owner(Operation::Values);
+    }
+
+    #[test]
+    fn canonical_histogram_shares_large_schema_owner_and_recovers_after_denial() {
+        canonical_maps_share_large_schema_owner(Operation::Histogram);
+    }
+
+    fn canonical_maps_share_large_schema_owner(operation: Operation) {
         let mut builder = SchemaTableBuilder::new();
         let mut add = |body| {
             builder
@@ -576,6 +585,10 @@ mod tests {
             element: Box::new(SchemaBody::String),
             dimensions: Box::new([DimensionExpr::Constant(1), DimensionExpr::Constant(2)]),
         });
+        let values = add(SchemaBody::Matrix {
+            element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W64)),
+            dimensions: Box::new([DimensionExpr::Constant(1), DimensionExpr::Constant(2)]),
+        });
         for columns in 0..512 {
             add(SchemaBody::Matrix {
                 element: Box::new(SchemaBody::Bool),
@@ -588,6 +601,12 @@ mod tests {
         let build = builder.finish().unwrap();
         let map = build.resolve(map).unwrap();
         let keys = build.resolve(keys).unwrap();
+        let values = build.resolve(values).unwrap();
+        let (source, result) = match operation {
+            Operation::Histogram => (keys, map),
+            Operation::Keys => (map, keys),
+            Operation::Values => (map, values),
+        };
         let (schemas, _) = build.into_parts();
         let arena_bytes = schemas.clone_allocation_bound_bytes().unwrap();
         assert!(arena_bytes > 4096);
@@ -605,12 +624,12 @@ mod tests {
         };
         let contract = ResolvedOperationContract::Declared(DeclaredOperationContract {
             inputs: Box::new([ResolvedInputPort {
-                schema: map,
+                schema: source,
                 access: AccessMode::Read,
                 delivery: DeliveryMode::Signal,
             }]),
             outputs: Box::new([ResolvedOutputPort {
-                schema: keys,
+                schema: result,
                 access: AccessMode::Write,
                 delivery: DeliveryMode::Signal,
                 construction: OutputConstruction::FullWrite {
@@ -622,7 +641,7 @@ mod tests {
             interaction: ExternalInteraction::Pure,
         });
         // Use the actual maintained projection contract, not an invented policy.
-        let policy = Operation::Keys.contract();
+        let policy = operation.contract();
         let ResolvedOperationContract::Declared(mut declared) = contract else {
             unreachable!()
         };
@@ -632,10 +651,10 @@ mod tests {
         let request = ResidentKernelBindRequest {
             contract: &contract,
             schemas: &schemas,
-            inputs: &[layout(map)],
-            output: layout(keys),
+            inputs: &[layout(source)],
+            output: layout(result),
         };
-        let kernel = bind(&request, Operation::Keys).unwrap();
+        let kernel = bind(&request, operation).unwrap();
         assert_eq!(
             kernel.work_accounting(),
             ResidentKernelWorkAccounting::RuntimeMetered
@@ -656,27 +675,37 @@ mod tests {
         let input = |second: &str| {
             Some(
                 ValueDraft {
-                    schema: map,
+                    schema: source,
                     shape_values: Box::new([]),
-                    data: ValueDataDraft::Map(
-                        vec![
-                            MapEntryDraft {
-                                items: vec![
-                                    ValueDataDraft::String("a".into()),
-                                    ValueDataDraft::U64(1),
-                                ]
-                                .into_boxed_slice(),
-                            },
-                            MapEntryDraft {
-                                items: vec![
-                                    ValueDataDraft::String(second.into()),
-                                    ValueDataDraft::U64(2),
-                                ]
-                                .into_boxed_slice(),
-                            },
-                        ]
-                        .into_boxed_slice(),
-                    ),
+                    data: if operation == Operation::Histogram {
+                        ValueDataDraft::Matrix(
+                            vec![
+                                ValueDataDraft::String(second.into()),
+                                ValueDataDraft::String("a".into()),
+                            ]
+                            .into_boxed_slice(),
+                        )
+                    } else {
+                        ValueDataDraft::Map(
+                            vec![
+                                MapEntryDraft {
+                                    items: vec![
+                                        ValueDataDraft::String("a".into()),
+                                        ValueDataDraft::U64(1),
+                                    ]
+                                    .into_boxed_slice(),
+                                },
+                                MapEntryDraft {
+                                    items: vec![
+                                        ValueDataDraft::String(second.into()),
+                                        ValueDataDraft::U64(u64::MAX),
+                                    ]
+                                    .into_boxed_slice(),
+                                },
+                            ]
+                            .into_boxed_slice(),
+                        )
+                    },
                 }
                 .finalize(&SnapshotValidationContext::new(&schemas))
                 .unwrap(),
@@ -692,16 +721,13 @@ mod tests {
             ResolvedValueDescriptor::from_schema(schema, shape).unwrap()
         };
         let binding = BoundCall::artifact_operation(
-            ResolvedOperationDescriptor::from_name(
-                Operation::Keys.name(),
-                Operation::Keys.contract().clone(),
-            )
-            .unwrap(),
-            Box::new([descriptor(map)]),
-            Box::new([descriptor(keys)]),
+            ResolvedOperationDescriptor::from_name(operation.name(), operation.contract().clone())
+                .unwrap(),
+            Box::new([descriptor(source)]),
+            Box::new([descriptor(result)]),
             ResidentOperationKey {
                 module_path: vec!["map".to_owned()].into_boxed_slice(),
-                operation_name: "keys".to_owned(),
+                operation_name: operation.name().strip_prefix("map/").unwrap().to_owned(),
             },
         )
         .unwrap();
@@ -740,13 +766,13 @@ mod tests {
             last: MemoryPlanPoint::new(1),
         };
         let source_storage = crate::memory_planner::resident_storage_descriptor(
-            &descriptor(map),
+            &descriptor(source),
             ResidentValueKind::Snapshot,
             lifetime,
         )
         .unwrap();
         let output_storage = crate::memory_planner::resident_storage_descriptor(
-            &descriptor(keys),
+            &descriptor(result),
             ResidentValueKind::Snapshot,
             lifetime,
         )
@@ -757,7 +783,7 @@ mod tests {
             output_storage: &[output_storage],
             input_witnesses: &[MemoryFootprintWitness::Known(footprint(
                 small[0].as_ref(),
-                map,
+                source,
             ))],
             output_witnesses: &[MemoryFootprintWitness::Known(
                 CurrentMemoryFootprint::default(),
@@ -765,7 +791,7 @@ mod tests {
             published_output_witnesses: &[MemoryFootprintWitness::Known(
                 CurrentMemoryFootprint::default(),
             )],
-            implementation_memory: Operation::Keys.memory(),
+            implementation_memory: operation.memory(),
             target: &target,
             regions: &[RegionAccessPlan::WholeValue],
         })
@@ -781,9 +807,9 @@ mod tests {
             let mut facts = crate::memory_planner::TurnMemoryFacts::default();
             facts.resolved_footprints.insert(
                 (node, PortDirection::Input, 0),
-                footprint(input[0].as_ref(), map),
+                footprint(input[0].as_ref(), source),
             );
-            let prior = footprint(output[0].as_ref(), keys);
+            let prior = footprint(output[0].as_ref(), result);
             facts
                 .resolved_footprints
                 .insert((node, PortDirection::Output, 0), prior);
@@ -813,12 +839,13 @@ mod tests {
         };
         let mut output = [None];
         invoke(&small, &mut output).unwrap();
+        assert!(!invoke(&small, &mut output).unwrap());
         let previous = output[0].as_ref().unwrap().clone();
         assert!(Arc::ptr_eq(&owner, &previous.schemas().unwrap()));
         assert_eq!(
             invoke(&large, &mut output),
             Err(ResidentKernelError::InvalidShape),
-            "oversized valid keys must fail a finite admission, never InvalidOutput"
+            "oversized valid input must fail finite admission before publication"
         );
         assert!(
             output[0].as_ref().unwrap().shares_frozen_storage(&previous),
@@ -827,18 +854,42 @@ mod tests {
         invoke(&recovered, &mut output).unwrap();
         let value = output[0].as_ref().unwrap();
         assert!(Arc::ptr_eq(&owner, &value.schemas().unwrap()));
-        let ValueData::Matrix(matrix) = value.data() else {
-            panic!("{value:?}")
-        };
-        let SequenceView::String(values) = matrix.elements() else {
-            panic!("{matrix:?}")
-        };
-        assert_eq!(
-            values
+        if let SchemaBody::Matrix { dimensions, .. } = schemas.get(result).unwrap().body() {
+            let geometry = dimensions
                 .iter()
-                .map(|value| value.as_ref())
-                .collect::<Vec<_>>(),
-            ["a", "zz"]
-        );
+                .map(|dimension| value.shape().resolve_dimension(dimension).unwrap())
+                .collect::<Vec<_>>();
+            assert_eq!(geometry, [1, 2]);
+        }
+        match (operation, value.data()) {
+            (Operation::Keys, ValueData::Matrix(matrix)) => {
+                let SequenceView::String(values) = matrix.elements() else {
+                    panic!("{matrix:?}")
+                };
+                assert_eq!(
+                    values
+                        .iter()
+                        .map(|value| value.as_ref())
+                        .collect::<Vec<_>>(),
+                    ["a", "zz"]
+                );
+            }
+            (Operation::Values, ValueData::Matrix(matrix)) => {
+                let SequenceView::U64(values) = matrix.elements() else {
+                    panic!("{matrix:?}")
+                };
+                assert_eq!(values, [1, u64::MAX]);
+            }
+            (Operation::Histogram, ValueData::Map(map)) => {
+                assert_eq!(map.entries().len(), 2);
+                for (entry, expected) in map.entries().iter().zip(["a", "zz"]) {
+                    assert!(
+                        matches!(entry.key().data(), ValueData::String(key) if key.as_ref() == expected)
+                    );
+                    assert!(matches!(entry.value(), ValueData::U64(1)));
+                }
+            }
+            _ => panic!("{value:?}"),
+        }
     }
 }
