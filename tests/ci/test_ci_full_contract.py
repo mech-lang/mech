@@ -131,6 +131,42 @@ def literal_assignment(source: str, name: str):
 
 
 class FullWorkflowContractTests(unittest.TestCase):
+    def test_canonical_applications_execute_linked_qualifications_explicitly(self):
+        block = job_block(FULL, "canonical-applications")
+        self.assertIn("RUSTUP_TOOLCHAIN: nightly-2026-03-03", block)
+        self.assertNotIn("continue-on-error", block)
+        for target in (
+            "applications", "tail_control", "native_artifact_lowering",
+            "native_artifact_i64_lowering", "native_artifact_output_initializers",
+            "canonical_artifact_native", "canonical_artifact_i64",
+            "canonical_cli_bytes", "native_host_io", "repeated_application",
+        ):
+            self.assertIn(f"--test {target}", block)
+        self.assertIn("--lib resident::native_semantics::tests", block)
+        self.assertIn("--features canonical-native --lib native_artifact::", block)
+        self.assertIn("--features canonical-native-runtime --lib", block)
+        for target, case, evidence in (
+            ("native_host_application",
+             "one_linked_executable_runs_secure_and_trusted_without_rebuilding",
+             "MECH_NATIVE_QUALIFICATION_DIRECTORY"),
+            ("canonical_artifact_application",
+             "linked_canonical_artifact_scalar_applications_are_typed_bounded_and_atomic",
+             "MECH_CANONICAL_NATIVE_EVIDENCE_DIR"),
+            ("canonical_cli_application",
+             "linked_canonical_cli_arguments_and_stdin_finish_without_drivers",
+             "MECH_CANONICAL_CLI_EVIDENCE_DIR"),
+        ):
+            step = next(step for step in job_steps(FULL, "canonical-applications")
+                        if f"--test {target} " in step)
+            self.assertIn("cargo +nightly-2026-03-03 test --locked --offline", step)
+            self.assertIn("-- --ignored --exact", step)
+            self.assertIn(case, step)
+            self.assertIn("--test-threads=1", step)
+            self.assertIn(evidence, step)
+        self.assertIn("MECH_CANONICAL_NATIVE_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}", block)
+        self.assertIn("MECH_CANONICAL_CLI_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}", block)
+        self.assertIn("uses: actions/upload-artifact@", block)
+
     def test_runtime_family_keeps_minimal_and_complete_source_profiles(self):
         block = job_block(FULL, "cargo-runtime")
         self.assertIn("run: cargo test -p mech-runtime --lib --tests", block)

@@ -1,0 +1,72 @@
+{
+  "schema": "mech.validation.pr901-integration-corrections.v1",
+  "status": "IMPLEMENTED_FINAL_STACK_QUALIFICATION_PENDING",
+  "historical_evidence": {
+    "handoff_commit": "7baa187cf06db29746449220ab424242e8a047a3",
+    "handoff": "benchmark-agent-handoff-v1.json",
+    "rule": "Earlier receipts remain historical evidence for their recorded commits, not qualification of this corrected candidate."
+  },
+  "corrections": [
+    {
+      "area": "module layout",
+      "implementation": "Retain native_resources/mod.rs and move program/tests.rs to program/tests/mod.rs; leave the existing layout gate unchanged."
+    },
+    {
+      "area": "text/join",
+      "cause": "The previous comparison estimate charged the longer payload even when unequal lengths establish inequality immediately.",
+      "implementation": "Charge fixed comparison work for unequal lengths and admit the possible payload comparison for equal lengths. Keep traversal, copying, allocation and retention charges and the global limits.",
+      "coverage": "Original and decoded artifacts; first publication at 65535, 65536, 65537 and 70000 bytes, growth/shrinkage, isolated repeated join, denial atomicity and recovery."
+    },
+    {
+      "area": "structural tail carriers",
+      "cause": "Repeated full enum, schema-body and draft copies consumed cumulative work on retained countdown and RecordBounds carriers.",
+      "implementation": "Bind and cache structural eligibility at activation; retain canonical values with schema-key/body/path evidence and borrow projections. Admit actual draft materialization, finalization and equality when needed.",
+      "diagnostics": "Preserve ResourceLimit with planning/admission/execution/publication phase, dimension, required amount and limit instead of collapsing admission causes to InvalidShape.",
+      "fixture_rule": "All ten original tail_control inputs, limits, expected results and recovery assertions are unchanged; only failure context was added."
+    },
+    {
+      "area": "persistent projection metadata",
+      "implementation": "Install a non-arena metadata demand in ActivatedPlan.memory_plan and initial/refined peak demands. Replace rather than accumulate the previous baseline, preserve value footprint nodes, reserve once at realization and release on denial/close, including budget None.",
+      "coverage": "Exact limit and one-under denial, refinement idempotence, growth, retained-node limits and release after failed realization."
+    },
+    {
+      "area": "map ownership and metering",
+      "implementation": "Keys, Values and Histogram finalize with the selected kernel's shared immutable schema owner. Their Snapshot implementations admit scans, histogram sort workspace, shape construction, drafts, payload copies, bounded canonical finalization and equality.",
+      "accounting_contract": "RuntimeMetered belongs to these audited selected implementations. The dense String output bridge remains Unclassified because it has additional copies.",
+      "coverage": "Owner identity, unrelated large schema arena/small result, exact U64 values, canonical order and geometry, finite per-call budget, repeated publication, denial and recovery. The original Keys/Values 4096-byte cases remain; the new Histogram case admits its complete 4148-byte workspace within 6144 bytes, below the unrelated arena's size."
+    },
+    {
+      "area": "native signed linked coverage",
+      "implementation": "Retain Bool/U64/I64 selected implementation witnesses and add a linked signed division/remainder fixture covering signs, extrema, zero divisors, MIN/-1 traps, source ordering, atomic outputs and recovery."
+    },
+    {
+      "area": "CI selection",
+      "implementation": "Select canonical application qualification for language/native impacts. Explicitly run ignored linked native-host, canonical-native and resident-CLI tests with pinned toolchain, locked dependencies, one test thread and retained evidence. A workflow regression test protects these selections."
+    }
+  ],
+  "remaining_compatibility_accounting": {
+    "location": "src/engine/src/resident/general/comprehension.rs:bind_inner",
+    "paths": [
+      "Legacy non-String-Set Snapshot results retain a representation-based dispatch-only fallback relying on their bound memory plan.",
+      "Older dense primitive operations retain canonical-name-based fixed scalar bounds, reduction/access exceptions and element-based concatenation/Set bounds."
+    ],
+    "boundary": "New String Set controls require RuntimeMetered descendants rather than inheriting those compatibility fallbacks. Audited map implementations meter their actual paths. None of these public work contracts supplies the private selected native-semantic witness.",
+    "follow_up": "Replace inherited name/representation fallbacks with implementation-owned contracts as those kernels are migrated."
+  },
+  "capabilities": {
+    "canonical_resident": "Validated canonical ProgramArtifact execution with retained state, control, collections and configured resource contracts, subject to each selected implementation's supported layouts and admission limits.",
+    "older_source_native": "The separate source-based native application frontend and activated text ports remain distinct from canonical-artifact native lowering.",
+    "canonical_native": "Stateless Turn-only Bool/U64/I64 scalar graphs with private selected implementation evidence; JIT/Object and linked qualification are separate phases.",
+    "benchmark_credit": "No new benchmark measurements or complete ten-workload qualification are claimed."
+  },
+  "live_follow_up_work": [
+    "Compose and qualify preserved additive F64 and checked-cast candidates against current source hashes.",
+    "Expand canonical native control, state, Iteration, matrices, collections and typed resources with real compiler/runtime support.",
+    "Migrate older native frontends to canonical artifacts; consolidate executable-region walkers, shape/Snapshot/admission/publication helpers.",
+    "Complete strict CLI payload/count and ownership/collection/bigint gaps, then qualify all ten idiomatic programs and publication LOC.",
+    "Qualify complete same-binary trusted/secured workload execution before serial Mech-only timing; preserve historical language cohorts.",
+    "Continue broader packaging and optimizer work independently of the corrected stack's qualification."
+  ],
+  "checks": [],
+  "benchmark_measurements": 0
+}
