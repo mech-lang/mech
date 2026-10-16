@@ -3212,7 +3212,7 @@ function-define := identifier, left-parenthesis,
                    (function-define-match-arms
                   | function-define-statements) ;
 function-define-statements :=
-  equal, whitespace0,
+  (output-operator | equal), whitespace0,
   (function-out-args | function-out-arg),
   define-operator,
   [(whitespace1 | statement-separator), statement],

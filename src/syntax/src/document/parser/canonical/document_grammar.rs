@@ -648,7 +648,10 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
     DocumentRule {
         rule: rules::FUNCTION_DEFINE_STATEMENTS,
         expression: GrammarExpression::Sequence(&[
-            GrammarExpression::Rule(rules::EQUAL),
+            GrammarExpression::Choice(&[
+                GrammarExpression::Rule(rules::OUTPUT_OPERATOR),
+                GrammarExpression::Rule(rules::EQUAL),
+            ]),
             GrammarExpression::Rule(rules::WHITESPACE0),
             GrammarExpression::Choice(&[
                 GrammarExpression::Rule(rules::FUNCTION_OUT_ARGS),
