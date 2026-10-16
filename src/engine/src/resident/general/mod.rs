@@ -12150,7 +12150,9 @@ fn build_layout(
                 },
                 schema.key(),
                 shape,
-                true,
+                // A runtime-shaped local carries its actual geometry in the
+                // snapshot; its lower-bound shape is only an arena seed.
+                has_fixed_shape || !(turn_shaped_binding || turn_shaped_schema),
                 ResidentStorageClass::Scratch,
                 kind,
                 resident_shape,
@@ -23219,6 +23221,24 @@ fn prepare_match_node(
     layout: &LayoutBuild,
 ) -> Result<ActivatedMatchNode, ResidentActivationError> {
     let continuation = control.contains_suspend();
+    for capture in &control.captures {
+        let schema = artifact
+            .schemas()
+            .get(capture.schema)
+            .ok_or(ResidentActivationError::UnsupportedControlLayout { node: owner })?;
+        if !crate::is_control_value_schema(schema) {
+            // A variable-shaped capture must carry its own validated geometry.
+            // Never reinterpret a dense lower-bound arena as the current value.
+            let region = input_reads[capture.input as usize].region();
+            if !crate::is_control_capture_schema(schema)
+                || region.kind != ResidentValueKind::Snapshot
+                || region.shape != ResidentShape::SCALAR
+                || region.len != 1
+            {
+                return Err(ResidentActivationError::UnsupportedControlLayout { node: owner });
+            }
+        }
+    }
     let scrutinee_source = inputs[control.scrutinee as usize];
     let scrutinee = input_reads[control.scrutinee as usize];
     let (scrutinee_schema, scrutinee_shape_values) = match scrutinee_source {

@@ -9776,6 +9776,7 @@ impl SemanticBuilder {
         let mut coverage =
             StructuralPatternCoverage::new(structural_coverage_space(&scrutinee_schema));
         let mut result_schema = None;
+        let mut result_schema_identity = None;
         for arm in arms {
             if activation && coverage.is_complete() {
                 return Err(SourceSemanticError {
@@ -10047,9 +10048,18 @@ impl SemanticBuilder {
                         result?
                     }
                 };
-                if result_schema
+                // Selection drafts can retain unused source-axis declarations.
+                // Match results require the exact canonical schema later used
+                // by the artifact, rather than an identical draft environment.
+                let schema_identity = schema.clone().finalize().map_err(|error| {
+                    internal(
+                        SourceSemanticAnchor::for_node(&arm.syntax),
+                        format!("unable to finalize match result schema: {error:?}"),
+                    )
+                })?;
+                if result_schema_identity
                     .as_ref()
-                    .is_some_and(|expected| expected != &schema)
+                    .is_some_and(|expected| expected != &schema_identity)
                 {
                     return Err(SourceSemanticError {
                         code: "source-semantics/incompatible-match-result-kind",
@@ -10057,6 +10067,7 @@ impl SemanticBuilder {
                         anchor: SourceSemanticAnchor::for_node(&arm.syntax),
                     });
                 }
+                result_schema_identity.get_or_insert(schema_identity);
                 result_schema.get_or_insert(schema);
                 Ok(PendingMatchArm {
                     pattern,
@@ -10257,7 +10268,12 @@ impl SemanticBuilder {
                         // projected schema. Array-rest bindings deliberately carry
                         // a per-turn dimension, so they are not ordinary closed
                         // captures and must retain that live schema into the block.
-                        if pattern_binding.is_none() && !closed_value(&schema) {
+                        if pattern_binding.is_none()
+                            && !schema
+                                .clone()
+                                .finalize()
+                                .is_ok_and(|schema| crate::is_control_capture_schema(&schema))
+                        {
                             return Err(unsupported());
                         }
                         let source =

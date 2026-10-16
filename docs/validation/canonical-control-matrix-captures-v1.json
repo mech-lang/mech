@@ -1,0 +1,129 @@
+{
+  "schema": "mech.canonical-control-matrix-captures.v1",
+  "source_parent_commit": "dfde3a64a",
+  "scope": "Canonical source and original/decoded resident artifacts with live matrix lexical captures, nested control-local geometry, and canonical scalar Match result schemas.",
+  "changes": [
+    "Rank-two scalar-element matrices with Turn dimensions may be lexical captures backed by validated canonical snapshots.",
+    "Suspended captures retain their original snapshot geometry while fresh live inputs use current geometry.",
+    "Snapshot retention measurement uses the immutable schema table owned by the retained value.",
+    "Runtime-shaped control locals do not claim activation-fixed geometry from their lower-bound allocation seed.",
+    "Match result compatibility compares finalized canonical schemas; unused source-axis declarations do not distinguish equal scalar results."
+  ],
+  "preserved_requirements": [
+    "Closed scrutinee, pattern-binding and result gates remain separate from lexical matrix capture eligibility.",
+    "Inactive branches remain lazy; admitted capture failures preserve the publication and allow later recovery.",
+    "Activation-lifetime and unsupported-rank matrix captures do not gain eligibility.",
+    "Different scalar kinds and different fixed result geometries remain incompatible."
+  ],
+  "source_files": [
+    {
+      "path": "src/engine/src/artifact/control.rs",
+      "sha256": "2854144ec2cfa072a7a1e0b30086c93946506752ee8dca2a485893597c041916"
+    },
+    {
+      "path": "src/engine/src/resident/general/execution.rs",
+      "sha256": "b1a77055883daf816755c3ed63c1b8ef9722828ecf3b44a897e0b880d118ee7a"
+    },
+    {
+      "path": "src/engine/src/resident/general/mod.rs",
+      "sha256": "56c7cd4dad3525f5f36765cd30cb26589cd3acaddac1c9ef72f8b6aa22eb6716"
+    },
+    {
+      "path": "src/engine/src/source_semantics/frontend.rs",
+      "sha256": "eca504144e5e174e4b14cbc97316ef63ec670969b229e1a328d7085945a49eba"
+    },
+    {
+      "path": "src/stdlib/tests/control_local_geometry.rs",
+      "sha256": "f641dcd05f24e39798b65691f93306fbc3f0eccc86c13382971b67b70b8c5561"
+    },
+    {
+      "path": "src/stdlib/tests/control_matrix_captures.rs",
+      "sha256": "1113c3df0da5604fd89710c2b564b5e733589344b1920aaa2422654827df8872"
+    },
+    {
+      "path": "src/stdlib/tests/match_result_schemas.rs",
+      "sha256": "26a3361dbb724bb2739eb1c1dcfc6da73158917f4e3b0eda672676687a364902"
+    }
+  ],
+  "actual_test_runs": [
+    {
+      "target": "mech-engine library",
+      "filter": "capture",
+      "passed": 8,
+      "filtered_out": 739,
+      "log": "control-capture-private-regressions-v1.log"
+    },
+    {
+      "target": "canonical_boolean_match",
+      "passed": 38,
+      "filtered_out": 0,
+      "log": "control-retained-regressions-v1.log"
+    },
+    {
+      "target": "comprehension_captures",
+      "passed": 5,
+      "filtered_out": 0,
+      "log": "control-retained-regressions-v1.log"
+    },
+    {
+      "target": "string_literal_match",
+      "passed": 7,
+      "filtered_out": 0,
+      "log": "control-retained-regressions-v1.log"
+    },
+    {
+      "target": "control_matrix_captures",
+      "passed": 5,
+      "filtered_out": 0,
+      "log": "qualification-control-corrections-initial-v1.json"
+    },
+    {
+      "target": "control_local_geometry",
+      "passed": 1,
+      "filtered_out": 0,
+      "log": "control-local-geometry-final-v1.log"
+    },
+    {
+      "target": "match_result_schemas",
+      "passed": 3,
+      "filtered_out": 0,
+      "log": "match-schema-current-signal-inputs-v3.log"
+    }
+  ],
+  "minimal_runtime_check": {
+    "package": "mech-engine",
+    "default_features": false,
+    "features": [
+      "std",
+      "resident-artifact",
+      "bool",
+      "u64",
+      "string"
+    ],
+    "target": "lib",
+    "passed": true,
+    "log": "control-runtime-minimal-check-v1.log"
+  },
+  "build_environment": {
+    "cargo_incremental": 0,
+    "dev_debug": 0,
+    "build_jobs": 2,
+    "rust_min_stack": 67108864,
+    "offline": true,
+    "locked": true,
+    "test_threads": 1
+  },
+  "compiler_test_features": [
+    "mech-stdlib/full_compiler",
+    "mech-stdlib/pure_text",
+    "mech-stdlib/sequence_sort",
+    "mech-stdlib/map_ops",
+    "mech-stdlib/native-sequence",
+    "mech-stdlib/native-artifact"
+  ],
+  "observations": {
+    "native_execution_qualification": false,
+    "host_io_qualification": false,
+    "benchmark_measurements": 0
+  }
+}

@@ -5484,8 +5484,16 @@ fn resident_frame_value_footprint(
                     let Some(value) = value else {
                         return Some((bytes, nodes));
                     };
-                    let footprint =
-                        budget::measure_canonical_value_footprint(meter, value, schemas).ok()?;
+                    // Schema ids belong to the retained snapshot's arena, not
+                    // necessarily the enclosing program's arena. The snapshot
+                    // owns both that immutable arena and its concrete shape.
+                    let owner = value.schemas();
+                    let footprint = budget::measure_canonical_value_footprint(
+                        meter,
+                        value,
+                        owner.as_deref().unwrap_or(schemas),
+                    )
+                    .ok()?;
                     Some((
                         bytes.checked_add(footprint.retained_bytes)?,
                         nodes.checked_add(footprint.node_count)?,
@@ -5819,6 +5827,57 @@ mod tests {
             },
         )
         .unwrap()
+    }
+
+    #[cfg(feature = "string")]
+    #[test]
+    fn retained_snapshot_capture_measurement_uses_its_immutable_schema_owner() {
+        let retained = mech_core::ValueCell::from_exact("owned arena".to_owned())
+            .unwrap()
+            .snapshot()
+            .unwrap();
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        builder
+            .insert(
+                mech_core::SchemaDraft {
+                    body: mech_core::SchemaBody::Bool,
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let fallback = builder.finish().unwrap().table;
+        let mut meter = budget::ResidentBudgetMeter::default();
+        let footprint = resident_frame_value_footprint(
+            ResidentValueRef::Snapshot(&[Some(retained.clone())]),
+            &fallback,
+            &mut meter,
+        )
+        .expect("the captured value owns its String schema, not fallback Bool");
+        assert!(
+            footprint.0
+                >= retained
+                    .retained_footprint(&retained.schemas().unwrap())
+                    .unwrap()
+                    .retained_bytes
+        );
+        assert!(footprint.1 >= 1);
+        let large = mech_core::ValueCell::from_exact(
+            "x".repeat(mech_core::RESIDENT_MAX_COMPARISON_WORK as usize + 1),
+        )
+        .unwrap()
+        .snapshot()
+        .unwrap();
+        assert!(
+            resident_frame_value_footprint(
+                ResidentValueRef::Snapshot(&[Some(large)]),
+                &fallback,
+                &mut budget::ResidentBudgetMeter::default(),
+            )
+            .is_none(),
+            "retention is refused before an over-budget snapshot clone"
+        );
     }
 
     #[cfg(feature = "source")]

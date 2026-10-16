@@ -733,7 +733,10 @@ pub(super) fn validate_match_inner(
     let mut captured_inputs = std::collections::BTreeSet::new();
     for capture in &declaration.captures {
         if inputs.get(capture.input as usize) != Some(&capture.schema)
-            || !closed_value(capture.schema)
+            || !draft
+                .schemas
+                .get(capture.schema)
+                .is_some_and(is_control_capture_schema)
             || !captured_inputs.insert(capture.input)
         {
             return Err(invalid("invalid or duplicate capture"));
@@ -1002,6 +1005,16 @@ pub(super) fn validate_match_inner(
                                     )
                                 })
                     );
+                    let live_turn_shaped_capture = matches!(
+                        input,
+                        ControlValue::Parameter { block: owner, ordinal }
+                            if *owner == block.id
+                                && block.parameters.get(*ordinal as usize).is_some_and(|parameter| {
+                                    matches!(parameter.source, ControlParameterSource::Capture(_))
+                                        && draft.schemas.get(parameter.schema)
+                                            .is_some_and(is_control_capture_schema)
+                                })
+                    );
                     let live_turn_shaped_local = matches!(
                         input,
                         ControlValue::Local { block: owner, node: local }
@@ -1015,6 +1028,7 @@ pub(super) fn validate_match_inner(
                         || value_schema(*input, index)? != port.schema
                         || (!closed_value(port.schema)
                             && !live_pattern_parameter
+                            && !live_turn_shaped_capture
                             && !live_turn_shaped_local)
                     {
                         return Err(invalid("block operation input contract mismatch"));
@@ -1485,10 +1499,91 @@ pub(crate) fn is_control_value_schema(schema: &mech_core::Schema) -> bool {
         && !matches!(schema.body(), mech_core::SchemaBody::Dynamic)
 }
 
+/// A lexical matrix capture may retain its turn-local shape in a canonical
+/// snapshot. This does not make variable-shaped scrutinees, structural pattern
+/// bindings, or block results closed control values.
+pub(crate) fn is_control_capture_schema(schema: &mech_core::Schema) -> bool {
+    use mech_core::{DimensionLifetime, SchemaBody};
+    is_control_value_schema(schema)
+        || (matches!(
+            schema.body(),
+            SchemaBody::Matrix { element, dimensions }
+                if dimensions.len() == 2
+                    && matches!(element.as_ref(),
+                        SchemaBody::Bool
+                            | SchemaBody::Index
+                            | SchemaBody::String
+                            | SchemaBody::UnsignedInteger(_)
+                            | SchemaBody::SignedInteger(_)
+                            | SchemaBody::FloatingPoint(_))
+        ) && schema
+            .dimension_parameters()
+            .iter()
+            .all(|parameter| parameter.lifetime() == DimensionLifetime::Turn))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use mech_core::{DimensionExpr, FloatWidth, SchemaBody, SchemaDraft, SchemaTableBuilder};
+
+    #[test]
+    fn turn_matrix_capture_eligibility_does_not_widen_closed_values() {
+        use mech_core::{
+            DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+            DimensionParameterOrigin,
+        };
+        let schema = |element, rank, lifetime| {
+            SchemaDraft {
+                body: SchemaBody::Matrix {
+                    element: Box::new(element),
+                    dimensions: (0..rank)
+                        .map(|axis| {
+                            if axis == 0 {
+                                DimensionExpr::Parameter(DimensionParameterId::new(0))
+                            } else {
+                                DimensionExpr::Constant(1)
+                            }
+                        })
+                        .collect(),
+                },
+                dimension_parameters: vec![DimensionParameterDeclaration {
+                    id: DimensionParameterId::new(0),
+                    origin: DimensionParameterOrigin::Explicit,
+                    lifetime,
+                    lower_bound: DimensionExpr::Constant(0),
+                    upper_bound: None,
+                }]
+                .into_boxed_slice(),
+            }
+            .finalize()
+            .unwrap()
+        };
+        for element in [
+            SchemaBody::String,
+            SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64),
+            SchemaBody::FloatingPoint(FloatWidth::W64),
+        ] {
+            let turn = schema(element.clone(), 2, DimensionLifetime::Turn);
+            assert!(is_control_capture_schema(&turn));
+            assert!(!is_control_value_schema(&turn));
+            assert!(!is_control_capture_schema(&schema(
+                element.clone(),
+                2,
+                DimensionLifetime::Activation,
+            )));
+            assert!(!is_control_capture_schema(&schema(
+                element,
+                1,
+                DimensionLifetime::Turn,
+            )));
+        }
+        assert!(!is_control_capture_schema(&schema(
+            SchemaBody::Dynamic,
+            2,
+            DimensionLifetime::Turn,
+        )));
+    }
 
     #[test]
     fn fixed_array_patterns_are_irrefutable_only_when_their_lengths_fit() {
