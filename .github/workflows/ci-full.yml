@@ -475,6 +475,20 @@ jobs:
           cargo +nightly-2026-03-03 test --locked --offline -p mech-build
           --no-default-features --features standard-hosts
           --test canonical_cli_bytes -- --test-threads=1
+      - name: Execute activated native host I/O and application syntax
+        run: >-
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu
+          --no-default-features --features native-build,native-io
+          --test native_host_io --test repeated_application -- --test-threads=1
+      - name: Qualify the same native host executable under both launch policies
+        env:
+          MECH_NATIVE_QUALIFICATION_DIRECTORY: ${{ runner.temp }}/native-host-evidence
+        run: >-
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu
+          --no-default-features --features native-build,native-io
+          --test native_host_application -- --ignored --exact
+          one_linked_executable_runs_secure_and_trusted_without_rebuilding
+          --test-threads=1
       - name: Qualify linked canonical native applications
         env:
           MECH_CANONICAL_NATIVE_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}
@@ -503,6 +517,7 @@ jobs:
           path: |
             ${{ runner.temp }}/canonical-native-evidence
             ${{ runner.temp }}/canonical-cli-evidence
+            ${{ runner.temp }}/native-host-evidence
           if-no-files-found: warn
 
   managed-memory-fixed-profiles:
