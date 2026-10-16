@@ -7,6 +7,8 @@ pub use comprehension::{
     ActivatedCollectionStep, ActivatedComprehensionNode, ActivatedPatternBinding,
 };
 mod live;
+#[cfg(feature = "native-artifact")]
+pub(crate) mod native_lowering;
 
 pub use execution::*;
 
@@ -12558,6 +12560,28 @@ fn bind_resident_operation(
     input_layouts: &[ResidentPortLayout],
     output_layout: ResidentPortLayout,
 ) -> Result<(BoundResidentKernel, mech_core::CallMemoryPlan), ResidentActivationError> {
+    bind_operation_for_target(
+        artifact,
+        catalog,
+        node_id,
+        operation,
+        contract_id,
+        input_layouts,
+        output_layout,
+        ExecutionTarget::ResidentCpu,
+    )
+}
+
+fn bind_operation_for_target(
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+    node_id: NodeId,
+    operation: &crate::OperationReference,
+    contract_id: mech_core::OperationContractId,
+    input_layouts: &[ResidentPortLayout],
+    output_layout: ResidentPortLayout,
+    target: ExecutionTarget,
+) -> Result<(BoundResidentKernel, mech_core::CallMemoryPlan), ResidentActivationError> {
     let canonical_operation = operation.canonical_name();
     let mech_core::ResolvedOperationContract::Declared(contract) = artifact
         .contracts()
@@ -12639,11 +12663,12 @@ fn bind_resident_operation(
         error: ResidentKernelBindError::InvalidParameters,
     })?;
     let resident_context = ResidentBuildContext {
-        bound_call: BoundCall::artifact_operation(
+        bound_call: BoundCall::artifact_operation_for_target(
             semantic_operation,
             input_descriptors,
             vec![output_descriptor].into_boxed_slice(),
             resident_operation,
+            target,
         )
         .map_err(|_| ResidentActivationError::KernelBind {
             node: node_id,
@@ -12654,13 +12679,27 @@ fn bind_resident_operation(
         .map_or(ImplementationMemoryClass::NoAdditionalScratch, |entry| {
             entry.implementation_memory
         });
-    let memory_plan = resident_call_memory_plan(
-        &resident_context.bound_call,
-        &input_layouts,
-        &output_layout,
-        output_contract,
-        implementation_memory,
-    )?;
+    let memory_plan = if target == ExecutionTarget::ResidentCpu {
+        resident_call_memory_plan(
+            &resident_context.bound_call,
+            input_layouts,
+            &output_layout,
+            output_contract,
+            implementation_memory,
+        )?
+    } else {
+        // Retain the selected implementation's conservative scratch policy
+        // while deriving actual native scalar storage. This is metadata-only;
+        // a future native executor must qualify its own complete cost policy.
+        operation_call_memory_plan(
+            &resident_context.bound_call,
+            input_layouts,
+            &output_layout,
+            output_contract,
+            implementation_memory,
+            target,
+        )?
+    };
     let bind_request = ResidentKernelBindRequest {
         contract: artifact.contracts().get(contract_id).unwrap(),
         schemas: artifact.schemas(),
@@ -12688,13 +12727,11 @@ fn bind_resident_operation(
         node: node_id,
         error,
     })?;
-    // The selected binder's declaration covers this request. Attaching the
-    // engine's descriptor for that same request is not a factory mutation;
-    // preserve only the finished binder's claim across this final attachment.
-    let work_accounting = kernel.work_accounting();
-    let kernel = kernel
-        .with_bound_call(resident_context.bound_call)
-        .with_work_accounting(work_accounting);
+    // Preserve the selected binder's cost contract for this exact request.
+    // The private semantic certifier independently validates its candidate
+    // before sealing the engine's final BoundCall; custom kernels stay unsealed.
+    let kernel =
+        super::native_semantics::bind_call(kernel, &bind_request, resident_context.bound_call);
     Ok((kernel, memory_plan))
 }
 
@@ -13716,8 +13753,31 @@ fn resident_call_memory_plan(
     output_contract: &mech_core::ResolvedOutputPort,
     implementation_memory: ImplementationMemoryClass,
 ) -> Result<mech_core::CallMemoryPlan, ResidentActivationError> {
-    let target = TargetMemoryProfile::current_resident_cpu()
-        .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })?;
+    operation_call_memory_plan(
+        bound_call,
+        inputs,
+        output,
+        output_contract,
+        implementation_memory,
+        ExecutionTarget::ResidentCpu,
+    )
+}
+
+fn operation_call_memory_plan(
+    bound_call: &BoundCall,
+    inputs: &[ResidentPortLayout],
+    output: &ResidentPortLayout,
+    output_contract: &mech_core::ResolvedOutputPort,
+    implementation_memory: ImplementationMemoryClass,
+    execution_target: ExecutionTarget,
+) -> Result<mech_core::CallMemoryPlan, ResidentActivationError> {
+    let target = match execution_target {
+        ExecutionTarget::ResidentCpu => TargetMemoryProfile::current_resident_cpu(),
+        ExecutionTarget::Native => TargetMemoryProfile::current_native_host(),
+        _ => Err(MemoryPlanError::DescriptorMismatch),
+    }
+    .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })?;
+
     let lifetime = MemoryLifetime::Turn {
         first: MemoryPlanPoint::new(0),
         last: MemoryPlanPoint::new(1),
@@ -13725,18 +13785,20 @@ fn resident_call_memory_plan(
     let input_storage = inputs
         .iter()
         .zip(bound_call.inputs())
-        .map(|(layout, descriptor)| resident_storage_descriptor(descriptor, layout.kind, lifetime))
+        .map(|(layout, descriptor)| {
+            operation_storage_descriptor(descriptor, layout.kind, lifetime, &target)
+        })
         .collect::<Result<Vec<_>, _>>()
         .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })?;
     let output_storage = vec![
-        resident_storage_descriptor(&bound_call.outputs()[0], output.kind, lifetime)
+        operation_storage_descriptor(&bound_call.outputs()[0], output.kind, lifetime, &target)
             .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })?,
     ];
     let input_witnesses = inputs
         .iter()
-        .map(resident_port_memory_witness)
+        .map(|layout| operation_port_memory_witness(layout, execution_target))
         .collect::<Result<Vec<_>, _>>()?;
-    let output_witnesses = vec![resident_port_memory_witness(output)?];
+    let output_witnesses = vec![operation_port_memory_witness(output, execution_target)?];
     let regions = vec![match &output_contract.construction {
         OutputConstruction::ReadModifyWrite { regions, .. } => RegionAccessPlan::Deferred(*regions),
         _ => RegionAccessPlan::WholeValue,
@@ -13753,6 +13815,53 @@ fn resident_call_memory_plan(
         regions: &regions,
     })
     .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })
+}
+
+// Native scalar slots are planned as actual host scalar storage, not relabeled
+// resident canonical handles. The first native artifact slice admits only these
+// two exact scalar schemas; other backends/layouts need their own derivation.
+fn operation_storage_descriptor(
+    descriptor: &mech_core::ResolvedValueDescriptor,
+    resident_kind: ResidentValueKind,
+    lifetime: MemoryLifetime,
+    target: &TargetMemoryProfile,
+) -> Result<mech_core::PhysicalStorageDescriptor, MemoryPlanError> {
+    if target.kind == mech_core::MemoryTargetKind::ResidentCpu {
+        return resident_storage_descriptor(descriptor, resident_kind, lifetime);
+    }
+    if target.kind != mech_core::MemoryTargetKind::NativeHost
+        || !descriptor.shape().parameter_values().is_empty()
+        || !descriptor.schema().dimension_parameters().is_empty()
+    {
+        return Err(MemoryPlanError::UnsupportedStorageLayout);
+    }
+    let representation = match descriptor.schema().body() {
+        SchemaBody::Bool => mech_core::FunctionValueRepresentation::Bool,
+        SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64) => {
+            mech_core::FunctionValueRepresentation::U64
+        }
+        _ => return Err(MemoryPlanError::UnsupportedStorageLayout),
+    };
+    Ok(mech_core::physical_storage_descriptor(
+        representation,
+        target,
+        lifetime,
+    ))
+}
+
+fn operation_port_memory_witness(
+    layout: &ResidentPortLayout,
+    target: ExecutionTarget,
+) -> Result<MemoryFootprintWitness, ResidentActivationError> {
+    if target == ExecutionTarget::Native {
+        // The exact scalar schema has already been checked by the physical
+        // descriptor builder. No payload observation is needed for one lane.
+        return Ok(MemoryFootprintWitness::Known(CurrentMemoryFootprint {
+            logical_elements: 1,
+            ..CurrentMemoryFootprint::default()
+        }));
+    }
+    resident_port_memory_witness(layout)
 }
 
 fn resident_port_memory_witness(

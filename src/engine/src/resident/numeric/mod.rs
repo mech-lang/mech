@@ -2222,7 +2222,7 @@ fn bind_dense_comparison(
         .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
     let right_mode = binary_broadcast_mode(right_shape, output)
         .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
-    bound(
+    let kernel = bound(
         dense_comparison,
         vec![
             output.rows as u64,
@@ -2232,7 +2232,20 @@ fn bind_dense_comparison(
             comparison as u64,
         ]
         .into_boxed_slice(),
-    )
+    )?;
+    Ok(match comparison {
+        SemanticComparison::Equal => super::native_semantics::certify(
+            request,
+            kernel,
+            super::native_semantics::NativeScalarOp::BoolEq,
+        ),
+        SemanticComparison::NotEqual => super::native_semantics::certify(
+            request,
+            kernel,
+            super::native_semantics::NativeScalarOp::BoolNe,
+        ),
+        _ => kernel,
+    })
 }
 
 fn snapshot_comparison_element_supported(
@@ -2377,11 +2390,20 @@ fn bind_snapshot_comparison(
                     schema.body() == &SchemaBody::UnsignedInteger(IntegerWidth::W64)
                 })
         });
-    Ok(if metered_u64_guard {
+    let kernel = if metered_u64_guard {
         kernel.with_work_accounting(ResidentKernelWorkAccounting::RuntimeMetered)
     } else {
         kernel
-    })
+    };
+    let op = match comparison {
+        SemanticComparison::Equal => super::native_semantics::NativeScalarOp::U64Eq,
+        SemanticComparison::NotEqual => super::native_semantics::NativeScalarOp::U64Ne,
+        SemanticComparison::Less => super::native_semantics::NativeScalarOp::U64Lt,
+        SemanticComparison::LessEqual => super::native_semantics::NativeScalarOp::U64Le,
+        SemanticComparison::Greater => super::native_semantics::NativeScalarOp::U64Gt,
+        SemanticComparison::GreaterEqual => super::native_semantics::NativeScalarOp::U64Ge,
+    };
+    Ok(super::native_semantics::certify(request, kernel, op))
 }
 
 fn bind_snapshot_equality(
@@ -2562,7 +2584,13 @@ fn bind_bool_binary(
 fn bind_bool_and(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_bool_binary(request, bool_and)
+    bind_bool_binary(request, bool_and).map(|kernel| {
+        super::native_semantics::certify(
+            request,
+            kernel,
+            super::native_semantics::NativeScalarOp::BoolAnd,
+        )
+    })
 }
 
 fn bind_semantic_bool_and(
@@ -2620,7 +2648,13 @@ fn bind_bool_vector_binary(
 fn bind_bool_or(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_bool_binary(request, bool_or)
+    bind_bool_binary(request, bool_or).map(|kernel| {
+        super::native_semantics::certify(
+            request,
+            kernel,
+            super::native_semantics::NativeScalarOp::BoolOr,
+        )
+    })
 }
 
 fn bind_semantic_bool_or(
@@ -2634,7 +2668,13 @@ fn bind_semantic_bool_or(
 fn bind_bool_xor(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_bool_binary(request, bool_xor)
+    bind_bool_binary(request, bool_xor).map(|kernel| {
+        super::native_semantics::certify(
+            request,
+            kernel,
+            super::native_semantics::NativeScalarOp::BoolXor,
+        )
+    })
 }
 
 fn bind_semantic_bool_xor(
@@ -2750,10 +2790,19 @@ fn bind_dense_bool_not(
     if request.inputs[0].shape != request.output.shape {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
-    bound(
+    let kernel = bound(
         if scalar { bool_not } else { bool_vector_not },
         Vec::<u64>::new().into_boxed_slice(),
-    )
+    )?;
+    Ok(if scalar {
+        super::native_semantics::certify(
+            request,
+            kernel,
+            super::native_semantics::NativeScalarOp::BoolNot,
+        )
+    } else {
+        kernel
+    })
 }
 
 fn bind_snapshot_bool_not(
@@ -3238,11 +3287,20 @@ fn bind_snapshot_numeric_binary(
         .into_boxed_slice(),
     )?
     .with_snapshot_schemas(request.schemas.clone());
-    if snapshot_output {
-        Ok(kernel.with_snapshot_output(snapshot_output_metadata(request)))
+    let kernel = if snapshot_output {
+        kernel.with_snapshot_output(snapshot_output_metadata(request))
     } else {
-        Ok(kernel)
-    }
+        kernel
+    };
+    let op = match arithmetic {
+        SemanticArithmetic::Add => super::native_semantics::NativeScalarOp::U64Add,
+        SemanticArithmetic::Subtract => super::native_semantics::NativeScalarOp::U64Sub,
+        SemanticArithmetic::Multiply => super::native_semantics::NativeScalarOp::U64Mul,
+        SemanticArithmetic::Divide => super::native_semantics::NativeScalarOp::U64Div,
+        SemanticArithmetic::Remainder => super::native_semantics::NativeScalarOp::U64Rem,
+        SemanticArithmetic::Power => return Ok(kernel),
+    };
+    Ok(super::native_semantics::certify(request, kernel, op))
 }
 
 fn bind_snapshot_numeric_negate(

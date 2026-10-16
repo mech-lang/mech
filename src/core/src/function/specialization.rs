@@ -747,6 +747,34 @@ impl BoundCall {
         outputs: Box<[ResolvedValueDescriptor]>,
         resident_operation: crate::ResidentOperationKey,
     ) -> MResult<Self> {
+        Self::artifact_operation_for_target(
+            operation,
+            inputs,
+            outputs,
+            resident_operation,
+            ExecutionTarget::ResidentCpu,
+        )
+    }
+
+    /// Joins an artifact operation to its selected implementation and explicit
+    /// destination. This descriptor is not proof that a backend implements the
+    /// operation; native lowering additionally requires its private binder seal.
+    pub fn artifact_operation_for_target(
+        operation: ResolvedOperationDescriptor,
+        inputs: Box<[ResolvedValueDescriptor]>,
+        outputs: Box<[ResolvedValueDescriptor]>,
+        resident_operation: crate::ResidentOperationKey,
+        target: ExecutionTarget,
+    ) -> MResult<Self> {
+        if !matches!(
+            target,
+            ExecutionTarget::ResidentCpu | ExecutionTarget::Native
+        ) {
+            return Err(
+                MechError::new(crate::MemoryPlanError::DescriptorMismatch, None)
+                    .with_compiler_loc(),
+            );
+        }
         let canonical_name = format!(
             "{}/{}",
             resident_operation.module_path.join("/"),
@@ -770,7 +798,7 @@ impl BoundCall {
             inputs,
             outputs,
             implementation: BoundImplementationId::Resident(resident_operation),
-            target: ExecutionTarget::ResidentCpu,
+            target,
         })
     }
 

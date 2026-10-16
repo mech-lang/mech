@@ -18,6 +18,8 @@ pub(crate) mod map_ops;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod matrix_literal;
 #[cfg(feature = "resident-artifact")]
+pub(crate) mod native_semantics;
+#[cfg(feature = "resident-artifact")]
 pub(crate) mod numeric;
 #[cfg(all(feature = "resident-artifact", feature = "pure_text"))]
 pub(crate) mod pure_text;

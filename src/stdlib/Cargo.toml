@@ -100,6 +100,8 @@ standard_compiler = ["standard_source", "compiler"]
 
 full_runtime = ["runtime", "full_values", "full_operations"]
 full_source = ["full_runtime", "semantic-compiler"]
+# Metadata-only canonical artifact lowering; no native code generator is enabled.
+native-artifact = ["mech-engine/native-artifact"]
 full_compiler = ["full_source", "compiler", "mech-engine/resident-artifact"]
 
 standard_values = [
@@ -373,3 +375,7 @@ nalgebra = { version = "0.34.1" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10"
+
+[[test]]
+name = "native_artifact_lowering"
+required-features = ["full_compiler", "native-artifact"]

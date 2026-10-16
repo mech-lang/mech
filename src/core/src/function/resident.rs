@@ -353,6 +353,9 @@ pub struct BoundResidentKernel {
     retained_state: Option<Arc<dyn Any + Send + Sync>>,
     bound_call: Option<BoundCall>,
     work_accounting: ResidentKernelWorkAccounting,
+    // The defining implementation owns the concrete type. No erased getter
+    // exposes an attachment for copying onto an unrelated kernel.
+    lowering_witness: Option<Arc<dyn Any + Send + Sync>>,
 }
 
 #[derive(Clone, Debug)]
@@ -375,6 +378,7 @@ impl core::fmt::Debug for BoundResidentKernel {
             .field("retained_state", &self.retained_state.is_some())
             .field("bound_call", &self.bound_call)
             .field("work_accounting", &self.work_accounting)
+            .field("lowering_witness", &self.lowering_witness.is_some())
             .finish()
     }
 }
@@ -389,6 +393,7 @@ impl BoundResidentKernel {
             retained_state: None,
             bound_call: None,
             work_accounting: ResidentKernelWorkAccounting::Unclassified,
+            lowering_witness: None,
         }
     }
 
@@ -401,6 +406,7 @@ impl BoundResidentKernel {
             retained_state: None,
             bound_call: None,
             work_accounting: ResidentKernelWorkAccounting::Unclassified,
+            lowering_witness: None,
         }
     }
 
@@ -413,6 +419,7 @@ impl BoundResidentKernel {
             retained_state: None,
             bound_call: None,
             work_accounting: ResidentKernelWorkAccounting::Unclassified,
+            lowering_witness: None,
         }
     }
 
@@ -425,6 +432,7 @@ impl BoundResidentKernel {
             retained_state: None,
             bound_call: None,
             work_accounting: ResidentKernelWorkAccounting::Unclassified,
+            lowering_witness: None,
         }
     }
 
@@ -437,6 +445,7 @@ impl BoundResidentKernel {
             retained_state: None,
             bound_call: None,
             work_accounting: ResidentKernelWorkAccounting::Unclassified,
+            lowering_witness: None,
         }
     }
 
@@ -452,6 +461,7 @@ impl BoundResidentKernel {
             retained_state: None,
             bound_call: None,
             work_accounting: ResidentKernelWorkAccounting::Unclassified,
+            lowering_witness: None,
         }
     }
 
@@ -467,6 +477,7 @@ impl BoundResidentKernel {
             retained_state: None,
             bound_call: None,
             work_accounting: ResidentKernelWorkAccounting::Unclassified,
+            lowering_witness: None,
         }
     }
 
@@ -482,6 +493,7 @@ impl BoundResidentKernel {
             retained_state: None,
             bound_call: None,
             work_accounting: ResidentKernelWorkAccounting::Unclassified,
+            lowering_witness: None,
         }
     }
 
@@ -497,6 +509,7 @@ impl BoundResidentKernel {
             retained_state: None,
             bound_call: None,
             work_accounting: ResidentKernelWorkAccounting::Unclassified,
+            lowering_witness: None,
         }
     }
 
@@ -506,8 +519,31 @@ impl BoundResidentKernel {
     /// delegated kernel cannot accidentally retain it after semantic mutation.
     /// Cloning an unchanged bound kernel preserves the declaration.
     pub fn with_work_accounting(mut self, accounting: ResidentKernelWorkAccounting) -> Self {
+        self.lowering_witness = None;
         self.work_accounting = accounting;
         self
+    }
+
+    /// Attaches implementation-owned lowering evidence after all execution
+    /// metadata is finished. Only the defining implementation can recognize a
+    /// private concrete witness type. This generic storage grants no semantic
+    /// authority by itself. All semantic and cost builders invalidate it.
+    pub fn with_lowering_witness<T>(mut self, witness: Arc<T>) -> Self
+    where
+        T: Any + Send + Sync,
+    {
+        self.lowering_witness = Some(witness);
+        self
+    }
+
+    /// Borrows only a caller-known concrete attachment type. The implicit
+    /// Sized bound and absence of an erased getter keep private witness types
+    /// inaccessible to unrelated implementations.
+    pub fn lowering_witness<T>(&self) -> Option<&T>
+    where
+        T: Any + Send + Sync,
+    {
+        self.lowering_witness.as_deref()?.downcast_ref()
     }
 
     pub const fn work_accounting(&self) -> ResidentKernelWorkAccounting {
@@ -516,12 +552,14 @@ impl BoundResidentKernel {
 
     pub fn with_snapshot_output(mut self, output: ResidentSnapshotOutput) -> Self {
         self.snapshot_output = Some(output);
+        self.lowering_witness = None;
         self.work_accounting = ResidentKernelWorkAccounting::Unclassified;
         self
     }
 
     pub fn with_bound_call(mut self, bound_call: BoundCall) -> Self {
         self.bound_call = Some(bound_call);
+        self.lowering_witness = None;
         self.work_accounting = ResidentKernelWorkAccounting::Unclassified;
         self
     }
@@ -536,6 +574,7 @@ impl BoundResidentKernel {
 
     pub fn with_snapshot_schemas(mut self, schemas: SchemaTable) -> Self {
         self.snapshot_schemas = Some(Arc::new(schemas));
+        self.lowering_witness = None;
         self.work_accounting = ResidentKernelWorkAccounting::Unclassified;
         self
     }
@@ -559,6 +598,7 @@ impl BoundResidentKernel {
         T: Any + Send + Sync,
     {
         self.retained_state = Some(state);
+        self.lowering_witness = None;
         self.work_accounting = ResidentKernelWorkAccounting::Unclassified;
         self
     }

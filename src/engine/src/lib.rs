@@ -23,6 +23,8 @@ pub mod intrinsics;
 pub mod memory_planner;
 #[cfg(any(feature = "semantic-compiler", feature = "resident-artifact"))]
 pub mod memory_runtime;
+#[cfg(feature = "native-artifact")]
+pub mod native_artifact;
 #[cfg(feature = "native-sequence")]
 pub mod native_sequence;
 pub mod numeric_optimizations;
