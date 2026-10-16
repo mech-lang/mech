@@ -3,7 +3,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::PathBuf;
 
-const EXPECTED_SCHEMA_ROWS: usize = 81;
+const EXPECTED_SCHEMA_ROWS: usize = 83;
 const SCHEMA_HEADER: &str =
     "grammar-name\tparser-module\temission-policy\tsyntax-kind\tkind-origin\tnotes";
 const COMPONENT_HEADER: &str = "grammar-name\tfamily\tcomponent-id\tcomponent-size\t\
@@ -258,18 +258,18 @@ fn schema_inventory_and_categorical_contracts_are_exact() {
 
     assert_eq!(
         policy_totals,
-        BTreeMap::from([("conditional-node", 8), ("node", 71), ("transparent", 2)])
+        BTreeMap::from([("conditional-node", 8), ("node", 73), ("transparent", 2)])
     );
     assert_eq!(
         origin_totals,
-        BTreeMap::from([("existing", 5), ("new", 74), ("none", 2)])
+        BTreeMap::from([("existing", 5), ("new", 76), ("none", 2)])
     );
     assert_eq!(
         module_totals,
         BTreeMap::from([
             ("calls", 4),
             ("comprehensions", 4),
-            ("expressions", 3),
+            ("expressions", 5),
             ("fsm", 7),
             ("kinds", 11),
             ("literals", 1),
@@ -370,6 +370,8 @@ fn new_kinds_match_the_exact_append_only_schema() {
         assert!(!kind.is_token());
     }
     assert!(expected.insert(format!("{:?}", SyntaxKind::ApplicationExpression)));
+    assert!(expected.insert(format!("{:?}", SyntaxKind::ApplicationOperator)));
+    assert!(expected.insert(format!("{:?}", SyntaxKind::ApplicationStage)));
 
     let actual = schema()
         .values()

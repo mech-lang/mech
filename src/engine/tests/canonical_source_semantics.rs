@@ -2054,7 +2054,7 @@ fn semantic_policy_covers_the_exact_generated_component() {
         .map(|line| line.split('\t').next().unwrap())
         .collect::<Vec<_>>();
 
-    assert_eq!(CANONICAL_SEMANTIC_RULES.len(), 80);
+    assert_eq!(CANONICAL_SEMANTIC_RULES.len(), 83);
     assert_eq!(
         CANONICAL_SEMANTIC_RULES
             .iter()

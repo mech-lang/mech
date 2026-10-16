@@ -3,7 +3,7 @@ use std::fs;
 use std::path::PathBuf;
 
 const EXPECTED_RULES: usize = 543;
-const EXPECTED_EXECUTABLE_RULES: usize = 81;
+const EXPECTED_EXECUTABLE_RULES: usize = 83;
 const EXPECTED_EXECUTABLE_COMPONENTS: usize = 1;
 const DEPENDENCY_HEADER: &str = "grammar-name\tdirect-children\tdirect-parents";
 const SCC_HEADER: &str = "component-id\tcomponent-size\trecursive\tmembers\t\

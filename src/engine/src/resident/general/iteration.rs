@@ -61,7 +61,9 @@ pub(super) fn prepare(
         .slots
         .get(output_slot.get() as usize)
         .ok_or_else(invalid)?;
-    if output.schema != control.carrier {
+    if matches!(control.count, crate::IterationCount::Literal(_))
+        && output.schema != control.carrier
+    {
         return Err(invalid());
     }
     let &(carrier_slot, carrier_memory_node) = layout
@@ -107,7 +109,18 @@ pub(super) fn prepare(
         artifact_node: owner,
         budget_node,
         carrier_memory_node,
-        count: control.count,
+        count: match control.count {
+            crate::IterationCount::Literal(count) => ActivatedIterationCount::Literal(count),
+            crate::IterationCount::Elements { input } => ActivatedIterationCount::Elements {
+                read: *input_reads.get(input as usize).ok_or_else(invalid)?,
+                layout: source_port_layout(
+                    artifact,
+                    layout,
+                    *inputs.get(input as usize).ok_or_else(invalid)?,
+                    &mut ArtifactStaticSelectorResolver::new(artifact),
+                )?,
+            },
+        },
         seed: *input_reads.get(control.seed as usize).ok_or_else(invalid)?,
         seed_layout,
         write: ResidentWriteLocation {

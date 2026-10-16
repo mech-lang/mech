@@ -30,8 +30,10 @@ use super::combinator::Attempt;
 use super::{base, combinator};
 
 #[cfg(test)]
-pub(crate) const EXECUTABLE_RULES: &[RuleId; 81] = &[
+pub(crate) const EXECUTABLE_RULES: &[RuleId; 83] = &[
     rules::APPLICATION_EXPRESSION,
+    rules::APPLICATION_OPERATOR,
+    rules::APPLICATION_STAGE,
     rules::ARGUMENT_LIST,
     rules::BINDING,
     rules::BRACE_SUBSCRIPT,
@@ -211,6 +213,9 @@ pub(crate) fn supports(rule: RuleId) -> bool {
 pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Option<Attempt> {
     let result = match rule {
         rules::APPLICATION_EXPRESSION => expressions::parse_application_expression(parser),
+        rules::APPLICATION_OPERATOR | rules::APPLICATION_STAGE => {
+            precedence::parse_application_support(parser, rule)
+        }
         rules::ARGUMENT_LIST => calls::parse_argument_list(parser),
         rules::BINDING => structures::parse_binding(parser),
         rules::BRACE_SUBSCRIPT => subscripts::parse_brace_subscript(parser),

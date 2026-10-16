@@ -113,6 +113,14 @@ impl ParsedSource {
     pub fn parse(source: &str) -> Result<Self, String> {
         let source = application::normalize(source)?;
         let syntax = Self::parse_syntax(&source)?;
+        fn bracketed_counts(node: &SyntaxNode) -> bool {
+            mech_syntax::document::ApplicationOperatorSyntax::cast(node.clone())
+                .is_some_and(|operator| operator.count_expression().is_some())
+                || node.children().any(|child| bracketed_counts(&child))
+        }
+        if bracketed_counts(&syntax) {
+            return Err("bracketed application counts require canonical resident execution; legacy native frontends cannot lower element-wise iteration".into());
+        }
         Ok(Self { source, syntax })
     }
     fn parse_syntax(source: &str) -> Result<SyntaxNode, String> {

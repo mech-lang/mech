@@ -200,11 +200,24 @@ enum WireNodeBody {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct WireIterationDeclaration {
-    count: u64,
+    count: WireIterationCount,
     seed: u16,
     captures: Box<[(u16, u32, bool)]>,
     carrier: u32,
     body: WireControlBlock,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+enum WireIterationCount {
+    Literal(u64),
+    Elements(WireElementCounts),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct WireElementCounts {
+    elements: u16,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -1767,7 +1780,12 @@ fn wire_iteration(
     operations: &BTreeMap<OperationReference, u32>,
 ) -> WireIterationDeclaration {
     WireIterationDeclaration {
-        count: control.count,
+        count: match control.count {
+            super::IterationCount::Literal(count) => WireIterationCount::Literal(count),
+            super::IterationCount::Elements { input } => {
+                WireIterationCount::Elements(WireElementCounts { elements: input })
+            }
+        },
         seed: control.seed,
         captures: control
             .captures
@@ -2222,7 +2240,12 @@ fn iteration_from_wire(
     operation: &impl Fn(u32) -> Result<OperationReference, ArtifactBytecodeError>,
 ) -> Result<super::IterationDeclaration, ArtifactBytecodeError> {
     Ok(super::IterationDeclaration {
-        count: control.count,
+        count: match control.count {
+            WireIterationCount::Literal(count) => super::IterationCount::Literal(count),
+            WireIterationCount::Elements(count) => super::IterationCount::Elements {
+                input: count.elements,
+            },
+        },
         seed: control.seed,
         captures: control
             .captures
@@ -3075,7 +3098,7 @@ mod iteration_wire_tests {
         for count in [0, 19, u64::MAX] {
             let json = declaration(count);
             let wire: WireIterationDeclaration = serde_json::from_value(json.clone()).unwrap();
-            assert_eq!(wire.count, count);
+            assert!(matches!(wire.count, WireIterationCount::Literal(value) if value == count));
             assert!(wire.body.operations.is_empty());
             assert_eq!(serde_json::to_value(&wire).unwrap(), json);
             let mut unknown = json;
@@ -3090,6 +3113,25 @@ mod iteration_wire_tests {
             let mut json = declaration(0);
             json["count"] = count;
             assert!(serde_json::from_value::<WireIterationDeclaration>(json).is_err());
+        }
+    }
+
+    #[test]
+    fn iteration_wire_element_counts_have_one_strict_input_role() {
+        let mut json = declaration(0);
+        json["count"] = serde_json::json!({"elements": 1});
+        let wire: WireIterationDeclaration = serde_json::from_value(json.clone()).unwrap();
+        assert!(matches!(&wire.count, WireIterationCount::Elements(count) if count.elements == 1));
+        assert_eq!(serde_json::to_value(&wire).unwrap(), json);
+        for count in [
+            serde_json::json!({"elements": 1, "ignored": true}),
+            serde_json::json!({"elements": -1}),
+            serde_json::json!({"elements": 65536}),
+            serde_json::json!({"elements": "1"}),
+            serde_json::json!({"elements": 1.5}),
+        ] {
+            json["count"] = count;
+            assert!(serde_json::from_value::<WireIterationDeclaration>(json.clone()).is_err());
         }
     }
 

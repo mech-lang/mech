@@ -6,12 +6,32 @@ use mech_core::{
 
 use super::{ControlBlock, ControlCapture};
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum IterationCount {
+    Literal(u64),
+    /// Numeric matrix checked as exact U64 counts. A singleton broadcasts; otherwise its actual
+    /// shape must equal the seed matrix shape. Each body receives one element.
+    Elements {
+        input: u16,
+    },
+}
+
+pub(crate) fn is_iteration_count_element(body: &SchemaBody) -> bool {
+    matches!(
+        body,
+        SchemaBody::Index
+            | SchemaBody::UnsignedInteger(_)
+            | SchemaBody::SignedInteger(_)
+            | SchemaBody::FloatingPoint(_)
+    )
+}
+
 /// The seed is evaluated once; the body is validated once and executed `count`
 /// times with a privately owned current carrier. The body's id is its sole
 /// lexical scope identity. A count of zero never executes a body operation.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct IterationDeclaration<C = OperationContractId> {
-    pub count: u64,
+    pub count: IterationCount,
     /// Ordinal in the enclosing node's actual input bindings.
     pub seed: u16,
     pub captures: Box<[ControlCapture]>,
@@ -219,18 +239,54 @@ pub(super) fn validate_iteration_inner(
     let seed = *inputs
         .get(declaration.seed as usize)
         .ok_or_else(|| invalid("unknown iteration seed input"))?;
-    if output != declaration.carrier
-        || !is_iteration_carrier_schema(carrier)
-        || !draft
-            .schemas
-            .get(seed)
-            .is_some_and(|schema| iteration_carrier_compatible(schema, carrier))
-    {
+    let seed_schema = draft
+        .schemas
+        .get(seed)
+        .ok_or_else(|| invalid("unknown iteration seed schema"))?;
+    let output_schema = draft
+        .schemas
+        .get(output)
+        .ok_or_else(|| invalid("unknown iteration output schema"))?;
+    let compatible = match declaration.count {
+        IterationCount::Literal(_) => {
+            output == declaration.carrier && iteration_carrier_compatible(seed_schema, carrier)
+        }
+        IterationCount::Elements { input } => {
+            let count = inputs
+                .get(input as usize)
+                .and_then(|id| draft.schemas.get(*id))
+                .ok_or_else(|| invalid("unknown iteration count input"))?;
+            if !matches!(count.body(), SchemaBody::Matrix { element, dimensions }
+                if is_iteration_count_element(element) && dimensions.len() == 2)
+                || !is_iteration_carrier_schema(count)
+                || !carrier.dimension_parameters().is_empty()
+                || !scalar(carrier.body())
+            {
+                return Err(invalid(
+                    "element counts require a numeric matrix and scalar body",
+                ));
+            }
+            match seed_schema.body() {
+                SchemaBody::Matrix { element, .. } => {
+                    **element == *carrier.body()
+                        && iteration_carrier_compatible(seed_schema, output_schema)
+                }
+                _ => {
+                    output == declaration.carrier
+                        && iteration_carrier_compatible(seed_schema, carrier)
+                }
+            }
+        }
+    };
+    if !is_iteration_carrier_schema(carrier) || !compatible {
         return Err(invalid(
             "iteration seed/output must preserve the supported carrier kind",
         ));
     }
     let mut used_inputs = std::collections::BTreeSet::from([declaration.seed]);
+    if let IterationCount::Elements { input } = declaration.count {
+        used_inputs.insert(input);
+    }
     let mut captures = std::collections::BTreeSet::new();
     for capture in &declaration.captures {
         if inputs.get(capture.input as usize) != Some(&capture.schema)
@@ -249,7 +305,7 @@ pub(super) fn validate_iteration_inner(
     }
     if used_inputs.len() != inputs.len() || declaration.captures.len() > u16::MAX as usize {
         return Err(invalid(
-            "every iteration input must have one explicit seed/capture role",
+            "every iteration input must have an explicit seed/count/capture role",
         ));
     }
     let block = &declaration.body;

@@ -15,6 +15,7 @@ pub(super) enum Phase {
     OperatorBar(Marker),
     OperatorDigits(Marker, bool),
     OperatorDigit(Marker),
+    OperatorCount(Marker, Marker, Marker),
     OperatorAngle(Marker),
     OperatorRecovered(Marker),
 }
@@ -46,6 +47,11 @@ impl Continuation {
                 | Phase::OperatorDigit(node)
                 | Phase::OperatorAngle(node)
                 | Phase::OperatorRecovered(node) => (node, SyntaxKind::ApplicationOperator),
+                Phase::OperatorCount(node, factor, structure) => {
+                    structure.complete(parser, SyntaxKind::Structure);
+                    factor.complete(parser, SyntaxKind::Factor);
+                    (node, SyntaxKind::ApplicationOperator)
+                }
             };
             node.complete(parser, kind);
             self.result = Attempt::Committed;
@@ -121,7 +127,12 @@ impl Continuation {
                     .cursor()
                     .peek_char()
                     .is_some_and(|character| character.is_ascii_digit());
-                if digit {
+                if !counted && parser.cursor().starts_with("[") {
+                    let factor = parser.start();
+                    let structure = parser.start();
+                    self.application(Phase::OperatorCount(node, factor, structure));
+                    self.push(Frame::Call(rules::MATRIX));
+                } else if digit {
                     self.application(Phase::OperatorDigit(node));
                     self.base(rules::DIGIT_TOKEN);
                 } else if parser.cursor().starts_with(">") || counted && parser.is_eof() {
@@ -139,13 +150,25 @@ impl Continuation {
             Phase::OperatorDigit(node) => {
                 self.application(Phase::OperatorDigits(node, true));
             }
+            Phase::OperatorCount(node, factor, structure) => {
+                if self.result == Attempt::NoMatch {
+                    structure.abandon(parser);
+                    factor.abandon(parser);
+                    node.abandon(parser);
+                } else {
+                    structure.complete(parser, SyntaxKind::Structure);
+                    factor.complete(parser, SyntaxKind::Factor);
+                    self.application(Phase::OperatorAngle(node));
+                    self.base(rules::RIGHT_ANGLE);
+                }
+            }
             Phase::OperatorAngle(node) => {
                 if self.result == Attempt::NoMatch {
                     self.application(Phase::OperatorRecovered(node));
                     self.push(Frame::Required(Box::new(Required::new(
                         rules::APPLICATION_OPERATOR,
                         "syntax/missing-application-angle",
-                        "missing > after counted application digits",
+                        "missing > after application count",
                         "right-angle",
                         &[],
                         &[],

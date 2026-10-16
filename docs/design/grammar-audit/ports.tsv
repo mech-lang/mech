@@ -18,8 +18,8 @@ any	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonica
 any-token	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
 apostrophe	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
 application-expression	functions	certified	certified	executable-core	node:ApplicationExpression	executable	Typed canonical application; direct syntax, recovery, streaming and artifact-ready semantic witnesses are retained in the certification and validation records.
-application-operator	functions	certified	syntax-only	supporting	node:ApplicationOperator	application	Canonical application support; typed source and recovery behavior are exercised by application conformance tests.
-application-stage	functions	certified	syntax-only	supporting	node:ApplicationStage	application	Canonical application support; typed source and recovery behavior are exercised by application conformance tests.
+application-operator	functions	certified	certified	executable-core	node:ApplicationOperator	executable	Canonical application support; typed source and recovery behavior are exercised by application conformance tests.
+application-stage	functions	certified	certified	executable-core	node:ApplicationStage	executable	Canonical application support; typed source and recovery behavior are exercised by application conformance tests.
 argument-list	functions	certified	certified	executable-core	node:ArgumentList	executable	executable grammar canonical recursive core; semantic disposition: structural.
 assign-operator	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
 asterisk	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure

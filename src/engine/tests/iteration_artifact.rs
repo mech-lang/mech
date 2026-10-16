@@ -41,7 +41,7 @@ fn identity(
     captures: usize,
 ) -> IterationDeclaration<OperationContractDeclaration> {
     IterationDeclaration {
-        count,
+        count: IterationCount::Literal(count),
         seed: 0,
         carrier: schema,
         captures: (0..captures)
@@ -126,6 +126,78 @@ fn invalid(result: Result<ProgramArtifact, ArtifactBuildError>) {
 }
 
 #[test]
+fn iteration_element_count_input_is_validated_and_bound_by_artifact_identity() {
+    let mut builder = SchemaTableBuilder::new();
+    let scalar = builder
+        .insert(
+            SchemaDraft {
+                body: SchemaBody::UnsignedInteger(IntegerWidth::W64),
+                dimension_parameters: Box::new([]),
+            }
+            .finalize()
+            .unwrap(),
+        )
+        .unwrap();
+    let counts = builder
+        .insert(
+            SchemaDraft {
+                body: SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W64)),
+                    dimensions: Box::new([
+                        mech_core::DimensionExpr::Constant(1),
+                        mech_core::DimensionExpr::Constant(1),
+                    ]),
+                },
+                dimension_parameters: Box::new([]),
+            }
+            .finalize()
+            .unwrap(),
+        )
+        .unwrap();
+    let bad = builder
+        .insert(
+            SchemaDraft {
+                body: SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::Bool),
+                    dimensions: Box::new([
+                        mech_core::DimensionExpr::Constant(1),
+                        mech_core::DimensionExpr::Constant(1),
+                    ]),
+                },
+                dimension_parameters: Box::new([]),
+            }
+            .finalize()
+            .unwrap(),
+        )
+        .unwrap();
+    let built = builder.finish().unwrap();
+    let scalar = built.resolve(scalar).unwrap();
+    let counts = built.resolve(counts).unwrap();
+    let bad = built.resolve(bad).unwrap();
+    let mut control = identity(scalar, 0, 0);
+    control.count = IterationCount::Elements { input: 1 };
+    let original = build(&built.table, control.clone(), &[scalar, counts]).unwrap();
+    let bytes = encode_program_artifact_bytecode_v1(&original).unwrap();
+    let decoded = decode_program_artifact_bytecode_v1(&bytes).unwrap();
+    assert_eq!(original.nodes(), decoded.nodes());
+    assert_eq!(original.revision(), decoded.revision());
+    assert_ne!(
+        original.revision(),
+        build(&built.table, identity(scalar, 0, 0), &[scalar])
+            .unwrap()
+            .revision()
+    );
+    invalid(build(&built.table, control.clone(), &[scalar, bad]));
+    invalid(build(
+        &built.table,
+        identity(scalar, 0, 0),
+        &[scalar, counts],
+    ));
+    control.count = IterationCount::Elements { input: 2 };
+    invalid(build(&built.table, control, &[scalar, counts]));
+}
+
+#[test]
 fn iteration_roundtrip_binds_exact_count_without_unrolling() {
     let (schemas, carrier, _) = schemas();
     let mut prior_revision = None;
@@ -136,7 +208,7 @@ fn iteration_roundtrip_binds_exact_count_without_unrolling() {
         let ExecutableNodeBody::Iteration(control) = &original.nodes()[0].body else {
             panic!("a real iteration node is required")
         };
-        assert_eq!(control.count, count);
+        assert_eq!(control.count, IterationCount::Literal(count));
         assert!(control.body.operations.is_empty());
         let encoded = encode_program_artifact_bytecode_v1(&original).unwrap();
         let decoded = decode_program_artifact_bytecode_v1(&encoded).unwrap();

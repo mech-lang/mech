@@ -4,8 +4,11 @@
 //! complete body candidate is checked and admitted before replacing the
 //! carrier; only the final carrier reaches the ordinary result region.
 use super::*;
-use crate::resident::general::live;
+use crate::resident::general::{ActivatedIterationCount, ActivatedIterationNode, live};
 use mech_core::{CurrentMemoryFootprint, ResidentPortLayout};
+
+#[path = "iteration_elements.rs"]
+mod elements;
 
 fn checked_add(left: u64, right: u64) -> Result<u64, ResidentKernelError> {
     left.checked_add(right)
@@ -110,6 +113,21 @@ impl ReactiveInstance {
                         checked_add(live_bytes, retained.0).map_err(fail)?,
                         checked_add(live_nodes, retained.1).map_err(fail)?,
                     );
+                    if let ActivatedIterationCount::Elements { read, layout } = &control.count {
+                        self.execute_element_iterations(
+                            &control,
+                            *read,
+                            layout,
+                            (before_epoch, working_epoch),
+                            probe,
+                            body_live,
+                        )?;
+                        set_bit(
+                            &mut self.workspace.initialized_output_bits,
+                            node_index.get() as usize,
+                        );
+                        return Ok(true);
+                    }
                     self.iteration_copy_boundary(
                         node,
                         control.carrier_memory_node,
@@ -119,78 +137,16 @@ impl ReactiveInstance {
                         working_epoch,
                         body_live,
                     )?;
-                    let body = control
-                        .body
-                        .as_ref()
-                        .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
-                    let mut completed = 0_u64;
-                    while completed < control.count {
-                        budget::charge_planning_step()?;
-                        // Identity/empty bodies still consume one visit. Do
-                        // not reserve count*cost in advance: an earlier checked
-                        // operation must precede a later work denial.
-                        admit(|| {
-                            Ok(budget::resident_cost! {
-                                compute_work: 1,
-                                ..budget::KernelCostEstimate::default()
-                            })
-                        })
-                        .map_err(fail)?;
-                        let mut local_meter = budget::ResidentBudgetMeter::default();
-                        let mut block_live = ControlBlockLiveFootprint::default();
-                        for step in body.steps.iter() {
-                            self.execute_control_step_with_live_demand(
-                                node,
-                                body,
-                                step,
-                                &mut block_live,
-                                &mut local_meter,
-                                (before_epoch, working_epoch),
-                                probe,
-                                body_live,
-                            )?;
-                        }
-                        // Every scheduled local, including unused checked
-                        // nodes, remains live until this boundary is admitted.
-                        let retained_locals = self
-                            .resident_local_footprint(
-                                body.locals.iter().copied(),
-                                &self.plan.schemas,
-                                &mut local_meter,
-                            )
-                            .map_err(fail)?;
-                        // This borrowed planning walk includes locals that
-                        // are not the yield. Charge its complete estimate in a
-                        // fresh visit scope before staging the next carrier.
-                        admit(|| Ok(local_meter.estimate())).map_err(fail)?;
-                        self.iteration_copy_boundary(
-                            node,
-                            control.carrier_memory_node,
-                            body.yield_value,
-                            &body.yield_layout,
-                            control.carrier,
-                            working_epoch,
-                            (
-                                checked_add(body_live.0, retained_locals.retained_bytes)
-                                    .map_err(fail)?,
-                                checked_add(body_live.1, retained_locals.node_count)
-                                    .map_err(fail)?,
-                            ),
-                        )?;
-                        admit(|| {
-                            Ok(budget::resident_cost! {
-                                compute_work: control.locals.len() as u64,
-                                ..budget::KernelCostEstimate::default()
-                            })
-                        })
-                        .map_err(fail)?;
-                        for region in control.locals.iter().copied() {
-                            if region != control.carrier.region {
-                                self.workspace.scratch.discard_payload_write(region);
-                            }
-                        }
-                        completed += 1; // completed<count<=u64::MAX proves this addition.
-                    }
+                    let ActivatedIterationCount::Literal(count) = control.count else {
+                        unreachable!()
+                    };
+                    self.execute_iteration_body(
+                        &control,
+                        count,
+                        (before_epoch, working_epoch),
+                        probe,
+                        body_live,
+                    )?;
                     let carrier_layout = super::super::slot_port_layout(
                         &self.plan.slots[control.carrier.slot.get() as usize],
                     );
@@ -207,20 +163,97 @@ impl ReactiveInstance {
                         &mut self.workspace.initialized_output_bits,
                         node_index.get() as usize,
                     );
-                    // Like canonical collection construction, this first
-                    // implementation conservatively reports a complete result
-                    // as changed. It performs no unfunded payload equality scan.
                     Ok(true)
                 })();
-                // No lexical payload escapes success, a checked error, or a
-                // memory/work denial. The enclosing publication stays staged
-                // in its own ordinary result region until the host turn commits.
                 for region in control.locals.iter().copied() {
                     self.workspace.scratch.discard_payload_write(region);
                 }
                 result
             })
         })
+    }
+
+    fn execute_iteration_body(
+        &mut self,
+        control: &ActivatedIterationNode,
+        count: u64,
+        (before_epoch, working_epoch): (InstanceEpoch, InstanceEpoch),
+        probe: &mut ResidentStructuralProbe,
+        body_live: (u64, u64),
+    ) -> Result<(), ResidentExecutionError> {
+        let node = control.artifact_node;
+        let fail = |error| ResidentExecutionError::Kernel { node, error };
+        let body = control
+            .body
+            .as_ref()
+            .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
+        let mut completed = 0_u64;
+        while completed < count {
+            budget::charge_planning_step()?;
+            // Identity/empty bodies still consume one visit. Do
+            // not reserve count*cost in advance: an earlier checked
+            // operation must precede a later work denial.
+            admit(|| {
+                Ok(budget::resident_cost! {
+                    compute_work: 1,
+                    ..budget::KernelCostEstimate::default()
+                })
+            })
+            .map_err(fail)?;
+            let mut local_meter = budget::ResidentBudgetMeter::default();
+            let mut block_live = ControlBlockLiveFootprint::default();
+            for step in body.steps.iter() {
+                self.execute_control_step_with_live_demand(
+                    node,
+                    body,
+                    step,
+                    &mut block_live,
+                    &mut local_meter,
+                    (before_epoch, working_epoch),
+                    probe,
+                    body_live,
+                )?;
+            }
+            // Every scheduled local, including unused checked
+            // nodes, remains live until this boundary is admitted.
+            let retained_locals = self
+                .resident_local_footprint(
+                    body.locals.iter().copied(),
+                    &self.plan.schemas,
+                    &mut local_meter,
+                )
+                .map_err(fail)?;
+            // This borrowed planning walk includes locals that
+            // are not the yield. Charge its complete estimate in a
+            // fresh visit scope before staging the next carrier.
+            admit(|| Ok(local_meter.estimate())).map_err(fail)?;
+            self.iteration_copy_boundary(
+                node,
+                control.carrier_memory_node,
+                body.yield_value,
+                &body.yield_layout,
+                control.carrier,
+                working_epoch,
+                (
+                    checked_add(body_live.0, retained_locals.retained_bytes).map_err(fail)?,
+                    checked_add(body_live.1, retained_locals.node_count).map_err(fail)?,
+                ),
+            )?;
+            admit(|| {
+                Ok(budget::resident_cost! {
+                    compute_work: control.locals.len() as u64,
+                    ..budget::KernelCostEstimate::default()
+                })
+            })
+            .map_err(fail)?;
+            for region in control.locals.iter().copied() {
+                if region != control.carrier.region {
+                    self.workspace.scratch.discard_payload_write(region);
+                }
+            }
+            completed += 1; // completed<count<=u64::MAX proves this addition.
+        }
+        Ok(())
     }
 
     fn iteration_copy_boundary(

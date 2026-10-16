@@ -128,14 +128,23 @@ impl CanonicalArtifactWriter {
             super::ControlOperationBody::Suspend => self.u8(4),
             super::ControlOperationBody::Publish => self.u8(5),
             super::ControlOperationBody::Iteration(control) => {
-                self.u8(6);
+                self.u8(
+                    if matches!(control.count, super::IterationCount::Literal(_)) {
+                        6
+                    } else {
+                        7
+                    },
+                );
                 self.iteration(control);
             }
         }
     }
 
     fn iteration(&mut self, control: &super::IterationDeclaration) {
-        self.u64(control.count);
+        match control.count {
+            super::IterationCount::Literal(count) => self.u64(count),
+            super::IterationCount::Elements { input } => self.u16(input),
+        }
         self.u16(control.seed);
         self.u64(control.captures.len() as u64);
         for capture in &control.captures {
@@ -597,7 +606,13 @@ fn revision(draft: RevisionData<'_>) -> Result<ProgramRevision, ArtifactBuildErr
                 writer.match_declaration(control);
             }
             super::ExecutableNodeBody::Iteration(control) => {
-                writer.u8(5);
+                writer.u8(
+                    if matches!(control.count, super::IterationCount::Literal(_)) {
+                        5
+                    } else {
+                        6
+                    },
+                );
                 writer.iteration(control);
             }
             super::ExecutableNodeBody::Fsm(control) => {

@@ -13,8 +13,13 @@ enum ApplicationCallable {
     },
 }
 
+enum ApplicationCount {
+    Literal(u64),
+    Elements(PendingValue),
+}
+
 pub(super) struct PendingIteration {
-    pub(super) count: u64,
+    pub(super) count: crate::IterationCount,
     pub(super) captures: Vec<(u16, SchemaDraft, bool)>,
     pub(super) carrier: SchemaDraft,
     pub(super) body: PendingControlBlock,
@@ -122,18 +127,24 @@ impl SemanticBuilder {
             let function = self.required(stage.function(), stage.syntax(), "a unary callable")?;
             let name = node_text(function.syntax())?;
             let callable = self.application_callable(&name, function.syntax())?;
-            let count = stage.count().map_err(|error| SourceSemanticError {
-                code: match error {
-                    ApplicationCountError::Invalid => "source-semantics/invalid-application-count",
-                    ApplicationCountError::Overflow => {
-                        "source-semantics/application-count-overflow"
-                    }
-                },
-                message: "counted application requires an exact nonnegative decimal u64 count"
-                    .to_owned(),
-                anchor: SourceSemanticAnchor::for_node(stage.syntax()),
-            })?;
-            resolved.push((callable, count, stage.syntax()));
+            let count = if stage.count_expression().is_some() {
+                None
+            } else {
+                stage.count().map_err(|error| SourceSemanticError {
+                    code: match error {
+                        ApplicationCountError::Invalid => {
+                            "source-semantics/invalid-application-count"
+                        }
+                        ApplicationCountError::Overflow => {
+                            "source-semantics/application-count-overflow"
+                        }
+                    },
+                    message: "counted application requires an exact nonnegative decimal u64 count"
+                        .to_owned(),
+                    anchor: SourceSemanticAnchor::for_node(stage.syntax()),
+                })?
+            };
+            resolved.push((callable, count, stage));
         }
         let seed = self.required(
             application.seed(),
@@ -144,11 +155,11 @@ impl SemanticBuilder {
         // follows normal call contextual typing; explicit literal suffixes and
         // annotations keep their existing authority.
         let seed_context = match resolved.first() {
-            Some((ApplicationCallable::Catalog { declaration, .. }, _, syntax)) => {
+            Some((ApplicationCallable::Catalog { declaration, .. }, _, stage)) => {
                 declared_call_argument_contexts(
                     declaration,
                     &[String::new()],
-                    SourceSemanticAnchor::for_node(syntax),
+                    SourceSemanticAnchor::for_node(stage.syntax()),
                 )
                 .into_iter()
                 .next()
@@ -160,7 +171,26 @@ impl SemanticBuilder {
             &seed,
             seed_context.as_ref().map(ExpectedSchema::CallArgument),
         )?;
-        for (callable, count, syntax) in resolved {
+        for (callable, count, stage) in resolved {
+            let syntax = stage.syntax();
+            let count = if let Some(expression) = stage.count_expression() {
+                let count = self.expression_body_with_expected(&expression, None)?;
+                let schema = self.schema_draft_of(count)?;
+                if !matches!(&schema.body, SchemaBody::Matrix { element, dimensions }
+                    if crate::is_iteration_count_element(element) && dimensions.len() == 2)
+                {
+                    return Err(SourceSemanticError {
+                        code: "source-semantics/invalid-application-count",
+                        message:
+                            "bracketed application counts require numeric elements exactly representable as nonnegative U64 counts"
+                                .to_owned(),
+                        anchor: SourceSemanticAnchor::for_node(syntax),
+                    });
+                }
+                Some(ApplicationCount::Elements(count))
+            } else {
+                count.map(ApplicationCount::Literal)
+            };
             value = match count {
                 None => self.apply_callable(callable, value, syntax)?,
                 Some(count) => self.counted_application(callable, value, count, syntax)?,
@@ -175,7 +205,7 @@ impl SemanticBuilder {
         &mut self,
         callable: ApplicationCallable,
         seed: PendingValue,
-        count: u64,
+        count: ApplicationCount,
         syntax: &SyntaxNode,
     ) -> Result<PendingValue, SourceSemanticError> {
         let error = || {
@@ -189,26 +219,38 @@ impl SemanticBuilder {
             return Err(error());
         }
         let seed_schema = self.schema_draft_of(seed)?;
-        let carrier = match &callable {
-            ApplicationCallable::Document(name) => {
-                let parameter = self.unary_document_parameter_schema(name, syntax)?;
-                let seed_type = seed_schema.clone().finalize().map_err(|_| error())?;
-                let parameter_type = parameter.clone().finalize().map_err(|_| error())?;
-                if crate::iteration_carrier_compatible(&seed_type, &parameter_type) {
-                    parameter
-                } else {
-                    // A normal scalar-pattern function may lift over a matrix.
-                    // Its actual selected body still decides whether that call
-                    // is valid; the loop never invents a lifting implementation.
-                    generalized_carrier(&seed_schema)
-                }
+        let elementwise = matches!(count, ApplicationCount::Elements(_));
+        let carrier = if elementwise {
+            match &seed_schema.body {
+                SchemaBody::Matrix { element, .. } => SchemaDraft {
+                    body: *element.clone(),
+                    dimension_parameters: Box::new([]),
+                },
+                _ => seed_schema.clone(),
             }
-            ApplicationCallable::Catalog { .. } => generalized_carrier(&seed_schema),
+        } else {
+            match &callable {
+                ApplicationCallable::Document(name) => {
+                    let parameter = self.unary_document_parameter_schema(name, syntax)?;
+                    let seed_type = seed_schema.clone().finalize().map_err(|_| error())?;
+                    let parameter_type = parameter.clone().finalize().map_err(|_| error())?;
+                    if crate::iteration_carrier_compatible(&seed_type, &parameter_type) {
+                        parameter
+                    } else {
+                        // A normal scalar-pattern function may lift over a matrix.
+                        // Its actual selected body still decides whether that call
+                        // is valid; the loop never invents a lifting implementation.
+                        generalized_carrier(&seed_schema)
+                    }
+                }
+                ApplicationCallable::Catalog { .. } => generalized_carrier(&seed_schema),
+            }
         };
         let seed_type = seed_schema.clone().finalize().map_err(|_| error())?;
         let carrier_type = carrier.clone().finalize().map_err(|_| error())?;
         if !crate::is_iteration_carrier_schema(&carrier_type)
-            || !crate::iteration_carrier_compatible(&seed_type, &carrier_type)
+            || (!elementwise && !crate::iteration_carrier_compatible(&seed_type, &carrier_type))
+            || (elementwise && !crate::is_iteration_carrier_schema(&seed_type))
         {
             return Err(error());
         }
@@ -265,6 +307,18 @@ impl SemanticBuilder {
             })
             .collect::<Result<BTreeMap<_, _>, SourceSemanticError>>()?;
         let mut inputs = vec![seed];
+        let count = match count {
+            ApplicationCount::Literal(count) => crate::IterationCount::Literal(count),
+            ApplicationCount::Elements(value) => {
+                let input = if value == seed {
+                    0
+                } else {
+                    inputs.push(value);
+                    1
+                };
+                crate::IterationCount::Elements { input }
+            }
+        };
         let mut captures = Vec::<(u16, SchemaDraft, bool)>::new();
         let mut parameters = vec![(
             crate::ControlParameterSource::IterationCarrier,
@@ -369,13 +423,13 @@ impl SemanticBuilder {
             }),
             inferable_projection: false,
             inputs,
-            schema: carrier,
+            schema: if elementwise { seed_schema } else { carrier },
             exposes_output: true,
             state: None,
             semantic: SourceSemanticNode {
                 operation: "iteration".to_owned(),
                 role: "iteration",
-                detail: Some(count.to_string()),
+                detail: Some(format!("{count:?}")),
                 anchor: SourceSemanticAnchor::for_node(syntax),
             },
         });

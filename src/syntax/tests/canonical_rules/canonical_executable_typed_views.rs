@@ -92,7 +92,7 @@ fn find_matrix_comprehension_factor(node: &SyntaxNode) -> Option<FactorSyntax> {
 #[test]
 fn schema_and_typed_surface_have_one_complete_authority() {
     let rows = schema_rows();
-    assert_eq!(rows.len(), 81);
+    assert_eq!(rows.len(), 83);
     let mut node_kinds = BTreeSet::new();
     let mut transparent = BTreeSet::new();
 
@@ -119,7 +119,7 @@ fn schema_and_typed_surface_have_one_complete_authority() {
         }
     }
 
-    assert_eq!(node_kinds.len(), 79);
+    assert_eq!(node_kinds.len(), 81);
     assert_eq!(
         transparent,
         BTreeSet::from(["formula".to_owned(), "pattern-array-item".to_owned()])

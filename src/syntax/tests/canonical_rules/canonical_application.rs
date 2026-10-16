@@ -79,6 +79,29 @@ fn count_is_checked_decimal_u64_and_zero_is_retained() {
         Err(ApplicationCountError::Overflow)
     );
 }
+
+#[test]
+fn bracketed_counts_reuse_matrix_expressions_and_keep_stage_order() {
+    for count in [
+        "[2]",
+        "[n]",
+        "[n * 2]",
+        "[5 4 3 2 1]",
+        "[1 1 1 1 1]",
+        "[1 3 2 5 3]",
+        "[1; 3]",
+    ] {
+        let text = format!("seed |{count}> step |> next");
+        let value = expression(&text);
+        let ExpressionBodySyntax::Application(body) = value.body().unwrap() else {
+            panic!("application");
+        };
+        assert_eq!(body.stages().len(), 2);
+        let count_expression = body.stages()[0].count_expression().unwrap();
+        assert_eq!(count_expression.syntax().text().unwrap(), count);
+        assert_eq!(body.stages()[1].count(), Ok(None));
+    }
+}
 #[test]
 fn grouped_complete_expression_retains_match_and_application_owners() {
     let value = expression("(flag ? | true => 1u64 | false => 2u64) |> next");

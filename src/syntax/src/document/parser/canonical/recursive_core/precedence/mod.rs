@@ -56,6 +56,11 @@ impl FormulaSeed {
 }
 
 #[cfg(test)]
+pub(super) fn parse_application_support(parser: &mut Parser<'_>, rule: RuleId) -> Attempt {
+    continuation::Continuation::new(rule).drive(parser)
+}
+
+#[cfg(test)]
 pub(super) fn parse_l1(parser: &mut Parser<'_>) -> Attempt {
     continuation::Continuation::new(rules::L1).drive(parser)
 }

@@ -241,11 +241,20 @@ pub struct ActivatedMatchNode {
 }
 
 #[derive(Clone, Debug)]
+pub enum ActivatedIterationCount {
+    Literal(u64),
+    Elements {
+        read: ResidentReadLocation,
+        layout: ResidentPortLayout,
+    },
+}
+
+#[derive(Clone, Debug)]
 pub struct ActivatedIterationNode {
     pub artifact_node: NodeId,
     pub budget_node: NodeId,
     pub carrier_memory_node: NodeId,
-    pub count: u64,
+    pub count: ActivatedIterationCount,
     pub seed: ResidentReadLocation,
     pub seed_layout: ResidentPortLayout,
     pub write: ResidentWriteLocation,

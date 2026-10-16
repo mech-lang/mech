@@ -15871,6 +15871,43 @@ pub(crate) fn resident_value_to_snapshot(
     resident_shape: ResidentShape,
     value: ResidentValueRef<'_>,
 ) -> Result<mech_core::Value, ResidentKernelError> {
+    resident_value_to_snapshot_with_context(
+        schemas,
+        schema_id,
+        shape,
+        resident_shape,
+        value,
+        &SnapshotValidationContext::new(schemas),
+    )
+}
+
+/// Internal resident materialization keeps the activated schema identity and
+/// immutable owner; unlike host export it must not close dynamic dimensions.
+pub(crate) fn resident_value_to_shared_snapshot(
+    schemas: &std::sync::Arc<mech_core::SchemaTable>,
+    schema_id: SchemaId,
+    shape: &ShapeInstance,
+    resident_shape: ResidentShape,
+    value: ResidentValueRef<'_>,
+) -> Result<mech_core::Value, ResidentKernelError> {
+    resident_value_to_snapshot_with_context(
+        schemas,
+        schema_id,
+        shape,
+        resident_shape,
+        value,
+        &SnapshotValidationContext::with_shared_schemas(schemas),
+    )
+}
+
+fn resident_value_to_snapshot_with_context(
+    schemas: &mech_core::SchemaTable,
+    schema_id: SchemaId,
+    shape: &ShapeInstance,
+    resident_shape: ResidentShape,
+    value: ResidentValueRef<'_>,
+    context: &SnapshotValidationContext<'_>,
+) -> Result<mech_core::Value, ResidentKernelError> {
     if let ResidentValueRef::Snapshot([Some(value)]) = value {
         if value.schema() != schema_id {
             return Err(ResidentKernelError::InvalidInput);
@@ -15957,7 +15994,7 @@ pub(crate) fn resident_value_to_snapshot(
         shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
         data,
     }
-    .finalize(&SnapshotValidationContext::new(schemas))
+    .finalize(context)
     .map_err(|_| ResidentKernelError::InvalidInput)
 }
 

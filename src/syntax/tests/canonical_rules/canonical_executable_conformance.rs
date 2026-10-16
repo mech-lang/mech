@@ -191,6 +191,8 @@ fn typed_access_hash(rule_name: &str, node: &SyntaxNode) -> u64 {
     let view = RecursiveCoreSyntax::cast(syntax).expect("closed recursive typed view");
     hash.field(match &view {
         RecursiveCoreSyntax::ApplicationExpression(_) => "ApplicationExpression",
+        RecursiveCoreSyntax::ApplicationOperator(_) => "ApplicationOperator",
+        RecursiveCoreSyntax::ApplicationStage(_) => "ApplicationStage",
         RecursiveCoreSyntax::ArgumentList(_) => "ArgumentList",
         RecursiveCoreSyntax::RecordBinding(_) => "RecordBinding",
         RecursiveCoreSyntax::BraceSubscript(_) => "BraceSubscript",
@@ -289,6 +291,14 @@ fn typed_access_hash(rule_name: &str, node: &SyntaxNode) -> u64 {
         RecursiveCoreSyntax::ApplicationExpression(view) => {
             node!("seed", view.seed());
             nodes!("stages", view.stages());
+        }
+        RecursiveCoreSyntax::ApplicationOperator(view) => {
+            node!("count-expression", view.count_expression());
+        }
+        RecursiveCoreSyntax::ApplicationStage(view) => {
+            node!("operator", view.operator());
+            node!("function", view.function());
+            node!("count-expression", view.count_expression());
         }
         RecursiveCoreSyntax::ArgumentList(view) => {
             token!("opening-parenthesis", view.opening_parenthesis());
@@ -929,7 +939,7 @@ fn clean_tree_evidence_covers_flags_and_ignores_snapshot_identity() {
 fn certification_table_executes_every_direct_accept_reject_and_recovery_case() {
     let rows = certification_rows();
     let contracts = inventory_contracts();
-    assert_eq!(contracts.len(), 81);
+    assert_eq!(contracts.len(), 83);
     assert_certified_inventory(rows.iter().map(|row| row.name.as_str()), &contracts);
     let mut stale_hashes = Vec::new();
     for row in rows {

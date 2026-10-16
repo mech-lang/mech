@@ -151,8 +151,15 @@ impl ApplicationStageSyntax {
         child(self.syntax())
     }
 
-    /// None is ordinary `|>`. A counted stage carries the exact checked u64;
-    /// no source normalization or function-name interpretation is involved.
+    /// Bracketed counts use the ordinary matrix expression owner, including
+    /// its expression cells and geometry. The brackets are not stripped or
+    /// reparsed by a source frontend.
+    pub fn count_expression(&self) -> Option<ExpressionBodySyntax> {
+        self.operator()?.count_expression()
+    }
+
+    /// Literal shorthand only: None is ordinary `|>`. Bracketed counts are
+    /// exposed by `count_expression`; this accessor rejects nonliteral forms.
     pub fn count(&self) -> Result<Option<u64>, ApplicationCountError> {
         let operator = self.operator().ok_or(ApplicationCountError::Invalid)?;
         let text = operator
@@ -177,6 +184,12 @@ impl ApplicationStageSyntax {
                 .ok_or(ApplicationCountError::Overflow)?;
         }
         Ok(Some(value))
+    }
+}
+
+impl ApplicationOperatorSyntax {
+    pub fn count_expression(&self) -> Option<ExpressionBodySyntax> {
+        selected_expression_body(self.syntax())
     }
 }
 

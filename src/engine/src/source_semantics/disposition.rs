@@ -17,12 +17,14 @@ pub struct CanonicalSemanticRule {
 
 use CanonicalSemanticDisposition::{CompileTime, Executable, Structural};
 
-/// Closed semantic policy for the generated 81-rule recursive component.
+/// Closed semantic policy for the generated 83-rule recursive component.
 ///
 /// Keep this in the same lexical order as `recursive-core-syntax-schema.tsv` so the
 /// certification gate can compare the two authorities without heuristics.
-pub const CANONICAL_SEMANTIC_RULES: [CanonicalSemanticRule; 81] = [
+pub const CANONICAL_SEMANTIC_RULES: [CanonicalSemanticRule; 83] = [
     rule("application-expression", Executable),
+    rule("application-operator", Structural),
+    rule("application-stage", Structural),
     rule("argument-list", Structural),
     rule("binding", Structural),
     rule("brace-subscript", Structural),

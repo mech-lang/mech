@@ -18,7 +18,7 @@ any	none	any-token|code-block
 any-token	any	grammar-terminal-token|source-import-tail
 apostrophe	none	punctuation|transpose
 application-expression	application-stage|formula|fsm-pipe|matrix-comprehension|range-expression|set-comprehension	expression
-application-operator	bar|digit-token|right-angle	application-stage
+application-operator	bar|digit-token|matrix|right-angle	application-stage
 application-stage	application-operator|identifier|whitespace0	application-expression
 argument-list	call-arg|call-arg-with-binding|left-parenthesis|list-separator|right-parenthesis	fsm|function-call
 assign-operator	whitespace0	invariant-define|variable-assign|variable-define
@@ -296,7 +296,7 @@ map	left-brace|mapping|right-brace|whitespace0	structure
 mapping	colon|comma|expression|whitespace0	map
 match-arm	expression|guard-operator|list-separator|output-operator|pattern|statement-separator|whitespace0|whitespace1	expression|match-expression
 match-expression	factor|match-arm|period|question|whitespace0	none
-matrix	box-drawing-char|matrix-end|matrix-row|matrix-start|whitespace|whitespace0	structure
+matrix	box-drawing-char|matrix-end|matrix-row|matrix-start|whitespace|whitespace0	application-operator|structure
 matrix-column	box-vert|box-vert-bold|comma|expression|space-tab0	matrix-row
 matrix-comprehension	bar|comprehension-qualifier|expression|left-bracket|list-separator|right-bracket|whitespace0	application-expression|factor
 matrix-end	box-br|box-br-bold|box-br-round|right-bracket	matrix

@@ -1152,6 +1152,16 @@ mod tests {
         let normalized = normalize("r := x |> f(¬_, some_🙂)\n").unwrap();
         assert!(normalized.contains("f(¬ application-temp-0, some_🙂)"));
     }
+
+    #[test]
+    fn legacy_native_frontends_explicitly_reject_canonical_element_counts() {
+        let error = super::super::ParsedSource::parse(
+            "step(x<f64>) => <f64> := x + 1.0\nx := [10.0 20.0] |[1 3]> step\n",
+        )
+        .err()
+        .unwrap();
+        assert!(error.contains("canonical resident execution"), "{error}");
+    }
     #[test]
     fn counted_detection_preserves_prose_numeric_tables_and_bar_heavy_documents() {
         let prose = "use |. Prefix each native application with its host.\n";

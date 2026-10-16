@@ -320,6 +320,273 @@ fn exact_counts_include_zero_and_exceed_the_recursion_depth_without_unrolling() 
 }
 
 #[test]
+fn bracketed_counts_broadcast_and_apply_per_element_without_reordering() {
+    let catalog = mech_stdlib::source_catalog();
+    for (expression, expected) in [
+        (
+            "[10u64 20u64 30u64 40u64 50u64] |[5 4 3 2 1]> inc",
+            vec![15, 24, 33, 42, 51],
+        ),
+        (
+            "[10u64 20u64 30u64 40u64 50u64] |[1 1 1 1 1]> inc",
+            vec![11, 21, 31, 41, 51],
+        ),
+        (
+            "[10u64 20u64 30u64 40u64 50u64] |[1 3 2 5 3]> inc",
+            vec![11, 23, 32, 45, 53],
+        ),
+        ("[10u64 20u64 30u64] |[1 3 2]> inc", vec![11, 23, 32]),
+        ("[10u64 20u64 30u64] |[2]> inc", vec![12, 22, 32]),
+        ("[10u64 20u64 30u64] |[0 0 0]> inc", vec![10, 20, 30]),
+        ("[10u64 20u64 30u64] |[n * 2]> inc", vec![14, 24, 34]),
+        ("[10u64 20u64 30u64] |[n 0 n + 1]> inc", vec![12, 20, 33]),
+    ] {
+        let source = format!("n := 2\ninc(x<u64>) => <u64> := x + 1u64\n{expression}\n");
+        let (artifacts, output) = compile(&source, Arc::clone(&catalog));
+        for (ordinal, artifact) in artifacts.iter().enumerate() {
+            let mut instance = instance(artifact, &catalog, ordinal);
+            for _ in 0..2 {
+                turn(&mut instance, artifact, &[]).unwrap();
+                assert_matrix(
+                    &instance.copied_output(output).unwrap(),
+                    [1, expected.len() as u64],
+                    ValueDataDraft::Matrix(
+                        expected.iter().copied().map(ValueDataDraft::U64).collect(),
+                    ),
+                );
+            }
+        }
+    }
+    let (artifacts, output) = compile(
+        "inc(x<u64>) => <u64> := x + 1u64\n10u64 |[3]> inc\n",
+        Arc::clone(&catalog),
+    );
+    for (ordinal, artifact) in artifacts.iter().enumerate() {
+        let mut instance = instance(artifact, &catalog, ordinal);
+        turn(&mut instance, artifact, &[]).unwrap();
+        assert_scalar(&instance.copied_output(output).unwrap(), 13);
+    }
+}
+
+#[test]
+fn element_counts_preserve_matrix_orientation_and_owned_unicode_strings() {
+    let catalog = mech_stdlib::source_catalog();
+    for (source, extents, expected) in [
+        (
+            "inc(x<f64>) => <f64> := x + 1.0\n[10.0 20.0; 30.0 40.0] |[1 3; 2 0]> inc\n",
+            [2, 2],
+            ValueDataDraft::Matrix(
+                [11.0, 23.0, 32.0, 40.0]
+                    .into_iter()
+                    .map(|value| ValueDataDraft::F64(F64Bits::from_f64(value)))
+                    .collect(),
+            ),
+        ),
+        (
+            "append(x<string>) => <string> := x + \"é\"\n[\"é\" \"🧑‍🚀\"] |[1 2]> append\n",
+            [1, 2],
+            ValueDataDraft::Matrix(
+                vec![
+                    ValueDataDraft::String("éé".to_owned()),
+                    ValueDataDraft::String("🧑‍🚀éé".to_owned()),
+                ]
+                .into(),
+            ),
+        ),
+    ] {
+        let (artifacts, output) = compile(source, Arc::clone(&catalog));
+        for (ordinal, artifact) in artifacts.iter().enumerate() {
+            let mut instance = instance(artifact, &catalog, ordinal);
+            turn(&mut instance, artifact, &[]).unwrap();
+            assert_matrix(
+                &instance.copied_output(output).unwrap(),
+                extents,
+                expected.clone(),
+            );
+        }
+    }
+}
+
+#[test]
+fn element_counts_validate_actual_geometry_and_fail_atomically_then_recover() {
+    let catalog = mech_stdlib::source_catalog();
+    let source = "inc(x<u64>) => <u64> := x + 1u64\nvalues<[u64]> |[counts<[u64]>]> inc\n";
+    let (artifacts, output) = compile(source, Arc::clone(&catalog));
+    for (ordinal, artifact) in artifacts.iter().enumerate() {
+        let mut instance = instance(artifact, &catalog, ordinal);
+        let named = |values: &[u64], value_shape, counts: &[u64], count_shape| {
+            [
+                (
+                    "values",
+                    input(
+                        artifact,
+                        "values",
+                        Some(value_shape),
+                        ValueDataDraft::Matrix(
+                            values.iter().copied().map(ValueDataDraft::U64).collect(),
+                        ),
+                    ),
+                ),
+                (
+                    "counts",
+                    input(
+                        artifact,
+                        "counts",
+                        Some(count_shape),
+                        ValueDataDraft::Matrix(
+                            counts.iter().copied().map(ValueDataDraft::U64).collect(),
+                        ),
+                    ),
+                ),
+            ]
+        };
+        turn(
+            &mut instance,
+            artifact,
+            &named(&[10, 20], [2, 1], &[1, 2], [2, 1]),
+        )
+        .unwrap();
+        let epoch = instance.published_epoch();
+        for inputs in [
+            named(&[10, 20], [2, 1], &[1, 2], [1, 2]),
+            named(&[10, u64::MAX], [2, 1], &[1, 1], [2, 1]),
+            named(&[10, 20], [2, 1], &[u64::MAX], [1, 1]),
+        ] {
+            assert!(turn(&mut instance, artifact, &inputs).is_err());
+            assert_eq!(instance.published_epoch(), epoch);
+            assert_matrix(
+                &instance.copied_output(output).unwrap(),
+                [2, 1],
+                ValueDataDraft::Matrix(
+                    vec![ValueDataDraft::U64(11), ValueDataDraft::U64(22)].into(),
+                ),
+            );
+        }
+        turn(
+            &mut instance,
+            artifact,
+            &named(&[3, 4], [1, 2], &[2], [1, 1]),
+        )
+        .unwrap();
+        assert_matrix(
+            &instance.copied_output(output).unwrap(),
+            [1, 2],
+            ValueDataDraft::Matrix(vec![ValueDataDraft::U64(5), ValueDataDraft::U64(6)].into()),
+        );
+        turn(&mut instance, artifact, &named(&[], [0, 2], &[], [0, 2])).unwrap();
+        assert_matrix(
+            &instance.copied_output(output).unwrap(),
+            [0, 2],
+            ValueDataDraft::Matrix(Box::new([])),
+        );
+    }
+}
+
+#[test]
+fn count_numbers_are_checked_without_truncation_or_u64_round_trips() {
+    let catalog = mech_stdlib::source_catalog();
+    let source = "inc(x<f64>) => <f64> := x + 1.0\nseed<f64> |[count<f64>]> inc\n";
+    let (artifacts, output) = compile(source, Arc::clone(&catalog));
+    for (ordinal, artifact) in artifacts.iter().enumerate() {
+        let mut instance = instance(artifact, &catalog, ordinal);
+        let named = |count| {
+            [
+                (
+                    "seed",
+                    input(
+                        artifact,
+                        "seed",
+                        None,
+                        ValueDataDraft::F64(F64Bits::from_f64(10.0)),
+                    ),
+                ),
+                (
+                    "count",
+                    input(
+                        artifact,
+                        "count",
+                        None,
+                        ValueDataDraft::F64(F64Bits::from_f64(count)),
+                    ),
+                ),
+            ]
+        };
+        turn(&mut instance, artifact, &named(2.0)).unwrap();
+        let epoch = instance.published_epoch();
+        for count in [
+            -1.0,
+            1.5,
+            f64::NAN,
+            f64::INFINITY,
+            18_446_744_073_709_551_616.0,
+        ] {
+            let error = turn(&mut instance, artifact, &named(count)).unwrap_err();
+            assert!(error.contains("InvalidInput"), "{count}: {error}");
+            assert_eq!(instance.published_epoch(), epoch);
+            assert!(
+                matches!(instance.copied_output(output).unwrap().data(), ValueData::F64(value) if value.to_f64() == 12.0)
+            );
+        }
+        turn(&mut instance, artifact, &named(0.0)).unwrap();
+        assert!(
+            matches!(instance.copied_output(output).unwrap().data(), ValueData::F64(value) if value.to_f64() == 10.0)
+        );
+    }
+    let source = "n := 100\ninc(x<f64>) => <f64> := x + 1.0\n2.0 |[n * 2]> inc\n";
+    let (artifacts, output) = compile(source, catalog.clone());
+    for (ordinal, artifact) in artifacts.iter().enumerate() {
+        let mut instance = instance(artifact, &catalog, ordinal);
+        turn(&mut instance, artifact, &[]).unwrap();
+        assert!(
+            matches!(instance.copied_output(output).unwrap().data(), ValueData::F64(value) if value.to_f64() == 202.0)
+        );
+    }
+}
+
+#[test]
+fn bracketed_count_managed_denial_preserves_publication_and_recovers() {
+    use mech_engine::resident::{ResidentActivationOptions, activate_with_options};
+    let catalog = mech_stdlib::source_catalog();
+    let (artifacts, output) = compile(
+        "inc(x<u64>) => <u64> := x + 1u64\nseed<u64> |[count<u64>]> inc\n",
+        Arc::clone(&catalog),
+    );
+    for (ordinal, artifact) in artifacts.iter().enumerate() {
+        let budget = mech_core::ManagedMemoryBudget::new(8 * 1024 * 1024);
+        let mut instance = activate_with_options(
+            ReactiveInstanceId::new(0x454c454d, ordinal as u32),
+            artifact,
+            &catalog,
+            &ActivationFacts::default(),
+            ResidentActivationOptions {
+                memory_budget: Some(budget.clone()),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        let named = |seed, count| {
+            [
+                ("seed", scalar(artifact, "seed", seed)),
+                ("count", scalar(artifact, "count", count)),
+            ]
+        };
+        turn(&mut instance, artifact, &named(3, 2)).unwrap();
+        let epoch = instance.published_epoch();
+        let held = budget
+            .reserve_capacity(budget.limit_bytes() - budget.used_bytes())
+            .unwrap();
+        assert!(turn(&mut instance, artifact, &named(4, 3)).is_err());
+        assert_eq!(instance.published_epoch(), epoch);
+        drop(held);
+        assert_scalar(&instance.copied_output(output).unwrap(), 5);
+        turn(&mut instance, artifact, &named(4, 3)).unwrap();
+        assert_scalar(&instance.copied_output(output).unwrap(), 7);
+        drop(instance);
+        assert_eq!(budget.used_bytes(), 0);
+    }
+}
+
+#[test]
 fn nested_counted_applications_keep_separate_carriers_and_exact_lexical_captures() {
     let source = "inner(x<u64>) => <u64> := x + A\nouter(x<u64>) => <u64> := x |3> inner\nA := delta<u64> + 0u64\nseed<u64> |2> outer\n";
     let catalog = mech_stdlib::source_catalog();
@@ -357,7 +624,13 @@ fn max_count_is_finitely_denied_after_earlier_checked_errors_and_recovers() {
         turn(&mut instance, artifact, &named(3, false)).unwrap();
         let epoch = instance.published_epoch();
         let denial = turn(&mut instance, artifact, &named(1, true)).unwrap_err();
-        assert!(denial.contains("InvalidShape"), "{denial}");
+        assert!(
+            denial.contains("ResourceLimit")
+                && denial.contains("phase: Admission")
+                && denial.contains("dimension: ComparisonWork")
+                && denial.contains("limit: 65536"),
+            "{denial}"
+        );
         assert_eq!(instance.published_epoch(), epoch);
         assert_scalar(&instance.copied_output(output).unwrap(), 3);
         let arithmetic = turn(&mut instance, artifact, &named(0, true)).unwrap_err();
@@ -556,25 +829,62 @@ fn runtime_global_and_seed_producers_execute_once_per_invocation() {
     // Source declarations remain the genuine maintained declarations. Only the
     // selected runtime leaf has a transparent test observer; it delegates all
     // arithmetic and error behavior to that exact maintained implementation.
-    let source = "step(x<u64>) => <u64> := x + A\nA := 20u64 / denominator<u64>\n(10u64 / seed<u64>) |4> step\n";
-    let (artifacts, output) = compile(source, Arc::clone(&maintained));
-    for (ordinal, artifact) in artifacts.iter().enumerate() {
-        PRODUCER_EXECUTIONS.store(0, Ordering::Relaxed);
-        let mut instance = instance(artifact, &execution_catalog, ordinal);
-        assert_eq!(PRODUCER_EXECUTIONS.load(Ordering::Relaxed), 0);
-        for (seed, denominator, expected) in [(2, 4, 25), (5, 2, 42)] {
-            let before = PRODUCER_EXECUTIONS.load(Ordering::Relaxed);
-            turn(
-                &mut instance,
-                artifact,
-                &[
-                    ("seed", scalar(artifact, "seed", seed)),
-                    ("denominator", scalar(artifact, "denominator", denominator)),
-                ],
-            )
-            .unwrap();
-            assert_eq!(PRODUCER_EXECUTIONS.load(Ordering::Relaxed) - before, 2);
-            assert_scalar(&instance.copied_output(output).unwrap(), expected);
+    for (expression, observed, matrix) in [
+        ("(10u64 / seed<u64>) |4> step", 2, false),
+        ("(10u64 / seed<u64>) |[12u64 / count<u64>]> step", 3, false),
+        (
+            "[10u64 / seed<u64> 10u64] |[12u64 / count<u64>]> step",
+            3,
+            true,
+        ),
+    ] {
+        let source = format!(
+            "step(x<u64>) => <u64> := x + A\nA := 20u64 / denominator<u64>\n{expression}\n"
+        );
+        let (artifacts, output) = compile(&source, Arc::clone(&maintained));
+        for (ordinal, artifact) in artifacts.iter().enumerate() {
+            PRODUCER_EXECUTIONS.store(0, Ordering::Relaxed);
+            let mut instance = instance(artifact, &execution_catalog, ordinal);
+            assert_eq!(PRODUCER_EXECUTIONS.load(Ordering::Relaxed), 0);
+            for (seed, denominator, expected) in [(2, 4, 25), (5, 2, 42)] {
+                let before = PRODUCER_EXECUTIONS.load(Ordering::Relaxed);
+                turn(
+                    &mut instance,
+                    artifact,
+                    &[
+                        ("seed", scalar(artifact, "seed", seed)),
+                        ("denominator", scalar(artifact, "denominator", denominator)),
+                        (
+                            "count",
+                            if observed == 3 {
+                                scalar(artifact, "count", 3)
+                            } else {
+                                scalar(artifact, "seed", seed)
+                            },
+                        ),
+                    ],
+                )
+                .unwrap();
+                assert_eq!(
+                    PRODUCER_EXECUTIONS.load(Ordering::Relaxed) - before,
+                    observed
+                );
+                if matrix {
+                    assert_matrix(
+                        &instance.copied_output(output).unwrap(),
+                        [1, 2],
+                        ValueDataDraft::Matrix(
+                            vec![
+                                ValueDataDraft::U64(expected),
+                                ValueDataDraft::U64(10 + 4 * (20 / denominator)),
+                            ]
+                            .into(),
+                        ),
+                    );
+                } else {
+                    assert_scalar(&instance.copied_output(output).unwrap(), expected);
+                }
+            }
         }
     }
 }
