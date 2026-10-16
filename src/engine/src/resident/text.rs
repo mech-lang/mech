@@ -3,7 +3,7 @@ use mech_core::{
     ExternalInteraction, FunctionCatalogBuilder, ImplementationMemoryClass, MResult,
     OutputConstruction, RegionPolicy, ResidentKernelBindError, ResidentKernelBindRequest,
     ResidentKernelError, ResidentKernelInputs, ResidentShape, ResidentValueKind, ResidentValueMut,
-    ResidentValueRef, ResolvedOperationContract, ShapeRule,
+    ResidentValueRef, ResolvedOperationContract, SchemaBody, ShapeRule, ValueData,
 };
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
@@ -256,6 +256,9 @@ fn string_transpose(
 pub(super) fn bind_string_gather(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    if canonical_string_source(request) {
+        return bind_canonical_string_selection(request, false);
+    }
     let ResolvedOperationContract::Declared(contract) = request.contract else {
         return Err(ResidentKernelBindError::UnsupportedContract);
     };
@@ -478,6 +481,9 @@ fn admit_scalar_string_comparison(left: &str, right: &str) -> Result<(), Residen
 pub(super) fn bind_string_scalar_access(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    if canonical_string_source(request) {
+        return bind_canonical_string_selection(request, true);
+    }
     let ResolvedOperationContract::Declared(contract) = request.contract else {
         return Err(ResidentKernelBindError::UnsupportedContract);
     };
@@ -552,6 +558,293 @@ fn string_scalar_access(
         core::mem::size_of::<u64>(),
     )?;
     let next = next.clone();
+    let changed = *target != next;
+    if changed {
+        *target = next;
+    }
+    Ok(changed)
+}
+
+fn canonical_string_source(request: &ResidentKernelBindRequest<'_>) -> bool {
+    request.inputs.first().is_some_and(|source| {
+        request
+            .schemas
+            .get(source.schema_id)
+            .is_some_and(|schema| matches!(schema.body(), SchemaBody::String))
+    })
+}
+
+fn bind_canonical_string_selection(
+    request: &ResidentKernelBindRequest<'_>,
+    scalar: bool,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    let ResolvedOperationContract::Declared(contract) = request.contract else {
+        return Err(ResidentKernelBindError::UnsupportedContract);
+    };
+    let Some(source) = request.inputs.first() else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    if (scalar && request.inputs.len() != 2)
+        || (!scalar && !matches!(request.inputs.len(), 1 | 2))
+        || source.kind != ResidentValueKind::String
+        || source.shape != ResidentShape::SCALAR
+        || request.output.kind != ResidentValueKind::String
+        || request.output.shape != ResidentShape::SCALAR
+        || !request
+            .schemas
+            .get(request.output.schema_id)
+            .is_some_and(|schema| matches!(schema.body(), SchemaBody::String))
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    if contract.interaction != ExternalInteraction::Pure
+        || contract.inputs.len() != request.inputs.len()
+        || contract.outputs.len() != 1
+        || contract
+            .inputs
+            .iter()
+            .zip(request.inputs)
+            .any(|(port, layout)| {
+                port.schema != layout.schema_id
+                    || port.access != AccessMode::Read
+                    || port.delivery != DeliveryMode::Signal
+            })
+    {
+        return Err(ResidentKernelBindError::UnsupportedContract);
+    }
+    let output = &contract.outputs[0];
+    if output.schema != request.output.schema_id
+        || output.access != AccessMode::Write
+        || output.delivery != DeliveryMode::Signal
+        || output.construction
+            != (OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            })
+        || output.alias != AliasPolicy::NoAlias
+        || output.change_detection != ChangeDetectionPolicy::KernelReported
+    {
+        return Err(ResidentKernelBindError::UnsupportedContract);
+    }
+    let Some(selector) = request.inputs.get(1) else {
+        return Ok(BoundResidentKernel::new(
+            canonical_string_selection,
+            Box::new([0, 0, 0]),
+        ));
+    };
+    let schema = request
+        .schemas
+        .get(selector.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let (rows, columns, logical) = match schema.body() {
+        SchemaBody::Matrix {
+            element,
+            dimensions,
+        } => {
+            let [rows, columns] = dimensions.as_ref() else {
+                return Err(ResidentKernelBindError::UnsupportedLayout);
+            };
+            let dimension = |value| {
+                selector
+                    .shape_instance
+                    .resolve_dimension(value)
+                    .ok()
+                    .and_then(|value| u32::try_from(value).ok())
+                    .ok_or(ResidentKernelBindError::UnsupportedLayout)
+            };
+            (
+                dimension(rows)?,
+                dimension(columns)?,
+                element.as_ref() == &SchemaBody::Bool,
+            )
+        }
+        _ => (1, 1, false),
+    };
+    if (logical
+        && (scalar
+            || !matches!(
+                selector.kind,
+                ResidentValueKind::Bool | ResidentValueKind::Snapshot
+            )))
+        || (!logical && !super::numeric::numeric_positional_selector_layout(request, selector))
+        || (selector.kind == ResidentValueKind::Snapshot && selector.shape != ResidentShape::SCALAR)
+        || (selector.kind != ResidentValueKind::Snapshot
+            && selector.shape != (ResidentShape { rows, columns }))
+        || (scalar && (rows != 1 || columns != 1))
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    Ok(BoundResidentKernel::new(
+        canonical_string_selection,
+        Box::new([
+            if scalar { 1 } else { 2 },
+            u64::from(rows),
+            u64::from(columns),
+        ]),
+    ))
+}
+
+// Dense resident matrices store columns contiguously, whereas canonical
+// selectors (including Snapshot matrices) visit their elements row by row.
+fn visit_canonical_string_selector(
+    selector: ResidentValueRef<'_>,
+    rows: usize,
+    columns: usize,
+    upper: usize,
+    mut visit: impl FnMut(usize) -> Result<(), ResidentKernelError>,
+) -> Result<(), ResidentKernelError> {
+    let count = rows
+        .checked_mul(columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    if let ResidentValueRef::Snapshot([Some(value)]) = selector {
+        let actual_count = match value.data() {
+            ValueData::Matrix(matrix) => matrix.elements().len(),
+            _ => 1,
+        };
+        if actual_count != count {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        return super::numeric::selector_for_each_access_index(selector, upper, visit);
+    }
+    if selector.len() != count {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    if matches!(selector, ResidentValueRef::Bool(_)) && count != upper {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    for row in 0..rows {
+        for column in 0..columns {
+            let lane_index = column * rows + row;
+            let value = match selector {
+                ResidentValueRef::Index(values) => ValueData::Index(values[lane_index]),
+                ResidentValueRef::F64(values) => {
+                    ValueData::F64(mech_core::snapshot::F64Bits::from_f64(values[lane_index]))
+                }
+                ResidentValueRef::Bool(values) => {
+                    match values[lane_index] {
+                        0 => {}
+                        1 => visit(row * columns + column)?,
+                        _ => return Err(ResidentKernelError::InvalidInput),
+                    }
+                    continue;
+                }
+                _ => return Err(ResidentKernelError::InvalidInput),
+            };
+            let index = mech_core::canonical_positional_index(&value, upper)
+                .map_err(|_| ResidentKernelError::InvalidInput)?;
+            visit(index)?;
+        }
+    }
+    Ok(())
+}
+
+fn admit_string_selection_scratch(
+    compute_work: usize,
+    scratch_bytes: usize,
+) -> Result<(), ResidentKernelError> {
+    super::budget::PreparedKernel::new(
+        (),
+        super::budget::resident_cost! {
+            compute_work,
+            temporary_bytes: scratch_bytes,
+            ..super::budget::KernelCostEstimate::default()
+        },
+    )
+    .admit()?
+    .into_plan();
+    Ok(())
+}
+
+fn canonical_string_selection(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let Some(ResidentValueRef::String([source])) = inputs.get(0) else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let ResidentValueMut::String([target]) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    let [mode, rows, columns] = kernel.parameters() else {
+        return Err(ResidentKernelError::InvalidShape);
+    };
+    if *mode == 0 {
+        admit_string_materialization(
+            1,
+            source.len(),
+            source.len(),
+            source.len(),
+            target.len().max(source.len()),
+            1,
+            0,
+            0,
+        )?;
+        let next = source.clone();
+        let changed = *target != next;
+        if changed {
+            *target = next;
+        }
+        return Ok(changed);
+    }
+    let selector = inputs.get(1).ok_or(ResidentKernelError::InvalidInput)?;
+    let rows = usize::try_from(*rows).map_err(|_| ResidentKernelError::InvalidShape)?;
+    let columns = usize::try_from(*columns).map_err(|_| ResidentKernelError::InvalidShape)?;
+    let selector_count = rows
+        .checked_mul(columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    // Admit both segmentation passes and selector visits before performing
+    // them; no index or grapheme buffer is constructed without admission.
+    let scan_work = source
+        .len()
+        .checked_mul(2)
+        .and_then(|work| selector_count.checked_mul(2)?.checked_add(work))
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    admit_string_selection_scratch(scan_work, 0)?;
+    let graphemes = grapheme::Graphemes::from_usvs(source);
+    let extent = graphemes.iter().count();
+    let span_bytes = extent
+        .checked_mul(core::mem::size_of::<&str>())
+        .and_then(|bytes| bytes.checked_add(core::mem::size_of::<Vec<&str>>()))
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    admit_string_selection_scratch(scan_work, span_bytes)?;
+    let mut spans = Vec::with_capacity(extent);
+    for grapheme in graphemes.iter() {
+        spans.push(grapheme.as_str());
+    }
+    let mut selected_count = 0usize;
+    let mut payload_bytes = 0usize;
+    visit_canonical_string_selector(selector, rows, columns, extent, |index| {
+        selected_count = selected_count
+            .checked_add(1)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        payload_bytes = payload_bytes
+            .checked_add(spans[index].len())
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        Ok(())
+    })?;
+    if *mode == 1 && selected_count != 1 {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let compute_work = scan_work
+        .checked_add(payload_bytes)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    // Repeated graphemes each contribute their full UTF-8 payload. Keep the
+    // span table in the peak demand while staging the complete new String.
+    admit_string_materialization(
+        1,
+        payload_bytes,
+        payload_bytes,
+        compute_work,
+        target.len().max(payload_bytes),
+        1,
+        span_bytes,
+        0,
+    )?;
+    let mut next = String::with_capacity(payload_bytes);
+    visit_canonical_string_selector(selector, rows, columns, extent, |index| {
+        next.push_str(spans[index]);
+        Ok(())
+    })?;
     let changed = *target != next;
     if changed {
         *target = next;

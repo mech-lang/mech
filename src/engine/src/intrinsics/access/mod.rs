@@ -270,9 +270,59 @@ impl MechFunctionImpl for CanonicalAccess {
         if !self.output_requires_canonical_builder() {
             return Ok(None);
         }
+        if matches!(self.source.closed_schema_body()?, SchemaBody::String)
+            && self.selectors.len() == 1
+        {
+            let snapshot = self.source.snapshot()?;
+            let ValueData::String(value) = snapshot.data() else {
+                unreachable!("String schema retains String data")
+            };
+            let graphemes = grapheme::Graphemes::from_usvs(value)
+                .iter()
+                .collect::<Vec<_>>();
+            let selected = canonical_indices(&self.selectors[0], graphemes.len())?;
+            let overflow = || {
+                MechError::new(
+                    GenericError {
+                        msg: "string selection footprint exceeds u64".to_owned(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            };
+            // Gathers may repeat a grapheme, so the source payload alone is
+            // not an upper bound. Admit the selected UTF-8 payload before
+            // constructing the String, including every repeated occurrence.
+            let payload_bytes = selected.iter().try_fold(0_u64, |bytes, &index| {
+                u64::try_from(graphemes[index].as_str().len())
+                    .ok()
+                    .and_then(|length| bytes.checked_add(length))
+                    .ok_or_else(overflow)
+            })?;
+            let shape_parameter_count = self.output.shape().parameter_values().len();
+            let footprint = mech_core::snapshot::prospective_string_value_footprint(
+                shape_parameter_count,
+                false,
+                1,
+                payload_bytes,
+            )
+            .map_err(|_| overflow())?;
+            return Ok(Some(
+                vec![CurrentMemoryFootprint {
+                    logical_elements: 1,
+                    payload_bytes: footprint.retained_bytes,
+                    encoded_bytes: footprint.encoded_bytes,
+                    retained_nodes: footprint.node_count,
+                    schema_bytes: self.output.current_memory_footprint()?.schema_bytes,
+                    shape_parameter_count: shape_parameter_count as u64,
+                    ..CurrentMemoryFootprint::default()
+                }]
+                .into_boxed_slice(),
+            ));
+        }
         let SchemaBody::Matrix { element, .. } = self.source.closed_schema_body()? else {
-            // Selecting one member, column, or grapheme cannot retain more
-            // canonical data than the already-borrowed aggregate/String that
+            // Selecting one member or column cannot retain more canonical
+            // data than the already-borrowed aggregate that
             // contains it. This complete-source upper bound avoids building a
             // candidate or selector result before admission.
             let mut footprint = self.source.current_memory_footprint()?;
@@ -726,19 +776,27 @@ fn canonical_access_result(
             if matches!(selectors[0], CanonicalAccessSelector::All) {
                 return source.detached_clone();
             }
-            let index = canonical_indices(&selectors[0], usize::MAX)?[0];
-            let ValueData::String(value) = source.snapshot()?.data().clone() else {
-                unreachable!()
+            let snapshot = source.snapshot()?;
+            let ValueData::String(value) = snapshot.data() else {
+                unreachable!("String schema retains String data")
             };
-            let grapheme = grapheme::Graphemes::from_usvs(&value)
+            let graphemes = grapheme::Graphemes::from_usvs(value)
                 .iter()
-                .nth(index)
-                .map(|value| value.as_str().to_owned())
-                .ok_or_else(|| {
-                    MechError::new(crate::intrinsics::IndexOutOfBoundsError, None)
-                        .with_compiler_loc()
-                })?;
-            ValueCell::from_exact(grapheme)
+                .collect::<Vec<_>>();
+            let selected = canonical_indices(&selectors[0], graphemes.len())?;
+            let text = selected
+                .iter()
+                .map(|&index| {
+                    graphemes
+                        .get(index)
+                        .map(|value| value.as_str())
+                        .ok_or_else(|| {
+                            MechError::new(crate::intrinsics::IndexOutOfBoundsError, None)
+                                .with_compiler_loc()
+                        })
+                })
+                .collect::<MResult<String>>()?;
+            ValueCell::from_exact(text)
         }
         SchemaBody::Matrix { element, .. } if (1..=2).contains(&selectors.len()) => {
             let (rows, columns) = canonical_matrix_dimensions(source)?;
@@ -1313,6 +1371,66 @@ mod canonical_aggregate_access_tests {
             assert!(
                 matches!(selected.snapshot().unwrap().data(), ValueData::String(value) if value.as_ref() == text)
             );
+        }
+    }
+
+    #[test]
+    fn managed_string_selection_preserves_graphemes_order_repeats_and_empty() {
+        for (ordinals, expected) in [
+            (vec![2], "👩🏽‍💻"),
+            (vec![1, 2], "e\u{301}👩🏽‍💻"),
+            (vec![3, 1, 3, 2], "Ze\u{301}Z👩🏽‍💻"),
+            (vec![], ""),
+        ] {
+            let source = ValueCell::from_exact("e\u{301}👩🏽‍💻Z".to_owned()).unwrap();
+            let selector = ValueCell::from_schema_data(
+                SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)),
+                    dimensions: vec![
+                        DimensionExpr::Constant(ordinals.len() as u64),
+                        DimensionExpr::Constant(1),
+                    ]
+                    .into_boxed_slice(),
+                },
+                ValueDataDraft::Matrix(ordinals.into_iter().map(ValueDataDraft::U64).collect()),
+            )
+            .unwrap();
+            let function = managed_scalar_access(source, selector);
+            function.instance().solve_result().unwrap();
+            assert_string(function.instance().output(), expected);
+        }
+    }
+
+    #[test]
+    fn managed_string_gather_admits_growth_and_rejects_invalid_reactive_indices() {
+        let grapheme = format!("e{}", "\u{301}".repeat(1024));
+        let source = ValueCell::from_exact(format!("{grapheme}Z")).unwrap();
+        let selector = ValueCell::from_schema_data(
+            SchemaBody::Matrix {
+                element: Box::new(SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)),
+                dimensions: vec![DimensionExpr::Constant(3), DimensionExpr::Constant(1)]
+                    .into_boxed_slice(),
+            },
+            ValueDataDraft::Matrix(vec![ValueDataDraft::U64(1); 3].into_boxed_slice()),
+        )
+        .unwrap();
+        let function = managed_scalar_access(source, selector.clone());
+        function.instance().solve_result().unwrap();
+        assert_string(function.instance().output(), &grapheme.repeat(3));
+        for invalid in [0, 3] {
+            let next = selector
+                .rebuild_data_draft(ValueDataDraft::Matrix(
+                    vec![
+                        ValueDataDraft::U64(1),
+                        ValueDataDraft::U64(1),
+                        ValueDataDraft::U64(invalid),
+                    ]
+                    .into_boxed_slice(),
+                ))
+                .unwrap();
+            selector.replace(&next).unwrap();
+            assert!(function.instance().solve_result().is_err());
+            assert_string(function.instance().output(), &grapheme.repeat(3));
         }
     }
 }
