@@ -11,7 +11,7 @@ aliased-item-import	import-alias-operator|module-import-alias|module-import-path
 alignment-separator	center-alignment|left-alignment|no-alignment|right-alignment|space-tab0	mechdown-table-header
 alpha	none	alpha-token|subtitle
 alpha-token	alpha	alphanumeric|context-address-path-token|context-base-resource-uri|context-capability-path-token|context-import-alias-segment|escaped-char|grammar-identifier|hexadecimal-literal|identifier|identifier-path-segment|raw-text|source-import-uri-scheme|source-path-component-token|text|ul-subtitle|uri-scheme-part
-alphanumeric	alpha-token|digit-token	citation|reference|section-reference
+alphanumeric	alpha-token|digit-token	citation|complex-number|reference|section-reference
 ampersand	none	identifier-symbol|symbol
 and	ws0e	logic-operator
 any	none	any-token|code-block
@@ -82,7 +82,7 @@ comment	comment-sigil|new-line|paragraph-element|space-tab	code-terminal|fsm-com
 comment-sigil	none	comment|divide|raw-subtract
 comparison-operator	equal-to|greater-than|greater-than-equal|less-than|less-than-equal|not-equal|strict-equal|strict-not-equal	l2
 complement	ws0e	set-operator
-complex-number	dash|plus|untyped-real-number	number
+complex-number	alphanumeric|dash|emoji|plus|untyped-real-number	number
 comprehension-qualifier	expression|generator|variable-define	matrix-comprehension|set-comprehension
 context-address-path	context-address-path-token	prefixed-context-path
 context-address-path-token	alpha-token|dash|digit-token|period|slash|underscore	context-address-path
@@ -112,7 +112,7 @@ dot-product	ws0e	matrix-operator
 dot-subscript	identifier|period	subscript
 dot-subscript-int	integer-literal|period	subscript
 element-of	ws0e	set-operator
-emoji	emoji-grapheme|forbidden-emoji	identifier|identifier-path-segment-emoji|raw-text|text|unordered-list-item
+emoji	emoji-grapheme|forbidden-emoji	complex-number|identifier|identifier-path-segment-emoji|raw-text|text|unordered-list-item
 emoji-grapheme	none	emoji
 emphasis	emphasis-sigil|paragraph-element	paragraph-element
 emphasis-sigil	none	emphasis

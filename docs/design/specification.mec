@@ -2667,9 +2667,9 @@ false-literal := english-false-literal
 
 number := complex-number
         | real-number ;
-complex-number := untyped-real-number, ("i" | "j")
+complex-number := untyped-real-number, ("i" | "j"), ¬(alphanumeric | emoji)
                 | untyped-real-number, (plus | dash),
-                  untyped-real-number, ("i" | "j") ;
+                  untyped-real-number, ("i" | "j"), ¬(alphanumeric | emoji) ;
 real-number := ?dash,
                (hexadecimal-literal
               | decimal-literal

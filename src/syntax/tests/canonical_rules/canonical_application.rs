@@ -178,3 +178,81 @@ fn numeric_table_rows_and_comprehension_comparisons_are_not_counted_stages() {
         );
     }
 }
+
+#[test]
+fn integer_kind_suffixes_do_not_select_imaginary_unit_prefixes() {
+    use crate::document::parse_canonical_document;
+    for number in [
+        "7i8",
+        "7i16",
+        "7i32",
+        "7i64",
+        "7i128",
+        "9223372036854775807i64",
+        "18446744073709551615u64",
+        "7integer",
+        "7j64",
+        "7i🦀",
+    ] {
+        let parsed = parse_canonical_executable_rule_for_test(
+            source(number),
+            rules::EXPRESSION,
+            ParseConfig::default(),
+        )
+        .unwrap();
+        assert!(
+            parsed.is_strictly_clean(),
+            "{number}: {:?}",
+            parsed.diagnostics
+        );
+        assert_eq!(parsed.consumed, parsed.source.full_range(), "{number}");
+        assert!(
+            find(&parsed.syntax(), SyntaxKind::TypedInteger).is_some(),
+            "{number}"
+        );
+        assert!(
+            find(&parsed.syntax(), SyntaxKind::ComplexNumber).is_none(),
+            "{number}"
+        );
+        validate_lossless_range(&parsed.root, &parsed.source, parsed.consumed).unwrap();
+        let text = format!("value := {number}\nvalue\nlive<i64>\n");
+        let document = parse_canonical_document(source(&text), ParseConfig::default());
+        assert!(
+            document.is_strictly_clean(),
+            "{text}: {:?}",
+            document.diagnostics
+        );
+        assert_eq!(
+            find(&document.syntax(), SyntaxKind::VariableDefine)
+                .unwrap()
+                .text()
+                .unwrap(),
+            format!("value := {number}")
+        );
+        validate_lossless_range(
+            &document.root,
+            &document.source,
+            document.source.full_range(),
+        )
+        .unwrap();
+    }
+    for number in ["7i", "7j", "2+3i", "2-3j", "2i+3j", "2i * 3", "2i/3"] {
+        let parsed = parse_canonical_executable_rule_for_test(
+            source(number),
+            rules::EXPRESSION,
+            ParseConfig::default(),
+        )
+        .unwrap();
+        assert!(
+            parsed.is_strictly_clean(),
+            "{number}: {:?}",
+            parsed.diagnostics
+        );
+        assert_eq!(parsed.consumed, parsed.source.full_range(), "{number}");
+        assert!(
+            find(&parsed.syntax(), SyntaxKind::ComplexNumber).is_some(),
+            "{number}"
+        );
+        validate_lossless_range(&parsed.root, &parsed.source, parsed.consumed).unwrap();
+    }
+}
