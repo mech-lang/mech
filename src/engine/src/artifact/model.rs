@@ -5,14 +5,15 @@ use core::ops::Range;
 use std::collections::BTreeMap;
 
 use mech_core::{
-    AccessMode, ApplicationRequirementId, BindingId, CellSlotId, ComputePlacement, ComputeRegionId,
-    ConstantId, ConstantStore, DeclaredOperationContract, DeliveryMode, ExternalInteraction,
-    InputId, IntegrityConstraintId, MechError, NodeId, OperationContractDeclaration,
-    OperationContractError, OperationContractHandle, OperationContractId, OperationContractTable,
-    OperationContractTableBuilder, OutputId, PortDirection, ProgramRevision, ResolvedInputPort,
-    ResolvedOperationContract, ResolvedOutputPort, ResolvedRangeMode, ResolvedReductionMode,
-    ResolvedSelectionMode, SchemaId, SchemaTable, SemanticModelError, ShapeInstance,
-    SnapshotValueError, validate_declaration,
+    AccessMode, ApplicationRequirementId, BindingId, CanonicalNominalPath, CellSlotId,
+    ComputePlacement, ComputeRegionId, ConstantId, ConstantStore, DeclaredOperationContract,
+    DeliveryMode, ExternalInteraction, InputId, IntegrityConstraintId, MechError, NodeId,
+    OperationContractDeclaration, OperationContractError, OperationContractHandle,
+    OperationContractId, OperationContractTable, OperationContractTableBuilder, OutputId,
+    PortDirection, ProgramRevision, ResolvedInputPort, ResolvedOperationContract,
+    ResolvedOutputPort, ResolvedRangeMode, ResolvedReductionMode, ResolvedSelectionMode,
+    SchemaBody, SchemaId, SchemaTable, SemanticModelError, ShapeInstance, SnapshotValueError,
+    validate_declaration,
 };
 
 use super::CompilerIrError;
@@ -526,6 +527,17 @@ pub struct IntegrityConstraintDeclaration {
     pub inputs: Box<[ArtifactSource]>,
 }
 
+/// A source-defined nominal type and its actual typed schema.
+///
+/// Paths are relative to the defining document. The table preserves source
+/// declarations even when no executable graph node refers to their schemas.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SourceNominalDeclaration {
+    pub document_id: u64,
+    pub relative_path: Box<[String]>,
+    pub schema: SchemaId,
+}
+
 #[derive(Clone, Debug)]
 pub struct ProgramArtifact {
     revision: ProgramRevision,
@@ -540,6 +552,7 @@ pub struct ProgramArtifact {
     outputs: Box<[OutputDeclaration]>,
     constraints: Box<[IntegrityConstraintDeclaration]>,
     compute_regions: Box<[ComputeRegionDeclaration]>,
+    source_nominal_declarations: Box<[SourceNominalDeclaration]>,
     // Current-process compiler planning evidence. This is intentionally not
     // part of ProgramArtifactDraft, ProgramRevision, or bytecode-v1 encoding.
     slot_shape_hints: BTreeMap<CellSlotId, ShapeInstance>,
@@ -636,6 +649,27 @@ impl ProgramArtifact {
         &self.compute_regions
     }
 
+    pub const fn source_nominal_declarations(&self) -> &[SourceNominalDeclaration] {
+        &self.source_nominal_declarations
+    }
+
+    /// Attaches source declarations in canonical document/path order.
+    ///
+    /// Each entry must identify an existing enum schema. Duplicate defining
+    /// document/path pairs are rejected, including duplicates of one schema.
+    pub fn with_source_nominal_declarations(
+        mut self,
+        mut declarations: Box<[SourceNominalDeclaration]>,
+    ) -> Result<Self, ArtifactBuildError> {
+        declarations.sort_by(|left, right| {
+            (left.document_id, &left.relative_path).cmp(&(right.document_id, &right.relative_path))
+        });
+        validate_source_nominal_declarations(&self.schemas, &declarations)?;
+        self.revision = super::encoding::program_artifact_revision(&self, &declarations)?;
+        self.source_nominal_declarations = declarations;
+        Ok(self)
+    }
+
     /// Returns the compiler-proven current shape for a parameterized slot.
     ///
     /// These hints are non-wire planning sidecars. Durable artifacts recover
@@ -674,6 +708,7 @@ impl ProgramArtifact {
         compute_regions: Box<[ComputeRegionDeclaration]>,
     ) -> Result<Self, ArtifactBuildError> {
         let shape_hints = self.slot_shape_hints;
+        let source_nominal_declarations = self.source_nominal_declarations;
         ProgramArtifactDraft {
             schemas: self.schemas,
             constants: self.constants,
@@ -688,6 +723,7 @@ impl ProgramArtifact {
             compute_regions,
         }
         .finalize()?
+        .with_source_nominal_declarations(source_nominal_declarations)?
         .with_slot_shape_hints(shape_hints)
     }
 }
@@ -724,9 +760,39 @@ impl ProgramArtifactDraft {
             outputs: self.outputs,
             constraints: self.constraints,
             compute_regions: self.compute_regions,
+            source_nominal_declarations: Box::new([]),
             slot_shape_hints: BTreeMap::new(),
         })
     }
+}
+
+pub(super) fn validate_source_nominal_declarations(
+    schemas: &SchemaTable,
+    declarations: &[SourceNominalDeclaration],
+) -> Result<(), ArtifactBuildError> {
+    let mut previous = None;
+    for declaration in declarations {
+        let key = (declaration.document_id, &declaration.relative_path);
+        if previous.is_some_and(|previous| previous >= key) {
+            return Err(ArtifactBuildError::NonCanonicalSourceNominalDeclarationTable);
+        }
+        previous = Some(key);
+        let invalid = |reason| ArtifactBuildError::InvalidSourceNominalDeclaration {
+            document_id: declaration.document_id,
+            relative_path: declaration.relative_path.clone(),
+            reason,
+        };
+        CanonicalNominalPath::new(declaration.relative_path.clone())?;
+        let schema = schemas
+            .get(declaration.schema)
+            .ok_or(ArtifactBuildError::UnknownSchema {
+                schema: declaration.schema,
+            })?;
+        if !matches!(schema.body(), SchemaBody::Enum { .. }) {
+            return Err(invalid("source nominal declaration schema is not an enum"));
+        }
+    }
+    Ok(())
 }
 
 impl ProgramArtifactDraft {
@@ -1044,6 +1110,12 @@ fn source_schema(
 
 #[derive(Debug)]
 pub enum ArtifactBuildError {
+    InvalidSourceNominalDeclaration {
+        document_id: u64,
+        relative_path: Box<[String]>,
+        reason: &'static str,
+    },
+    NonCanonicalSourceNominalDeclarationTable,
     InvalidControl {
         node: NodeId,
         reason: &'static str,

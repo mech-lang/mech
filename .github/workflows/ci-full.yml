@@ -1236,6 +1236,8 @@ jobs:
     if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'browser') }}
     name: WASM bytecode v1
     runs-on: ubuntu-latest
+    env:
+      RUSTUP_TOOLCHAIN: nightly-2026-03-03
     steps:
       - uses: actions/checkout@v7.0.1
         id: checkout
@@ -2203,6 +2205,7 @@ jobs:
       CARGO_TERM_COLOR: always
       RUST_BACKTRACE: full
       CARGO_INCREMENTAL: 0
+      RUSTUP_TOOLCHAIN: nightly-2026-03-03
     steps:
       - uses: actions/checkout@v7.0.1
         id: checkout
@@ -2216,7 +2219,8 @@ jobs:
           CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
         shell: bash
         run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"
-      - uses: dtolnay/rust-toolchain@stable
+      - name: Install Rust nightly-2026-03-03
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
 
       - uses: Swatinem/rust-cache@v2
 

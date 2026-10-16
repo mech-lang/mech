@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import re
 import sys
 import unittest
 from pathlib import Path
@@ -89,12 +90,14 @@ class ProgramArtifactContractTests(unittest.TestCase):
     def test_canonical_source_proof_rejects_missing_field_assertions(self) -> None:
         source = (ROOT / "src/engine/tests/canonical_document_state.rs").read_text()
         for field in (
-            "requirements", "compute_regions", "contracts", "inputs",
+            "requirements", "compute_regions", "source_nominal_declarations", "contracts", "inputs",
             "slots", "bindings", "outputs", "constraints", "nodes",
         ):
-            assertion = f"assert_eq!(artifact.{field}(), decoded.{field}());"
+            pattern = rf"assert_eq!\(\s*artifact\.{field}\(\),\s*decoded\.{field}\(\)\s*\);"
             with self.subTest(field=field):
-                self.assertTrue(CHECKER.validate_ordinary_source_proof(source.replace(assertion, "")))
+                changed, count = re.subn(pattern, "", source, count=1)
+                self.assertEqual(count, 1)
+                self.assertTrue(CHECKER.validate_ordinary_source_proof(changed))
         for assertion in (
             "assert_eq!(artifact.schemas().len(), decoded.schemas().len());",
             "assert_eq!(left.key(), right.key());",
@@ -104,6 +107,15 @@ class ProgramArtifactContractTests(unittest.TestCase):
         ):
             with self.subTest(assertion=assertion):
                 self.assertTrue(CHECKER.validate_ordinary_source_proof(source.replace(assertion, "")))
+
+    def test_canonical_source_proof_accepts_formatted_field_assertions(self) -> None:
+        source = (ROOT / "src/engine/tests/canonical_document_state.rs").read_text()
+        self.assertEqual(CHECKER.validate_ordinary_source_proof(source), [])
+        source = source.replace(
+            "assert_eq!(artifact.inputs(), decoded.inputs());",
+            "assert_eq!(\n    artifact.inputs(),\n    decoded.inputs()\n);",
+        )
+        self.assertEqual(CHECKER.validate_ordinary_source_proof(source), [])
 
     def test_canonical_source_proof_requires_independent_compilation(self) -> None:
         source = (ROOT / "src/engine/tests/canonical_document_state.rs").read_text()

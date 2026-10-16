@@ -271,7 +271,7 @@ NominalKey = SHA-256(
 0x02 enum
 ```
 
-Artifact compilation derives this path from the resolved defining declaration:
+For resolved packages, artifact compilation derives this path from the defining declaration:
 the first segment is the exact UTF-8 package name declared by the resolved
 package manifest; zero or more following segments are the defining module's
 canonical namespace relative to that package root; and the final segment is
@@ -287,6 +287,26 @@ packages are legal. Duplicate dependency names elsewhere in `Cargo.lock` are
 irrelevant. A Cargo package ID is only an internal collision discriminator and
 is never encoded in `NominalKey`. A filesystem path or process-local numeric
 hash is never a nominal identity.
+
+An unrooted document or interactive session can instead receive an explicit
+host-assigned standalone origin, `["mech:standalone", uuid]`, where `uuid` is a
+canonical lowercase, hyphenated UUIDv7. The declaration name is appended to
+this origin using the same nominal encoding. The reserved first segment cannot
+be a Cargo package name because it contains `:`. A host assigns the UUID once
+per logical document or session and retains it through edits, clears, resets,
+recompilation, and artifact transport. A new independent document or session
+receives a new origin. Existing explicit package provenance always takes
+precedence; standalone admission fills only an absent origin.
+
+This is an explicit host admission policy, not a fallback in the semantic
+frontend or low-level source resolver/parser. The origin is not derived from
+source bytes, a URI, a filesystem path, or a process counter or hash. Callers
+that save source for later recompilation must persist its origin alongside
+the source or use the existing provenance-bearing bundle format. Saving only
+source text and loading it as a new standalone document creates a new nominal
+owner. Existing collision checks still apply when documents are combined.
+The policy changes neither nominal hashing nor schema or bytecode encoding,
+and decoding an existing artifact never creates a replacement origin.
 
 The checked-in golden-vector document is independently frozen by the canonical
 JSON SHA-256 `0be9531a4514ef359bedc3172f6ea327c28bcaab0fa493d9725d430799343a9f`,
