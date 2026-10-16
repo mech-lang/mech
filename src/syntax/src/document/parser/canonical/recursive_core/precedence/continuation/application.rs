@@ -30,6 +30,27 @@ impl Continuation {
         phase: Box<Phase>,
         final_input: bool,
     ) -> Option<Progress> {
+        if parser.is_halted() {
+            let (node, kind) = match *phase {
+                Phase::Enter(_) => {
+                    self.result = Attempt::Committed;
+                    return None;
+                }
+                Phase::StageSpace(node)
+                | Phase::StageOperator(node)
+                | Phase::StageNameSpace(node, _)
+                | Phase::StageName(node, _)
+                | Phase::StageRecovered(node) => (node, SyntaxKind::ApplicationStage),
+                Phase::OperatorBar(node)
+                | Phase::OperatorDigits(node, _)
+                | Phase::OperatorDigit(node)
+                | Phase::OperatorAngle(node)
+                | Phase::OperatorRecovered(node) => (node, SyntaxKind::ApplicationOperator),
+            };
+            node.complete(parser, kind);
+            self.result = Attempt::Committed;
+            return None;
+        }
         match *phase {
             Phase::Enter(rule) => {
                 self.transaction(parser, rule);

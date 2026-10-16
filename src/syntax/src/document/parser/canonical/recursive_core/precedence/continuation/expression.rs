@@ -4,6 +4,7 @@ use super::*;
 pub(super) enum Phase {
     Enter,
     EnterGrouped,
+    CompleteBody,
     Finish(Marker, bool),
     ApplicationEnter,
     ApplicationFirst(Marker),
@@ -59,10 +60,20 @@ impl Continuation {
                 self.transaction(parser, rules::EXPRESSION);
                 let node = parser.start();
                 self.expression(Phase::Finish(node, grouped));
-                self.expression(Phase::AfterApplication);
-                self.expression(Phase::ApplicationEnter);
+                self.expression(Phase::CompleteBody);
+            }
+            Phase::CompleteBody => {
+                if parser.is_halted() {
+                    self.expression_result(FactAttempt::Committed);
+                } else {
+                    self.expression(Phase::AfterApplication);
+                    self.expression(Phase::ApplicationEnter);
+                }
             }
             Phase::Finish(node, grouped) => {
+                if parser.is_halted() {
+                    self.expression_result(FactAttempt::Committed);
+                }
                 self.result = self.facts.attempt();
                 if self.result == Attempt::NoMatch
                     || grouped
@@ -80,6 +91,14 @@ impl Continuation {
                 self.expression(Phase::Body);
             }
             Phase::ApplicationFirst(node) => {
+                // Delimited seeds finish with a failed operator probe. Their
+                // semantic discriminator, rather than that probe, owns the
+                // seed result before the application transaction can close.
+                self.result = if parser.is_halted() {
+                    Attempt::Committed
+                } else {
+                    self.facts.attempt()
+                };
                 if self.result == Attempt::NoMatch {
                     node.abandon(parser);
                 } else {
@@ -92,6 +111,11 @@ impl Continuation {
                 }
             }
             Phase::ApplicationLoop(node, seed, stages, committed) => {
+                if parser.is_halted() {
+                    node.complete(parser, SyntaxKind::ApplicationExpression);
+                    self.expression_result(FactAttempt::Committed);
+                    return None;
+                }
                 self.expression(Phase::ApplicationNext(
                     node,
                     seed,
@@ -104,7 +128,10 @@ impl Continuation {
                 ))));
             }
             Phase::ApplicationNext(node, seed, stages, committed, before) => {
-                if self.result != Attempt::NoMatch && parser.offset() > before {
+                if parser.is_halted() {
+                    node.complete(parser, SyntaxKind::ApplicationExpression);
+                    self.expression_result(FactAttempt::Committed);
+                } else if self.result != Attempt::NoMatch && parser.offset() > before {
                     self.expression(Phase::ApplicationLoop(
                         node,
                         seed,
@@ -127,7 +154,9 @@ impl Continuation {
                 }
             }
             Phase::AfterApplication => {
-                if self.result != Attempt::NoMatch {
+                if parser.is_halted() {
+                    self.expression_result(FactAttempt::Committed);
+                } else if self.result != Attempt::NoMatch {
                     self.expression(Phase::AfterMatch(
                         self.result == Attempt::Committed,
                         parser.offset(),

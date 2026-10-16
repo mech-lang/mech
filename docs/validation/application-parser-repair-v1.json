@@ -1,0 +1,189 @@
+{
+  "schema": "mech.validation.application-parser-repair.v1",
+  "status": "retained-precedence-qualified-library-execution-incomplete",
+  "base_commit": "920b0f0872802e804a2eb5ca2f83b4107ed207a8",
+  "changes": [
+    "Use semantic seed facts after an optional operator probe, preserving complete comprehension ranges.",
+    "Group full application and Match expressions with the existing tuple discriminator.",
+    "Close pending application nodes when resource limits require finalization.",
+    "Exercise the maintained direct and cached streaming oracle helpers without suppressing unused-code diagnostics."
+  ],
+  "validation": [
+    {
+      "name": "ordinary-application-parser-v3",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "mech-syntax",
+        "--no-default-features",
+        "--features",
+        "full",
+        "--lib",
+        "canonical_application",
+        "--offline",
+        "--locked",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "base_commit": "920b0f0872802e804a2eb5ca2f83b4107ed207a8",
+      "exit_code": 0,
+      "results": [
+        "test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 500 filtered out; finished in 0.09s"
+      ],
+      "log_sha256": "a1447457735eecb12438a2fa9864c5baacf454da042d68e95e0933a06d144edb",
+      "source_pins": {
+        "src/syntax/src/document/parser/canonical/recursive_core/precedence/continuation/application.rs": "ce75bb066b641a7eee60b59e7e8093b7c6db128e83427b9f513c7d3945cb6f03",
+        "src/syntax/src/document/parser/canonical/recursive_core/precedence/continuation/expression.rs": "29d7ed61230db8c099f40759f76550113d3e1e562715a813f6174ff3ea987465",
+        "src/syntax/src/document/parser/canonical/recursive_core/precedence/continuation/parenthesis.rs": "ed72949caa31b39efac96552915b33a1c977c0834bae28588d6091c5b2dd5445",
+        "src/syntax/tests/canonical_application_streaming.rs": "e8f7ec5c8896affa1afd60fe72c99e5728c1601ad2f14e252ba6e503552679b4"
+      },
+      "serial_preflight": true,
+      "sources_unchanged_during_run": true
+    },
+    {
+      "name": "ordinary-application-streaming-v2",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "mech-syntax",
+        "--no-default-features",
+        "--features",
+        "full",
+        "--test",
+        "canonical_application_streaming",
+        "--offline",
+        "--locked",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "base_commit": "920b0f0872802e804a2eb5ca2f83b4107ed207a8",
+      "exit_code": 0,
+      "results": [
+        "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 43.13s"
+      ],
+      "log_sha256": "6ba896271971033f0bf64c2e2bcebc9f00dd65ea464936d44fa30ef8b4bdddc5",
+      "source_pins": {
+        "src/syntax/src/document/parser/canonical/recursive_core/precedence/continuation/application.rs": "ce75bb066b641a7eee60b59e7e8093b7c6db128e83427b9f513c7d3945cb6f03",
+        "src/syntax/src/document/parser/canonical/recursive_core/precedence/continuation/expression.rs": "29d7ed61230db8c099f40759f76550113d3e1e562715a813f6174ff3ea987465",
+        "src/syntax/src/document/parser/canonical/recursive_core/precedence/continuation/parenthesis.rs": "ed72949caa31b39efac96552915b33a1c977c0834bae28588d6091c5b2dd5445",
+        "src/syntax/tests/canonical_application_streaming.rs": "e8f7ec5c8896affa1afd60fe72c99e5728c1601ad2f14e252ba6e503552679b4"
+      },
+      "serial_preflight": true,
+      "sources_unchanged_during_run": true
+    },
+    {
+      "name": "ordinary-application-retained-limit-v1",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "mech-syntax",
+        "--no-default-features",
+        "--features",
+        "full",
+        "--lib",
+        "range_and_parenthetical_owners_preserve_all_input_and_work_partitions",
+        "--offline",
+        "--locked",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "base_commit": "920b0f0872802e804a2eb5ca2f83b4107ed207a8",
+      "exit_code": 0,
+      "results": [
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 504 filtered out; finished in 2.63s"
+      ],
+      "log_sha256": "9b3be585d7f8af28f739e658949d1389eb4de4db2db8b7e9f7b2af4eb2edfb43",
+      "source_pins": {
+        "src/syntax/src/document/parser/canonical/recursive_core/precedence/continuation/application.rs": "5364dc1be25fe465c3be260151878ab894c95e49b77f621b532c0e87ca4587ad",
+        "src/syntax/src/document/parser/canonical/recursive_core/precedence/continuation/expression.rs": "1cf0947eedfa70fae3af58869894fd3312f3f28a956f5d4e749be556560b8acc",
+        "src/syntax/src/document/parser/canonical/recursive_core/precedence/continuation/parenthesis.rs": "ed72949caa31b39efac96552915b33a1c977c0834bae28588d6091c5b2dd5445",
+        "src/syntax/tests/canonical_application_streaming.rs": "e8f7ec5c8896affa1afd60fe72c99e5728c1601ad2f14e252ba6e503552679b4"
+      },
+      "serial_preflight": true,
+      "sources_unchanged_during_run": true
+    },
+    {
+      "name": "ordinary-application-retained-continuations-v1",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "mech-syntax",
+        "--no-default-features",
+        "--features",
+        "full",
+        "--lib",
+        "recursive_core::precedence::continuation::tests",
+        "--offline",
+        "--locked",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "base_commit": "920b0f0872802e804a2eb5ca2f83b4107ed207a8",
+      "exit_code": 0,
+      "results": [
+        "test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 486 filtered out; finished in 127.44s"
+      ],
+      "log_sha256": "d3031839fa0afac45a89c85fd64ee60040561710969fabdd069f50f8ab5149ab",
+      "source_pins": {
+        "src/syntax/src/document/parser/canonical/recursive_core/precedence/continuation/application.rs": "5364dc1be25fe465c3be260151878ab894c95e49b77f621b532c0e87ca4587ad",
+        "src/syntax/src/document/parser/canonical/recursive_core/precedence/continuation/expression.rs": "1cf0947eedfa70fae3af58869894fd3312f3f28a956f5d4e749be556560b8acc",
+        "src/syntax/src/document/parser/canonical/recursive_core/precedence/continuation/parenthesis.rs": "ed72949caa31b39efac96552915b33a1c977c0834bae28588d6091c5b2dd5445",
+        "src/syntax/tests/canonical_application_streaming.rs": "e8f7ec5c8896affa1afd60fe72c99e5728c1601ad2f14e252ba6e503552679b4"
+      },
+      "serial_preflight": true,
+      "sources_unchanged_during_run": true
+    },
+    {
+      "name": "ordinary-application-library-v1",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "mech-stdlib",
+        "--no-default-features",
+        "--features",
+        "full_compiler",
+        "--test",
+        "applications",
+        "--offline",
+        "--locked",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "base_commit": "920b0f0872802e804a2eb5ca2f83b4107ed207a8",
+      "exit_code": 101,
+      "results": [],
+      "log_sha256": "9acd8c7f50ec85a4ce4fcba614eb5a643a1d43f2abffa747b9d20a58e5bc2951",
+      "source_pins": {
+        "src/syntax/src/document/parser/canonical/recursive_core/precedence/continuation/application.rs": "5364dc1be25fe465c3be260151878ab894c95e49b77f621b532c0e87ca4587ad",
+        "src/syntax/src/document/parser/canonical/recursive_core/precedence/continuation/expression.rs": "1cf0947eedfa70fae3af58869894fd3312f3f28a956f5d4e749be556560b8acc",
+        "src/syntax/src/document/parser/canonical/recursive_core/precedence/continuation/parenthesis.rs": "ed72949caa31b39efac96552915b33a1c977c0834bae28588d6091c5b2dd5445",
+        "src/syntax/tests/canonical_application_streaming.rs": "e8f7ec5c8896affa1afd60fe72c99e5728c1601ad2f14e252ba6e503552679b4"
+      },
+      "serial_preflight": true,
+      "sources_unchanged_during_run": true
+    }
+  ],
+  "qualification_note": "The five focused parser and two streaming tests passed before the final limit-handling correction; the 19 retained precedence tests passed after that correction. Each record binds its own source bytes. The separate one-case limit check overlaps the retained suite and is not an additional unique test.",
+  "remaining": [
+    "Full syntax certification has not been promoted: the new application rule still needs captured syntax and semantic certification evidence.",
+    "The new library target compiled and one test passed, then bound_document_inputs_relocate_iteration_captures_and_body_constants_recursively failed with Kernel node0 InvalidShape and the test process aborted. The remaining eight cases did not execute.",
+    "Native counted execution, byte input geometry preservation and full benchmark workload qualification remain pending."
+  ],
+  "source_pins": {
+    "src/syntax/src/document/parser/canonical/recursive_core/precedence/continuation/application.rs": "5364dc1be25fe465c3be260151878ab894c95e49b77f621b532c0e87ca4587ad",
+    "src/syntax/src/document/parser/canonical/recursive_core/precedence/continuation/expression.rs": "1cf0947eedfa70fae3af58869894fd3312f3f28a956f5d4e749be556560b8acc",
+    "src/syntax/src/document/parser/canonical/recursive_core/precedence/continuation/parenthesis.rs": "ed72949caa31b39efac96552915b33a1c977c0834bae28588d6091c5b2dd5445",
+    "src/syntax/tests/canonical_application_streaming.rs": "e8f7ec5c8896affa1afd60fe72c99e5728c1601ad2f14e252ba6e503552679b4"
+  },
+  "benchmark_measurements": 0
+}
