@@ -145,6 +145,18 @@ impl Program {
     }
 }
 
+/// Document parsing deliberately preserves unsupported declarations as prose.
+/// Admission and frontend selection must agree about these attempted forms.
+pub(super) fn rejected_declaration(node: &SyntaxNode) -> bool {
+    matches!(
+        node.kind(),
+        SyntaxKind::ImportDeclaration | SyntaxKind::ContextDeclaration
+    ) || (node.kind() == SyntaxKind::Paragraph
+        && node
+            .text()
+            .is_ok_and(|text| text.trim_start().starts_with("+>")))
+}
+
 #[derive(Default)]
 pub(super) struct SourceBindings {
     contexts: BTreeMap<String, String>,
@@ -186,7 +198,7 @@ impl SourceBindings {
                         .into(),
                 );
             }
-            if node.kind() == SyntaxKind::Paragraph && text(node)?.trim_start().starts_with("+>") {
+            if rejected_declaration(node) {
                 return Err("unsupported native import syntax; use canonical module/item, alias or module/* imports".into());
             }
             for child in node.children() {
@@ -496,6 +508,8 @@ mod tests {
             "+> @a := cli/args\nx := 1\n",
             "x := @missing/1\n",
             "@missing/line <- \"x\"\n",
+            "+> *\nx := 1\n",
+            "+> @out :=\nx := 1\n",
         ] {
             assert!(
                 ParsedSource::parse(source).unwrap().has_activated_ports(),
@@ -504,6 +518,11 @@ mod tests {
         }
         assert!(
             !ParsedSource::parse("x := number/parse-u64(\"1\")\n")
+                .unwrap()
+                .has_activated_ports()
+        );
+        assert!(
+            !ParsedSource::parse("label := \"+> *\"\n")
                 .unwrap()
                 .has_activated_ports()
         );
