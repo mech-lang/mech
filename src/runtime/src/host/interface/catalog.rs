@@ -72,6 +72,14 @@ impl HostInterfaceCatalog {
     pub fn interface(&self, instance: &str) -> Option<&MaterializedHostInterface> {
         self.interfaces.get(instance)
     }
+
+    #[cfg(all(feature = "runtime", feature = "string"))]
+    pub(crate) fn context_for_base_uri(&self, base_uri: &str) -> Option<&MaterializedHostContext> {
+        self.interfaces
+            .values()
+            .flat_map(|interface| &interface.contexts)
+            .find(|context| context.base_uri == base_uri)
+    }
 }
 
 pub fn validate_host_interface(interface: &MaterializedHostInterface) -> MResult<()> {

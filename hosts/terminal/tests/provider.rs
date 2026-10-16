@@ -1,25 +1,41 @@
-use std::collections::HashMap;
+use std::{cell::Cell, collections::HashMap, ffi::OsString};
 
 use mech_core::{
     EffectContract, EffectDeliveryPolicy, ExternalInteraction, IdempotencyRequirement, MResult,
     MechError, MechErrorKind, ObservationContract, ObservationReplayPolicy, Value, ValueData,
 };
 use mech_runtime::{
-    PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeEffectId, RuntimeResourceProvider,
-    RuntimeResourceReadRequest, RuntimeResourceWriteCommand, RuntimeResourceWriteIntent,
-    RuntimeResourceWriteRequest, TransactionId, value_empty, value_string,
+    ConfigValue, PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeEffectId,
+    RuntimeHostFactory, RuntimeResourceProvider, RuntimeResourceReadRequest,
+    RuntimeResourceWriteCommand, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
+    TransactionId, value_empty, value_string,
 };
-use mech_terminal::{CliBackend, CliResourceProvider};
+use mech_terminal::{CliBackend, CliHostFactory, CliResourceProvider};
 
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 struct FakeCliBackend {
     env: HashMap<String, String>,
     env_error: Option<String>,
+    arguments: Vec<OsString>,
+    argument_error: Option<String>,
+    argument_reads: Cell<usize>,
     stdout: Vec<String>,
     stderr: Vec<String>,
 }
 
 impl CliBackend for FakeCliBackend {
+    fn argument(&self, index: usize) -> MResult<Option<OsString>> {
+        self.argument_reads.set(self.argument_reads.get() + 1);
+        if let Some(reason) = &self.argument_error {
+            return Err(MechError::new(
+                FakeCliBackendError {
+                    reason: reason.clone(),
+                },
+                None,
+            ));
+        }
+        Ok(self.arguments.get(index - 1).cloned())
+    }
     fn env_var(&self, name: &str) -> MResult<Option<String>> {
         if let Some(reason) = &self.env_error {
             return Err(MechError::new(
@@ -108,6 +124,168 @@ fn env_read_returns_fake_value_and_missing_errors() {
             })
             .is_err()
     );
+}
+
+fn args_read(base: &str, path: &str) -> RuntimeResourceReadRequest {
+    RuntimeResourceReadRequest {
+        base_uri: base.to_string(),
+        path: path.to_string(),
+        context_name: "args".to_string(),
+    }
+}
+
+#[test]
+fn args_reads_are_one_based_raw_unicode_and_preserve_empty_arguments() {
+    let provider = CliResourceProvider::new(FakeCliBackend {
+        arguments: ["5500", "héllo 👋", "", "--user-option"]
+            .map(OsString::from)
+            .to_vec(),
+        ..Default::default()
+    });
+    for base in ["cli://args", "cli://cli/args"] {
+        for (path, expected) in [
+            ("1", "5500"),
+            ("2", "héllo 👋"),
+            ("3", ""),
+            ("4", "--user-option"),
+        ] {
+            assert_string(&provider.read(args_read(base, path)).unwrap(), expected);
+        }
+        let error = provider.read(args_read(base, "5")).unwrap_err();
+        assert!(
+            error
+                .display_message()
+                .contains("argument 5 is not present")
+        );
+    }
+}
+
+#[test]
+fn args_planning_and_invalid_paths_never_read_the_backend() {
+    let provider = CliResourceProvider::new(FakeCliBackend {
+        argument_error: Some("backend must not be called while planning".to_string()),
+        ..Default::default()
+    });
+    for base in ["cli://args", "cli://cli/args"] {
+        for path in ["1", "9", &usize::MAX.to_string()] {
+            assert_string(&provider.plan_read(args_read(base, path)).unwrap(), "");
+            assert!(!provider.observation_requires_input_driver(&args_read(base, path)));
+        }
+        for path in [
+            "",
+            "0",
+            "00",
+            "01",
+            "-1",
+            "+1",
+            "1.0",
+            " 1",
+            "1 ",
+            "1/2",
+            "１",
+            "184467440737095516160",
+        ] {
+            assert!(provider.read(args_read(base, path)).is_err(), "{path}");
+            assert!(provider.plan_read(args_read(base, path)).is_err(), "{path}");
+        }
+    }
+    assert_eq!(provider.backend().argument_reads.get(), 0);
+}
+
+#[test]
+fn args_propagate_backend_errors_and_remain_optional_for_existing_backends() {
+    let provider = CliResourceProvider::new(FakeCliBackend {
+        argument_error: Some("argument snapshot unavailable".to_string()),
+        ..Default::default()
+    });
+    let error = provider.read(args_read("cli://args", "1")).unwrap_err();
+    assert!(
+        error
+            .display_message()
+            .contains("argument snapshot unavailable")
+    );
+
+    #[derive(Debug)]
+    struct LegacyBackend;
+    impl CliBackend for LegacyBackend {
+        fn env_var(&self, _: &str) -> MResult<Option<String>> {
+            Ok(None)
+        }
+        fn write_stdout(&mut self, _: &str) -> MResult<()> {
+            Ok(())
+        }
+        fn write_stderr(&mut self, _: &str) -> MResult<()> {
+            Ok(())
+        }
+    }
+    let provider = CliResourceProvider::new(LegacyBackend);
+    assert!(
+        provider
+            .read(args_read("cli://args", "1"))
+            .unwrap_err()
+            .display_message()
+            .contains("unavailable")
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn args_reject_non_unicode_without_lossy_conversion() {
+    use std::os::unix::ffi::OsStringExt;
+    let provider = CliResourceProvider::new(FakeCliBackend {
+        arguments: vec![OsString::from_vec(vec![b'a', 0xff])],
+        ..Default::default()
+    });
+    let error = provider.read(args_read("cli://args", "1")).unwrap_err();
+    assert!(
+        error
+            .display_message()
+            .contains("argument 1 is not valid Unicode")
+    );
+}
+
+#[test]
+fn args_manifest_aliases_and_factory_use_the_same_read_only_context() {
+    let factory = CliHostFactory::with_backend(FakeCliBackend {
+        arguments: vec![OsString::from("native-user-value")],
+        ..Default::default()
+    })
+    .unwrap();
+    let installation = factory
+        .instantiate("term", &ConfigValue::Map(Default::default()))
+        .unwrap();
+    let provider = &installation.resource_providers[0];
+    assert_string(
+        &provider.read(args_read("cli://term/args", "1")).unwrap(),
+        "native-user-value",
+    );
+    assert!(provider.read(args_read("cli://args", "1")).is_err());
+    assert!(provider.equivalent_base_uri_groups().is_empty());
+    let provider = CliResourceProvider::new(FakeCliBackend::default());
+    assert!(provider.base_uris().contains(&"cli://args".to_string()));
+    assert!(provider.equivalent_base_uri_groups().contains(&vec![
+        "cli://cli/args".to_string(),
+        "cli://args".to_string()
+    ]));
+    for intent in [
+        RuntimeResourceWriteIntent::Assign,
+        RuntimeResourceWriteIntent::Send,
+    ] {
+        let error = provider
+            .prepare_write(RuntimeResourceWriteRequest {
+                base_uri: "cli://args".to_string(),
+                path: "1".to_string(),
+                context_name: "args".to_string(),
+                operation: RuntimeCapabilityOperation::Write,
+                value: str_value("replace"),
+                intent,
+                effect_id: effect_id(),
+                idempotency_key: "terminal-test:args".to_string(),
+            })
+            .unwrap_err();
+        assert!(error.display_message().contains("read-only"));
+    }
+    assert_eq!(provider.backend().argument_reads.get(), 0);
 }
 
 #[test]
@@ -238,6 +416,104 @@ fn env_write_and_send_error() {
                 })
                 .is_err()
         );
+    }
+}
+
+#[test]
+fn host_prepared_output_matches_runtime_validation_buffering_and_delivery() {
+    for base in ["cli://stdout", "cli://stderr"] {
+        for path in ["text", "line"] {
+            let provider = CliResourceProvider::new(FakeCliBackend::default());
+            let mut direct = provider
+                .prepare_output(RuntimeResourceWriteCommand {
+                    base_uri: base.to_string(),
+                    path: path.to_string(),
+                    context_name: "out".to_string(),
+                    operation: RuntimeCapabilityOperation::Write,
+                    value: str_value("λ"),
+                    intent: RuntimeResourceWriteIntent::Send,
+                })
+                .unwrap();
+            let PreparedRuntimeEffect::AfterCommit(mut runtime) = provider
+                .prepare_write(RuntimeResourceWriteRequest {
+                    base_uri: base.to_string(),
+                    path: path.to_string(),
+                    context_name: "out".to_string(),
+                    operation: RuntimeCapabilityOperation::Write,
+                    value: str_value("λ"),
+                    intent: RuntimeResourceWriteIntent::Send,
+                    effect_id: effect_id(),
+                    idempotency_key: "terminal-test:parity".to_string(),
+                })
+                .unwrap()
+            else {
+                panic!("expected after-commit terminal effect");
+            };
+            assert_eq!(direct.metadata(), runtime.metadata());
+            assert!(provider.backend().stdout.is_empty());
+            assert!(provider.backend().stderr.is_empty());
+            direct.deliver().unwrap();
+            runtime.deliver().unwrap();
+            let expected = if path == "line" { "λ\n" } else { "λ" };
+            let backend = provider.backend();
+            let actual = if base == "cli://stdout" {
+                &backend.stdout
+            } else {
+                &backend.stderr
+            };
+            assert_eq!(actual, &[expected, expected]);
+        }
+    }
+    let provider = CliResourceProvider::new(FakeCliBackend::default());
+    for (base, path, intent, value) in [
+        (
+            "cli://args",
+            "1",
+            RuntimeResourceWriteIntent::Send,
+            str_value("x"),
+        ),
+        (
+            "cli://stdout",
+            "line",
+            RuntimeResourceWriteIntent::Assign,
+            str_value("x"),
+        ),
+        (
+            "cli://stdout",
+            "unknown",
+            RuntimeResourceWriteIntent::Send,
+            str_value("x"),
+        ),
+        (
+            "cli://stdout",
+            "line",
+            RuntimeResourceWriteIntent::Send,
+            value_empty(),
+        ),
+    ] {
+        let direct = provider
+            .prepare_output(RuntimeResourceWriteCommand {
+                base_uri: base.to_string(),
+                path: path.to_string(),
+                context_name: "out".to_string(),
+                operation: RuntimeCapabilityOperation::Write,
+                value: value.clone(),
+                intent,
+            })
+            .unwrap_err();
+        let runtime = provider
+            .prepare_write(RuntimeResourceWriteRequest {
+                base_uri: base.to_string(),
+                path: path.to_string(),
+                context_name: "out".to_string(),
+                operation: RuntimeCapabilityOperation::Write,
+                value,
+                intent,
+                effect_id: effect_id(),
+                idempotency_key: "terminal-test:parity".to_string(),
+            })
+            .unwrap_err();
+        assert_eq!(direct.display_message(), runtime.display_message());
     }
 }
 

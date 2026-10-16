@@ -33,6 +33,8 @@ mod lifecycle;
 mod limits;
 #[cfg(feature = "source")]
 mod module;
+#[cfg(feature = "string")]
+mod native_resources;
 mod object;
 mod operation_context;
 pub mod program;
@@ -53,6 +55,8 @@ pub use self::builder::RuntimeBuilder;
 #[doc(hidden)]
 pub use self::cost_probe::{RuntimeCostSnapshot, reset_runtime_costs, runtime_cost_snapshot};
 pub use self::errors::*;
+#[cfg(feature = "string")]
+pub use self::native_resources::{NativeResourceBindingError, NativeResourceBindings};
 #[cfg(feature = "resident-external")]
 pub use self::program::*;
 pub use self::state::MechRuntime;

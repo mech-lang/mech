@@ -16,6 +16,7 @@ native-build = ["sequence-cli", "fused-cli"]
 system-gmp = ["dep:gmp-mpfr-sys", "gmp-mpfr-sys/use-system-libs"]
 sequence-cli = ["aot", "dep:hashbrown", "dep:fxhash", "dep:rayon", "dep:memchr", "dep:regex", "dep:rug", "dep:mech-stdlib", "mech-stdlib/native-sequence"]
 runtime-host = ["dep:mech-runtime"]
+native-io = ["sequence-cli", "runtime-host", "dep:mech-terminal"]
 native = ["runtime-host", "dep:bytemuck", "dep:pollster", "dep:wgpu"]
 jit = [
   "mech-engine/runtime",
@@ -59,6 +60,7 @@ mech-compute = { version = "0.3.5", path = "../../src/compute" }
 mech-core = { version = "0.3.5", path = "../../src/core", default-features = false, features = ["range"] }
 mech-engine = { version = "0.3.5", path = "../../src/engine", default-features = false, features = ["resident-artifact"] }
 mech-runtime = { version = "0.3.5", path = "../../src/runtime", default-features = false, features = ["runtime", "string", "f64"], optional = true }
+mech-terminal = { version = "0.3.5", path = "../terminal", default-features = false, features = ["provider"], optional = true }
 mech-stdlib = { version = "0.3.5", path = "../../src/stdlib", default-features = false, features = [], optional = true }
 bytemuck = { version = "1.24.0", optional = true }
 pollster = { version = "0.3.0", optional = true }
