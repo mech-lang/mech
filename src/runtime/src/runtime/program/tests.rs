@@ -2826,11 +2826,57 @@ selected
     };
 
     let mut initially_oversized = configured_runtime(OUTSIDE_PORTABLE_INDEX);
-    assert!(
+    // A representative planning value supplies the input schema, not a
+    // selector to execute during compilation. Portable-width checks apply to
+    // the actual input, and a rejected input must leave the program usable.
+    initially_oversized
+        .load_source_program(SOURCE, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+    for (index, expected) in [
+        (1, Some(10.0)),
+        (OUTSIDE_PORTABLE_INDEX, None),
+        (2, Some(20.0)),
+    ] {
         initially_oversized
-            .load_source_program(SOURCE, crate::ResidentDurabilityPolicy::Volatile)
-            .is_err()
-    );
+            .ingress()
+            .submit(crate::RuntimeHostInput::single(
+                crate::RuntimeHostInputSource::new("test://typed/value", "data").unwrap(),
+                crate::RuntimeHostInputValue::U64(index),
+            ))
+            .unwrap();
+        let outcome = initially_oversized.drain_resident_host_inputs(1).unwrap();
+        if let Some(expected) = expected {
+            assert!(matches!(
+                outcome.turn,
+                Some(crate::ResidentExternalTurnOutcome::Accepted { .. })
+            ));
+            assert_eq!(
+                canonical_f64(
+                    initially_oversized
+                        .program_output_value()
+                        .unwrap()
+                        .unwrap()
+                        .value()
+                ),
+                expected
+            );
+        } else {
+            assert!(matches!(
+                outcome.turn,
+                Some(crate::ResidentExternalTurnOutcome::Rejected { .. })
+            ));
+            assert_eq!(
+                canonical_f64(
+                    initially_oversized
+                        .program_output_value()
+                        .unwrap()
+                        .unwrap()
+                        .value()
+                ),
+                10.0
+            );
+        }
+    }
 
     let mut source = configured_runtime(1);
     source
@@ -9514,3 +9560,5 @@ fn rooted_runtime_source_limit_rejection_leaves_the_runtime_usable() {
         );
     }
 }
+
+mod resource_input_schema;

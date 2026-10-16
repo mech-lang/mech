@@ -1414,6 +1414,9 @@ impl TurnWorkspace {
 #[derive(Clone, Debug, Default)]
 pub struct ActivationFacts {
     pub slot_shapes: BTreeMap<CellSlotId, ShapeInstance>,
+    /// Initial validated geometry for turn-varying inputs. These seeds do not
+    /// prove an invariant resident layout; declared lifetimes govern updates.
+    pub slot_shape_seeds: BTreeMap<CellSlotId, ShapeInstance>,
     // Derived preparation facts, not caller-supplied geometry or wire data.
     // A known shape does not change the resident implementation's layout.
     resident_snapshot_slots: BTreeSet<CellSlotId>,
@@ -3038,6 +3041,13 @@ fn preflight_state_initializers(
 
 fn activation_facts_fingerprint(facts: &ActivationFacts) -> [u8; 32] {
     let mut hash = Sha256::new();
+    hash.update(b"resident-slot-shape-seeds-v1");
+    hash.update((facts.slot_shape_seeds.len() as u64).to_le_bytes());
+    for (slot, shape) in &facts.slot_shape_seeds {
+        hash.update(slot.get().to_le_bytes());
+        hash.update(shape.canonical_bytes());
+    }
+    hash.update(b"resident-fixed-slot-shapes-v1");
     hash.update((facts.slot_shapes.len() as u64).to_le_bytes());
     for (slot, shape) in &facts.slot_shapes {
         hash.update(slot.get().to_le_bytes());
@@ -12485,7 +12495,11 @@ fn slot_shape(
             ArtifactSource::Slot(source) => slot_shape(artifact, source, facts),
         };
     }
-    if let Some(shape) = facts.slot_shapes.get(&slot) {
+    if let Some(shape) = facts
+        .slot_shapes
+        .get(&slot)
+        .or_else(|| facts.slot_shape_seeds.get(&slot))
+    {
         let schema = artifact
             .schemas()
             .entry(declaration.schema)
@@ -12710,7 +12724,9 @@ fn slot_retains_snapshot_layout(
     // shape. Looking only at the alias's schema can turn a snapshot value into
     // a dense read after its inferred geometry becomes known.
     for _ in 0..artifact.slots().len() {
-        if facts.resident_snapshot_slots.contains(&slot) {
+        if facts.resident_snapshot_slots.contains(&slot)
+            || facts.slot_shape_seeds.contains_key(&slot)
+        {
             return true;
         }
         match artifact.slots()[slot.get() as usize].producer {

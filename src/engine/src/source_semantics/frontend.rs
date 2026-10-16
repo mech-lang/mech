@@ -110,9 +110,27 @@ pub struct CanonicalSourceProgram {
     source_nominal_declarations: Box<[crate::SourceNominalDeclaration]>,
 }
 
+fn closed_input_schema_drafts(
+    schemas: BTreeMap<String, SchemaBody>,
+) -> BTreeMap<String, SchemaDraft> {
+    schemas
+        .into_iter()
+        .map(|(name, body)| {
+            (
+                name,
+                SchemaDraft {
+                    body,
+                    dimension_parameters: Box::new([]),
+                },
+            )
+        })
+        .collect()
+}
+
 /// One retained root in an explicitly ordered compilation. Imported roots refer
 /// to exported graph bindings, so their live dependencies remain in the artifact.
-pub struct CanonicalOrderedDocument {
+#[derive(Clone)]
+pub struct CanonicalOrderedDocument<S = SchemaBody> {
     pub document: DocumentSyntax,
     pub nominal_origin: Option<CanonicalNominalPath>,
     pub nominal_package_id: Option<String>,
@@ -121,7 +139,7 @@ pub struct CanonicalOrderedDocument {
     /// published root result. Linked dependencies retain their live graph and
     /// exports without becoming additional program outputs.
     pub publish_result: bool,
-    pub input_schemas: BTreeMap<String, SchemaBody>,
+    pub input_schemas: BTreeMap<String, S>,
     pub resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
     pub imports: BTreeMap<String, CanonicalOrderedImport>,
     pub resolved_modules: BTreeSet<String>,
@@ -145,6 +163,29 @@ impl CanonicalSourceFrontend {
     pub fn compile_ordered_documents_with_catalog(
         &self,
         documents: &[CanonicalOrderedDocument],
+        catalog: Arc<mech_core::FunctionCatalog>,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        let documents = documents
+            .iter()
+            .map(|root| CanonicalOrderedDocument {
+                document: root.document.clone(),
+                nominal_origin: root.nominal_origin.clone(),
+                nominal_package_id: root.nominal_package_id.clone(),
+                identity: root.identity,
+                publish_result: root.publish_result,
+                input_schemas: closed_input_schema_drafts(root.input_schemas.clone()),
+                resource_writes: root.resource_writes.clone(),
+                imports: root.imports.clone(),
+                resolved_modules: root.resolved_modules.clone(),
+            })
+            .collect::<Vec<_>>();
+        self.compile_ordered_documents_with_catalog_schema_drafts(&documents, catalog)
+    }
+
+    /// Lower ordered roots without closing declared input dimensions.
+    pub fn compile_ordered_documents_with_catalog_schema_drafts(
+        &self,
+        documents: &[CanonicalOrderedDocument<SchemaDraft>],
         catalog: Arc<mech_core::FunctionCatalog>,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         for root in documents {
@@ -828,6 +869,20 @@ impl CanonicalSourceFrontend {
         catalog: Arc<mech_core::FunctionCatalog>,
         input_schemas: BTreeMap<String, SchemaBody>,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        self.compile_document_with_catalog_and_input_schemas_schema_drafts(
+            document,
+            catalog,
+            closed_input_schema_drafts(input_schemas),
+        )
+    }
+
+    /// Preserves the supplied schema parameter identities, bounds and lifetimes.
+    pub fn compile_document_with_catalog_and_input_schemas_schema_drafts(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+        input_schemas: BTreeMap<String, SchemaDraft>,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         reject_recovered_syntax(document)?;
         document_lowering::compile_document_with_catalog_and_input_schemas(
             document,
@@ -844,6 +899,24 @@ impl CanonicalSourceFrontend {
         document: &DocumentSyntax,
         catalog: Arc<mech_core::FunctionCatalog>,
         input_schemas: BTreeMap<String, SchemaBody>,
+        resource_reads: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        self.compile_document_with_catalog_and_resources_schema_drafts(
+            document,
+            catalog,
+            closed_input_schema_drafts(input_schemas),
+            resource_reads,
+            resource_writes,
+        )
+    }
+
+    /// Preserves the supplied schema parameter identities, bounds and lifetimes.
+    pub fn compile_document_with_catalog_and_resources_schema_drafts(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+        input_schemas: BTreeMap<String, SchemaDraft>,
         resource_reads: BTreeMap<String, mech_core::ExecutionResourceRequest>,
         resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
@@ -865,6 +938,24 @@ impl CanonicalSourceFrontend {
         resource_reads: BTreeMap<String, mech_core::ExecutionResourceRequest>,
         resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        self.compile_interactive_document_with_catalog_and_resources_schema_drafts(
+            document,
+            catalog,
+            closed_input_schema_drafts(input_schemas),
+            resource_reads,
+            resource_writes,
+        )
+    }
+
+    /// Preserves the supplied schema parameter identities, bounds and lifetimes.
+    pub fn compile_interactive_document_with_catalog_and_resources_schema_drafts(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+        input_schemas: BTreeMap<String, SchemaDraft>,
+        resource_reads: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         self.compile_document_resource_projection(
             document,
             catalog,
@@ -879,7 +970,7 @@ impl CanonicalSourceFrontend {
         &self,
         document: &DocumentSyntax,
         catalog: Arc<mech_core::FunctionCatalog>,
-        input_schemas: BTreeMap<String, SchemaBody>,
+        input_schemas: BTreeMap<String, SchemaDraft>,
         resource_reads: BTreeMap<String, mech_core::ExecutionResourceRequest>,
         resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
         interactive: bool,
@@ -920,6 +1011,28 @@ impl CanonicalSourceFrontend {
         published_bindings: &BTreeSet<String>,
         resolved_source_modules: &BTreeSet<String>,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        self.compile_document_with_planning_contract_schema_drafts(
+            document,
+            catalog,
+            closed_input_schema_drafts(input_schemas),
+            resource_writes,
+            external_definitions,
+            published_bindings,
+            resolved_source_modules,
+        )
+    }
+
+    /// Preserves the supplied schema parameter identities, bounds and lifetimes.
+    pub fn compile_document_with_planning_contract_schema_drafts(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+        input_schemas: BTreeMap<String, SchemaDraft>,
+        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+        external_definitions: &BTreeSet<String>,
+        published_bindings: &BTreeSet<String>,
+        resolved_source_modules: &BTreeSet<String>,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         self.compile_document_with_planning_projection(
             document,
             catalog,
@@ -938,6 +1051,28 @@ impl CanonicalSourceFrontend {
         document: &DocumentSyntax,
         catalog: Arc<mech_core::FunctionCatalog>,
         input_schemas: BTreeMap<String, SchemaBody>,
+        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+        external_definitions: &BTreeSet<String>,
+        published_bindings: &BTreeSet<String>,
+        resolved_source_modules: &BTreeSet<String>,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        self.compile_interactive_document_with_planning_contract_schema_drafts(
+            document,
+            catalog,
+            closed_input_schema_drafts(input_schemas),
+            resource_writes,
+            external_definitions,
+            published_bindings,
+            resolved_source_modules,
+        )
+    }
+
+    /// Preserves the supplied schema parameter identities, bounds and lifetimes.
+    pub fn compile_interactive_document_with_planning_contract_schema_drafts(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+        input_schemas: BTreeMap<String, SchemaDraft>,
         resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
         external_definitions: &BTreeSet<String>,
         published_bindings: &BTreeSet<String>,
@@ -967,6 +1102,26 @@ impl CanonicalSourceFrontend {
         resolved_source_modules: &BTreeSet<String>,
         boundary: mech_syntax::document::TextSize,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        self.compile_interactive_document_with_retained_result_schema_drafts(
+            document,
+            catalog,
+            closed_input_schema_drafts(input_schemas),
+            resource_writes,
+            resolved_source_modules,
+            boundary,
+        )
+    }
+
+    /// Preserves the supplied schema parameter identities, bounds and lifetimes.
+    pub fn compile_interactive_document_with_retained_result_schema_drafts(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+        input_schemas: BTreeMap<String, SchemaDraft>,
+        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+        resolved_source_modules: &BTreeSet<String>,
+        boundary: mech_syntax::document::TextSize,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         reject_recovered_syntax(document)?;
         document_lowering::compile_document_with_capture_options(
             document,
@@ -987,7 +1142,7 @@ impl CanonicalSourceFrontend {
         &self,
         document: &DocumentSyntax,
         catalog: Arc<mech_core::FunctionCatalog>,
-        input_schemas: BTreeMap<String, SchemaBody>,
+        input_schemas: BTreeMap<String, SchemaDraft>,
         resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
         external_definitions: &BTreeSet<String>,
         published_bindings: &BTreeSet<String>,
@@ -1050,7 +1205,27 @@ impl CanonicalSourceFrontend {
         external_inputs: &BTreeSet<String>,
         retained_outputs: &BTreeSet<String>,
     ) -> Result<CanonicalMixedSourcePrograms, SourceSemanticError> {
-        self.compile_mixed_document_with_planning_contract(
+        self.compile_mixed_document_with_catalog_and_resources_schema_drafts(
+            document,
+            catalog,
+            closed_input_schema_drafts(input_schemas),
+            resource_writes,
+            external_inputs,
+            retained_outputs,
+        )
+    }
+
+    /// Preserves the supplied schema parameter identities, bounds and lifetimes.
+    pub fn compile_mixed_document_with_catalog_and_resources_schema_drafts(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+        input_schemas: BTreeMap<String, SchemaDraft>,
+        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+        external_inputs: &BTreeSet<String>,
+        retained_outputs: &BTreeSet<String>,
+    ) -> Result<CanonicalMixedSourcePrograms, SourceSemanticError> {
+        self.compile_mixed_document_with_planning_contract_schema_drafts(
             document,
             catalog,
             input_schemas,
@@ -1072,7 +1247,29 @@ impl CanonicalSourceFrontend {
         retained_outputs: &BTreeSet<String>,
         resolved_source_modules: &BTreeSet<String>,
     ) -> Result<CanonicalMixedSourcePrograms, SourceSemanticError> {
-        let prepared = self.prepare_mixed_document_with_planning_contract(
+        self.compile_mixed_document_with_planning_contract_schema_drafts(
+            document,
+            catalog,
+            closed_input_schema_drafts(input_schemas),
+            resource_writes,
+            external_inputs,
+            retained_outputs,
+            resolved_source_modules,
+        )
+    }
+
+    /// Preserves the supplied schema parameter identities, bounds and lifetimes.
+    pub fn compile_mixed_document_with_planning_contract_schema_drafts(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+        input_schemas: BTreeMap<String, SchemaDraft>,
+        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+        external_inputs: &BTreeSet<String>,
+        retained_outputs: &BTreeSet<String>,
+        resolved_source_modules: &BTreeSet<String>,
+    ) -> Result<CanonicalMixedSourcePrograms, SourceSemanticError> {
+        let prepared = self.prepare_mixed_document_with_planning_contract_schema_drafts(
             document,
             catalog,
             input_schemas,
@@ -1097,6 +1294,28 @@ impl CanonicalSourceFrontend {
         document: &DocumentSyntax,
         catalog: Arc<mech_core::FunctionCatalog>,
         input_schemas: BTreeMap<String, SchemaBody>,
+        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+        external_inputs: &BTreeSet<String>,
+        retained_outputs: &BTreeSet<String>,
+        resolved_source_modules: &BTreeSet<String>,
+    ) -> Result<CanonicalMixedSourcePreparation, SourceSemanticError> {
+        self.prepare_mixed_document_with_planning_contract_schema_drafts(
+            document,
+            catalog,
+            closed_input_schema_drafts(input_schemas),
+            resource_writes,
+            external_inputs,
+            retained_outputs,
+            resolved_source_modules,
+        )
+    }
+
+    /// Preserves the supplied schema parameter identities, bounds and lifetimes.
+    pub fn prepare_mixed_document_with_planning_contract_schema_drafts(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+        input_schemas: BTreeMap<String, SchemaDraft>,
         resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
         external_inputs: &BTreeSet<String>,
         retained_outputs: &BTreeSet<String>,
@@ -3326,21 +3545,15 @@ impl SemanticBuilder {
     fn with_function_catalog_and_input_schemas(
         anchor: SourceSemanticAnchor,
         function_catalog: Arc<mech_core::FunctionCatalog>,
-        input_schemas: BTreeMap<String, SchemaBody>,
+        input_schemas: BTreeMap<String, SchemaDraft>,
     ) -> Result<Self, SourceSemanticError> {
         let mut builder = Self::with_function_catalog(anchor, function_catalog)?;
-        builder.input_schema_overrides = input_schemas
-            .into_iter()
-            .map(|(name, body)| {
-                (
-                    name,
-                    SchemaDraft {
-                        body,
-                        dimension_parameters: Box::new([]),
-                    },
-                )
-            })
-            .collect();
+        for schema in input_schemas.values() {
+            schema.clone().finalize().map_err(|error| {
+                internal(anchor, format!("invalid declared input schema: {error:?}"))
+            })?;
+        }
+        builder.input_schema_overrides = input_schemas;
         Ok(builder)
     }
 

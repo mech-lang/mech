@@ -477,22 +477,15 @@ impl ResidentExternalCoordinator {
             ) else {
                 continue;
             };
-            let migrated = value
-                .rebind(
-                    target.input.schema,
-                    &target.input.shape,
-                    self.artifact.schemas(),
-                )
+            let migrated = self
+                .rebind_observation_value(target, value)
                 .map_err(|error| {
                     invalid_value(format!(
                         "{snapshot_name} is incompatible with the replacement: {error:?}"
                     ))
                 })?;
-            let retained_bytes = retained_input_value_bytes(
-                &migrated,
-                &target.input.shape,
-                self.artifact.schemas(),
-            )?;
+            let retained_bytes =
+                retained_input_value_bytes(&migrated, migrated.shape(), self.artifact.schemas())?;
             replacements.push((target_ordinal, migrated, retained_bytes));
         }
         Ok(replacements)
@@ -630,25 +623,16 @@ impl ResidentExternalCoordinator {
             }) else {
                 continue;
             };
-            let value = update
-                .value
-                .clone()
-                .into_value()?
-                .rebind(
-                    observation.input.schema,
-                    &observation.input.shape,
-                    self.artifact.schemas(),
-                )
+            let source_value = update.value.clone().into_value()?;
+            let value = self
+                .rebind_observation_value(observation, &source_value)
                 .map_err(|error| {
                     invalid_value(format!(
                         "host input does not match the observed schema: {error:?}"
                     ))
                 })?;
-            let retained_bytes = retained_input_value_bytes(
-                &value,
-                &observation.input.shape,
-                self.artifact.schemas(),
-            )?;
+            let retained_bytes =
+                retained_input_value_bytes(&value, value.shape(), self.artifact.schemas())?;
             replacements.push((ordinal, value, retained_bytes));
         }
         self.install_pending_live_input_replacements(replacements)
@@ -897,6 +881,68 @@ impl ResidentExternalCoordinator {
         self.reserve_live_turn()
     }
 
+    /// Resolve geometry in the target schema's own dimension environment.
+    /// The planning value seeds activation geometry; only Turn declarations
+    /// permit later observations to differ from that seed.
+    fn rebind_observation_value(
+        &self,
+        observation: &super::BoundResidentObservation,
+        value: &Value,
+    ) -> MResult<Value> {
+        let target = self
+            .instance()
+            .plan
+            .slots
+            .iter()
+            .find(|slot| slot.artifact_id == observation.input.artifact_slot)
+            .ok_or_else(|| invalid_value("observation slot is unavailable".to_owned()))?;
+        let schema = self
+            .artifact
+            .schemas()
+            .get(observation.input.schema)
+            .ok_or_else(|| invalid_value("observation schema is unavailable".to_owned()))?;
+        if target.schema != observation.input.schema
+            || target.schema_key != observation.input.schema_key
+            || target.shape != observation.input.shape
+            || schema.key() != observation.input.schema_key
+        {
+            return Err(invalid_value(
+                "observation differs from its activated slot".to_owned(),
+            ));
+        }
+        let source_schemas = value
+            .schemas()
+            .ok_or_else(|| invalid_value("observation value has no schema owner".to_owned()))?;
+        value.validate_against(&source_schemas).map_err(|error| {
+            invalid_value(format!("observation snapshot is invalid: {error:?}"))
+        })?;
+        let source_schema = source_schemas
+            .get(value.schema())
+            .ok_or_else(|| invalid_value("observation value schema is unavailable".to_owned()))?;
+        let actual_body = source_schema.closed_body(value.shape())?;
+        let shape =
+            mech_core::shape_for_schema_components(schema, &[(schema.body(), actual_body)], None)
+                .map_err(|error| {
+                invalid_value(format!(
+                    "observation geometry does not satisfy its declared schema: {error:?}"
+                ))
+            })?;
+        if (target.activation_fixed_shape && shape != target.shape)
+            || !mech_core::shape_change_allowed(schema, &target.shape, &shape)
+        {
+            return Err(invalid_value(
+                "observation changes fixed activation geometry".to_owned(),
+            ));
+        }
+        value
+            .rebind(observation.input.schema, &shape, self.artifact.schemas())
+            .map_err(|error| {
+                invalid_value(format!(
+                    "observation payload does not match its declared schema: {error:?}"
+                ))
+            })
+    }
+
     fn validate_host_updates(&self, updates: &[crate::RuntimeHostInputUpdate]) -> MResult<()> {
         let mut sources = std::collections::BTreeSet::new();
         for update in updates {
@@ -917,12 +963,7 @@ impl ResidentExternalCoordinator {
             }
             let value = update.value.clone().into_value()?;
             for observation in matching {
-                value
-                    .rebind(
-                        observation.input.schema,
-                        &observation.input.shape,
-                        self.artifact.schemas(),
-                    )
+                self.rebind_observation_value(observation, &value)
                     .map_err(|error| {
                         invalid_value(format!(
                             "host input does not match its activated schema: {error:?}"
@@ -1949,15 +1990,8 @@ impl ResidentExternalCoordinator {
                     })
                 });
                 let value = if let Some(update) = packet_value {
-                    update
-                        .value
-                        .clone()
-                        .into_value()?
-                        .rebind(
-                            observation.input.schema,
-                            &observation.input.shape,
-                            self.artifact.schemas(),
-                        )
+                    let source_value = update.value.clone().into_value()?;
+                    self.rebind_observation_value(observation, &source_value)
                         .map_err(|error| {
                             invalid_value(format!(
                                 "host input does not match the observed schema: {error:?}"
@@ -2012,17 +2046,12 @@ impl ResidentExternalCoordinator {
                         observation.provider_binding.as_ref().ok_or_else(|| {
                             invalid_value("live observation has no provider binding".to_owned())
                         })?;
-                    provider_binding
-                        .read(RuntimeResourceReadRequest {
-                            base_uri: observation.request.base_uri.clone(),
-                            path: observation.request.path.clone(),
-                            context_name: observation.request.context_name.clone(),
-                        })?
-                        .rebind(
-                            observation.input.schema,
-                            &observation.input.shape,
-                            self.artifact.schemas(),
-                        )
+                    let source_value = provider_binding.read(RuntimeResourceReadRequest {
+                        base_uri: observation.request.base_uri.clone(),
+                        path: observation.request.path.clone(),
+                        context_name: observation.request.context_name.clone(),
+                    })?;
+                    self.rebind_observation_value(observation, &source_value)
                         .map_err(|error| {
                             invalid_value(format!(
                                 "provider input does not match the observed schema: {error:?}"
@@ -2059,7 +2088,7 @@ impl ResidentExternalCoordinator {
                     observation.node,
                     observation.input.artifact_slot,
                     observation.input.schema_key,
-                    observation.input.shape.clone(),
+                    value.shape().clone(),
                     value,
                     trigger,
                     self.artifact.schemas(),
@@ -2078,7 +2107,7 @@ impl ResidentExternalCoordinator {
             .facts
             .iter()
             .map(|fact| {
-                CapturedInputFact::new_with_trigger(
+                let canonical = CapturedInputFact::new_with_trigger(
                     fact.sequence,
                     fact.requirement,
                     fact.node,
@@ -2088,7 +2117,11 @@ impl ResidentExternalCoordinator {
                     fact.value.clone(),
                     fact.trigger,
                     self.artifact.schemas(),
-                )
+                )?;
+                if canonical.payload_hash != fact.payload_hash {
+                    return invalid_coordinator("replay fact payload hash is invalid");
+                }
+                Ok(canonical)
             })
             .collect::<MResult<Vec<_>>>()?;
         let canonical = CapturedInputBatch::new(facts)?;
@@ -2111,14 +2144,19 @@ impl ResidentExternalCoordinator {
                 || fact.node != observation.node
                 || fact.slot != observation.input.artifact_slot
                 || fact.schema_key != observation.input.schema_key
-                || fact.shape != observation.input.shape
                 || fact.value.schema() != observation.input.schema
                 || fact.value.schema_key() != observation.input.schema_key
-                || fact.value.shape() != &observation.input.shape
+                || fact.value.shape() != &fact.shape
                 || fact.value.value_hash(self.artifact.schemas()).ok() != Some(fact.payload_hash)
             {
                 return invalid_coordinator(
                     "replay batch differs from the activated observation plan",
+                );
+            }
+            let rebound = self.rebind_observation_value(observation, &fact.value)?;
+            if rebound.shape() != &fact.shape {
+                return invalid_coordinator(
+                    "replay fact differs from its validated observation geometry",
                 );
             }
             for (previous_fact, previous_observation) in canonical.facts[..ordinal]

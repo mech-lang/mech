@@ -953,7 +953,17 @@ pub(super) fn plan_resident_activation_facts(
                         ),
                     )
                 })?;
-            if let Some(existing) = facts.slot_shapes.insert(target, planned.shape().clone())
+            let shapes = if schema
+                .schema()
+                .dimension_parameters()
+                .iter()
+                .any(|parameter| parameter.lifetime() == mech_core::DimensionLifetime::Turn)
+            {
+                &mut facts.slot_shape_seeds
+            } else {
+                &mut facts.slot_shapes
+            };
+            if let Some(existing) = shapes.insert(target, planned.shape().clone())
                 && existing != *planned.shape()
             {
                 return Err(route_failure(

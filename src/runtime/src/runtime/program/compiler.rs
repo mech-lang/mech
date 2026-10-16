@@ -647,7 +647,7 @@ impl<'a> CanonicalGraphCompilation<'a> {
 }
 
 struct CanonicalDocumentPlanning {
-    schemas: BTreeMap<String, mech_core::SchemaBody>,
+    schemas: BTreeMap<String, mech_core::SchemaDraft>,
     reads: BTreeMap<String, ExecutionResourceRequest>,
     writes: BTreeMap<String, ExecutionResourceRequest>,
     values: BTreeMap<String, Value>,
@@ -745,7 +745,7 @@ impl<'a> ProgramCompilerView<'a> {
         let (input_schemas, resource_reads, resource_writes, planned_reads) =
             self.canonical_document_resources(&index.root, &document.document())?;
         let mut program = canonical_frontend(document)
-            .compile_interactive_document_with_planning_contract(
+            .compile_interactive_document_with_planning_contract_schema_drafts(
                 &document.document(),
                 Arc::clone(&self.function_catalog),
                 input_schemas,
@@ -800,7 +800,9 @@ impl<'a> ProgramCompilerView<'a> {
             let value = input.clone().into_value()?;
             schemas.insert(
                 name.clone(),
-                ValueCell::from_snapshot(value.clone())?.closed_schema_body()?,
+                canonical_closed_input_schema(
+                    ValueCell::from_snapshot(value.clone())?.closed_schema_body()?,
+                ),
             );
             values.insert(name.clone(), value);
         }
@@ -821,7 +823,7 @@ impl<'a> ProgramCompilerView<'a> {
         initialization: bool,
     ) -> MResult<CanonicalSourceProgram> {
         let mut program = canonical_frontend(document)
-            .compile_document_with_planning_contract(
+            .compile_document_with_planning_contract_schema_drafts(
                 &document.document(),
                 Arc::clone(&self.function_catalog),
                 context.schemas.clone(),
@@ -1085,9 +1087,9 @@ impl<'a> ProgramCompilerView<'a> {
         let (input_schemas, resource_reads, resource_writes, planned_reads) =
             self.canonical_document_resources(&index.root, &document.document())?;
         let compile = if interactive {
-            CanonicalSourceFrontend::compile_interactive_document_with_catalog_and_resources
+            CanonicalSourceFrontend::compile_interactive_document_with_catalog_and_resources_schema_drafts
         } else {
-            CanonicalSourceFrontend::compile_document_with_catalog_and_resources
+            CanonicalSourceFrontend::compile_document_with_catalog_and_resources_schema_drafts
         };
         let frontend = canonical_frontend(document);
         let mut program = compile(
@@ -1387,7 +1389,10 @@ impl<'a> ProgramCompilerView<'a> {
         }
         let mut program = CanonicalSourceFrontend
             .with_imported_enum_qualifiers(context.enum_qualifiers()?)
-            .compile_ordered_documents_with_catalog(&documents, Arc::clone(&self.function_catalog))
+            .compile_ordered_documents_with_catalog_schema_drafts(
+                &documents,
+                Arc::clone(&self.function_catalog),
+            )
             .map_err(|error| canonical_compilation_error(error.to_string()))?;
         for (ordinal, imports) in import_uses {
             use mech_syntax::document::AstNode;
@@ -1476,7 +1481,9 @@ impl<'a> ProgramCompilerView<'a> {
         for (name, value) in &imported {
             input_schemas.insert(
                 name.clone(),
-                ValueCell::from_snapshot(value.to_value())?.closed_schema_body()?,
+                canonical_closed_input_schema(
+                    ValueCell::from_snapshot(value.to_value())?.closed_schema_body()?,
+                ),
             );
         }
         let modules = imports
@@ -1491,7 +1498,7 @@ impl<'a> ProgramCompilerView<'a> {
             .collect();
         let prepared = canonical_frontend(document)
             .with_imported_enum_qualifiers(context.enum_qualifiers()?)
-            .prepare_mixed_document_with_planning_contract(
+            .prepare_mixed_document_with_planning_contract_schema_drafts(
                 &document.document(),
                 Arc::clone(&self.function_catalog),
                 input_schemas,
@@ -1601,13 +1608,15 @@ impl<'a> ProgramCompilerView<'a> {
         for (name, value) in imported {
             schemas.insert(
                 name,
-                ValueCell::from_snapshot(value.to_value())?.closed_schema_body()?,
+                canonical_closed_input_schema(
+                    ValueCell::from_snapshot(value.to_value())?.closed_schema_body()?,
+                ),
             );
         }
         let compile = if interactive {
-            CanonicalSourceFrontend::compile_interactive_document_with_planning_contract
+            CanonicalSourceFrontend::compile_interactive_document_with_planning_contract_schema_drafts
         } else {
-            CanonicalSourceFrontend::compile_document_with_planning_contract
+            CanonicalSourceFrontend::compile_document_with_planning_contract_schema_drafts
         };
         let program = compile(
             &frontend,
@@ -1884,7 +1893,7 @@ impl<'a> ProgramCompilerView<'a> {
         index: &SourceIndex,
         document: &mech_syntax::document::DocumentSyntax,
     ) -> MResult<(
-        BTreeMap<String, mech_core::SchemaBody>,
+        BTreeMap<String, mech_core::SchemaDraft>,
         BTreeMap<String, ExecutionResourceRequest>,
         BTreeMap<String, ExecutionResourceRequest>,
         BTreeMap<String, Value>,
@@ -1900,7 +1909,7 @@ impl<'a> ProgramCompilerView<'a> {
         document: &mech_syntax::document::DocumentSyntax,
         mut plan_read: impl FnMut(RuntimeResourceReadRequest) -> MResult<Option<Value>>,
     ) -> MResult<(
-        BTreeMap<String, mech_core::SchemaBody>,
+        BTreeMap<String, mech_core::SchemaDraft>,
         BTreeMap<String, ExecutionResourceRequest>,
         BTreeMap<String, ExecutionResourceRequest>,
         BTreeMap<String, Value>,
@@ -2133,7 +2142,9 @@ impl<'a> ProgramCompilerView<'a> {
         for (name, value) in &imported {
             input_schemas.insert(
                 name.clone(),
-                ValueCell::from_snapshot(value.to_value())?.closed_schema_body()?,
+                canonical_closed_input_schema(
+                    ValueCell::from_snapshot(value.to_value())?.closed_schema_body()?,
+                ),
             );
         }
         let modules = imports
@@ -2148,7 +2159,7 @@ impl<'a> ProgramCompilerView<'a> {
             .collect();
         let mut programs = canonical_frontend(document)
             .with_imported_enum_qualifiers(imported_enum_qualifiers)
-            .prepare_mixed_document_with_planning_contract(
+            .prepare_mixed_document_with_planning_contract_schema_drafts(
                 &document.document(),
                 Arc::clone(&self.function_catalog),
                 input_schemas,
@@ -2253,7 +2264,7 @@ impl<'a> ProgramCompilerView<'a> {
         let coordinator = bind_imports(
             programs
                 .coordinator
-                .compile(compute_read_schemas)
+                .compile_schema_drafts(compute_read_schemas)
                 .map_err(|error| canonical_compilation_error(error.to_string()))?,
         )?;
 
@@ -2974,15 +2985,55 @@ impl mech_engine::ExternalRequirementContractResolver for CompilerExternalContra
     }
 }
 
-fn canonical_planned_read_schema(value: &Value) -> MResult<mech_core::SchemaBody> {
+fn canonical_closed_input_schema(body: mech_core::SchemaBody) -> mech_core::SchemaDraft {
+    mech_core::SchemaDraft {
+        body,
+        dimension_parameters: Box::new([]),
+    }
+}
+
+fn canonical_planned_read_schema(value: &Value) -> MResult<mech_core::SchemaDraft> {
     let schemas = value
         .schemas()
         .ok_or_else(|| canonical_compilation_error("planned resource read has no schema owner"))?;
+    value.validate_against(&schemas).map_err(|error| {
+        canonical_compilation_error(format!("planned resource snapshot is invalid: {error:?}"))
+    })?;
     let schema = schemas.get(value.schema()).ok_or_else(|| {
         canonical_compilation_error("planned resource read schema is unavailable")
     })?;
-    // Resolve provider/interface shape parameters before crossing schema arenas.
-    schema.closed_body(value.shape())
+    schema.instantiate_shape(value.shape().parameter_values().to_vec().into_boxed_slice())?;
+    // The finalized schema already owns canonical parameter ordinals. Rebuild
+    // those declarations without specializing its provider-declared lifetimes
+    // or bounds to the representative planning value's current geometry.
+    let draft = mech_core::SchemaDraft {
+        body: schema.body().clone(),
+        dimension_parameters: schema
+            .dimension_parameters()
+            .iter()
+            .enumerate()
+            .map(|(ordinal, parameter)| {
+                let ordinal = u32::try_from(ordinal).map_err(|_| {
+                    canonical_compilation_error("planned resource read has too many dimensions")
+                })?;
+                Ok(mech_core::DimensionParameterDeclaration {
+                    id: mech_core::DimensionParameterId::new(ordinal),
+                    origin: mech_core::DimensionParameterOrigin::Explicit,
+                    lifetime: parameter.lifetime(),
+                    lower_bound: parameter.lower_bound().clone(),
+                    upper_bound: parameter.upper_bound().cloned(),
+                })
+            })
+            .collect::<MResult<Vec<_>>>()?
+            .into_boxed_slice(),
+    };
+    let rebuilt = draft.clone().finalize()?;
+    if rebuilt != *schema || rebuilt.key() != value.schema_key() {
+        return Err(canonical_compilation_error(
+            "planned resource read lost its schema identity",
+        ));
+    }
+    Ok(draft)
 }
 
 fn is_compute_kernel_base(base_uri: &str) -> bool {
