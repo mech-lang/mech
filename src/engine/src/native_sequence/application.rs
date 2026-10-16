@@ -14,6 +14,21 @@ fn identifier_char(ch: char) -> bool {
             '_' | '&' | '$' | '%' | '/' | '#' | '\\' | '~' | '+' | '-' | '*' | '^'
         )
 }
+
+// Callback names admit more symbols than a standalone argument-hole boundary.
+// Keep the original ASCII boundaries and distinguish canonical Unicode
+// operators from the non-ASCII characters accepted in names.
+fn hole_identifier_char(ch: char) -> bool {
+    (ch.is_alphanumeric() || !ch.is_ascii() || matches!(ch, '_' | '-' | '/'))
+        && !unicode_operator(ch)
+}
+
+fn unicode_operator(ch: char) -> bool {
+    matches!(
+        ch,
+        '×' | '÷' | '·' | '•' | '⨯' | '≠' | '≥' | '≤' | '∨' | '∧' | '¬' | '⊗'
+    )
+}
 fn identifier(source: &str) -> bool {
     !source.is_empty()
         && source.chars().all(identifier_char)
@@ -441,11 +456,26 @@ fn substitute(stage: &str, value: &str) -> Result<String, String> {
     let mut holes = 0;
     for (i, ch) in code.char_indices() {
         if ch == '_'
-            && (i == 0 || !code[..i].chars().next_back().is_some_and(identifier_char))
-            && !code[i + 1..].chars().next().is_some_and(identifier_char)
+            && (i == 0
+                || !code[..i]
+                    .chars()
+                    .next_back()
+                    .is_some_and(hole_identifier_char))
+            && !code[i + 1..]
+                .chars()
+                .next()
+                .is_some_and(hole_identifier_char)
         {
             output.push_str(&stage[start..i]);
+            // Separate generated names from Unicode operator/emoji name
+            // characters so the canonical parser sees the original operator.
+            if code[..i].chars().next_back().is_some_and(unicode_operator) {
+                output.push(' ');
+            }
             output.push_str(value);
+            if code[i + 1..].chars().next().is_some_and(unicode_operator) {
+                output.push(' ');
+            }
             start = i + 1;
             holes += 1;
         }
@@ -554,8 +584,7 @@ fn is_candidate(source: &str) -> bool {
     // Documentation/prose is not a definition just because it quotes an operator.
     let named_statement = identifier(initial)
         && (code[initial.len()..].trim_start().starts_with(":=")
-            || code[initial.len()..].trim_start().starts_with('(')
-            || starts_pipe(&code[initial.len()..]));
+            || code[initial.len()..].trim_start().starts_with('('));
     if named_statement {
         return true;
     }
@@ -569,12 +598,24 @@ fn is_candidate(source: &str) -> bool {
     let Ok(pipes) = pipe_offsets(code) else {
         return false;
     };
-    let Some(pipe) = pipes.first().filter(|pipe| pipe.repetitions.is_some()) else {
+    let Some(pipe) = pipes.first() else {
         return false;
     };
     let seed = code[..pipe.start].trim();
-    seed.parse::<f64>().is_ok()
-        || (seed.starts_with('[') && seed.ends_with(']') && top_offsets(seed, "|").is_ok())
+    let named_seed = identifier(seed);
+    let counted_seed = pipe.repetitions.is_some()
+        && (seed.parse::<f64>().is_ok()
+            || (seed.starts_with('[') && seed.ends_with(']') && top_offsets(seed, "|").is_ok()));
+    // A standalone example may begin with a word just like a named seed.
+    // Require complete valid stages before treating it as executable source;
+    // bindings/functions above still retain all malformed-stage diagnostics.
+    (named_seed || counted_seed)
+        && pipeline(
+            code.trim_end_matches('.').trim_end(),
+            "application-probe-",
+            &mut 0,
+        )
+        .is_ok()
 }
 
 fn arrow_definition(source: &str) -> bool {
@@ -1055,6 +1096,61 @@ mod tests {
         assert_eq!(normalize(source).unwrap(), source);
         let n = normalize("r := seed |18446744073709551615> step\n").unwrap();
         assert!(n.contains("18446744073709551615, step)"));
+    }
+    #[test]
+    fn complete_counted_examples_in_prose_are_not_statements() {
+        use mech_syntax::document::{
+            DocumentId, ParseConfig, Revision, TextSnapshot, parse_canonical_document,
+        };
+        for source in [
+            "Use |1> step in examples.\n",
+            "Apply |19> step as an example.\n",
+        ] {
+            assert_eq!(normalize(source).unwrap(), source);
+            let canonical = parse_canonical_document(
+                TextSnapshot::new(DocumentId(1), Revision(0), source).unwrap(),
+                ParseConfig::default(),
+            );
+            // Let the canonical grammar decide whether bare bars need quoting;
+            // the application surface must neither reject nor admit the prose.
+            let public = super::super::ParsedSource::parse(source);
+            assert_eq!(public.is_ok(), canonical.diagnostics.is_empty());
+            if let Err(error) = public {
+                assert!(
+                    error.starts_with("canonical source diagnostics:"),
+                    "{error}"
+                );
+            }
+        }
+        let quoted = "Use `|1> step` in examples.\n";
+        assert_eq!(normalize(quoted).unwrap(), quoted);
+        super::super::ParsedSource::parse(quoted).unwrap();
+        assert!(
+            normalize("seed |1> step\n")
+                .unwrap()
+                .contains("sequence/iterate")
+        );
+        assert!(
+            normalize("seed |> step\n")
+                .unwrap()
+                .contains("step(application-temp-0)")
+        );
+    }
+
+    #[test]
+    fn compact_unicode_operators_do_not_hide_argument_holes() {
+        for operator in ["×", "÷", "·", "•", "⨯", "≠", "≥", "≤", "∨", "∧", "⊗"] {
+            let source = format!("r := x |> f(_{operator}2.0, 2.0{operator}_)\n");
+            let normalized = normalize(&source).unwrap();
+            assert!(
+                normalized.contains(&format!(
+                    "f(application-temp-0 {operator}2.0, 2.0{operator} application-temp-0)"
+                )),
+                "{normalized}"
+            );
+        }
+        let normalized = normalize("r := x |> f(¬_, some_🙂)\n").unwrap();
+        assert!(normalized.contains("f(¬ application-temp-0, some_🙂)"));
     }
     #[test]
     fn counted_detection_preserves_prose_numeric_tables_and_bar_heavy_documents() {
