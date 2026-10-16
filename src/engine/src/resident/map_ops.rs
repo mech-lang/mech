@@ -422,13 +422,14 @@ fn execute(
         .and_then(|v| v.checked_add(footprint.retained_bytes.checked_mul(2)?))
         .ok_or(ResidentKernelError::InvalidShape)?;
     let measured = meter.estimate();
-    PreparedKernel::new((), budget::resident_cost! {
+    let cost = budget::resident_cost! {
         compute_work: (work as u64).checked_add(finalization_work).and_then(|v| v.checked_add(measured.compute_work())).ok_or(ResidentKernelError::InvalidShape)?,
         comparison_work: comparison_work.checked_add(finalization_work).and_then(|v| v.checked_add(work as u64)).and_then(|v| v.checked_add(measured.comparison_work())).ok_or(ResidentKernelError::InvalidShape)?,
         output_elements: count, output_bytes: footprint.retained_bytes, temporary_bytes: temporary, cloned_bytes: payload,
         retained_nodes: footprint.node_count.checked_mul(3).and_then(|v| v.checked_add(measured.retained_nodes())).ok_or(ResidentKernelError::InvalidShape)?,
         ..budget::KernelCostEstimate::default()
-    }).admit()?.into_plan();
+    };
+    PreparedKernel::new((), cost).admit()?.into_plan();
     let data = if let Some(strings) = source_strings {
         let mut entries = Vec::new();
         entries
@@ -609,7 +610,14 @@ mod tests {
         };
         let (schemas, _) = build.into_parts();
         let arena_bytes = schemas.clone_allocation_bound_bytes().unwrap();
-        assert!(arena_bytes > 4096);
+        // Histogram retains sorting buffers and map drafts beside finalization.
+        // Both finite call quotas remain below the unrelated schema arena.
+        let call_quota = if operation == Operation::Histogram {
+            6144
+        } else {
+            4096
+        };
+        assert!(arena_bytes > call_quota);
         let layout = |id| {
             let schema = schemas.get(id).unwrap();
             ResidentPortLayout {
@@ -758,9 +766,9 @@ mod tests {
             }
         };
         let mut target = TargetMemoryProfile::current_resident_cpu().unwrap();
-        target.limits.max_output_bytes = Some(4096);
-        target.limits.max_temporary_bytes = Some(4096);
-        target.limits.max_cloned_bytes = Some(4096);
+        target.limits.max_output_bytes = Some(call_quota);
+        target.limits.max_temporary_bytes = Some(call_quota);
+        target.limits.max_cloned_bytes = Some(call_quota);
         let lifetime = MemoryLifetime::Turn {
             first: MemoryPlanPoint::new(0),
             last: MemoryPlanPoint::new(1),
