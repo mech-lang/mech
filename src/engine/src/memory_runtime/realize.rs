@@ -145,3 +145,35 @@ fn program_max_concurrent_leases(plan: &ProgramMemoryPlan) -> MemoryRuntimeResul
         })
         .map(|count| count.unwrap_or(0))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn metadata_without_an_external_budget_is_reserved_once_and_released() {
+        for bytes in [0, 123] {
+            let demand = mech_core::ResourceDemand {
+                persistent_bytes: bytes,
+                ..Default::default()
+            };
+            let plan = ProgramMemoryPlan {
+                metadata_demand: demand,
+                peak: demand,
+                ..Default::default()
+            };
+            let memory = ManagedProgramMemory::realize_with_memory_budget(&plan, None).unwrap();
+            let account = memory._metadata_reservation.as_ref().map(|reservation| {
+                assert_eq!(reservation.capacity_bytes(), bytes);
+                let account = reservation.budget();
+                assert_eq!(account.used_bytes(), bytes);
+                account
+            });
+            assert_eq!(account.is_some(), bytes != 0);
+            memory.close().unwrap();
+            if let Some(account) = account {
+                assert_eq!(account.used_bytes(), 0);
+            }
+        }
+    }
+}
