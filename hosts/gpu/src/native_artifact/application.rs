@@ -60,6 +60,60 @@ fn json_string(value: &str) -> String {
     serde_json::to_string(value).expect("string serialization cannot fail")
 }
 
+/// Cargo ignores a dependency workspace's patch table. Retain the actual
+/// workspace's local resolution in the generated standalone workspace too.
+fn workspace_resolution_patches(workspace: &Path) -> Result<String, NativeApplicationError> {
+    use std::fmt::Write;
+    let source = fs::read_to_string(workspace.join("Cargo.toml"))?;
+    let manifest = source
+        .parse::<toml_edit::DocumentMut>()
+        .map_err(|error| NativeApplicationError::Encoding(error.to_string()))?;
+    let Some(patches) = manifest
+        .get("patch")
+        .and_then(|patch| patch.get("crates-io"))
+    else {
+        return Ok(String::new());
+    };
+    let patches = patches
+        .as_table_like()
+        .ok_or(NativeApplicationError::Invalid(
+            "workspace registry overrides must be a table",
+        ))?;
+    let mut result = String::from("\n[patch.crates-io]\n");
+    for (package, specification) in patches.iter() {
+        let table = specification
+            .as_table_like()
+            .ok_or(NativeApplicationError::Invalid(
+                "workspace registry override must be a local path",
+            ))?;
+        if table.len() != 1 {
+            return Err(NativeApplicationError::Invalid(
+                "workspace registry override must contain only a local path",
+            ));
+        }
+        let relative = table.get("path").and_then(toml_edit::Item::as_str).ok_or(
+            NativeApplicationError::Invalid("workspace registry override has no local path"),
+        )?;
+        let path = workspace.join(relative).canonicalize()?;
+        if !path.starts_with(workspace) || !path.join("Cargo.toml").is_file() {
+            return Err(NativeApplicationError::Invalid(
+                "workspace registry override is outside the pinned workspace",
+            ));
+        }
+        let path = path.to_str().ok_or(NativeApplicationError::Invalid(
+            "workspace registry override path is not Unicode",
+        ))?;
+        writeln!(
+            &mut result,
+            "{} = {{ path = {} }}",
+            json_string(package),
+            json_string(path)
+        )
+        .expect("String formatting cannot fail");
+    }
+    Ok(result)
+}
+
 /// Derives a real private-witness plan from `artifact` and the actual catalog,
 /// emits its Object, and creates a Rust runtime-only linked application.
 /// No source interpreter, resident executor, JIT or compiler runs in that app.
@@ -108,7 +162,7 @@ pub fn generate_linked_application(
     let main = include_str!("templates/linked_main.rs.in")
         .replace("@IDENTITY_SYMBOL@", object.identity().symbol())
         .replace("@BYTECODE_SHA256@", &digest(&bytecode));
-    let cargo = format!(
+    let mut cargo = format!(
         r#"[package]
 name = {name}
 version = "0.0.0"
@@ -135,6 +189,7 @@ incremental = false
         gpu = json_string(&format!("{workspace_text}/hosts/gpu")),
         stdlib = json_string(&format!("{workspace_text}/src/stdlib")),
     );
+    cargo.push_str(&workspace_resolution_patches(&workspace)?);
     let mut files = BTreeMap::<String, Vec<u8>>::from([
         ("application.mec".into(), source_provenance.to_vec()),
         ("program.mecb".into(), bytecode),

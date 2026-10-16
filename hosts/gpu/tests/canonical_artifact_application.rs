@@ -615,6 +615,16 @@ fn feature_closure(metadata: &Value) -> Vec<Value> {
         }
         let package = packages[id];
         let name = package["name"].as_str().unwrap();
+        if name.starts_with("mech-") {
+            assert!(package["source"].is_null(), "registry Mech crate {name}");
+            let manifest = Path::new(package["manifest_path"].as_str().unwrap())
+                .canonicalize()
+                .unwrap();
+            assert!(
+                manifest.starts_with(workspace().canonicalize().unwrap()),
+                "Mech crate {name} is outside the pinned workspace"
+            );
+        }
         assert_ne!(name, "mech-syntax");
         assert!(
             !name.starts_with("cranelift-"),

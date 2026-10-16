@@ -13,7 +13,7 @@ rust-version = "1.92"
 [features]
 default = []
 canonical-native-runtime = ["mech-engine/native-artifact"]
-canonical-native = ["canonical-native-runtime", "aot"]
+canonical-native = ["canonical-native-runtime", "aot", "dep:toml_edit"]
 native-build = ["sequence-cli", "fused-cli"]
 system-gmp = ["dep:gmp-mpfr-sys", "gmp-mpfr-sys/use-system-libs"]
 sequence-cli = ["aot", "dep:hashbrown", "dep:fxhash", "dep:rayon", "dep:memchr", "dep:regex", "dep:rug", "dep:mech-stdlib", "mech-stdlib/native-sequence"]
@@ -70,6 +70,7 @@ web-time = "1.1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sha2 = { version = "0.11.0", default-features = false }
+toml_edit = { version = "0.23", optional = true }
 wgpu = { version = "0.20.1", optional = true }
 wide = "0.7.33"
 cranelift-codegen = { version = "=0.131.3", optional = true }
