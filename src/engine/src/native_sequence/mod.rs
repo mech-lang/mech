@@ -8,8 +8,8 @@ pub mod grid;
 mod matrix;
 
 use mech_syntax::document::{
-    AnyCallArgumentSyntax, AstNode, DocumentId, FunctionCallSyntax, ParseConfig, Revision,
-    StringLiteralSyntax, SyntaxKind, SyntaxNode, TextSnapshot, VariableDefineSyntax,
+    AnyCallArgumentSyntax, AstNode, CanonicalOperator, DocumentId, FunctionCallSyntax, OperatorSyntax,
+    ParseConfig, Revision, StringLiteralSyntax, SyntaxKind, SyntaxNode, TextSnapshot, VariableDefineSyntax,
     parse_canonical_document,
 };
 use serde::{Deserialize, Serialize};
@@ -640,11 +640,13 @@ pub fn compile_parsed(
                 for pair in children[1..].chunks(2) {
                     // Canonical operation identity owns aliases such as ×/÷;
                     // source spelling must not select a different native path.
-                    let mut op = match pair[0].kind() {
-                        SyntaxKind::MultiplyOperation => 20,
-                        SyntaxKind::DivideOperation => 21,
-                        SyntaxKind::AddOperation => 22,
-                        SyntaxKind::SubtractOperation => 23,
+                    let mut op = match OperatorSyntax::cast(pair[0].clone())
+                        .and_then(|operator| operator.semantic())
+                    {
+                        Some(CanonicalOperator::Multiply) => 20,
+                        Some(CanonicalOperator::Divide) => 21,
+                        Some(CanonicalOperator::Add) => 22,
+                        Some(CanonicalOperator::Subtract) => 23,
                         _ => return Err("unsupported numeric operator".into()),
                     };
                     let mut rhs = lower(
