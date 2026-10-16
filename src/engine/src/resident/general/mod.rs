@@ -4750,7 +4750,7 @@ fn closed_access_preparation_meter(
     analysis: &ClosedActivationAnalysisContext,
 ) -> Result<Option<super::budget::ResidentBudgetMeter>, ResidentActivationError> {
     let mut meter = analysis.construction.preparation_meter();
-    if super::budget::measure_canonical_value_footprint(
+    if super::budget::measure_borrowed_canonical_value_footprint(
         &mut meter,
         &source.value,
         artifact.schemas(),
@@ -4761,7 +4761,7 @@ fn closed_access_preparation_meter(
     }
     for selector in selectors {
         if closed_operand_resident_kind(artifact, selector, facts)? == ResidentValueKind::Snapshot
-            && super::budget::measure_canonical_value_footprint(
+            && super::budget::measure_borrowed_canonical_value_footprint(
                 &mut meter,
                 &selector.value,
                 artifact.schemas(),
@@ -4785,7 +4785,7 @@ fn closed_copy_preparation(
     let mut meter = analysis.construction.preparation_meter();
     let mut finalization = 0_u64;
     for operand in operands {
-        if super::budget::measure_canonical_value_footprint(
+        if super::budget::measure_borrowed_canonical_value_footprint(
             &mut meter,
             &operand.value,
             artifact.schemas(),
@@ -4808,7 +4808,24 @@ fn closed_copy_preparation(
             finalization = work;
         }
     }
-    Ok(Some((meter.estimate().comparison_work(), finalization)))
+    let measured = meter.estimate();
+    let Some(non_comparison_work) = measured
+        .compute_work()
+        .checked_sub(measured.comparison_work())
+    else {
+        return Ok(None);
+    };
+    // The caller already admits the returned comparisons as both compute and
+    // comparison work. Preserve the independently charged metadata/encoding
+    // preparation as well, without counting those comparisons twice.
+    if non_comparison_work > 0
+        && !analysis
+            .construction
+            .charge_compute_chunk(0, non_comparison_work, 1)
+    {
+        return Ok(None);
+    }
+    Ok(Some((measured.comparison_work(), finalization)))
 }
 
 fn closed_publication_comparison_work_measured(
@@ -12876,6 +12893,7 @@ fn build_plan(
                     steps: Box::new([]),
                     locals: Box::new([]),
                     schema_reads: Box::new([]),
+                    invariant_text_sources: Box::new([]),
                     yield_value: ResidentReadLocation::Scratch(output.region),
                     yield_schema: output.schema,
                 },
@@ -13749,6 +13767,18 @@ fn build_plan(
                 &schemas,
                 &structural_projections,
             );
+        }
+    }
+    // Static binding/write proof only; no String bytes are read or indexed.
+    for index in 0..steps.len() {
+        if let ActivatedTurnStep::Comprehension(control) = &steps[index] {
+            let sources = super::text_index::qualify_sources(&steps, &reads, control);
+            let ActivatedTurnStep::Comprehension(control) = &mut steps[index] else {
+                unreachable!()
+            };
+            std::sync::Arc::get_mut(control)
+                .expect("unpublished collection plan")
+                .invariant_text_sources = sources;
         }
     }
     let plan = ActivatedPlan {
@@ -18163,6 +18193,104 @@ mod shape_fact_tests {
         .unwrap()
     }
 
+    // Preserve denial-before-materialization under the resource actually
+    // consumed. Payload size alone no longer predicts comparison exhaustion
+    // when finalization metadata/encoding is admitted as compute.
+    fn assert_closed_copy_work_boundaries(
+        artifact: &ProgramArtifact,
+        admitted: &ClosedActivationAnalysisContext,
+        expected: &Value,
+        label: &str,
+    ) {
+        let source = ArtifactSource::Slot(CellSlotId::new(0));
+        let encoded_payload =
+            u64::try_from(expected.canonical_payload_len(artifact.schemas()).unwrap()).unwrap();
+        assert!(
+            admitted.construction.compute_work.get() >= encoded_payload,
+            "{label}: actual copied/encoded payload must be funded independently of measured boundary"
+        );
+        for (resource, required, limit) in [
+            (
+                "compute",
+                admitted.construction.compute_work.get(),
+                mech_core::RESIDENT_MAX_COMPUTE_WORK,
+            ),
+            (
+                "comparison",
+                admitted.construction.comparison_work.get(),
+                mech_core::RESIDENT_MAX_COMPARISON_WORK,
+            ),
+        ] {
+            if required == 0 {
+                continue;
+            }
+            let configure = |remaining| {
+                let analysis = ClosedActivationAnalysisContext::default();
+                let consumed = limit.checked_sub(remaining).unwrap();
+                match resource {
+                    "compute" => analysis.construction.compute_work.set(consumed),
+                    "comparison" => analysis.construction.comparison_work.set(consumed),
+                    _ => unreachable!(),
+                }
+                analysis
+            };
+            let denied = configure(required - 1);
+            CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.set(0));
+            CLOSED_OPERAND_DRAFT_ENTRIES.with(|entries| entries.set(0));
+            assert!(
+                constant_comparison_operand(
+                    artifact,
+                    NodeId::new(0),
+                    source,
+                    &ActivationFacts::default(),
+                    &denied,
+                    false,
+                )
+                .unwrap()
+                .is_none(),
+                "{label}: {resource} must be finite"
+            );
+            assert_eq!(
+                CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.get()),
+                0,
+                "{label}: publication draft before {resource} admission"
+            );
+            assert_eq!(
+                CLOSED_OPERAND_DRAFT_ENTRIES.with(|entries| entries.get()),
+                0,
+                "{label}: whole-source draft before {resource} admission"
+            );
+            assert!(
+                !denied.values.borrow().contains_key(&source),
+                "{label}: refused result entered usable cache"
+            );
+
+            let funded = configure(required);
+            let result = constant_comparison_operand(
+                artifact,
+                NodeId::new(0),
+                source,
+                &ActivationFacts::default(),
+                &funded,
+                false,
+            )
+            .unwrap()
+            .unwrap_or_else(|| panic!("{label}: exact funded {resource} retry"));
+            assert!(
+                result
+                    .value
+                    .snapshot_eq(artifact.schemas(), expected, artifact.schemas())
+                    .unwrap()
+            );
+            let consumed = match resource {
+                "compute" => funded.construction.compute_work.get(),
+                "comparison" => funded.construction.comparison_work.get(),
+                _ => unreachable!(),
+            };
+            assert_eq!(consumed, limit, "{label}: exact {resource} boundary");
+        }
+    }
+
     #[test]
     fn snapshot_copy_preparation_matches_resident_cumulative_work() {
         let tuple = SchemaBody::Tuple(
@@ -18220,8 +18348,8 @@ mod shape_fact_tests {
                 );
                 let (inputs, output) = match case {
                     "literal" | "encoded-literal" => (
-                        // Each input fits independently. Input scan plus the
-                        // canonicalization preflight exceeds the shared limit.
+                        // Retain the original payload-size fixtures. Metadata and
+                        // encoding use compute; real comparisons stay separate.
                         vec![(
                             tuple.clone(),
                             cell(
@@ -18302,7 +18430,7 @@ mod shape_fact_tests {
                         false,
                     )
                     .unwrap();
-                    if large {
+                    if folded.is_none() {
                         assert_eq!(
                             CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.get()),
                             0,
@@ -18314,35 +18442,17 @@ mod shape_fact_tests {
                             "whole source copy before refusal: {case}"
                         );
                     } else {
-                        let insufficient = ClosedActivationAnalysisContext::default();
-                        insufficient
-                            .construction
-                            .comparison_work
-                            .set(mech_core::RESIDENT_MAX_COMPARISON_WORK);
-                        CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.set(0));
-                        CLOSED_OPERAND_DRAFT_ENTRIES.with(|entries| entries.set(0));
+                        assert_closed_copy_work_boundaries(
+                            artifact,
+                            &analysis,
+                            &folded.as_ref().unwrap().value,
+                            case,
+                        );
+                    }
+                    if !large {
                         assert!(
-                            constant_comparison_operand(
-                                artifact,
-                                NodeId::new(0),
-                                ArtifactSource::Slot(CellSlotId::new(0)),
-                                &ActivationFacts::default(),
-                                &insufficient,
-                                false
-                            )
-                            .unwrap()
-                            .is_none(),
-                            "exhausted preparation: {case}"
-                        );
-                        assert_eq!(
-                            CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.get()),
-                            0,
-                            "payload copy after exhaustion: {case}"
-                        );
-                        assert_eq!(
-                            CLOSED_OPERAND_DRAFT_ENTRIES.with(|entries| entries.get()),
-                            0,
-                            "whole source copy after exhaustion: {case}"
+                            folded.is_some(),
+                            "small fixture must remain admitted: {case}"
                         );
                     }
                     let mut catalog = mech_core::FunctionCatalogBuilder::new();
@@ -18370,13 +18480,8 @@ mod shape_fact_tests {
                     let actual = instance.turn(&[]);
                     assert_eq!(
                         actual.is_ok(),
-                        !large,
-                        "resident {module}/{name}: {actual:?}"
-                    );
-                    assert_eq!(
                         folded.is_some(),
-                        !large,
-                        "analysis must share cumulative preparation for {module}/{name}"
+                        "analysis must share resident cumulative preparation for {module}/{name}: {actual:?}"
                     );
                     if let Some(folded) = folded {
                         assert!(
@@ -18449,12 +18554,13 @@ mod shape_fact_tests {
                 .unwrap();
                 for artifact in [&artifact, &decoded] {
                     CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.set(0));
+                    let analysis = ClosedActivationAnalysisContext::default();
                     let folded = constant_comparison_operand(
                         artifact,
                         NodeId::new(0),
                         ArtifactSource::Slot(CellSlotId::new(0)),
                         &ActivationFacts::default(),
-                        &ClosedActivationAnalysisContext::default(),
+                        &analysis,
                         false,
                     )
                     .unwrap();
@@ -18486,13 +18592,21 @@ mod shape_fact_tests {
                     );
                     if let Some(actual) = actual {
                         admitted += 1;
+                        let folded = folded.unwrap();
+                        assert!(
+                            analysis.construction.comparison_work.get() >= bytes as u64 + 1,
+                            "real common-prefix key comparisons must remain charged"
+                        );
+                        assert_closed_copy_work_boundaries(
+                            artifact,
+                            &analysis,
+                            &folded.value,
+                            operation,
+                        );
+                        refused += 1; // The tight finite boundary above refused before drafts.
                         assert!(
                             actual
-                                .snapshot_eq(
-                                    artifact.schemas(),
-                                    &folded.unwrap().value,
-                                    artifact.schemas()
-                                )
+                                .snapshot_eq(artifact.schemas(), &folded.value, artifact.schemas())
                                 .unwrap()
                         );
                     } else {
@@ -18535,6 +18649,7 @@ mod shape_fact_tests {
                 .into_boxed_slice(),
             )
         };
+        let mut previous_work = None;
         for repeats in [2, 3] {
             let artifact = closed_copy_artifact(
                 "access",
@@ -18567,70 +18682,74 @@ mod shape_fact_tests {
                 false,
             )
             .unwrap();
+            let operand =
+                operand.expect("original gathers now fit: copying is compute, not key comparison");
+            let work = analysis.construction.compute_work.get();
+            if let Some(previous) = previous_work {
+                assert!(
+                    work.checked_sub(previous).unwrap() >= 11_000,
+                    "every repeated selection must fund at least its 11,000 copied String bytes"
+                );
+            }
+            previous_work = Some(work);
+            let before_compute = work;
+            let before_comparison = analysis.construction.comparison_work.get();
+            let copies = CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.get());
+            let reused = constant_comparison_operand(
+                &artifact,
+                NodeId::new(0),
+                source,
+                &ActivationFacts::default(),
+                &analysis,
+                false,
+            )
+            .unwrap()
+            .unwrap();
+            assert_eq!(before_compute, analysis.construction.compute_work.get());
             assert_eq!(
-                operand.is_some(),
-                repeats == 2,
-                "each selected occurrence must fit cumulative preparation"
+                before_comparison,
+                analysis.construction.comparison_work.get()
             );
-            if repeats == 2 {
-                let before = analysis.construction.comparison_work.get();
-                let copies = CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.get());
-                let reused = constant_comparison_operand(
-                    &artifact,
+            assert_eq!(
+                copies,
+                CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.get())
+            );
+            assert!(
+                operand
+                    .value
+                    .snapshot_eq(artifact.schemas(), &reused.value, artifact.schemas())
+                    .unwrap()
+            );
+            assert_closed_copy_work_boundaries(
+                &artifact,
+                &analysis,
+                &operand.value,
+                "repeated gather",
+            );
+            let retry = closed_copy_artifact(
+                "access",
+                "scalar",
+                vec![
+                    (
+                        matrix(1, tuple.clone()),
+                        ValueDataDraft::Matrix(vec![cell(1, 70)].into_boxed_slice()),
+                    ),
+                    (SchemaBody::Index, ValueDataDraft::Index(1)),
+                ],
+                tuple.clone(),
+            );
+            assert!(
+                constant_comparison_operand(
+                    &retry,
                     NodeId::new(0),
                     source,
                     &ActivationFacts::default(),
-                    &analysis,
+                    &ClosedActivationAnalysisContext::default(),
                     false,
                 )
                 .unwrap()
-                .unwrap();
-                assert_eq!(before, analysis.construction.comparison_work.get());
-                assert_eq!(
-                    copies,
-                    CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.get())
-                );
-                assert!(
-                    operand
-                        .unwrap()
-                        .value
-                        .snapshot_eq(artifact.schemas(), &reused.value, artifact.schemas())
-                        .unwrap()
-                );
-            } else {
-                assert!(
-                    !analysis.values.borrow().contains_key(&source),
-                    "a refused result must not enter the usable cache"
-                );
-                assert_eq!(
-                    CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.get()),
-                    0
-                );
-                let retry = closed_copy_artifact(
-                    "access",
-                    "scalar",
-                    vec![
-                        (
-                            matrix(1, tuple.clone()),
-                            ValueDataDraft::Matrix(vec![cell(1, 70)].into_boxed_slice()),
-                        ),
-                        (SchemaBody::Index, ValueDataDraft::Index(1)),
-                    ],
-                    tuple.clone(),
-                );
-                assert!(
-                    constant_comparison_operand(
-                        &retry,
-                        NodeId::new(0),
-                        source,
-                        &ActivationFacts::default(),
-                        &ClosedActivationAnalysisContext::default(),
-                        false
-                    )
-                    .unwrap()
-                    .is_some()
-                );
-            }
+                .is_some()
+            );
             let mut catalog = mech_core::FunctionCatalogBuilder::new();
             crate::install_intrinsic_resident(&mut catalog).unwrap();
             match activate(
@@ -18639,11 +18758,13 @@ mod shape_fact_tests {
                 &catalog.build().unwrap(),
                 &ActivationFacts::default(),
             ) {
-                Ok(mut instance) => assert_eq!(instance.turn(&[]).is_ok(), repeats == 2),
+                Ok(mut instance) => {
+                    instance.turn(&[]).unwrap();
+                }
                 Err(ResidentActivationError::ActivationKernelExecution {
                     error: ResidentKernelError::InvalidShape,
                     ..
-                }) if repeats == 3 => {}
+                }) => panic!("original repeated gather must fit its actual work"),
                 Err(error) => panic!("unsupported repeated-access fixture: {error:?}"),
             }
         }
@@ -23940,6 +24061,7 @@ fn bind_control_block(
                             steps: Box::new([]),
                             locals: Box::new([]),
                             schema_reads: Box::new([]),
+                            invariant_text_sources: Box::new([]),
                             yield_value: ResidentReadLocation::Scratch(output.region),
                             yield_schema: output.schema,
                         },

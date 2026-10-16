@@ -31,6 +31,8 @@ pub(crate) mod set;
 pub(crate) mod table;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod text;
+#[cfg(feature = "resident-artifact")]
+pub(crate) mod text_index;
 #[cfg(all(feature = "resident-artifact", feature = "pure_text"))]
 pub(crate) mod text_ops;
 mod workspace;

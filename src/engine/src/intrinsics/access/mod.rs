@@ -205,6 +205,9 @@ pub(crate) fn install_native_plan(builder: &mut FunctionCatalogBuilder) -> MResu
     Ok(())
 }
 
+#[cfg(feature = "semantic-compiler")]
+mod managed_string;
+
 pub struct AccessScalar {}
 
 #[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
@@ -270,55 +273,10 @@ impl MechFunctionImpl for CanonicalAccess {
         if !self.output_requires_canonical_builder() {
             return Ok(None);
         }
-        if matches!(self.source.closed_schema_body()?, SchemaBody::String)
-            && self.selectors.len() == 1
-        {
-            let snapshot = self.source.snapshot()?;
-            let ValueData::String(value) = snapshot.data() else {
-                unreachable!("String schema retains String data")
-            };
-            let graphemes = grapheme::Graphemes::from_usvs(value)
-                .iter()
-                .collect::<Vec<_>>();
-            let selected = canonical_indices(&self.selectors[0], graphemes.len())?;
-            let overflow = || {
-                MechError::new(
-                    GenericError {
-                        msg: "string selection footprint exceeds u64".to_owned(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()
-            };
-            // Gathers may repeat a grapheme, so the source payload alone is
-            // not an upper bound. Admit the selected UTF-8 payload before
-            // constructing the String, including every repeated occurrence.
-            let payload_bytes = selected.iter().try_fold(0_u64, |bytes, &index| {
-                u64::try_from(graphemes[index].as_str().len())
-                    .ok()
-                    .and_then(|length| bytes.checked_add(length))
-                    .ok_or_else(overflow)
-            })?;
-            let shape_parameter_count = self.output.shape().parameter_values().len();
-            let footprint = mech_core::snapshot::prospective_string_value_footprint(
-                shape_parameter_count,
-                false,
-                1,
-                payload_bytes,
-            )
-            .map_err(|_| overflow())?;
-            return Ok(Some(
-                vec![CurrentMemoryFootprint {
-                    logical_elements: 1,
-                    payload_bytes: footprint.retained_bytes,
-                    encoded_bytes: footprint.encoded_bytes,
-                    retained_nodes: footprint.node_count,
-                    schema_bytes: self.output.current_memory_footprint()?.schema_bytes,
-                    shape_parameter_count: shape_parameter_count as u64,
-                    ..CurrentMemoryFootprint::default()
-                }]
-                .into_boxed_slice(),
-            ));
+        if self.is_managed_string_selection() {
+            // Exact payload discovery belongs to admitted execution. The
+            // request-aware hook below uses current input witnesses instead.
+            return Ok(None);
         }
         let SchemaBody::Matrix { element, .. } = self.source.closed_schema_body()? else {
             // Selecting one member or column cannot retain more canonical
@@ -423,6 +381,26 @@ impl MechFunctionImpl for CanonicalAccess {
             selected_count,
         )?;
         Ok(Some(vec![footprint].into_boxed_slice()))
+    }
+
+    fn planned_output_footprints_with_request(
+        &self,
+        request: &mech_core::ExecutionDemandPlanningRequest<'_>,
+    ) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        if self.is_managed_string_selection() {
+            return self.managed_string_output_footprints(request);
+        }
+        self.planned_output_footprints()
+    }
+
+    fn planned_execution_demand(
+        &self,
+        request: &mech_core::ExecutionDemandPlanningRequest<'_>,
+    ) -> MResult<mech_core::PlannedExecutionDemand> {
+        if self.is_managed_string_selection() {
+            return self.managed_string_execution_demand(request);
+        }
+        Ok(mech_core::PlannedExecutionDemand::default())
     }
 
     fn solve_managed(
@@ -562,6 +540,9 @@ impl CanonicalAccess {
     }
 
     fn stage_managed(&self, frame: &mut mech_core::KernelMemoryFrame<'_>) -> MResult<()> {
+        if self.is_managed_string_selection() {
+            return self.stage_managed_string(frame);
+        }
         let footprint = self.prospective_output_footprint()?;
         frame.with_admitted_canonical_output(&self.output, footprint, |_, construction| {
             let next = construction.try_rebind_snapshot_candidate_with(&self.output, || {
@@ -952,7 +933,11 @@ fn canonical_access(
         SchemaBody::Matrix { .. } => "MatrixAccessCanonical",
         _ => fallback_name,
     };
-    let output = canonical_access_result(&source, &selectors)?;
+    let output = if matches!(source.closed_schema_body()?, SchemaBody::String) {
+        managed_string::empty_seed(&selectors)?
+    } else {
+        canonical_access_result(&source, &selectors)?
+    };
     let inputs = std::iter::once(source.clone())
         .chain(selectors.iter().filter_map(|selector| match selector {
             CanonicalAccessSelector::Cell(cell) => Some(cell.clone()),
@@ -1182,10 +1167,16 @@ impl CanonicalFunctionSpecializer for AccessColumn {
 mod canonical_aggregate_access_tests {
     use super::*;
 
-    fn managed_scalar_access(source: ValueCell, selector: ValueCell) -> SpecializedFunction {
-        let output =
-            canonical_access_result(&source, &[CanonicalAccessSelector::Cell(selector.clone())])
-                .unwrap();
+    pub(super) fn managed_scalar_access(
+        source: ValueCell,
+        selector: ValueCell,
+    ) -> SpecializedFunction {
+        let selectors = [CanonicalAccessSelector::Cell(selector.clone())];
+        let output = if matches!(source.closed_schema_body().unwrap(), SchemaBody::String) {
+            managed_string::empty_seed(&selectors).unwrap()
+        } else {
+            canonical_access_result(&source, &selectors).unwrap()
+        };
         let invocation =
             FunctionInvocation::binary(output.clone(), source.clone(), selector.clone());
         crate::test_support::managed_implementation_instance(
@@ -1203,7 +1194,7 @@ mod canonical_aggregate_access_tests {
         .unwrap()
     }
 
-    fn assert_string(value: &ValueCell, expected: &str) {
+    pub(super) fn assert_string(value: &ValueCell, expected: &str) {
         assert!(matches!(
             value.snapshot().unwrap().data(),
             ValueData::String(value) if value.as_ref() == expected

@@ -535,6 +535,59 @@ fn enum_payload_draft(
     })
 }
 
+// Only these trees have draft container widths already bounded by their
+// canonical ValueData footprint. Packed Matrix/Table and field-label drafts
+// keep the existing conservative route until a separate expansion bound is
+// available; this predicate authorizes no new value or operation kind.
+fn enum_payload_has_equivalent_draft_storage(
+    body: &SchemaBody,
+    depth: usize,
+    meter: &mut super::budget::ResidentBudgetMeter,
+) -> Result<bool, ResidentKernelError> {
+    meter.charge_compute_work(64)?;
+    if depth >= 32 || core::mem::size_of::<ValueDataDraft>() > core::mem::size_of::<ValueData>() {
+        // Canonical inline slots only bound draft slots on targets where the
+        // draft representation is no wider. Otherwise retain the old route.
+        return Ok(false);
+    }
+    match body {
+        SchemaBody::Bool
+        | SchemaBody::Id
+        | SchemaBody::Index
+        | SchemaBody::Atom(_)
+        | SchemaBody::String
+        | SchemaBody::UnsignedInteger(_)
+        | SchemaBody::SignedInteger(_)
+        | SchemaBody::FloatingPoint(_)
+        | SchemaBody::Complex(_)
+        | SchemaBody::Rational64 => Ok(true),
+        SchemaBody::Tuple(items) => {
+            for item in items {
+                if !enum_payload_has_equivalent_draft_storage(item, depth + 1, meter)? {
+                    return Ok(false);
+                }
+            }
+            Ok(true)
+        }
+        SchemaBody::Option(item) => {
+            enum_payload_has_equivalent_draft_storage(item, depth + 1, meter)
+        }
+        SchemaBody::Enum { variants, .. } => {
+            for variant in variants {
+                // Payload-free variants still require a header inspection.
+                meter.charge_compute_work(64)?;
+                if let Some(item) = variant.payload.as_ref()
+                    && !enum_payload_has_equivalent_draft_storage(item, depth + 1, meter)?
+                {
+                    return Ok(false);
+                }
+            }
+            Ok(true)
+        }
+        _ => Ok(false),
+    }
+}
+
 fn enum_pack(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -565,8 +618,15 @@ fn enum_pack(
     let mut meter = super::budget::ResidentBudgetMeter::default();
     let mut payload_plan = plan.payload.clone();
     payload_plan.dynamic = dynamic;
+    let borrowed_inventory = if dynamic {
+        false
+    } else if let Some(schema) = plan.schemas.get(payload_plan.source.schema_id) {
+        enum_payload_has_equivalent_draft_storage(schema.body(), 0, &mut meter)?
+    } else {
+        false
+    };
     let (payload_bytes, payload_nodes, payload_encoded_bytes) =
-        resident_child_clone_cost(&mut meter, payload_input, &payload_plan)?;
+        resident_child_clone_cost(&mut meter, payload_input, &payload_plan, borrowed_inventory)?;
     let finalization_work = match payload_input {
         ResidentValueRef::Snapshot([Some(value)]) => {
             let schema = plan
@@ -614,6 +674,9 @@ fn enum_pack(
         meter.charge_comparison_work(equality_work)?;
     }
     meter.charge_compute_work(output_nodes)?;
+    if borrowed_inventory {
+        meter.charge_compute_work(super::budget::checked_u64(payload_bytes)?)?;
+    }
     let measured = meter.estimate();
     let draft_bytes = core::mem::size_of::<ValueDataDraft>()
         .checked_add(payload_bytes)
@@ -802,6 +865,7 @@ fn resident_child_clone_cost(
     meter: &mut super::budget::ResidentBudgetMeter,
     input: ResidentValueRef<'_>,
     plan: &CompositeChildPlan,
+    borrowed_inventory: bool,
 ) -> Result<(usize, usize, u64), ResidentKernelError> {
     let expected_len = if plan.input_is_matrix {
         if plan.snapshot_backed_matrix {
@@ -868,8 +932,13 @@ fn resident_child_clone_cost(
             for value in values {
                 let value = value.as_ref().ok_or(ResidentKernelError::InvalidInput)?;
                 let schemas = value.schemas().ok_or(ResidentKernelError::InvalidInput)?;
-                let footprint =
-                    super::budget::measure_canonical_value_footprint(meter, value, &schemas)?;
+                let footprint = if borrowed_inventory {
+                    super::budget::measure_borrowed_canonical_value_footprint(
+                        meter, value, &schemas,
+                    )?
+                } else {
+                    super::budget::measure_canonical_value_footprint(meter, value, &schemas)?
+                };
                 encoded = encoded
                     .checked_add(footprint.encoded_bytes)
                     .ok_or(ResidentKernelError::InvalidShape)?;
@@ -1021,6 +1090,7 @@ fn composite_pack(
             &mut footprint_meter,
             inputs.get(index).ok_or(ResidentKernelError::InvalidInput)?,
             child,
+            true,
         )?;
         output_encoded_bytes = output_encoded_bytes
             .checked_add(encoded_bytes)
@@ -1167,16 +1237,19 @@ fn composite_pack(
     .into_iter()
     .try_fold(0usize, |total, bytes| total.checked_add(bytes))
     .ok_or(ResidentKernelError::InvalidShape)?;
+    let copy_and_child_work = super::budget::checked_u64(cloned_bytes)?
+        .checked_add(
+            super::budget::checked_u64(plan.children.len())?
+                .checked_mul(2)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+        )
+        .ok_or(ResidentKernelError::InvalidShape)?;
     let admitted_children = super::budget::PreparedKernel::new(
         plan.children.len(),
         super::budget::resident_cost! {
             comparison_work: measured.comparison_work(),
             compute_work: measured.compute_work()
-                .checked_add(
-                    super::budget::checked_u64(plan.children.len())?
-                        .checked_mul(2)
-                        .ok_or(ResidentKernelError::InvalidShape)?,
-                )
+                .checked_add(copy_and_child_work)
                 .ok_or(ResidentKernelError::InvalidShape)?,
             output_elements: plan.children.len(),
             output_bytes: output_bytes,
@@ -1247,6 +1320,73 @@ fn composite_pack(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn retention_enum_draft_route_excludes_unbounded_container_expansion() {
+        let scalar = SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64);
+        let eligible = |body: &SchemaBody| {
+            enum_payload_has_equivalent_draft_storage(
+                body,
+                0,
+                &mut super::super::budget::ResidentBudgetMeter::for_closed_analysis(1_000_000, 0),
+            )
+            .unwrap()
+        };
+        assert_eq!(
+            eligible(&SchemaBody::Tuple(
+                vec![
+                    scalar.clone(),
+                    SchemaBody::Option(Box::new(SchemaBody::String))
+                ]
+                .into_boxed_slice()
+            )),
+            core::mem::size_of::<ValueDataDraft>() <= core::mem::size_of::<ValueData>()
+        );
+        assert!(!eligible(&SchemaBody::Matrix {
+            element: Box::new(scalar.clone()),
+            dimensions: Box::new([
+                mech_core::DimensionExpr::Constant(1),
+                mech_core::DimensionExpr::Constant(512),
+            ]),
+        }));
+        assert!(!eligible(&SchemaBody::Record(
+            vec![mech_core::SchemaField {
+                name: "label".into(),
+                schema: scalar
+            }]
+            .into_boxed_slice()
+        )));
+        assert!(!eligible(&SchemaBody::Dynamic));
+    }
+
+    #[test]
+    fn retention_enum_eligibility_schema_walk_is_finite() {
+        let wide = SchemaBody::Tuple(
+            vec![SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64); 1_024]
+                .into_boxed_slice(),
+        );
+        let mut denied = super::super::budget::ResidentBudgetMeter::for_closed_analysis(4_096, 0);
+        if core::mem::size_of::<ValueDataDraft>() <= core::mem::size_of::<ValueData>() {
+            assert!(enum_payload_has_equivalent_draft_storage(&wide, 0, &mut denied).is_err());
+            let mut retry =
+                super::super::budget::ResidentBudgetMeter::for_closed_analysis(1_000_000, 0);
+            assert_eq!(
+                enum_payload_has_equivalent_draft_storage(&wide, 0, &mut retry),
+                Ok(true)
+            );
+            assert_eq!(retry.estimate().compute_work(), 1_025 * 64);
+            assert_eq!(retry.estimate().comparison_work(), 0);
+        } else {
+            // The traversal is unreachable when the target representation
+            // cannot prove equivalent draft widths: reject at the root.
+            assert_eq!(
+                enum_payload_has_equivalent_draft_storage(&wide, 0, &mut denied),
+                Ok(false)
+            );
+            assert_eq!(denied.estimate().compute_work(), 64);
+        }
+    }
+
     use mech_core::ValueDataDraft;
 
     struct Inputs<'a>(&'a [ResidentValueRef<'a>]);

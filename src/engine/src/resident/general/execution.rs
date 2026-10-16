@@ -538,9 +538,14 @@ impl ReactiveInstance {
         live_nodes: u64,
         execute: impl FnOnce(&mut Self) -> Result<T, ResidentExecutionError>,
     ) -> Result<T, ResidentExecutionError> {
+        let _index_owner = super::super::text_index::OwnerGuard::enter(
+            self._managed_memory.domain().id(),
+            self.memory_budget(),
+        );
         let index = node_index.get() as usize;
         if live_bytes == 0
             && live_nodes == 0
+            && !super::super::text_index::has_index_scope()
             && let Some(cached) = self.workspace.fixed_turn_plans[index].clone()
         {
             // Reuse the certified base plan, not a materialization permit.
@@ -664,8 +669,10 @@ impl ReactiveInstance {
                 error: ResidentKernelError::InvalidShape,
             });
         }
-        let cacheable =
-            live_bytes == 0 && live_nodes == 0 && super::live::has_invariant_memory_facts(call);
+        let cacheable = live_bytes == 0
+            && live_nodes == 0
+            && !super::super::text_index::has_index_scope()
+            && super::live::has_invariant_memory_facts(call);
         let has_canonical_input = inputs
             .iter()
             .any(|input| input.kind() == ResidentValueKind::Snapshot);
@@ -2204,7 +2211,7 @@ impl ReactiveInstance {
                 scratch: &self.workspace.scratch,
                 epoch: working_epoch,
             };
-            node.kernel.execute(&inputs, output)
+            super::super::text_index::execute(node, &inputs, output, &self.plan.reads)
         } else {
             let output = self.state.buffers[candidate].write(node.write.region);
             if let Some(tape) = &self.plan.f64_read_tape {
@@ -2216,7 +2223,7 @@ impl ReactiveInstance {
                         &self.workspace.scratch.f64s,
                     ],
                 };
-                node.kernel.execute(&inputs, output)
+                super::super::text_index::execute(node, &inputs, output, &self.plan.reads)
             } else {
                 let inputs = StateNodeInputsWithoutState {
                     locations: &self.plan.reads[node.reads.start as usize..node.reads.end as usize],
@@ -2225,7 +2232,7 @@ impl ReactiveInstance {
                     captures: &self.workspace.continuation_capture_frames,
                     scratch: &self.workspace.scratch,
                 };
-                node.kernel.execute(&inputs, output)
+                super::super::text_index::execute(node, &inputs, output, &self.plan.reads)
             }
         }
         .map_err(|error| ResidentExecutionError::Kernel {
@@ -2313,6 +2320,10 @@ impl ReactiveInstance {
         live_bytes: u64,
         live_nodes: u64,
     ) -> Result<bool, ResidentExecutionError> {
+        let _index_owner = super::super::text_index::OwnerGuard::enter(
+            self._managed_memory.domain().id(),
+            self.memory_budget(),
+        );
         if self.step_depends_on_unpublished_continuation(node_index.get() as usize) {
             // A dirty root can also be downstream of a suspended FSM through
             // another live input. Do not let any such kernel consume the
@@ -2363,6 +2374,7 @@ impl ReactiveInstance {
                 });
         }
         if let ActivatedTurnStep::Recur(call) = self.plan.steps[node_index.get() as usize] {
+            let _text_barrier = super::super::text_index::LookupBarrier::enter();
             return self.execute_recursive_call(
                 node_index,
                 call,
@@ -2569,6 +2581,10 @@ impl ReactiveInstance {
         live_nodes: u64,
         forwarded_tail: Option<TailContext>,
     ) -> Result<MatchOutcome, ResidentExecutionError> {
+        // Every entry, including a forwarded terminal Match, may select a
+        // different lexical/capture frame. Keep enclosing indices live but
+        // disable their lookup until this exact entry unwinds.
+        let _text_barrier = super::super::text_index::LookupBarrier::enter();
         let ActivatedTurnStep::Match(matched) = &self.plan.steps[node_index.get() as usize] else {
             unreachable!()
         };
@@ -4572,7 +4588,7 @@ impl ReactiveInstance {
                             ],
                             state_arena_by_slot: &self.workspace.state_f64_arena_by_slot,
                         };
-                        node.kernel.execute(&inputs, output)
+                        super::super::text_index::execute(node, &inputs, output, &self.plan.reads)
                     } else {
                         let inputs = ScratchNodeInputs {
                             locations: &self.plan.reads
@@ -4584,7 +4600,7 @@ impl ReactiveInstance {
                             scratch,
                             epoch: working_epoch,
                         };
-                        node.kernel.execute(&inputs, output)
+                        super::super::text_index::execute(node, &inputs, output, &self.plan.reads)
                     }
                 } else {
                     let (scratch, output) = self.workspace.scratch.split_output(node.write.region);
@@ -4598,7 +4614,7 @@ impl ReactiveInstance {
                         scratch,
                         epoch: working_epoch,
                     };
-                    node.kernel.execute(&inputs, output)
+                    super::super::text_index::execute(node, &inputs, output, &self.plan.reads)
                 }
                 .map_err(|error| ResidentExecutionError::Kernel {
                     node: node.artifact_node,
@@ -4694,12 +4710,11 @@ impl ReactiveInstance {
                         scratch: &self.workspace.scratch,
                         epoch: working_epoch,
                     };
-                    node.kernel.execute(&inputs, output).map_err(|error| {
-                        ResidentExecutionError::Kernel {
+                    super::super::text_index::execute(node, &inputs, output, &self.plan.reads)
+                        .map_err(|error| ResidentExecutionError::Kernel {
                             node: node.artifact_node,
                             error,
-                        }
-                    })?
+                        })?
                 } else {
                     let output = self.state.buffers[candidate].write(node.write.region);
                     if let Some(tape) = &self.plan.f64_read_tape {
@@ -4711,7 +4726,7 @@ impl ReactiveInstance {
                                 &self.workspace.scratch.f64s,
                             ],
                         };
-                        node.kernel.execute(&inputs, output)
+                        super::super::text_index::execute(node, &inputs, output, &self.plan.reads)
                     } else {
                         let inputs = StateNodeInputsWithoutState {
                             locations: &self.plan.reads
@@ -4721,7 +4736,7 @@ impl ReactiveInstance {
                             captures: &self.workspace.continuation_capture_frames,
                             scratch: &self.workspace.scratch,
                         };
-                        node.kernel.execute(&inputs, output)
+                        super::super::text_index::execute(node, &inputs, output, &self.plan.reads)
                     }
                     .map_err(|error| ResidentExecutionError::Kernel {
                         node: node.artifact_node,
@@ -4832,7 +4847,8 @@ fn match_conversion_prior_footprint(
     let mut meter = budget::ResidentBudgetMeter::default();
     let nodes = match prior {
         Some(prior) => {
-            budget::measure_canonical_value_footprint(&mut meter, prior, schemas)?.node_count
+            budget::measure_borrowed_canonical_value_footprint(&mut meter, prior, schemas)?
+                .node_count
         }
         None => 0,
     };
@@ -7634,24 +7650,132 @@ mod tests {
             }])
             .unwrap();
         let output = instance.copied_output(0).unwrap();
+        let epoch = instance.published_epoch();
+        let published_pointers = match instance.output_borrow(0).unwrap() {
+            ResidentValueBorrow::String { values, .. } => values
+                .iter()
+                .map(|value| value.as_ptr())
+                .collect::<Vec<_>>(),
+            value => panic!("expected dense String publication: {value:?}"),
+        };
         let (nodes, work) =
             match_conversion_prior_footprint(Some(&output), &instance.plan.schemas).unwrap();
-        assert!(nodes >= 5);
-        assert!(work.comparison_work() >= 50 * 1024);
-
-        let candidate_work = 20 * 1024;
         assert_eq!(
-            budget::PreparedKernel::new(
-                (),
-                budget::resident_cost! {
-                    comparison_work: work.comparison_work() + candidate_work,
-                    compute_work: work.compute_work() + candidate_work,
-                    ..budget::KernelCostEstimate::default()
-                },
-            )
-            .admit_control()
-            .map(|permit| permit.into_plan()),
+            nodes,
+            output
+                .retained_footprint(&instance.plan.schemas)
+                .unwrap()
+                .node_count
+        );
+        assert_eq!(work.comparison_work(), 0);
+        assert!(work.compute_work() > 0);
+
+        // Borrowed retention reads the complete container metadata, not the
+        // String payload. Its work must depend on topology rather than bytes.
+        let short = [String::new(), String::new()];
+        let short_value = crate::resident::numeric::resident_value_to_snapshot(
+            &instance.plan.schemas,
+            output.schema(),
+            output.shape(),
+            ResidentShape {
+                rows: 1,
+                columns: 2,
+            },
+            ResidentValueRef::String(&short),
+        )?;
+        let (short_nodes, short_work) =
+            match_conversion_prior_footprint(Some(&short_value), &instance.plan.schemas)?;
+        assert_eq!(short_nodes, nodes);
+        assert_eq!(short_work.compute_work(), work.compute_work());
+        assert_eq!(short_work.comparison_work(), 0);
+
+        let mut metadata_denial = budget::detached_turn_plan(mech_core::ResourceDemand::default())?;
+        metadata_denial.budget_limits.max_compute_work = Some(work.compute_work() - 1);
+        assert_eq!(
+            budget::with_resident_turn_plan(metadata_denial, || {
+                match_conversion_prior_footprint(Some(&output), &instance.plan.schemas)
+            }),
             Err(ResidentKernelError::InvalidShape)
+        );
+
+        // The candidate's actual materialization cost already reserves its
+        // publication comparison. Prior retention adds only metadata compute.
+        let candidate = ["p".repeat(10 * 1024), "q".repeat(10 * 1024)];
+        let cost = crate::resident::numeric::resident_value_snapshot_materialization_cost(
+            &instance.plan.schemas,
+            output.schema(),
+            output.shape(),
+            ResidentValueRef::String(&candidate),
+        )?;
+        assert_eq!(cost.comparison_work, 20 * 1024 + 2);
+        assert_eq!(cost.compute_work, 20 * 1024 + 4);
+        let complete = budget::resident_cost! {
+            comparison_work: cost.comparison_work + work.comparison_work(),
+            compute_work: cost.compute_work + work.compute_work(),
+            ..budget::KernelCostEstimate::default()
+        };
+        let mut denied = budget::detached_turn_plan(mech_core::ResourceDemand::default())?;
+        denied.budget_limits.max_comparison_work = Some(cost.comparison_work);
+        denied.budget_limits.max_compute_work = Some(complete.compute_work() - 1);
+        let materialized = std::cell::Cell::new(false);
+        let convert = || -> Result<Value, ResidentKernelError> {
+            budget::PreparedKernel::new((), complete)
+                .admit_control()?
+                .into_plan();
+            materialized.set(true);
+            crate::resident::numeric::resident_value_to_snapshot(
+                &instance.plan.schemas,
+                output.schema(),
+                output.shape(),
+                ResidentShape {
+                    rows: 1,
+                    columns: 2,
+                },
+                ResidentValueRef::String(&candidate),
+            )
+        };
+        assert!(matches!(
+            budget::with_resident_turn_plan(denied.clone(), convert),
+            Err(ResidentKernelError::InvalidShape)
+        ));
+        assert!(!materialized.get());
+        assert_eq!(instance.published_epoch(), epoch);
+        let retained_pointers = match instance.output_borrow(0).unwrap() {
+            ResidentValueBorrow::String { values, .. } => values
+                .iter()
+                .map(|value| value.as_ptr())
+                .collect::<Vec<_>>(),
+            value => panic!("expected retained dense String publication: {value:?}"),
+        };
+        assert_eq!(retained_pointers, published_pointers);
+        assert!(
+            instance
+                .copied_output(0)
+                .unwrap()
+                .snapshot_eq(&instance.plan.schemas, &output, &instance.plan.schemas)
+                .unwrap()
+        );
+
+        denied.budget_limits.max_compute_work = Some(complete.compute_work());
+        let next = budget::with_resident_turn_plan(denied, convert)?;
+        assert!(materialized.get());
+        assert!(
+            !output
+                .snapshot_eq(&instance.plan.schemas, &next, &instance.plan.schemas)
+                .unwrap()
+        );
+        instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::String(&candidate),
+            }])
+            .unwrap();
+        assert!(
+            instance
+                .copied_output(0)
+                .unwrap()
+                .snapshot_eq(&instance.plan.schemas, &next, &instance.plan.schemas)
+                .unwrap()
         );
         Ok(())
     }

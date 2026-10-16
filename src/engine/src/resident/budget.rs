@@ -410,7 +410,7 @@ pub(crate) fn published_canonical_footprint(
     #[cfg(test)]
     {
         // Direct kernel unit tests have no executor boundary or scoped plan.
-        return measure_canonical_value_footprint(meter, current, schemas);
+        return measure_borrowed_canonical_value_footprint(meter, current, schemas);
     }
     #[cfg(not(test))]
     Err(ResidentKernelError::InvalidInput)
@@ -684,8 +684,11 @@ impl KernelCostEstimate {
                     })
                 })
                 .transpose()?;
-            if let Some(demand) = try_admit_fixed_turn_memory(&active, self.demand, final_output)
-                .map_err(|_| ResidentKernelError::InvalidShape)?
+            if !super::text_index::has_index_scope()
+                && index_growth(&active)? == (0, 0)
+                && let Some(demand) =
+                    try_admit_fixed_turn_memory(&active, self.demand, final_output)
+                        .map_err(|_| ResidentKernelError::InvalidShape)?
             {
                 admit_payload_plan(&active)?;
                 return Ok(ResidentBudgetPermit {
@@ -714,7 +717,42 @@ impl KernelCostEstimate {
         let result = with_active_turn_plan(|active| {
             active.as_ref().map(|plan| {
                 check_turn_planning_progress(plan, self.demand)
-                    .map_err(|_| ResidentKernelError::InvalidShape)
+                    .map_err(|_| ResidentKernelError::InvalidShape)?;
+                let (bytes, nodes) = index_growth(plan)?;
+                let temporary = self
+                    .demand
+                    .turn_peak_bytes
+                    .checked_add(plan.facts.additional_demand.turn_peak_bytes)
+                    .map(|value| value.max(plan.demand.turn_peak_bytes))
+                    .and_then(|value| value.checked_add(bytes))
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+                let retained_nodes = self
+                    .demand
+                    .retained_nodes
+                    .checked_add(plan.facts.additional_demand.retained_nodes)
+                    .map(|value| value.max(plan.demand.retained_nodes))
+                    .and_then(|value| value.checked_add(nodes))
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+                let demand = ResourceDemand {
+                    turn_peak_bytes: temporary,
+                    retained_nodes,
+                    ..ResourceDemand::default()
+                };
+                if !mech_core::evaluate_call_memory_budget(
+                    mech_core::MemoryObjectOwner::NodeOutput {
+                        node: plan.node,
+                        port: 0,
+                    },
+                    demand,
+                    plan.output_bytes,
+                    plan.storage_buffer_bytes,
+                    plan.budget_limits,
+                )
+                .is_empty()
+                {
+                    return Err(ResidentKernelError::InvalidShape);
+                }
+                Ok(())
             })
         });
         if let Some(result) = result {
@@ -803,9 +841,46 @@ pub(crate) fn detached_turn_plan(
     .map_err(|_| ResidentKernelError::InvalidShape)
 }
 
+fn index_growth(plan: &TurnMemoryPlan) -> Result<(u64, u64), ResidentKernelError> {
+    let (bytes, nodes) = super::text_index::live_demand();
+    Ok((
+        bytes
+            .checked_sub(plan.resident_text_index_baseline.0)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        nodes
+            .checked_sub(plan.resident_text_index_baseline.1)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    ))
+}
+
 impl ResidentBudgetPermit {
-    fn from_turn_plan(plan: TurnMemoryPlan) -> Result<Self, ResidentKernelError> {
+    fn from_turn_plan(mut plan: TurnMemoryPlan) -> Result<Self, ResidentKernelError> {
         if !plan.budget_violations.is_empty() {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        let (bytes, nodes) = index_growth(&plan)?;
+        plan.demand.turn_peak_bytes = plan
+            .demand
+            .turn_peak_bytes
+            .checked_add(bytes)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        plan.demand.retained_nodes = plan
+            .demand
+            .retained_nodes
+            .checked_add(nodes)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        if !mech_core::evaluate_call_memory_budget(
+            mech_core::MemoryObjectOwner::NodeOutput {
+                node: plan.node,
+                port: 0,
+            },
+            plan.demand,
+            plan.output_bytes,
+            plan.storage_buffer_bytes,
+            plan.budget_limits,
+        )
+        .is_empty()
+        {
             return Err(ResidentKernelError::InvalidShape);
         }
         admit_payload_plan(&plan)?;
@@ -1018,7 +1093,25 @@ pub(crate) fn preflight_canonical_data_finalization(
     schema: &SchemaBody,
     data: &ValueData,
 ) -> Result<u64, ResidentKernelError> {
-    measure_canonical_data_comparison_work(meter, schema, data)?;
+    if borrowed_footprint_schema_supported(meter, schema, 0)? {
+        let footprint =
+            measure_proven_borrowed_canonical_data_footprint(meter, schema, data, false)?;
+        // Metadata traversal is not a payload comparison. Reserve the second
+        // finalization walk and later canonical encoding/copy bytes as compute;
+        // actual ordered-container key work below remains comparison work.
+        meter.charge_compute_work(checked_cost_product(&[
+            footprint.node_count.max(1),
+            BORROWED_FOOTPRINT_METADATA_WORK,
+        ])?)?;
+        meter.charge_compute_work(
+            footprint
+                .encoded_bytes
+                .checked_add(footprint.node_count)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+        )?;
+    } else {
+        measure_canonical_data_comparison_work(meter, schema, data)?;
+    }
     let remaining = meter.remaining_incremental_work()?;
     let budget = SnapshotCanonicalizationBudget::new(remaining);
     let work = mech_core::snapshot::canonical_data_draft_finalization_work_with_budget(
@@ -1231,6 +1324,7 @@ fn measure_proven_borrowed_canonical_data_footprint(
     meter: &mut ResidentBudgetMeter,
     schema: &SchemaBody,
     data: &ValueData,
+    retain_nodes: bool,
 ) -> Result<ValueFootprint, ResidentKernelError> {
     let mut footprint = ValueFootprint::zero();
     mech_core::snapshot::visit_canonical_data_work(schema, data, |chunk| {
@@ -1241,7 +1335,9 @@ fn measure_proven_borrowed_canonical_data_footprint(
             BORROWED_FOOTPRINT_METADATA_WORK,
             chunk.node_count.max(1),
         ])?)?;
-        meter.charge_retained_nodes(chunk.node_count)?;
+        if retain_nodes {
+            meter.charge_retained_nodes(chunk.node_count)?;
+        }
         footprint = footprint
             .checked_add(ValueFootprint {
                 encoded_bytes: chunk.encoded_bytes,
@@ -1265,7 +1361,6 @@ fn measure_proven_borrowed_canonical_data_footprint(
 /// Measures already-finalized borrowed data for retention bookkeeping. This
 /// does not authorize payload comparison, encoding, cloning or reconstruction.
 /// Unsupported/deep schemas retain the older conservative full-work path.
-#[cfg(test)]
 pub(crate) fn measure_borrowed_canonical_data_footprint(
     meter: &mut ResidentBudgetMeter,
     schema: &SchemaBody,
@@ -1274,7 +1369,7 @@ pub(crate) fn measure_borrowed_canonical_data_footprint(
     if !borrowed_footprint_schema_supported(meter, schema, 0)? {
         return measure_canonical_data_footprint(meter, schema, data);
     }
-    measure_proven_borrowed_canonical_data_footprint(meter, schema, data)
+    measure_proven_borrowed_canonical_data_footprint(meter, schema, data, true)
 }
 
 /// Measures an immutable root and its actual owned shape using metadata-only
@@ -1299,7 +1394,7 @@ pub(crate) fn measure_borrowed_canonical_value_footprint(
     let shape_parameters = value.shape().parameter_values().len();
     meter.charge_retained_nodes(1)?;
     let data =
-        measure_proven_borrowed_canonical_data_footprint(meter, schema.body(), value.data())?;
+        measure_proven_borrowed_canonical_data_footprint(meter, schema.body(), value.data(), true)?;
     projected_canonical_value_footprint(data, shape_parameters)
 }
 
@@ -1492,6 +1587,65 @@ pub(crate) fn checked_cost_sum(values: &[u64]) -> Result<u64, ResidentKernelErro
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn retention_finalization_preserves_encoding_compute_without_false_comparisons() {
+        let (value, schemas) = borrowed_retention_value(
+            SchemaBody::String,
+            mech_core::ValueDataDraft::String("x".repeat(8_192)),
+        );
+        let body = schemas.get(value.schema()).unwrap().body();
+        let token = value.resident_token();
+        let mut denied = ResidentBudgetMeter::for_closed_analysis(4_096, 0);
+        assert!(
+            preflight_canonical_data_finalization(&mut denied, body, value.data()).is_err(),
+            "real encoding/copy compute must be finite even without any key comparisons"
+        );
+        let mut retry = ResidentBudgetMeter::for_closed_analysis(65_536, 0);
+        assert_eq!(
+            preflight_canonical_data_finalization(&mut retry, body, value.data()),
+            Ok(0)
+        );
+        assert_eq!(retry.estimate().comparison_work(), 0);
+        assert!(retry.estimate().compute_work() >= 8_192);
+        assert_eq!(value.resident_token(), token);
+    }
+
+    #[test]
+    fn retention_finalization_keeps_actual_ordered_key_work_and_denial() {
+        let body = SchemaBody::Set {
+            element: Box::new(SchemaBody::String),
+            cardinality: mech_core::CardinalitySpec::Exact(mech_core::DimensionExpr::Constant(2)),
+        };
+        let (value, schemas) = borrowed_retention_value(
+            body,
+            mech_core::ValueDataDraft::Set(
+                vec![
+                    mech_core::ValueDataDraft::String(format!("{}a", "x".repeat(2_048))),
+                    mech_core::ValueDataDraft::String(format!("{}b", "x".repeat(2_048))),
+                ]
+                .into_boxed_slice(),
+            ),
+        );
+        let body = schemas.get(value.schema()).unwrap().body();
+        let before = value.resident_token();
+        assert!(
+            preflight_canonical_data_finalization(
+                &mut ResidentBudgetMeter::for_closed_analysis(1_000_000, 0),
+                body,
+                value.data()
+            )
+            .is_err()
+        );
+        let mut retry = ResidentBudgetMeter::for_closed_analysis(1_000_000, 65_536);
+        let work = preflight_canonical_data_finalization(&mut retry, body, value.data()).unwrap();
+        assert!(
+            work >= 2_048,
+            "long common-prefix keys really compare bytes"
+        );
+        assert_eq!(retry.estimate().comparison_work(), work);
+        assert_eq!(value.resident_token(), before);
+    }
 
     fn borrowed_retention_value(
         body: SchemaBody,
@@ -1740,14 +1894,24 @@ mod tests {
             measure_canonical_data_comparison_work(&mut compare, body, value.data()),
             Err(ResidentKernelError::InvalidShape),
         );
+        // String encoding consumes compute, while ordered-key comparisons
+        // keep their independent allowance. Metadata alone grants neither.
         let mut finalization = ResidentBudgetMeter::for_closed_analysis(
-            MAX_RESIDENT_COMPUTE_WORK,
+            MAX_RESIDENT_COMPARISON_WORK,
             MAX_RESIDENT_COMPARISON_WORK,
         );
         assert_eq!(
             preflight_canonical_data_finalization(&mut finalization, body, value.data()),
             Err(ResidentKernelError::InvalidShape),
         );
+        let mut funded_finalization =
+            ResidentBudgetMeter::for_closed_analysis(MAX_RESIDENT_COMPUTE_WORK, 0);
+        assert_eq!(
+            preflight_canonical_data_finalization(&mut funded_finalization, body, value.data()),
+            Ok(0),
+        );
+        assert_eq!(funded_finalization.estimate().comparison_work(), 0);
+        assert!(funded_finalization.estimate().compute_work() >= measured.encoded_bytes);
         let mut clone = ResidentBudgetMeter::for_closed_analysis(
             MAX_RESIDENT_COMPUTE_WORK,
             MAX_RESIDENT_COMPARISON_WORK,

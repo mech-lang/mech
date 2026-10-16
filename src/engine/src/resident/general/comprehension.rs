@@ -54,6 +54,9 @@ pub struct ActivatedComprehensionNode {
     /// execution can import every schema owner reachable from the actual
     /// comprehension inputs.
     pub schema_reads: Box<[ResidentReadLocation]>,
+    /// Captured/constant scalar String bindings proved read-only through all
+    /// descendants of this lexical invocation. Reuse never crosses an entry.
+    pub(crate) invariant_text_sources: Box<[ResidentReadLocation]>,
     pub yield_value: ResidentReadLocation,
     pub yield_schema: SchemaId,
 }
@@ -849,6 +852,7 @@ pub(super) fn bind_inner(
                                 steps: Box::new([]),
                                 locals: Box::new([]),
                                 schema_reads: Box::new([]),
+                                invariant_text_sources: Box::new([]),
                                 yield_value: ResidentReadLocation::Scratch(output.region),
                                 yield_schema: output.schema,
                             },

@@ -876,14 +876,115 @@ mod tests {
         let source = [Some(element)];
         let mut output = [None];
 
+        // The retained preflight no longer bills a second payload traversal as
+        // comparison. Isolate the real ordered-key work on this same fixture.
+        let element = source[0].as_ref().unwrap();
+        let mut input_meter = super::super::budget::ResidentBudgetMeter::default();
+        super::super::budget::measure_canonical_value_footprint(
+            &mut input_meter,
+            element,
+            &schemas,
+        )
+        .unwrap();
+        let mut finalization_meter = super::super::budget::ResidentBudgetMeter::default();
+        let key_work = super::super::budget::preflight_canonical_data_finalization(
+            &mut finalization_meter,
+            schemas.get(scalar).unwrap().body(),
+            element.data(),
+        )
+        .unwrap();
         assert_eq!(
-            kernel.execute(
-                &Inputs(vec![ResidentValueRef::Snapshot(&source)]),
-                ResidentValueMut::Snapshot(&mut output),
-            ),
+            key_work,
+            47 * 505,
+            "all adjacent canonical Set keys still compare payload bytes"
+        );
+        assert_eq!(finalization_meter.estimate().comparison_work(), key_work);
+        assert!(finalization_meter.estimate().compute_work() > key_work);
+
+        let mut measured = None;
+        let (_, reserved_keys) = prepare_snapshot_literal(
+            &schemas,
+            1,
+            |_| Ok(element),
+            None,
+            super::super::budget::ResidentBudgetMeter::default(),
+        )
+        .unwrap()
+        .prepare_for_analysis(|cost| {
+            measured = Some(cost);
+            Ok(())
+        })
+        .unwrap();
+        let measured = measured.unwrap();
+        assert_eq!(reserved_keys, key_work);
+        assert_eq!(
+            measured.comparison_work(),
+            input_meter.estimate().comparison_work() + key_work
+        );
+
+        struct BeforeDraft<'a> {
+            source: &'a [Option<mech_core::Value>],
+            reads: std::cell::Cell<usize>,
+        }
+        impl ResidentKernelInputs for BeforeDraft<'_> {
+            fn len(&self) -> usize {
+                1
+            }
+            fn get(&self, index: usize) -> Option<ResidentValueRef<'_>> {
+                let reads = self.reads.get() + 1;
+                self.reads.set(reads);
+                assert_eq!(
+                    reads, 1,
+                    "denied literal reached payload draft construction"
+                );
+                (index == 0).then_some(ResidentValueRef::Snapshot(self.source))
+            }
+        }
+        let before_draft = BeforeDraft {
+            source: &source,
+            reads: std::cell::Cell::new(0),
+        };
+        let mut denied =
+            super::super::budget::detached_turn_plan(mech_core::ResourceDemand::default()).unwrap();
+        denied.budget_limits.max_comparison_work = Some(measured.comparison_work() - 1);
+        denied.budget_limits.max_compute_work = Some(measured.compute_work());
+        assert_eq!(
+            super::super::budget::with_resident_turn_plan(denied.clone(), || {
+                kernel.execute(&before_draft, ResidentValueMut::Snapshot(&mut output))
+            }),
             Err(ResidentKernelError::InvalidShape),
         );
+        assert_eq!(before_draft.reads.get(), 1);
         assert!(output[0].is_none());
+
+        // Exact funding, without changing any Set key or global limit, permits
+        // the unchanged literal and preserves all canonical values.
+        denied.budget_limits.max_comparison_work = Some(measured.comparison_work());
+        assert_eq!(
+            super::super::budget::with_resident_turn_plan(denied, || {
+                kernel.execute(
+                    &Inputs(vec![ResidentValueRef::Snapshot(&source)]),
+                    ResidentValueMut::Snapshot(&mut output),
+                )
+            }),
+            Ok(true),
+        );
+        let expected = ValueDraft {
+            schema: matrix,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Matrix(
+                vec![element.canonical_data_draft().unwrap()].into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        assert!(
+            output[0]
+                .as_ref()
+                .unwrap()
+                .snapshot_eq(&schemas, &expected, &schemas)
+                .unwrap()
+        );
     }
 
     #[test]

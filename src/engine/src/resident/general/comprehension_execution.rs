@@ -3721,7 +3721,14 @@ fn prepare_pattern_item_materialization_with_source(
                     source.body(),
                     value.data(),
                 )?;
-                meter.charge_comparison_work(finalization_meter.estimate().comparison_work())?;
+                let preflight_work = finalization_meter.estimate();
+                meter.charge_compute_work(
+                    preflight_work
+                        .compute_work()
+                        .checked_sub(preflight_work.comparison_work())
+                        .ok_or(ResidentKernelError::InvalidShape)?,
+                )?;
+                meter.charge_comparison_work(preflight_work.comparison_work())?;
                 meter.charge_comparison_work(
                     canonical_finalization_work
                         .checked_mul(finalization_count.saturating_sub(1))
@@ -4456,7 +4463,14 @@ fn retained_value_footprint(
                 source.body(),
                 value.data(),
             )?;
-            meter.charge_comparison_work(item_meter.estimate().comparison_work())?;
+            let measured = item_meter.estimate();
+            meter.charge_compute_work(
+                measured
+                    .compute_work()
+                    .checked_sub(measured.comparison_work())
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+            )?;
+            meter.charge_comparison_work(measured.comparison_work())?;
             return Ok((footprint, finalization_work));
         }
         ResidentValueRef::Bool([_]) => scalar_footprint(1)?,
@@ -5605,6 +5619,7 @@ impl ReactiveInstance {
                 live_bytes,
                 live_nodes,
                 |this| {
+                    let _text_scope = crate::resident::text_index::enter_collection_scope(&control);
                     this.execute_collection_planned(
                         index, &control, before, working, probe, live_bytes, live_nodes,
                     )
@@ -11020,6 +11035,65 @@ mod tests {
         .unwrap();
         assert_eq!(value.shape().parameter_values(), [3]);
         assert!(matches!(value.data(), ValueData::Matrix(_)));
+    }
+
+    #[test]
+    fn retention_yield_forwards_non_comparison_preflight_compute() {
+        let mut builder = SchemaTableBuilder::new();
+        let handle = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::String,
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let schema = build.resolve(handle).unwrap();
+        let schemas = build.table;
+        let value = ValueDraft {
+            schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::String("x".repeat(8_192)),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let before = value.resident_token();
+        let body = schemas.get(schema).unwrap().body();
+        let mut expected = ResidentBudgetMeter::for_closed_analysis(1_000_000, 65_536);
+        budget::measure_canonical_data_footprint(&mut expected, body, value.data()).unwrap();
+        budget::preflight_canonical_data_finalization(&mut expected, body, value.data()).unwrap();
+        let work = expected.estimate();
+        assert!(work.compute_work() > work.comparison_work());
+        let values = [Some(value)];
+        let mut denied = ResidentBudgetMeter::for_closed_analysis(
+            work.compute_work() - 1,
+            work.comparison_work(),
+        );
+        assert!(
+            retained_value_footprint(
+                ResidentValueRef::Snapshot(&values),
+                schema,
+                &schemas,
+                &mut denied
+            )
+            .is_err(),
+            "a fork must not discard the new metadata/encoding compute"
+        );
+        let mut retry =
+            ResidentBudgetMeter::for_closed_analysis(work.compute_work(), work.comparison_work());
+        retained_value_footprint(
+            ResidentValueRef::Snapshot(&values),
+            schema,
+            &schemas,
+            &mut retry,
+        )
+        .unwrap();
+        assert_eq!(retry.estimate().compute_work(), work.compute_work());
+        assert_eq!(retry.estimate().comparison_work(), work.comparison_work());
+        assert_eq!(values[0].as_ref().unwrap().resident_token(), before);
     }
 
     #[test]

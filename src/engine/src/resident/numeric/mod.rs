@@ -33,6 +33,23 @@ fn snapshot_clone_cost(
     Ok((footprint.retained_bytes, footprint.node_count))
 }
 
+// This is operand retention plus the actual staging copy, not a payload
+// comparison. Other mutation/constructor routes retain their original helper
+// until their distinct materialization contracts are audited.
+fn snapshot_operand_copy_cost(
+    meter: &mut super::budget::ResidentBudgetMeter,
+    value: &mech_core::Value,
+    schemas: &mech_core::SchemaTable,
+    copies_payload: bool,
+) -> Result<(u64, u64), ResidentKernelError> {
+    let footprint =
+        super::budget::measure_borrowed_canonical_value_footprint(meter, value, schemas)?;
+    if copies_payload {
+        meter.charge_compute_work(footprint.retained_bytes)?;
+    }
+    Ok((footprint.retained_bytes, footprint.node_count))
+}
+
 fn snapshot_lane_clone_footprint(
     meter: &mut super::budget::ResidentBudgetMeter,
     values: &[Option<mech_core::Value>],
@@ -43,7 +60,7 @@ fn snapshot_lane_clone_footprint(
         .flatten()
         .try_fold(ValueFootprint::zero(), |total, value| {
             let footprint =
-                super::budget::measure_canonical_value_footprint(meter, value, schemas)?;
+                super::budget::measure_borrowed_canonical_value_footprint(meter, value, schemas)?;
             total
                 .checked_add(footprint)
                 .map_err(|_| ResidentKernelError::InvalidShape)
@@ -3837,6 +3854,67 @@ struct SnapshotConstructorInputPlan {
 struct SnapshotConstructorPlan {
     inputs: Box<[SnapshotConstructorInputPlan]>,
     empty_dimensions: Option<(usize, usize)>,
+    // Issued only by the completed maintained binder for closed fixed-width
+    // scalar Snapshot inputs and an exact closed rank-two result.
+    primitive_output_dimensions: Option<(usize, usize)>,
+}
+
+fn primitive_snapshot_constructor_dimensions(
+    request: &ResidentKernelBindRequest<'_>,
+    output_element: &SchemaBody,
+    inputs: &[SnapshotConstructorInputPlan],
+    horizontal: bool,
+) -> Option<(usize, usize)> {
+    // The general nullary path may traverse a large empty common axis.
+    // Its work is outside this scalar-input proof, even when R*0 is zero.
+    if inputs.is_empty() {
+        return None;
+    }
+    snapshot_fixed_element_encoded_bytes(output_element)?;
+    let output_entry = request.schemas.entry(request.output.schema_id)?;
+    let output_schema = output_entry.schema();
+    let SchemaBody::Matrix { dimensions, .. } = output_schema.body() else {
+        return None;
+    };
+    let [
+        mech_core::DimensionExpr::Constant(rows),
+        mech_core::DimensionExpr::Constant(columns),
+    ] = dimensions.as_ref()
+    else {
+        return None;
+    };
+    if inputs.len() != request.inputs.len()
+        || !output_schema.dimension_parameters().is_empty()
+        || !request.output.shape_instance.parameter_values().is_empty()
+        || output_entry.key() != request.output.schema_key
+        || !inputs.iter().zip(request.inputs).all(|(plan, input)| {
+            input.kind == ResidentValueKind::Snapshot
+                && input.shape == ResidentShape::SCALAR
+                && !plan.matrix
+                && input.shape_instance.parameter_values().is_empty()
+                && request.schemas.entry(input.schema_id).is_some_and(|entry| {
+                    entry.key() == input.schema_key
+                        && entry.schema().dimension_parameters().is_empty()
+                        && entry.schema().body() == output_element
+                })
+        })
+    {
+        return None;
+    }
+    let dimensions = (
+        usize::try_from(*rows).ok()?,
+        usize::try_from(*columns).ok()?,
+    );
+    if dimensions
+        != if horizontal {
+            (1, inputs.len())
+        } else {
+            (inputs.len(), 1)
+        }
+    {
+        return None;
+    }
+    Some(dimensions)
 }
 
 fn dense_constructor_kind(element: &SchemaBody) -> Option<ResidentValueKind> {
@@ -3909,11 +3987,14 @@ fn bind_matrix_constructor(
         } else {
             None
         };
+        let primitive_output_dimensions =
+            primitive_snapshot_constructor_dimensions(request, output_element, &inputs, horizontal);
         let plan = SnapshotConstructorPlan {
             inputs: inputs.into_boxed_slice(),
             empty_dimensions,
+            primitive_output_dimensions,
         };
-        return Ok(bound(
+        let kernel = bound(
             if horizontal {
                 concatenate_horizontal_snapshot
             } else {
@@ -3923,7 +4004,12 @@ fn bind_matrix_constructor(
         )?
         .with_retained_state(Arc::new(plan))
         .with_snapshot_output(snapshot_output_metadata(request))
-        .with_snapshot_schemas(request.schemas.clone()));
+        .with_snapshot_schemas(request.schemas.clone());
+        return Ok(if primitive_output_dimensions.is_some() {
+            kernel.with_work_accounting(ResidentKernelWorkAccounting::RuntimeMetered)
+        } else {
+            kernel
+        });
     }
     let output_dimensions = declared_matrix_dimensions(request, &request.output)?;
     let dimensions = request
@@ -7702,11 +7788,21 @@ fn snapshot_comparison(
         .ok_or(ResidentKernelError::InvalidShape)?;
     let mut footprint_meter = super::budget::ResidentBudgetMeter::default();
     let (left_bytes, left_nodes) = match left {
-        Some(value) => snapshot_clone_cost(&mut footprint_meter, value, schemas)?,
+        Some(value) => snapshot_operand_copy_cost(
+            &mut footprint_meter,
+            value,
+            schemas,
+            matches!(value.data(), ValueData::Matrix(_)),
+        )?,
         None => (0, 0),
     };
     let (right_bytes, right_nodes) = match right {
-        Some(value) => snapshot_clone_cost(&mut footprint_meter, value, schemas)?,
+        Some(value) => snapshot_operand_copy_cost(
+            &mut footprint_meter,
+            value,
+            schemas,
+            matches!(value.data(), ValueData::Matrix(_)),
+        )?,
         None => (0, 0),
     };
     let left_dense_bytes = left_dense
@@ -7796,6 +7892,28 @@ fn snapshot_comparison(
             .checked_mul(core::mem::size_of::<ValueDataDraft>())
             .ok_or(ResidentKernelError::InvalidShape)?,
     )?;
+    // Scalar Snapshot operands stay borrowed. Matrix.to_values and dense
+    // materialization initialize these owned ValueData slots after admission.
+    let staged_copy_elements = (if left.is_none()
+        || left.is_some_and(|value| matches!(value.data(), ValueData::Matrix(_)))
+    {
+        left_count
+    } else {
+        0
+    })
+    .checked_add(
+        if right.is_none()
+            || right.is_some_and(|value| matches!(value.data(), ValueData::Matrix(_)))
+        {
+            right_count
+        } else {
+            0
+        },
+    )
+    .ok_or(ResidentKernelError::InvalidShape)?;
+    let staging_copy_work = super::budget::checked_u64(staged_copy_elements)?
+        .checked_mul(core::mem::size_of::<ValueData>() as u64)
+        .ok_or(ResidentKernelError::InvalidShape)?;
     let output_nodes = if snapshot_output { 3_u64 } else { 0 };
     let output_footprint = ValueFootprint {
         encoded_bytes: super::budget::checked_u64(output_len)?
@@ -7813,7 +7931,7 @@ fn snapshot_comparison(
         };
         match values.first().and_then(|value| value.as_ref()) {
             Some(previous) => {
-                let prior = super::budget::measure_canonical_value_footprint(
+                let prior = super::budget::measure_borrowed_canonical_value_footprint(
                     &mut footprint_meter,
                     previous,
                     schemas,
@@ -7844,7 +7962,8 @@ fn snapshot_comparison(
                 .checked_add(publication_work)
                 .ok_or(ResidentKernelError::InvalidShape)?,
             compute_work: footprint_work.compute_work()
-                .checked_add(super::budget::checked_u64(output_len)?)
+                .checked_add(staging_copy_work)
+                .and_then(|work| work.checked_add(super::budget::checked_u64(output_len).ok()?))
                 .and_then(|work| work.checked_add(publication_work))
                 .ok_or(ResidentKernelError::InvalidShape)?,
             output_elements: output_len,
@@ -13529,6 +13648,53 @@ fn dense_constructor_input_drafts(
     }
 }
 
+fn primitive_constructor_output_footprint(
+    element: &SchemaBody,
+    elements: usize,
+) -> Result<ValueFootprint, ResidentKernelError> {
+    let width =
+        snapshot_fixed_element_encoded_bytes(element).ok_or(ResidentKernelError::InvalidOutput)?;
+    let payload_bytes = super::budget::checked_u64(elements)?
+        .checked_mul(super::budget::checked_u64(width)?)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    // The output owns a Matrix ValueData and a new packed sequence. Scalar
+    // inputs do not own that sequence, so their retention sum is no output
+    // footprint authority, especially for a single coefficient.
+    super::budget::projected_canonical_value_footprint(
+        ValueFootprint {
+            encoded_bytes: payload_bytes,
+            retained_bytes: super::budget::checked_u64(core::mem::size_of::<ValueData>())?
+                .checked_add(payload_bytes)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            node_count: 2,
+        },
+        0,
+    )
+}
+
+fn primitive_constructor_metadata_cost(
+    inputs: usize,
+) -> Result<super::budget::KernelCostEstimate, ResidentKernelError> {
+    let bytes = inputs
+        .checked_mul(
+            core::mem::size_of::<(usize, usize)>()
+                .checked_add(core::mem::size_of::<Vec<ValueDataDraft>>())
+                .ok_or(ResidentKernelError::InvalidShape)?,
+        )
+        .and_then(|bytes| bytes.checked_add(3 * core::mem::size_of::<Vec<ValueDataDraft>>()))
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let work = super::budget::checked_u64(inputs)?
+        .checked_mul(128)
+        .and_then(|work| work.checked_add(128))
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    Ok(super::budget::resident_cost! {
+        compute_work: work,
+        temporary_bytes: bytes,
+        retained_nodes: inputs,
+        ..super::budget::KernelCostEstimate::default()
+    })
+}
+
 fn constructor_snapshot_inputs(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -13565,8 +13731,23 @@ fn constructor_snapshot_inputs(
     let mut input_encoded_bytes = 0u64;
     let mut output_count = 0usize;
     let mut finalization_work = 0u64;
+    let primitive_metadata = plan
+        .primitive_output_dimensions
+        .map(|_| primitive_constructor_metadata_cost(inputs.len()))
+        .transpose()?;
+    if let Some(cost) = primitive_metadata {
+        // No input payload or allocation has been visited. Admit the exact
+        // dimensions/outer-staging metadata before creating its first Vec.
+        super::budget::PreparedKernel::new((), cost)
+            .admit()?
+            .into_plan();
+    }
     let mut dimensions = Vec::with_capacity(inputs.len());
     let mut footprint_meter = super::budget::ResidentBudgetMeter::default();
+    if let Some(cost) = primitive_metadata {
+        footprint_meter.charge_compute_work(cost.compute_work())?;
+        footprint_meter.charge_retained_nodes(cost.retained_nodes())?;
+    }
     for (ordinal, input_plan) in plan.inputs.iter().enumerate() {
         let input_ref = inputs
             .get(ordinal)
@@ -13686,8 +13867,17 @@ fn constructor_snapshot_inputs(
     {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let output_shape =
-        resolved_snapshot_output_shape(kernel, output_dimensions.0, output_dimensions.1)?;
+    let output_shape = if let Some(expected) = plan.primitive_output_dimensions {
+        if output_dimensions != expected {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        // The private proof permits only constant axes and zero parameters.
+        // Retain the exact already-bound ShapeInstance rather than allocate
+        // the generic runtime-axis witness solver's temporary Vecs.
+        output_metadata.shape.clone()
+    } else {
+        resolved_snapshot_output_shape(kernel, output_dimensions.0, output_dimensions.1)?
+    };
     let previous_footprint = match previous {
         Some(previous) => super::budget::measure_canonical_value_footprint(
             &mut footprint_meter,
@@ -13723,11 +13913,20 @@ fn constructor_snapshot_inputs(
         })
         .ok_or(ResidentKernelError::InvalidShape)?;
     retained_bytes = retained_bytes.max(super::budget::checked_u64(minimum_retained_bytes)?);
-    let final_output_footprint = ValueFootprint {
-        encoded_bytes: input_encoded_bytes,
-        retained_bytes,
-        node_count: final_nodes,
+    let final_output_footprint = if primitive_metadata.is_some() {
+        primitive_constructor_output_footprint(output_element, output_count)?
+    } else {
+        ValueFootprint {
+            encoded_bytes: input_encoded_bytes,
+            retained_bytes,
+            node_count: final_nodes,
+        }
     };
+    // Keep the existing source/staging bound as one phase. The coexisting
+    // final phase must also fund its independently owned packed buffer.
+    let source_and_final_bytes = retained_bytes
+        .checked_add(retained_bytes.max(final_output_footprint.retained_bytes))
+        .ok_or(ResidentKernelError::InvalidShape)?;
     let change_detection_work = match previous {
         Some(previous) => super::budget::projected_language_equality_work(
             schemas,
@@ -13740,28 +13939,48 @@ fn constructor_snapshot_inputs(
         None => 0,
     };
     let footprint_work = footprint_meter.estimate();
+    let metadata_bytes = primitive_metadata.map_or(0, |cost| cost.temporary_bytes());
+    let primitive_copy_work = if primitive_metadata.is_some() {
+        // Both input staging and the result own a ValueDataDraft slot per
+        // coefficient; horizontal append clones and vertical append moves.
+        // The fixed-width output is then packed and canonically encoded.
+        super::budget::checked_u64(container_bytes)?
+            .checked_add(
+                input_encoded_bytes
+                    .checked_mul(2)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+            )
+            .ok_or(ResidentKernelError::InvalidShape)?
+    } else {
+        0
+    };
     let cost = super::budget::resident_cost! {
         comparison_work: footprint_work.comparison_work()
             .checked_add(change_detection_work)
             .ok_or(ResidentKernelError::InvalidShape)?,
         compute_work: super::budget::checked_u64(output_count)?
             .checked_add(footprint_work.compute_work())
+            .and_then(|work| work.checked_add(primitive_copy_work))
             .and_then(|work| work.checked_add(change_detection_work))
             .ok_or(ResidentKernelError::InvalidShape)?,
         output_elements: output_count,
-        output_bytes: retained_bytes,
-        temporary_bytes: retained_bytes
-            .checked_mul(2)
+        output_bytes: final_output_footprint.retained_bytes,
+        temporary_bytes: source_and_final_bytes,
+        cloned_bytes: source_and_final_bytes
+            .checked_add(if primitive_metadata.is_some() {
+                super::budget::checked_u64(container_bytes)?
+            } else {
+                0
+            })
             .ok_or(ResidentKernelError::InvalidShape)?,
-        cloned_bytes: retained_bytes
-            .checked_mul(2)
+        container_bytes: super::budget::checked_u64(container_bytes)?
+            .checked_add(metadata_bytes)
             .ok_or(ResidentKernelError::InvalidShape)?,
-        container_bytes,
         retained_nodes: super::budget::checked_cost_sum(&[
             footprint_work.retained_nodes(),
             staged_nodes,
             result_nodes,
-            final_nodes,
+            final_output_footprint.node_count,
         ])?,
         ..super::budget::KernelCostEstimate::default()
     };
@@ -15303,7 +15522,8 @@ fn snapshot_selector_materialization_cost(
         value
             .validate_against(schemas)
             .map_err(|_| ResidentKernelError::InvalidInput)?;
-        let footprint = super::budget::measure_canonical_value_footprint(meter, value, schemas)?;
+        let footprint =
+            super::budget::measure_borrowed_canonical_value_footprint(meter, value, schemas)?;
         let elements = match value.data() {
             ValueData::Matrix(matrix) => matrix.elements().len(),
             _ => 1,
@@ -15949,7 +16169,29 @@ pub(crate) fn selected_sequence_footprint(
     values: SequenceView<'_>,
     index: usize,
 ) -> Result<(), ResidentKernelError> {
+    let primitive = matches!(
+        schema,
+        SchemaBody::Bool
+            | SchemaBody::Index
+            | SchemaBody::Id
+            | SchemaBody::Atom(_)
+            | SchemaBody::String
+            | SchemaBody::UnsignedInteger(_)
+            | SchemaBody::SignedInteger(_)
+            | SchemaBody::FloatingPoint(_)
+            | SchemaBody::Complex(_)
+            | SchemaBody::Rational64
+    );
     let footprint = match values {
+        SequenceView::Values(values) if primitive => {
+            let footprint = super::budget::measure_borrowed_canonical_data_footprint(
+                meter,
+                schema,
+                values.get(index).ok_or(ResidentKernelError::InvalidShape)?,
+            )?;
+            meter.charge_compute_work(footprint.retained_bytes)?;
+            footprint
+        }
         SequenceView::Values(values) => super::budget::measure_canonical_data_footprint(
             meter,
             schema,
@@ -15958,8 +16200,8 @@ pub(crate) fn selected_sequence_footprint(
         values => {
             let footprint = canonical_sequence_element_retained_footprint(schema, values, index)
                 .map_err(|_| ResidentKernelError::InvalidInput)?;
-            meter
-                .charge_comparison_work(footprint.encoded_bytes.max(footprint.node_count).max(1))?;
+            meter.charge_compute_work(64)?;
+            meter.charge_compute_work(footprint.retained_bytes)?;
             meter.charge_retained_nodes(footprint.node_count)?;
             footprint
         }
@@ -16329,21 +16571,26 @@ fn snapshot_access_output_cost(
                 // Reordering copies canonical cells without normalizing nested
                 // payloads. Their data footprint, including the matrix root,
                 // is unchanged; token construction still visits the full data.
-                let footprint = super::budget::measure_canonical_data_footprint(
+                let footprint = super::budget::measure_borrowed_canonical_data_footprint(
                     meter,
                     source_schema,
                     source.data(),
                 )?;
-                let finalization_work = footprint
+                let construction_work = footprint
                     .encoded_bytes
                     .checked_add(footprint.node_count)
                     .ok_or(ResidentKernelError::InvalidShape)?;
+                // The bound core constructor copies existing canonical cells
+                // and computes their token; it neither sorts nor normalizes
+                // nested keys. Fund that payload work as compute before any
+                // construction. Publication equality is reserved separately.
+                meter.charge_compute_work(construction_work)?;
                 return Ok(SnapshotAccessOutputCost {
                     footprint,
                     count: source_len,
                     index_elements: 0,
                     selected_ordinal: None,
-                    finalization_work,
+                    finalization_work: 0,
                     output_dimensions: resolved_output_dimensions,
                 });
             }
@@ -16889,8 +17136,11 @@ fn snapshot_access_from_source(
         .validate_against(schemas)
         .map_err(|_| ResidentKernelError::InvalidInput)?;
     let mut footprint_meter = super::budget::ResidentBudgetMeter::default();
-    let source_footprint =
-        super::budget::measure_canonical_value_footprint(&mut footprint_meter, source, schemas)?;
+    let source_footprint = super::budget::measure_borrowed_canonical_value_footprint(
+        &mut footprint_meter,
+        source,
+        schemas,
+    )?;
     let snapshot_output = matches!(&output, ResidentValueMut::Snapshot(_));
     let dense_string_current_bytes = match &output {
         ResidentValueMut::String(values) => values.iter().try_fold(0_u64, |total, value| {
@@ -16906,7 +17156,7 @@ fn snapshot_access_from_source(
                 value
                     .validate_against(schemas)
                     .map_err(|_| ResidentKernelError::InvalidOutput)?;
-                let footprint = super::budget::measure_canonical_value_footprint(
+                let footprint = super::budget::measure_borrowed_canonical_value_footprint(
                     &mut footprint_meter,
                     value,
                     schemas,
@@ -17578,7 +17828,7 @@ fn preflight_snapshot_arithmetic(
             .iter()
             .try_fold((0u64, 0u64), |(bytes, nodes), value| {
                 let (next_bytes, next_nodes) =
-                    snapshot_clone_cost(&mut footprint_meter, value, schemas)?;
+                    snapshot_operand_copy_cost(&mut footprint_meter, value, schemas, true)?;
                 Ok::<_, ResidentKernelError>((
                     bytes
                         .checked_add(next_bytes)
@@ -17591,7 +17841,7 @@ fn preflight_snapshot_arithmetic(
     let previous_footprint = match output {
         ResidentValueMut::Snapshot(values) => match values.first().and_then(|value| value.as_ref())
         {
-            Some(previous) => Some(super::budget::measure_canonical_value_footprint(
+            Some(previous) => Some(super::budget::measure_borrowed_canonical_value_footprint(
                 &mut footprint_meter,
                 previous,
                 schemas,
@@ -17665,6 +17915,7 @@ fn preflight_snapshot_arithmetic(
             compute_work: super::budget::checked_u64(output_elements)?
                 .checked_add(super::budget::checked_u64(additional_compute_work)?)
                 .and_then(|work| work.checked_add(measured.compute_work()))
+                .and_then(|work| work.checked_add(draft_bytes))
                 .and_then(|work| work.checked_add(publication_work))
                 .ok_or(ResidentKernelError::InvalidShape)?,
             output_elements,
@@ -17697,7 +17948,7 @@ fn preflight_snapshot_dense_f64_output(
             .iter()
             .try_fold((0_u64, 0_u64), |(bytes, nodes), value| {
                 let (next_bytes, next_nodes) =
-                    snapshot_clone_cost(&mut footprint_meter, value, schemas)?;
+                    snapshot_operand_copy_cost(&mut footprint_meter, value, schemas, true)?;
                 Ok::<_, ResidentKernelError>((
                     bytes
                         .checked_add(next_bytes)
@@ -17723,7 +17974,8 @@ fn preflight_snapshot_dense_f64_output(
                 .checked_add(super::budget::checked_u64(output_elements)?)
                 .ok_or(ResidentKernelError::InvalidShape)?,
             compute_work: measured.compute_work()
-                .checked_add(super::budget::checked_u64(output_elements)?)
+                .checked_add(draft_bytes)
+                .and_then(|work| work.checked_add(super::budget::checked_u64(output_elements).ok()?))
                 .and_then(|work| work.checked_add(
                     super::budget::checked_u64(additional_compute_work).ok()?
                 ))
@@ -19662,10 +19914,10 @@ fn finalize_snapshot_data_for_shape_with_work_budget(
         .snapshot_output()
         .ok_or(ResidentKernelError::InvalidOutput)?;
     let schemas = kernel
-        .snapshot_schemas()
+        .shared_snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidOutput)?;
     let budget = canonicalization_work_limit.map(SnapshotCanonicalizationBudget::new);
-    let mut context = SnapshotValidationContext::new(schemas);
+    let mut context = SnapshotValidationContext::with_shared_schemas(schemas);
     if let Some(budget) = budget.as_ref() {
         context = context.with_canonicalization_budget(budget);
     }
@@ -20723,6 +20975,554 @@ fn indexed_rows(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn primitive_constructor_fixture(
+        element: SchemaBody,
+        count: usize,
+        horizontal: bool,
+        matrix_inputs: bool,
+    ) -> (mech_core::SchemaTable, SchemaId, BoundResidentKernel) {
+        let matrix = |rows, columns| SchemaBody::Matrix {
+            element: Box::new(element.clone()),
+            dimensions: Box::new([
+                mech_core::DimensionExpr::Constant(rows),
+                mech_core::DimensionExpr::Constant(columns),
+            ]),
+        };
+        let input_body = if matrix_inputs {
+            matrix(1, 1)
+        } else {
+            element.clone()
+        };
+        let output_body = if horizontal {
+            matrix(1, count as u64)
+        } else {
+            matrix(count as u64, 1)
+        };
+        let (schemas, ids) = test_schema_table([input_body, output_body]);
+        let input = test_layout(
+            &schemas,
+            ids[0],
+            ResidentValueKind::Snapshot,
+            ResidentShape::SCALAR,
+        );
+        let output = test_layout(
+            &schemas,
+            ids[1],
+            ResidentValueKind::Snapshot,
+            ResidentShape::SCALAR,
+        );
+        let contract = test_contract(
+            &vec![ids[0]; count],
+            ids[1],
+            OutputConstruction::Build {
+                postcondition: ShapeContractReference {
+                    module_path: vec!["matrix".to_owned(), "concatenate".to_owned()]
+                        .into_boxed_slice(),
+                    contract_name: if horizontal {
+                        "horizontal-output"
+                    } else {
+                        "vertical-output"
+                    }
+                    .into(),
+                },
+            },
+            AccessMode::Write,
+            AliasPolicy::NoAlias,
+            ChangeDetectionPolicy::KernelReported,
+        );
+        let layouts = vec![input; count];
+        let request = ResidentKernelBindRequest {
+            contract: &contract,
+            schemas: &schemas,
+            inputs: &layouts,
+            output,
+        };
+        let kernel = if horizontal {
+            bind_horizontal(&request)
+        } else {
+            bind_vertical(&request)
+        }
+        .unwrap();
+        (schemas, ids[0], kernel)
+    }
+
+    #[test]
+    fn primitive_snapshot_constructor_nullary_large_row_axes_stay_unclassified() {
+        let operation =
+            mech_core::maintained_operation_contract("matrix/comprehension", 0, false).unwrap();
+        assert!(operation.inputs.resolve(0).unwrap().is_empty());
+        for rows in [0, 1, super::super::budget::MAX_RESIDENT_COMPUTE_WORK + 1] {
+            let (schemas, ids) = test_schema_table([SchemaBody::Matrix {
+                element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W64)),
+                dimensions: Box::new([
+                    mech_core::DimensionExpr::Constant(rows),
+                    mech_core::DimensionExpr::Constant(0),
+                ]),
+            }]);
+            let policy = &operation.outputs[0];
+            let contract = test_contract(
+                &[],
+                ids[0],
+                policy.construction.clone(),
+                policy.access,
+                policy.alias.clone(),
+                policy.change_detection,
+            );
+            let request = ResidentKernelBindRequest {
+                contract: &contract,
+                schemas: &schemas,
+                inputs: &[],
+                output: test_layout(
+                    &schemas,
+                    ids[0],
+                    ResidentValueKind::Snapshot,
+                    ResidentShape::SCALAR,
+                ),
+            };
+            let kernel = bind_matrix_comprehension(&request).unwrap();
+            assert_eq!(
+                kernel.work_accounting(),
+                ResidentKernelWorkAccounting::Unclassified
+            );
+            assert!(
+                kernel
+                    .retained_state::<SnapshotConstructorPlan>()
+                    .unwrap()
+                    .primitive_output_dimensions
+                    .is_none()
+            );
+            // This is an authority test only: the large legacy empty-axis
+            // executor is not run or claimed to have newly bounded work.
+        }
+    }
+
+    #[test]
+    fn primitive_snapshot_constructor_singleton_output_funds_its_packed_buffer() {
+        use mech_core::{
+            BoundCall, CallMemoryPlanningRequest, MemoryFootprintWitness, MemoryLifetime,
+            MemoryPlanPoint, NodeId, PortDirection, RegionAccessPlan, ResidentOperationKey,
+            ResolvedOperationDescriptor, ResolvedValueDescriptor, TargetMemoryProfile, Value,
+            plan_call_memory,
+        };
+        let element = SchemaBody::UnsignedInteger(IntegerWidth::W64);
+        let (schemas, input_schema, kernel) =
+            primitive_constructor_fixture(element.clone(), 1, true, false);
+        let output_schema = kernel.snapshot_output().unwrap().schema;
+        let expected = primitive_constructor_output_footprint(&element, 1).unwrap();
+        let initial = test_value(&schemas, input_schema, ValueDataDraft::U64(10));
+        let input_size = initial.retained_footprint(&schemas).unwrap();
+        assert_eq!(expected.retained_bytes, input_size.retained_bytes + 8);
+        assert_eq!(expected.encoded_bytes, 8);
+        assert_eq!(expected.node_count, 3);
+        let descriptor = |id| {
+            let schema = schemas.get(id).unwrap().clone();
+            let shape = schema.instantiate_shape(Box::new([])).unwrap();
+            ResolvedValueDescriptor::from_schema(schema, shape).unwrap()
+        };
+        let policy = mech_core::maintained_operation_contract("matrix/horzcat", 1, false).unwrap();
+        let binding = BoundCall::artifact_operation(
+            ResolvedOperationDescriptor::from_name("matrix/horzcat", policy).unwrap(),
+            Box::new([descriptor(input_schema)]),
+            Box::new([descriptor(output_schema)]),
+            ResidentOperationKey {
+                module_path: vec!["matrix".to_owned()].into_boxed_slice(),
+                operation_name: "horzcat".to_owned(),
+            },
+        )
+        .unwrap();
+        let accounting = kernel.work_accounting();
+        let kernel = kernel
+            .with_bound_call(binding.clone())
+            .with_work_accounting(accounting);
+        let node = NodeId::new(0);
+        let footprint = |value: Option<&Value>| {
+            let Some(value) = value else {
+                return CurrentMemoryFootprint::default();
+            };
+            let measured = value.retained_footprint(&schemas).unwrap();
+            CurrentMemoryFootprint {
+                logical_elements: 1,
+                payload_bytes: measured.retained_bytes,
+                encoded_bytes: measured.encoded_bytes,
+                retained_nodes: measured.node_count,
+                schema_bytes: schemas.get(value.schema()).unwrap().canonical_bytes().len() as u64,
+                shape_parameter_count: value.shape().parameter_values().len() as u64,
+                ..CurrentMemoryFootprint::default()
+            }
+        };
+        let invoke = |number, limit, output: &mut [Option<Value>; 1]| {
+            let input = [Some(test_value(
+                &schemas,
+                input_schema,
+                ValueDataDraft::U64(number),
+            ))];
+            let input_footprint = footprint(input[0].as_ref());
+            let prior = footprint(output[0].as_ref());
+            let mut target = TargetMemoryProfile::current_resident_cpu().unwrap();
+            target.limits.max_output_bytes = Some(limit);
+            let lifetime = MemoryLifetime::Turn {
+                first: MemoryPlanPoint::new(0),
+                last: MemoryPlanPoint::new(1),
+            };
+            let input_storage = crate::memory_planner::resident_storage_descriptor(
+                &descriptor(input_schema),
+                ResidentValueKind::Snapshot,
+                lifetime,
+            )
+            .unwrap();
+            let output_storage = crate::memory_planner::resident_storage_descriptor(
+                &descriptor(output_schema),
+                ResidentValueKind::Snapshot,
+                lifetime,
+            )
+            .unwrap();
+            let call = plan_call_memory(CallMemoryPlanningRequest {
+                bound_call: &binding,
+                input_storage: &[input_storage],
+                output_storage: &[output_storage],
+                input_witnesses: &[MemoryFootprintWitness::Known(input_footprint)],
+                output_witnesses: &[MemoryFootprintWitness::Known(prior)],
+                published_output_witnesses: &[MemoryFootprintWitness::Known(prior)],
+                implementation_memory: ImplementationMemoryClass::CanonicalFinalize,
+                target: &target,
+                regions: &[RegionAccessPlan::WholeValue],
+            })
+            .unwrap();
+            let program = crate::memory_planner::ProgramMemoryPlan {
+                call_nodes: Box::new([node]),
+                calls: Box::new([call.clone()]),
+                allocations: call.allocations.clone(),
+                budget_limits: target.limits,
+                ..crate::memory_planner::ProgramMemoryPlan::default()
+            };
+            let mut facts = crate::memory_planner::TurnMemoryFacts::default();
+            facts
+                .resolved_footprints
+                .insert((node, PortDirection::Input, 0), input_footprint);
+            facts
+                .resolved_footprints
+                .insert((node, PortDirection::Output, 0), prior);
+            facts.published_footprints.insert((node, 0), prior);
+            let turn =
+                crate::memory_planner::plan_current_resident_turn(&program, node, &facts).unwrap();
+            assert!(turn.call.is_some());
+            assert!(
+                turn.budget_violations.is_empty(),
+                "{:?}",
+                turn.budget_violations
+            );
+            super::super::budget::with_resident_turn_plan(turn, || {
+                kernel.execute(
+                    &Inputs(&[ResidentValueRef::Snapshot(&input)]),
+                    ResidentValueMut::Snapshot(output),
+                )
+            })
+        };
+        let mut output = [None];
+        assert_eq!(
+            invoke(10, expected.retained_bytes - 1, &mut output),
+            Err(ResidentKernelError::InvalidShape),
+            "scalar retention alone must not authorize a new packed matrix buffer",
+        );
+        assert!(output[0].is_none());
+        invoke(10, 4_096, &mut output).unwrap();
+        let first = output[0].as_ref().unwrap();
+        assert_eq!(first.retained_footprint(&schemas).unwrap(), expected);
+        assert!(Arc::ptr_eq(
+            &first.schemas().unwrap(),
+            kernel.shared_snapshot_schemas().unwrap()
+        ));
+        invoke(20, 4_096, &mut output).unwrap();
+        let value = output[0].as_ref().unwrap();
+        assert_eq!(value.retained_footprint(&schemas).unwrap(), expected);
+        let ValueData::Matrix(matrix) = value.data() else {
+            panic!("{value:?}")
+        };
+        assert!(matches!(matrix.elements(), SequenceView::U64(values) if values == &[20]));
+    }
+
+    #[test]
+    fn primitive_snapshot_constructor_exact_plan_qualifies_and_mutations_clear() {
+        for element in [
+            SchemaBody::Bool,
+            SchemaBody::UnsignedInteger(IntegerWidth::W64),
+            SchemaBody::SignedInteger(IntegerWidth::W64),
+            SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+            SchemaBody::Atom(mech_core::NominalKey::from_bytes([0; 32])),
+        ] {
+            for horizontal in [true, false] {
+                let (_, _, kernel) =
+                    primitive_constructor_fixture(element.clone(), 2, horizontal, false);
+                assert_eq!(
+                    kernel.work_accounting(),
+                    ResidentKernelWorkAccounting::RuntimeMetered
+                );
+                let plan = kernel.retained_state::<SnapshotConstructorPlan>().unwrap();
+                assert_eq!(
+                    plan.primitive_output_dimensions,
+                    Some(if horizontal { (1, 2) } else { (2, 1) })
+                );
+                assert_eq!(
+                    kernel.clone().work_accounting(),
+                    ResidentKernelWorkAccounting::RuntimeMetered
+                );
+                assert_eq!(
+                    kernel
+                        .clone()
+                        .with_retained_state(Arc::new(plan.clone()))
+                        .work_accounting(),
+                    ResidentKernelWorkAccounting::Unclassified
+                );
+                assert_eq!(
+                    kernel
+                        .clone()
+                        .with_snapshot_schemas(kernel.snapshot_schemas().unwrap().clone())
+                        .work_accounting(),
+                    ResidentKernelWorkAccounting::Unclassified
+                );
+                assert_eq!(
+                    kernel
+                        .clone()
+                        .with_snapshot_output(kernel.snapshot_output().unwrap().clone())
+                        .work_accounting(),
+                    ResidentKernelWorkAccounting::Unclassified
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn primitive_snapshot_constructor_keeps_other_inputs_unclassified() {
+        for (element, matrix_inputs) in [
+            (SchemaBody::String, false),
+            (SchemaBody::UnsignedInteger(IntegerWidth::W64), true),
+            (
+                SchemaBody::Tuple(
+                    vec![SchemaBody::UnsignedInteger(IntegerWidth::W64)].into_boxed_slice(),
+                ),
+                false,
+            ),
+        ] {
+            let (_, _, kernel) = primitive_constructor_fixture(element, 2, true, matrix_inputs);
+            assert_eq!(
+                kernel.work_accounting(),
+                ResidentKernelWorkAccounting::Unclassified
+            );
+            assert!(
+                kernel
+                    .retained_state::<SnapshotConstructorPlan>()
+                    .unwrap()
+                    .primitive_output_dimensions
+                    .is_none()
+            );
+        }
+    }
+
+    #[test]
+    fn primitive_snapshot_constructor_metadata_is_admitted_before_input_reads() {
+        let cost = primitive_constructor_metadata_cost(2).unwrap();
+        assert!(
+            cost.temporary_bytes()
+                >= 2 * (core::mem::size_of::<(usize, usize)>()
+                    + core::mem::size_of::<Vec<ValueDataDraft>>()) as u64
+        );
+        assert!(cost.compute_work() >= 2 * 128);
+        assert!(primitive_constructor_metadata_cost(usize::MAX).is_err());
+        let (_, _, kernel) = primitive_constructor_fixture(
+            SchemaBody::UnsignedInteger(IntegerWidth::W64),
+            super::super::budget::MAX_RESIDENT_RETAINED_NODES as usize + 1,
+            true,
+            false,
+        );
+        struct Unreadable(usize);
+        impl ResidentKernelInputs for Unreadable {
+            fn len(&self) -> usize {
+                self.0
+            }
+            fn get(&self, _: usize) -> Option<ResidentValueRef<'_>> {
+                panic!("metadata denial reached a provider/input read")
+            }
+        }
+        let mut output = [None];
+        assert_eq!(
+            kernel.execute(
+                &Unreadable(kernel.parameters()[0] as usize),
+                ResidentValueMut::Snapshot(&mut output),
+            ),
+            Err(ResidentKernelError::InvalidShape)
+        );
+        assert!(output[0].is_none());
+    }
+
+    #[test]
+    fn primitive_snapshot_constructor_errors_are_atomic_and_schema_owner_is_shared() {
+        for horizontal in [true, false] {
+            let (schemas, input_schema, kernel) = primitive_constructor_fixture(
+                SchemaBody::UnsignedInteger(IntegerWidth::W64),
+                2,
+                horizontal,
+                false,
+            );
+            let owner = kernel.shared_snapshot_schemas().unwrap();
+            let mut output = [None];
+            let left = [Some(test_value(
+                &schemas,
+                input_schema,
+                ValueDataDraft::U64(1),
+            ))];
+            let right = [Some(test_value(
+                &schemas,
+                input_schema,
+                ValueDataDraft::U64(2),
+            ))];
+            let inputs = [
+                ResidentValueRef::Snapshot(&left),
+                ResidentValueRef::Snapshot(&right),
+            ];
+            kernel
+                .execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output))
+                .unwrap();
+            let before = output[0].as_ref().unwrap().clone();
+            assert!(Arc::ptr_eq(&before.schemas().unwrap(), owner));
+            let ValueData::Matrix(matrix) = before.data() else {
+                panic!("{before:?}")
+            };
+            assert!(matches!(matrix.elements(), SequenceView::U64(values) if values == &[1, 2]));
+            let malformed = [None];
+            let inputs = [
+                ResidentValueRef::Snapshot(&left),
+                ResidentValueRef::Snapshot(&malformed),
+            ];
+            assert_eq!(
+                kernel.execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output)),
+                Err(ResidentKernelError::InvalidInput)
+            );
+            assert!(output[0].as_ref().unwrap().shares_frozen_storage(&before));
+            let next = [Some(test_value(
+                &schemas,
+                input_schema,
+                ValueDataDraft::U64(3),
+            ))];
+            let inputs = [
+                ResidentValueRef::Snapshot(&left),
+                ResidentValueRef::Snapshot(&next),
+            ];
+            kernel
+                .execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output))
+                .unwrap();
+            let value = output[0].as_ref().unwrap();
+            assert!(Arc::ptr_eq(&value.schemas().unwrap(), owner));
+            let ValueData::Matrix(matrix) = value.data() else {
+                panic!("{value:?}")
+            };
+            assert!(matches!(matrix.elements(), SequenceView::U64(values) if values == &[1, 3]));
+        }
+    }
+
+    #[test]
+    fn retention_operand_inventory_distinguishes_scalar_borrow_from_matrix_copy() {
+        let (schemas, ids) = test_schema_table([
+            SchemaBody::String,
+            SchemaBody::Matrix {
+                element: Box::new(SchemaBody::String),
+                dimensions: Box::new([
+                    mech_core::DimensionExpr::Constant(1),
+                    mech_core::DimensionExpr::Constant(1),
+                ]),
+            },
+        ]);
+        let scalar = test_value(&schemas, ids[0], ValueDataDraft::String("x".repeat(8_192)));
+        let matrix = test_value(
+            &schemas,
+            ids[1],
+            ValueDataDraft::Matrix(
+                vec![ValueDataDraft::String("x".repeat(8_192))].into_boxed_slice(),
+            ),
+        );
+        let mut scalar_meter =
+            super::super::budget::ResidentBudgetMeter::for_closed_analysis(4_096, 0);
+        snapshot_operand_copy_cost(&mut scalar_meter, &scalar, &schemas, false).unwrap();
+        assert_eq!(scalar_meter.estimate().comparison_work(), 0);
+        assert!(scalar_meter.estimate().compute_work() < 4_096);
+        let token = matrix.resident_token();
+        assert!(
+            snapshot_operand_copy_cost(
+                &mut super::super::budget::ResidentBudgetMeter::for_closed_analysis(4_096, 0),
+                &matrix,
+                &schemas,
+                true
+            )
+            .is_err()
+        );
+        let mut retry = super::super::budget::ResidentBudgetMeter::for_closed_analysis(65_536, 0);
+        let (bytes, _) = snapshot_operand_copy_cost(&mut retry, &matrix, &schemas, true).unwrap();
+        assert!(retry.estimate().compute_work() >= bytes);
+        assert_eq!(retry.estimate().comparison_work(), 0);
+        assert_eq!(matrix.resident_token(), token);
+    }
+
+    #[test]
+    fn retention_numeric_results_share_the_exact_selected_kernel_schema_owner() {
+        let u64_body = SchemaBody::UnsignedInteger(IntegerWidth::W64);
+        let mut bodies = vec![u64_body.clone()];
+        bodies.extend((0..514).map(|index| {
+            SchemaBody::Record(
+                vec![mech_core::SchemaField {
+                    name: format!("unused-{index}"),
+                    schema: u64_body.clone(),
+                }]
+                .into_boxed_slice(),
+            )
+        }));
+        let (schemas, ids) = test_schema_table(bodies);
+        assert!(schemas.clone_allocation_bound_bytes().unwrap() > 4_096);
+        let id = ids[0];
+        let contract = test_contract(
+            &[id, id],
+            id,
+            OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            AccessMode::Write,
+            AliasPolicy::NoAlias,
+            ChangeDetectionPolicy::ExactScalar,
+        );
+        let port = || {
+            test_layout(
+                &schemas,
+                id,
+                ResidentValueKind::Snapshot,
+                ResidentShape::SCALAR,
+            )
+        };
+        let kernel = bind_add(&ResidentKernelBindRequest {
+            contract: &contract,
+            schemas: &schemas,
+            inputs: &[port(), port()],
+            output: port(),
+        })
+        .unwrap();
+        let owner = kernel.shared_snapshot_schemas().unwrap().clone();
+        let left = [Some(test_value(&schemas, id, ValueDataDraft::U64(1)))];
+        let right = [Some(test_value(&schemas, id, ValueDataDraft::U64(2)))];
+        let inputs = [
+            ResidentValueRef::Snapshot(&left),
+            ResidentValueRef::Snapshot(&right),
+        ];
+        let mut output = [None];
+        for _ in 0..3 {
+            kernel
+                .execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output))
+                .unwrap();
+            let value = output[0].as_ref().unwrap();
+            assert!(matches!(value.data(), ValueData::U64(3)));
+            assert!(
+                Arc::ptr_eq(&value.schemas().unwrap(), &owner),
+                "no full retained schema arena clone during numeric result finalization"
+            );
+        }
+    }
 
     struct Inputs<'a>(&'a [ResidentValueRef<'a>]);
 
@@ -29155,15 +29955,88 @@ mod tests {
         let current = test_value(&schemas, *string_schema, ValueDataDraft::String(text));
         let mut output = [Some(current.clone())];
 
+        // Retained source/prior roots now charge metadata compute, not another
+        // payload comparison. Selection still scans one encoded String and
+        // publication reserves both equal String payloads plus schema equality.
+        let encoded = current.retained_footprint(&schemas).unwrap().encoded_bytes;
+        assert_eq!(encoded, 18 * 1024 + 8);
+        let schema_work = schemas
+            .entry(*string_schema)
+            .unwrap()
+            .canonical_bytes()
+            .len() as u64;
+        let snapshot_comparison = 3 * encoded + schema_work;
+        assert!(snapshot_comparison < super::super::budget::MAX_RESIDENT_COMPARISON_WORK);
+        let mut retained = super::super::budget::ResidentBudgetMeter::default();
+        super::super::budget::measure_borrowed_canonical_value_footprint(
+            &mut retained,
+            source[0].as_ref().unwrap(),
+            &schemas,
+        )
+        .unwrap();
+        super::super::budget::measure_borrowed_canonical_value_footprint(
+            &mut retained,
+            &current,
+            &schemas,
+        )
+        .unwrap();
+        assert_eq!(retained.estimate().comparison_work(), 0);
+        assert!(retained.estimate().compute_work() > 0);
+
+        struct BeforeAccessDraft<'a> {
+            inputs: &'a [ResidentValueRef<'a>],
+            selector_reads: std::cell::Cell<usize>,
+        }
+        impl ResidentKernelInputs for BeforeAccessDraft<'_> {
+            fn len(&self) -> usize {
+                self.inputs.len()
+            }
+            fn get(&self, index: usize) -> Option<ResidentValueRef<'_>> {
+                if index == 1 {
+                    let reads = self.selector_reads.get() + 1;
+                    self.selector_reads.set(reads);
+                    assert!(
+                        reads <= 2,
+                        "denied access reached selector/payload materialization"
+                    );
+                }
+                self.inputs.get(index).copied()
+            }
+        }
+        let before_draft = BeforeAccessDraft {
+            inputs: &inputs,
+            selector_reads: std::cell::Cell::new(0),
+        };
+        let mut denied =
+            super::super::budget::detached_turn_plan(mech_core::ResourceDemand::default()).unwrap();
+        denied.budget_limits.max_comparison_work = Some(snapshot_comparison - 1);
         assert_eq!(
-            kernel.execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output)),
+            super::super::budget::with_resident_turn_plan(denied.clone(), || {
+                kernel.execute(&before_draft, ResidentValueMut::Snapshot(&mut output))
+            }),
             Err(ResidentKernelError::InvalidShape),
         );
+        assert_eq!(before_draft.selector_reads.get(), 2);
+        assert!(output[0].as_ref().unwrap().shares_frozen_storage(&current));
         assert!(
             output[0]
                 .as_ref()
                 .unwrap()
                 .language_eq(&schemas, &current, &schemas)
+                .unwrap()
+        );
+        denied.budget_limits.max_comparison_work = Some(snapshot_comparison);
+        assert_eq!(
+            super::super::budget::with_resident_turn_plan(denied, || {
+                kernel.execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output))
+            }),
+            Ok(false),
+        );
+        assert!(
+            output[0]
+                .as_ref()
+                .unwrap()
+                .snapshot_eq(&schemas, &current, &schemas)
                 .unwrap()
         );
 
@@ -29193,12 +30066,37 @@ mod tests {
         })
         .unwrap();
         let mut dense_output = [current_text.clone()];
+        let dense_comparison = 2 * encoded + current_text.len() as u64 + 1;
+        assert!(dense_comparison < super::super::budget::MAX_RESIDENT_COMPARISON_WORK);
+        let before_dense_draft = BeforeAccessDraft {
+            inputs: &inputs,
+            selector_reads: std::cell::Cell::new(0),
+        };
+        let original_pointer = dense_output[0].as_ptr();
+        let mut denied =
+            super::super::budget::detached_turn_plan(mech_core::ResourceDemand::default()).unwrap();
+        denied.budget_limits.max_comparison_work = Some(dense_comparison - 1);
         assert_eq!(
-            dense_kernel.execute(
-                &Inputs(&inputs),
-                ResidentValueMut::String(&mut dense_output),
-            ),
+            super::super::budget::with_resident_turn_plan(denied.clone(), || {
+                dense_kernel.execute(
+                    &before_dense_draft,
+                    ResidentValueMut::String(&mut dense_output),
+                )
+            }),
             Err(ResidentKernelError::InvalidShape),
+        );
+        assert_eq!(before_dense_draft.selector_reads.get(), 2);
+        assert_eq!(dense_output[0].as_ptr(), original_pointer);
+        assert_eq!(dense_output, [current_text.clone()]);
+        denied.budget_limits.max_comparison_work = Some(dense_comparison);
+        assert_eq!(
+            super::super::budget::with_resident_turn_plan(denied, || {
+                dense_kernel.execute(
+                    &Inputs(&inputs),
+                    ResidentValueMut::String(&mut dense_output),
+                )
+            }),
+            Ok(false),
         );
         assert_eq!(dense_output, [current_text]);
     }
@@ -29932,12 +30830,32 @@ mod tests {
         let mut output = [Some(original.clone())];
         let hold = BoundResidentKernel::new(hold_state, Box::new([]))
             .with_snapshot_schemas(schemas.clone());
+        let encoded = original.retained_footprint(&schemas).unwrap().encoded_bytes;
+        assert_eq!(encoded, 20_000 + 8);
+        let equality_work = 2 * encoded
+            + schemas
+                .entry(*string_schema)
+                .unwrap()
+                .canonical_bytes()
+                .len() as u64;
+        let mut denied =
+            super::super::budget::detached_turn_plan(mech_core::ResourceDemand::default()).unwrap();
+        denied.budget_limits.max_comparison_work = Some(equality_work - 1);
         assert_eq!(
-            hold.execute(
+            super::super::budget::with_resident_turn_plan(denied.clone(), || hold.execute(
                 &Inputs(&[ResidentValueRef::Snapshot(&source)]),
                 ResidentValueMut::Snapshot(&mut output),
-            ),
+            )),
             Err(ResidentKernelError::InvalidShape),
+        );
+        assert!(output[0].as_ref().unwrap().shares_frozen_storage(&original));
+        denied.budget_limits.max_comparison_work = Some(equality_work);
+        assert_eq!(
+            super::super::budget::with_resident_turn_plan(denied, || hold.execute(
+                &Inputs(&[ResidentValueRef::Snapshot(&source)]),
+                ResidentValueMut::Snapshot(&mut output),
+            )),
+            Ok(false),
         );
         assert!(
             output[0]

@@ -875,33 +875,26 @@ fn canonical_string_selection(
     let selector_count = rows
         .checked_mul(columns)
         .ok_or(ResidentKernelError::InvalidShape)?;
-    // Admit both segmentation passes and selector visits before performing
-    // them; no index or grapheme buffer is constructed without admission.
-    let scan_work = source
-        .len()
+    let index = super::text_index::prepared(source)?;
+    let extent = index.len();
+    let scan_work = selector_count
         .checked_mul(2)
-        .and_then(|work| selector_count.checked_mul(2)?.checked_add(work))
+        .and_then(|work| work.checked_add(index.compute_work))
         .ok_or(ResidentKernelError::InvalidShape)?;
-    admit_string_selection_scratch(scan_work, 0)?;
-    let graphemes = grapheme::Graphemes::from_usvs(source);
-    let extent = graphemes.iter().count();
-    let span_bytes = extent
-        .checked_mul(core::mem::size_of::<&str>())
-        .and_then(|bytes| bytes.checked_add(core::mem::size_of::<Vec<&str>>()))
-        .ok_or(ResidentKernelError::InvalidShape)?;
-    admit_string_selection_scratch(scan_work, span_bytes)?;
-    let mut spans = Vec::with_capacity(extent);
-    for grapheme in graphemes.iter() {
-        spans.push(grapheme.as_str());
-    }
+    admit_string_selection_scratch(scan_work, index.scratch_bytes)?;
     let mut selected_count = 0usize;
     let mut payload_bytes = 0usize;
-    visit_canonical_string_selector(selector, rows, columns, extent, |index| {
+    visit_canonical_string_selector(selector, rows, columns, extent, |ordinal| {
         selected_count = selected_count
             .checked_add(1)
             .ok_or(ResidentKernelError::InvalidShape)?;
         payload_bytes = payload_bytes
-            .checked_add(spans[index].len())
+            .checked_add(
+                source[index
+                    .byte_range(ordinal)
+                    .ok_or(ResidentKernelError::InvalidInput)?]
+                .len(),
+            )
             .ok_or(ResidentKernelError::InvalidShape)?;
         Ok(())
     })?;
@@ -920,12 +913,16 @@ fn canonical_string_selection(
         compute_work,
         target.len().max(payload_bytes),
         1,
-        span_bytes,
+        index.scratch_bytes,
         0,
     )?;
     let mut next = String::with_capacity(payload_bytes);
-    visit_canonical_string_selector(selector, rows, columns, extent, |index| {
-        next.push_str(spans[index]);
+    visit_canonical_string_selector(selector, rows, columns, extent, |ordinal| {
+        next.push_str(
+            &source[index
+                .byte_range(ordinal)
+                .ok_or(ResidentKernelError::InvalidInput)?],
+        );
         Ok(())
     })?;
     let changed = *target != next;

@@ -875,9 +875,20 @@ fn enumerate(
     ) else {
         return Ok(false);
     };
-    if !analysis
-        .construction
-        .charge_comparison_work(meter.estimate().comparison_work())
+    let measured = meter.estimate();
+    let Some(non_comparison_work) = measured
+        .compute_work()
+        .checked_sub(measured.comparison_work())
+    else {
+        return Ok(false);
+    };
+    if (non_comparison_work > 0
+        && !analysis
+            .construction
+            .charge_compute_chunk(0, non_comparison_work, 1))
+        || !analysis
+            .construction
+            .charge_comparison_work(measured.comparison_work())
     {
         return Ok(false);
     }
