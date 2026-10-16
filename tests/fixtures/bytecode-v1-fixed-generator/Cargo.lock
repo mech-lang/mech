@@ -766,6 +766,7 @@ dependencies = [
  "serde_derive",
  "tabled",
  "unicode-segmentation",
+ "unicode-width",
 ]
 
 [[package]]

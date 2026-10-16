@@ -914,6 +914,7 @@ dependencies = [
  "serde_json",
  "tabled",
  "unicode-segmentation",
+ "unicode-width",
 ]
 
 [[package]]

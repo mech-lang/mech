@@ -53,6 +53,14 @@ class ObsoleteProgramReachabilityTests(unittest.TestCase):
         )
         self.assertEqual(findings, [])
 
+    def test_generated_html_class_count_is_allowed(self):
+        self.assertEqual(self.scan({"src/test.rs":
+            'assert_eq!(html.matches("mech-program-output").count(), 0);\n'}), [])
+
+    def test_html_class_count_does_not_hide_an_obsolete_crate_call(self):
+        self.assertEqual(len(self.scan({"src/test.rs":
+            'html.matches("mech-program-output"); mech_program::execute(program);\n'})), 1)
+
     def test_single_quoted_mech_program_html_class_is_allowed(self):
         findings = self.scan(
             {

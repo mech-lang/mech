@@ -3348,10 +3348,8 @@ result\n",
             mech_syntax::document::ParseConfig::default(),
         )
         .unwrap();
+        assert!(!broken.is_strictly_clean());
         assert!(broken.index().is_err());
-        assert!(
-            mech_runtime::canonical_document_presentation_output_ids(&broken.document()).is_err()
-        );
         snapshot.sources.insert(
             uri.clone(),
             mech_runtime::RuntimeWorkspaceSourceSnapshot {
@@ -3391,7 +3389,10 @@ result\n",
             broken.contains("cannot index an invalid retained source document"),
             "{broken}"
         );
-        assert!(registry.get_route("/source/broken.mec").is_some());
+        assert_eq!(
+            registry.get_route("/source/broken.mec").unwrap().bytes,
+            broken_source.as_bytes()
+        );
         std::fs::remove_dir_all(root).unwrap();
     }
 

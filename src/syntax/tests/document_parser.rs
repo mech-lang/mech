@@ -94,7 +94,24 @@ fn missing_right_parenthesis_has_owned_token_and_safe_fix() {
         .iter()
         .find(|diagnostic| diagnostic.code.as_str() == "syntax/missing-delimiter")
         .unwrap();
-    assert!(diagnostic.labels.is_empty());
+    assert_eq!(diagnostic.labels.len(), 1);
+    let boundary = diagnostic.labels[0]
+        .anchor
+        .resolve(snapshot.revision, &snapshot.nodes)
+        .unwrap();
+    assert!(boundary.is_empty());
+    assert_eq!(
+        diagnostic.labels[0].message,
+        "closing delimiter expected before this boundary"
+    );
+    let opening = diagnostic
+        .primary
+        .resolve(snapshot.revision, &snapshot.nodes)
+        .unwrap();
+    assert_eq!(
+        &snapshot.source.to_contiguous_string()[opening.start.0 as usize..opening.end.0 as usize],
+        "("
+    );
     assert_eq!(
         diagnostic.expected,
         vec![ExpectedSyntax::Token(SyntaxKind::RightParen)]

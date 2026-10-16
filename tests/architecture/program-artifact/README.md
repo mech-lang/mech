@@ -11,6 +11,12 @@ constant, interface, slot/producer, node, binding, output, constraint, and
 operation sections directly. Earlier pre-launch bytecode-v1 layouts have no
 compatibility adapter.
 
+Source enum and FSM declarations retain their defining document, relative path,
+and actual schema in an optional graph field committed by `ProgramRevision`.
+The field is omitted when empty, preserving existing non-nominal bytes and
+revisions. Editable nominal bundles require this evidence and must be rebuilt
+when produced by an older compiler without it.
+
 C3 produces and round-trips the artifact but does not activate or execute it.
 The checker therefore freezes the C2 production execution paths against
 changes in this PR, while allowing the compiler-only `MechProgram` method to

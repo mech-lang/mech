@@ -1,0 +1,301 @@
+{
+  "id": "E-STANDALONE-ENUM-REVIEW-FOLLOWUP",
+  "outcome": "passed",
+  "recorded_at": "2026-10-07T16:12:15.180237+00:00",
+  "source_commit": "35e2a7a72c86c81282ee49f293da5243bfddbd8a",
+  "evidence_level": "real-Chrome-WASM-execution",
+  "scope": "Fresh focused package for standalone enum provenance and retained source revision review fixes",
+  "command": "/private/tmp/mech-review896-types-followup.py --expected-head 35e2a7a72c86c81282ee49f293da5243bfddbd8a --build-command 'RUSTUP_TOOLCHAIN=nightly-2026-03-03 CARGO_BUILD_JOBS=1 CARGO_TARGET_DIR=/private/tmp/mech-review896-browser-target /private/tmp/mech-ci-wasm-pack/wasm-pack-v0.15.0-aarch64-apple-darwin/wasm-pack build src/wasm --target web --out-dir pkg --no-default-features --features browser_project,type_inspection,u64,u128 --locked --offline'",
+  "validation_script_sha256": "2d4b28c003fa7d36b04021db85c6f759b767740e0a3ae793f689c5d67cf21331",
+  "maintained_assertions": "audit/v04/check_types_browser.py deterministic cases, publication/restarts, exact UTF-8 diagnostic selection and stale-diagnostic clearing",
+  "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+  "artifact_identity": {
+    "source_commit": "35e2a7a72c86c81282ee49f293da5243bfddbd8a",
+    "scope": "Fresh focused package for standalone enum provenance and retained source revision review fixes",
+    "features": "browser_project,type_inspection,u64,u128",
+    "target": "wasm32-unknown-unknown",
+    "profile": "release",
+    "wasm_opt": false,
+    "command": "RUSTUP_TOOLCHAIN=nightly-2026-03-03 CARGO_BUILD_JOBS=1 CARGO_TARGET_DIR=/private/tmp/mech-review896-browser-target /private/tmp/mech-ci-wasm-pack/wasm-pack-v0.15.0-aarch64-apple-darwin/wasm-pack build src/wasm --target web --out-dir pkg --no-default-features --features browser_project,type_inspection,u64,u128 --locked --offline",
+    "environment": {
+      "system": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+      "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0",
+      "wasm_pack": "wasm-pack 0.15.0",
+      "wasm_bindgen": "0.2.126 (Cargo.lock)"
+    },
+    "lockfile_sha256": "3bafde738e893a2c1c186d10856ec3ec0c104adefa4002cacee9f830c46980ff",
+    "code_sha256": {
+      "src/wasm/src/type_inspection.rs": "af64836f45ae350766dcaea184b8f95aab9fe9bee06a58109e67761819e95c86",
+      "src/wasm/src/project.rs": "3979283819ec3b0b7cb1c87205b8abe9b26074155ddcb09f23c22683c5e6500c",
+      "src/wasm/src/canonical_document.rs": "0ee43804007a77dd79bd7ea77b52d98db2fbd329948ebf52b439bec124fe6494",
+      "src/wasm/src/repl.rs": "8ff1907c44d7e5663eb14439699621227000cf36487575987b59304fce560e53",
+      "src/runtime/src/interactive.rs": "ad54625a28805ce43a39281cd0ac38c2d2e60b93e18101f1903e806e15250e71",
+      "src/runtime/src/resolver/document.rs": "0c501a55efb47d44abef50834d09d88ac1eb4e4459413e179f27f6d70295f26c",
+      "src/runtime/src/runtime/program/compiler.rs": "07c41aeac92657518a924628fd12adf79262f81857e6f7ae3e8063cf0de4bb1e",
+      "src/runtime/src/runtime/program/bundle.rs": "bafa20f45af3bc65a6ae82a995faf5c6bfb5dc93d3424fa75a14bf4d3716710a",
+      "src/engine/src/source_semantics/frontend.rs": "a30b4e4981ee832a23457a5bba0316f115ccef5b9afabb1af607cc8f309f7343",
+      "src/engine/src/source_semantics/document_lowering.rs": "0ecc57a1f1dd3286f9beb5a20f48513505d5276fc974526ecaf4949f9dd653bc",
+      "src/engine/src/source_semantics/document_types.rs": "fd7133e5b9dfc25b34aee0ab3b475018e1c975f77dfd8e5fdf57c398321eb211",
+      "src/engine/src/source_semantics/document_fsms.rs": "b34cc84283e2bb803378ab20910d4ae1d0241d75bdf32099dfdf593f048f1ab3",
+      "src/engine/src/source_semantics/constant_binding.rs": "60f356181b31a3ffc8b7b2c3f743cff431377d8c90327a7dd6eb524402dbbc0b",
+      "src/engine/src/artifact/model.rs": "8fc3b1abcc9fa2b24b76e51c4d0c893d291ea15aab7e62ef1b1a6b5bde9171d3",
+      "src/engine/src/artifact/encoding.rs": "ef0c4a11106d1d02d3cf297cb443783014dcb30b22e93b9a6ea7c5af53d5fd7c",
+      "src/engine/src/artifact/bytecode.rs": "24453735dc6d54e7e99cbc839017d34a768ea9b7891a1901e0bed68bd328fca3",
+      "src/wasm/Cargo.toml": "a67e53147c6379452454179b909ee3f51dd72d9785dd07202b4497adac7f26ea",
+      "Cargo.lock": "3bafde738e893a2c1c186d10856ec3ec0c104adefa4002cacee9f830c46980ff",
+      "audit/v04/check_types_browser.py": "5a2abe8d86bd5f4e79c5cd09adf8734e91c2214467535ef53c9b9fce3300bebb",
+      "tests/browser/harness/chrome.py": "dcda3597755d5408cad018204110f44f8a95ef23b00ab7d5bb2c81b64224d82e",
+      "src/syntax/src/document/parser/canonical/recursive_core/required/mod.rs": "2c6357c6b594961e021531ba4104fb37cb0d32501ab51dd7367f8e1dd7c37b96",
+      "src/syntax/src/document/parser/canonical/recursive_core/required/document_restart.rs": "3d72895ef502477d8095d145f3e142a6054f167149b1e9da81ec8270db376e74",
+      "src/syntax/src/document/parser/canonical/recursive_core/precedence/continuation/mod.rs": "79fe8348917725cf0beba1211405b90ff42129f4d339c15d9d452b4677373c20",
+      "src/syntax/src/document/parser/recovery/abandon.rs": "7dc360e6da031710fe8fea62e00a1f8afd1770aa99cc01cc2be0c46c686b8f92",
+      "audit/v04/site/types.html": "f25415e6f065fe7fe699cacdedb7abf4f69367fab68e2e8541dfd954f228b441",
+      "audit/v04/site/types.js": "4abd86c907847eb9e60363a85324e86c56ec4d67f4b66dc117288b7ddea9c9f2",
+      "audit/v04/site/wasm-transport.js": "68ab1c1ec3e150e4b52eb90dabde10cd06c5fb8247048067aee6939d1570bbf1",
+      "audit/v04/site/human-data.css": "19fd8ea4bde49b986450085adc28d8e770b5a9d1c56084f34c82b49d18e483a9",
+      "audit/v04/site/human-data.js": "c7700cf6525aa8d6ccaba193f0b017db4bda6be2ad3267899db888b856443f30",
+      "audit/v04/site/style.css": "a505fbf6657619154e69be131a946e2567f8dd1d40b446ec7fcc2d754cb0f626"
+    },
+    "artifacts": {
+      "pkg/mech_wasm.js": {
+        "sha256": "79abc6b739fc57e47cf8d19df559db550c339595644ad6ac3795095d1fe88e83",
+        "bytes": 74206
+      },
+      "pkg/mech_wasm_bg.wasm": {
+        "sha256": "f1a24f1bc674e2cd9a5609e5f4464d25666e6a97bd20cbcee1724de134134d67",
+        "bytes": 173594334
+      }
+    },
+    "transport": {
+      "encoding": "gzip",
+      "uncompressed_bytes": 173594334,
+      "uncompressed_sha256": "f1a24f1bc674e2cd9a5609e5f4464d25666e6a97bd20cbcee1724de134134d67",
+      "compressed_bytes": 7634733,
+      "chunks": [
+        {
+          "path": "mech-wasm-f1a24f1bc674-00.gz.part",
+          "bytes": 7634733,
+          "sha256": "52dae04cefb1a7872378db9f9851847295ecc032401fd3df0a9157570ce885cf"
+        }
+      ]
+    }
+  },
+  "deterministic_cases": {
+    "passed": 15,
+    "failed": 0,
+    "cases": [
+      {
+        "id": "lower",
+        "passed": true
+      },
+      {
+        "id": "last",
+        "passed": true
+      },
+      {
+        "id": "exclusive",
+        "passed": true
+      },
+      {
+        "id": "below",
+        "passed": true
+      },
+      {
+        "id": "inclusive",
+        "passed": true
+      },
+      {
+        "id": "interval-arithmetic",
+        "passed": true
+      },
+      {
+        "id": "option",
+        "passed": true
+      },
+      {
+        "id": "absent",
+        "passed": true
+      },
+      {
+        "id": "nested",
+        "passed": true
+      },
+      {
+        "id": "enum",
+        "passed": true
+      },
+      {
+        "id": "enum-variant",
+        "passed": true
+      },
+      {
+        "id": "inference",
+        "passed": true
+      },
+      {
+        "id": "shape",
+        "passed": true
+      },
+      {
+        "id": "named",
+        "passed": true
+      },
+      {
+        "id": "wide",
+        "passed": true
+      }
+    ]
+  },
+  "publication": {
+    "passed": true,
+    "same_instance_inputs": [
+      "9",
+      "10",
+      "3"
+    ],
+    "fresh_instance_restarts": 3
+  },
+  "diagnostic_selection": {
+    "source": "café := 1\n10⟨u8:1..10⟩\n",
+    "selected": "10",
+    "selection": [
+      10,
+      12
+    ],
+    "stale_cleared": true,
+    "passed": true
+  },
+  "exact_source_editor": {
+    "passed": true,
+    "source": "<color> := :red | :green | :blue\nmy-color<color> := :red\n",
+    "steps": [
+      "red",
+      "red-repeat",
+      "blue",
+      "yellow",
+      "yellow-repeat",
+      "parse-rejected",
+      "parse-repeat",
+      "red-recovery",
+      "recovery-repeat"
+    ],
+    "source_identity_checks": [
+      {
+        "step": "red",
+        "document": "223951314829134",
+        "revision": "16",
+        "diagnostic_count": 0,
+        "decimal_identity": true,
+        "same_document": true,
+        "expected_revision": true,
+        "diagnostics_match": true,
+        "passed": true
+      },
+      {
+        "step": "red-repeat",
+        "document": "223951314829134",
+        "revision": "16",
+        "diagnostic_count": 0,
+        "decimal_identity": true,
+        "same_document": true,
+        "expected_revision": true,
+        "diagnostics_match": true,
+        "passed": true
+      },
+      {
+        "step": "blue",
+        "document": "223951314829134",
+        "revision": "17",
+        "diagnostic_count": 0,
+        "decimal_identity": true,
+        "same_document": true,
+        "expected_revision": true,
+        "diagnostics_match": true,
+        "passed": true
+      },
+      {
+        "step": "yellow",
+        "document": "223951314829134",
+        "revision": "18",
+        "diagnostic_count": 1,
+        "decimal_identity": true,
+        "same_document": true,
+        "expected_revision": true,
+        "diagnostics_match": true,
+        "passed": true
+      },
+      {
+        "step": "yellow-repeat",
+        "document": "223951314829134",
+        "revision": "18",
+        "diagnostic_count": 1,
+        "decimal_identity": true,
+        "same_document": true,
+        "expected_revision": true,
+        "diagnostics_match": true,
+        "passed": true
+      },
+      {
+        "step": "parse-rejected",
+        "document": "223951314829134",
+        "revision": "19",
+        "diagnostic_count": 1,
+        "decimal_identity": true,
+        "same_document": true,
+        "expected_revision": true,
+        "diagnostics_match": true,
+        "passed": true
+      },
+      {
+        "step": "parse-repeat",
+        "document": "223951314829134",
+        "revision": "19",
+        "diagnostic_count": 1,
+        "decimal_identity": true,
+        "same_document": true,
+        "expected_revision": true,
+        "diagnostics_match": true,
+        "passed": true
+      },
+      {
+        "step": "red-recovery",
+        "document": "223951314829134",
+        "revision": "20",
+        "diagnostic_count": 0,
+        "decimal_identity": true,
+        "same_document": true,
+        "expected_revision": true,
+        "diagnostics_match": true,
+        "passed": true
+      },
+      {
+        "step": "recovery-repeat",
+        "document": "223951314829134",
+        "revision": "20",
+        "diagnostic_count": 0,
+        "decimal_identity": true,
+        "same_document": true,
+        "expected_revision": true,
+        "diagnostics_match": true,
+        "passed": true
+      }
+    ],
+    "same_source_retains_revision": true,
+    "changed_source_increments_revision_on_acceptance_and_rejection": true,
+    "parse_and_semantic_diagnostics_match_result_revision": true,
+    "nominal_key": "NominalKey([34, 85, 104, 33, 147, 185, 33, 100, 67, 145, 6, 237, 149, 33, 168, 134, 88, 93, 154, 170, 227, 228, 232, 5, 6, 60, 0, 255, 210, 3, 18, 63])",
+    "schema": "Enum { key: NominalKey([34, 85, 104, 33, 147, 185, 33, 100, 67, 145, 6, 237, 149, 33, 168, 134, 88, 93, 154, 170, 227, 228, 232, 5, 6, 60, 0, 255, 210, 3, 18, 63]), variants: [EnumVariantSchema { name: \"red\", payload: None }, EnumVariantSchema { name: \"green\", payload: None }, EnumVariantSchema { name: \"blue\", payload: None }] }",
+    "same_schema_and_nominal_key_after_edits_and_recovery": true,
+    "selected_rejected_variant": ":yellow"
+  },
+  "temporary_details": {
+    "types_checks": "/private/tmp/mech-review896-types-followup-evidence/types-checks.json",
+    "enum_editor": "/private/tmp/mech-review896-types-followup-evidence/exact-enum-editor.json",
+    "screenshot": "/private/tmp/mech-review896-types-followup-evidence/types-review-fixes.png"
+  },
+  "cleanup": {
+    "server_exit_code": -15,
+    "chrome_session_closed": true,
+    "temporary_profile_removed": true
+  }
+}

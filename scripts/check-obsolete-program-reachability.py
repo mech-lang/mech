@@ -61,6 +61,11 @@ def is_css_class_occurrence(line: str, start: int) -> bool:
     if start > 0 and line[start - 1] == "." and in_string:
         return True
 
+    # Renderer assertions count this established class token in generated HTML.
+    for match in re.finditer(r'\bhtml\.matches\("mech-program-output"\)', line):
+        if match.start() <= start < match.end():
+            return True
+
     prefix = line[:start]
     class_attribute = r"class\s*=\s*(?P<escape>\\?)(?P<quote>[\"'])"
     for opening in reversed(list(re.finditer(class_attribute, prefix))):

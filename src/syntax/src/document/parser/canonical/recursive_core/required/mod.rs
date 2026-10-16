@@ -604,11 +604,11 @@ impl<'a> Closer<'a> {
                         final_input,
                         allowance,
                         |parser, ch, _, allowance| {
-                            if *allowance == 0 {
-                                return BoundaryProgress::NeedsProcessing;
-                            }
-                            *allowance -= 1;
                             if self.boundaries.contains(&ch) {
+                                if *allowance == 0 {
+                                    return BoundaryProgress::NeedsProcessing;
+                                }
+                                *allowance -= 1;
                                 return BoundaryProgress::Complete(true);
                             }
                             if self.restart.as_ref().is_none_or(|(at, probe)| {
@@ -616,6 +616,8 @@ impl<'a> Closer<'a> {
                             }) {
                                 self.restart = Some((parser.offset(), DocumentRestart::new()));
                             }
+                            // The retained probe charges its own transitions. A
+                            // prefix charge here would starve it on one-step resumes.
                             match self.restart.as_mut().unwrap().1.advance(
                                 parser,
                                 final_input,

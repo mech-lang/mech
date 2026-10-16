@@ -29,7 +29,8 @@ pub struct CanonicalProgramBundle {
     pub source_revision: u64,
     pub source_hash: u64,
     pub source: String,
-    /// Present only when the root declares nominal types whose keys depend on it.
+    /// Retained across every revision of an owned root, including scalar and
+    /// clear edits, so package roots cannot be mistaken for standalone roots.
     pub root_nominal_origin: Option<CanonicalNominalPath>,
     pub root_nominal_package_id: Option<String>,
     /// Resolved transitive dependency URI -> retained source/provenance hash.
@@ -39,6 +40,8 @@ pub struct CanonicalProgramBundle {
 }
 
 impl CanonicalProgramBundle {
+    /// Bundle transport supports source that is clean under default parser limits.
+    /// Documents requiring custom limits are rejected before accepting a product.
     pub fn from_product(
         canonical_uri: impl Into<String>,
         document: &SourceDocument,
@@ -76,25 +79,30 @@ impl CanonicalProgramBundle {
         bytecode: Vec<u8>,
         source_dependencies: std::collections::BTreeMap<String, u64>,
     ) -> MResult<Self> {
+        let canonical_uri = canonical_uri.into();
         let source = document.source().to_contiguous_string();
-        let has_nominal_declarations = !CanonicalSourceFrontend
-            .declared_enum_names(&document.document())
-            .map_err(|error| bundle_error(error.to_string()))?
-            .is_empty();
-        let root_nominal_origin = has_nominal_declarations
+        // Bundle admission and decoding use bounded default parser limits.
+        // Reject incompatible source before accepting a compilation product.
+        parse_bundle_source(&canonical_uri, document.source().revision().0, &source)?;
+        let has_origin_dependent_declarations = CanonicalSourceFrontend
+            .has_origin_dependent_declarations(&document.document())
+            .map_err(|error| bundle_error(error.to_string()))?;
+        validate_standalone_provenance(document.nominal_origin(), document.nominal_package_id())?;
+        let retain_origin = document.nominal_origin().is_some();
+        let root_nominal_origin = retain_origin
             .then(|| document.nominal_origin().cloned())
             .flatten();
-        if has_nominal_declarations && root_nominal_origin.is_none() {
+        if has_origin_dependent_declarations && root_nominal_origin.is_none() {
             return Err(bundle_error(
-                "canonical bundle root enum has no defining origin",
+                "canonical bundle root nominal declarations have no defining origin",
             ));
         }
-        let root_nominal_package_id = has_nominal_declarations
+        let root_nominal_package_id = retain_origin
             .then(|| document.nominal_package_id().map(str::to_owned))
             .flatten();
         let bundle = Self {
             version: CANONICAL_PROGRAM_BUNDLE_VERSION,
-            canonical_uri: canonical_uri.into(),
+            canonical_uri,
             document_id: document.source().document().0,
             source_revision: document.source().revision().0,
             source_hash: super::compiler::canonical_dependency_identity_hash(
@@ -161,6 +169,10 @@ impl CanonicalProgramBundle {
                 "canonical bundle root nominal provenance is invalid",
             ));
         }
+        validate_standalone_provenance(
+            self.root_nominal_origin.as_ref(),
+            self.root_nominal_package_id.as_deref(),
+        )?;
         if self
             .source_dependencies
             .keys()
@@ -175,6 +187,16 @@ impl CanonicalProgramBundle {
                 "canonical program bundle source and served source differ; regenerate the bundle",
             ));
         }
+        let document =
+            parse_bundle_source(&self.canonical_uri, self.source_revision, &self.source)?;
+        let has_origin_dependent_declarations = CanonicalSourceFrontend
+            .has_origin_dependent_declarations(&document.document())
+            .map_err(|error| bundle_error(error.to_string()))?;
+        if has_origin_dependent_declarations && self.root_nominal_origin.is_none() {
+            return Err(bundle_error(
+                "canonical bundle root nominal declarations have no defining origin; regenerate the bundle",
+            ));
+        }
         let artifact = decode_program_artifact_bytecode_v1(&self.bytecode).map_err(|error| {
             bundle_error(format!(
                 "canonical program bundle artifact is invalid: {error:?}"
@@ -183,6 +205,37 @@ impl CanonicalProgramBundle {
         if artifact.revision().as_bytes() != &self.artifact_revision {
             return Err(bundle_error(
                 "canonical program bundle artifact identity is stale or invalid; regenerate the bundle",
+            ));
+        }
+        let expected = self
+            .root_nominal_origin
+            .as_ref()
+            .map(|origin| {
+                CanonicalSourceFrontend
+                    .declared_nominal_schemas(&document.document(), origin)
+                    .map_err(|error| bundle_error(error.to_string()))
+            })
+            .transpose()?
+            .unwrap_or_default();
+        let retained = artifact
+            .source_nominal_declarations()
+            .iter()
+            .filter(|declaration| declaration.document_id == self.document_id)
+            .collect::<Vec<_>>();
+        if retained.len() != expected.len()
+            || expected.iter().any(|(path, schema)| {
+                !retained.iter().any(|declaration| {
+                    declaration.relative_path.as_ref() == path.as_ref()
+                        && artifact
+                            .schemas()
+                            .get(declaration.schema)
+                            .map(|schema| schema.body())
+                            == Some(schema)
+                })
+            })
+        {
+            return Err(bundle_error(
+                "canonical bundle root nominal declarations differ from the compiled defining origin or lack declaration evidence; regenerate the bundle",
             ));
         }
         Ok(artifact.revision())
@@ -215,13 +268,27 @@ impl CanonicalProgramBundle {
                     "canonical bundle dependency {uri} is missing; regenerate the bundle"
                 ))
             })?;
-            if mech_core::hash_str(retained.source) != *expected_hash
-                && super::compiler::canonical_dependency_identity_hash(
-                    retained.source,
-                    retained.nominal_origin,
-                    retained.nominal_package_id,
-                ) != *expected_hash
+            validate_standalone_provenance(retained.nominal_origin, retained.nominal_package_id)?;
+            let document = parse_bundle_source(uri, 0, retained.source)?;
+            let nominal = CanonicalSourceFrontend
+                .has_origin_dependent_declarations(&document.document())
+                .map_err(|error| bundle_error(error.to_string()))?;
+            if nominal && retained.nominal_origin.is_none() {
+                return Err(bundle_error(format!(
+                    "canonical bundle dependency {uri} is missing nominal provenance; regenerate the bundle"
+                )));
+            }
+            if super::compiler::canonical_dependency_identity_hash(
+                retained.source,
+                retained.nominal_origin,
+                retained.nominal_package_id,
+            ) == *expected_hash
             {
+                continue;
+            }
+            let text_matches = mech_core::hash_str(retained.source) == *expected_hash;
+            let text_only = text_matches && !nominal;
+            if !text_only {
                 return Err(bundle_error(format!(
                     "canonical bundle dependency {uri} differs from the compiled source or nominal provenance; regenerate the bundle"
                 )));
@@ -259,6 +326,24 @@ impl CanonicalProgramBundle {
         Ok(bundle)
     }
 
+    /// Restore a standalone editable root's retained owner when no resolver
+    /// provenance exists. Package roots still require explicit current provenance.
+    #[cfg(feature = "serde")]
+    pub fn decode_standalone(encoded: &str, expected_source: Option<&str>) -> MResult<Self> {
+        let bundle = Self::decode_payload(encoded)?;
+        let origin = bundle
+            .root_nominal_origin
+            .as_ref()
+            .filter(|origin| is_standalone_origin(origin));
+        if origin.is_none() {
+            return Err(bundle_error(
+                "canonical standalone bundle has no retained standalone origin; regenerate the bundle",
+            ));
+        }
+        bundle.validate_root_with_provenance(expected_source, origin, None)?;
+        Ok(bundle)
+    }
+
     #[cfg(feature = "serde")]
     fn decode_payload(encoded: &str) -> MResult<Self> {
         mech_core::encoded_payload::decode_and_decompress(encoded).map_err(|error| {
@@ -267,6 +352,37 @@ impl CanonicalProgramBundle {
             ))
         })
     }
+}
+
+fn is_standalone_origin(origin: &CanonicalNominalPath) -> bool {
+    matches!(origin.segments(), [namespace, owner]
+        if namespace == "mech:standalone"
+            && uuid::Uuid::parse_str(owner).is_ok_and(|uuid|
+                uuid.get_variant() == uuid::Variant::RFC4122
+                    && uuid.get_version_num() == 7 && uuid.to_string() == *owner))
+}
+
+fn validate_standalone_provenance(
+    origin: Option<&CanonicalNominalPath>,
+    package_id: Option<&str>,
+) -> MResult<()> {
+    SourceDocument::validate_nominal_provenance(origin, package_id)
+}
+
+fn parse_bundle_source(uri: &str, revision: u64, source: &str) -> MResult<SourceDocument> {
+    let document = SourceDocument::parse_resolved(
+        uri,
+        mech_syntax::document::Revision(revision),
+        source,
+        mech_syntax::document::ParseConfig::default(),
+    )
+    .map_err(|error| bundle_error(format!("invalid canonical bundle source: {error:?}")))?;
+    if !document.is_strictly_clean() {
+        return Err(bundle_error(
+            "canonical bundles require clean source under default parser limits; custom-limit source is not supported",
+        ));
+    }
+    Ok(document)
 }
 
 fn bundle_error(message: impl Into<String>) -> MechError {
@@ -288,6 +404,302 @@ mod tests {
     use std::sync::Arc;
 
     use mech_syntax::document::{ParseConfig, Revision};
+
+    fn rehash_source(bundle: &mut CanonicalProgramBundle) {
+        bundle.source_hash = super::super::compiler::canonical_dependency_identity_hash(
+            &bundle.source,
+            bundle.root_nominal_origin.as_ref(),
+            bundle.root_nominal_package_id.as_deref(),
+        );
+    }
+
+    fn document(source: &str) -> SourceDocument {
+        SourceDocument::parse_resolved(
+            "bundle:///document.mec",
+            Revision(0),
+            source,
+            ParseConfig::default(),
+        )
+        .unwrap()
+        .with_standalone_nominal_origin()
+    }
+
+    fn empty_product() -> mech_engine::ProgramArtifactCompilationProduct {
+        let schemas = mech_core::SchemaTableBuilder::new()
+            .finish()
+            .unwrap()
+            .into_parts()
+            .0;
+        let constants = mech_core::ConstantStoreBuilder::new(&schemas)
+            .finish()
+            .unwrap()
+            .into_parts()
+            .0;
+        let artifact = mech_engine::compile_source_program_with_control_contracts(
+            &mech_engine::SourceProgram::default(),
+            &mut mech_engine::ArtifactBuildContext::new(&schemas, &constants),
+            &[],
+        )
+        .unwrap();
+        mech_engine::ProgramArtifactCompilationProduct::from_artifact(artifact)
+    }
+
+    fn owned_source(
+        name: &str,
+        source: &str,
+        origin: &CanonicalNominalPath,
+        package_id: &str,
+    ) -> MResult<crate::ResolvedSource> {
+        crate::ResolvedSource::new(
+            name,
+            format!("memory:{name}"),
+            mech_core::MechSourceCode::String(source.to_owned()),
+        )
+        .with_kind(crate::SourceKind::Mech)
+        .with_nominal_origin(origin.clone())
+        .with_nominal_package_id(package_id)
+        .retain_source_document(Revision(0), ParseConfig::default())?
+        .admit_canonical_document()
+    }
+
+    #[cfg(feature = "compute")]
+    #[test]
+    fn mixed_coordinator_bundle_retains_compute_fsm_declaration_evidence() -> MResult<()> {
+        let source = "@compute := compute://worker/kernel{:write(input/x), :write(turn)}\n@compute/input/x <- 1f32\n@compute/turn <- 1\n\ncalculation @compute\n-------------------------------------------------------------------------------\n#Drive() => <f64>\n  | :Done.\n#Drive() -> :Done\n  :Done => 1.0.\nx := 1f32\nresult := x + 1f32\nresult\n";
+        let document = document(source);
+        let resolver = crate::InMemorySourceResolver::new().with_source(
+            "main.mec",
+            crate::ResolvedSource::new(
+                "main.mec",
+                "bundle:///document.mec",
+                mech_core::MechSourceCode::String(source.to_owned()),
+            )
+            .with_kind(crate::SourceKind::Mech)
+            .with_source_document(document.clone())?,
+        );
+        let mut compiler = crate::RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_native_plan_catalog())
+            .source_resolver(resolver)
+            .build_compiler()?;
+        let mixed = compiler.compile_canonical_mixed_root(
+            crate::SourceRequest::new("main.mec"),
+            crate::ModuleBuildOptions::new("test", "v0.4", "native", &[], &[]),
+        )?;
+        assert_eq!(
+            mixed
+                .coordinator
+                .artifact()
+                .source_nominal_declarations()
+                .len(),
+            1
+        );
+        let bundle = CanonicalProgramBundle::from_artifact_product(
+            "bundle:///document.mec",
+            &document,
+            &mixed.coordinator,
+            mixed.source_dependencies,
+        )?;
+        CanonicalProgramBundle::decode_standalone(&bundle.encode()?, Some(source))?;
+        let mut edited = bundle;
+        edited.source = edited.source.replace(":Done", ":Other");
+        rehash_source(&mut edited);
+        assert!(
+            CanonicalProgramBundle::decode_standalone(&edited.encode()?, Some(&edited.source))
+                .is_err()
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn canonical_bundle_rejects_stale_complete_declaration_schemas() -> MResult<()> {
+        for (before, after) in [
+            (
+                "<Color> := :red | :blue\nvalue := 1.0\n",
+                "<Color> := :red | :green\nvalue := 1.0\n",
+            ),
+            (
+                "<Item> := :some<f64> | :none\nvalue := 1.0\n",
+                "<Item> := :some<u64> | :none\nvalue := 1.0\n",
+            ),
+            (
+                "<A> := <f64>\n<Item> := :some<A>\nvalue := 1.0\n",
+                "<A> := <u64>\n<Item> := :some<A>\nvalue := 1.0\n",
+            ),
+            (
+                "<Item> := :pair<[f64]:1,2> | :none\nvalue := 1.0\n",
+                "<Item> := :pair<[f64]:1,3> | :none\nvalue := 1.0\n",
+            ),
+            (
+                "#Drive() => <f64>\n  | :Done.\n#Drive() -> :Done\n  :Done => 1.0.\nvalue := 1.0\n",
+                "#Drive() => <f64>\n  | :Stopped.\n#Drive() -> :Stopped\n  :Stopped => 1.0.\nvalue := 1.0\n",
+            ),
+            (
+                "#Drive() => <f64>\n  | :Done(x<f64>).\n#Drive() -> :Done(1.0)\n  :Done(x) => 1.0.\nvalue := 1.0\n",
+                "#Drive() => <f64>\n  | :Done(x<u64>).\n#Drive() -> :Done(1)\n  :Done(x) => 1.0.\nvalue := 1.0\n",
+            ),
+        ] {
+            let original = document(before);
+            let edited = SourceDocument::parse_resolved(
+                "bundle:///document.mec",
+                Revision(1),
+                after,
+                ParseConfig::default(),
+            )
+            .unwrap()
+            .with_nominal_origin(original.nominal_origin().unwrap().clone());
+            assert!(edited.is_strictly_clean());
+            let mut compiler = crate::RuntimeBuilder::new()
+                .function_catalog(mech_stdlib::source_catalog())
+                .build_compiler()?;
+            let product = compiler.compile_document(&original)?;
+            let mut bundle = CanonicalProgramBundle::from_product(
+                "bundle:///document.mec",
+                &original,
+                &product,
+            )?;
+            assert!(
+                CanonicalProgramBundle::from_product("bundle:///document.mec", &edited, &product)
+                    .is_err(),
+                "{after}"
+            );
+            bundle.source = after.to_owned();
+            bundle.source_revision = 1;
+            rehash_source(&mut bundle);
+            assert!(
+                CanonicalProgramBundle::decode_standalone(&bundle.encode()?, Some(after)).is_err()
+            );
+            let fresh = compiler.compile_document(&edited)?;
+            CanonicalProgramBundle::from_product("bundle:///document.mec", &edited, &fresh)?;
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn canonical_bundle_ownerless_nominal_dependency_cannot_use_text_hash_fast_path() -> MResult<()>
+    {
+        let root = document("answer := 42\n");
+        let source = "#Drive() => <f64>\n  | :Done.\n#Drive() -> :Done\n  :Done => 1.0.\n";
+        let mut compiler = crate::RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_catalog())
+            .build_compiler()?;
+        let product = compiler
+            .compile_document(&root)?
+            .with_source_dependencies(BTreeMap::from([(
+                "memory:dep.mec".to_owned(),
+                mech_core::hash_str(source),
+            )]));
+        let bundle =
+            CanonicalProgramBundle::from_product("bundle:///document.mec", &root, &product)?;
+        for package_id in [None, Some("owner")] {
+            let error = bundle
+                .validate_dependency_sources_with_provenance(|_| {
+                    Some(CanonicalDependencySource {
+                        source,
+                        nominal_origin: None,
+                        nominal_package_id: package_id,
+                    })
+                })
+                .unwrap_err();
+            assert!(
+                error
+                    .display_message()
+                    .contains("missing nominal provenance")
+            );
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn canonical_bundle_scalar_package_requires_current_package_provenance() -> MResult<()> {
+        let origin = CanonicalNominalPath::new(["package".to_owned(), "main".to_owned()]).unwrap();
+        let root = document("answer := 42\n")
+            .with_nominal_provenance(origin.clone(), Some("package-id".to_owned()));
+        let mut compiler = crate::RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_catalog())
+            .build_compiler()?;
+        let product = compiler.compile_document(&root)?;
+        let mut bundle =
+            CanonicalProgramBundle::from_product("bundle:///document.mec", &root, &product)?;
+        assert_eq!(bundle.root_nominal_origin.as_ref(), Some(&origin));
+        assert_eq!(
+            bundle.root_nominal_package_id.as_deref(),
+            Some("package-id")
+        );
+        let encoded = bundle.encode()?;
+        CanonicalProgramBundle::decode_with_root_provenance(
+            &encoded,
+            None,
+            Some(&origin),
+            Some("package-id"),
+        )?;
+        assert!(CanonicalProgramBundle::decode_standalone(&encoded, None).is_err());
+        bundle.root_nominal_origin = None;
+        bundle.root_nominal_package_id = None;
+        rehash_source(&mut bundle);
+        assert!(CanonicalProgramBundle::decode_standalone(&bundle.encode()?, None).is_err());
+        let standalone = document("answer := 42\n");
+        let bundle =
+            CanonicalProgramBundle::from_product("bundle:///document.mec", &standalone, &product)?;
+        CanonicalProgramBundle::decode_standalone(&bundle.encode()?, None)?;
+        Ok(())
+    }
+
+    #[test]
+    fn canonical_bundle_explicitly_rejects_source_requiring_custom_parser_limits() -> MResult<()> {
+        // Deep custom-limit documents need more than the test runner's small
+        // worker stack; default bundle parsing remains independently bounded.
+        std::thread::Builder::new()
+            .stack_size(32 * 1024 * 1024)
+            .spawn(|| -> MResult<()> {
+                let source = format!("answer := {}1.0{}\n", "(".repeat(300), ")".repeat(300));
+                let mut config = ParseConfig::default();
+                config.limits.max_nesting = 4096;
+                let root = SourceDocument::parse_resolved(
+                    "bundle:///document.mec",
+                    Revision(0),
+                    source.as_str(),
+                    config,
+                )
+                .unwrap()
+                .with_standalone_nominal_origin();
+                assert!(root.is_strictly_clean());
+                let mut compiler = crate::RuntimeBuilder::new()
+                    .function_catalog(mech_stdlib::source_catalog())
+                    .build_compiler()?;
+                let product = compiler.compile_document(&root)?;
+                let error =
+                    CanonicalProgramBundle::from_product("bundle:///document.mec", &root, &product)
+                        .unwrap_err();
+                assert!(error.display_message().contains("default parser limits"));
+                // A custom configuration remains compatible when default parsing is clean.
+                let root = SourceDocument::parse_resolved(
+                    "bundle:///document.mec",
+                    Revision(0),
+                    "answer := 1.0\n",
+                    config,
+                )
+                .unwrap()
+                .with_standalone_nominal_origin();
+                let product = compiler.compile_document(&root)?;
+                let mut bundle = CanonicalProgramBundle::from_product(
+                    "bundle:///document.mec",
+                    &root,
+                    &product,
+                )?;
+                bundle.source = source;
+                rehash_source(&mut bundle);
+                assert!(
+                    CanonicalProgramBundle::decode_standalone(&bundle.encode()?, None)
+                        .unwrap_err()
+                        .display_message()
+                        .contains("default parser limits")
+                );
+                Ok(())
+            })
+            .unwrap()
+            .join()
+            .unwrap()
+    }
 
     #[test]
     fn canonical_bundle_rejects_stale_source_and_retired_tree_payload() -> MResult<()> {
@@ -375,6 +787,117 @@ mod tests {
     }
 
     #[test]
+    fn canonical_bundle_fsm_dependency_freshness_includes_compiled_provenance() -> MResult<()> {
+        let root_source = "+> ./dep.mec\nanswer := dep/value\nanswer\n";
+        let origin =
+            CanonicalNominalPath::new(["package-a".to_owned(), "drive".to_owned()]).unwrap();
+        let changed_origin =
+            CanonicalNominalPath::new(["package-a".to_owned(), "other-drive".to_owned()]).unwrap();
+        for dependency_source in [
+            "#Drive() => <f64>\n  | :Done.\n#Drive() -> :Done\n  :Done => 1.0.\nvalue := #Drive()\n<+ value\n",
+            "#Drive() => <f64>\n  | :Done.\n#Drive() -> :Done\n  :Done => 1.0.\nvalue := 42\n<+ value\n",
+            "```mech\n#Drive() => <f64>\n  | :Done.\n#Drive() -> :Done\n  :Done => 1.0.\nvalue := #Drive()\n```\n<+ value\n",
+        ] {
+            let mut resolver = crate::InMemorySourceResolver::new();
+            resolver.insert_canonical_string("main.mec", root_source)?;
+            resolver.insert_source(
+                "dep.mec",
+                owned_source("dep.mec", dependency_source, &origin, "package-a")?,
+            )?;
+            let root = SourceDocument::parse_resolved(
+                "memory:main.mec",
+                Revision(0),
+                root_source,
+                ParseConfig::default(),
+            )
+            .unwrap();
+            let mut compiler = crate::RuntimeBuilder::new()
+                .function_catalog(mech_stdlib::source_catalog())
+                .source_resolver(resolver)
+                .build_compiler()?;
+            let products = [
+                compiler.compile_canonical_root(crate::SourceRequest::new("main.mec"))?,
+                compiler.compile_canonical_roots(
+                    &[crate::SourceRequest::new("main.mec")],
+                    crate::ModuleBuildOptions::new("test", "v0.4", "native", &[], &[]),
+                )?,
+            ];
+            for product in products {
+                assert_ne!(
+                    product.source_dependencies()["memory:dep.mec"],
+                    mech_core::hash_str(dependency_source),
+                    "used and unused FSM declarations require provenance on both dependency routes"
+                );
+                let bundle =
+                    CanonicalProgramBundle::from_product("memory:main.mec", &root, &product)?;
+                let validate = |bundle: &CanonicalProgramBundle, origin, package_id| {
+                    bundle.validate_dependency_sources_with_provenance(|uri| {
+                        assert_eq!(uri, "memory:dep.mec");
+                        Some(CanonicalDependencySource {
+                            source: dependency_source,
+                            nominal_origin: origin,
+                            nominal_package_id: package_id,
+                        })
+                    })
+                };
+                validate(&bundle, Some(&origin), Some("package-a"))?;
+                assert!(validate(&bundle, Some(&changed_origin), Some("package-a")).is_err());
+                assert!(validate(&bundle, Some(&origin), Some("package-b")).is_err());
+                assert!(validate(&bundle, None, None).is_err());
+                let mut legacy = bundle.clone();
+                legacy.source_dependencies.insert(
+                    "memory:dep.mec".to_owned(),
+                    mech_core::hash_str(dependency_source),
+                );
+                assert!(validate(&legacy, Some(&origin), Some("package-a")).is_err());
+                assert!(validate(&legacy, Some(&changed_origin), Some("package-a")).is_err());
+            }
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn canonical_bundle_resolver_rejects_fsm_owner_collisions() -> MResult<()> {
+        let root_source =
+            "+> ./left.mec\n+> ./right.mec\nanswer := left/value + right/value\nanswer\n";
+        let dependency_source = "#Drive() => <f64>\n  | :Done.\n#Drive() -> :Done\n  :Done => 1.0.\nvalue := #Drive()\n<+ value\n";
+        let origin =
+            CanonicalNominalPath::new(["package".to_owned(), "shared-module".to_owned()]).unwrap();
+        for right_source in [
+            dependency_source.to_owned(),
+            dependency_source.replace("Drive", "OtherDrive"),
+        ] {
+            let mut resolver = crate::InMemorySourceResolver::new();
+            resolver.insert_canonical_string("main.mec", root_source)?;
+            resolver.insert_source(
+                "left.mec",
+                owned_source("left.mec", dependency_source, &origin, "package")?,
+            )?;
+            resolver.insert_source(
+                "right.mec",
+                owned_source("right.mec", &right_source, &origin, "package")?,
+            )?;
+            let mut compiler = crate::RuntimeBuilder::new()
+                .function_catalog(mech_stdlib::source_catalog())
+                .source_resolver(resolver)
+                .build_compiler()?;
+            let product = compiler.compile_canonical_root(crate::SourceRequest::new("main.mec"));
+            if right_source == dependency_source {
+                let error = product.expect_err("distinct documents cannot define one FSM path");
+                assert!(
+                    error
+                        .display_message()
+                        .contains("ambiguous-nominal-declaration-v1"),
+                    "{error:?}"
+                );
+            } else {
+                assert_eq!(product?.source_dependencies().len(), 2);
+            }
+        }
+        Ok(())
+    }
+
+    #[test]
     fn canonical_bundle_root_requires_current_nominal_provenance() -> MResult<()> {
         let source = "<event> := :idle | :busy\nvalue<event> := :idle\nvalue\n";
         let origin =
@@ -398,6 +921,7 @@ mod tests {
             CanonicalProgramBundle::from_product("bundle://event.mec", &document, &product)?;
         let encoded = bundle.encode()?;
         assert!(CanonicalProgramBundle::decode(&encoded, Some(source)).is_err());
+        assert!(CanonicalProgramBundle::decode_standalone(&encoded, Some(source)).is_err());
         assert_eq!(
             CanonicalProgramBundle::decode_with_root_provenance(
                 &encoded,
@@ -420,6 +944,410 @@ mod tests {
             bundle
                 .validate_root_with_provenance(Some(source), Some(&origin), Some("package-b"))
                 .is_err()
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn canonical_bundle_standalone_enum_and_fsm_origins_survive_reload_and_edit() -> MResult<()> {
+        for source in [
+            "<color> := :red | :blue\nmy-color<color> := :red\n",
+            "#Drive() => <f64>\n  | :Done.\n#Drive() -> :Done\n  :Done => 1.0.\nresult := #Drive()\nresult\n",
+        ] {
+            let document = SourceDocument::parse_resolved(
+                "bundle:///document.mec",
+                Revision(0),
+                source,
+                ParseConfig::default(),
+            )
+            .unwrap()
+            .with_standalone_nominal_origin();
+            let mut compiler = crate::RuntimeBuilder::new()
+                .function_catalog(mech_stdlib::source_catalog())
+                .build_compiler()?;
+            let product = compiler.compile_document(&document)?;
+            let bundle = CanonicalProgramBundle::from_product(
+                "bundle:///document.mec",
+                &document,
+                &product,
+            )?;
+            assert_eq!(
+                bundle.root_nominal_origin.as_ref(),
+                document.nominal_origin()
+            );
+            let encoded = bundle.encode()?;
+            let restored = CanonicalProgramBundle::decode_standalone(&encoded, Some(source))?;
+            let edited_source = source
+                .replace("my-color<color> := :red", "my-color<color> := :blue")
+                .replace("=> 1.0.", "=> 2.0.");
+            let edited = SourceDocument::parse_resolved(
+                "runtime:interactive",
+                Revision(1),
+                edited_source,
+                ParseConfig::default(),
+            )
+            .unwrap()
+            .with_nominal_provenance(restored.root_nominal_origin.unwrap(), None);
+            let edited_product = compiler.compile_document(&edited)?;
+            let keys = |artifact: &mech_engine::ProgramArtifact| {
+                artifact
+                    .schemas()
+                    .entries()
+                    .filter_map(|entry| {
+                        matches!(entry.schema().body(), mech_core::SchemaBody::Enum { .. })
+                            .then_some(entry.key())
+                    })
+                    .collect::<Vec<_>>()
+            };
+            let original_keys = keys(product.artifact());
+            assert!(!original_keys.is_empty());
+            assert_eq!(keys(edited_product.artifact()), original_keys);
+            assert!(
+                CanonicalProgramBundle::decode_with_root_provenance(
+                    &encoded,
+                    Some(source),
+                    Some(&SourceDocument::new_standalone_origin()),
+                    None,
+                )
+                .is_err()
+            );
+
+            let mut contradictory = bundle.clone();
+            contradictory.root_nominal_package_id = Some("package-a".to_owned());
+            contradictory.source_hash = super::super::compiler::canonical_dependency_identity_hash(
+                source,
+                contradictory.root_nominal_origin.as_ref(),
+                contradictory.root_nominal_package_id.as_deref(),
+            );
+            assert!(
+                CanonicalProgramBundle::decode_standalone(&contradictory.encode()?, Some(source),)
+                    .is_err()
+            );
+
+            let mut invalid_owner = bundle.clone();
+            invalid_owner.root_nominal_origin = Some(
+                CanonicalNominalPath::new(["mech:standalone".to_owned(), "not-a-uuid".to_owned()])
+                    .unwrap(),
+            );
+            invalid_owner.source_hash = super::super::compiler::canonical_dependency_identity_hash(
+                source,
+                invalid_owner.root_nominal_origin.as_ref(),
+                None,
+            );
+            assert!(
+                CanonicalProgramBundle::decode_standalone(&invalid_owner.encode()?, Some(source),)
+                    .is_err()
+            );
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn canonical_bundle_binds_used_and_unused_nominal_declarations_to_bytecode() -> MResult<()> {
+        let mut compiler = crate::RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_catalog())
+            .build_compiler()?;
+        for source in [
+            "<color> := :red | :blue\nmy-color<color> := :red\n",
+            "<color> := :red | :blue\nanswer := 42\n",
+            "#Drive() => <f64>\n  | :Done.\n#Drive() -> :Done\n  :Done => 1.0.\nresult := #Drive()\nresult\n",
+            "#Drive() => <f64>\n  | :Done.\n#Drive() -> :Done\n  :Done => 1.0.\nanswer := 42\n",
+        ] {
+            let document = document(source);
+            let product = compiler.compile_document(&document)?;
+            assert!(!product.artifact().source_nominal_declarations().is_empty());
+            let bundle = CanonicalProgramBundle::from_product(
+                "bundle:///document.mec",
+                &document,
+                &product,
+            )?;
+            CanonicalProgramBundle::decode_standalone(&bundle.encode()?, Some(source))?;
+
+            let changed_document = document
+                .clone()
+                .with_nominal_origin(SourceDocument::new_standalone_origin());
+            assert!(
+                CanonicalProgramBundle::from_product(
+                    "bundle:///document.mec",
+                    &changed_document,
+                    &product,
+                )
+                .is_err(),
+                "a product compiled under a different defining owner is stale"
+            );
+            let mut changed = bundle.clone();
+            changed.root_nominal_origin = changed_document.nominal_origin().cloned();
+            rehash_source(&mut changed);
+            assert!(
+                CanonicalProgramBundle::decode_standalone(&changed.encode()?, Some(source))
+                    .is_err()
+            );
+            assert!(
+                CanonicalProgramBundle::decode_with_root_provenance(
+                    &changed.encode()?,
+                    Some(source),
+                    changed.root_nominal_origin.as_ref(),
+                    None,
+                )
+                .is_err()
+            );
+
+            let mut removed = bundle.clone();
+            removed.root_nominal_origin = None;
+            rehash_source(&mut removed);
+            assert!(
+                CanonicalProgramBundle::decode_standalone(&removed.encode()?, Some(source))
+                    .is_err()
+            );
+            assert!(CanonicalProgramBundle::decode(&removed.encode()?, Some(source)).is_err());
+
+            for declarations in [
+                Box::new([]) as Box<[mech_engine::SourceNominalDeclaration]>,
+                product
+                    .artifact()
+                    .source_nominal_declarations()
+                    .iter()
+                    .map(|declaration| mech_engine::SourceNominalDeclaration {
+                        document_id: mech_core::hash_str("bundle:///foreign.mec"),
+                        ..declaration.clone()
+                    })
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ] {
+                let artifact = product
+                    .artifact()
+                    .clone()
+                    .with_source_nominal_declarations(declarations)
+                    .unwrap();
+                let artifact_product =
+                    mech_engine::ProgramArtifactCompilationProduct::from_artifact(artifact.clone());
+                assert!(
+                    CanonicalProgramBundle::from_artifact_product(
+                        "bundle:///document.mec",
+                        &document,
+                        &artifact_product,
+                        BTreeMap::new(),
+                    )
+                    .is_err()
+                );
+                let mut missing = bundle.clone();
+                missing.bytecode =
+                    mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+                missing.artifact_revision = artifact.revision().into_bytes();
+                assert!(
+                    CanonicalProgramBundle::decode_standalone(&missing.encode()?, Some(source))
+                        .is_err()
+                );
+            }
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn canonical_bundle_rejects_ownerless_fsms_and_non_rfc_uuid_owners() -> MResult<()> {
+        let source = "#Drive() => <f64>\n  | :Done.\n#Drive() -> :Done\n  :Done => 1.0.\nresult := #Drive()\nresult\n";
+        let mut compiler = crate::RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_catalog())
+            .build_compiler()?;
+        let ownerless = SourceDocument::parse_resolved(
+            "bundle:///document.mec",
+            Revision(0),
+            source,
+            ParseConfig::default(),
+        )
+        .unwrap();
+        let product = compiler.compile_document(&ownerless)?;
+        assert!(
+            CanonicalProgramBundle::from_product("bundle:///document.mec", &ownerless, &product)
+                .is_err()
+        );
+        let artifact_product = compiler.compile_document_artifact(&ownerless)?;
+        assert!(
+            CanonicalProgramBundle::from_artifact_product(
+                "bundle:///document.mec",
+                &ownerless,
+                &artifact_product,
+                BTreeMap::new()
+            )
+            .is_err()
+        );
+
+        for source in [source, "answer := 42\n"] {
+            let document = document(source);
+            let product = compiler.compile_document(&document)?;
+            let mut bundle = CanonicalProgramBundle::from_product(
+                "bundle:///document.mec",
+                &document,
+                &product,
+            )?;
+            let invalid_owner = CanonicalNominalPath::new([
+                "mech:standalone".to_owned(),
+                "00000000-0000-7000-0000-000000000000".to_owned(),
+            ])
+            .unwrap();
+            let uuid = uuid::Uuid::parse_str(&invalid_owner.segments()[1]).unwrap();
+            assert_eq!(uuid.get_version_num(), 7);
+            assert_ne!(uuid.get_variant(), uuid::Variant::RFC4122);
+            let invalid_document = document.with_nominal_origin(invalid_owner.clone());
+            assert!(
+                CanonicalProgramBundle::from_product(
+                    "bundle:///document.mec",
+                    &invalid_document,
+                    &product
+                )
+                .is_err()
+            );
+            bundle.root_nominal_origin = Some(invalid_owner.clone());
+            rehash_source(&mut bundle);
+            assert!(
+                CanonicalProgramBundle::decode_standalone(&bundle.encode()?, Some(source)).is_err()
+            );
+            assert!(
+                CanonicalProgramBundle::decode_with_root_provenance(
+                    &bundle.encode()?,
+                    Some(source),
+                    Some(&invalid_owner),
+                    None
+                )
+                .is_err()
+            );
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn canonical_bundle_standalone_origin_survives_scalar_and_clear_revisions() -> MResult<()> {
+        let enum_source = "<color> := :red | :blue\nmy-color<color> := :red\n";
+        let initial = document(enum_source);
+        let mut compiler = crate::RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_catalog())
+            .build_compiler()?;
+        let original = compiler.compile_document(&initial)?;
+        let enum_schema = original
+            .artifact()
+            .schemas()
+            .entries()
+            .find(|entry| matches!(entry.schema().body(), mech_core::SchemaBody::Enum { .. }))
+            .unwrap()
+            .key();
+        let mut owner = initial.nominal_origin().cloned();
+        for source in ["answer := 42\n", "", "Cleared\n=======\n"] {
+            let revision = SourceDocument::parse_resolved(
+                "bundle:///document.mec",
+                Revision(1),
+                source,
+                ParseConfig::default(),
+            )
+            .unwrap()
+            .with_nominal_provenance(owner.clone().unwrap(), None);
+            // Clearing a session has no executable source unit. Its transport
+            // uses a valid empty artifact rather than compiling empty text.
+            let product = if source == "answer := 42\n" {
+                compiler.compile_document_artifact(&revision)?
+            } else {
+                empty_product()
+            };
+            assert!(product.artifact().source_nominal_declarations().is_empty());
+            let bundle = CanonicalProgramBundle::from_artifact_product(
+                "bundle:///document.mec",
+                &revision,
+                &product,
+                BTreeMap::new(),
+            )?;
+            assert_eq!(bundle.root_nominal_origin, owner);
+            let restored =
+                CanonicalProgramBundle::decode_standalone(&bundle.encode()?, Some(source))?;
+            owner = restored.root_nominal_origin;
+            let restored_enum = SourceDocument::parse_resolved(
+                "runtime:interactive",
+                Revision(2),
+                enum_source,
+                ParseConfig::default(),
+            )
+            .unwrap()
+            .with_nominal_provenance(owner.clone().unwrap(), None);
+            let restored = compiler.compile_document(&restored_enum)?;
+            assert!(
+                restored
+                    .artifact()
+                    .schemas()
+                    .find_by_key(enum_schema)
+                    .is_some()
+            );
+        }
+        let package_scalar = document("answer := 42\n").with_nominal_provenance(
+            CanonicalNominalPath::new(["package".to_owned(), "module".to_owned()]).unwrap(),
+            Some("package-id".to_owned()),
+        );
+        let product = compiler.compile_document(&package_scalar)?;
+        let bundle = CanonicalProgramBundle::from_product(
+            "bundle:///document.mec",
+            &package_scalar,
+            &product,
+        )?;
+        assert_eq!(
+            bundle.root_nominal_origin.as_ref(),
+            package_scalar.nominal_origin()
+        );
+        CanonicalProgramBundle::decode_with_root_provenance(
+            &bundle.encode()?,
+            Some("answer := 42\n"),
+            package_scalar.nominal_origin(),
+            package_scalar.nominal_package_id(),
+        )?;
+        Ok(())
+    }
+
+    #[test]
+    fn canonical_bundle_dependency_nominal_key_cannot_satisfy_root_declaration_evidence()
+    -> MResult<()> {
+        let source = "<color> := :red | :blue\nmy-color<color> := :red\n";
+        let root = document(source);
+        let dependency = SourceDocument::parse_resolved(
+            "bundle:///dep.mec",
+            Revision(0),
+            "<color> := :red | :blue\nunrelated := 42\n",
+            ParseConfig::default(),
+        )
+        .unwrap()
+        .with_standalone_nominal_origin();
+        let ordered = |document: &SourceDocument, identity, publish_result| {
+            mech_engine::CanonicalOrderedDocument {
+                document: document.document(),
+                nominal_origin: document.nominal_origin().cloned(),
+                nominal_package_id: None,
+                identity,
+                publish_result,
+                input_schemas: BTreeMap::new(),
+                resource_writes: BTreeMap::new(),
+                imports: BTreeMap::new(),
+                resolved_modules: std::collections::BTreeSet::new(),
+            }
+        };
+        let program = mech_engine::CanonicalSourceFrontend
+            .compile_ordered_documents_with_catalog(
+                &[ordered(&dependency, 0, false), ordered(&root, 1, true)],
+                mech_stdlib::source_catalog(),
+            )
+            .unwrap();
+        let artifact = program.compile_artifact().unwrap();
+        let dependency_key = mech_engine::CanonicalSourceFrontend
+            .declared_nominal_keys(&dependency.document(), dependency.nominal_origin().unwrap())
+            .unwrap()[0]
+            .1;
+        assert!(artifact.schemas().entries().any(|entry|
+            matches!(entry.schema().body(), mech_core::SchemaBody::Enum { key, .. } if *key == dependency_key)));
+        let product = mech_engine::ProgramArtifactCompilationProduct::from_artifact(artifact);
+        let mut bundle = CanonicalProgramBundle::from_artifact_product(
+            "bundle:///document.mec",
+            &root,
+            &product,
+            BTreeMap::new(),
+        )?;
+        bundle.root_nominal_origin = dependency.nominal_origin().cloned();
+        rehash_source(&mut bundle);
+        assert!(
+            CanonicalProgramBundle::decode_standalone(&bundle.encode()?, Some(source)).is_err()
         );
         Ok(())
     }
@@ -448,6 +1376,18 @@ mod tests {
         let bundle =
             CanonicalProgramBundle::from_product("bundle://answer.mec", &document, &product)?;
         bundle.validate_dependency_sources(|_| Some(dependency_source))?;
+        for origin in [
+            CanonicalNominalPath::new(["package-a".to_owned(), "module".to_owned()]).unwrap(),
+            CanonicalNominalPath::new(["package-b".to_owned(), "module".to_owned()]).unwrap(),
+        ] {
+            bundle.validate_dependency_sources_with_provenance(|_| {
+                Some(CanonicalDependencySource {
+                    source: dependency_source,
+                    nominal_origin: Some(&origin),
+                    nominal_package_id: Some("package-id"),
+                })
+            })?;
+        }
         Ok(())
     }
 }

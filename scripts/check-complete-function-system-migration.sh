@@ -51,12 +51,14 @@ for name in {"mech-inter" + "preter", "mech-pro" + "gram"}:
         raise SystemExit(f"complete function-system migration boundary failed: {name} remains a workspace member")
 '
 
+# Historical rename records are comparison evidence, not active build inputs.
 if rg -n -H \
   "$obsolete_interpreter|$obsolete_interpreter_ident|$obsolete_interpreter_path" \
   "$repository_root" \
   --hidden \
   --glob '!target/**' \
   --glob '!tests/architecture/**' \
+  --glob '!audit/v04/data/history.json' \
   --glob '!.git/**' \
   --glob '!.agents/**' \
   --glob '!.codex/**'
