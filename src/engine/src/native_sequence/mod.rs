@@ -979,10 +979,10 @@ impl Program {
         self
     }
 
-    /// Schedule independent immutable computations before blocking consumers.
-    /// IO and fallible regex calls retain their original effect order. Canonical
-    /// constants and handle renumbering make equivalent call graphs emit the
-    /// same object.
+    /// Canonicalize constants and handles while preserving source evaluation
+    /// order, including failures from otherwise immutable computations.
+    /// Kernels can still launch background work; consumers resolve it as needed.
+    /// Hoisting across statements requires a separate proof of totality.
     pub fn scheduled(self) -> Result<Self, String> {
         if self.nodes.iter().any(|node| matches!(node.op, 9..=12)) {
             return Err("schedule must precede host IO fusion".into());
@@ -1000,22 +1000,20 @@ impl Program {
         }
         let old_base = self.constants.len();
         let mut dependencies = Vec::new();
-        let mut previous_effect = None;
+        let mut previous_node = None;
         for node in &self.nodes {
             let mut parents: BTreeSet<_> = node
                 .args
                 .iter()
                 .filter_map(|id| id.checked_sub(old_base))
                 .collect();
-            // Regex compilation can fail even when its output is unused. Keep
-            // that error behind earlier IO and ahead of later effects, rather
-            // than allowing the regex scheduling priority to move it across IO.
-            if matches!(node.op, 1 | 8 | 45 | 52 | 53 | 54 | 72 | 73) {
-                if let Some(parent) = previous_effect {
-                    parents.insert(parent);
-                }
-                previous_effect = Some(dependencies.len());
+            // Runtime domain checks are not described by the coarse output
+            // kinds. Preserve every launch and synchronous failure in source
+            // order until a selected operation has an explicit totality proof.
+            if let Some(parent) = previous_node {
+                parents.insert(parent);
             }
+            previous_node = Some(dependencies.len());
             dependencies.push(parents);
         }
         let mut output = Program {
@@ -1028,28 +1026,7 @@ impl Program {
         let mut done = BTreeSet::new();
         while done.len() < self.nodes.len() {
             let selected = (0..self.nodes.len())
-                .filter(|i| !done.contains(i) && dependencies[*i].is_subset(&done))
-                .min_by_key(|&i| {
-                    let node = &self.nodes[i];
-                    let width = node
-                        .kernel
-                        .or_else(|| self.windows.get(&(old_base + i)).copied())
-                        .map_or(0, |(_, width)| width);
-                    let rank = match node.op {
-                        5 | 53 => 0,
-                        4 | 54 => 1,
-                        1..=3 => 2,
-                        _ if node
-                            .args
-                            .iter()
-                            .any(|&id| self.kinds[id] == SequenceKind::Histogram) =>
-                        {
-                            3
-                        }
-                        _ => 4,
-                    };
-                    (rank, std::cmp::Reverse(width), i)
-                })
+                .find(|i| !done.contains(i) && dependencies[*i].is_subset(&done))
                 .ok_or("collection dependency cycle")?;
             let old_id = old_base + selected;
             let new_id = output.kinds.len();

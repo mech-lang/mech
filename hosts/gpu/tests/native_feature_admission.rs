@@ -1,9 +1,94 @@
-//! General resource/effect inference and observable regex graph scheduling.
+//! General resource/effect inference and observable runtime failure ordering.
 #![cfg(feature = "sequence-cli")]
 
 #[cfg(test)]
 mod tests {
     use mech_engine::native_sequence::control::{analysis::Effect, compile};
+
+    fn execute(
+        source: &str,
+        input: Option<&[u8]>,
+        scheduled: bool,
+    ) -> (Result<(), String>, Vec<u8>) {
+        let program = mech_gpu::sequence::compile(source, 256).unwrap();
+        let program = if scheduled {
+            program.scheduled().unwrap()
+        } else {
+            program
+        };
+        let jit = mech_gpu::sequence::JitProgram::compile(&program, 256, false).unwrap();
+        let mut context =
+            mech_gpu::sequence::Context::new(&program.constants, input.map(<[u8]>::to_vec), false);
+        let result = jit.run(&mut context);
+        (result, context.output)
+    }
+
+    #[test]
+    fn byte_encoding_preserves_prior_writes_and_failure_atomicity() {
+        for (alphabet, mode, input, expected_error) in [
+            ("", "exact", "A", Some("invalid byte alphabet")),
+            ("A", "unknown", "A", Some("unknown byte encoding mode")),
+            ("AA", "exact", "A", Some("duplicate alphabet symbol")),
+            (
+                "Aa",
+                "ignore-ascii-case",
+                "A",
+                Some("duplicate alphabet symbol"),
+            ),
+            ("A", "exact", "B", Some("byte 66 is not in the alphabet")),
+            ("A", "exact", "A", None),
+        ] {
+            let source = format!(
+                "raw := io/read()\nio/write(\"before\")\nencoded := bytes/encode(raw, {alphabet:?}, {mode:?})\nio/write(\"after\")\n"
+            );
+            for scheduled in [false, true] {
+                let (result, output) = execute(&source, Some(input.as_bytes()), scheduled);
+                match expected_error {
+                    Some(error) => {
+                        assert_eq!(result, Err(error.into()), "{source}");
+                        assert_eq!(output, b"before", "{source}");
+                    }
+                    None => {
+                        assert_eq!(result, Ok(()), "{source}");
+                        assert_eq!(output, b"beforeafter", "{source}");
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn scheduled_runtime_failures_keep_source_order_across_operation_families() {
+        for (source, expected_error, expected_output) in [
+            (
+                "io/write(\"before\")\nvalue := text/record(\"ABC\", \"\", \">\")\nio/write(\"after\")\n",
+                "record prefixes cannot be empty",
+                "before",
+            ),
+            (
+                "encoded := bytes/encode(\"ABC\", \"ABC\", \"exact\")\nio/write(\"before\")\nwindows := sequence/packed-windows(encoded, 1, 1)\nio/write(\"after\")\n",
+                "encoded symbol exceeds window bit width",
+                "before",
+            ),
+            (
+                "io/write(\"before\")\nvalue := number/format(1, 13)\ncount := regex/count-bytes(\"ABC\", \"[\")\nio/write(\"after\")\n",
+                "decimal precision exceeds 12",
+                "before",
+            ),
+            (
+                "io/write(\"before\")\nencoded := bytes/encode(\"A\", \"\", \"exact\")\ncount := regex/count-bytes(\"ABC\", \"[\")\nio/write(\"after\")\n",
+                "invalid byte alphabet",
+                "before",
+            ),
+        ] {
+            for scheduled in [false, true] {
+                let (result, output) = execute(source, None, scheduled);
+                assert_eq!(result, Err(expected_error.into()), "{source}");
+                assert_eq!(output, expected_output.as_bytes(), "{source}");
+            }
+        }
+    }
+
     #[test]
     fn typed_arbitrary_precision_resources_and_mutation_are_inferred() {
         let catalog = mech_stdlib::native_control_catalog();

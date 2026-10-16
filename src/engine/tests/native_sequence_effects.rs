@@ -1,4 +1,4 @@
-//! Scheduling must preserve observable IO and runtime regex error order.
+//! Scheduling must preserve observable IO and runtime failure order.
 #![cfg(feature = "native-sequence")]
 
 use mech_engine::native_sequence::{Constant, Node, Program, SequenceKind};
@@ -100,5 +100,87 @@ fn ordered_regex_dependencies_survive_constant_and_node_renumbering() {
     assert_eq!(
         scheduled.constants[scheduled.nodes[2].args[1]],
         Constant::Text("[".into())
+    );
+}
+
+#[test]
+fn byte_encoding_errors_stay_between_preceding_and_following_writes() {
+    for (input, alphabet, mode) in [
+        ("A", "", "exact"),
+        ("A", "A", "unknown"),
+        ("A", "AA", "exact"),
+        ("A", "Aa", "ignore-ascii-case"),
+        ("B", "A", "exact"),
+    ] {
+        let mut program = graph(&[
+            (8, vec![3], SequenceKind::Unit),
+            (3, vec![0, 1, 2], SequenceKind::Bytes),
+            (8, vec![4], SequenceKind::Unit),
+        ]);
+        program.constants[0] = Constant::Text(input.into());
+        program.constants[1] = Constant::Text(alphabet.into());
+        program.constants[2] = Constant::Text(mode.into());
+        let scheduled = program.scheduled().unwrap();
+        assert_eq!(
+            scheduled
+                .nodes
+                .iter()
+                .map(|node| node.op)
+                .collect::<Vec<_>>(),
+            [8, 3, 8],
+            "{input:?}, {alphabet:?}, {mode:?}"
+        );
+    }
+}
+
+#[test]
+fn byte_encoding_and_regex_failures_keep_their_source_order() {
+    for (first, second) in [(3, 53), (53, 3), (3, 54), (54, 3)] {
+        let operation = |op| match op {
+            3 => (3, vec![0, 1, 2], SequenceKind::Bytes),
+            53 => (53, vec![0, 1], SequenceKind::Integer),
+            54 => (54, vec![0, 1, 2], SequenceKind::Text),
+            _ => unreachable!(),
+        };
+        let scheduled = graph(&[
+            (8, vec![3], SequenceKind::Unit),
+            operation(first),
+            operation(second),
+            (8, vec![4], SequenceKind::Unit),
+        ])
+        .scheduled()
+        .unwrap();
+        assert_eq!(
+            scheduled
+                .nodes
+                .iter()
+                .map(|node| node.op)
+                .collect::<Vec<_>>(),
+            [8, first, second, 8]
+        );
+    }
+}
+
+#[test]
+fn an_earlier_formatting_failure_precedes_a_higher_priority_regex() {
+    let mut program = graph(&[
+        (8, vec![3], SequenceKind::Unit),
+        (24, vec![0, 1], SequenceKind::Text),
+        (53, vec![2, 4], SequenceKind::Integer),
+        (8, vec![3], SequenceKind::Unit),
+    ]);
+    program.constants[0] = Constant::Integer(1);
+    program.constants[1] = Constant::Integer(13);
+    program.constants[4] = Constant::Text("[".into());
+    program.kinds[0] = SequenceKind::Integer;
+    program.kinds[1] = SequenceKind::Integer;
+    let scheduled = program.scheduled().unwrap();
+    assert_eq!(
+        scheduled
+            .nodes
+            .iter()
+            .map(|node| node.op)
+            .collect::<Vec<_>>(),
+        [8, 24, 53, 8]
     );
 }
