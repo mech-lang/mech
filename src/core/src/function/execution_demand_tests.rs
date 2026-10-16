@@ -153,7 +153,8 @@ compiler_stub!(
     DemandFunction,
     DefaultFunction,
     CanonicalWorkspaceFunction,
-    CanonicalIndexRowCopy
+    CanonicalIndexRowCopy,
+    InputSnapshotFunction
 );
 
 fn instance(
@@ -907,4 +908,231 @@ fn canonical_index_matrix_output_refreshes_empty_nonempty_empty() {
             &[1, expected.len() as u64]
         );
     }
+}
+
+struct InputSnapshotFunction {
+    input: ValueCell,
+    retained_input: Value,
+    output: ValueCell,
+    output_footprint: CurrentMemoryFootprint,
+    fund_reconstruction: Rc<Cell<bool>>,
+    observations: Rc<RefCell<Vec<(u64, u64, u64, u64, bool)>>>,
+}
+impl MechFunctionImpl for InputSnapshotFunction {
+    fn planned_output_footprints_with_request(
+        &self,
+        _: &ExecutionDemandPlanningRequest<'_>,
+    ) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        Ok(Some(Box::new([self.output_footprint])))
+    }
+    fn planned_execution_demand(
+        &self,
+        request: &ExecutionDemandPlanningRequest<'_>,
+    ) -> MResult<PlannedExecutionDemand> {
+        let input = request
+            .input_footprint(0)
+            .map_err(|error| MechError::new(error, None).with_compiler_loc())?;
+        let canonical = CurrentMemoryFootprint {
+            payload_bytes: input.payload_bytes.max(input.fixed_bytes),
+            ..input
+        };
+        let temporary = canonical_snapshot_draft_bytes(canonical)
+            .unwrap()
+            .checked_add(canonical_snapshot_finalization_bytes(canonical).unwrap())
+            .unwrap();
+        Ok(PlannedExecutionDemand {
+            temporary_bytes: if self.fund_reconstruction.get() {
+                temporary
+            } else {
+                0
+            },
+            cloned_bytes: input.fixed_bytes.checked_add(input.schema_bytes).unwrap(),
+            retained_nodes: input.logical_elements.checked_add(3).unwrap(),
+            work: WorkDemand {
+                compute: input.fixed_bytes.checked_add(input.schema_bytes).unwrap(),
+                ..WorkDemand::default()
+            },
+        })
+    }
+    fn solve_managed(
+        &self,
+        frame: &mut KernelMemoryFrame<'_>,
+        _: &mut dyn MechExecutionServices,
+    ) -> MResult<ReactiveSolveStatus> {
+        frame.with_admitted_canonical_output(
+            &self.output,
+            self.output_footprint,
+            |frame, construction| {
+                let temporary_before = construction.remaining_temporary_bytes();
+                let finalization_before = construction.remaining_output_finalization_bytes();
+                let input =
+                    frame.snapshot_input_cell_with_construction(&self.input, 0, construction)?;
+                let temporary_after = construction.remaining_temporary_bytes();
+                let finalization_after = construction.remaining_output_finalization_bytes();
+                self.observations.borrow_mut().push((
+                    temporary_before,
+                    temporary_after,
+                    finalization_before,
+                    finalization_after,
+                    input.shares_frozen_storage(&self.retained_input),
+                ));
+                let ValueData::Matrix(matrix) = input.data() else {
+                    panic!("{input:?}")
+                };
+                let crate::snapshot::SequenceView::U64(values) = matrix.elements() else {
+                    panic!("{input:?}")
+                };
+                assert_eq!(values.len(), 256);
+                assert!(values.iter().all(|value| *value == 7));
+                let schemas = self.output.retained_schema_table();
+                let output = crate::cell_binding::finalize_draft_with_construction(
+                    self.output.schema(),
+                    &self.output.shape(),
+                    schemas.as_ref(),
+                    ValueDataDraft::U64(values.len() as u64),
+                    construction,
+                )?;
+                Ok(((), output))
+            },
+        )?;
+        Ok(ReactiveSolveStatus::Changed)
+    }
+    fn to_string(&self) -> String {
+        "temporary input snapshot fixture".into()
+    }
+}
+
+#[test]
+fn input_snapshot_reconstruction_preserves_output_reserve_and_rolls_back_on_denial() {
+    let domain = MemoryDomain::new().unwrap();
+    let input =
+        ValueCell::from_exact_in(&domain, nalgebra::DMatrix::from_element(2, 128, 7_u64)).unwrap();
+    assert!(!input.requires_canonical_output_builder().unwrap());
+    let seed = ValueCell::from_exact_in(&domain, 99_u64).unwrap();
+    let output = ValueCell::from_snapshot_in(&domain, seed.snapshot().unwrap()).unwrap();
+    let output_footprint = output.current_memory_footprint().unwrap();
+    let input_footprint = input.current_memory_footprint().unwrap();
+    assert_eq!(input_footprint.logical_elements, 256);
+    assert_eq!(output_footprint.logical_elements, 1);
+    let observations = Rc::new(RefCell::new(Vec::new()));
+    let fund_reconstruction = Rc::new(Cell::new(true));
+    let function = instance(
+        &input,
+        &output,
+        Box::new(InputSnapshotFunction {
+            input: input.clone(),
+            retained_input: input.snapshot().unwrap(),
+            output: output.clone(),
+            output_footprint,
+            fund_reconstruction: fund_reconstruction.clone(),
+            observations: observations.clone(),
+        }),
+        ImplementationMemoryClass::CanonicalFinalize,
+        MemoryBudgetLimits::default(),
+    );
+    assert_eq!(
+        function.memory_plan().input_storage[0].slot,
+        PlannedSlotKind::FixedScalar(ScalarMemoryKind::Unsigned(IntegerWidth::W64))
+    );
+    function.solve_result().unwrap();
+    let first = observations.borrow()[0];
+    assert!(
+        !first.4,
+        "dense input requires an admitted temporary snapshot"
+    );
+    assert!(first.0 - first.1 >= input_footprint.fixed_bytes + input_footprint.schema_bytes);
+    assert_eq!(
+        first.2,
+        canonical_snapshot_finalization_bytes(output_footprint).unwrap()
+    );
+    assert_eq!(
+        first.3, first.2,
+        "input reconstruction cannot spend output finalization"
+    );
+    assert!(matches!(
+        output.snapshot().unwrap().data(),
+        ValueData::U64(256)
+    ));
+
+    for injected in [false, true] {
+        fund_reconstruction.set(injected);
+        let before = output.snapshot().unwrap();
+        let version = output.published_version();
+        let revision = function.managed_plan_revision();
+        let ledger = domain.ledger();
+        let observed = observations.borrow().len();
+        if injected {
+            domain
+                .inject_failure_after(MemoryFailurePoint::HostAllocation, 0)
+                .unwrap();
+        }
+        let error = function.solve_result().unwrap_err();
+        if !injected {
+            assert!(format!("{error:?}").contains("CapacityExceeded"));
+        }
+        assert_eq!(observations.borrow().len(), observed);
+        assert_eq!(output.published_version(), version);
+        assert_eq!(function.managed_plan_revision(), revision);
+        assert_eq!(domain.ledger(), ledger);
+        let after = output.snapshot().unwrap();
+        assert!(
+            before
+                .snapshot_eq(
+                    &before.schemas().unwrap(),
+                    &after,
+                    &after.schemas().unwrap()
+                )
+                .unwrap()
+        );
+        fund_reconstruction.set(true);
+        function.solve_result().unwrap();
+        assert!(matches!(
+            output.snapshot().unwrap().data(),
+            ValueData::U64(256)
+        ));
+        let latest = *observations.borrow().last().unwrap();
+        assert_eq!(latest.2, latest.3);
+    }
+}
+
+#[test]
+fn canonical_input_snapshot_keeps_its_root_without_temporary_reconstruction() {
+    let domain = MemoryDomain::new().unwrap();
+    let dense =
+        ValueCell::from_exact_in(&domain, nalgebra::DMatrix::from_element(2, 128, 7_u64)).unwrap();
+    let input = ValueCell::from_snapshot_in(&domain, dense.snapshot().unwrap()).unwrap();
+    let retained_input = input.snapshot().unwrap();
+    assert!(input.requires_canonical_output_builder().unwrap());
+    let output = ValueCell::from_snapshot_in(
+        &domain,
+        ValueCell::from_exact_in(&domain, 0_u64)
+            .unwrap()
+            .snapshot()
+            .unwrap(),
+    )
+    .unwrap();
+    let observations = Rc::new(RefCell::new(Vec::new()));
+    let function = instance(
+        &input,
+        &output,
+        Box::new(InputSnapshotFunction {
+            input: input.clone(),
+            retained_input,
+            output: output.clone(),
+            output_footprint: output.current_memory_footprint().unwrap(),
+            fund_reconstruction: Rc::new(Cell::new(false)),
+            observations: observations.clone(),
+        }),
+        ImplementationMemoryClass::CanonicalFinalize,
+        MemoryBudgetLimits::default(),
+    );
+    function.solve_result().unwrap();
+    let observed = observations.borrow()[0];
+    assert!(observed.4);
+    assert_eq!(observed.0, observed.1);
+    assert_eq!(observed.2, observed.3);
+    assert!(matches!(
+        output.snapshot().unwrap().data(),
+        ValueData::U64(256)
+    ));
 }

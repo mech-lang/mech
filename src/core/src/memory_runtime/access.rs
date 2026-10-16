@@ -2326,7 +2326,8 @@ impl KernelMemoryFrame<'_> {
 
     /// Reconstructs a fixed-width input directly from this frame while
     /// charging every draft/finalization allocation to the caller's finite
-    /// canonical construction authority. Canonical inputs retain their
+    /// temporary construction workspace, preserving the output finalization
+    /// reserve. Canonical inputs retain their
     /// already frozen root and therefore require no reconstruction.
     #[cfg(feature = "functions")]
     pub fn snapshot_input_cell_with_construction(
@@ -2335,7 +2336,8 @@ impl KernelMemoryFrame<'_> {
         semantic_input: usize,
         construction: &super::FrozenSnapshotConstruction,
     ) -> crate::MResult<crate::Value> {
-        self.snapshot_input_cell_inner(input, semantic_input, Some(construction))
+        let temporary = construction.temporary_snapshot_authority();
+        self.snapshot_input_cell_inner(input, semantic_input, Some(&temporary))
     }
 
     #[cfg(feature = "functions")]
@@ -2343,7 +2345,7 @@ impl KernelMemoryFrame<'_> {
         &self,
         input: &crate::ValueCell,
         semantic_input: usize,
-        construction: Option<&super::FrozenSnapshotConstruction>,
+        construction: Option<&dyn crate::snapshot::validation::SnapshotConstructionAuthority>,
     ) -> crate::MResult<crate::Value> {
         let lease = self.port_lease(
             input.reactive_cell_id(),

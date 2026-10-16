@@ -344,6 +344,28 @@ pub struct FrozenSnapshotConstruction {
     charged_temporary_bytes: Cell<u64>,
 }
 
+/// A borrowed input-snapshot child of the call's construction workspace.
+/// Reconstructed inputs are temporary values; they must not spend the reserve
+/// held separately for the final published output. Every child shares the
+/// same finite temporary counter, so taking another child cannot reset it.
+#[cfg(feature = "functions")]
+pub(crate) struct TemporarySnapshotConstruction<'a> {
+    parent: &'a FrozenSnapshotConstruction,
+}
+
+#[cfg(feature = "functions")]
+impl crate::snapshot::validation::SnapshotConstructionAuthority
+    for TemporarySnapshotConstruction<'_>
+{
+    fn admit_snapshot_allocation(&self, bytes: u64, alignment: u32) -> MemoryRuntimeResult<()> {
+        self.parent.charge_temporary_aligned(bytes, alignment)
+    }
+
+    fn allocation_object(&self) -> Option<crate::MemoryObjectId> {
+        Some(self.parent.object())
+    }
+}
+
 /// Call-scoped authority for external argument marshalling. The call memory plan
 /// owns the finite scratch capacity; this token debits that capacity at every
 /// argument-container, numeric-draft, and canonical-finalization allocation.
@@ -460,7 +482,28 @@ impl FrozenSnapshotConstruction {
             .object()
     }
 
-    fn charge_temporary(&mut self, bytes: u64) -> MemoryRuntimeResult<()> {
+    #[cfg(feature = "functions")]
+    pub(crate) fn temporary_snapshot_authority(&self) -> TemporarySnapshotConstruction<'_> {
+        TemporarySnapshotConstruction { parent: self }
+    }
+
+    #[cfg(all(
+        test,
+        feature = "functions",
+        feature = "u64",
+        feature = "f64",
+        feature = "matrixd",
+        not(feature = "no_std")
+    ))]
+    pub(crate) fn remaining_output_finalization_bytes(&self) -> u64 {
+        self.remaining_finalization_bytes.get()
+    }
+
+    fn charge_temporary(&self, bytes: u64) -> MemoryRuntimeResult<()> {
+        self.charge_temporary_aligned(bytes, 1)
+    }
+
+    fn charge_temporary_aligned(&self, bytes: u64, alignment: u32) -> MemoryRuntimeResult<()> {
         if bytes == 0 {
             return Ok(());
         }
@@ -481,7 +524,7 @@ impl FrozenSnapshotConstruction {
             domain.borrow_mut().check_failure_injection(
                 super::MemoryFailurePoint::HostAllocation,
                 bytes,
-                1,
+                alignment,
                 crate::MemorySpace::Host,
             )?;
         } else {
