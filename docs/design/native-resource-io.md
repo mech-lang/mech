@@ -75,6 +75,12 @@ execution. An explicit generated-application test links once and runs that
 executable under both policies, checks denied launches, and pins the executable,
 object, constant and requirement hashes.
 
+The [native application qualification receipt](../validation/native-resource-io-v1.json)
+records a completed single-build check on Apple Silicon. Secure and trusted
+launches both returned the expected output; denied and invalid-policy launches
+returned errors without output. This is a correctness qualification, not a
+runtime measurement.
+
 Comparisons between these policies must measure complete process lifetime,
 including runtime construction, grant loading, port binding, input, computation,
 output delivery and shutdown. Both modes use the same executable hash and input.
