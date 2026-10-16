@@ -13,6 +13,48 @@ fn digest(path: &Path) -> String {
 }
 
 #[test]
+fn rejected_declarations_cannot_select_legacy_application_frontends() {
+    let root = std::env::temp_dir().join(format!(
+        "mech-rejected-native-declarations-{}-{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ));
+    fs::create_dir(&root).unwrap();
+    let workspace = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .canonicalize()
+        .unwrap();
+    for (index, declaration) in ["+> *", "+> @out :="].iter().enumerate() {
+        let source = root.join(format!("{index}.mec"));
+        let text = format!("{declaration}\nio/print(\"legacy bypass\\n\")\n");
+        fs::write(&source, &text).unwrap();
+        let parsed = mech_engine::native_sequence::ParsedSource::parse(&text).unwrap();
+        assert!(parsed.has_activated_ports(), "{text}");
+        let directory = root.join(format!("rejected-{index}"));
+        let error = native_build::emit_application(
+            &source,
+            &directory,
+            &workspace,
+            "rejected_declaration",
+            false,
+            false,
+        )
+        .unwrap_err();
+        assert!(
+            error.contains("activated native source admission"),
+            "{error}"
+        );
+        assert!(!directory.join("Cargo.toml").exists());
+        assert!(!directory.join("src/main.rs").exists());
+        assert!(!directory.join("mech-control.o").exists());
+    }
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
 #[ignore = "links an isolated generated Cargo application; run explicitly for native I/O qualification"]
 fn one_linked_executable_runs_secure_and_trusted_without_rebuilding() {
     let retained = std::env::var_os("MECH_NATIVE_QUALIFICATION_DIRECTORY");

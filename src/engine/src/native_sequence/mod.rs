@@ -156,7 +156,8 @@ impl ParsedSource {
                 SyntaxKind::ModuleImportContextAlias
                     | SyntaxKind::ContextSend
                     | SyntaxKind::PrefixedContextPath
-            ) || node.children().any(|child| activated(&child))
+            ) || ports::rejected_declaration(node)
+                || node.children().any(|child| activated(&child))
         }
         activated(&self.syntax)
     }
