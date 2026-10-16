@@ -1,14 +1,15 @@
 use std::{cell::Cell, collections::HashMap, ffi::OsString};
 
 use mech_core::{
-    EffectContract, EffectDeliveryPolicy, ExternalInteraction, IdempotencyRequirement, MResult,
-    MechError, MechErrorKind, ObservationContract, ObservationReplayPolicy, Value, ValueData,
+    DimensionExpr, EffectContract, EffectDeliveryPolicy, ExternalInteraction,
+    IdempotencyRequirement, IntegerWidth, MResult, MechError, MechErrorKind, ObservationContract,
+    ObservationReplayPolicy, SchemaBody, SchemaDraft, Value, ValueData,
 };
 use mech_runtime::{
-    ConfigValue, PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeEffectId,
-    RuntimeHostFactory, RuntimeResourceProvider, RuntimeResourceReadRequest,
-    RuntimeResourceWriteCommand, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
-    TransactionId, value_empty, value_string,
+    ConfigValue, PreparedRuntimeEffect, ResourceSchemaPreflight, RuntimeCapabilityOperation,
+    RuntimeEffectId, RuntimeHostFactory, RuntimeResourceProvider, RuntimeResourceReadRequest,
+    RuntimeResourceWriteCommand, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
+    RuntimeResourceWriteRequest, TransactionId, value_empty, value_string,
 };
 use mech_terminal::{CliBackend, CliHostFactory, CliResourceProvider};
 
@@ -19,11 +20,27 @@ struct FakeCliBackend {
     arguments: Vec<OsString>,
     argument_error: Option<String>,
     argument_reads: Cell<usize>,
+    stdin: String,
+    stdin_error: Option<String>,
+    stdin_reads: Cell<usize>,
     stdout: Vec<String>,
     stderr: Vec<String>,
 }
 
 impl CliBackend for FakeCliBackend {
+    fn stdin_text(&self) -> MResult<String> {
+        self.stdin_reads.set(self.stdin_reads.get() + 1);
+        if let Some(reason) = &self.stdin_error {
+            return Err(MechError::new(
+                FakeCliBackendError {
+                    reason: reason.clone(),
+                },
+                None,
+            ));
+        }
+        Ok(self.stdin.clone())
+    }
+
     fn argument(&self, index: usize) -> MResult<Option<OsString>> {
         self.argument_reads.set(self.argument_reads.get() + 1);
         if let Some(reason) = &self.argument_error {
@@ -134,6 +151,129 @@ fn args_read(base: &str, path: &str) -> RuntimeResourceReadRequest {
     }
 }
 
+fn stdin_read(base: &str, path: &str) -> RuntimeResourceReadRequest {
+    RuntimeResourceReadRequest {
+        base_uri: base.to_string(),
+        path: path.to_string(),
+        context_name: "stdin".to_string(),
+    }
+}
+
+#[test]
+fn stdin_captures_exact_unicode_or_empty_text_once_per_provider() {
+    for text in ["", "héllo e\u{301} 👋\n\nlast\r\n"] {
+        let mut provider = CliResourceProvider::new(FakeCliBackend {
+            stdin: text.to_string(),
+            ..Default::default()
+        });
+        assert_string(
+            &provider
+                .read(stdin_read("cli://cli/stdin", "text"))
+                .unwrap(),
+            text,
+        );
+        provider.backend_mut().stdin = "a later consumptive read".to_string();
+        for base in ["cli://stdin", "cli://cli/stdin"] {
+            assert_string(&provider.read(stdin_read(base, "text")).unwrap(), text);
+        }
+        assert_eq!(provider.backend().stdin_reads.get(), 1);
+    }
+}
+
+#[test]
+fn stdin_planning_and_invalid_paths_never_observe_the_backend() {
+    let provider = CliResourceProvider::new(FakeCliBackend {
+        stdin_error: Some("planning must not consume stdin".to_string()),
+        ..Default::default()
+    });
+    for base in ["cli://stdin", "cli://cli/stdin"] {
+        assert_string(&provider.plan_read(stdin_read(base, "text")).unwrap(), "");
+        assert!(!provider.observation_requires_input_driver(&stdin_read(base, "text")));
+        for path in [
+            "", "line", "Text", "text/1", "/text", " text", "text ", "text\n",
+        ] {
+            assert!(provider.read(stdin_read(base, path)).is_err(), "{path}");
+            assert!(
+                provider.plan_read(stdin_read(base, path)).is_err(),
+                "{path}"
+            );
+        }
+        let mut spoofed = stdin_read(base, "text");
+        spoofed.context_name = "args".into();
+        assert!(provider.read(spoofed.clone()).is_err());
+        assert!(provider.plan_read(spoofed).is_err());
+    }
+    assert_eq!(provider.backend().stdin_reads.get(), 0);
+}
+
+#[test]
+fn stdin_retains_the_first_backend_failure() {
+    let mut provider = CliResourceProvider::new(FakeCliBackend {
+        stdin_error: Some("stdin is not valid Unicode".to_string()),
+        ..Default::default()
+    });
+    let first = provider
+        .read(stdin_read("cli://stdin", "text"))
+        .unwrap_err();
+    provider.backend_mut().stdin_error = None;
+    let second = provider
+        .read(stdin_read("cli://cli/stdin", "text"))
+        .unwrap_err();
+    assert_eq!(first.display_message(), second.display_message());
+    assert!(
+        second
+            .display_message()
+            .contains("stdin is not valid Unicode")
+    );
+    assert_eq!(provider.backend().stdin_reads.get(), 1);
+}
+
+#[test]
+fn stdin_manifest_aliases_remain_read_only_and_instance_scoped() {
+    let factory = CliHostFactory::with_backend(FakeCliBackend {
+        stdin: "injected snapshot".to_string(),
+        ..Default::default()
+    })
+    .unwrap();
+    let installation = factory
+        .instantiate("term", &ConfigValue::Map(Default::default()))
+        .unwrap();
+    let provider = &installation.resource_providers[0];
+    assert_string(
+        &provider
+            .read(stdin_read("cli://term/stdin", "text"))
+            .unwrap(),
+        "injected snapshot",
+    );
+    assert!(provider.read(stdin_read("cli://stdin", "text")).is_err());
+    assert!(provider.equivalent_base_uri_groups().is_empty());
+    let provider = CliResourceProvider::new(FakeCliBackend::default());
+    assert!(provider.base_uris().contains(&"cli://stdin".to_string()));
+    assert!(provider.equivalent_base_uri_groups().contains(&vec![
+        "cli://cli/stdin".to_string(),
+        "cli://stdin".to_string(),
+    ]));
+    for intent in [
+        RuntimeResourceWriteIntent::Assign,
+        RuntimeResourceWriteIntent::Send,
+    ] {
+        let error = provider
+            .prepare_write(RuntimeResourceWriteRequest {
+                base_uri: "cli://cli/stdin".into(),
+                context_name: "stdin".into(),
+                path: "text".into(),
+                operation: RuntimeCapabilityOperation::Write,
+                value: str_value("replace"),
+                intent,
+                effect_id: effect_id(),
+                idempotency_key: "terminal-test:stdin".into(),
+            })
+            .unwrap_err();
+        assert!(error.display_message().contains("read-only"));
+    }
+    assert_eq!(provider.backend().stdin_reads.get(), 0);
+}
+
 #[test]
 fn args_reads_are_one_based_raw_unicode_and_preserve_empty_arguments() {
     let provider = CliResourceProvider::new(FakeCliBackend {
@@ -219,6 +359,13 @@ fn args_propagate_backend_errors_and_remain_optional_for_existing_backends() {
         }
     }
     let provider = CliResourceProvider::new(LegacyBackend);
+    assert!(
+        provider
+            .read(stdin_read("cli://stdin", "text"))
+            .unwrap_err()
+            .display_message()
+            .contains("unavailable")
+    );
     assert!(
         provider
             .read(args_read("cli://args", "1"))
@@ -650,6 +797,105 @@ fn stdout_planning_accepts_only_scalar_strings_without_output() {
     );
     assert!(provider.backend().stdout.is_empty());
     assert!(provider.backend().stderr.is_empty());
+}
+
+#[test]
+fn output_schema_preflight_accepts_only_scalar_strings_without_observation_or_delivery() {
+    let provider = CliResourceProvider::new(FakeCliBackend::default());
+    let schema = |body| {
+        SchemaDraft {
+            body,
+            dimension_parameters: Box::new([]),
+        }
+        .finalize()
+        .unwrap()
+    };
+    let string = schema(SchemaBody::String);
+    let rejected = [
+        schema(SchemaBody::UnsignedInteger(IntegerWidth::W64)),
+        schema(SchemaBody::Matrix {
+            element: Box::new(SchemaBody::String),
+            dimensions: Box::new([DimensionExpr::Constant(1), DimensionExpr::Constant(1)]),
+        }),
+        schema(SchemaBody::Matrix {
+            element: Box::new(SchemaBody::String),
+            dimensions: Box::new([DimensionExpr::Constant(0), DimensionExpr::Constant(3)]),
+        }),
+    ];
+    for base in [
+        "cli://stdout",
+        "cli://stderr",
+        "cli://cli/stdout",
+        "cli://cli/stderr",
+    ] {
+        for path in ["text", "line"] {
+            let request = || RuntimeResourceWritePreflightRequest {
+                base_uri: base.into(),
+                path: path.into(),
+                context_name: "output-alias".into(),
+                operation: RuntimeCapabilityOperation::Write,
+                intent: RuntimeResourceWriteIntent::Send,
+            };
+            assert_eq!(
+                provider.preflight_write_schema(request(), &string).unwrap(),
+                ResourceSchemaPreflight::Validated
+            );
+            for payload in &rejected {
+                let error = provider
+                    .preflight_write_schema(request(), payload)
+                    .unwrap_err();
+                assert!(error.display_message().contains("scalar string payload"));
+            }
+        }
+    }
+    let backend = provider.backend();
+    assert_eq!(backend.stdin_reads.get(), 0);
+    assert_eq!(backend.argument_reads.get(), 0);
+    assert!(backend.stdout.is_empty());
+    assert!(backend.stderr.is_empty());
+}
+
+#[test]
+fn output_schema_preflight_preserves_resource_direction_and_path_validation() {
+    let provider = CliResourceProvider::new(FakeCliBackend::default());
+    let string = SchemaDraft {
+        body: SchemaBody::String,
+        dimension_parameters: Box::new([]),
+    }
+    .finalize()
+    .unwrap();
+    for (base, path, intent) in [
+        ("cli://env", "HOME", RuntimeResourceWriteIntent::Send),
+        ("cli://args", "1", RuntimeResourceWriteIntent::Send),
+        ("cli://stdin", "text", RuntimeResourceWriteIntent::Send),
+        (
+            "cli://other/stdout",
+            "text",
+            RuntimeResourceWriteIntent::Send,
+        ),
+        ("cli://stdout", "unknown", RuntimeResourceWriteIntent::Send),
+        ("cli://stdout", "text", RuntimeResourceWriteIntent::Assign),
+    ] {
+        assert!(
+            provider
+                .preflight_write_schema(
+                    RuntimeResourceWritePreflightRequest {
+                        base_uri: base.into(),
+                        path: path.into(),
+                        context_name: "alias".into(),
+                        operation: RuntimeCapabilityOperation::Write,
+                        intent,
+                    },
+                    &string,
+                )
+                .is_err()
+        );
+    }
+    let backend = provider.backend();
+    assert_eq!(backend.stdin_reads.get(), 0);
+    assert_eq!(backend.argument_reads.get(), 0);
+    assert!(backend.stdout.is_empty());
+    assert!(backend.stderr.is_empty());
 }
 
 #[test]

@@ -33,14 +33,17 @@ use mech_engine::{
 
 use crate::SourceContextCapabilityScope;
 use crate::{
-    CapabilityRequest, HostInterfaceCatalog, ModuleBuildOptions, ModuleBuilder,
-    ResidentExternalContractResolver, ResolvedSource, RuntimeCapabilityOperation,
-    RuntimeHostInputValue, RuntimeInvalidOperationError, RuntimeModuleDependencyMissingError,
-    RuntimeResourceKey, RuntimeResourceProviderNotFound, RuntimeResourceReadRequest,
-    RuntimeResourceRegistry, RuntimeResourceWriteCommand, RuntimeResourceWriteIntent,
+    ArtifactResourceSchemaPreflightReport, CapabilityRequest, HostInterfaceCatalog,
+    ModuleBuildOptions, ModuleBuilder, ResidentExternalContractResolver, ResolvedSource,
+    ResourceSchemaPreflight, RuntimeCapabilityOperation, RuntimeHostInputValue,
+    RuntimeInvalidOperationError, RuntimeModuleDependencyMissingError, RuntimeResourceKey,
+    RuntimeResourceProviderNotFound, RuntimeResourceReadRequest, RuntimeResourceRegistry,
+    RuntimeResourceWriteCommand, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
     SourceContextBase, SourceDocument, SourceImportAlias, SourceImportDeclaration, SourceIndex,
-    SourceRequest, SourceResolver, import_may_resolve_source_dependency,
-    import_requires_source_dependency, module_namespace_for_import, source_request_for_import,
+    SourceRequest, SourceResolver, artifact_has_closed_resource_payloads,
+    import_may_resolve_source_dependency, import_requires_source_dependency,
+    module_namespace_for_import, preflight_artifact_resource_schemas, source_request_for_import,
+    validate_artifact_resource_read_schema, validate_artifact_resource_schema_contract,
 };
 
 use super::{ResidentRouteFailure, ResidentRouteFailureClass, route_failure};
@@ -939,8 +942,8 @@ impl<'a> ProgramCompilerView<'a> {
     fn validate_canonical_planning_candidate(
         &self,
         program: &CanonicalSourceProgram,
-        values: &BTreeMap<String, Value>,
-    ) -> MResult<()> {
+        _values: &BTreeMap<String, Value>,
+    ) -> MResult<ArtifactResourceSchemaPreflightReport> {
         self.validate_canonical_planning_step_limit(program)?;
         let has_write = program.program().nodes.iter().any(|node| {
             let mech_engine::SourceNodeBody::Operation {
@@ -954,33 +957,60 @@ impl<'a> ProgramCompilerView<'a> {
                 Some(ApplicationRequirement::Resource(request))
                 if matches!(request.intent, ResourceIntent::Assign | ResourceIntent::Send))
         });
-        if !has_write && values.is_empty() {
-            return Ok(());
+        if !has_write {
+            return Ok(ArtifactResourceSchemaPreflightReport::default());
         }
-        let bindings = program
-            .program()
-            .inputs
-            .iter()
-            .enumerate()
-            .filter_map(|(ordinal, input)| {
-                values
-                    .get(&input.name)
-                    .map(|value| (ordinal as u32, value.clone()))
-            })
-            .collect::<Vec<_>>();
-        let planning = program
-            .clone()
-            .bind_input_constants(&bindings)
-            .map_err(|error| canonical_compilation_error(error.to_string()))?;
-        // Explicit live ports can have their defaults evaluated by the
-        // separate initializer projection. Do not fabricate a planning value
-        // for a still-open input merely to execute an unrelated pure graph.
-        if !has_write && !planning.program().inputs.is_empty() {
-            return Ok(());
-        }
-        let artifact = planning.compile_artifact_with_external_contracts(
+        // Resource representatives establish schemas, not values. Retain the
+        // original open inputs instead of turning those representatives into
+        // constants and evaluating arbitrary domain-sensitive operations.
+        let artifact = program.compile_artifact_with_external_contracts(
             &ResidentExternalContractResolver::new(self.resources),
         )?;
+        let report = preflight_artifact_resource_schemas(&artifact, |site| {
+            let binding = self
+                .resources
+                .resident_provider_binding(&site.request.base_uri)?;
+            if site.request.intent == ResourceIntent::Read {
+                validate_artifact_resource_schema_contract(
+                    &site,
+                    binding.semantic_read_contract()?,
+                )?;
+                let representative = self.resources.plan_read(RuntimeResourceReadRequest {
+                    base_uri: site.request.base_uri.clone(),
+                    path: site.request.path.clone(),
+                    context_name: site.request.context_name.clone(),
+                })?;
+                validate_artifact_resource_read_schema(&artifact, &site, &representative)?;
+                return Ok(ResourceSchemaPreflight::Validated);
+            }
+            let intent = match site.request.intent {
+                ResourceIntent::Assign => RuntimeResourceWriteIntent::Assign,
+                ResourceIntent::Send => RuntimeResourceWriteIntent::Send,
+                ResourceIntent::Read => unreachable!(),
+            };
+            validate_artifact_resource_schema_contract(
+                &site,
+                binding.semantic_write_contract(intent)?,
+            )?;
+            self.resources.preflight_write_schema(
+                RuntimeResourceWritePreflightRequest {
+                    base_uri: site.request.base_uri.clone(),
+                    path: site.request.path.clone(),
+                    context_name: site.request.context_name.clone(),
+                    operation: RuntimeCapabilityOperation::from_name(
+                        site.request.operation.clone(),
+                    )?,
+                    intent,
+                },
+                site.schema,
+            )
+        })?;
+        if !artifact_has_closed_resource_payloads(&artifact) {
+            // A deferred provider check is preserved in the report. Every
+            // real effect still invokes mandatory provider preparation before
+            // publication, including for legacy custom providers.
+            return Ok(report);
+        }
         with_canonical_planning_step_limit(self.max_planning_steps, || {
             let mut instance = activate_external(
                 ReactiveInstanceId::new(0x4350_4c4e, 0),
@@ -1004,7 +1034,8 @@ impl<'a> ProgramCompilerView<'a> {
             // captured effects are discarded after the provider's effect-free hook.
             prepared.abort();
             Ok(())
-        })
+        })?;
+        Ok(report)
     }
 
     fn validate_canonical_planning_step_limit(
@@ -1893,23 +1924,24 @@ impl<'a> ProgramCompilerView<'a> {
                 ))
             })?;
             let key = RuntimeResourceKey::new(base_uri, &reference.name)?;
+            let read = RuntimeResourceReadRequest {
+                base_uri: key.base_uri.clone(),
+                path: key.path.clone(),
+                context_name: context_name.clone(),
+            };
             let request = ExecutionResourceRequest {
                 base_uri: key.base_uri.clone(),
                 path: key.path.clone(),
                 context_name: context_name.clone(),
                 operation: "read".to_owned(),
                 intent: ResourceIntent::Read,
+                // All observations remain captured live input facts. Whether
+                // a host driver is required is separate provider metadata.
                 delivery: mech_core::ResourceDelivery::Live,
             };
             let name = format!("@{}/{}", reference.target, reference.name);
             reads.insert(name.clone(), request);
-            if let Some(value) = plan_read(RuntimeResourceReadRequest {
-                base_uri: key.base_uri,
-                path: key.path,
-                context_name: context_name.clone(),
-            })
-            .map_err(classify_source_planning)?
-            {
+            if let Some(value) = plan_read(read).map_err(classify_source_planning)? {
                 input_schemas.insert(name.clone(), canonical_planned_read_schema(&value)?);
                 planned_reads.insert(name, value);
             }

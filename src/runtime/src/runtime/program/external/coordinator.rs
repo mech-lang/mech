@@ -28,13 +28,15 @@ use crate::{
     },
 };
 
+#[cfg(feature = "resident-routing")]
+use super::retained_input_value_bytes;
 use super::{
     BoundResidentEffect, BoundResidentExternalPlan, CapturedInputBatch, CapturedInputFact,
     ResidentExternalAuthority, ResidentExternalTurnMode, ResidentOutboxPayload,
     ResidentTurnReceiptV1, ResidentTurnRecord, bind_external_requirements,
     bind_replay_requirements, resident_effect_id, resident_effect_ids_hash,
     resident_idempotency_key, resident_idempotency_keys_hash, resident_outbox_policy,
-    resident_transaction_id, retained_input_value_bytes,
+    resident_transaction_id,
 };
 use crate::runtime::effect_journal::{
     RuntimeEffectJournal, deliver_prepared_after_commit, validate_prepared_after_commit,
@@ -608,6 +610,7 @@ impl ResidentExternalCoordinator {
             .into_boxed_slice())
     }
 
+    #[cfg(feature = "resident-routing")]
     pub(crate) fn has_driverless_trigger_observation(&self) -> MResult<bool> {
         Ok(!self.replay_bootstrap.driverless_trigger_inputs.is_empty())
     }
@@ -672,6 +675,7 @@ impl ResidentExternalCoordinator {
         Ok(())
     }
 
+    #[cfg(feature = "resident-routing")]
     fn install_pending_live_input_replacements(
         &mut self,
         replacements: Vec<(usize, Value, usize)>,
@@ -719,6 +723,7 @@ impl ResidentExternalCoordinator {
         Ok(())
     }
 
+    #[cfg(feature = "resident-routing")]
     fn has_pending_live_inputs(&self) -> bool {
         self.pending_live_inputs.iter().any(Option::is_some)
     }

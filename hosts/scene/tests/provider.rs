@@ -5,15 +5,16 @@ use mech_core::ValueData;
 use mech_core::snapshot::{F64Bits, TableColumnDraft};
 use mech_core::{
     CardinalitySpec, DimensionExpr, EffectContract, EffectDeliveryPolicy, ExternalInteraction,
-    FloatWidth, IdempotencyRequirement, MResult, MechError, MechErrorKind, SchemaBody, Value,
-    ValueCell, ValueDataDraft,
+    FloatWidth, IdempotencyRequirement, MResult, MechError, MechErrorKind, Schema, SchemaBody,
+    SchemaDraft, SchemaField, Value, ValueCell, ValueDataDraft,
 };
 #[cfg(feature = "native")]
 use mech_runtime::RuntimeHostFactory;
 use mech_runtime::{
-    ConfigValue, PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeEffectId,
-    RuntimeResourceProvider, RuntimeResourceWriteCommand, RuntimeResourceWriteIntent,
-    RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest, TransactionId,
+    ConfigValue, PreparedRuntimeEffect, ResourceSchemaPreflight, RuntimeCapabilityOperation,
+    RuntimeEffectId, RuntimeResourceProvider, RuntimeResourceWriteCommand,
+    RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
+    TransactionId,
 };
 #[cfg(feature = "browser")]
 use mech_runtime::{
@@ -1333,4 +1334,362 @@ fn scene_provider_failed_replace_does_not_advance_dedup_state() {
     assert_eq!(backend.generation(), 1);
     deliver_write(&mut provider, write(empty_scene())).unwrap();
     assert_eq!(backend.generation(), 1);
+}
+
+fn payload_schema(value: &Value) -> Schema {
+    value
+        .schemas()
+        .unwrap()
+        .get(value.schema())
+        .unwrap()
+        .clone()
+}
+
+fn closed_schema(body: SchemaBody) -> Schema {
+    SchemaDraft {
+        dimension_parameters: Box::new([]),
+        body,
+    }
+    .finalize()
+    .unwrap()
+}
+
+fn scene_schema_with(field: &str, body: SchemaBody) -> Schema {
+    let mut fields = vec![
+        SchemaField {
+            name: "width".into(),
+            schema: SchemaBody::FloatingPoint(FloatWidth::W64),
+        },
+        SchemaField {
+            name: "height".into(),
+            schema: SchemaBody::FloatingPoint(FloatWidth::W64),
+        },
+        SchemaField {
+            name: "background".into(),
+            schema: SchemaBody::String,
+        },
+    ];
+    if let Some(existing) = fields.iter_mut().find(|existing| existing.name == field) {
+        existing.schema = body;
+    } else {
+        fields.push(SchemaField {
+            name: field.into(),
+            schema: body,
+        });
+    }
+    closed_schema(SchemaBody::Record(fields.into_boxed_slice()))
+}
+
+fn schema_request(path: &str) -> RuntimeResourceWritePreflightRequest {
+    RuntimeResourceWritePreflightRequest {
+        base_uri: "scene://view/frame".into(),
+        path: path.into(),
+        context_name: "view".into(),
+        operation: RuntimeCapabilityOperation::Write,
+        intent: RuntimeResourceWriteIntent::Send,
+    }
+}
+
+#[test]
+fn scene_schema_preflight_preserves_maintained_value_forms_without_rendering() {
+    let backend = RecordingSceneBackend::new();
+    let provider = SceneResourceProvider::new("view", backend.clone());
+    for value in [
+        empty_scene(),
+        record(vec![
+            ("width", f(100.0)),
+            ("height", f(50.0)),
+            ("background", f(0x080b12 as f64)),
+            ("circles", tuple(vec![circle("c")])),
+            ("lines", table(vec![line("l")])),
+            ("texts", tuple(vec![text("t")])),
+        ]),
+        record(vec![
+            ("width", f(100.0)),
+            ("height", f(50.0)),
+            ("background", s("black")),
+            ("point-sets", point_set("p")),
+            ("line-strips", line_strip("s")),
+        ]),
+        record(vec![
+            ("width", f(100.0)),
+            ("height", f(50.0)),
+            ("background", s("black")),
+            ("point-sets", table(vec![point_set("p")])),
+            ("line-strips", tuple(vec![line_strip("s")])),
+        ]),
+    ] {
+        let value = canonical(value);
+        SceneSnapshot::from_value(&value).unwrap();
+        provider
+            .preflight_write_schema(schema_request("replace"), &payload_schema(&value))
+            .unwrap();
+    }
+    assert_eq!(backend.generation(), 0);
+    assert!(backend.latest().is_none());
+}
+
+#[test]
+fn scene_schema_preflight_rejects_impossible_structure_and_preserves_path_checks() {
+    let provider = SceneResourceProvider::new("view", RecordingSceneBackend::new());
+    for schema in [
+        closed_schema(SchemaBody::String),
+        closed_schema(SchemaBody::Record(Box::new([]))),
+        scene_schema_with("width", SchemaBody::String),
+        scene_schema_with("background", SchemaBody::Index),
+        scene_schema_with("unknown", SchemaBody::Bool),
+        scene_schema_with("circles", SchemaBody::Record(Box::new([]))),
+        scene_schema_with("texts", SchemaBody::Tuple(Box::new([SchemaBody::Bool]))),
+    ] {
+        assert!(
+            provider
+                .preflight_write_schema(schema_request("replace"), &schema)
+                .is_err(),
+            "{schema:?}"
+        );
+    }
+    let schema = payload_schema(&canonical(empty_scene()));
+    let mut request = schema_request("replace");
+    request.base_uri = "scene://other/frame".into();
+    assert!(provider.preflight_write_schema(request, &schema).is_err());
+    let mut request = schema_request("replace");
+    request.intent = RuntimeResourceWriteIntent::Assign;
+    assert!(provider.preflight_write_schema(request, &schema).is_err());
+    assert!(
+        provider
+            .preflight_write_schema(schema_request("unknown"), &schema)
+            .is_err()
+    );
+}
+
+#[test]
+fn scene_schema_preflight_defers_optional_dynamic_and_zero_row_field_kinds() {
+    let provider = SceneResourceProvider::new("view", RecordingSceneBackend::new());
+    let plain = payload_schema(&canonical(empty_scene()));
+    for schema in [
+        closed_schema(SchemaBody::Dynamic),
+        closed_schema(SchemaBody::Option(Box::new(plain.body().clone()))),
+        scene_schema_with("width", SchemaBody::Dynamic),
+        scene_schema_with("circles", SchemaBody::Option(Box::new(SchemaBody::Bool))),
+    ] {
+        assert_eq!(
+            provider
+                .preflight_write_schema(schema_request("replace"), &schema)
+                .unwrap(),
+            ResourceSchemaPreflight::DeferredToRuntime
+        );
+    }
+    // None is a real accepted empty collection even when its Some kind would
+    // not be an element collection. Preflight must not manufacture Some.
+    let absent = ValueCell::from_schema_data(
+        SchemaBody::Option(Box::new(SchemaBody::Bool)),
+        ValueDataDraft::Option(mech_core::snapshot::OptionDraft {
+            present: false,
+            value: None,
+        }),
+    )
+    .unwrap();
+    let value = canonical(record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("black")),
+        ("circles", absent),
+    ]));
+    assert!(
+        SceneSnapshot::from_value(&value)
+            .unwrap()
+            .circles
+            .is_empty()
+    );
+    assert_eq!(
+        provider
+            .preflight_write_schema(schema_request("replace"), &payload_schema(&value))
+            .unwrap(),
+        ResourceSchemaPreflight::DeferredToRuntime
+    );
+
+    let SchemaBody::Record(mut fields) = circle("template").closed_schema_body().unwrap() else {
+        panic!("circle record")
+    };
+    fields
+        .iter_mut()
+        .find(|field| field.name == "id")
+        .unwrap()
+        .schema = SchemaBody::Bool;
+    let empty = ValueCell::empty_dynamic_table(fields.clone()).unwrap();
+    let value = canonical(record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("black")),
+        ("circles", empty),
+    ]));
+    assert!(
+        SceneSnapshot::from_value(&value)
+            .unwrap()
+            .circles
+            .is_empty()
+    );
+    assert_eq!(
+        provider
+            .preflight_write_schema(schema_request("replace"), &payload_schema(&value))
+            .unwrap(),
+        ResourceSchemaPreflight::DeferredToRuntime
+    );
+    let nonempty = scene_schema_with(
+        "circles",
+        SchemaBody::Table {
+            columns: fields.clone(),
+            rows: CardinalitySpec::Exact(DimensionExpr::Constant(1)),
+        },
+    );
+    assert!(
+        provider
+            .preflight_write_schema(schema_request("replace"), &nonempty)
+            .is_err()
+    );
+    let missing = fields
+        .into_vec()
+        .into_iter()
+        .filter(|field| field.name != "radius")
+        .collect::<Vec<_>>()
+        .into_boxed_slice();
+    let empty_missing = scene_schema_with(
+        "circles",
+        SchemaBody::Table {
+            columns: missing,
+            rows: CardinalitySpec::Exact(DimensionExpr::Constant(0)),
+        },
+    );
+    assert!(
+        provider
+            .preflight_write_schema(schema_request("replace"), &empty_missing)
+            .is_err()
+    );
+}
+
+#[test]
+fn scene_schema_preflight_leaves_actual_numeric_domains_with_prepare_write() {
+    let backend = RecordingSceneBackend::new();
+    let provider = SceneResourceProvider::new("view", backend.clone());
+    for value in [
+        record(vec![
+            ("width", f(0.0)),
+            ("height", f(50.0)),
+            ("background", s("black")),
+        ]),
+        record(vec![
+            ("width", f(100.0)),
+            ("height", f(50.0)),
+            ("background", s("black")),
+            ("circles", tuple(vec![circle("same"), circle("same")])),
+        ]),
+    ] {
+        let value = canonical(value);
+        assert_eq!(
+            provider
+                .preflight_write_schema(schema_request("replace"), &payload_schema(&value))
+                .unwrap(),
+            ResourceSchemaPreflight::Validated
+        );
+        let request = RuntimeResourceWriteCommand {
+            base_uri: "scene://view/frame".into(),
+            path: "replace".into(),
+            context_name: "view".into(),
+            operation: RuntimeCapabilityOperation::Write,
+            value,
+            intent: RuntimeResourceWriteIntent::Send,
+        };
+        assert!(
+            provider
+                .prepare_write(request.bind_effect(effect_id(), "schema-preflight:0".into()))
+                .is_err()
+        );
+    }
+    assert_eq!(backend.generation(), 0);
+    assert!(backend.latest().is_none());
+}
+
+#[test]
+fn points_schema_preflight_checks_rank_f64_and_fixed_extents_without_values() {
+    use mech_core::{
+        DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+        DimensionParameterOrigin,
+    };
+    let provider = SceneResourceProvider::new("view", RecordingSceneBackend::new());
+    let matrix = |element, dimensions: Vec<DimensionExpr>| {
+        closed_schema(SchemaBody::Matrix {
+            element: Box::new(element),
+            dimensions: dimensions.into_boxed_slice(),
+        })
+    };
+    let f64_kind = SchemaBody::FloatingPoint(FloatWidth::W64);
+    for schema in [
+        closed_schema(SchemaBody::Dynamic),
+        closed_schema(SchemaBody::Option(Box::new(SchemaBody::Dynamic))),
+        matrix(
+            SchemaBody::FloatingPoint(FloatWidth::W32),
+            vec![DimensionExpr::Constant(2), DimensionExpr::Constant(2)],
+        ),
+        matrix(f64_kind.clone(), vec![DimensionExpr::Constant(2)]),
+        matrix(
+            f64_kind.clone(),
+            vec![DimensionExpr::Constant(0), DimensionExpr::Constant(2)],
+        ),
+        matrix(
+            f64_kind.clone(),
+            vec![DimensionExpr::Constant(2), DimensionExpr::Constant(3)],
+        ),
+    ] {
+        assert!(
+            provider
+                .preflight_write_schema(schema_request("points"), &schema)
+                .is_err(),
+            "{schema:?}"
+        );
+    }
+    let fixed = matrix(
+        f64_kind.clone(),
+        vec![DimensionExpr::Constant(2), DimensionExpr::Constant(2)],
+    );
+    assert_eq!(
+        provider
+            .preflight_write_schema(schema_request("points"), &fixed)
+            .unwrap(),
+        ResourceSchemaPreflight::Validated
+    );
+    let variable = SchemaDraft {
+        dimension_parameters: Box::new([DimensionParameterDeclaration {
+            id: DimensionParameterId::new(0),
+            origin: DimensionParameterOrigin::Explicit,
+            lifetime: DimensionLifetime::Turn,
+            lower_bound: DimensionExpr::Constant(0),
+            upper_bound: None,
+        }]),
+        body: SchemaBody::Matrix {
+            element: Box::new(f64_kind),
+            dimensions: Box::new([
+                DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                DimensionExpr::Constant(2),
+            ]),
+        },
+    }
+    .finalize()
+    .unwrap();
+    assert_eq!(
+        provider
+            .preflight_write_schema(schema_request("points"), &variable)
+            .unwrap(),
+        ResourceSchemaPreflight::DeferredToRuntime
+    );
+    let value = canonical(points(1, 2, vec![f64::INFINITY, 0.0]));
+    assert!(
+        provider
+            .preflight_write_schema(schema_request("points"), &payload_schema(&value))
+            .is_ok()
+    );
+    assert!(
+        provider
+            .prepare_write(points_write(points(1, 2, vec![f64::INFINITY, 0.0])))
+            .is_err()
+    );
 }

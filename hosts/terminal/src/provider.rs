@@ -1,19 +1,19 @@
 use std::{
     env::VarError,
     ffi::OsString,
-    io::Write,
+    io::{Read, Write},
     sync::{Arc, Mutex, MutexGuard},
 };
 
 use mech_core::{
     AccessMode, DeliveryMode, EffectContract, EffectDeliveryPolicy, ExternalInteraction,
     IdempotencyRequirement, InputPortLayout, InputPortPolicy, MResult, MechError, MechErrorKind,
-    OperationContractDeclaration, Value, ValueData,
+    OperationContractDeclaration, Schema, SchemaBody, Value, ValueData,
 };
 use mech_runtime::{
-    ConfigValue, HostManifestConfig, PreparedRuntimeEffect, RuntimeAfterCommitEffect,
-    RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeHostFactory,
-    RuntimeHostInputValue, RuntimeHostInstallation, RuntimeResourceProvider,
+    ConfigValue, HostManifestConfig, PreparedRuntimeEffect, ResourceSchemaPreflight,
+    RuntimeAfterCommitEffect, RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource,
+    RuntimeHostFactory, RuntimeHostInputValue, RuntimeHostInstallation, RuntimeResourceProvider,
     RuntimeResourceReadNotPlannable, RuntimeResourceReadRequest, RuntimeResourceWriteCommand,
     RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
     materialize_host_manifest,
@@ -45,6 +45,14 @@ pub trait CliBackend: std::fmt::Debug {
             "command-line arguments are unavailable from this CLI backend",
         ))
     }
+    /// Read exact Unicode text through EOF. Providers retain the first result,
+    /// so a consumptive stream is observed only once per provider instance.
+    fn stdin_text(&self) -> MResult<String> {
+        Err(cli_error(
+            "cli://stdin".to_string(),
+            "standard input is unavailable from this CLI backend",
+        ))
+    }
     fn write_stdout(&mut self, text: &str) -> MResult<()>;
     fn write_stderr(&mut self, text: &str) -> MResult<()>;
 }
@@ -53,6 +61,15 @@ pub trait CliBackend: std::fmt::Debug {
 pub struct StdCliBackend;
 
 impl CliBackend for StdCliBackend {
+    fn stdin_text(&self) -> MResult<String> {
+        let mut text = String::new();
+        std::io::stdin()
+            .lock()
+            .read_to_string(&mut text)
+            .map_err(|error| cli_error("cli://stdin".to_string(), error.to_string()))?;
+        Ok(text)
+    }
+
     fn argument(&self, index: usize) -> MResult<Option<OsString>> {
         Ok(std::env::args_os().nth(index))
     }
@@ -89,6 +106,7 @@ impl CliBackend for StdCliBackend {
 pub struct CliResourceProvider<B: CliBackend> {
     instance: String,
     backend: Arc<Mutex<B>>,
+    stdin_snapshot: Mutex<Option<MResult<Value>>>,
 }
 
 impl<B: CliBackend> CliResourceProvider<B> {
@@ -99,6 +117,7 @@ impl<B: CliBackend> CliResourceProvider<B> {
         Self {
             instance: instance.into(),
             backend: Arc::new(Mutex::new(backend)),
+            stdin_snapshot: Mutex::new(None),
         }
     }
     fn base(&self, context: &str) -> String {
@@ -169,6 +188,7 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
         let mut bases = vec![
             self.base("env"),
             self.base("args"),
+            self.base("stdin"),
             self.base("stdout"),
             self.base("stderr"),
         ];
@@ -176,6 +196,7 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
             bases.extend([
                 "cli://env".to_string(),
                 "cli://args".to_string(),
+                "cli://stdin".to_string(),
                 "cli://stdout".to_string(),
                 "cli://stderr".to_string(),
             ]);
@@ -190,6 +211,7 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
     fn observation_requires_input_driver(&self, request: &RuntimeResourceReadRequest) -> bool {
         !self.matches_base(&request.base_uri, "env")
             && !self.matches_base(&request.base_uri, "args")
+            && !self.matches_base(&request.base_uri, "stdin")
     }
 
     fn semantic_write_contract(
@@ -207,6 +229,7 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
         vec![
             vec![self.base("env"), "cli://env".to_string()],
             vec![self.base("args"), "cli://args".to_string()],
+            vec![self.base("stdin"), "cli://stdin".to_string()],
             vec![self.base("stdout"), "cli://stdout".to_string()],
             vec![self.base("stderr"), "cli://stderr".to_string()],
         ]
@@ -250,6 +273,23 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
                 )
             })?;
             RuntimeHostInputValue::String(value).into_value()
+        } else if self.matches_base(&request.base_uri, "stdin") {
+            validate_stdin_read(&request)?;
+            let mut snapshot = self.stdin_snapshot.lock().map_err(|_| {
+                cli_error(request.base_uri.clone(), "CLI stdin snapshot lock poisoned")
+            })?;
+            snapshot
+                .get_or_insert_with(|| {
+                    let text = self
+                        .backend
+                        .lock()
+                        .map_err(|_| {
+                            cli_error(request.base_uri.clone(), "CLI backend lock poisoned")
+                        })?
+                        .stdin_text()?;
+                    RuntimeHostInputValue::String(text).into_value()
+                })
+                .clone()
         } else if self.matches_base(&request.base_uri, "stdout")
             || self.matches_base(&request.base_uri, "stderr")
         {
@@ -271,6 +311,10 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
             argument_index(&request.path)?;
             return RuntimeHostInputValue::String(String::new()).into_value();
         }
+        if self.matches_base(&request.base_uri, "stdin") {
+            validate_stdin_read(&request)?;
+            return RuntimeHostInputValue::String(String::new()).into_value();
+        }
         Err(MechError::new(
             RuntimeResourceReadNotPlannable {
                 scheme: self.scheme().to_string(),
@@ -284,10 +328,11 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
     fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
         if self.matches_base(&request.base_uri, "env")
             || self.matches_base(&request.base_uri, "args")
+            || self.matches_base(&request.base_uri, "stdin")
         {
             Err(cli_error(
                 request.base_uri,
-                "cli env/args are read-only and do not support writes or sends",
+                "cli env/args/stdin are read-only and do not support writes or sends",
             ))
         } else if self.matches_base(&request.base_uri, "stdout")
             || self.matches_base(&request.base_uri, "stderr")
@@ -308,6 +353,22 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
         } else {
             Err(cli_error(request.base_uri, "unsupported cli resource"))
         }
+    }
+
+    fn preflight_write_schema(
+        &self,
+        request: RuntimeResourceWritePreflightRequest,
+        payload_schema: &Schema,
+    ) -> MResult<ResourceSchemaPreflight> {
+        let resource = request.base_uri.clone();
+        self.preflight_write(request)?;
+        if !matches!(payload_schema.body(), SchemaBody::String) {
+            return Err(cli_error(
+                resource,
+                "stdout/stderr sends require a scalar string payload",
+            ));
+        }
+        Ok(ResourceSchemaPreflight::Validated)
     }
 
     fn prepare_write(
@@ -400,6 +461,16 @@ fn argument_index(path: &str) -> MResult<usize> {
             "argument index exceeds the platform index range",
         )
     })
+}
+
+fn validate_stdin_read(request: &RuntimeResourceReadRequest) -> MResult<()> {
+    if request.context_name != "stdin" || request.path != "text" {
+        return Err(cli_error(
+            request.base_uri.clone(),
+            "stdin reads require context `stdin` and exactly the `text` path",
+        ));
+    }
+    Ok(())
 }
 
 fn validate_env_key(key: &str) -> MResult<()> {

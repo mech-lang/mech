@@ -1,0 +1,52 @@
+Standard Input
+===============================================================================
+
+The CLI standard-input context exposes one read-only Unicode text snapshot.
+
+```mech
++> @in := cli/stdin
+text := @in/text
+```
+
+1. Snapshot semantics
+-------------------------------------------------------------------------------
+
+The only admitted path is text. On the first runtime read, the standard backend
+reads stdin through EOF and returns its exact UTF-8 text, including empty input,
+line endings and combining characters. Invalid UTF-8 and I/O failures are errors;
+there is no lossy conversion or numeric parsing.
+
+Each provider retains its first result, including an error. Later reads reuse
+that snapshot and do not consume stdin again. A new provider starts a new
+snapshot. Reads return the complete stream rather than one line at a time.
+
+2. Planning and capabilities
+-------------------------------------------------------------------------------
+
+Planning checks the context and exact text path and supplies a string placeholder.
+It never reads stdin or waits for EOF. No input driver is required. Assignments
+and sends to stdin are rejected.
+
+Binding +> @in := cli/stdin grants no authority. Standard-input reads are excluded
+from default CLI capabilities. Explicitly grant the existing read capability:
+
+```mech
+config := {
+  run: {
+    grants: [{ target: "cli/stdin" operations: ["read"] paths: ["text"] }]
+  }
+}
+```
+
+Configured CLI aliases use their instance target, such as term/stdin. The
+experimental native Sequence compiler lowers the default CLI context to a
+SnapshotTextRead observation. It retains the exact canonical cli://cli/stdin,
+stdin context, text path and read intent in its resource requirements; its
+launcher chooses the existing secure or trusted host policy.
+
+3. Embedding
+-------------------------------------------------------------------------------
+
+Custom CLI backends implement stdin_text() to supply a text snapshot. Existing
+backends can omit this optional method; reads then report stdin unavailable.
+The provider caches the first success or failure for custom backends as well.

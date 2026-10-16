@@ -4,16 +4,16 @@ use mech_core::snapshot::SequenceView;
 use mech_core::{
     AccessMode, DeliveryMode, EffectContract, EffectDeliveryPolicy, ExternalInteraction,
     IdempotencyRequirement, InputPortLayout, InputPortPolicy, MResult,
-    OperationContractDeclaration, SchemaBody, Value, ValueData,
+    OperationContractDeclaration, Schema, SchemaBody, Value, ValueData,
 };
 use mech_runtime::{
-    ConfigValue, HostManifestConfig, PreparedRuntimeEffect, RuntimeAfterCommitEffect,
-    RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeHostFactory,
-    RuntimeHostInput, RuntimeHostInputDriver, RuntimeHostInputSource, RuntimeHostInputUpdate,
-    RuntimeHostInputValue, RuntimeHostInstallation, RuntimeIngress, RuntimeResourceProvider,
-    RuntimeResourceReadRequest, RuntimeResourceWriteCommand, RuntimeResourceWriteIntent,
-    RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest, materialize_host_manifest,
-    resource_observation_contract,
+    ConfigValue, HostManifestConfig, PreparedRuntimeEffect, ResourceSchemaPreflight,
+    RuntimeAfterCommitEffect, RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource,
+    RuntimeHostFactory, RuntimeHostInput, RuntimeHostInputDriver, RuntimeHostInputSource,
+    RuntimeHostInputUpdate, RuntimeHostInputValue, RuntimeHostInstallation, RuntimeIngress,
+    RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteCommand,
+    RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
+    materialize_host_manifest, resource_observation_contract,
 };
 
 use crate::{
@@ -314,6 +314,19 @@ impl<B: SceneBackend> RuntimeResourceProvider for SceneResourceProvider<B> {
         match request.path.as_str() {
             "replace" => SceneSnapshot::from_value(&request.value).map(|_| ()),
             "points" => scene_snapshot_from_points(&request.value, &self.settings).map(|_| ()),
+            _ => unreachable!("scene path was preflighted"),
+        }
+    }
+    fn preflight_write_schema(
+        &self,
+        request: RuntimeResourceWritePreflightRequest,
+        payload_schema: &Schema,
+    ) -> MResult<ResourceSchemaPreflight> {
+        let path = request.path.clone();
+        self.preflight_write(request)?;
+        match path.as_str() {
+            "replace" => crate::schema::preflight_scene_schema(payload_schema),
+            "points" => crate::schema::preflight_points_schema(payload_schema),
             _ => unreachable!("scene path was preflighted"),
         }
     }

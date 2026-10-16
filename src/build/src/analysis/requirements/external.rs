@@ -6,8 +6,9 @@ use mech_core::{
     ResourceIntent, Value, ValueData, validate_stable_value_update,
 };
 use mech_runtime::{
-    RuntimeCapabilityOperation, RuntimeConfig, RuntimeResourceWriteCommand,
-    RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
+    ArtifactResourceSchemaSite, ResourceSchemaPreflight, RuntimeCapabilityOperation, RuntimeConfig,
+    RuntimeResourceWriteCommand, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
+    validate_artifact_resource_schema_contract,
 };
 
 use crate::{
@@ -167,20 +168,39 @@ impl<'catalog> NativeBytecodeContractResolver<'catalog> {
         self.plan_resource_write(request, source, NativeContractSite::ArtifactNode(node))
     }
 
-    pub(crate) fn preflight_artifact_resource_write(
-        &mut self,
-        node: NodeId,
-        request: &mech_core::ExecutionResourceRequest,
+    pub(crate) fn validate_artifact_resource_contract(
+        &self,
+        site: &ArtifactResourceSchemaSite<'_>,
     ) -> MResult<()> {
-        self.plan_resource_write_contract(request, None, NativeContractSite::ArtifactNode(node))
+        let owner = resolve_resource_owner(site.request, &self.materialized)?;
+        let provider = match site.request.intent {
+            ResourceIntent::Read => owner.provider.semantic_read_contract(),
+            ResourceIntent::Assign => owner
+                .provider
+                .semantic_write_contract(RuntimeResourceWriteIntent::Assign),
+            ResourceIntent::Send => owner
+                .provider
+                .semantic_write_contract(RuntimeResourceWriteIntent::Send),
+        };
+        validate_artifact_resource_schema_contract(site, provider)
     }
 
-    fn plan_resource_read(
+    pub(crate) fn preflight_artifact_resource_write(
         &mut self,
-        request: &mech_core::ExecutionResourceRequest,
-        site: NativeContractSite,
-    ) -> MResult<Value> {
-        let (planned, owner, grant, driven_live) = {
+        site: &ArtifactResourceSchemaSite<'_>,
+    ) -> MResult<ResourceSchemaPreflight> {
+        self.validate_artifact_resource_contract(site)?;
+        let request = site.request;
+        let intent = match request.intent {
+            ResourceIntent::Assign => RuntimeResourceWriteIntent::Assign,
+            ResourceIntent::Send => RuntimeResourceWriteIntent::Send,
+            ResourceIntent::Read => {
+                return Err(NativeContractSite::ArtifactNode(site.node)
+                    .invalid("write schema carries a read intent".into()));
+            }
+        };
+        let operation = RuntimeCapabilityOperation::from_name(request.operation.clone())?;
+        let (admission, owner, grant) = {
             let owner = resolve_resource_owner(request, &self.materialized)?;
             let configured_grants = self
                 .normalized_config
@@ -188,24 +208,79 @@ impl<'catalog> NativeBytecodeContractResolver<'catalog> {
                 .map(|config| config.run_grants.as_slice())
                 .unwrap_or_default();
             let grant = validate_resource_authorization(request, &owner, configured_grants)?;
-            let planned = owner
+            let admission = owner
                 .provider
-                .plan_read(mech_runtime::RuntimeResourceReadRequest {
-                    base_uri: request.base_uri.clone(),
-                    path: request.path.clone(),
-                    context_name: owner.context.name.clone(),
-                })
+                .preflight_write_schema(
+                    RuntimeResourceWritePreflightRequest {
+                        base_uri: request.base_uri.clone(),
+                        path: request.path.clone(),
+                        context_name: owner.context.name.clone(),
+                        operation,
+                        intent,
+                    },
+                    site.schema,
+                )
                 .map_err(|error| {
-                    native_build_error(
-                        NativeBuildErrorKind::NativeResourcePathInvalid {
-                            target: runtime_resource_grant_target(&grant),
-                            path: request.path.clone(),
-                        },
-                        None,
-                    )
-                    .with_source(error)
+                    NativeContractSite::ArtifactNode(site.node)
+                        .invalid(format!(
+                            "resource write/send `{}/{}` rejected its payload schema: {}",
+                            request.base_uri,
+                            request.path,
+                            error.display_message(),
+                        ))
+                        .with_source(error)
                 })?;
-            let driven_live = if request.delivery == mech_core::ResourceDelivery::Live {
+            (admission, owner.planned_owner(), grant)
+        };
+        self.record_resource_requirement(request, owner, grant);
+        Ok(admission)
+    }
+
+    pub(crate) fn planning_step_limit(&self) -> MResult<usize> {
+        self.normalized_config
+            .as_ref()
+            .map(|config| &config.runtime)
+            .unwrap_or(&RuntimeConfig::default())
+            .limits
+            .max_steps_per_turn_as_usize()
+    }
+
+    fn plan_resource_read(
+        &mut self,
+        request: &mech_core::ExecutionResourceRequest,
+        site: NativeContractSite,
+    ) -> MResult<Value> {
+        let (planned, owner, grant, requires_input_driver, driven_live) = {
+            let owner = resolve_resource_owner(request, &self.materialized)?;
+            let configured_grants = self
+                .normalized_config
+                .as_ref()
+                .map(|config| config.run_grants.as_slice())
+                .unwrap_or_default();
+            let grant = validate_resource_authorization(request, &owner, configured_grants)?;
+            let read_request = mech_runtime::RuntimeResourceReadRequest {
+                base_uri: request.base_uri.clone(),
+                path: request.path.clone(),
+                context_name: owner.context.name.clone(),
+            };
+            // Artifact Live delivery denotes a captured observation. Some
+            // providers capture their initial snapshot without a host driver;
+            // driven observations must still resolve the exact input source.
+            let requires_input_driver = request.delivery == mech_core::ResourceDelivery::Live
+                && owner
+                    .provider
+                    .observation_requires_input_driver(&read_request);
+            let planned = owner.provider.plan_read(read_request).map_err(|error| {
+                native_build_error(
+                    NativeBuildErrorKind::NativeResourcePathInvalid {
+                        target: runtime_resource_grant_target(&grant),
+                        path: request.path.clone(),
+                    },
+                    None,
+                )
+                .with_source(error)
+            })?;
+            let driven_live = if requires_input_driver {
                 owner.has_input_driver_for(request).map_err(|error| {
                     site.invalid(format!(
                         "live resource read `{}/{}` has an invalid input source: {}",
@@ -218,9 +293,15 @@ impl<'catalog> NativeBytecodeContractResolver<'catalog> {
             } else {
                 false
             };
-            (planned, owner.planned_owner(), grant, driven_live)
+            (
+                planned,
+                owner.planned_owner(),
+                grant,
+                requires_input_driver,
+                driven_live,
+            )
         };
-        if request.delivery == mech_core::ResourceDelivery::Live && !driven_live {
+        if requires_input_driver && !driven_live {
             return Err(site.invalid(format!(
                 "live resource read `{}/{}` is not driven by its materialized native host",
                 request.base_uri, request.path,
