@@ -1,0 +1,425 @@
+diff --git a/src/core/src/snapshot/validation.rs b/src/core/src/snapshot/validation.rs
+--- a/src/core/src/snapshot/validation.rs
++++ b/src/core/src/snapshot/validation.rs
+@@ -785,6 +785,57 @@
+ 
+     pub fn data(&self) -> &ValueData {
+         &self.root.data.data
++    }
++
++    /// Constructs a canonical rank-two `U8` matrix without expanding each
++    /// byte into a data draft. The authoritative schema, dimension bounds and
++    /// exact cardinality are validated before allocating or copying payload.
++    ///
++    /// Shared schema ownership and managed construction allocation checks use
++    /// the same context as ordinary snapshot finalization. This constructor
++    /// does not grant a retained-memory ticket or impose a new input-size cap.
++    pub fn from_u8_matrix_slice(
++        schema: SchemaId,
++        shape_values: Box<[u64]>,
++        elements: &[u8],
++        context: &SnapshotValidationContext<'_>,
++    ) -> Result<Self, SnapshotValueError> {
++        let entry = context
++            .schemas()
++            .entry(schema)
++            .ok_or(SnapshotValueError::UnknownSnapshotSchema { schema })?;
++        let mismatch = || SnapshotValueError::SnapshotSchemaDefinitionMismatch { key: entry.key() };
++        let SchemaBody::Matrix {
++            element,
++            dimensions,
++        } = entry.schema().body()
++        else {
++            return Err(mismatch());
++        };
++        if element.as_ref() != &SchemaBody::UnsignedInteger(IntegerWidth::W8)
++            || dimensions.len() != 2
++        {
++            return Err(mismatch());
++        }
++        let shape = entry.schema().instantiate_shape(shape_values)?;
++        ensure_cardinality(
++            &SnapshotPath::root(),
++            resolved_product(dimensions, &shape)?,
++            elements.len(),
++        )?;
++        let mut packed = context.try_vec_with_capacity::<u8>(elements.len())?;
++        packed.extend_from_slice(elements);
++        let schemas = context.try_clone_schemas()?;
++        finalized_value_with_construction(
++            schema,
++            entry.key(),
++            shape,
++            ValueData::Matrix(MatrixValue {
++                elements: SequenceStorage::U8(packed.into_boxed_slice()),
++            }),
++            Some(schemas),
++            context,
++        )
+     }
+ 
+     /// Returns the immutable schema table that validates this detached value.
+@@ -5406,4 +5457,140 @@
+             "the index cannot override the destination schema authority",
+         );
+     }
+-}
++
++    fn packed_u8_test_schemas() -> (Arc<SchemaTable>, [SchemaId; 5]) {
++        let mut builder = SchemaTableBuilder::new();
++        let mut handles = Vec::new();
++        for (body, parameters) in [
++            (
++                SchemaBody::Matrix {
++                    element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
++                    dimensions: vec![
++                        DimensionExpr::Parameter(DimensionParameterId::new(0)),
++                        DimensionExpr::Parameter(DimensionParameterId::new(1)),
++                    ]
++                    .into_boxed_slice(),
++                },
++                (0..2)
++                    .map(|index| DimensionParameterDeclaration {
++                        id: DimensionParameterId::new(index),
++                        origin: DimensionParameterOrigin::Inferred,
++                        lifetime: DimensionLifetime::Turn,
++                        lower_bound: DimensionExpr::Constant(0),
++                        upper_bound: None,
++                    })
++                    .collect::<Box<[_]>>(),
++            ),
++            (
++                SchemaBody::UnsignedInteger(IntegerWidth::W8),
++                Box::<[DimensionParameterDeclaration]>::default(),
++            ),
++            (
++                SchemaBody::Matrix {
++                    element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W16)),
++                    dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(2)]
++                        .into_boxed_slice(),
++                },
++                Box::new([]),
++            ),
++            (
++                SchemaBody::Matrix {
++                    element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
++                    dimensions: vec![DimensionExpr::Constant(2)].into_boxed_slice(),
++                },
++                Box::new([]),
++            ),
++            (
++                SchemaBody::Matrix {
++                    element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
++                    dimensions: vec![
++                        DimensionExpr::Constant(1),
++                        DimensionExpr::Parameter(DimensionParameterId::new(0)),
++                    ]
++                    .into_boxed_slice(),
++                },
++                vec![DimensionParameterDeclaration {
++                    id: DimensionParameterId::new(0),
++                    origin: DimensionParameterOrigin::Inferred,
++                    lifetime: DimensionLifetime::Turn,
++                    lower_bound: DimensionExpr::Constant(1),
++                    upper_bound: Some(DimensionExpr::Constant(8)),
++                }]
++                .into_boxed_slice(),
++            ),
++        ] {
++            handles.push(
++                builder
++                    .insert(SchemaDraft { body, dimension_parameters: parameters }.finalize().unwrap())
++                    .unwrap(),
++            );
++        }
++        let built = builder.finish().unwrap();
++        let ids = handles
++            .into_iter()
++            .map(|handle| built.resolve(handle).unwrap())
++            .collect::<Vec<_>>()
++            .try_into()
++            .unwrap();
++        (Arc::new(built.table), ids)
++    }
++
++    #[test]
++    fn packed_u8_matrix_rejects_invalid_metadata_before_payload_allocation() {
++        let (schemas, [matrix, scalar, wrong_kind, wrong_rank, bounded]) = packed_u8_test_schemas();
++        let source = [0, 255, 128];
++        for (schema, shape, payload) in [
++            (SchemaId::new(u32::MAX), vec![], &source[..]),
++            (scalar, vec![], &source[..]),
++            (wrong_kind, vec![], &source[..2]),
++            (wrong_rank, vec![], &source[..2]),
++            (matrix, vec![1], &source[..]),
++            (matrix, vec![1, 2], &source[..]),
++            (matrix, vec![1, 4], &source[..]),
++            (matrix, vec![u64::MAX, 2], &source[..]),
++            (bounded, vec![0], &[][..]),
++            (bounded, vec![9], &source[..]),
++        ] {
++            let authority = RecordingConstructionAuthority::default();
++            let context = SnapshotValidationContext::with_shared_schemas(&schemas)
++                .with_construction_authority(&authority);
++            assert!(Value::from_u8_matrix_slice(schema, shape.into_boxed_slice(), payload, &context).is_err());
++            assert!(authority.allocations.borrow().is_empty(), "invalid metadata reached payload/finalization allocation");
++        }
++        assert_eq!(source, [0, 255, 128]);
++        // The existing default lower0/unbounded Turn axes still admit empty
++        // geometry and large extents when another axis makes cardinality zero.
++        let context = SnapshotValidationContext::with_shared_schemas(&schemas);
++        for shape in [[1, 0], [0, 17], [u64::MAX, 0]] {
++            let value = Value::from_u8_matrix_slice(matrix, Box::new(shape), &[], &context).unwrap();
++            assert_eq!(value.shape().parameter_values(), shape);
++            assert!(matches!(value.data(), ValueData::Matrix(matrix) if matches!(matrix.elements(), SequenceView::U8([]))));
++        }
++    }
++
++    #[test]
++    fn packed_u8_matrix_honors_each_construction_denial_and_recovers() {
++        let (schemas, [matrix, ..]) = packed_u8_test_schemas();
++        let source = (0..=255u8).collect::<Vec<_>>();
++        for admitted in 0..4 {
++            let authority = FailAfterConstructionAuthority { remaining: Cell::new(admitted) };
++            let context = SnapshotValidationContext::with_shared_schemas(&schemas)
++                .with_construction_authority(&authority);
++            assert!(matches!(
++                Value::from_u8_matrix_slice(matrix, Box::new([1, 256]), &source, &context),
++                Err(SnapshotValueError::MemoryRuntime(_))
++            ));
++            authority.remaining.set(4);
++            let value = Value::from_u8_matrix_slice(matrix, Box::new([1, 256]), &source, &context).unwrap();
++            assert!(matches!(value.data(), ValueData::Matrix(matrix) if matches!(matrix.elements(), SequenceView::U8(bytes) if bytes == source.as_slice())));
++            assert!(Arc::ptr_eq(&value.schemas().unwrap(), &schemas));
++        }
++        let authority = RecordingConstructionAuthority::default();
++        let context = SnapshotValidationContext::with_shared_schemas(&schemas)
++            .with_construction_authority(&authority);
++        let _value = Value::from_u8_matrix_slice(matrix, Box::new([1, 256]), &source, &context).unwrap();
++        let allocations = authority.allocations.borrow();
++        assert_eq!(allocations.len(), 4, "one packed payload and three common final owners");
++        assert_eq!(allocations[0], (256, 1));
++    }
++}
+diff --git a/src/core/tests/packed_u8_snapshot.rs b/src/core/tests/packed_u8_snapshot.rs
+--- /dev/null
++++ b/src/core/tests/packed_u8_snapshot.rs
+@@ -0,0 +1,130 @@
++#![cfg(feature = "std")]
++
++use mech_core::{
++    DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
++    DimensionParameterOrigin, IntegerWidth, ManagedMemoryBudget, SchemaBody, SchemaDraft,
++    SchemaId, SchemaTable, SchemaTableBuilder, Value, ValueData, ValueDataDraft, ValueDraft,
++    snapshot::{SequenceView, SnapshotValidationContext},
++};
++use std::sync::Arc;
++
++#[path = "support/allocation_probe.rs"]
++mod allocation_probe;
++
++#[global_allocator]
++static ALLOCATOR: allocation_probe::ProbeAllocator = allocation_probe::ProbeAllocator;
++
++fn schema() -> (Arc<SchemaTable>, SchemaId) {
++    let mut builder = SchemaTableBuilder::new();
++    let handle = builder.insert(SchemaDraft {
++        dimension_parameters: (0..2).map(|ordinal| DimensionParameterDeclaration {
++            id: DimensionParameterId::new(ordinal),
++            origin: DimensionParameterOrigin::Inferred,
++            lifetime: DimensionLifetime::Turn,
++            lower_bound: DimensionExpr::Constant(0),
++            upper_bound: None,
++        }).collect(),
++        body: SchemaBody::Matrix {
++            element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
++            dimensions: (0..2).map(|ordinal| DimensionExpr::Parameter(DimensionParameterId::new(ordinal))).collect(),
++        },
++    }.finalize().unwrap()).unwrap();
++    let built = builder.finish().unwrap();
++    let id = built.resolve(handle).unwrap();
++    (Arc::new(built.table), id)
++}
++
++fn bytes(value: &Value) -> &[u8] {
++    let ValueData::Matrix(matrix) = value.data() else { panic!("matrix payload") };
++    let SequenceView::U8(bytes) = matrix.elements() else { panic!("packed U8 payload") };
++    bytes
++}
++
++#[test]
++fn all_byte_values_match_validated_drafts_and_preserve_zero_axis_identity() {
++    let (schemas, id) = schema();
++    let input = (0..=255u8).collect::<Vec<_>>();
++    let context = SnapshotValidationContext::with_shared_schemas(&schemas);
++    let packed = Value::from_u8_matrix_slice(id, Box::new([1, 256]), &input, &context).unwrap();
++    let reference = ValueDraft {
++        schema: id,
++        shape_values: Box::new([1, 256]),
++        data: ValueDataDraft::Matrix(input.iter().copied().map(ValueDataDraft::U8).collect()),
++    }.finalize(&context).unwrap();
++    assert_eq!(bytes(&packed), input.as_slice());
++    assert_eq!(packed.schema_key(), reference.schema_key());
++    assert_eq!(packed.shape(), reference.shape());
++    assert_eq!(packed.resident_token(), reference.resident_token());
++    assert_eq!(packed.canonical_payload_bytes(&schemas).unwrap().as_ref(), input.as_slice());
++    assert_eq!(packed.canonical_snapshot_bytes(&schemas).unwrap(), reference.canonical_snapshot_bytes(&schemas).unwrap());
++    assert!(Arc::ptr_eq(&packed.schemas().unwrap(), &schemas));
++    let row = Value::from_u8_matrix_slice(id, Box::new([1, 0]), &[], &context).unwrap();
++    let columnless = Value::from_u8_matrix_slice(id, Box::new([0, 17]), &[], &context).unwrap();
++    assert!(bytes(&row).is_empty() && bytes(&columnless).is_empty());
++    assert_eq!(row.shape().parameter_values(), [1, 0]);
++    assert_eq!(columnless.shape().parameter_values(), [0, 17]);
++    assert!(!row.snapshot_eq(&schemas, &columnless, &schemas).unwrap());
++}
++
++#[test]
++fn packed_construction_and_encoding_have_bounded_actual_allocations_as_bytes_grow() {
++    let (schemas, id) = schema();
++    let context = SnapshotValidationContext::with_shared_schemas(&schemas);
++    let mut empty = None;
++    let mut empty_required = None;
++    for length in [0usize, 1, 256, 65_536, 1_048_576] {
++        let input = (0..length).map(|index| index as u8).collect::<Vec<_>>();
++        let shape = Box::new([1, length as u64]);
++        let (result, calls, allocated) = allocation_probe::measured_with_bytes(|| {
++            Value::from_u8_matrix_slice(id, shape, &input, &context)
++        });
++        let value = result.unwrap();
++        let (empty_calls, empty_bytes) = *empty.get_or_insert((calls, allocated));
++        assert!(calls <= empty_calls + 2, "payload-length-dependent allocation count: N={length}, calls={calls}");
++        assert!(allocated <= empty_bytes + length * 2 + 4096, "draft-sized expansion: N={length}, allocated={allocated}");
++        assert_eq!(bytes(&value), input.as_slice());
++        let required = value.memory_budget_required_bytes().unwrap();
++        let baseline = *empty_required.get_or_insert(required);
++        assert_eq!(required - baseline, length as u64, "retained capacity must grow by one byte per element");
++        // Canonical encoding is still real work and allocates its output.
++        // U8's canonical payload consists of exactly the original bytes.
++        let (encoded, encoding_calls, encoding_bytes) = allocation_probe::measured_with_bytes(|| value.canonical_payload_bytes(&schemas));
++        assert_eq!(encoded.unwrap().as_ref(), input.as_slice());
++        assert!(encoding_calls <= 2);
++        assert!(encoding_bytes <= length * 2 + 16);
++    }
++}
++
++#[test]
++fn packed_snapshot_uses_the_existing_retained_budget_and_clone_lifetime() {
++    let (schemas, id) = schema();
++    let context = SnapshotValidationContext::with_shared_schemas(&schemas);
++    let input = (0..=255u8).cycle().take(65_536).collect::<Vec<_>>();
++    let value = Value::from_u8_matrix_slice(id, Box::new([1, input.len() as u64]), &input, &context).unwrap();
++    let budget = ManagedMemoryBudget::new(1_000_000);
++    let required = value.memory_budget_admission_bytes(&budget).unwrap();
++    let mut denied = budget.reserve_capacity(required - 1).unwrap();
++    assert!(value.clone().into_memory_budget(&mut denied).is_err());
++    assert_eq!(budget.used_bytes(), required - 1);
++    drop(denied);
++    assert_eq!(budget.used_bytes(), 0);
++    let mut admitted = budget.reserve_capacity(required).unwrap();
++    let value = value.into_memory_budget(&mut admitted).unwrap();
++    let alias = value.clone().into_memory_budget(&mut admitted).unwrap();
++    assert_eq!(admitted.capacity_bytes(), 0);
++    drop(admitted);
++    assert_eq!(budget.used_bytes(), required);
++    let (_, allocations) = allocation_probe::measured(|| {
++        for _ in 0..128 {
++            let clone = value.clone();
++            assert!(clone.shares_frozen_storage(&value));
++            assert_eq!(bytes(&clone), input.as_slice());
++        }
++    });
++    assert_eq!(allocations, 0);
++    drop(value);
++    assert_eq!(budget.used_bytes(), required);
++    assert_eq!(bytes(&alias), input.as_slice());
++    drop(alias);
++    assert_eq!(budget.used_bytes(), 0);
++}
+diff --git a/hosts/terminal/src/provider.rs b/hosts/terminal/src/provider.rs
+--- a/hosts/terminal/src/provider.rs
++++ b/hosts/terminal/src/provider.rs
+@@ -6,11 +6,12 @@
+ };
+ 
+ use mech_core::{
+-    AccessMode, DeliveryMode, DimensionExpr, EffectContract, EffectDeliveryPolicy,
++    AccessMode, DeliveryMode, DimensionExpr, DimensionLifetime, DimensionParameterDeclaration,
++    DimensionParameterId, DimensionParameterOrigin, EffectContract, EffectDeliveryPolicy,
+     ExternalInteraction, IdempotencyRequirement, InputPortLayout, InputPortPolicy, IntegerWidth,
+-    MResult, MechError, MechErrorKind, OperationContractDeclaration, Schema, SchemaBody, Value,
+-    ValueCell, ValueData,
+-    snapshot::{SequenceView, ValueDataDraft},
++    MResult, MechError, MechErrorKind, OperationContractDeclaration, Schema, SchemaBody, SchemaDraft,
++    SchemaTableBuilder, Value, ValueData,
++    snapshot::{SequenceView, SnapshotValidationContext},
+ };
+ use mech_runtime::{
+     ConfigValue, HostManifestConfig, PreparedRuntimeEffect, ResourceSchemaPreflight,
+@@ -576,12 +577,36 @@
+ fn byte_row_value(bytes: &[u8], resource: &str) -> MResult<Value> {
+     let columns = u64::try_from(bytes.len())
+         .map_err(|_| cli_error(resource.into(), "byte input length exceeds u64"))?;
+-    ValueCell::dynamic_matrix(
+-        SchemaBody::UnsignedInteger(IntegerWidth::W8),
++    let schema = SchemaDraft {
++        dimension_parameters: (0..2)
++            .map(|ordinal| DimensionParameterDeclaration {
++                id: DimensionParameterId::new(ordinal),
++                origin: DimensionParameterOrigin::Inferred,
++                lifetime: DimensionLifetime::Turn,
++                lower_bound: DimensionExpr::Constant(0),
++                upper_bound: None,
++            })
++            .collect(),
++        body: SchemaBody::Matrix {
++            element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
++            dimensions: (0..2)
++                .map(|ordinal| DimensionExpr::Parameter(DimensionParameterId::new(ordinal)))
++                .collect(),
++        },
++    }
++    .finalize()
++    .map_err(MechError::from)?;
++    let mut builder = SchemaTableBuilder::new();
++    let handle = builder.insert(schema).map_err(MechError::from)?;
++    let built = builder.finish().map_err(MechError::from)?;
++    let schema = built.resolve(handle).map_err(MechError::from)?;
++    Value::from_u8_matrix_slice(
++        schema,
+         Box::new([1, columns]),
+-        bytes.iter().copied().map(ValueDataDraft::U8).collect(),
+-    )?
+-    .snapshot()
++        bytes,
++        &SnapshotValidationContext::new(&built.table),
++    )
++    .map_err(|error| cli_error(resource.into(), format!("invalid byte snapshot: {error:?}")))
+ }
+ 
+ fn byte_row_schema(schema: &Schema, resource: &str) -> MResult<ResourceSchemaPreflight> {
+diff --git a/hosts/terminal/tests/provider_bytes.rs b/hosts/terminal/tests/provider_bytes.rs
+--- a/hosts/terminal/tests/provider_bytes.rs
++++ b/hosts/terminal/tests/provider_bytes.rs
+@@ -429,3 +429,22 @@
+             .contains("unavailable")
+     );
+ }
++
++#[test]
++fn packed_raw_input_preserves_every_byte_schema_identity_and_cached_owner() {
++    let input = (0..=255u8).collect::<Vec<_>>();
++    let provider = CliResourceProvider::new(Backend { input: input.clone(), ..Default::default() });
++    let planned = provider.plan_read(read("bytes")).unwrap();
++    let value = provider.read(read("bytes")).unwrap();
++    assert_row(&planned, &[]);
++    assert_row(&value, &input);
++    let reference = row(1, 256, &input);
++    assert_eq!(planned.schema_key(), value.schema_key());
++    assert_eq!(reference.schema_key(), value.schema_key());
++    assert_eq!(reference.shape(), value.shape());
++    assert_eq!(reference.resident_token(), value.resident_token());
++    assert_eq!(value.canonical_payload_bytes(&value.schemas().unwrap()).unwrap().as_ref(), input.as_slice());
++    let cached = provider.read(read("bytes")).unwrap();
++    assert!(value.shares_frozen_storage(&cached));
++    assert_eq!(provider.backend().reads.get(), 1);
++}

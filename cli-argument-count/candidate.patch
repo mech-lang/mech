@@ -1,0 +1,864 @@
+diff --git a/hosts/terminal/Cargo.toml b/hosts/terminal/Cargo.toml
+--- a/hosts/terminal/Cargo.toml
++++ b/hosts/terminal/Cargo.toml
+@@ -12,7 +12,7 @@
+ 
+ [features]
+ default = []
+-provider = ["mech-core/string", "mech-core/u8"]
++provider = ["mech-core/string", "mech-core/u8", "mech-runtime/u64"]
+ 
+ [dependencies]
+ mech-core = { version = "0.3.5", path = "../../src/core", default-features = false }
+@@ -25,3 +25,8 @@
+ name = "provider"
+ path = "tests/provider.rs"
+ required-features = ["provider"]
++
++[[test]]
++name = "provider_argument_count"
++path = "tests/provider_argument_count.rs"
++required-features = ["provider"]
+diff --git a/hosts/terminal/docs/args.mec b/hosts/terminal/docs/args.mec
+--- a/hosts/terminal/docs/args.mec
++++ b/hosts/terminal/docs/args.mec
+@@ -6,12 +6,18 @@
+ ```mech
+ +> @args := cli/args
+ first := @args/1
++count := @args/count
+ ```
+ 
+ 1. Paths and values
+ -------------------------------------------------------------------------------
+ 
+-Paths are one-based positive canonical decimal indices: 1, 2, 3, and so on.
++The count path returns the exact number of raw payload arguments as a scalar U64.
++It counts empty and non-Unicode arguments without reading or decoding their text.
++It requires an explicitly supplied payload snapshot; the standard backend alone
++reports count unavailable because process argv has no launcher boundary.
++
++Indexed paths are one-based positive canonical decimal indices: 1, 2, 3, and so on.
+ Index 1 selects the first argument after the executable. Zero, leading zeroes,
+ signs, spaces, fractions, extra path segments and overflowing indices are rejected.
+ Missing arguments and arguments that are not valid Unicode produce errors.
+@@ -33,7 +39,9 @@
+ 2. Planning and capabilities
+ -------------------------------------------------------------------------------
+ 
+-Planning validates the index and String schema without reading argv. The runtime captures the actual read through the same observation and
++Planning validates the index and String schema, or the count path and U64 schema,
++without reading argv or asking the backend for a count. The typed count placeholder
++is not an observed argument count. The runtime captures the actual read through the same observation and
+ capability system as cli/env. Args do not require an input driver. Writes and
+ sends are rejected.
+ 
+@@ -43,13 +51,14 @@
+ ```mech
+ config := {
+   run: {
+-    grants: [{ target: "cli/args" operations: ["read"] paths: ["1"] }]
++    grants: [{ target: "cli/args" operations: ["read"] paths: ["count" "1"] }]
+   }
+ }
+ ```
+ 
+-The explicit :cli/args capability profile grants read access to all argument
+-indices. Configured CLI aliases use their instance name, such as term/args.
++A grant for index 1 does not grant count, and a count-only grant does not grant
++argument text. The explicit :cli/args capability profile uses the wildcard path
++and grants read access to every args path, including count and indexed values. Configured CLI aliases use their instance name, such as term/args.
+ 
+ 3. Embedding
+ -------------------------------------------------------------------------------
+@@ -57,7 +66,11 @@
+ Custom CLI backends implement argument(index) using a user-argument snapshot;
+ the snapshot excludes the executable and launcher policy flags. Existing backends
+ can omit this optional method, in which case reads report arguments unavailable.
+-No argument contents need to be read during compilation or planning.
++No argument contents need to be read during compilation or planning. Custom
++backends may implement argument_count() only when they own the same immutable
++payload snapshot as indexed reads; its default reports unavailable. The standard
++backend keeps its historical indexed process-argv behavior but does not infer a
++payload count or parse launcher controls.
+ 
+ CliHostFactory::with_arguments(Vec<OsString>) installs an immutable payload-only
+ snapshot over the standard environment, stdin and output backend. Vector element
+@@ -69,3 +82,25 @@
+ Embedders can wrap another backend with ArgumentSnapshotCliBackend::new(backend,
+ arguments). Cloned wrappers share the same immutable argument snapshot and
+ delegate all other CLI I/O to their backend.
++
++4. Strict payload arity
++-------------------------------------------------------------------------------
++
++Count is ordinary resource metadata. Programs must check it when they require an
++exact number of payload arguments. A pure pattern function can deliberately be
++partial, so a missing pattern produces a checked failed call:
++
++```mech
++parse-input(count<u64>, raw<string>) => <u64>
++  | (1u64, value) => number/parse-u64(value).
++
+++> @args := cli/args
++n := parse-input(@args/count, @args/1)
++```
++
++This accepts one payload argument and rejects extra arguments. Missing arguments
++and invalid Unicode remain checked resource errors. An empty single argument
++counts as one and then fails the strict numeric parser. Failed source turns do
++not deliver staged terminal output. Resource acquisition can precede the pure
++pattern check, so this does not promise arity errors before all resource errors.
++Ordinary match expressions still require exhaustive coverage.
+diff --git a/hosts/terminal/docs/grants.mec b/hosts/terminal/docs/grants.mec
+--- a/hosts/terminal/docs/grants.mec
++++ b/hosts/terminal/docs/grants.mec
+@@ -57,6 +57,7 @@
+ The CLI can install default local capabilities for common environment/stdout/stderr use. An explicit run grants list in config should be treated as the configured authority for the project.
+ 
+ Argument and standard-input reads are excluded from these defaults. Grant cli/args with read and
+-specific index paths in config, or select the explicit :cli/args profile for all
+-indices. Binding +> @args := cli/args does not grant access. Configured aliases
++specific paths such as count and 1 in config, or select the explicit :cli/args
++profile. That profile uses wildcard path authority over count and all indexed
++argument values. A grant for index 1 alone does not authorize count. Binding +> @args := cli/args does not grant access. Configured aliases
+ use their instance target, for example term/args.
+diff --git a/hosts/terminal/src/provider.rs b/hosts/terminal/src/provider.rs
+--- a/hosts/terminal/src/provider.rs
++++ b/hosts/terminal/src/provider.rs
+@@ -47,6 +47,15 @@
+             "command-line arguments are unavailable from this CLI backend",
+         ))
+     }
++    /// Return the length of the same immutable payload-only snapshot used by
++    /// `argument`. Backends without an explicit payload boundary leave this
++    /// unavailable instead of counting executable or launcher arguments.
++    fn argument_count(&self) -> MResult<u64> {
++        Err(cli_error(
++            "cli://args".to_string(),
++            "payload argument count is unavailable from this CLI backend",
++        ))
++    }
+     /// Read exact Unicode text through EOF. Providers retain the first result,
+     /// so a consumptive stream is observed only once per provider instance.
+     fn stdin_text(&self) -> MResult<String> {
+@@ -98,6 +107,15 @@
+ }
+ 
+ impl<B: CliBackend> CliBackend for ArgumentSnapshotCliBackend<B> {
++    fn argument_count(&self) -> MResult<u64> {
++        u64::try_from(self.arguments.len()).map_err(|_| {
++            cli_error(
++                "cli://args".to_string(),
++                "payload argument count exceeds u64",
++            )
++        })
++    }
++
+     fn argument(&self, index: usize) -> MResult<Option<OsString>> {
+         Ok(index
+             .checked_sub(1)
+@@ -360,6 +378,15 @@
+                 })?;
+             RuntimeHostInputValue::String(value).into_value()
+         } else if self.matches_base(&request.base_uri, "args") {
++            if request.path == "count" {
++                validate_argument_count_read(&request)?;
++                let count = self
++                    .backend
++                    .lock()
++                    .map_err(|_| cli_error(request.base_uri.clone(), "CLI backend lock poisoned"))?
++                    .argument_count()?;
++                return RuntimeHostInputValue::U64(count).into_value();
++            }
+             let index = argument_index(&request.path)?;
+             let argument = self
+                 .backend
+@@ -453,6 +480,12 @@
+             return RuntimeHostInputValue::String(String::new()).into_value();
+         }
+         if self.matches_base(&request.base_uri, "args") {
++            if request.path == "count" {
++                validate_argument_count_read(&request)?;
++                // This is only a typed planning value. It neither observes
++                // the payload vector nor establishes its actual cardinality.
++                return RuntimeHostInputValue::U64(0).into_value();
++            }
+             argument_index(&request.path)?;
+             return RuntimeHostInputValue::String(String::new()).into_value();
+         }
+@@ -722,6 +755,16 @@
+     }
+ }
+ 
++fn validate_argument_count_read(request: &RuntimeResourceReadRequest) -> MResult<()> {
++    if request.context_name != "args" {
++        return Err(cli_error(
++            request.base_uri.clone(),
++            "argument count reads require context `args` and exactly the `count` path",
++        ));
++    }
++    Ok(())
++}
++
+ fn argument_index(path: &str) -> MResult<usize> {
+     if path.is_empty() || path.starts_with('0') || !path.bytes().all(|b| b.is_ascii_digit()) {
+         return Err(cli_error(
+diff --git a/hosts/terminal/tests/provider_argument_count.rs b/hosts/terminal/tests/provider_argument_count.rs
+new file mode 100644
+--- /dev/null
++++ b/hosts/terminal/tests/provider_argument_count.rs
+@@ -0,0 +1,295 @@
++#![cfg(feature = "provider")]
++
++use mech_core::{IntegerWidth, MResult, MechError, SchemaBody, Value, ValueData};
++use mech_runtime::{
++    ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeBuilder,
++    RuntimeCapabilityOperation, RuntimeHostInputValue, RuntimeResourceProvider,
++    RuntimeResourceReadRequest, RuntimeResourceWriteCommand, RuntimeResourceWriteIntent,
++};
++use mech_terminal::{
++    ArgumentSnapshotCliBackend, CliBackend, CliHostFactory, CliResourceProvider,
++    CliResourceProviderError, StdCliBackend,
++};
++use std::{
++    collections::BTreeMap,
++    ffi::OsString,
++    sync::{Arc, Mutex},
++};
++
++#[derive(Debug, Default)]
++struct Calls {
++    arguments: usize,
++    counts: usize,
++}
++
++#[derive(Clone, Debug, Default)]
++struct Backend {
++    arguments: Arc<[OsString]>,
++    calls: Arc<Mutex<Calls>>,
++    fail_count: bool,
++}
++
++fn failure(reason: &str) -> MechError {
++    MechError::new(
++        CliResourceProviderError {
++            resource: "test://arguments".into(),
++            reason: reason.into(),
++        },
++        None,
++    )
++}
++
++impl Backend {
++    fn with_arguments(arguments: Vec<OsString>) -> Self {
++        Self {
++            arguments: arguments.into(),
++            ..Self::default()
++        }
++    }
++}
++
++impl CliBackend for Backend {
++    fn env_var(&self, _: &str) -> MResult<Option<String>> {
++        Ok(None)
++    }
++
++    fn argument(&self, index: usize) -> MResult<Option<OsString>> {
++        self.calls.lock().unwrap().arguments += 1;
++        Ok(index
++            .checked_sub(1)
++            .and_then(|index| self.arguments.get(index))
++            .cloned())
++    }
++
++    fn argument_count(&self) -> MResult<u64> {
++        self.calls.lock().unwrap().counts += 1;
++        if self.fail_count {
++            return Err(failure("injected payload-count failure"));
++        }
++        u64::try_from(self.arguments.len()).map_err(|_| failure("count overflow"))
++    }
++
++    fn write_stdout(&mut self, _: &str) -> MResult<()> {
++        panic!("argument metadata cannot write stdout")
++    }
++
++    fn write_stderr(&mut self, _: &str) -> MResult<()> {
++        panic!("argument metadata cannot write stderr")
++    }
++}
++
++#[derive(Debug)]
++struct LegacyBackend;
++
++impl CliBackend for LegacyBackend {
++    fn env_var(&self, _: &str) -> MResult<Option<String>> {
++        Ok(None)
++    }
++    fn argument(&self, index: usize) -> MResult<Option<OsString>> {
++        Ok((index == 1).then(|| OsString::from("legacy")))
++    }
++    fn write_stdout(&mut self, _: &str) -> MResult<()> {
++        panic!("read-only fixture")
++    }
++    fn write_stderr(&mut self, _: &str) -> MResult<()> {
++        panic!("read-only fixture")
++    }
++}
++
++fn read(base: &str, path: &str) -> RuntimeResourceReadRequest {
++    RuntimeResourceReadRequest {
++        base_uri: base.into(),
++        path: path.into(),
++        context_name: "args".into(),
++    }
++}
++
++fn assert_count(value: &Value, expected: u64) {
++    assert!(matches!(value.data(), ValueData::U64(actual) if *actual == expected));
++    let owner = value.schemas().unwrap();
++    assert_eq!(
++        owner.get(value.schema()).unwrap().body(),
++        &SchemaBody::UnsignedInteger(IntegerWidth::W64)
++    );
++    assert!(value.shape().parameter_values().is_empty());
++}
++
++#[test]
++fn count_is_exact_payload_snapshot_length_and_never_delegates_to_another_argv() {
++    for arguments in [
++        Vec::new(),
++        vec![OsString::from("")],
++        vec![
++            OsString::from("héllo"),
++            OsString::from("--once"),
++            OsString::from("--runtime-info"),
++            OsString::from(""),
++        ],
++    ] {
++        let backend = Backend {
++            fail_count: true,
++            ..Backend::with_arguments(vec![OsString::from("unrelated-backend-argument")])
++        };
++        let calls = backend.calls.clone();
++        let snapshot = ArgumentSnapshotCliBackend::new(backend, arguments.clone());
++        let clone = snapshot.clone();
++        assert_eq!(snapshot.argument_count().unwrap(), arguments.len() as u64);
++        assert_eq!(clone.argument_count().unwrap(), arguments.len() as u64);
++        for (index, argument) in arguments.iter().enumerate() {
++            assert_eq!(clone.argument(index + 1).unwrap().as_ref(), Some(argument));
++        }
++        assert!(snapshot.argument(arguments.len() + 1).unwrap().is_none());
++        assert_eq!(calls.lock().unwrap().counts, 0);
++        assert_eq!(calls.lock().unwrap().arguments, 0);
++        let provider = CliResourceProvider::new(snapshot);
++        assert_count(
++            &provider.read(read("cli://cli/args", "count")).unwrap(),
++            arguments.len() as u64,
++        );
++    }
++}
++
++#[test]
++fn count_planning_is_typed_but_observes_neither_real_count_nor_arguments() {
++    let backend = Backend::with_arguments(vec![OsString::from("first"), OsString::from("second")]);
++    let calls = backend.calls.clone();
++    let provider = CliResourceProvider::new(backend);
++    let planned = provider.plan_read(read("cli://cli/args", "count")).unwrap();
++    assert_count(&planned, 0);
++    provider.plan_read(read("cli://args", "1")).unwrap();
++    assert_eq!(calls.lock().unwrap().counts, 0);
++    assert_eq!(calls.lock().unwrap().arguments, 0);
++    assert!(!provider.observation_requires_input_driver(&read("cli://args", "count")));
++    assert_count(&provider.read(read("cli://args", "count")).unwrap(), 2);
++    assert_eq!(calls.lock().unwrap().counts, 1);
++    assert_eq!(calls.lock().unwrap().arguments, 0);
++}
++
++#[test]
++fn count_requires_exact_path_and_semantic_context_without_getter_calls() {
++    let backend = Backend::with_arguments(vec![OsString::from("first")]);
++    let calls = backend.calls.clone();
++    let provider = CliResourceProvider::new(backend);
++    for path in ["Count", "count/1", "count/", " count", "length", "0", "01"] {
++        assert!(provider.plan_read(read("cli://args", path)).is_err());
++        assert!(provider.read(read("cli://args", path)).is_err());
++    }
++    let mut request = read("cli://args", "count");
++    request.context_name = "out".into();
++    assert!(provider.plan_read(request.clone()).is_err());
++    assert!(provider.read(request).is_err());
++    assert_eq!(calls.lock().unwrap().counts, 0);
++    assert_eq!(calls.lock().unwrap().arguments, 0);
++}
++
++#[test]
++fn legacy_and_unwrapped_standard_backends_report_count_unavailable() {
++    assert!(StdCliBackend.argument_count().is_err());
++    let provider = CliResourceProvider::new(LegacyBackend);
++    let planned = provider.plan_read(read("cli://args", "count")).unwrap();
++    assert_count(&planned, 0);
++    let error = provider.read(read("cli://args", "count")).unwrap_err();
++    assert!(error.display_message().contains("count is unavailable"));
++    let text = provider.read(read("cli://args", "1")).unwrap();
++    assert!(matches!(text.data(), ValueData::String(text) if text.as_ref() == "legacy"));
++}
++
++#[test]
++fn actual_count_error_propagates_and_does_not_become_a_zero_count() {
++    let backend = Backend {
++        fail_count: true,
++        ..Backend::with_arguments(vec![OsString::from("first")])
++    };
++    let provider = CliResourceProvider::new(backend);
++    assert_count(&provider.plan_read(read("cli://args", "count")).unwrap(), 0);
++    let error = provider.read(read("cli://args", "count")).unwrap_err();
++    assert!(
++        error
++            .display_message()
++            .contains("injected payload-count failure")
++    );
++    assert_eq!(provider.backend().calls.lock().unwrap().counts, 1);
++    assert_eq!(provider.backend().calls.lock().unwrap().arguments, 0);
++}
++
++#[test]
++fn count_is_read_only_under_assign_and_send() {
++    let provider = CliResourceProvider::new(Backend::default());
++    for intent in [
++        RuntimeResourceWriteIntent::Assign,
++        RuntimeResourceWriteIntent::Send,
++    ] {
++        assert!(
++            provider
++                .plan_write(RuntimeResourceWriteCommand {
++                    base_uri: "cli://cli/args".into(),
++                    path: "count".into(),
++                    context_name: "args".into(),
++                    operation: RuntimeCapabilityOperation::Write,
++                    value: RuntimeHostInputValue::U64(1).into_value().unwrap(),
++                    intent,
++                })
++                .is_err()
++        );
++    }
++}
++
++#[test]
++fn exact_index_and_count_grants_stay_independent_and_wildcard_covers_both() {
++    for instance in ["cli", "term"] {
++        for paths in [vec!["1"], vec!["count"], vec!["*"]] {
++            let backend = Backend::with_arguments(vec![OsString::from("first")]);
++            let calls = backend.calls.clone();
++            let mut runtime = RuntimeBuilder::new()
++                .host_factory(Box::new(CliHostFactory::with_backend(backend).unwrap()))
++                .unwrap()
++                .host_instance(HostInstanceConfig {
++                    name: instance.into(),
++                    provider: "cli".into(),
++                    settings: ConfigValue::Map(BTreeMap::new()),
++                })
++                .run_resource_grant(RunResourceGrantConfig {
++                    target: format!("{instance}/args"),
++                    operations: vec!["read".into()],
++                    paths: paths.iter().map(|path| (*path).into()).collect(),
++                })
++                .build()
++                .unwrap();
++            let count = runtime.read_resource(read(&format!("cli://{instance}/args"), "count"));
++            let allowed_count = paths.contains(&"count") || paths.contains(&"*");
++            assert_eq!(count.is_ok(), allowed_count);
++            if let Ok(count) = count {
++                assert_count(count.value(), 1);
++            }
++            assert_eq!(calls.lock().unwrap().counts, usize::from(allowed_count));
++            let text = runtime.read_resource(read(&format!("cli://{instance}/args"), "1"));
++            let allowed_text = paths.contains(&"1") || paths.contains(&"*");
++            assert_eq!(text.is_ok(), allowed_text);
++            assert_eq!(calls.lock().unwrap().arguments, usize::from(allowed_text));
++            runtime.shutdown().unwrap();
++        }
++    }
++}
++
++#[cfg(unix)]
++#[test]
++fn count_includes_non_unicode_payloads_without_decoding_or_poisoning_metadata() {
++    use std::os::unix::ffi::OsStringExt;
++    let raw = OsString::from_vec(vec![0xff, 0x80]);
++    let provider = CliResourceProvider::new(ArgumentSnapshotCliBackend::new(
++        LegacyBackend,
++        vec![OsString::from(""), raw, OsString::from("--once")],
++    ));
++    assert_count(&provider.read(read("cli://args", "count")).unwrap(), 3);
++    assert!(
++        provider
++            .read(read("cli://args", "2"))
++            .unwrap_err()
++            .display_message()
++            .contains("Unicode")
++    );
++    assert_count(&provider.read(read("cli://args", "count")).unwrap(), 3);
++    assert!(
++        matches!(provider.read(read("cli://args", "1")).unwrap().data(), ValueData::String(text) if text.is_empty())
++    );
++}
+diff --git a/src/build/tests/canonical_cli_argument_count.rs b/src/build/tests/canonical_cli_argument_count.rs
+new file mode 100644
+--- /dev/null
++++ b/src/build/tests/canonical_cli_argument_count.rs
+@@ -0,0 +1,353 @@
++//! Actual immutable payload metadata through canonical original/decoded sessions.
++#![cfg(feature = "standard-hosts")]
++
++use mech_core::{MResult, MechError, ParsedProgram, ResourceIntent};
++use mech_engine::ProgramArtifact;
++use mech_runtime::{
++    ConfigValue, HostInstanceConfig, ModuleBuildOptions, ResidentDurabilityPolicy,
++    RunResourceGrantConfig, RuntimeBuilder, RuntimeProgramRoute, SourceRequest,
++    resolver::InMemorySourceResolver,
++};
++use mech_terminal::{
++    ArgumentSnapshotCliBackend, CliBackend, CliHostFactory, CliResourceProviderError,
++};
++use std::{
++    collections::BTreeMap,
++    ffi::OsString,
++    sync::{Arc, Mutex},
++};
++
++#[derive(Debug, Default)]
++struct State {
++    count_reads: usize,
++    argument_reads: usize,
++    output: Vec<String>,
++    attempts: usize,
++}
++
++#[derive(Clone, Debug, Default)]
++struct Output(Arc<Mutex<State>>);
++
++impl CliBackend for Output {
++    fn env_var(&self, _: &str) -> MResult<Option<String>> {
++        Ok(None)
++    }
++    fn argument(&self, _: usize) -> MResult<Option<OsString>> {
++        panic!("the immutable wrapper owns payload indexed reads")
++    }
++    fn argument_count(&self) -> MResult<u64> {
++        panic!("the immutable wrapper owns payload cardinality")
++    }
++    fn write_stdout(&mut self, text: &str) -> MResult<()> {
++        let mut state = self.0.lock().unwrap();
++        state.attempts += 1;
++        state.output.push(text.into());
++        Ok(())
++    }
++    fn write_stderr(&mut self, _: &str) -> MResult<()> {
++        panic!("the count fixtures do not send stderr")
++    }
++}
++
++#[derive(Clone, Debug)]
++struct Snapshot {
++    inner: ArgumentSnapshotCliBackend<Output>,
++    state: Arc<Mutex<State>>,
++}
++
++impl Snapshot {
++    fn new(arguments: Vec<OsString>) -> Self {
++        let output = Output::default();
++        Self {
++            state: output.0.clone(),
++            inner: ArgumentSnapshotCliBackend::new(output, arguments),
++        }
++    }
++}
++
++impl CliBackend for Snapshot {
++    fn env_var(&self, name: &str) -> MResult<Option<String>> {
++        self.inner.env_var(name)
++    }
++    fn argument(&self, index: usize) -> MResult<Option<OsString>> {
++        self.state.lock().unwrap().argument_reads += 1;
++        self.inner.argument(index)
++    }
++    fn argument_count(&self) -> MResult<u64> {
++        self.state.lock().unwrap().count_reads += 1;
++        self.inner.argument_count()
++    }
++    fn write_stdout(&mut self, text: &str) -> MResult<()> {
++        self.inner.write_stdout(text)
++    }
++    fn write_stderr(&mut self, text: &str) -> MResult<()> {
++        self.inner.write_stderr(text)
++    }
++}
++
++fn builder(backend: Snapshot, paths: &[&str]) -> RuntimeBuilder {
++    RuntimeBuilder::new()
++        .function_catalog(mech_stdlib::source_catalog())
++        .host_factory(Box::new(CliHostFactory::with_backend(backend).unwrap()))
++        .unwrap()
++        .host_instance(HostInstanceConfig {
++            name: "cli".into(),
++            provider: "cli".into(),
++            settings: ConfigValue::Map(BTreeMap::new()),
++        })
++        .run_resource_grant(RunResourceGrantConfig {
++            target: "cli/args".into(),
++            operations: vec!["read".into()],
++            paths: paths.iter().map(|path| (*path).into()).collect(),
++        })
++        .run_resource_grant(RunResourceGrantConfig {
++            target: "cli/stdout".into(),
++            operations: vec!["write".into()],
++            paths: vec!["text".into(), "line".into()],
++        })
++}
++
++fn artifacts(source: &str) -> [ProgramArtifact; 2] {
++    // A strict-one guard would fail for this empty vector if compilation ever
++    // evaluated a planning placeholder or observed the actual payload count.
++    let backend = Snapshot::new(Vec::new());
++    let mut compiler = builder(backend.clone(), &["count", "1"])
++        .source_resolver(InMemorySourceResolver::new().with_string("count.mec", source))
++        .build_compiler()
++        .unwrap();
++    let product = compiler
++        .compile_canonical_roots(
++            &[SourceRequest::new("count.mec")],
++            ModuleBuildOptions::new(env!("CARGO_PKG_VERSION"), "v0.3", "native", &[], &[]),
++        )
++        .unwrap();
++    let parsed = ParsedProgram::from_bytes(product.bytecode()).unwrap();
++    assert!(parsed.instructions.is_empty());
++    assert!(!parsed.artifact.is_empty());
++    assert!(parsed.requirements.iter().any(|requirement| {
++        matches!(requirement, mech_core::ApplicationRequirement::Resource(resource)
++            if resource.path == "count" && resource.intent == ResourceIntent::Read)
++    }));
++    let state = backend.state.lock().unwrap();
++    assert_eq!(state.count_reads, 0, "planning must not ask for real argc");
++    assert_eq!(
++        state.argument_reads, 0,
++        "planning must not read payload text"
++    );
++    assert_eq!(state.attempts, 0);
++    drop(state);
++    let original = product.artifact().clone();
++    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap();
++    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
++    assert_eq!(
++        encoded,
++        mech_engine::encode_program_artifact_bytecode_v1(&decoded).unwrap()
++    );
++    [original, decoded]
++}
++
++const STRICT_ONE: &str = "parse-input(count<u64>, raw<string>) => <u64>\n  | (1u64, value) => number/parse-u64(value).\n+> @args := cli/args\n+> @out := cli/stdout\n@out/text <- \"prefix\"\nn := parse-input(@args/count, @args/1)\n@out/text <- number/format(n, 0u64)\n";
++
++#[test]
++fn strict_one_partial_pattern_accepts_one_and_aborts_missing_extra_and_parse_errors() {
++    for artifact in artifacts(STRICT_ONE) {
++        for (arguments, succeeds) in [
++            (vec![OsString::from("19")], true),
++            (Vec::new(), false),
++            (vec![OsString::from("19"), OsString::from("extra")], false),
++            (vec![OsString::from("19"), OsString::from("")], false),
++            (vec![OsString::from("")], false),
++            (vec![OsString::from("not-a-number")], false),
++        ] {
++            let extra_argument = arguments.len() > 1;
++            let backend = Snapshot::new(arguments);
++            let mut runtime = builder(backend.clone(), &["count", "1"]).build().unwrap();
++            let result =
++                runtime.load_compiled_program(artifact.clone(), ResidentDurabilityPolicy::Volatile);
++            assert_eq!(result.is_ok(), succeeds);
++            match result {
++                Ok(loaded) => assert_eq!(loaded.route, RuntimeProgramRoute::ResidentExternal),
++                Err(error) if extra_argument => assert!(
++                    error.display_message().contains("InvalidInput"),
++                    "the partial arity guard must reject the extra payload: {error:?}"
++                ),
++                Err(_) => {}
++            }
++            runtime.shutdown().unwrap();
++            let state = backend.state.lock().unwrap();
++            if succeeds {
++                assert_eq!(state.output, vec!["prefix", "19"]);
++                assert_eq!(state.attempts, 2);
++            } else {
++                assert!(
++                    state.output.is_empty(),
++                    "the earlier source send must not commit"
++                );
++                assert_eq!(state.attempts, 0);
++            }
++        }
++    }
++}
++
++#[test]
++fn strict_one_requires_both_exact_grants_and_wildcard_explicitly_covers_count() {
++    for artifact in artifacts(STRICT_ONE) {
++        for paths in [vec!["1"], vec!["count"], vec!["*"]] {
++            let backend = Snapshot::new(vec![OsString::from("19")]);
++            let mut runtime = builder(backend.clone(), &paths).build().unwrap();
++            let result =
++                runtime.load_compiled_program(artifact.clone(), ResidentDurabilityPolicy::Volatile);
++            assert_eq!(result.is_ok(), paths == vec!["*"]);
++            runtime.shutdown().unwrap();
++            let state = backend.state.lock().unwrap();
++            if paths == vec!["*"] {
++                assert_eq!(state.output, vec!["prefix", "19"]);
++            } else {
++                assert_eq!(state.count_reads, 0);
++                assert_eq!(state.argument_reads, 0);
++                assert_eq!(state.attempts, 0);
++                assert!(state.output.is_empty());
++            }
++        }
++    }
++}
++
++#[test]
++fn failed_strict_load_can_recover_without_mutating_the_immutable_payload() {
++    let accept_two = "accept-two(count<u64>) => <string>\n  | 2u64 => \"recovered\".\n+> @args := cli/args\n+> @out := cli/stdout\n@out/text <- accept-two(@args/count)\n";
++    for (strict, recovered) in artifacts(STRICT_ONE).into_iter().zip(artifacts(accept_two)) {
++        let backend = Snapshot::new(vec![OsString::from("19"), OsString::from("extra")]);
++        let mut runtime = builder(backend.clone(), &["count", "1"]).build().unwrap();
++        assert!(
++            runtime
++                .load_compiled_program(strict, ResidentDurabilityPolicy::Volatile)
++                .is_err()
++        );
++        assert!(backend.state.lock().unwrap().output.is_empty());
++        assert_eq!(backend.inner.argument_count().unwrap(), 2);
++        runtime
++            .load_compiled_program(recovered, ResidentDurabilityPolicy::Volatile)
++            .unwrap();
++        runtime.shutdown().unwrap();
++        let state = backend.state.lock().unwrap();
++        assert_eq!(state.output, vec!["recovered"]);
++        assert_eq!(state.attempts, 1);
++    }
++}
++
++#[test]
++fn count_and_index_preserve_empty_unicode_and_flag_looking_payload_values() {
++    let source = "+> @args := cli/args\n+> @out := cli/stdout\n@out/line <- number/format(@args/count, 0u64)\n@out/text <- @args/1\n";
++    for artifact in artifacts(source) {
++        for argument in ["", "héllo\r\n", "--once", "--runtime-info", "--"] {
++            let backend = Snapshot::new(vec![OsString::from(argument)]);
++            let mut runtime = builder(backend.clone(), &["count", "1"]).build().unwrap();
++            runtime
++                .load_compiled_program(artifact.clone(), ResidentDurabilityPolicy::Volatile)
++                .unwrap();
++            runtime.shutdown().unwrap();
++            assert_eq!(backend.state.lock().unwrap().output, vec!["1\n", argument]);
++        }
++    }
++}
++
++#[cfg(unix)]
++#[test]
++fn count_observes_non_unicode_arity_without_decoding_unrequested_extra_payloads() {
++    use std::os::unix::ffi::OsStringExt;
++    let count_only = "+> @args := cli/args\n+> @out := cli/stdout\n@out/text <- number/format(@args/count, 0u64)\n";
++    for artifact in artifacts(count_only) {
++        let backend = Snapshot::new(vec![
++            OsString::from_vec(vec![0xff]),
++            OsString::from(""),
++            OsString::from("--once"),
++        ]);
++        let mut runtime = builder(backend.clone(), &["count"]).build().unwrap();
++        runtime
++            .load_compiled_program(artifact, ResidentDurabilityPolicy::Volatile)
++            .unwrap();
++        runtime.shutdown().unwrap();
++        let state = backend.state.lock().unwrap();
++        assert_eq!(state.output, vec!["3"]);
++        assert_eq!(state.argument_reads, 0);
++    }
++    for artifact in artifacts(STRICT_ONE) {
++        for arguments in [
++            vec![OsString::from_vec(vec![0xff])],
++            vec![OsString::from("19"), OsString::from_vec(vec![0xff])],
++        ] {
++            let first_is_invalid = arguments.len() == 1;
++            let backend = Snapshot::new(arguments);
++            let mut runtime = builder(backend.clone(), &["count", "1"]).build().unwrap();
++            let error = runtime
++                .load_compiled_program(artifact.clone(), ResidentDurabilityPolicy::Volatile)
++                .unwrap_err();
++            assert_eq!(
++                error.display_message().contains("Unicode"),
++                first_is_invalid
++            );
++            runtime.shutdown().unwrap();
++            let state = backend.state.lock().unwrap();
++            assert!(state.output.is_empty());
++            assert_eq!(state.attempts, 0);
++        }
++    }
++}
++
++#[test]
++fn legacy_backend_count_failure_does_not_substitute_a_planning_zero() {
++    #[derive(Clone, Debug)]
++    struct Legacy(Output);
++    impl CliBackend for Legacy {
++        fn env_var(&self, _: &str) -> MResult<Option<String>> {
++            Ok(None)
++        }
++        fn argument(&self, index: usize) -> MResult<Option<OsString>> {
++            Ok((index == 1).then(|| OsString::from("19")))
++        }
++        fn write_stdout(&mut self, text: &str) -> MResult<()> {
++            self.0.write_stdout(text)
++        }
++        fn write_stderr(&mut self, _: &str) -> MResult<()> {
++            Err(MechError::new(
++                CliResourceProviderError {
++                    resource: "legacy".into(),
++                    reason: "no stderr".into(),
++                },
++                None,
++            ))
++        }
++    }
++    for artifact in artifacts(STRICT_ONE) {
++        let output = Output::default();
++        let mut runtime = RuntimeBuilder::new()
++            .function_catalog(mech_stdlib::source_catalog())
++            .host_factory(Box::new(
++                CliHostFactory::with_backend(Legacy(output.clone())).unwrap(),
++            ))
++            .unwrap()
++            .host_instance(HostInstanceConfig {
++                name: "cli".into(),
++                provider: "cli".into(),
++                settings: ConfigValue::Map(BTreeMap::new()),
++            })
++            .run_resource_grant(RunResourceGrantConfig {
++                target: "cli/args".into(),
++                operations: vec!["read".into()],
++                paths: vec!["count".into(), "1".into()],
++            })
++            .run_resource_grant(RunResourceGrantConfig {
++                target: "cli/stdout".into(),
++                operations: vec!["write".into()],
++                paths: vec!["text".into()],
++            })
++            .build()
++            .unwrap();
++        let error = runtime
++            .load_compiled_program(artifact, ResidentDurabilityPolicy::Volatile)
++            .unwrap_err();
++        assert!(error.display_message().contains("count is unavailable"));
++        runtime.shutdown().unwrap();
++        assert_eq!(output.0.lock().unwrap().attempts, 0);
++    }
++}

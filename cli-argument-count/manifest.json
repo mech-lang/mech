@@ -1,0 +1,105 @@
+{
+  "schema": "mech.portable-source-candidate.v1",
+  "name": "cli-argument-count",
+  "status": "FROZEN_SOURCE_ONLY_UNRUN",
+  "scope": "Immutable payload argument count through the ordinary cli/args count read port. Exact grants, non-consuming typed planning and strict partial-pattern arity checks.",
+  "patch": {
+    "path": "cli-argument-count/candidate.patch",
+    "sha256": "1b07172b09ff98ec7168906bb3cf5749511cb0f0c919db35acaa871b78081195",
+    "bytes": 35280
+  },
+  "files": [
+    {
+      "repository_path": "hosts/terminal/Cargo.toml",
+      "base": {
+        "path": "cli-argument-count/base/hosts/terminal/Cargo.toml",
+        "sha256": "6f161acd324d060c6775224a86852f3af50eb4c1b075a74248e94f76c060118c",
+        "bytes": 870
+      },
+      "candidate": {
+        "path": "cli-argument-count/candidate/hosts/terminal/Cargo.toml",
+        "sha256": "4a0e9bc4a50ada996ad39bf034c589a7f5972f4d99d59a3b3e20af463eb11828",
+        "bytes": 1008
+      }
+    },
+    {
+      "repository_path": "hosts/terminal/docs/args.mec",
+      "base": {
+        "path": "cli-argument-count/base/hosts/terminal/docs/args.mec",
+        "sha256": "eafa38f76cccad4d60427195dac5dac1c4c3dc01d76340dfdf7a94c746c3e39b",
+        "bytes": 3450
+      },
+      "candidate": {
+        "path": "cli-argument-count/candidate/hosts/terminal/docs/args.mec",
+        "sha256": "16e99bde699ea82dd5512f4e7c7184481840e265920efcd545ca631e95a1db3e",
+        "bytes": 5331
+      }
+    },
+    {
+      "repository_path": "hosts/terminal/docs/grants.mec",
+      "base": {
+        "path": "cli-argument-count/base/hosts/terminal/docs/grants.mec",
+        "sha256": "2411f6f46f5b79198b25395528b41c0f9bc478c759e71086390e19cad8071c92",
+        "bytes": 1650
+      },
+      "candidate": {
+        "path": "cli-argument-count/candidate/hosts/terminal/docs/grants.mec",
+        "sha256": "b81849170e9073ea3d37ce97b7acb98167043653609f025dd5c0f9f0599d9a86",
+        "bytes": 1786
+      }
+    },
+    {
+      "repository_path": "hosts/terminal/src/provider.rs",
+      "base": {
+        "path": "cli-argument-count/base/hosts/terminal/src/provider.rs",
+        "sha256": "4276ebb5c5d698a79b0b5067e9628328e5032addb3e6ce5f4fb1297742971a6f",
+        "bytes": 30150
+      },
+      "candidate": {
+        "path": "cli-argument-count/candidate/hosts/terminal/src/provider.rs",
+        "sha256": "c9d8b1be75b3dfa6e8269159e810689c0a5f74ab31c78a9ca0e88d9368475295",
+        "bytes": 31896
+      }
+    },
+    {
+      "repository_path": "hosts/terminal/tests/provider_argument_count.rs",
+      "base": null,
+      "candidate": {
+        "path": "cli-argument-count/candidate/hosts/terminal/tests/provider_argument_count.rs",
+        "sha256": "16bab30a003d3ce84a7fe35a89e52d8596aa080308460122deeac427fa5419dc",
+        "bytes": 10789
+      }
+    },
+    {
+      "repository_path": "src/build/tests/canonical_cli_argument_count.rs",
+      "base": null,
+      "candidate": {
+        "path": "cli-argument-count/candidate/src/build/tests/canonical_cli_argument_count.rs",
+        "sha256": "7d15cf436b0d7895bb88828e9ec90ac70f8f4959042bd7a1b4a76c7160816040",
+        "bytes": 13983
+      }
+    }
+  ],
+  "prepared_tests": {
+    "provider": 8,
+    "original_decoded_sessions": 6,
+    "total": 14
+  },
+  "validation": {
+    "compilation": "UNRUN",
+    "tests_executed": 0,
+    "native_execution": 0,
+    "benchmark_measurements": 0,
+    "patch_reconstructed_exact_candidates": true
+  },
+  "limitations": [
+    "Default source/interpreter CLI does not install an immutable payload snapshot; count remains unavailable there until explicit forwarding is implemented.",
+    "Experimental native port ABI is unchanged.",
+    "Parameterized resource input schema preservation is a separate incomplete candidate."
+  ],
+  "entrypoint_status": {
+    "generated_hosted_applications": "Both maintained renderers pass raw program_arguments selected by the launcher parser into the registered CliHostFactory::with_arguments. Executable and consumed launcher controls are excluded.",
+    "source_cli": "src/cli/host_factories.rs selects CliHostFactory::new; src/cli/run/mod.rs uses that default when no injected CLI factory is supplied. No payload count snapshot is installed.",
+    "provider_contract": "ArgumentSnapshotCliBackend counts its own immutable payload vector; StdCliBackend inherits explicit count-unavailable. Empty, non-Unicode and flag-looking payload values count unchanged. Planning never calls the actual getter."
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "schema": "mech.portable-source-candidate.v1",
+  "name": "packed-u8-snapshot",
+  "status": "FROZEN_SOURCE_ONLY_UNRUN",
+  "scope": "Checked canonical rank-two U8 matrix construction directly from packed bytes; terminal byte marshalling uses the maintained validated constructor.",
+  "patch": {
+    "path": "packed-u8-snapshot/candidate.patch",
+    "sha256": "f48ab7bcd2efd068ea7b69e98089ff872964b7b2bc61f20bc0d3483c01afd723",
+    "bytes": 20079
+  },
+  "files": [
+    {
+      "repository_path": "src/core/src/snapshot/validation.rs",
+      "base": {
+        "path": "packed-u8-snapshot/base/src/core/src/snapshot/validation.rs",
+        "sha256": "ef465bad3a8c346cdd8d4b742f1a9c77d5949ecf45d8e7e7ad269b8812fc9734",
+        "bytes": 211053
+      },
+      "candidate": {
+        "path": "packed-u8-snapshot/candidate/src/core/src/snapshot/validation.rs",
+        "sha256": "554af0fe552155a3f549612424e6e4e99c080cda2bae94be205c0d4b35c5bd45",
+        "bytes": 219653
+      }
+    },
+    {
+      "repository_path": "src/core/tests/packed_u8_snapshot.rs",
+      "base": null,
+      "candidate": {
+        "path": "packed-u8-snapshot/candidate/src/core/tests/packed_u8_snapshot.rs",
+        "sha256": "dc9fe4294c178a8eb12975a2f283d43e39d08ee092f9b84ffcd4d72fdd9d0dfe",
+        "bytes": 6462
+      }
+    },
+    {
+      "repository_path": "hosts/terminal/src/provider.rs",
+      "base": {
+        "path": "packed-u8-snapshot/base/hosts/terminal/src/provider.rs",
+        "sha256": "4276ebb5c5d698a79b0b5067e9628328e5032addb3e6ce5f4fb1297742971a6f",
+        "bytes": 30150
+      },
+      "candidate": {
+        "path": "packed-u8-snapshot/candidate/hosts/terminal/src/provider.rs",
+        "sha256": "87821ea2ce81eb6305f8b1117fd4942eefd5def26e392c3d21d4f146ede9347d",
+        "bytes": 31327
+      }
+    },
+    {
+      "repository_path": "hosts/terminal/tests/provider_bytes.rs",
+      "base": {
+        "path": "packed-u8-snapshot/base/hosts/terminal/tests/provider_bytes.rs",
+        "sha256": "8ee041d2a04fd6adedddfff212205540d6d737a392277524c813b4d69735a70b",
+        "bytes": 14998
+      },
+      "candidate": {
+        "path": "packed-u8-snapshot/candidate/hosts/terminal/tests/provider_bytes.rs",
+        "sha256": "116f3b761f17cfe027a97d1029d51ef4e04afed61c435cdf2d67aca9ee1a852a",
+        "bytes": 15962
+      }
+    }
+  ],
+  "prepared_tests": {
+    "core_private": 2,
+    "core_integration": 3,
+    "provider": 1,
+    "total": 6
+  },
+  "validation": {
+    "compilation": "UNRUN",
+    "tests_executed": 0,
+    "native_execution": 0,
+    "benchmark_measurements": 0,
+    "patch_reconstructed_exact_candidates": true
+  },
+  "limitations": [
+    "Actual allocator counts and retained-budget observations require qualification.",
+    "Raw stream caching precedes runtime marshalling as before; no process RSS or global memory security claim.",
+    "Large-input whole-process, secure/trusted and benchmark qualification remain separate."
+  ],
+  "unchanged_test_support": [
+    {
+      "path": "packed-u8-snapshot/reference/src/core/tests/support/allocation_probe.rs",
+      "sha256": "a3f6bba12bd7a658efc57cdb55038d6c3607c3ec6f9d8af584495dabff7f25f7",
+      "bytes": 2097
+    }
+  ]
+}

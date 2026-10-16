@@ -1,0 +1,107 @@
+{
+  "schema": "mech.portable-source-candidate.v1",
+  "name": "resource-input-schema-api-partial",
+  "status": "INCOMPLETE_SOURCE_ONLY_UNRUN",
+  "scope": "Partial full-SchemaDraft frontend and compiler metadata preservation with lifetime-separated activation geometry seeds. Existing SchemaBody wrappers remain. Runtime observation shape binding, facts, replay and tests are not yet implemented.",
+  "patch": {
+    "path": "resource-input-schema-api-partial/candidate.patch",
+    "sha256": "9bd05402f8c25d90586c40685e4683e2274c96dfae0d1902e91c60d40bb54673",
+    "bytes": 32642
+  },
+  "files": [
+    {
+      "repository_path": "src/engine/src/source_semantics/frontend.rs",
+      "base": {
+        "path": "resource-input-schema-api-partial/base/src/engine/src/source_semantics/frontend.rs",
+        "sha256": "ab9615b536156386a6586e1c5442e41891a80c022cd50015f7aa4bf2fa7852e1",
+        "bytes": 431757
+      },
+      "candidate": {
+        "path": "resource-input-schema-api-partial/candidate/src/engine/src/source_semantics/frontend.rs",
+        "sha256": "ffd2c78e2e64860a77e3c58c44be8fbb2b901e9dee7d6b33616ecf92cc54a968",
+        "bytes": 440480
+      }
+    },
+    {
+      "repository_path": "src/engine/src/source_semantics/document_lowering.rs",
+      "base": {
+        "path": "resource-input-schema-api-partial/base/src/engine/src/source_semantics/document_lowering.rs",
+        "sha256": "2e4afa4c66a067465fdf877d752c59013ca0856b97153824377604ee89086598",
+        "bytes": 104287
+      },
+      "candidate": {
+        "path": "resource-input-schema-api-partial/candidate/src/engine/src/source_semantics/document_lowering.rs",
+        "sha256": "ba80b162ae1799bdd106a5708390f0360353d8cd3ab9673aae5ebe98ecc54cc8",
+        "bytes": 104548
+      }
+    },
+    {
+      "repository_path": "src/engine/src/resident/general/mod.rs",
+      "base": {
+        "path": "resource-input-schema-api-partial/base/src/engine/src/resident/general/mod.rs",
+        "sha256": "8ed5596cb59ed1137757eeb0ddfe51bef88ee0d8e2bd937aedbd35d9ffbd1d1d",
+        "bytes": 992244
+      },
+      "candidate": {
+        "path": "resource-input-schema-api-partial/candidate/src/engine/src/resident/general/mod.rs",
+        "sha256": "589db0783b0d2b8d6f359aa2939fd86357ed6b60e58d627d3e9eadf7d15a0364",
+        "bytes": 992832
+      }
+    },
+    {
+      "repository_path": "src/runtime/src/runtime/program/compiler.rs",
+      "base": {
+        "path": "resource-input-schema-api-partial/base/src/runtime/src/runtime/program/compiler.rs",
+        "sha256": "fc9ccfe6e94ba0cffff3becc095042d50949e33cd8e79a4080770092a36025e7",
+        "bytes": 125074
+      },
+      "candidate": {
+        "path": "resource-input-schema-api-partial/candidate/src/runtime/src/runtime/program/compiler.rs",
+        "sha256": "30c9c318aceef7cc605b1449ca7f1035c970da6f765b49e46a346551be0fa59c",
+        "bytes": 126793
+      }
+    },
+    {
+      "repository_path": "src/runtime/src/runtime/program/loading.rs",
+      "base": {
+        "path": "resource-input-schema-api-partial/base/src/runtime/src/runtime/program/loading.rs",
+        "sha256": "154e98bb2ff2947d6152134959f390798c8b24a8ede0e58f62619c40e7fcce3b",
+        "bytes": 40273
+      },
+      "candidate": {
+        "path": "resource-input-schema-api-partial/candidate/src/runtime/src/runtime/program/loading.rs",
+        "sha256": "bcb7998e36e246f32de55b356fcf30bd89049aff7664faa85cdc0b5debe362ee",
+        "bytes": 40565
+      }
+    }
+  ],
+  "prepared_tests": {
+    "new_tests": 0,
+    "total": 0
+  },
+  "validation": {
+    "compilation": "UNRUN",
+    "tests_executed": 0,
+    "native_execution": 0,
+    "benchmark_measurements": 0,
+    "patch_reconstructed_exact_candidates": true
+  },
+  "limitations": [
+    "INCOMPLETE: not suitable for application as a standalone compiler feature.",
+    "Coordinator actual-shape binding, actual-shape facts, replay integration and tests remain outstanding.",
+    "No production or execution readiness claim."
+  ],
+  "prepared_api_names": [
+    "compile_document_with_catalog_and_input_schemas_schema_drafts",
+    "compile_document_with_catalog_and_resources_schema_drafts",
+    "compile_document_with_planning_contract_schema_drafts",
+    "compile_interactive_document_with_catalog_and_resources_schema_drafts",
+    "compile_interactive_document_with_planning_contract_schema_drafts",
+    "compile_interactive_document_with_retained_result_schema_drafts",
+    "compile_mixed_document_with_catalog_and_resources_schema_drafts",
+    "compile_mixed_document_with_planning_contract_schema_drafts",
+    "prepare_mixed_document_with_planning_contract_schema_drafts",
+    "compile_ordered_documents_with_catalog_schema_drafts",
+    "CanonicalCoordinatorPlan::compile_schema_drafts"
+  ]
+}

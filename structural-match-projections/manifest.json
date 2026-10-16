@@ -1,0 +1,68 @@
+{
+  "schema": "mech.portable-source-candidate.v1",
+  "name": "structural-match-projections",
+  "status": "FROZEN_SOURCE_ONLY_UNRUN",
+  "scope": "Private activation-issued structural projection proof for fixed Bool/Index/U64/F64 leaves in zero-parameter Enum/Tuple trees. One managed immutable root with finite admitted projection metadata; conservative fallback remains.",
+  "patch": {
+    "path": "structural-match-projections/candidate.patch",
+    "sha256": "c647c1bc77adc95a86a7e254f48f18ffff2620c516de384313fa7b7b4f198a14",
+    "bytes": 74995
+  },
+  "files": [
+    {
+      "repository_path": "src/engine/src/resident/general/borrowed_scalar_match.rs",
+      "base": null,
+      "candidate": {
+        "path": "structural-match-projections/candidate/src/engine/src/resident/general/borrowed_scalar_match.rs",
+        "sha256": "bc0dbdfca6decba18602713fe5b782e39630fb20e756b561fca1c48480ae9e77",
+        "bytes": 48880
+      }
+    },
+    {
+      "repository_path": "src/engine/src/resident/general/execution.rs",
+      "base": {
+        "path": "structural-match-projections/base/src/engine/src/resident/general/execution.rs",
+        "sha256": "721d15a40366dbeb84e6820f1363a11407767394869355d8869abfa2718fc16d",
+        "bytes": 320307
+      },
+      "candidate": {
+        "path": "structural-match-projections/candidate/src/engine/src/resident/general/execution.rs",
+        "sha256": "ff9e42f07efc05e2af881160b05540b0b26834503a3a778d5ee0f84d71ec5c10",
+        "bytes": 327786
+      }
+    },
+    {
+      "repository_path": "src/engine/src/resident/general/mod.rs",
+      "base": {
+        "path": "structural-match-projections/base/src/engine/src/resident/general/mod.rs",
+        "sha256": "8ed5596cb59ed1137757eeb0ddfe51bef88ee0d8e2bd937aedbd35d9ffbd1d1d",
+        "bytes": 992244
+      },
+      "candidate": {
+        "path": "structural-match-projections/candidate/src/engine/src/resident/general/mod.rs",
+        "sha256": "38f4168a0f482c252b74796396b08276adf6705320609005a3a88f52462580ae",
+        "bytes": 993125
+      }
+    }
+  ],
+  "prepared_tests": {
+    "private_source_cases": 9,
+    "total": 9
+  },
+  "validation": {
+    "compilation": "UNRUN",
+    "tests_executed": 0,
+    "native_execution": 0,
+    "benchmark_measurements": 0,
+    "patch_reconstructed_exact_candidates": true
+  },
+  "limitations": [
+    "Revision v3: metadata lookup admits finite work before binary search.",
+    "No compilation or execution qualification.",
+    "Original long-tail acceptance cases and finite limits remain unchanged.",
+    "Ineligible patterns, unsupported payloads and identity mismatch retain existing owned materialization.",
+    "Superseded revisions and private diagnostics are intentionally excluded."
+  ],
+  "revision": "v3",
+  "revision_change": "Bounded compute admission precedes activation-owned projection metadata binary search. The candidate remains uncompiled and unexecuted."
+}

@@ -101,11 +101,62 @@
         "workloads/idiomatic-six/patches/revcomp.patch"
       ],
       "prepared_test_sources": 0
+    },
+    {
+      "feature": "cli-argument-count",
+      "status": "FROZEN_SOURCE_ONLY_UNRUN",
+      "patches": [
+        "cli-argument-count/candidate.patch"
+      ],
+      "manifest": "cli-argument-count/manifest.json",
+      "prepared_tests": {
+        "provider": 8,
+        "original_decoded_sessions": 6,
+        "total": 14
+      }
+    },
+    {
+      "feature": "packed-u8-snapshot",
+      "status": "FROZEN_SOURCE_ONLY_UNRUN",
+      "patches": [
+        "packed-u8-snapshot/candidate.patch"
+      ],
+      "manifest": "packed-u8-snapshot/manifest.json",
+      "prepared_tests": {
+        "core_private": 2,
+        "core_integration": 3,
+        "provider": 1,
+        "total": 6
+      }
+    },
+    {
+      "feature": "structural-match-projections",
+      "status": "FROZEN_SOURCE_ONLY_UNRUN",
+      "patches": [
+        "structural-match-projections/candidate.patch"
+      ],
+      "manifest": "structural-match-projections/manifest.json",
+      "prepared_tests": {
+        "private_source_cases": 9,
+        "total": 9
+      }
+    },
+    {
+      "feature": "resource-input-schema-api-partial",
+      "status": "INCOMPLETE_SOURCE_ONLY_UNRUN",
+      "patches": [
+        "resource-input-schema-api-partial/candidate.patch"
+      ],
+      "manifest": "resource-input-schema-api-partial/manifest.json",
+      "prepared_tests": {
+        "new_tests": 0,
+        "total": 0
+      }
     }
   ],
   "file_inventory": {
     "path": "file-inventory.json",
-    "sha256": "2d035619ce83541d3868fe88516ed518feecd1a22e78b5b53ed4e8dfc6057cf8"
+    "sha256": "d76e3d091958680c349d2069e7a55bb379d4551acb0a40e66d5b2bd45941c532"
   },
   "selection_review": {
     "path": "selection-review.json",
@@ -114,5 +165,11 @@
   "byte_preservation": "Every patch, Mech fixture, Rust test source and binary input/oracle fixture copied byte-for-byte; portable metadata regenerated.",
   "no_execution": true,
   "no_git_writes": true,
-  "no_checkout_writes": true
+  "no_checkout_writes": true,
+  "supplemental_candidates": {
+    "path": "supplemental-candidates.json",
+    "sha256": "8449634657199bd96065fda006ba20c5b0fb2895ce26d3c9b2fe3925ddf7ac29"
+  },
+  "integration_checkpoint": "920b0f0872802e804a2eb5ca2f83b4107ed207a8",
+  "integration_scope_note": "The separately committed integration checkpoint has partial validation. This branch preserves unexecuted draft candidates against their exact per-file baselines; it is not an automatically applicable patch series."
 }

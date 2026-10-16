@@ -1,0 +1,32 @@
+[package]
+name = "mech-terminal"
+version = "0.3.5"
+authors = ["Corey Montella <corey@mech-lang.org>"]
+description = "CLI host integration for Mech runtimes."
+documentation = "https://docs.mech-lang.org"
+homepage = "https://mech-lang.org"
+repository = "https://github.com/mech-lang/mech"
+license = "Apache-2.0"
+edition = "2024"
+rust-version = "1.92"
+
+[features]
+default = []
+provider = ["mech-core/string", "mech-core/u8", "mech-runtime/u64"]
+
+[dependencies]
+mech-core = { version = "0.3.5", path = "../../src/core", default-features = false }
+mech-runtime = { version = "0.3.5", path = "../../src/runtime", default-features = false, features = ["runtime", "string"] }
+
+[dev-dependencies]
+mech-runtime = { version = "0.3.5", path = "../../src/runtime", default-features = false, features = ["source"] }
+
+[[test]]
+name = "provider"
+path = "tests/provider.rs"
+required-features = ["provider"]
+
+[[test]]
+name = "provider_argument_count"
+path = "tests/provider_argument_count.rs"
+required-features = ["provider"]

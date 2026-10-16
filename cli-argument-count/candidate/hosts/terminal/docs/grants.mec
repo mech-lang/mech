@@ -1,0 +1,63 @@
+CLI Grants
+===============================================================================
+
+CLI contexts are capability-checked like other host contexts.
+
+1. Environment read
+-------------------------------------------------------------------------------
+
+```mech
+config := {
+  run: {
+    grants: [
+      {
+        target: "cli/env"
+        operations: ["read"]
+        paths: ["HOME"]
+      }
+    ]
+  }
+}
+```
+
+2. Stdout write
+-------------------------------------------------------------------------------
+
+```mech
+config := {
+  run: {
+    grants: [
+      {
+        target: "cli/stdout"
+        operations: ["write"]
+        paths: ["line"]
+      }
+    ]
+  }
+}
+```
+
+3. Standard-input snapshot
+-------------------------------------------------------------------------------
+
+```mech
+config := {
+  run: {
+    grants: [{ target: "cli/stdin" operations: ["read"] paths: ["text"] }]
+  }
+}
+```
+
+Only the exact text path can be read. Importing cli/stdin does not grant access.
+Configured aliases use their instance target, for example term/stdin.
+
+4. Default CLI capabilities
+-------------------------------------------------------------------------------
+
+The CLI can install default local capabilities for common environment/stdout/stderr use. An explicit run grants list in config should be treated as the configured authority for the project.
+
+Argument and standard-input reads are excluded from these defaults. Grant cli/args with read and
+specific paths such as count and 1 in config, or select the explicit :cli/args
+profile. That profile uses wildcard path authority over count and all indexed
+argument values. A grant for index 1 alone does not authorize count. Binding +> @args := cli/args does not grant access. Configured aliases
+use their instance target, for example term/args.
