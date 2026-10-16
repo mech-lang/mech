@@ -1,0 +1,27 @@
+{
+  "commit": "eb562ece317ecb78fb9a02800cc21a1507281aa1",
+  "status": "ALREADY COMMITTED; NOT DUPLICATED IN THIS BUNDLE",
+  "files": [
+    {
+      "repository_path": "src/engine/src/resident/native_semantics.rs",
+      "sha256": "8683db8ae4c34b2dad825257e03a9622c99e798d8d3aa7c4dcdfa7eec9d416b4"
+    },
+    {
+      "repository_path": "src/engine/src/native_artifact/ir.rs",
+      "sha256": "2abfca857a044c6e9dd8073609bec1a99932f47d865eabf6d9b0204a58272ffd"
+    },
+    {
+      "repository_path": "hosts/gpu/src/native_artifact/compiler.rs",
+      "sha256": "5b6d4f4d9e9a4ebebb14a45992501ffc1997d3191021b3480d73c626749dd046"
+    },
+    {
+      "repository_path": "hosts/gpu/src/native_artifact/application.rs",
+      "sha256": "7efc28b87211337e12d66fff4a4d7bc47c8630fae5f0b4d5955b04855c8bac7b"
+    },
+    {
+      "repository_path": "hosts/gpu/src/native_artifact/linked.rs",
+      "sha256": "9664a93ce3e4193a0bf05ab70015423d8640dd311e6a794885f023cce81585df"
+    }
+  ],
+  "application_rule": "Use additive patch composition against reviewed current source; frozen source pins are not a claim that all patches apply unchanged to this commit."
+}

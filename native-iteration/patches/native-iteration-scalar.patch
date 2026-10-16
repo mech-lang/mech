@@ -1,0 +1,4485 @@
+diff --git a/hosts/gpu/Cargo.toml b/hosts/gpu/Cargo.toml
+index 584813c0c..327f9fedc 100644
+--- a/hosts/gpu/Cargo.toml
++++ b/hosts/gpu/Cargo.toml
+@@ -141,3 +141,13 @@ required-features = ["canonical-native"]
+ name = "canonical_artifact_application"
+ path = "tests/canonical_artifact_application.rs"
+ required-features = ["canonical-native"]
++
++[[test]]
++name = "canonical_artifact_iteration"
++path = "tests/canonical_artifact_iteration.rs"
++required-features = ["canonical-native"]
++
++[[test]]
++name = "canonical_artifact_iteration_application"
++path = "tests/canonical_artifact_iteration_application.rs"
++required-features = ["canonical-native"]
+diff --git a/hosts/gpu/src/native_artifact/control_compiler.rs b/hosts/gpu/src/native_artifact/control_compiler.rs
+index a090d5219..9573acbe1 100644
+--- a/hosts/gpu/src/native_artifact/control_compiler.rs
++++ b/hosts/gpu/src/native_artifact/control_compiler.rs
+@@ -329,7 +329,7 @@ fn validate(plan: &NativeMatchArtifactPlan) -> Result<(), NativeCompileError> {
+     Ok(())
+ }
+ 
+-fn load(
++pub(super) fn load(
+     b: &mut FunctionBuilder<'_>,
+     locals: Value,
+     value: NativeMatchValue,
+@@ -494,84 +494,16 @@ fn define<M: Module>(
+                 index,
+                 error,
+             );
+-            match block.action() {
+-                NativeMatchAction::Primitive {
+-                    op,
+-                    operands,
+-                    output,
+-                    ..
+-                } => {
+-                    let args = operands
+-                        .iter()
+-                        .map(|&value| load(&mut b, locals, value))
+-                        .collect::<Result<Vec<_>, _>>()?;
+-                    let value = primitive(&mut b, *op, &args, error);
+-                    b.ins().store(
+-                        MemFlags::new(),
+-                        value,
+-                        locals,
+-                        offset(output.get() as usize)?,
+-                    );
+-                }
+-                NativeMatchAction::Copy { source, output } => {
+-                    let value = load(&mut b, locals, *source)?;
+-                    b.ins().store(
+-                        MemFlags::new(),
+-                        value,
+-                        locals,
+-                        offset(output.get() as usize)?,
+-                    );
+-                }
+-                NativeMatchAction::None => {}
+-            }
+-            match block.terminator() {
+-                NativeMatchTerminator::Jump(next) => {
+-                    b.ins()
+-                        .jump(blocks[next as usize].expect("reachable successor"), &[]);
+-                }
+-                NativeMatchTerminator::Branch { condition, yes, no } => {
+-                    let value = load(&mut b, locals, condition)?;
+-                    let condition = b.ins().icmp_imm(IntCC::NotEqual, value, 0);
+-                    b.ins().brif(
+-                        condition,
+-                        blocks[yes as usize].expect("reachable successor"),
+-                        &[],
+-                        blocks[no as usize].expect("reachable successor"),
+-                        &[],
+-                    );
+-                }
+-                NativeMatchTerminator::LiteralBranch {
+-                    left,
+-                    right,
+-                    yes,
+-                    no,
+-                } => {
+-                    let left = load(&mut b, locals, left)?;
+-                    let right = load(&mut b, locals, right)?;
+-                    let condition = b.ins().icmp(IntCC::Equal, left, right);
+-                    b.ins().brif(
+-                        condition,
+-                        blocks[yes as usize].expect("reachable successor"),
+-                        &[],
+-                        blocks[no as usize].expect("reachable successor"),
+-                        &[],
+-                    );
+-                }
+-                NativeMatchTerminator::Reject => {
+-                    let status = b.ins().iconst(types::I64, STATUS_REJECT as i64);
+-                    b.ins().return_(&[status]);
+-                }
+-                NativeMatchTerminator::Complete => {
+-                    set_origin(&mut b, frame, NO_NODE);
+-                    for (index, output) in plan.outputs().iter().enumerate() {
+-                        let value = load(&mut b, locals, output.value())?;
+-                        b.ins()
+-                            .store(MemFlags::new(), value, outputs, offset(index)?);
+-                    }
+-                    let status = b.ins().iconst(types::I64, STATUS_OK as i64);
+-                    b.ins().return_(&[status]);
+-                }
+-            }
++            emit_scalar_action(&mut b, locals, block.action(), error)?;
++            emit_scalar_terminator(
++                &mut b,
++                frame,
++                locals,
++                outputs,
++                block.terminator(),
++                &blocks,
++                plan.outputs(),
++            )?;
+             let emitted = (b.func.dfg.num_insts() - before) as u64;
+             let bound = match block.action() {
+                 NativeMatchAction::Primitive { op, .. } => super::abi::primitive_work(*op),
+@@ -616,3 +548,102 @@ fn define<M: Module>(
+         NativeMatchDescriptor::from_plan(plan, stack, code).map_err(backend)?,
+     ))
+ }
++
++/// Shared selected scalar semantics, independent of control topology.
++pub(super) fn emit_scalar_action(
++    b: &mut FunctionBuilder<'_>,
++    locals: Value,
++    action: &NativeMatchAction,
++    error: cranelift_codegen::ir::Block,
++) -> Result<(), NativeCompileError> {
++    match action {
++        NativeMatchAction::Primitive {
++            op,
++            operands,
++            output,
++            ..
++        } => {
++            let args = operands
++                .iter()
++                .map(|&value| load(b, locals, value))
++                .collect::<Result<Vec<_>, _>>()?;
++            let value = primitive(b, *op, &args, error);
++            b.ins().store(
++                MemFlags::new(),
++                value,
++                locals,
++                offset(output.get() as usize)?,
++            );
++        }
++        NativeMatchAction::Copy { source, output } => {
++            let value = load(b, locals, *source)?;
++            b.ins().store(
++                MemFlags::new(),
++                value,
++                locals,
++                offset(output.get() as usize)?,
++            );
++        }
++        NativeMatchAction::None => {}
++    }
++    Ok(())
++}
++pub(super) fn emit_scalar_terminator(
++    b: &mut FunctionBuilder<'_>,
++    frame: Value,
++    locals: Value,
++    outputs: Value,
++    terminator: NativeMatchTerminator,
++    blocks: &[Option<cranelift_codegen::ir::Block>],
++    output_values: &[mech_engine::native_artifact::NativeMatchOutput],
++) -> Result<(), NativeCompileError> {
++    match terminator {
++        NativeMatchTerminator::Jump(next) => {
++            b.ins()
++                .jump(blocks[next as usize].expect("reachable successor"), &[]);
++        }
++        NativeMatchTerminator::Branch { condition, yes, no } => {
++            let value = load(b, locals, condition)?;
++            let condition = b.ins().icmp_imm(IntCC::NotEqual, value, 0);
++            b.ins().brif(
++                condition,
++                blocks[yes as usize].expect("reachable successor"),
++                &[],
++                blocks[no as usize].expect("reachable successor"),
++                &[],
++            );
++        }
++        NativeMatchTerminator::LiteralBranch {
++            left,
++            right,
++            yes,
++            no,
++        } => {
++            let left = load(b, locals, left)?;
++            let right = load(b, locals, right)?;
++            let condition = b.ins().icmp(IntCC::Equal, left, right);
++            b.ins().brif(
++                condition,
++                blocks[yes as usize].expect("reachable successor"),
++                &[],
++                blocks[no as usize].expect("reachable successor"),
++                &[],
++            );
++        }
++        NativeMatchTerminator::Reject => {
++            let status = b.ins().iconst(types::I64, STATUS_REJECT as i64);
++            b.ins().return_(&[status]);
++        }
++        NativeMatchTerminator::Complete => {
++            set_origin(b, frame, NO_NODE);
++            for (index, output) in output_values.iter().enumerate() {
++                let value = load(b, locals, output.value())?;
++                b.ins()
++                    .store(MemFlags::new(), value, outputs, offset(index)?);
++            }
++            let status = b.ins().iconst(types::I64, STATUS_OK as i64);
++            b.ins().return_(&[status]);
++        }
++    }
++    Ok(())
++}
+diff --git a/hosts/gpu/src/native_artifact/iteration_abi.rs b/hosts/gpu/src/native_artifact/iteration_abi.rs
+new file mode 100644
+index 000000000..1914656ab
+--- /dev/null
++++ b/hosts/gpu/src/native_artifact/iteration_abi.rs
+@@ -0,0 +1,171 @@
++//! Structured counted-loop ABI. Frozen scalar ABI1 and Match ABI2 are separate.
++use mech_core::ProgramRevision;
++use mech_engine::native_artifact::{
++    NativeIterationAction as Action, NativeIterationArtifactPlan as Plan, NativeIterationLoop,
++    NativeIterationTerminator as Terminator, NativeMatchAction as Scalar, NativeMatchOrigin,
++    NativeMatchTerminator as Term, NativeScalarType,
++};
++pub(super) const VERSION: u64 = 3;
++#[cfg(feature = "canonical-native")]
++pub(super) const ENTRY: &str = "mech_canonical_scalar_iteration_entry_v1";
++pub(super) const STATUS_REJECT: u64 = 4;
++#[cfg(feature = "canonical-native")]
++pub(super) type Entry = unsafe extern "C" fn(*mut super::abi::NativeEntryFrame) -> u64;
++#[derive(Clone, Copy, Debug, Eq, PartialEq)]
++pub(super) enum Progress {
++    Normal,
++    Initialize(u32),
++    Header(u32),
++    Latch(u32),
++    Exit(u32),
++}
++#[derive(Clone, Copy, Debug)]
++pub struct NativeIterationVisit {
++    pub(super) origin: NativeMatchOrigin,
++    pub(super) successors: [Option<u32>; 2],
++    pub(super) iteration: Option<u32>,
++    pub(super) progress: Progress,
++    pub(super) complete: bool,
++    pub(super) arithmetic: bool,
++    pub(super) reject: bool,
++    pub(super) work: u64,
++}
++impl NativeIterationVisit {
++    pub const fn origin(&self) -> NativeMatchOrigin {
++        self.origin
++    }
++    pub const fn successors(&self) -> [Option<u32>; 2] {
++        self.successors
++    }
++    pub const fn iteration(&self) -> Option<u32> {
++        self.iteration
++    }
++    pub const fn is_completion(&self) -> bool {
++        self.complete
++    }
++    pub const fn work(&self) -> u64 {
++        self.work
++    }
++}
++#[derive(Clone, Debug)]
++pub struct NativeIterationDescriptor {
++    pub(super) entry: u32,
++    pub(super) revision: ProgramRevision,
++    pub(super) inputs: Box<[NativeScalarType]>,
++    pub(super) outputs: Box<[NativeScalarType]>,
++    pub(super) value_count: usize,
++    pub(super) constant_count: usize,
++    pub(super) visits: Box<[NativeIterationVisit]>,
++    pub(super) iterations: Box<[NativeIterationLoop]>,
++    pub(super) stack_bytes: u64,
++    pub(super) code_bytes: u64,
++    pub(super) identity: [u8; 32],
++}
++impl NativeIterationDescriptor {
++    pub(super) fn from_plan(
++        plan: &Plan,
++        stack_bytes: u64,
++        code_bytes: u64,
++    ) -> Result<Self, &'static str> {
++        plan.validate_current_visits()?;
++        let completion = (plan.outputs().len() as u64)
++            .checked_mul(8)
++            .and_then(|n| n.checked_add((plan.iterations().len() as u64).checked_mul(8)?))
++            .and_then(|n| n.checked_add(256))
++            .ok_or("iteration completion overflow")?;
++        let mut visits = Vec::with_capacity(plan.blocks().len());
++        for (id, block) in plan.blocks().iter().enumerate() {
++            let (successors, complete) = match block.terminator() {
++                Terminator::Scalar(Term::Jump(next)) => ([Some(next), None], false),
++                Terminator::Scalar(
++                    Term::Branch { yes, no, .. } | Term::LiteralBranch { yes, no, .. },
++                ) => ([Some(yes), Some(no)], false),
++                Terminator::Header { body, exit, .. } => ([Some(body), Some(exit)], false),
++                Terminator::Scalar(Term::Complete) => ([None, None], true),
++                Terminator::Scalar(Term::Reject) => ([None, None], false),
++            };
++            let progress = match (block.action(), block.terminator()) {
++                (Action::Initialize { iteration }, _) => Progress::Initialize(*iteration),
++                (Action::Latch { iteration }, _) => Progress::Latch(*iteration),
++                (_, Terminator::Header { iteration, .. }) => Progress::Header(iteration),
++                _ => plan
++                    .iterations()
++                    .iter()
++                    .position(|v| v.exit() as usize == id)
++                    .map(|v| Progress::Exit(v as u32))
++                    .unwrap_or(Progress::Normal),
++            };
++            let arithmetic = matches!(block.action(), Action::Scalar(Scalar::Primitive { .. }));
++            let work = if complete {
++                completion
++            } else {
++                match block.action() {
++                    Action::Scalar(Scalar::Primitive { op, .. }) => super::abi::primitive_work(*op)
++                        .checked_add(128)
++                        .ok_or("iteration primitive work overflow")?,
++                    _ => 256,
++                }
++            };
++            visits.push(NativeIterationVisit {
++                origin: block.origin(),
++                successors,
++                iteration: block.iteration(),
++                progress,
++                complete,
++                arithmetic,
++                reject: block.terminator() == Terminator::Scalar(Term::Reject),
++                work,
++            });
++        }
++        Ok(Self {
++            entry: plan.entry(),
++            revision: plan.program_revision(),
++            inputs: plan
++                .inputs()
++                .iter()
++                .map(|v| v.declaration().ty().clone())
++                .collect(),
++            outputs: plan.outputs().iter().map(|v| v.ty().clone()).collect(),
++            value_count: plan.values().len(),
++            constant_count: plan.constants().len(),
++            visits: visits.into(),
++            iterations: plan.iterations().into(),
++            stack_bytes,
++            code_bytes,
++            identity: super::iteration_identity::typed_ir_sha256(plan),
++        })
++    }
++    pub const fn revision(&self) -> ProgramRevision {
++        self.revision
++    }
++    pub const fn entry(&self) -> u32 {
++        self.entry
++    }
++    pub fn inputs(&self) -> &[NativeScalarType] {
++        &self.inputs
++    }
++    pub fn outputs(&self) -> &[NativeScalarType] {
++        &self.outputs
++    }
++    pub const fn value_count(&self) -> usize {
++        self.value_count
++    }
++    pub fn visits(&self) -> &[NativeIterationVisit] {
++        &self.visits
++    }
++    pub fn iterations(&self) -> &[NativeIterationLoop] {
++        &self.iterations
++    }
++    pub const fn stack_bytes(&self) -> u64 {
++        self.stack_bytes
++    }
++    pub const fn code_bytes(&self) -> u64 {
++        self.code_bytes
++    }
++    pub fn typed_ir_sha256(&self) -> &[u8; 32] {
++        &self.identity
++    }
++    pub(super) fn local_count(&self) -> Option<usize> {
++        self.value_count.checked_add(self.iterations.len())
++    }
++}
+diff --git a/hosts/gpu/src/native_artifact/iteration_application.rs b/hosts/gpu/src/native_artifact/iteration_application.rs
+new file mode 100644
+index 000000000..02ecc042e
+--- /dev/null
++++ b/hosts/gpu/src/native_artifact/iteration_application.rs
+@@ -0,0 +1,50 @@
++//! Thin canonical Iteration route over the common pinned workspace generator.
++use super::application::{
++    GeneratedLinkedApplication, LinkedApplicationInputs, NativeApplicationError,
++    prepare_destination, render_main, write_linked_application,
++};
++use super::emit_iteration_object;
++use mech_core::FunctionCatalog;
++use mech_engine::native_artifact::lower_scalar_iteration_artifact;
++use mech_engine::{ProgramArtifact, encode_program_artifact_bytecode_v1};
++use std::path::Path;
++
++/// Emits and pins a real checked Iteration Object application. Source bytes are
++/// provenance only. Generation does not run Cargo, a linker or an executable.
++pub fn generate_linked_iteration_application(
++    workspace: &Path,
++    directory: &Path,
++    binary_name: &str,
++    artifact: &ProgramArtifact,
++    catalog: &FunctionCatalog,
++    source_provenance: &[u8],
++) -> Result<GeneratedLinkedApplication, NativeApplicationError> {
++    let workspace = prepare_destination(workspace, directory, binary_name)?;
++    let plan = lower_scalar_iteration_artifact(artifact, catalog)
++        .map_err(NativeApplicationError::Lowering)?;
++    let object = emit_iteration_object(&plan).map_err(NativeApplicationError::Compile)?;
++    let bytecode = encode_program_artifact_bytecode_v1(artifact)
++        .map_err(|error| NativeApplicationError::Encoding(format!("{error:?}")))?;
++    let main = render_main(
++        include_str!("templates/linked_iteration_main.rs.in"),
++        object.identity().symbol(),
++        &bytecode,
++    );
++    write_linked_application(
++        &workspace,
++        directory,
++        binary_name,
++        LinkedApplicationInputs {
++            source_provenance,
++            bytecode,
++            object: object.bytes(),
++            identity: object.identity().bytes(),
++            main,
++            revision: artifact.revision().as_bytes(),
++            typed_ir_sha256: object.descriptor().typed_ir_sha256(),
++            object_metadata: object.metadata(),
++            manifest_schema: "mech.canonical-linked-iteration-application.v1",
++            route: "canonical-artifact-iteration-cranelift-object",
++        },
++    )
++}
+diff --git a/hosts/gpu/src/native_artifact/iteration_compiler.rs b/hosts/gpu/src/native_artifact/iteration_compiler.rs
+new file mode 100644
+index 000000000..5f131b717
+--- /dev/null
++++ b/hosts/gpu/src/native_artifact/iteration_compiler.rs
+@@ -0,0 +1,507 @@
++//! Canonical scalar CFG definition shared by JIT and Object emission.
++use super::abi::{NO_NODE, NativeEntryFrame as Frame, STATUS_ABI};
++use super::compiler::{
++    admit, backend, compiled_stack_bytes, frame_load, guard, host_supported, limit, offset,
++    set_origin, signature,
++};
++use super::control_compiler::{emit_scalar_action, emit_scalar_terminator};
++use super::iteration_abi::{ENTRY, Entry, NativeIterationDescriptor, VERSION};
++use super::iteration_runtime::{NativeIterationExecutionError, NativeIterationExecutionReport};
++use super::{NativeCompileError, NativeCompileLimits, NativeExecutionLimits};
++use cranelift_codegen::{
++    ir::{AbiParam, InstBuilder, MemFlags, Value, condcodes::IntCC, types},
++    settings::{self, Configurable},
++};
++use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
++use cranelift_module::{DataDescription, FuncId, Linkage, Module, default_libcall_names};
++use cranelift_object::{ObjectBuilder, ObjectModule};
++use mech_core::ManagedMemoryBudget;
++use mech_engine::native_artifact::{
++    NativeIterationAction, NativeIterationArtifactPlan, NativeIterationTerminator,
++    NativeMatchAction, NativeMatchTerminator, NativeMatchValue, NativeScalarKind,
++    NativeScalarValue,
++};
++
++pub struct JitIterationArtifact {
++    _module: cranelift_jit::JITModule,
++    entry: Entry,
++    descriptor: NativeIterationDescriptor,
++}
++impl JitIterationArtifact {
++    pub fn compile(plan: &NativeIterationArtifactPlan) -> Result<Self, NativeCompileError> {
++        Self::compile_with_limits(plan, NativeCompileLimits::default())
++    }
++    pub fn compile_with_limits(
++        plan: &NativeIterationArtifactPlan,
++        limits: NativeCompileLimits,
++    ) -> Result<Self, NativeCompileError> {
++        host_supported()?;
++        let builder = cranelift_jit::JITBuilder::with_flags(
++            &[
++                ("opt_level", "none"),
++                ("is_pic", "true"),
++                ("preserve_frame_pointers", "true"),
++                ("unwind_info", "true"),
++            ],
++            default_libcall_names(),
++        )
++        .map_err(backend)?;
++        let mut module = cranelift_jit::JITModule::new(builder);
++        let (function, descriptor) = define(plan, &mut module, limits)?;
++        module.finalize_definitions().map_err(backend)?;
++        // SAFETY: the one checked definition emits the private repr(C) ABI;
++        // this owner retains its module for every synchronous invocation.
++        let entry = unsafe {
++            std::mem::transmute::<*const u8, Entry>(module.get_finalized_function(function))
++        };
++        Ok(Self {
++            _module: module,
++            entry,
++            descriptor,
++        })
++    }
++    pub fn descriptor(&self) -> &NativeIterationDescriptor {
++        &self.descriptor
++    }
++    pub fn evaluate_into(
++        &self,
++        inputs: &[NativeScalarValue],
++        outputs: &mut [NativeScalarValue],
++        limits: NativeExecutionLimits,
++        budget: Option<&ManagedMemoryBudget>,
++    ) -> Result<NativeIterationExecutionReport, NativeIterationExecutionError> {
++        super::iteration_runtime::execute(
++            &self.descriptor,
++            |frame| {
++                // SAFETY: this owner created and retains the exact checked entry.
++                unsafe { (self.entry)(frame) }
++            },
++            inputs,
++            outputs,
++            limits,
++            budget,
++        )
++    }
++}
++pub struct NativeIterationObject {
++    bytes: Vec<u8>,
++    descriptor: NativeIterationDescriptor,
++    identity: super::iteration_identity::NativeIterationObjectIdentity,
++}
++impl NativeIterationObject {
++    pub fn bytes(&self) -> &[u8] {
++        &self.bytes
++    }
++    pub fn descriptor(&self) -> &NativeIterationDescriptor {
++        &self.descriptor
++    }
++    pub fn identity_bytes(&self) -> &[u8; 176] {
++        self.identity.bytes()
++    }
++    pub fn identity_symbol(&self) -> &str {
++        self.identity.symbol()
++    }
++    pub fn identity(&self) -> &super::iteration_identity::NativeIterationObjectIdentity {
++        &self.identity
++    }
++    pub fn metadata(&self) -> serde_json::Value {
++        serde_json::json!({
++            "schema":"mech.canonical-scalar-iteration-object.v1","iteration_abi_version":VERSION,
++            "typed_ir_sha256":super::identity::hex(self.descriptor.typed_ir_sha256()),
++            "identity_symbol":self.identity.symbol(),"stack_bytes":self.descriptor.stack_bytes(),"code_bytes":self.descriptor.code_bytes(),
++            "linked":false,"executed":false,"timing_samples":0,
++        })
++    }
++}
++pub fn emit_iteration_object(
++    plan: &NativeIterationArtifactPlan,
++) -> Result<NativeIterationObject, NativeCompileError> {
++    emit_iteration_object_with_limits(plan, NativeCompileLimits::default())
++}
++pub fn emit_iteration_object_with_limits(
++    plan: &NativeIterationArtifactPlan,
++    limits: NativeCompileLimits,
++) -> Result<NativeIterationObject, NativeCompileError> {
++    host_supported()?;
++    let mut flags = settings::builder();
++    for (key, value) in [
++        ("opt_level", "none"),
++        ("is_pic", "true"),
++        ("preserve_frame_pointers", "true"),
++        ("unwind_info", "true"),
++    ] {
++        flags.set(key, value).map_err(backend)?;
++    }
++    let isa = cranelift_native::builder()
++        .map_err(backend)?
++        .finish(settings::Flags::new(flags))
++        .map_err(backend)?;
++    let mut module = ObjectModule::new(
++        ObjectBuilder::new(
++            isa,
++            "mech_canonical_scalar_iteration",
++            default_libcall_names(),
++        )
++        .map_err(backend)?,
++    );
++    let (_, descriptor) = define(plan, &mut module, limits)?;
++    let identity =
++        super::iteration_identity::NativeIterationObjectIdentity::from_descriptor(&descriptor)
++            .map_err(backend)?;
++    let id = module
++        .declare_data(identity.symbol(), Linkage::Export, false, false)
++        .map_err(backend)?;
++    let mut data = DataDescription::new();
++    data.define(identity.bytes().to_vec().into_boxed_slice());
++    data.set_align(8);
++    module.define_data(id, &data).map_err(backend)?;
++    let bytes = module.finish().emit().map_err(backend)?;
++    Ok(NativeIterationObject {
++        bytes,
++        descriptor,
++        identity,
++    })
++}
++
++fn successors(term: NativeIterationTerminator) -> [Option<u32>; 2] {
++    match term {
++        NativeIterationTerminator::Scalar(NativeMatchTerminator::Jump(next)) => [Some(next), None],
++        NativeIterationTerminator::Scalar(
++            NativeMatchTerminator::Branch { yes, no, .. }
++            | NativeMatchTerminator::LiteralBranch { yes, no, .. },
++        ) => [Some(yes), Some(no)],
++        NativeIterationTerminator::Header { body, exit, .. } => [Some(body), Some(exit)],
++        _ => [None, None],
++    }
++}
++fn validate(plan: &NativeIterationArtifactPlan) -> Result<(), NativeCompileError> {
++    let bad = || NativeCompileError::InvalidPlan {
++        node: None,
++        reason: "invalid iteration scalar signature",
++    };
++    plan.validate_current_visits()
++        .map_err(|reason| NativeCompileError::InvalidPlan { node: None, reason })?;
++    let ty = |value: NativeMatchValue| plan.values().get(value.get() as usize).ok_or_else(bad);
++    for block in plan.blocks() {
++        if let NativeIterationAction::Scalar(NativeMatchAction::Primitive {
++            op,
++            operands,
++            output,
++            ..
++        }) = block.action()
++        {
++            let (args, result) = signature(*op);
++            if operands.len() != args.len() || ty(*output)?.kind() != result {
++                return Err(bad());
++            }
++            for (&value, &kind) in operands.iter().zip(args) {
++                if ty(value)?.kind() != kind {
++                    return Err(bad());
++                }
++            }
++        }
++    }
++    Ok(())
++}
++fn load(
++    b: &mut FunctionBuilder<'_>,
++    locals: Value,
++    value: NativeMatchValue,
++) -> Result<Value, NativeCompileError> {
++    super::control_compiler::load(b, locals, value)
++}
++
++fn define<M: Module>(
++    plan: &NativeIterationArtifactPlan,
++    module: &mut M,
++    limits: NativeCompileLimits,
++) -> Result<(FuncId, NativeIterationDescriptor), NativeCompileError> {
++    host_supported()?;
++    if module.target_config().pointer_type() != types::I64 {
++        return Err(NativeCompileError::UnsupportedHost);
++    }
++    limit(
++        "Iteration blocks",
++        plan.blocks().len() as u64,
++        limits.max_nodes,
++    )?;
++    limit(
++        "Iteration inputs",
++        plan.inputs().len() as u64,
++        limits.max_inputs,
++    )?;
++    limit(
++        "Iteration outputs",
++        plan.outputs().len() as u64,
++        limits.max_outputs,
++    )?;
++    limit(
++        "Iteration scalar values",
++        plan.values().len() as u64,
++        limits.max_nodes.saturating_mul(8),
++    )?;
++    let local_count = plan
++        .values()
++        .len()
++        .checked_add(plan.iterations().len())
++        .ok_or_else(|| backend("iteration local count overflow"))?;
++    offset(local_count)?;
++    offset(plan.inputs().len())?;
++    offset(plan.outputs().len())?;
++    validate(plan)?;
++    let mut signature_entry = module.make_signature();
++    signature_entry.params.push(AbiParam::new(types::I64));
++    signature_entry.returns.push(AbiParam::new(types::I64));
++    let function = module
++        .declare_function(ENTRY, Linkage::Export, &signature_entry)
++        .map_err(backend)?;
++    let mut callback_signature = module.make_signature();
++    callback_signature.params = vec![AbiParam::new(types::I64); 2];
++    callback_signature.returns.push(AbiParam::new(types::I64));
++    let mut context = module.make_context();
++    context.func.signature = signature_entry;
++    let mut fb = FunctionBuilderContext::new();
++    {
++        let mut b = FunctionBuilder::new(&mut context.func, &mut fb);
++        let entry = b.create_block();
++        b.append_block_params_for_function_params(entry);
++        b.switch_to_block(entry);
++        let frame = b.block_params(entry)[0];
++        let error = b.create_block();
++        b.append_block_param(error, types::I64);
++        b.set_cold_block(error);
++        let nonnull = b.ins().icmp_imm(IntCC::NotEqual, frame, 0);
++        guard(&mut b, nonnull, error, STATUS_ABI);
++        set_origin(&mut b, frame, NO_NODE);
++        for (field, value) in [
++            (core::mem::offset_of!(Frame, version), VERSION),
++            (
++                core::mem::offset_of!(Frame, input_count),
++                plan.inputs().len() as u64,
++            ),
++            (
++                core::mem::offset_of!(Frame, local_count),
++                local_count as u64,
++            ),
++            (
++                core::mem::offset_of!(Frame, output_count),
++                plan.outputs().len() as u64,
++            ),
++        ] {
++            let actual = frame_load(&mut b, frame, field);
++            let valid = b.ins().icmp_imm(IntCC::Equal, actual, value as i64);
++            guard(&mut b, valid, error, STATUS_ABI);
++        }
++        let inputs = frame_load(&mut b, frame, core::mem::offset_of!(Frame, inputs));
++        let locals = frame_load(&mut b, frame, core::mem::offset_of!(Frame, locals));
++        let outputs = frame_load(&mut b, frame, core::mem::offset_of!(Frame, outputs));
++        let user_context = frame_load(&mut b, frame, core::mem::offset_of!(Frame, context));
++        let callback = frame_load(&mut b, frame, core::mem::offset_of!(Frame, admit_next));
++        for (pointer, count) in [
++            (inputs, plan.inputs().len()),
++            (locals, local_count),
++            (outputs, plan.outputs().len()),
++            (user_context, 1),
++            (callback, 1),
++        ] {
++            if count > 0 {
++                let valid = b.ins().icmp_imm(IntCC::NotEqual, pointer, 0);
++                guard(&mut b, valid, error, STATUS_ABI);
++            }
++        }
++        for (index, input) in plan.inputs().iter().enumerate() {
++            let word = b
++                .ins()
++                .load(types::I64, MemFlags::new(), inputs, offset(index)?);
++            if input.declaration().ty().kind() == NativeScalarKind::Bool {
++                let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, word, 1);
++                guard(&mut b, valid, error, STATUS_ABI);
++            }
++            b.ins().store(
++                MemFlags::new(),
++                word,
++                locals,
++                offset(input.value().get() as usize)?,
++            );
++        }
++        for constant in plan.constants() {
++            let word = match constant.scalar() {
++                NativeScalarValue::Bool(value) => u64::from(value),
++                NativeScalarValue::U64(value) => value,
++            };
++            let value = b.ins().iconst(types::I64, word as i64);
++            b.ins().store(
++                MemFlags::new(),
++                value,
++                locals,
++                offset(constant.value().get() as usize)?,
++            );
++        }
++        let callback_signature = b.import_signature(callback_signature);
++        let mut reachable = vec![false; plan.blocks().len()];
++        let mut pending = vec![plan.entry() as usize];
++        while let Some(id) = pending.pop() {
++            if reachable[id] {
++                continue;
++            }
++            reachable[id] = true;
++            pending.extend(
++                successors(plan.blocks()[id].terminator())
++                    .into_iter()
++                    .flatten()
++                    .map(|next| next as usize),
++            );
++        }
++        let blocks = reachable
++            .iter()
++            .map(|&used| used.then(|| b.create_block()))
++            .collect::<Vec<_>>();
++        b.ins()
++            .jump(blocks[plan.entry() as usize].expect("reachable entry"), &[]);
++        for (index, block) in plan.blocks().iter().enumerate() {
++            if !reachable[index] {
++                continue;
++            }
++            b.switch_to_block(blocks[index].expect("reachable block"));
++            let before = b.func.dfg.num_insts();
++            set_origin(&mut b, frame, index as u64);
++            admit(
++                &mut b,
++                callback_signature,
++                callback,
++                user_context,
++                index,
++                error,
++            );
++            match block.action() {
++                NativeIterationAction::Scalar(action) => {
++                    emit_scalar_action(&mut b, locals, action, error)?
++                }
++                NativeIterationAction::Initialize { iteration } => {
++                    let iteration = &plan.iterations()[*iteration as usize];
++                    let value = load(&mut b, locals, iteration.seed())?;
++                    b.ins().store(
++                        MemFlags::new(),
++                        value,
++                        locals,
++                        offset(iteration.carrier().get() as usize)?,
++                    );
++                    let count = b.ins().iconst(types::I64, iteration.count() as i64);
++                    let slot = plan.values().len()
++                        + match block.action() {
++                            NativeIterationAction::Initialize { iteration } => *iteration as usize,
++                            _ => unreachable!(),
++                        };
++                    b.ins().store(MemFlags::new(), count, locals, offset(slot)?);
++                }
++                NativeIterationAction::Latch { iteration } => {
++                    let id = *iteration as usize;
++                    let iteration = &plan.iterations()[id];
++                    let counter = b.ins().load(
++                        types::I64,
++                        MemFlags::new(),
++                        locals,
++                        offset(plan.values().len() + id)?,
++                    );
++                    let nonzero = b.ins().icmp_imm(IntCC::NotEqual, counter, 0);
++                    guard(&mut b, nonzero, error, STATUS_ABI);
++                    let next = load(&mut b, locals, iteration.next())?;
++                    b.ins().store(
++                        MemFlags::new(),
++                        next,
++                        locals,
++                        offset(iteration.carrier().get() as usize)?,
++                    );
++                    let remaining = b.ins().iadd_imm(counter, -1);
++                    b.ins().store(
++                        MemFlags::new(),
++                        remaining,
++                        locals,
++                        offset(plan.values().len() + id)?,
++                    );
++                }
++            }
++            match block.terminator() {
++                NativeIterationTerminator::Scalar(terminator) => emit_scalar_terminator(
++                    &mut b,
++                    frame,
++                    locals,
++                    outputs,
++                    terminator,
++                    &blocks,
++                    plan.outputs(),
++                )?,
++                NativeIterationTerminator::Header {
++                    iteration,
++                    body,
++                    exit,
++                } => {
++                    let remaining = b.ins().load(
++                        types::I64,
++                        MemFlags::new(),
++                        locals,
++                        offset(plan.values().len() + iteration as usize)?,
++                    );
++                    let nonzero = b.ins().icmp_imm(IntCC::NotEqual, remaining, 0);
++                    b.ins().brif(
++                        nonzero,
++                        blocks[body as usize].expect("reachable body"),
++                        &[],
++                        blocks[exit as usize].expect("reachable exit"),
++                        &[],
++                    );
++                }
++            }
++            let emitted = (b.func.dfg.num_insts() - before) as u64;
++            let bound = match block.action() {
++                NativeIterationAction::Scalar(NativeMatchAction::Primitive { op, .. }) => {
++                    super::abi::primitive_work(*op)
++                        .checked_add(128)
++                        .ok_or_else(|| backend("iteration work overflow"))?
++                }
++                _ => {
++                    if block.terminator()
++                        == NativeIterationTerminator::Scalar(NativeMatchTerminator::Complete)
++                    {
++                        (plan.outputs().len() as u64)
++                            .checked_mul(8)
++                            .and_then(|v| {
++                                v.checked_add((plan.iterations().len() as u64).checked_mul(8)?)
++                            })
++                            .and_then(|v| v.checked_add(256))
++                            .ok_or_else(|| backend("iteration completion overflow"))?
++                    } else {
++                        256
++                    }
++                }
++            };
++            if emitted.checked_add(128).is_none_or(|total| total > bound) {
++                return Err(NativeCompileError::InvalidPlan {
++                    node: Some(block.origin().node()),
++                    reason: "Iteration visit exceeds conservative work template",
++                });
++            }
++        }
++        b.switch_to_block(error);
++        let status = b.block_params(error)[0];
++        b.ins().return_(&[status]);
++        b.seal_all_blocks();
++        b.finalize();
++    }
++    module
++        .define_function(function, &mut context)
++        .map_err(backend)?;
++    let compiled = context
++        .compiled_code()
++        .ok_or(NativeCompileError::StackMetadata {
++            reason: "Iteration compiled code missing",
++        })?;
++    let stack = compiled_stack_bytes(&compiled.buffer)?;
++    let code = compiled.code_info().total_size as u64;
++    limit("Iteration stack", stack, limits.max_stack_bytes)?;
++    limit("Iteration code", code, limits.max_code_bytes)?;
++    Ok((
++        function,
++        NativeIterationDescriptor::from_plan(plan, stack, code).map_err(backend)?,
++    ))
++}
+diff --git a/hosts/gpu/src/native_artifact/iteration_identity.rs b/hosts/gpu/src/native_artifact/iteration_identity.rs
+new file mode 100644
+index 000000000..359a4ec99
+--- /dev/null
++++ b/hosts/gpu/src/native_artifact/iteration_identity.rs
+@@ -0,0 +1,369 @@
++//! Explicit versioned executable CFG identity; no Debug/serde encoding.
++use mech_engine::native_artifact::{
++    NativeIterationAction, NativeIterationArtifactPlan, NativeIterationTerminator,
++    NativeIterationValueScope, NativeMatchAction, NativeMatchTerminator, NativeScalarKind,
++    NativeScalarValue,
++};
++use sha2::{Digest, Sha256};
++fn word(hash: &mut Sha256, value: u64) {
++    hash.update(value.to_le_bytes());
++}
++fn bytes(hash: &mut Sha256, value: &[u8]) {
++    word(hash, value.len() as u64);
++    hash.update(value);
++}
++pub const NATIVE_ITERATION_LINK_IDENTITY_BYTES: usize = 176;
++pub const NATIVE_ITERATION_TYPED_IR_VERSION: u64 = 1;
++pub const NATIVE_ITERATION_WORK_POLICY_VERSION: u64 = 1;
++const MAGIC: &[u8; 16] = b"MECHNATIVEITER\0\0";
++
++/// Read-only same-Object metadata; only the checked emitter constructs it.
++#[derive(Clone, Debug)]
++pub struct NativeIterationObjectIdentity {
++    bytes: [u8; NATIVE_ITERATION_LINK_IDENTITY_BYTES],
++    symbol: String,
++}
++impl NativeIterationObjectIdentity {
++    #[cfg(feature = "canonical-native")]
++    pub(super) fn from_descriptor(
++        descriptor: &super::iteration_abi::NativeIterationDescriptor,
++    ) -> Result<Self, &'static str> {
++        let mut bytes = [0; NATIVE_ITERATION_LINK_IDENTITY_BYTES];
++        bytes[..16].copy_from_slice(MAGIC);
++        for (at, value) in [
++            (16, NATIVE_ITERATION_TYPED_IR_VERSION),
++            (24, super::iteration_abi::VERSION),
++            (32, NATIVE_ITERATION_WORK_POLICY_VERSION),
++            (112, descriptor.stack_bytes()),
++            (120, descriptor.code_bytes()),
++            (128, descriptor.inputs().len() as u64),
++            (136, descriptor.value_count() as u64),
++            (144, descriptor.visits().len() as u64),
++            (152, descriptor.outputs().len() as u64),
++            (160, descriptor.entry() as u64),
++            (168, descriptor.iterations().len() as u64),
++        ] {
++            bytes[at..at + 8].copy_from_slice(&value.to_le_bytes());
++        }
++        bytes[40..72].copy_from_slice(descriptor.revision().as_bytes());
++        bytes[72..104].copy_from_slice(descriptor.typed_ir_sha256());
++        bytes[104..112].copy_from_slice(
++            &super::identity::host_target_tag()
++                .ok_or("unsupported linked Iteration host target")?,
++        );
++        Ok(Self {
++            bytes,
++            symbol: format!(
++                "mech_canonical_scalar_iteration_identity_v1_{}",
++                super::identity::hex(descriptor.typed_ir_sha256())
++            ),
++        })
++    }
++    pub fn bytes(&self) -> &[u8; NATIVE_ITERATION_LINK_IDENTITY_BYTES] {
++        &self.bytes
++    }
++    pub fn symbol(&self) -> &str {
++        &self.symbol
++    }
++}
++fn get(bytes: &[u8; NATIVE_ITERATION_LINK_IDENTITY_BYTES], offset: usize) -> u64 {
++    u64::from_le_bytes(
++        bytes[offset..offset + 8]
++            .try_into()
++            .expect("fixed identity field"),
++    )
++}
++
++/// Metadata binding only. Matching record bytes do not authenticate a foreign
++/// entry; the unsafe build-owned constructor supplies that independent duty.
++pub(super) fn descriptor_from_identity(
++    plan: &NativeIterationArtifactPlan,
++    bytes: &[u8; NATIVE_ITERATION_LINK_IDENTITY_BYTES],
++) -> Result<super::iteration_abi::NativeIterationDescriptor, &'static str> {
++    if &bytes[..16] != MAGIC
++        || get(bytes, 16) != NATIVE_ITERATION_TYPED_IR_VERSION
++        || get(bytes, 24) != super::iteration_abi::VERSION
++        || get(bytes, 32) != NATIVE_ITERATION_WORK_POLICY_VERSION
++    {
++        return Err("unsupported linked Iteration identity/ABI/work-policy version");
++    }
++    let target =
++        super::identity::host_target_tag().ok_or("unsupported linked Iteration host target")?;
++    if bytes[104..112] != target {
++        return Err("linked Iteration object target differs from this executable");
++    }
++    if bytes[40..72] != plan.program_revision().as_bytes()[..]
++        || get(bytes, 128) != plan.inputs().len() as u64
++        || get(bytes, 136) != plan.values().len() as u64
++        || get(bytes, 144) != plan.blocks().len() as u64
++        || get(bytes, 152) != plan.outputs().len() as u64
++        || get(bytes, 160) != plan.entry() as u64
++        || get(bytes, 168) != plan.iterations().len() as u64
++    {
++        return Err("linked Iteration object canonical revision/counts/entry differ from plan");
++    }
++    let stack = get(bytes, 112);
++    let code = get(bytes, 120);
++    if stack == 0 || code == 0 {
++        return Err("linked Iteration object has no checked frame/code metadata");
++    }
++    let descriptor = super::iteration_abi::NativeIterationDescriptor::from_plan(plan, stack, code)?;
++    if bytes[72..104] != descriptor.typed_ir_sha256()[..] {
++        return Err("linked Iteration object typed CFG differs from selected canonical plan");
++    }
++    Ok(descriptor)
++}
++
++pub(super) fn typed_ir_sha256(plan: &NativeIterationArtifactPlan) -> [u8; 32] {
++    let mut hash = Sha256::new();
++    hash.update(b"mech.canonical-scalar-iteration-cfg\0");
++    word(&mut hash, NATIVE_ITERATION_TYPED_IR_VERSION); // Separate control IR version.
++    word(&mut hash, super::iteration_abi::VERSION);
++    word(&mut hash, NATIVE_ITERATION_WORK_POLICY_VERSION);
++    hash.update(plan.program_revision().as_bytes());
++    word(&mut hash, plan.entry() as u64);
++    word(&mut hash, plan.values().len() as u64);
++    for ty in plan.values() {
++        hash.update([match ty.kind() {
++            NativeScalarKind::Bool => 1,
++            NativeScalarKind::U64 => 2,
++        }]);
++        word(&mut hash, ty.schema().get() as u64);
++        hash.update(ty.schema_key().as_bytes());
++    }
++    word(&mut hash, plan.inputs().len() as u64);
++    for input in plan.inputs() {
++        word(&mut hash, input.declaration().input().get() as u64);
++        word(&mut hash, input.declaration().slot().get() as u64);
++        bytes(&mut hash, input.declaration().name().as_bytes());
++        word(&mut hash, input.value().get() as u64);
++    }
++    word(&mut hash, plan.constants().len() as u64);
++    for constant in plan.constants() {
++        word(&mut hash, constant.value().get() as u64);
++        match constant.scalar() {
++            NativeScalarValue::Bool(value) => {
++                hash.update([1]);
++                word(&mut hash, value as u64);
++            }
++            NativeScalarValue::U64(value) => {
++                hash.update([2]);
++                word(&mut hash, value);
++            }
++        }
++    }
++    word(&mut hash, plan.blocks().len() as u64);
++    for block in plan.blocks() {
++        let at = block.origin();
++        word(&mut hash, at.node().get() as u64);
++        for id in [at.block(), at.local()] {
++            match id {
++                Some(id) => {
++                    hash.update([1]);
++                    word(&mut hash, id as u64);
++                }
++                None => hash.update([0]),
++            }
++        }
++        match block.iteration() {
++            Some(id) => {
++                hash.update([1]);
++                word(&mut hash, id as u64);
++            }
++            None => hash.update([0]),
++        }
++        match block.action() {
++            NativeIterationAction::Scalar(action) => {
++                hash.update([0]);
++                match action {
++                    NativeMatchAction::None => hash.update([0]),
++                    NativeMatchAction::Primitive {
++                        op,
++                        operands,
++                        output,
++                        ..
++                    } => {
++                        hash.update([1, super::identity::op_tag(*op)]);
++                        word(&mut hash, output.get() as u64);
++                        word(&mut hash, operands.len() as u64);
++                        for operand in operands {
++                            word(&mut hash, operand.get() as u64);
++                        }
++                    }
++                    NativeMatchAction::Copy { source, output } => {
++                        hash.update([2]);
++                        word(&mut hash, source.get() as u64);
++                        word(&mut hash, output.get() as u64);
++                    }
++                }
++            }
++            NativeIterationAction::Initialize { iteration } => {
++                hash.update([1]);
++                word(&mut hash, *iteration as u64);
++            }
++            NativeIterationAction::Latch { iteration } => {
++                hash.update([2]);
++                word(&mut hash, *iteration as u64);
++            }
++        }
++        match block.terminator() {
++            NativeIterationTerminator::Scalar(terminator) => {
++                hash.update([0]);
++                match terminator {
++                    NativeMatchTerminator::Jump(next) => {
++                        hash.update([1]);
++                        word(&mut hash, next as u64);
++                    }
++                    NativeMatchTerminator::Branch { condition, yes, no } => {
++                        hash.update([2]);
++                        word(&mut hash, condition.get() as u64);
++                        word(&mut hash, yes as u64);
++                        word(&mut hash, no as u64);
++                    }
++                    NativeMatchTerminator::LiteralBranch {
++                        left,
++                        right,
++                        yes,
++                        no,
++                    } => {
++                        hash.update([3]);
++                        for value in [left.get(), right.get(), yes, no] {
++                            word(&mut hash, value as u64);
++                        }
++                    }
++                    NativeMatchTerminator::Complete => hash.update([4]),
++                    NativeMatchTerminator::Reject => hash.update([5]),
++                }
++            }
++            NativeIterationTerminator::Header {
++                iteration,
++                body,
++                exit,
++            } => {
++                hash.update([1]);
++                for id in [iteration, body, exit] {
++                    word(&mut hash, id as u64);
++                }
++            }
++        }
++    }
++    word(&mut hash, plan.value_scopes().len() as u64);
++    for scope in plan.value_scopes() {
++        match scope {
++            NativeIterationValueScope::Immutable { iteration } => {
++                hash.update([0]);
++                match iteration {
++                    Some(id) => {
++                        hash.update([1]);
++                        word(&mut hash, *id as u64);
++                    }
++                    None => hash.update([0]),
++                }
++            }
++            NativeIterationValueScope::Carrier { iteration } => {
++                hash.update([1]);
++                word(&mut hash, *iteration as u64);
++            }
++        }
++    }
++    word(&mut hash, plan.iterations().len() as u64);
++    for iteration in plan.iterations() {
++        word(&mut hash, iteration.origin().node().get() as u64);
++        for id in [
++            iteration.origin().block(),
++            iteration.origin().local(),
++            iteration.parent(),
++        ] {
++            match id {
++                Some(id) => {
++                    hash.update([1]);
++                    word(&mut hash, id as u64);
++                }
++                None => hash.update([0]),
++            }
++        }
++        word(&mut hash, iteration.count());
++        for value in [
++            iteration.seed(),
++            iteration.carrier(),
++            iteration.next(),
++            iteration.result(),
++        ] {
++            word(&mut hash, value.get() as u64);
++        }
++        for id in [
++            iteration.initialize(),
++            iteration.header(),
++            iteration.body(),
++            iteration.latch(),
++            iteration.exit(),
++        ] {
++            word(&mut hash, id as u64);
++        }
++    }
++
++    word(&mut hash, plan.outputs().len() as u64);
++    for output in plan.outputs() {
++        word(&mut hash, output.output().get() as u64);
++        word(&mut hash, output.slot().get() as u64);
++        bytes(&mut hash, output.name().as_bytes());
++        word(&mut hash, output.value().get() as u64);
++    }
++    hash.finalize().into()
++}
++
++#[cfg(all(test, feature = "canonical-native"))]
++mod tests {
++    use super::*;
++    use mech_engine::CanonicalSourceFrontend;
++    use mech_syntax::document::{
++        AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
++        parse_canonical_document,
++    };
++    fn plan(count: u64) -> NativeIterationArtifactPlan {
++        let source = format!(
++            "identity(x<u64>) => (next<u64>) := next := x.\nseed<u64> |{count}> identity\n"
++        );
++        let parsed = parse_canonical_document(
++            TextSnapshot::new(DocumentId(0x49544944), Revision(1), source.as_str()).unwrap(),
++            ParseConfig::default(),
++        );
++        assert!(parsed.is_strictly_clean());
++        let catalog = mech_stdlib::source_catalog();
++        let artifact = CanonicalSourceFrontend
++            .compile_document_with_catalog(
++                &DocumentSyntax::cast(parsed.syntax()).unwrap(),
++                catalog.clone(),
++            )
++            .unwrap()
++            .compile_artifact()
++            .unwrap();
++        mech_engine::native_artifact::lower_scalar_iteration_artifact(&artifact, &catalog).unwrap()
++    }
++    #[test]
++    fn iteration_identity_binds_count_scope_graph_target_and_all_counts() {
++        let other = plan(26);
++        let plan = plan(25);
++        assert_ne!(typed_ir_sha256(&plan), typed_ir_sha256(&other));
++        let descriptor =
++            super::super::iteration_abi::NativeIterationDescriptor::from_plan(&plan, 32, 1024)
++                .unwrap();
++        let identity = NativeIterationObjectIdentity::from_descriptor(&descriptor).unwrap();
++        let restored = descriptor_from_identity(&plan, identity.bytes()).unwrap();
++        assert_eq!(restored.typed_ir_sha256(), descriptor.typed_ir_sha256());
++        assert!(descriptor_from_identity(&other, identity.bytes()).is_err());
++        for offset in [0, 16, 24, 32, 40, 72, 104, 128, 136, 144, 152, 160, 168] {
++            let mut wrong = *identity.bytes();
++            wrong[offset] ^= 1;
++            assert!(
++                descriptor_from_identity(&plan, &wrong).is_err(),
++                "field {offset}"
++            );
++        }
++        for offset in [112, 120] {
++            let mut wrong = *identity.bytes();
++            wrong[offset..offset + 8].fill(0);
++            assert!(descriptor_from_identity(&plan, &wrong).is_err());
++        }
++    }
++}
+diff --git a/hosts/gpu/src/native_artifact/iteration_linked.rs b/hosts/gpu/src/native_artifact/iteration_linked.rs
+new file mode 100644
+index 000000000..8f5f68be7
+--- /dev/null
++++ b/hosts/gpu/src/native_artifact/iteration_linked.rs
+@@ -0,0 +1,60 @@
++//! Build-owned canonical Iteration entry, using the same managed evaluator as JIT.
++use super::iteration_abi::NativeIterationDescriptor;
++use super::iteration_identity::{NATIVE_ITERATION_LINK_IDENTITY_BYTES, descriptor_from_identity};
++use super::{
++    NativeExecutionLimits, NativeIterationExecutionError, NativeIterationExecutionReport,
++    NativeLinkError,
++};
++use core::ffi::c_void;
++use mech_core::ManagedMemoryBudget;
++use mech_engine::native_artifact::{NativeIterationArtifactPlan, NativeScalarValue};
++
++/// A statically linked checked Iteration entry. Its raw pointer is private.
++pub struct LinkedIterationArtifact {
++    entry: unsafe extern "C" fn(*mut c_void) -> u64,
++    descriptor: NativeIterationDescriptor,
++}
++impl LinkedIterationArtifact {
++    /// Binds metadata to a freshly derived canonical private-witness plan.
++    ///
++    /// # Safety
++    /// `entry` must be the process-lifetime control entry emitted by this crate's
++    /// checked shared JIT/Object definition, and `identity` must be its readonly
++    /// exported identity symbol from the SAME exact unchanged Object. The build
++    /// must verify Object, bytecode and generated source pins before linking.
++    /// The emitted entry obeys the private synchronous Iteration ABI/work policy:
++    /// no retained pointers, unwinding, ambient effects, foreign callbacks or
++    /// access outside admitted transport. Fabricating matching record bytes or
++    /// supplying an arbitrary foreign function does not satisfy this contract.
++    pub unsafe fn from_build_owned_entry(
++        plan: &NativeIterationArtifactPlan,
++        identity: &'static [u8; NATIVE_ITERATION_LINK_IDENTITY_BYTES],
++        entry: unsafe extern "C" fn(*mut c_void) -> u64,
++    ) -> Result<Self, NativeLinkError> {
++        let descriptor = descriptor_from_identity(plan, identity).map_err(NativeLinkError::new)?;
++        Ok(Self { entry, descriptor })
++    }
++    pub fn descriptor(&self) -> &NativeIterationDescriptor {
++        &self.descriptor
++    }
++    pub fn evaluate_into(
++        &self,
++        inputs: &[NativeScalarValue],
++        outputs: &mut [NativeScalarValue],
++        limits: NativeExecutionLimits,
++        budget: Option<&ManagedMemoryBudget>,
++    ) -> Result<NativeIterationExecutionReport, NativeIterationExecutionError> {
++        super::iteration_runtime::execute(
++            &self.descriptor,
++            |frame| {
++                // SAFETY: constructor proves the same exact checked entry;
++                // execute owns frame/transport for this synchronous invocation.
++                unsafe { (self.entry)(frame.cast::<c_void>()) }
++            },
++            inputs,
++            outputs,
++            limits,
++            budget,
++        )
++    }
++}
+diff --git a/hosts/gpu/src/native_artifact/iteration_runtime.rs b/hosts/gpu/src/native_artifact/iteration_runtime.rs
+new file mode 100644
+index 000000000..e22254505
+--- /dev/null
++++ b/hosts/gpu/src/native_artifact/iteration_runtime.rs
+@@ -0,0 +1,521 @@
++//! One admitted managed invocation. Callback checks visits and loop progress;
++//! every scalar condition, arithmetic operation and carrier transition executes
++//! in generated machine code. There is no resident/program evaluator here.
++use super::abi::{
++    NO_NODE, NativeEntryFrame as Frame, STATUS_ABI, STATUS_ADMISSION, STATUS_ARITHMETIC, STATUS_OK,
++};
++use super::iteration_abi::{NativeIterationDescriptor, Progress, STATUS_REJECT, VERSION};
++use super::memory::{NativeWordStorage, transport_bytes};
++use super::{NativeExecutionError, NativeExecutionLimits};
++use mech_core::ManagedMemoryBudget;
++use mech_engine::native_artifact::{NativeMatchOrigin, NativeScalarKind, NativeScalarValue};
++use std::ffi::c_void;
++#[derive(Clone, Debug, Eq, PartialEq)]
++pub enum NativeIterationExecutionError {
++    Base(NativeExecutionError),
++    Work {
++        origin: Option<NativeMatchOrigin>,
++        required: u64,
++        limit: u64,
++    },
++    Visit {
++        previous: Option<u32>,
++        actual: u64,
++    },
++    Arithmetic {
++        origin: NativeMatchOrigin,
++    },
++    Unmatched {
++        origin: NativeMatchOrigin,
++    },
++}
++impl From<NativeExecutionError> for NativeIterationExecutionError {
++    fn from(value: NativeExecutionError) -> Self {
++        Self::Base(value)
++    }
++}
++impl std::fmt::Display for NativeIterationExecutionError {
++    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
++        write!(f, "canonical native iteration execution: {self:?}")
++    }
++}
++impl std::error::Error for NativeIterationExecutionError {}
++#[derive(Clone, Copy, Debug, Eq, PartialEq)]
++pub struct NativeIterationExecutionReport {
++    pub work: u64,
++    pub transport_bytes: u64,
++    pub visits: u64,
++}
++fn invalid(reason: &'static str) -> NativeIterationExecutionError {
++    NativeExecutionError::Descriptor { reason }.into()
++}
++fn add(a: u64, b: u64) -> Result<u64, NativeIterationExecutionError> {
++    a.checked_add(b)
++        .ok_or_else(|| invalid("iteration count/work overflow"))
++}
++fn mul(a: u64, b: u64) -> Result<u64, NativeIterationExecutionError> {
++    a.checked_mul(b)
++        .ok_or_else(|| invalid("iteration count/work overflow"))
++}
++fn charge(
++    current: u64,
++    work: u64,
++    limit: u64,
++    origin: Option<NativeMatchOrigin>,
++) -> Result<u64, NativeIterationExecutionError> {
++    let required = current
++        .checked_add(work)
++        .ok_or(NativeIterationExecutionError::Work {
++            origin,
++            required: u64::MAX,
++            limit,
++        })?;
++    if required > limit {
++        return Err(NativeIterationExecutionError::Work {
++            origin,
++            required,
++            limit,
++        });
++    }
++    Ok(required)
++}
++struct Context<'a> {
++    descriptor: &'a NativeIterationDescriptor,
++    // Separate managed backing from generated code's locals/counters; no raw
++    // machine pointer aliases this exclusive callback progress slice.
++    progress: &'a mut [u64],
++    current: Option<u32>,
++    previous: Option<u32>,
++    completed: bool,
++    work: u64,
++    limit: u64,
++    visits: u64,
++    error: Option<NativeIterationExecutionError>,
++}
++impl Context<'_> {
++    fn visit(&mut self, raw: u64) -> Result<(), NativeIterationExecutionError> {
++        let id = u32::try_from(raw).ok();
++        let allowed = !self.completed
++            && match self.previous {
++                None => id == Some(self.descriptor.entry),
++                Some(previous) => {
++                    let prior = &self.descriptor.visits[previous as usize];
++                    if let Progress::Header(iteration) = prior.progress {
++                        let remaining = self.progress[iteration as usize * 2];
++                        id == prior.successors[usize::from(remaining == 0)]
++                    } else {
++                        id.is_some() && prior.successors.contains(&id)
++                    }
++                }
++            };
++        if !allowed {
++            return Err(NativeIterationExecutionError::Visit {
++                previous: self.previous,
++                actual: raw,
++            });
++        }
++        let id = id.ok_or_else(|| invalid("iteration visit id overflow"))?;
++        let site = *self
++            .descriptor
++            .visits
++            .get(id as usize)
++            .ok_or_else(|| invalid("iteration visit outside descriptor"))?;
++        // Charge before reading/changing per-loop metadata or inspecting any
++        // completion progress words. The generated block is not entered yet.
++        self.work = charge(self.work, site.work, self.limit, Some(site.origin))?;
++        match site.progress {
++            Progress::Initialize(iteration) => {
++                let data = &self.descriptor.iterations[iteration as usize];
++                if self.current != data.parent() || self.progress[iteration as usize * 2 + 1] != 0 {
++                    return Err(invalid(
++                        "iteration initialized outside exact parent invocation",
++                    ));
++                }
++                self.progress[iteration as usize * 2] = data.count();
++                self.progress[iteration as usize * 2 + 1] = 1;
++                self.current = Some(iteration);
++            }
++            Progress::Exit(iteration) => {
++                if self.current != Some(iteration)
++                    || self.progress[iteration as usize * 2] != 0
++                    || self.progress[iteration as usize * 2 + 1] != 1
++                {
++                    return Err(invalid("iteration exited before exact count"));
++                }
++                self.progress[iteration as usize * 2 + 1] = 0;
++                self.current = self.descriptor.iterations[iteration as usize].parent();
++                if self.current != site.iteration {
++                    return Err(invalid("iteration exit parent mismatch"));
++                }
++            }
++            Progress::Latch(iteration) => {
++                if self.current != Some(iteration)
++                    || self.progress[iteration as usize * 2 + 1] != 1
++                    || self.progress[iteration as usize * 2] == 0
++                {
++                    return Err(invalid("iteration latch outside active body"));
++                }
++                self.progress[iteration as usize * 2] -= 1;
++            }
++            Progress::Normal | Progress::Header(_) => {
++                if self.current != site.iteration {
++                    return Err(invalid("iteration visit outside lexical invocation"));
++                }
++            }
++        }
++        if site.complete
++            && (self.current.is_some() || self.progress.chunks_exact(2).any(|v| v[1] != 0))
++        {
++            return Err(invalid("completion with active iteration"));
++        }
++        self.previous = Some(id);
++        self.completed = site.complete;
++        self.visits = add(self.visits, 1)?;
++        Ok(())
++    }
++}
++unsafe extern "C" fn admit(context: *mut c_void, id: u64) -> u64 {
++    if context.is_null() {
++        return STATUS_ABI;
++    }
++    // SAFETY: execute owns context and disjoint progress backing synchronously.
++    let context = unsafe { &mut *context.cast::<Context<'_>>() };
++    if context.error.is_some() {
++        return STATUS_ADMISSION;
++    }
++    match context.visit(id) {
++        Ok(()) => STATUS_OK,
++        Err(error) => {
++            context.error = Some(error);
++            STATUS_ADMISSION
++        }
++    }
++}
++pub(super) fn execute<F: FnOnce(*mut Frame) -> u64>(
++    descriptor: &NativeIterationDescriptor,
++    entry: F,
++    inputs: &[NativeScalarValue],
++    outputs: &mut [NativeScalarValue],
++    limits: NativeExecutionLimits,
++    budget: Option<&ManagedMemoryBudget>,
++) -> Result<NativeIterationExecutionReport, NativeIterationExecutionError> {
++    if inputs.len() != descriptor.inputs.len() {
++        return Err(NativeExecutionError::InvalidInputs {
++            expected: descriptor.inputs.len(),
++            actual: inputs.len(),
++        }
++        .into());
++    }
++    if outputs.len() != descriptor.outputs.len() {
++        return Err(NativeExecutionError::InvalidOutputs {
++            expected: descriptor.outputs.len(),
++            actual: outputs.len(),
++        }
++        .into());
++    }
++    if descriptor.stack_bytes > limits.max_native_stack_bytes {
++        return Err(NativeExecutionError::StackLimit {
++            required: descriptor.stack_bytes,
++            limit: limits.max_native_stack_bytes,
++        }
++        .into());
++    }
++    let locals = descriptor
++        .local_count()
++        .ok_or_else(|| invalid("iteration local count overflow"))?;
++    let progress = descriptor
++        .iterations
++        .len()
++        .checked_mul(2)
++        .ok_or_else(|| invalid("iteration progress count overflow"))?;
++    let words = inputs
++        .len()
++        .checked_add(locals)
++        .and_then(|v| v.checked_add(progress))
++        .and_then(|v| v.checked_add(outputs.len()))
++        .ok_or_else(|| invalid("iteration transport overflow"))?;
++    let bytes = transport_bytes(words)?;
++    if bytes > limits.max_transport_bytes {
++        return Err(NativeExecutionError::TransportLimit {
++            required: bytes,
++            limit: limits.max_transport_bytes,
++        }
++        .into());
++    }
++    let setup = add(
++        256,
++        add(
++            mul(words as u64, 4)?,
++            add(
++                mul(inputs.len() as u64, 16)?,
++                mul(descriptor.constant_count as u64, 8)?,
++            )?,
++        )?,
++    )?;
++    let setup = charge(0, setup, limits.max_work, None)?;
++    // Actual shared memory denial precedes input type scans as well as copies.
++    let mut storage = NativeWordStorage::new(words, limits.max_transport_bytes, budget)?;
++    for (index, (value, ty)) in inputs.iter().zip(&descriptor.inputs).enumerate() {
++        if !matches!(
++            (value, ty.kind()),
++            (NativeScalarValue::Bool(_), NativeScalarKind::Bool)
++                | (NativeScalarValue::U64(_), NativeScalarKind::U64)
++        ) {
++            return Err(NativeExecutionError::InputType {
++                input: index,
++                expected: ty.kind(),
++            }
++            .into());
++        }
++    }
++    let (input_words, rest) = storage.values_mut().split_at_mut(inputs.len());
++    let (values, rest) = rest.split_at_mut(locals);
++    let (progress_words, output_words) = rest.split_at_mut(progress);
++    for (word, value) in input_words.iter_mut().zip(inputs) {
++        *word = match value {
++            NativeScalarValue::Bool(v) => u64::from(*v),
++            NativeScalarValue::U64(v) => *v,
++        };
++    }
++    let input_pointer = input_words.as_ptr();
++    let local_pointer = values.as_mut_ptr();
++    let output_pointer = output_words.as_mut_ptr();
++    let mut context = Context {
++        descriptor,
++        progress: progress_words,
++        current: None,
++        previous: None,
++        completed: false,
++        work: setup,
++        limit: limits.max_work,
++        visits: 0,
++        error: None,
++    };
++    let context_pointer = (&mut context as *mut Context<'_>).cast::<c_void>();
++    let mut frame = Frame {
++        version: VERSION,
++        input_count: inputs.len() as u64,
++        local_count: locals as u64,
++        output_count: outputs.len() as u64,
++        inputs: input_pointer,
++        locals: local_pointer,
++        outputs: output_pointer,
++        context: context_pointer,
++        admit_next: admit,
++        error_node: NO_NODE,
++    };
++    let status = entry(&mut frame);
++    if let Some(error) = context.error.take() {
++        return Err(error);
++    }
++    if frame.version != VERSION
++        || frame.input_count != inputs.len() as u64
++        || frame.local_count != locals as u64
++        || frame.output_count != outputs.len() as u64
++        || frame.inputs != input_pointer
++        || frame.locals != local_pointer
++        || frame.outputs != output_pointer
++        || frame.context != context_pointer
++        || frame.admit_next as usize != admit as *const () as usize
++    {
++        return Err(invalid("iteration entry changed immutable frame"));
++    }
++    match status {
++        STATUS_OK => {
++            if !context.completed || frame.error_node != NO_NODE {
++                return Err(invalid("iteration omitted atomic completion"));
++            }
++        }
++        STATUS_ARITHMETIC | STATUS_REJECT => {
++            let id = context
++                .previous
++                .ok_or_else(|| invalid("iteration failure before admitted visit"))?;
++            let site = &descriptor.visits[id as usize];
++            if frame.error_node != id as u64 {
++                return Err(invalid("iteration failure origin mismatch"));
++            }
++            if status == STATUS_ARITHMETIC {
++                if !site.arithmetic {
++                    return Err(invalid("iteration arithmetic outside primitive"));
++                }
++                return Err(NativeIterationExecutionError::Arithmetic {
++                    origin: site.origin,
++                });
++            }
++            if !site.reject {
++                return Err(invalid("iteration unmatched status outside rejection"));
++            }
++            return Err(NativeIterationExecutionError::Unmatched {
++                origin: site.origin,
++            });
++        }
++        _ => return Err(NativeExecutionError::InvalidStatus { status }.into()),
++    }
++    for (index, (&word, ty)) in output_words.iter().zip(&descriptor.outputs).enumerate() {
++        if ty.kind() == NativeScalarKind::Bool && word > 1 {
++            return Err(NativeExecutionError::InvalidOutputBool {
++                output: index,
++                value: word,
++            }
++            .into());
++        }
++    }
++    // All fallible checks precede this allocation-free final publication pass.
++    for ((target, &word), ty) in outputs
++        .iter_mut()
++        .zip(output_words.iter())
++        .zip(&descriptor.outputs)
++    {
++        *target = match ty.kind() {
++            NativeScalarKind::Bool => NativeScalarValue::Bool(word != 0),
++            NativeScalarKind::U64 => NativeScalarValue::U64(word),
++        };
++    }
++    Ok(NativeIterationExecutionReport {
++        work: context.work,
++        transport_bytes: bytes,
++        visits: context.visits,
++    })
++}
++
++#[cfg(all(test, feature = "canonical-native"))]
++mod tests {
++    use super::*;
++    use mech_engine::CanonicalSourceFrontend;
++    use mech_syntax::document::{
++        AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
++        parse_canonical_document,
++    };
++    fn plan(count: u64) -> mech_engine::native_artifact::NativeIterationArtifactPlan {
++        let source = format!(
++            "identity(x<u64>) => (next<u64>) := next := x.\nseed<u64> |{count}> identity\n"
++        );
++        let parsed = parse_canonical_document(
++            TextSnapshot::new(DocumentId(0x49545254), Revision(1), source.as_str()).unwrap(),
++            ParseConfig::default(),
++        );
++        assert!(parsed.is_strictly_clean(), "{:?}", parsed.diagnostics);
++        let catalog = mech_stdlib::source_catalog();
++        let artifact = CanonicalSourceFrontend
++            .compile_document_with_catalog(
++                &DocumentSyntax::cast(parsed.syntax()).unwrap(),
++                catalog.clone(),
++            )
++            .unwrap()
++            .compile_artifact()
++            .unwrap();
++        mech_engine::native_artifact::lower_scalar_iteration_artifact(&artifact, &catalog).unwrap()
++    }
++    #[test]
++    fn callback_progress_rejects_early_exit_and_body_after_exact_count() {
++        for count in [0, 2] {
++            let plan = plan(count);
++            let descriptor = NativeIterationDescriptor::from_plan(&plan, 32, 1).unwrap();
++            let iteration = descriptor.iterations[0].clone();
++            let mut progress = [0; 2];
++            let mut context = Context {
++                descriptor: &descriptor,
++                progress: &mut progress,
++                current: None,
++                previous: None,
++                completed: false,
++                work: 0,
++                limit: 100_000,
++                visits: 0,
++                error: None,
++            };
++            context.visit(descriptor.entry as u64).unwrap();
++            context.visit(iteration.initialize() as u64).unwrap();
++            context.visit(iteration.header() as u64).unwrap();
++            let denied = if count == 0 {
++                iteration.body()
++            } else {
++                iteration.exit()
++            };
++            let before = (context.work, context.visits, context.progress[0]);
++            assert!(matches!(
++                context.visit(denied as u64),
++                Err(NativeIterationExecutionError::Visit { .. })
++            ));
++            assert_eq!((context.work, context.visits, context.progress[0]), before);
++            // Identity's body has one no-op block. No hidden execution or
++            // inferred effect is used to move this private progress counter.
++            for _ in 0..count {
++                context.visit(iteration.body() as u64).unwrap();
++                context.visit(iteration.latch() as u64).unwrap();
++                context.visit(iteration.header() as u64).unwrap();
++            }
++            context.visit(iteration.exit() as u64).unwrap();
++            assert_eq!(context.current, None);
++            assert_eq!(&*context.progress, &[0, 0]);
++            assert!(context.visit(iteration.header() as u64).is_err());
++        }
++    }
++    #[test]
++    fn setup_transport_and_shared_budget_deny_before_input_scan_or_entry() {
++        let plan = plan(2);
++        let descriptor = NativeIterationDescriptor::from_plan(&plan, 32, 1).unwrap();
++        for (limits, shared, expected) in [
++            (
++                NativeExecutionLimits {
++                    max_work: 0,
++                    ..NativeExecutionLimits::default()
++                },
++                None,
++                "work",
++            ),
++            (
++                NativeExecutionLimits {
++                    max_transport_bytes: 0,
++                    ..NativeExecutionLimits::default()
++                },
++                None,
++                "transport",
++            ),
++            (
++                NativeExecutionLimits::default(),
++                Some(ManagedMemoryBudget::new(0)),
++                "memory",
++            ),
++        ] {
++            let called = std::cell::Cell::new(false);
++            let mut output = [NativeScalarValue::U64(99)];
++            // Wrong input type would fail the payload-type pass; denial must
++            // win first without invoking the injected entry.
++            let error = execute(
++                &descriptor,
++                |_| {
++                    called.set(true);
++                    STATUS_ABI
++                },
++                &[NativeScalarValue::Bool(false)],
++                &mut output,
++                limits,
++                shared.as_ref(),
++            )
++            .unwrap_err();
++            assert!(!called.get());
++            assert_eq!(output, [NativeScalarValue::U64(99)]);
++            match expected {
++                "work" => assert!(matches!(
++                    error,
++                    NativeIterationExecutionError::Work { origin: None, .. }
++                )),
++                "transport" => assert!(matches!(
++                    error,
++                    NativeIterationExecutionError::Base(
++                        NativeExecutionError::TransportLimit { .. }
++                    )
++                )),
++                "memory" => assert!(matches!(
++                    error,
++                    NativeIterationExecutionError::Base(NativeExecutionError::Memory { .. })
++                )),
++                _ => unreachable!(),
++            }
++            if let Some(shared) = shared {
++                assert_eq!(shared.used_bytes(), 0);
++            }
++        }
++    }
++}
+diff --git a/hosts/gpu/src/native_artifact/mod.rs b/hosts/gpu/src/native_artifact/mod.rs
+index 41c72a853..7275876b9 100644
+--- a/hosts/gpu/src/native_artifact/mod.rs
++++ b/hosts/gpu/src/native_artifact/mod.rs
+@@ -54,3 +54,26 @@ pub use control_linked::LinkedMatchArtifact;
+ 
+ #[cfg(feature = "canonical-native")]
+ pub use control_application::generate_linked_match_application;
++
++mod iteration_abi;
++#[cfg(feature = "canonical-native")]
++mod iteration_application;
++#[cfg(feature = "canonical-native")]
++mod iteration_compiler;
++mod iteration_identity;
++mod iteration_linked;
++mod iteration_runtime;
++pub use iteration_abi::{NativeIterationDescriptor, NativeIterationVisit};
++#[cfg(feature = "canonical-native")]
++pub use iteration_application::generate_linked_iteration_application;
++#[cfg(feature = "canonical-native")]
++pub use iteration_compiler::{
++    JitIterationArtifact, NativeIterationObject, emit_iteration_object,
++    emit_iteration_object_with_limits,
++};
++pub use iteration_identity::{
++    NATIVE_ITERATION_LINK_IDENTITY_BYTES, NATIVE_ITERATION_TYPED_IR_VERSION,
++    NATIVE_ITERATION_WORK_POLICY_VERSION, NativeIterationObjectIdentity,
++};
++pub use iteration_linked::LinkedIterationArtifact;
++pub use iteration_runtime::{NativeIterationExecutionError, NativeIterationExecutionReport};
+diff --git a/hosts/gpu/src/native_artifact/templates/linked_iteration_main.rs.in b/hosts/gpu/src/native_artifact/templates/linked_iteration_main.rs.in
+new file mode 100644
+index 000000000..9ab2bc1da
+--- /dev/null
++++ b/hosts/gpu/src/native_artifact/templates/linked_iteration_main.rs.in
+@@ -0,0 +1,84 @@
++//! Canonical artifact linked-entry shell. Kernel evaluation is not interpreted.
++use mech_engine::native_artifact::{
++    NativeScalarKind, NativeScalarValue, lower_scalar_iteration_artifact,
++};
++use mech_gpu::native_artifact::{
++    LinkedIterationArtifact, NATIVE_ITERATION_LINK_IDENTITY_BYTES, NativeExecutionLimits,
++};
++use sha2::{Digest, Sha256};
++use std::{
++    ffi::{OsString, c_void},
++    io::Write,
++};
++
++unsafe extern "C" {
++    #[link_name = "mech_canonical_scalar_iteration_entry_v1"]
++    fn linked_entry(frame: *mut c_void) -> u64;
++    #[link_name = "@IDENTITY_SYMBOL@"]
++    static LINKED_IDENTITY: [u8; NATIVE_ITERATION_LINK_IDENTITY_BYTES];
++}
++fn hex(bytes: &[u8]) -> String {
++    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
++}
++@ARGUMENT_HELPERS@
++fn run() -> Result<(), String> {
++    let bytecode = include_bytes!("../program.mecb");
++    if hex(&Sha256::digest(bytecode)) != "@BYTECODE_SHA256@" {
++        return Err("embedded canonical bytecode identity mismatch".into());
++    }
++    let artifact = mech_engine::decode_program_artifact_bytecode_v1(bytecode)
++        .map_err(|error| format!("canonical artifact decode: {error:?}"))?;
++    // Metadata selection only: no activation, value folding, resident kernel
++    // execution, source compilation, JIT, or machine-code generation here.
++    let catalog = std::thread::Builder::new()
++        .name("canonical-native-catalog".into())
++        .stack_size(64 * 1024 * 1024)
++        .spawn(|| -> Result<_, String> {
++            let mut builder = mech_core::FunctionCatalogBuilder::new();
++            mech_stdlib::install_native_plan(&mut builder).map_err(|error| format!("{error:?}"))?;
++            mech_engine::install_intrinsic_resident(&mut builder)
++                .map_err(|error| format!("{error:?}"))?;
++            builder.build().map_err(|error| format!("{error:?}"))
++        })
++        .map_err(|error| error.to_string())?
++        .join()
++        .map_err(|_| "canonical metadata catalog construction panicked")??;
++    let plan =
++        lower_scalar_iteration_artifact(&artifact, &catalog).map_err(|error| error.to_string())?;
++    // SAFETY: build.rs verifies all generated inputs and exact Object pin.
++    // Both symbols are linked from that one unchanged checked emitter object;
++    // the digest-qualified identity symbol makes a different-IR substitution
++    // fail at link time. Both symbols live for the process. The constructor
++    // checks its revision/IR/ABI/target/frame/counts against the actual plan.
++    let linked =
++        unsafe { LinkedIterationArtifact::from_build_owned_entry(&plan, &LINKED_IDENTITY, linked_entry) }
++            .map_err(|error| error.to_string())?;
++    let (limits, budget, arguments) = options(std::env::args_os().skip(1).collect())?;
++    if arguments.len() != plan.inputs().len() {
++        return Err(format!("expected {} typed inputs", plan.inputs().len()));
++    }
++    let mut inputs = Vec::with_capacity(arguments.len());
++    for (argument, input) in arguments.iter().zip(linked.descriptor().inputs()) {
++        inputs.push(scalar_argument(argument, input.kind())?);
++    }
++    let mut outputs = vec![NativeScalarValue::U64(0); plan.outputs().len()];
++    let budget = budget.map(mech_core::ManagedMemoryBudget::new);
++    linked
++        .evaluate_into(&inputs, &mut outputs, limits, budget.as_ref())
++        .map_err(|error| error.to_string())?;
++    // Formatting belongs to this explicit shell, after atomic typed compute.
++    let mut result = String::new();
++    for value in outputs {
++        append_scalar(&mut result, value);
++    }
++    let stdout = std::io::stdout();
++    let mut stdout = stdout.lock();
++    stdout.write_all(result.as_bytes()).map_err(|error| error.to_string())?;
++    stdout.flush().map_err(|error| error.to_string())
++}
++fn main() {
++    if let Err(error) = run() {
++        eprintln!("{error}");
++        std::process::exit(1);
++    }
++}
+diff --git a/hosts/gpu/tests/canonical_artifact_iteration.rs b/hosts/gpu/tests/canonical_artifact_iteration.rs
+new file mode 100644
+index 000000000..a363e4403
+--- /dev/null
++++ b/hosts/gpu/tests/canonical_artifact_iteration.rs
+@@ -0,0 +1,362 @@
++#![cfg(feature = "canonical-native")]
++//! Ordinary canonical counted iteration through real Cranelift loops.
++//! Scalar subproof only; managed matrix/native resources are separate work.
++use mech_core::{
++    ManagedMemoryBudget, ReactiveInstanceId, ValueData, ValueDataDraft,
++    snapshot::{SnapshotValidationContext, ValueDraft},
++};
++use mech_engine::native_artifact::{
++    NativeIterationAction, NativeMatchAction, NativeScalarValue, lower_scalar_iteration_artifact,
++};
++use mech_engine::resident::{ActivationFacts, CapturedValueInput, activate};
++use mech_engine::{CanonicalSourceFrontend, ProgramArtifact, SourceDocumentOutputKind};
++use mech_gpu::native_artifact::{
++    JitIterationArtifact, NativeExecutionError, NativeExecutionLimits,
++    NativeIterationExecutionError, emit_iteration_object,
++};
++use mech_syntax::document::{
++    AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
++    parse_canonical_document,
++};
++fn compile_mode(source: &str, interactive: bool) -> (ProgramArtifact, usize) {
++    let parsed = parse_canonical_document(
++        TextSnapshot::new(DocumentId(0x4d415443), Revision(1), source).unwrap(),
++        ParseConfig::default(),
++    );
++    assert!(
++        parsed.is_strictly_clean(),
++        "{source}: {:?}",
++        parsed.diagnostics
++    );
++    let syntax = DocumentSyntax::cast(parsed.syntax()).unwrap();
++    let product = if interactive {
++        CanonicalSourceFrontend
++            .compile_interactive_document_with_catalog(&syntax, mech_stdlib::source_catalog())
++    } else {
++        CanonicalSourceFrontend
++            .compile_document_with_catalog(&syntax, mech_stdlib::source_catalog())
++    }
++    .unwrap();
++    let output = product
++        .document_outputs()
++        .iter()
++        .rev()
++        .find(|v| v.kind == SourceDocumentOutputKind::Program)
++        .unwrap()
++        .output as usize;
++    (product.compile_artifact().unwrap(), output)
++}
++fn artifacts(source: &str) -> ([ProgramArtifact; 2], usize) {
++    artifacts_mode(source, false)
++}
++
++fn artifacts_mode(source: &str, interactive: bool) -> ([ProgramArtifact; 2], usize) {
++    let (original, output) = compile_mode(source, interactive);
++    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap();
++    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
++    assert_eq!(original.revision(), decoded.revision());
++    ([original, decoded], output)
++}
++fn inputs(
++    artifact: &ProgramArtifact,
++    named: &[(&str, NativeScalarValue)],
++) -> Vec<NativeScalarValue> {
++    artifact
++        .inputs()
++        .iter()
++        .map(|input| {
++            let name = mech_engine::decode_source_input_name(&input.name).unwrap();
++            named
++                .iter()
++                .find(|(key, _)| *key == name)
++                .unwrap_or_else(|| panic!("missing input {name}"))
++                .1
++        })
++        .collect()
++}
++fn reference(
++    artifact: &ProgramArtifact,
++    args: &[NativeScalarValue],
++) -> Result<Vec<NativeScalarValue>, String> {
++    let mut instance = activate(
++        ReactiveInstanceId::new(0x4d415443, 0),
++        artifact,
++        &mech_stdlib::source_catalog(),
++        &ActivationFacts::default(),
++    )
++    .map_err(|e| format!("{e:?}"))?;
++    let values = artifact
++        .inputs()
++        .iter()
++        .zip(args)
++        .map(|(input, value)| {
++            ValueDraft {
++                schema: input.schema,
++                shape_values: Box::new([]),
++                data: match value {
++                    NativeScalarValue::Bool(v) => ValueDataDraft::Bool(*v),
++                    NativeScalarValue::U64(v) => ValueDataDraft::U64(*v),
++                },
++            }
++            .finalize(&SnapshotValidationContext::new(artifact.schemas()))
++            .unwrap()
++        })
++        .collect::<Vec<_>>();
++    let captured = instance
++        .plan
++        .inputs
++        .iter()
++        .map(|input| {
++            let ordinal = artifact
++                .inputs()
++                .iter()
++                .position(|v| v.slot == input.artifact_slot)
++                .unwrap();
++            CapturedValueInput {
++                slot: input.slot,
++                value: &values[ordinal],
++            }
++        })
++        .collect::<Vec<_>>();
++    instance
++        .prepare_turn_values(&captured)
++        .and_then(|prepared| prepared.publish())
++        .map_err(|e| format!("{e:?}"))?;
++    Ok((0..artifact.outputs().len())
++        .map(
++            |index| match instance.copied_output(index).unwrap().data() {
++                ValueData::Bool(v) => NativeScalarValue::Bool(*v),
++                ValueData::U64(v) => NativeScalarValue::U64(*v),
++                v => panic!("unexpected scalar {v:?}"),
++            },
++        )
++        .collect())
++}
++
++fn check(source: &str, named: &[(&str, NativeScalarValue)], expected: NativeScalarValue) {
++    let (artifacts, last) = artifacts(source);
++    for artifact in artifacts {
++        let args = inputs(&artifact, named);
++        let ordinary = reference(&artifact, &args).unwrap();
++        assert_eq!(ordinary[last], expected);
++        let plan =
++            lower_scalar_iteration_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
++        plan.validate_current_visits().unwrap();
++        let jit = JitIterationArtifact::compile(&plan).unwrap();
++        let mut output = vec![NativeScalarValue::U64(77); plan.outputs().len()];
++        let report = jit
++            .evaluate_into(&args, &mut output, NativeExecutionLimits::default(), None)
++            .unwrap();
++        assert_eq!(output, ordinary);
++        assert!(report.visits > 0);
++        let object = emit_iteration_object(&plan).unwrap();
++        assert!(!object.bytes().is_empty());
++        assert_eq!(
++            object.descriptor().typed_ir_sha256(),
++            jit.descriptor().typed_ir_sha256()
++        );
++        assert_eq!(
++            object.descriptor().iterations().len(),
++            plan.iterations().len()
++        );
++        assert_eq!(object.metadata()["executed"], false);
++    }
++}
++#[test]
++fn exact_zero_and_over_twenty_four_counts_execute_real_loops() {
++    use NativeScalarValue::U64;
++    for count in [0, 1, 25, 64] {
++        let source =
++            format!("step(x<u64>) => (next<u64>) := next := x + 1u64.\nseed<u64> |{count}> step\n");
++        check(
++            &source,
++            &[("seed", U64((1 << 53) + 1))],
++            U64((1 << 53) + 1 + count),
++        );
++    }
++    // The checked operation is retained but is not executed at count zero.
++    check(
++        "step(x<u64>) => (next<u64>) := next := 1u64 / x.\nseed<u64> |0> step\n",
++        &[("seed", U64(0))],
++        U64(0),
++    );
++}
++#[test]
++fn nested_carriers_and_invocation_captures_are_current_visit_values() {
++    use NativeScalarValue::U64;
++    let source = "step(x<u64>) => (next<u64>) := next := x + delta.\nouter(x<u64>) => (next<u64>) := next := x |3> step.\ndelta := amount<u64> + 0u64\nseed<u64> |2> outer\n";
++    check(source, &[("seed", U64(4)), ("amount", U64(7))], U64(46));
++    check(source, &[("seed", U64(1)), ("amount", U64(0))], U64(1));
++    let (artifacts, _) = artifacts(source);
++    let plan =
++        lower_scalar_iteration_artifact(&artifacts[0], &mech_stdlib::source_catalog()).unwrap();
++    assert_eq!(plan.iterations().len(), 2);
++    assert_eq!(plan.iterations()[1].parent(), Some(0));
++    assert_ne!(
++        plan.iterations()[0].carrier(),
++        plan.iterations()[1].carrier()
++    );
++}
++#[test]
++fn matches_in_loop_bodies_preserve_lazy_errors_and_all_checked_nodes() {
++    use NativeScalarValue::{Bool, U64};
++    let source = "step(x<u64>) => (next<u64>) := next := (choose<bool>? | true => x + 1u64 | false => 1u64 / divisor<u64>).\nseed<u64> |3> step\n";
++    check(
++        source,
++        &[
++            ("seed", U64(9)),
++            ("choose", Bool(true)),
++            ("divisor", U64(0)),
++        ],
++        U64(12),
++    );
++    let (artifacts, _) = artifacts(source);
++    for artifact in artifacts {
++        let args = inputs(
++            &artifact,
++            &[
++                ("seed", U64(9)),
++                ("choose", Bool(false)),
++                ("divisor", U64(0)),
++            ],
++        );
++        assert!(reference(&artifact, &args).is_err());
++        let plan =
++            lower_scalar_iteration_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
++        let jit = JitIterationArtifact::compile(&plan).unwrap();
++        let mut output = vec![U64(99); plan.outputs().len()];
++        let before = output.clone();
++        let error = jit
++            .evaluate_into(&args, &mut output, NativeExecutionLimits::default(), None)
++            .unwrap_err();
++        assert!(matches!(
++            error,
++            NativeIterationExecutionError::Arithmetic { .. }
++        ));
++        assert_eq!(output, before);
++    }
++    let source = "step(x<u64>) => (next<u64>) := unused := 1u64 / divisor<u64>\nnext := x + 1u64.\nseed<u64> |2> step\n";
++    let (artifacts, _) = artifacts(source);
++    for artifact in artifacts {
++        let args = inputs(&artifact, &[("seed", U64(4)), ("divisor", U64(0))]);
++        assert!(reference(&artifact, &args).is_err());
++        let plan =
++            lower_scalar_iteration_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
++        assert!(plan.blocks().iter().any(|b| matches!(
++            b.action(),
++            NativeIterationAction::Scalar(NativeMatchAction::Primitive {
++                op: mech_engine::native_artifact::NativeScalarOp::U64Div,
++                ..
++            })
++        )));
++        let jit = JitIterationArtifact::compile(&plan).unwrap();
++        let mut output = vec![U64(88); plan.outputs().len()];
++        assert!(matches!(
++            jit.evaluate_into(&args, &mut output, NativeExecutionLimits::default(), None),
++            Err(NativeIterationExecutionError::Arithmetic { .. })
++        ));
++        assert!(output.iter().all(|v| *v == U64(88)));
++    }
++}
++#[test]
++fn max_count_is_finitely_denied_and_storage_is_independent_of_count() {
++    use NativeScalarValue::U64;
++    let source = |n: u64| {
++        format!("step(x<u64>) => (next<u64>) := next := x + 0u64.\nseed<u64> |{n}> step\n")
++    };
++    let (small, _) = artifacts(&source(1));
++    let (large, _) = artifacts(&source(u64::MAX));
++    let small_plan =
++        lower_scalar_iteration_artifact(&small[0], &mech_stdlib::source_catalog()).unwrap();
++    for artifact in large {
++        let args = inputs(&artifact, &[("seed", U64(5))]);
++        let plan =
++            lower_scalar_iteration_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
++        assert_eq!(plan.values().len(), small_plan.values().len());
++        assert_eq!(plan.blocks().len(), small_plan.blocks().len());
++        let jit = JitIterationArtifact::compile(&plan).unwrap();
++        let mut output = vec![U64(77); plan.outputs().len()];
++        assert!(matches!(
++            jit.evaluate_into(
++                &args,
++                &mut output,
++                NativeExecutionLimits {
++                    max_work: 20_000,
++                    ..NativeExecutionLimits::default()
++                },
++                None
++            ),
++            Err(NativeIterationExecutionError::Work {
++                origin: Some(_),
++                ..
++            })
++        ));
++        assert!(output.iter().all(|v| *v == U64(77)));
++    }
++}
++#[test]
++fn finite_work_memory_stack_and_completion_denials_are_atomic_and_recover() {
++    use NativeScalarValue::U64;
++    let (artifacts, last) =
++        artifacts("step(x<u64>) => (next<u64>) := next := x + 1u64.\nseed<u64> |25> step\n");
++    for artifact in artifacts {
++        let args = inputs(&artifact, &[("seed", U64(5))]);
++        let plan =
++            lower_scalar_iteration_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
++        let jit = JitIterationArtifact::compile(&plan).unwrap();
++        let mut output = vec![U64(77); plan.outputs().len()];
++        let report = jit
++            .evaluate_into(&args, &mut output, NativeExecutionLimits::default(), None)
++            .unwrap();
++        assert_eq!(output[last], U64(30));
++        let object = emit_iteration_object(&plan).unwrap();
++        for limits in [
++            NativeExecutionLimits {
++                max_work: 0,
++                ..NativeExecutionLimits::default()
++            },
++            NativeExecutionLimits {
++                max_work: report.work - 1,
++                ..NativeExecutionLimits::default()
++            },
++            NativeExecutionLimits {
++                max_transport_bytes: 0,
++                ..NativeExecutionLimits::default()
++            },
++            NativeExecutionLimits {
++                max_native_stack_bytes: object.descriptor().stack_bytes() - 1,
++                ..NativeExecutionLimits::default()
++            },
++        ] {
++            output.fill(U64(77));
++            let before = output.clone();
++            assert!(jit.evaluate_into(&args, &mut output, limits, None).is_err());
++            assert_eq!(output, before);
++        }
++        let budget = ManagedMemoryBudget::new(0);
++        output.fill(U64(77));
++        assert!(matches!(
++            jit.evaluate_into(
++                &args,
++                &mut output,
++                NativeExecutionLimits::default(),
++                Some(&budget)
++            ),
++            Err(NativeIterationExecutionError::Base(
++                NativeExecutionError::Memory { .. }
++            ))
++        ));
++        assert!(output.iter().all(|v| *v == U64(77)));
++        jit.evaluate_into(
++            &args,
++            &mut output,
++            NativeExecutionLimits {
++                max_work: report.work,
++                ..NativeExecutionLimits::default()
++            },
++            None,
++        )
++        .unwrap();
++        assert_eq!(output[last], U64(30));
++    }
++}
+diff --git a/hosts/gpu/tests/canonical_artifact_iteration_application.rs b/hosts/gpu/tests/canonical_artifact_iteration_application.rs
+new file mode 100644
+index 000000000..57c478bff
+--- /dev/null
++++ b/hosts/gpu/tests/canonical_artifact_iteration_application.rs
+@@ -0,0 +1,1036 @@
++//! Explicit same-Object linked qualification for ordinary counted iteration.
++//! Scalar subproof, not managed matrices, FSM/resources or benchmark evidence.
++//!
++//! Run from a clean committed checkout with MECH_CANONICAL_ITERATION_SOURCE_COMMIT
++//! and a fresh external MECH_CANONICAL_ITERATION_EVIDENCE_DIR. This records no timings.
++#![cfg(feature = "canonical-native")]
++#![cfg_attr(windows, feature(windows_process_extensions_main_thread_handle))]
++
++use std::{
++    collections::{BTreeMap, BTreeSet},
++    ffi::OsString,
++    fs::{self, File},
++    io::Cursor,
++    path::{Path, PathBuf},
++    process::{Command, ExitStatus, Stdio},
++    thread,
++    time::{Duration, Instant},
++};
++
++use mech_build::{CargoInvocation, parse_cargo_build_messages, process::ContainedChild};
++use mech_core::{
++    ReactiveInstanceId, ValueData, ValueDataDraft,
++    snapshot::{SnapshotValidationContext, ValueDraft},
++};
++use mech_engine::native_artifact::{
++    NativeIterationArtifactPlan, NativeScalarKind, NativeScalarValue,
++    lower_scalar_iteration_artifact,
++};
++use mech_engine::resident::{ActivationFacts, CapturedValueInput, activate};
++use mech_engine::{CanonicalSourceFrontend, ProgramArtifact, SourceDocumentOutputKind};
++use mech_gpu::native_artifact::{
++    JitIterationArtifact, NativeExecutionError, NativeExecutionLimits,
++    NativeIterationExecutionError, generate_linked_iteration_application,
++};
++use mech_syntax::document::{
++    AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
++    parse_canonical_document,
++};
++use serde_json::{Value, json};
++use sha2::{Digest, Sha256};
++
++const MIXED: &str = "advance(x<u64>) => (next<u64>) := next := (enabled<bool>? | true, gate<bool> => x + step<u64> | true => x | false => 1u64 / divisor<u64>).\nouter(x<u64>) => (next<u64>) := next := x |2> advance.\nselected := left<u64> |3> outer\nflag := !enabled<bool>\nselected\n";
++const ORDERED: &str = "unused := left<u64> / divisor<u64>\nadvance(x<u64>) => (next<u64>) := next := x + 1u64.\nselected := left<u64> |25> advance\nselected\n";
++const PROCESS_DEADLINE: Duration = Duration::from_secs(15);
++const WORKER_DEADLINE: Duration = Duration::from_secs(20 * 60);
++
++fn digest(bytes: &[u8]) -> String {
++    Sha256::digest(bytes)
++        .iter()
++        .map(|byte| format!("{byte:02x}"))
++        .collect()
++}
++fn pin(path: &Path) -> String {
++    digest(&fs::read(path).unwrap())
++}
++fn workspace() -> PathBuf {
++    Path::new(env!("CARGO_MANIFEST_DIR"))
++        .parent()
++        .unwrap()
++        .parent()
++        .unwrap()
++        .to_path_buf()
++}
++
++struct Captured {
++    status: ExitStatus,
++    stdout: Vec<u8>,
++    stderr: Vec<u8>,
++}
++
++/// File-backed streams and an owned process group/job contain the complete
++/// synchronous generation, lock resolution, metadata, build and link worker.
++fn bounded(mut command: Command, root: &Path, name: &str, deadline: Duration) -> Captured {
++    let stdout = root.join(format!("{name}.stdout"));
++    let stderr = root.join(format!("{name}.stderr"));
++    command
++        .stdin(Stdio::null())
++        .stdout(Stdio::from(File::create(&stdout).unwrap()))
++        .stderr(Stdio::from(File::create(&stderr).unwrap()));
++    let mut child = ContainedChild::spawn(&mut command).unwrap();
++    let end = Instant::now() + deadline;
++    let status = loop {
++        if let Some(status) = child.child_mut().try_wait().unwrap() {
++            break status;
++        }
++        if Instant::now() >= end {
++            child.terminate_tree().unwrap();
++            let reap = Instant::now() + Duration::from_secs(5);
++            while child.child_mut().try_wait().unwrap().is_none() && Instant::now() < reap {
++                thread::sleep(Duration::from_millis(20));
++            }
++            panic!("{name} exceeded deadline; diagnostics {}", stderr.display());
++        }
++        thread::sleep(Duration::from_millis(20));
++    };
++    child.terminate_tree().unwrap();
++    Captured {
++        status,
++        stdout: fs::read(stdout).unwrap(),
++        stderr: fs::read(stderr).unwrap(),
++    }
++}
++
++fn clean(workspace: &Path, evidence: &Path, commit: &str, label: &str) {
++    let mut command = Command::new("git");
++    command.args(["rev-parse", "HEAD"]).current_dir(workspace);
++    let head = bounded(
++        command,
++        evidence,
++        &format!("{label}-head"),
++        PROCESS_DEADLINE,
++    );
++    assert!(head.status.success());
++    assert_eq!(String::from_utf8(head.stdout).unwrap().trim(), commit);
++    let mut command = Command::new("git");
++    command
++        .args(["status", "--porcelain", "--untracked-files=all"])
++        .current_dir(workspace);
++    let status = bounded(
++        command,
++        evidence,
++        &format!("{label}-status"),
++        PROCESS_DEADLINE,
++    );
++    assert!(status.status.success());
++    assert!(
++        status.stdout.is_empty(),
++        "requires a clean immutable checkout"
++    );
++}
++
++fn compile(source: &str, interactive: bool) -> ([ProgramArtifact; 2], usize) {
++    let parsed = parse_canonical_document(
++        TextSnapshot::new(DocumentId(0x4c494e4b), Revision(1), source).unwrap(),
++        ParseConfig::default(),
++    );
++    assert!(parsed.is_strictly_clean(), "{:?}", parsed.diagnostics);
++    // Public interactive compilation retains real named Bool/U64 outputs;
++    // no artifact output, graph, operation or semantic witness is fabricated.
++    let document = DocumentSyntax::cast(parsed.syntax()).unwrap();
++    let product = if interactive {
++        CanonicalSourceFrontend
++            .compile_interactive_document_with_catalog(&document, mech_stdlib::source_catalog())
++    } else {
++        CanonicalSourceFrontend
++            .compile_document_with_catalog(&document, mech_stdlib::source_catalog())
++    }
++    .unwrap();
++    let result = product
++        .document_outputs()
++        .iter()
++        .find(|output| output.kind == SourceDocumentOutputKind::Program)
++        .unwrap()
++        .output as usize;
++    let original = product.compile_artifact().unwrap();
++    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap();
++    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
++    assert_eq!(original.revision(), decoded.revision());
++    assert_eq!(
++        bytes,
++        mech_engine::encode_program_artifact_bytecode_v1(&decoded).unwrap()
++    );
++    ([original, decoded], result)
++}
++
++fn inputs(
++    artifact: &ProgramArtifact,
++    named: &[(&str, NativeScalarValue)],
++) -> Vec<NativeScalarValue> {
++    artifact
++        .inputs()
++        .iter()
++        .map(|input| {
++            let name = mech_engine::decode_source_input_name(&input.name).unwrap();
++            named.iter().find(|(key, _)| *key == name).unwrap().1
++        })
++        .collect()
++}
++fn arguments(values: &[NativeScalarValue]) -> Vec<String> {
++    values
++        .iter()
++        .map(|value| match value {
++            NativeScalarValue::Bool(value) => value.to_string(),
++            NativeScalarValue::U64(value) => value.to_string(),
++        })
++        .collect()
++}
++fn stdout(values: &[NativeScalarValue]) -> String {
++    arguments(values)
++        .into_iter()
++        .map(|value| value + "\n")
++        .collect()
++}
++
++fn resident(
++    artifact: &ProgramArtifact,
++    arguments: &[NativeScalarValue],
++) -> Result<Vec<NativeScalarValue>, String> {
++    let mut instance = activate(
++        ReactiveInstanceId::new(0x4c494e4b, 0),
++        artifact,
++        &mech_stdlib::source_catalog(),
++        &ActivationFacts::default(),
++    )
++    .map_err(|error| format!("{error:?}"))?;
++    let values = artifact
++        .inputs()
++        .iter()
++        .zip(arguments)
++        .map(|(input, value)| {
++            ValueDraft {
++                schema: input.schema,
++                shape_values: Box::new([]),
++                data: match value {
++                    NativeScalarValue::Bool(value) => ValueDataDraft::Bool(*value),
++                    NativeScalarValue::U64(value) => ValueDataDraft::U64(*value),
++                },
++            }
++            .finalize(&SnapshotValidationContext::new(artifact.schemas()))
++            .unwrap()
++        })
++        .collect::<Vec<_>>();
++    let captured = instance
++        .plan
++        .inputs
++        .iter()
++        .map(|input| {
++            let ordinal = artifact
++                .inputs()
++                .iter()
++                .position(|value| value.slot == input.artifact_slot)
++                .unwrap();
++            CapturedValueInput {
++                slot: input.slot,
++                value: &values[ordinal],
++            }
++        })
++        .collect::<Vec<_>>();
++    instance
++        .prepare_turn_values(&captured)
++        .and_then(|prepared| prepared.publish())
++        .map_err(|error| format!("{error:?}"))?;
++    Ok((0..artifact.outputs().len())
++        .map(
++            |index| match instance.copied_output(index).unwrap().data() {
++                ValueData::Bool(value) => NativeScalarValue::Bool(*value),
++                ValueData::U64(value) => NativeScalarValue::U64(*value),
++                value => panic!("unexpected scalar {value:?}"),
++            },
++        )
++        .collect())
++}
++
++fn jit_success(
++    jit: &JitIterationArtifact,
++    arguments: &[NativeScalarValue],
++) -> (Vec<NativeScalarValue>, u64) {
++    let mut output = vec![NativeScalarValue::U64(0xfeed); jit.descriptor().outputs().len()];
++    let report = jit
++        .evaluate_into(
++            arguments,
++            &mut output,
++            NativeExecutionLimits::default(),
++            None,
++        )
++        .unwrap();
++    (output, report.work)
++}
++fn jit_error(
++    jit: &JitIterationArtifact,
++    arguments: &[NativeScalarValue],
++    limits: NativeExecutionLimits,
++) -> NativeIterationExecutionError {
++    let mut output = vec![NativeScalarValue::U64(0xfeed); jit.descriptor().outputs().len()];
++    let before = output.clone();
++    let error = jit
++        .evaluate_into(arguments, &mut output, limits, None)
++        .unwrap_err();
++    assert_eq!(output, before, "failed evaluation published an output");
++    error
++}
++fn success_case(name: &str, arguments: Vec<String>, output: &[NativeScalarValue]) -> Value {
++    json!({"name": name, "arguments": arguments, "stdout": stdout(output), "diagnostic": null})
++}
++fn failure_case(name: &str, arguments: Vec<String>, diagnostic: &str) -> Value {
++    json!({"name": name, "arguments": arguments, "stdout": "", "diagnostic": diagnostic})
++}
++fn exact_failure_case(
++    name: &str,
++    arguments: Vec<String>,
++    error: &NativeIterationExecutionError,
++) -> Value {
++    let mut case = failure_case(name, arguments, &error.to_string());
++    case["stderr"] = json!(format!("{error}\n"));
++    case
++}
++fn invalid_unicode_argument() -> Option<OsString> {
++    #[cfg(unix)]
++    {
++        use std::os::unix::ffi::OsStringExt;
++        Some(OsString::from_vec(vec![0xff, b'X']))
++    }
++    #[cfg(windows)]
++    {
++        use std::os::windows::ffi::OsStringExt;
++        Some(OsString::from_wide(&[0xd800]))
++    }
++    #[cfg(not(any(unix, windows)))]
++    {
++        None
++    }
++}
++fn with_limit(limit: &str, arguments: &[NativeScalarValue]) -> Vec<String> {
++    std::iter::once(limit.to_owned())
++        .chain(self::arguments(arguments))
++        .collect()
++}
++
++fn reference_cases(name: &str, artifacts: &[ProgramArtifact; 2], result: usize) -> Vec<Value> {
++    let plans = artifacts.each_ref().map(|artifact| {
++        lower_scalar_iteration_artifact(artifact, &mech_stdlib::source_catalog()).unwrap()
++    });
++    let jits = plans
++        .each_ref()
++        .map(|plan| JitIterationArtifact::compile(plan).unwrap());
++    let mut cases = Vec::new();
++    if name == "canonical-iteration-mixed" {
++        assert!(
++            plans[0]
++                .outputs()
++                .iter()
++                .any(|output| output.ty().kind() == NativeScalarKind::Bool)
++        );
++        assert!(
++            plans[0]
++                .outputs()
++                .iter()
++                .any(|output| output.ty().kind() == NativeScalarKind::U64)
++        );
++        for (label, left, step, divisor, enabled, gate, answer) in [
++            (
++                "above-f64-exact-range",
++                (1u64 << 53) + 1,
++                1,
++                0,
++                true,
++                false,
++                (1u64 << 53) + 1,
++            ),
++            ("u64-max-lazy-guard", u64::MAX, 1, 0, true, false, u64::MAX),
++            ("selected-guard-and-body", 7, 2, 7, true, true, 19),
++            ("nested-zero-lazy", 0, 1, 1, false, true, 1),
++            ("nested-bind", 9, 1, 2, false, true, 0),
++        ] {
++            let args = inputs(
++                &artifacts[0],
++                &[
++                    ("left", NativeScalarValue::U64(left)),
++                    ("step", NativeScalarValue::U64(step)),
++                    ("divisor", NativeScalarValue::U64(divisor)),
++                    ("enabled", NativeScalarValue::Bool(enabled)),
++                    ("gate", NativeScalarValue::Bool(gate)),
++                ],
++            );
++            let expected = resident(&artifacts[0], &args).unwrap();
++            assert_eq!(expected[result], NativeScalarValue::U64(answer));
++            for index in 0..2 {
++                assert_eq!(resident(&artifacts[index], &args).unwrap(), expected);
++                assert_eq!(jit_success(&jits[index], &args).0, expected);
++            }
++            cases.push(success_case(label, arguments(&args), &expected));
++            if label != "above-f64-exact-range" {
++                continue;
++            }
++            cases.push(success_case(
++                "explicit-boundary",
++                std::iter::once("--".into())
++                    .chain(arguments(&args))
++                    .collect(),
++                &expected,
++            ));
++            let work = jit_success(&jits[0], &args).1;
++            for (label, option, limits) in [
++                (
++                    "completion-denial",
++                    format!("--work={}", work - 1),
++                    NativeExecutionLimits {
++                        max_work: work - 1,
++                        ..NativeExecutionLimits::default()
++                    },
++                ),
++                (
++                    "setup-denial",
++                    "--work=0".into(),
++                    NativeExecutionLimits {
++                        max_work: 0,
++                        ..NativeExecutionLimits::default()
++                    },
++                ),
++                (
++                    "memory-denial",
++                    "--memory=0".into(),
++                    NativeExecutionLimits {
++                        max_transport_bytes: 0,
++                        ..NativeExecutionLimits::default()
++                    },
++                ),
++            ] {
++                let error = jit_error(&jits[0], &args, limits);
++                assert_eq!(jit_error(&jits[1], &args, limits), error);
++                cases.push(exact_failure_case(
++                    label,
++                    with_limit(&option, &args),
++                    &error,
++                ));
++            }
++            let budget = mech_core::ManagedMemoryBudget::new(0);
++            let mut outputs = vec![NativeScalarValue::U64(77); plans[0].outputs().len()];
++            let before = outputs.clone();
++            let error = jits[0]
++                .evaluate_into(
++                    &args,
++                    &mut outputs,
++                    NativeExecutionLimits::default(),
++                    Some(&budget),
++                )
++                .unwrap_err();
++            assert!(matches!(
++                error,
++                NativeIterationExecutionError::Base(NativeExecutionError::Memory { .. })
++            ));
++            assert_eq!(outputs, before);
++            assert_eq!(budget.used_bytes(), 0);
++            cases.push(exact_failure_case(
++                "shared-budget-denial",
++                with_limit("--budget=0", &args),
++                &error,
++            ));
++            cases.push(failure_case(
++                "stack-denial",
++                with_limit("--stack=0", &args),
++                "StackLimit",
++            ));
++            let numeric = plans[0]
++                .inputs()
++                .iter()
++                .position(|input| input.declaration().ty().kind() == NativeScalarKind::U64)
++                .unwrap();
++            let boolean = plans[0]
++                .inputs()
++                .iter()
++                .position(|input| input.declaration().ty().kind() == NativeScalarKind::Bool)
++                .unwrap();
++            for (label, text) in [
++                ("u64-overflow-input", "18446744073709551616"),
++                ("signed-u64-input", "-1"),
++                ("whitespace-u64-input", " 1"),
++            ] {
++                let mut invalid = arguments(&args);
++                invalid[numeric] = text.into();
++                invalid.insert(0, "--".into());
++                cases.push(failure_case(label, invalid, "invalid U64 argument"));
++            }
++            if invalid_unicode_argument().is_some() {
++                let mut invalid = failure_case(
++                    "invalid-unicode-input",
++                    arguments(&args),
++                    "argument is not Unicode",
++                );
++                invalid["invalid_os_argument"] = json!(numeric);
++                cases.push(invalid);
++            }
++            let mut invalid = arguments(&args);
++            invalid[boolean] = "TRUE".into();
++            cases.push(failure_case(
++                "invalid-bool-input",
++                invalid,
++                "invalid Bool argument",
++            ));
++            cases.push(failure_case("missing-input", vec![], "typed inputs"));
++            let mut extra = arguments(&args);
++            extra.push("tail".into());
++            cases.push(failure_case("extra-input", extra, "typed inputs"));
++            cases.push(failure_case(
++                "unknown-option",
++                vec!["--unknown".into()],
++                "unknown option",
++            ));
++            cases.push(failure_case(
++                "invalid-limit",
++                vec!["--work=invalid".into()],
++                "limit",
++            ));
++            cases.push(success_case(
++                "recovery-after-denials",
++                arguments(&args),
++                &expected,
++            ));
++        }
++        let bad = inputs(
++            &artifacts[0],
++            &[
++                ("left", NativeScalarValue::U64(8)),
++                ("step", NativeScalarValue::U64(1)),
++                ("divisor", NativeScalarValue::U64(0)),
++                ("enabled", NativeScalarValue::Bool(false)),
++                ("gate", NativeScalarValue::Bool(true)),
++            ],
++        );
++        for index in 0..2 {
++            assert!(
++                resident(&artifacts[index], &bad)
++                    .unwrap_err()
++                    .contains("Arithmetic")
++            );
++        }
++        let error = jit_error(&jits[0], &bad, NativeExecutionLimits::default());
++        assert!(
++            matches!(error,NativeIterationExecutionError::Arithmetic { origin } if origin.block().is_some() && origin.local().is_some())
++        );
++        assert_eq!(
++            jit_error(&jits[1], &bad, NativeExecutionLimits::default()),
++            error
++        );
++        cases.push(exact_failure_case(
++            "selected-nested-guard-error",
++            arguments(&bad),
++            &error,
++        ));
++    } else {
++        let args = |left, divisor| {
++            inputs(
++                &artifacts[0],
++                &[
++                    ("left", NativeScalarValue::U64(left)),
++                    ("divisor", NativeScalarValue::U64(divisor)),
++                ],
++            )
++        };
++        let good = args(3, 1);
++        let first_bad = args(u64::MAX, 0);
++        let later_bad = args(u64::MAX, 1);
++        let expected = resident(&artifacts[0], &good).unwrap();
++        assert_eq!(expected[result], NativeScalarValue::U64(28));
++        for index in 0..2 {
++            assert_eq!(resident(&artifacts[index], &good).unwrap(), expected);
++            assert_eq!(jit_success(&jits[index], &good).0, expected);
++            assert!(
++                resident(&artifacts[index], &first_bad)
++                    .unwrap_err()
++                    .contains("Arithmetic")
++            );
++            assert!(
++                resident(&artifacts[index], &later_bad)
++                    .unwrap_err()
++                    .contains("Arithmetic")
++            );
++        }
++        cases.push(success_case("success", arguments(&good), &expected));
++        // Find the finite budget admitting exactly the first failing checked
++        // operation. No later branch/node is admitted before its arithmetic error.
++        let mut low = 0;
++        let mut high = NativeExecutionLimits::default().max_work;
++        while low < high {
++            let mid = low + (high - low) / 2;
++            let limits = NativeExecutionLimits {
++                max_work: mid,
++                ..NativeExecutionLimits::default()
++            };
++            match jit_error(&jits[0], &first_bad, limits) {
++                NativeIterationExecutionError::Arithmetic { .. } => high = mid,
++                NativeIterationExecutionError::Work { .. } => low = mid + 1,
++                other => panic!("unexpected error {other:?}"),
++            }
++        }
++        let limits = NativeExecutionLimits {
++            max_work: low,
++            ..NativeExecutionLimits::default()
++        };
++        let first = jit_error(&jits[0], &first_bad, limits);
++        assert!(
++            matches!(first,NativeIterationExecutionError::Arithmetic {origin} if origin.block().is_none())
++        );
++        let later = jit_error(&jits[0], &later_bad, limits);
++        assert!(matches!(later, NativeIterationExecutionError::Work { .. }));
++        let overflow = jit_error(&jits[0], &later_bad, NativeExecutionLimits::default());
++        assert!(
++            matches!(overflow,NativeIterationExecutionError::Arithmetic {origin} if origin.block().is_some())
++        );
++        for index in 0..2 {
++            assert_eq!(jit_error(&jits[index], &first_bad, limits), first);
++            assert_eq!(jit_error(&jits[index], &later_bad, limits), later);
++            assert_eq!(
++                jit_error(&jits[index], &later_bad, NativeExecutionLimits::default()),
++                overflow
++            );
++        }
++        cases.push(exact_failure_case(
++            "unused-error-before-later-denial",
++            with_limit(&format!("--work={low}"), &first_bad),
++            &first,
++        ));
++        cases.push(exact_failure_case(
++            "later-node-denial-before-overflow",
++            with_limit(&format!("--work={low}"), &later_bad),
++            &later,
++        ));
++        cases.push(exact_failure_case(
++            "later-arithmetic-is-atomic",
++            arguments(&later_bad),
++            &overflow,
++        ));
++        cases.push(success_case("recovery", arguments(&good), &expected));
++    }
++    cases
++}
++
++/// Only called in the contained worker. Subprocesses inherit its owned group;
++/// they do not open another process group that could escape its deadline.
++fn worker_command(mut command: Command, root: &Path, label: &str) -> Captured {
++    command
++        .stdin(Stdio::null())
++        .stdout(Stdio::from(
++            File::create(root.join(format!("{label}.stdout"))).unwrap(),
++        ))
++        .stderr(Stdio::from(
++            File::create(root.join(format!("{label}.stderr"))).unwrap(),
++        ));
++    let status = command.status().unwrap();
++    Captured {
++        status,
++        stdout: fs::read(root.join(format!("{label}.stdout"))).unwrap(),
++        stderr: fs::read(root.join(format!("{label}.stderr"))).unwrap(),
++    }
++}
++
++fn compiled_feature_closure(metadata: &Value, build_stdout: &[u8]) -> Vec<Value> {
++    let packages = metadata["packages"]
++        .as_array()
++        .unwrap()
++        .iter()
++        .map(|package| (package["id"].as_str().unwrap(), package))
++        .collect::<BTreeMap<_, _>>();
++    let root = metadata["resolve"]["root"].as_str().unwrap();
++    // Metadata can retain weak optional dependency edges that Cargo does not
++    // build. Every actual compiler-artifact unit (including fresh units) is
++    // authoritative for the successful build's selected packages/features.
++    let mut seen = BTreeSet::new();
++    let mut seen_packages = BTreeSet::new();
++    let mut result = Vec::new();
++    for line in build_stdout.split(|byte| *byte == b'\n') {
++        if line.is_empty() {
++            continue;
++        }
++        let message: Value = serde_json::from_slice(line).unwrap();
++        if message["reason"] != "compiler-artifact" {
++            continue;
++        }
++        let id = message["package_id"].as_str().unwrap();
++        let package = packages[id];
++        let name = package["name"].as_str().unwrap();
++        seen_packages.insert(name.to_owned());
++        if name.starts_with("mech-") {
++            assert!(package["source"].is_null(), "registry Mech crate {name}");
++            let manifest = Path::new(package["manifest_path"].as_str().unwrap())
++                .canonicalize()
++                .unwrap();
++            assert!(
++                manifest.starts_with(workspace().canonicalize().unwrap()),
++                "Mech crate {name} is outside the pinned workspace"
++            );
++        }
++        assert_ne!(name, "mech-syntax");
++        assert!(
++            !name.starts_with("cranelift-"),
++            "runtime graph contains compiler crate {name}"
++        );
++        let forbidden: &[&str] = match name {
++            "mech-gpu" => &[
++                "canonical-native",
++                "jit",
++                "aot",
++                "sequence-cli",
++                "native-build",
++                "fused-cli",
++            ],
++            "mech-engine" | "mech-stdlib" => &[
++                "source",
++                "semantic-compiler",
++                "compiler",
++                "full_compiler",
++                "standard_compiler",
++                "native-sequence",
++            ],
++            _ => &[],
++        };
++        for feature in message["features"].as_array().unwrap() {
++            assert!(
++                !forbidden.contains(&feature.as_str().unwrap()),
++                "runtime-only graph enabled {name}/{feature}"
++            );
++        }
++        if seen.insert((
++            id.to_owned(),
++            message["target"].to_string(),
++            message["features"].to_string(),
++        )) {
++            result.push(json!({"id":id, "name":name, "version":package["version"], "features":message["features"], "target_name":message["target"]["name"], "target_kind":message["target"]["kind"]}));
++        }
++    }
++    assert!(result.iter().any(|unit| unit["id"] == root));
++    for required in ["mech-core", "mech-engine", "mech-gpu", "mech-stdlib"] {
++        assert!(
++            seen_packages.contains(required),
++            "missing compiled {required}"
++        );
++    }
++    result.sort_by(|a, b| a["id"].as_str().cmp(&b["id"].as_str()));
++    result
++}
++
++fn review_ir(plan: &NativeIterationArtifactPlan) -> Value {
++    // Diagnostic only. Executable identity uses explicit typed encoding.
++    json!({"revision":format!("{:?}",plan.program_revision()),"entry":plan.entry(),
++        "inputs":plan.inputs().iter().map(|v|json!({"id":v.declaration().input().get(),"name":v.declaration().name(),"value":v.value().get(),"kind":format!("{:?}",v.declaration().ty().kind())})).collect::<Vec<_>>(),
++        "values":format!("{:?}",plan.values()),"value_scopes":format!("{:?}",plan.value_scopes()),
++        "blocks":format!("{:?}",plan.blocks()),"iterations":format!("{:?}",plan.iterations()),
++        "outputs":format!("{:?}",plan.outputs())})
++}
++
++#[test]
++#[ignore = "internal worker; the outer qualification owns this complete process tree"]
++fn canonical_iteration_link_build_worker() {
++    let name = std::env::var("MECH_CANONICAL_ITERATION_WORKER_NAME").unwrap();
++    assert!(matches!(
++        name.as_str(),
++        "canonical-iteration-mixed" | "canonical-iteration-ordered"
++    ));
++    let evidence =
++        PathBuf::from(std::env::var_os("MECH_CANONICAL_ITERATION_EVIDENCE_DIR").unwrap());
++    let root = evidence.join(&name);
++    let source = fs::read_to_string(root.join("application.mec")).unwrap();
++    // Only the mixed fixture requests real interactive named outputs. The
++    // ordered fixture uses ordinary compilation, so its first checked node is
++    // genuinely unused by outputs and must nevertheless retain its error.
++    let interactive = name == "canonical-iteration-mixed";
++    let (artifacts, result) = compile(&source, interactive);
++    let catalog = mech_stdlib::source_catalog();
++    let plan = lower_scalar_iteration_artifact(&artifacts[0], &catalog).unwrap();
++    let decoded_plan = lower_scalar_iteration_artifact(&artifacts[1], &catalog).unwrap();
++    assert_eq!(review_ir(&plan), review_ir(&decoded_plan));
++    fs::write(
++        root.join("typed-ir-review.json"),
++        serde_json::to_vec_pretty(&review_ir(&plan)).unwrap(),
++    )
++    .unwrap();
++    let mut cases = reference_cases(&name, &artifacts, result);
++    let generated = generate_linked_iteration_application(
++        &workspace(),
++        &root.join("project"),
++        &name,
++        &artifacts[0],
++        &catalog,
++        source.as_bytes(),
++    )
++    .unwrap();
++    let decoded = generate_linked_iteration_application(
++        &workspace(),
++        &root.join("decoded-project"),
++        &name,
++        &artifacts[1],
++        &catalog,
++        source.as_bytes(),
++    )
++    .unwrap();
++    assert_eq!(generated.pins(), decoded.pins());
++    assert_eq!(
++        generated.metadata()["program_revision"],
++        decoded.metadata()["program_revision"]
++    );
++    assert_eq!(
++        generated.metadata()["typed_ir_sha256"],
++        decoded.metadata()["typed_ir_sha256"]
++    );
++    let bytecode = mech_engine::encode_program_artifact_bytecode_v1(&artifacts[0]).unwrap();
++    assert_eq!(
++        fs::read(generated.root().join("program.mecb")).unwrap(),
++        bytecode
++    );
++    assert_eq!(
++        fs::read(generated.root().join("application.mec")).unwrap(),
++        source.as_bytes()
++    );
++    for project in [&generated, &decoded] {
++        for (relative, expected) in project.pins() {
++            assert_eq!(&pin(&project.root().join(relative)), expected);
++        }
++    }
++    // Use the immutable workspace lock as a resolution seed, retaining the
++    // actual resolved lock and complete feature graph before the locked build.
++    fs::copy(
++        workspace().join("Cargo.lock"),
++        generated.root().join("Cargo.lock"),
++    )
++    .unwrap();
++    let cargo_home = std::env::var_os("CARGO_HOME")
++        .map(PathBuf::from)
++        .or_else(|| std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".cargo")));
++    if let Some(home) = cargo_home {
++        assert!(
++            !home.join("config").exists() && !home.join("config.toml").exists(),
++            "ambient Cargo configuration is unsupported for this pinned qualification"
++        );
++    }
++    let isolated = generated.root().ancestors().last().unwrap();
++    let locked = worker_command(
++        CargoInvocation::resolve_lockfile(generated.manifest_path(), true)
++            .with_current_dir(isolated)
++            .command(),
++        &root,
++        "metadata",
++    );
++    assert!(
++        locked.status.success(),
++        "{}",
++        String::from_utf8_lossy(&locked.stderr)
++    );
++    let metadata: Value = serde_json::from_slice(&locked.stdout).unwrap();
++    let mut command = CargoInvocation::build(
++        generated.manifest_path(),
++        &name,
++        None,
++        evidence.join("cargo-target"),
++        false,
++        true,
++    )
++    .unwrap()
++    .with_current_dir(isolated)
++    .command();
++    command
++        .env("CARGO_INCREMENTAL", "0")
++        .env("CARGO_PROFILE_DEV_DEBUG", "0")
++        .env("CARGO_BUILD_JOBS", "2");
++    let built = worker_command(command, &root, "build");
++    assert!(
++        built.status.success(),
++        "{}",
++        String::from_utf8_lossy(&built.stderr)
++    );
++    let messages = parse_cargo_build_messages(Cursor::new(&built.stdout)).unwrap();
++    assert_eq!(messages.build_finished, Some(true));
++    let closure = compiled_feature_closure(&metadata, &built.stdout);
++    let executable = messages.select_binary(&name).unwrap().executable;
++    let mut pins = BTreeMap::new();
++    for (label, project) in [("original", &generated), ("decoded", &decoded)] {
++        for (relative, expected) in project.pins() {
++            let path = project.root().join(relative);
++            assert_eq!(&pin(&path), expected);
++            pins.insert(path, expected.clone());
++        }
++        let path = project.root().join("linked-manifest.json");
++        pins.insert(path.clone(), pin(&path));
++        fs::write(
++            root.join(format!("{label}-generation.json")),
++            serde_json::to_vec_pretty(project.metadata()).unwrap(),
++        )
++        .unwrap();
++    }
++    for path in [
++        root.join("application.mec"),
++        root.join("typed-ir-review.json"),
++        generated.root().join("Cargo.lock"),
++        workspace().join("Cargo.lock"),
++        executable.clone(),
++        root.join("metadata.stdout"),
++        root.join("original-generation.json"),
++        root.join("decoded-generation.json"),
++    ] {
++        pins.insert(path.clone(), pin(&path));
++    }
++    // Every failure oracle is complete stderr, including the exact checked
++    // NodeId/admission phase. Object stack metadata belongs to that object,
++    // rather than assuming its compiled frame equals the JIT frame.
++    for case in &mut cases {
++        if case["diagnostic"].is_null() || case["stderr"].is_string() {
++            continue;
++        }
++        let error = match case["name"].as_str().unwrap() {
++            "stack-denial" => {
++                NativeIterationExecutionError::Base(NativeExecutionError::StackLimit {
++                    required: generated.metadata()["object"]["stack_bytes"]
++                        .as_u64()
++                        .unwrap(),
++                    limit: 0,
++                })
++                .to_string()
++            }
++            "u64-overflow-input" | "signed-u64-input" | "whitespace-u64-input" => {
++                "invalid U64 argument".into()
++            }
++            "invalid-bool-input" => "invalid Bool argument".into(),
++            "invalid-unicode-input" => "argument is not Unicode".into(),
++            "missing-input" | "extra-input" => {
++                format!("expected {} typed inputs", plan.inputs().len())
++            }
++            "unknown-option" => "unknown option".into(),
++            "invalid-limit" => "invalid limit argument".into(),
++            other => panic!("failure oracle missing for {other}"),
++        };
++        case["stderr"] = json!(format!("{error}\n"));
++    }
++    let receipt = json!({"name":name,"source_compile_mode":if interactive {"interactive"} else {"ordinary"},"source_sha256":digest(source.as_bytes()),"program_revision":generated.metadata()["program_revision"],"bytecode_sha256":digest(&bytecode),"typed_ir_sha256":generated.metadata()["typed_ir_sha256"],"typed_ir_review_sha256":pin(&root.join("typed-ir-review.json")),"original_and_decoded_pair_equal":true,"generator":generated.metadata(),"generated_runtime_feature_closure":closure,"binary":executable,"binary_sha256":pin(&executable),"build_count":1,"object_emissions":2,"reference":"ordinary canonical resident and JIT original+decoded; all outputs exact; finite native denials compared with JIT, not resident cost policy","benchmark_measurements":0});
++    fs::write(
++        root.join("application-build.json"),
++        serde_json::to_vec_pretty(
++            &json!({"executable":executable,"pins":pins,"receipt":receipt,"cases":cases}),
++        )
++        .unwrap(),
++    )
++    .unwrap();
++}
++
++fn qualify(evidence: &Path, name: &str, source: &str) -> Value {
++    let root = evidence.join(name);
++    fs::create_dir(&root).unwrap();
++    fs::write(root.join("application.mec"), source).unwrap();
++    let mut worker = Command::new(std::env::current_exe().unwrap());
++    worker
++        .args([
++            "--ignored",
++            "--exact",
++            "canonical_iteration_link_build_worker",
++            "--nocapture",
++            "--test-threads=1",
++        ])
++        .env("MECH_CANONICAL_ITERATION_WORKER_NAME", name);
++    let built = bounded(worker, &root, "build-worker", WORKER_DEADLINE);
++    assert!(
++        built.status.success(),
++        "{}",
++        String::from_utf8_lossy(&built.stderr)
++    );
++    let evidence_path = root.join("application-build.json");
++    let mut data: Value = serde_json::from_slice(&fs::read(&evidence_path).unwrap()).unwrap();
++    let executable: PathBuf = serde_json::from_value(data["executable"].take()).unwrap();
++    let mut pins: BTreeMap<PathBuf, String> = serde_json::from_value(data["pins"].take()).unwrap();
++    pins.insert(evidence_path.clone(), pin(&evidence_path));
++    let check_pins = || {
++        for (path, expected) in &pins {
++            assert_eq!(&pin(path), expected, "changed {}", path.display());
++        }
++    };
++    check_pins();
++    let mut records = Vec::new();
++    for case in data["cases"].as_array().unwrap() {
++        let label = case["name"].as_str().unwrap();
++        let mut args = case["arguments"]
++            .as_array()
++            .unwrap()
++            .iter()
++            .map(|value| OsString::from(value.as_str().unwrap()))
++            .collect::<Vec<_>>();
++        if let Some(index) = case["invalid_os_argument"].as_u64() {
++            args[index as usize] = invalid_unicode_argument().unwrap();
++        }
++        let expected = case["stdout"].as_str().unwrap().as_bytes();
++        fs::write(root.join(format!("{label}.expected.stdout")), expected).unwrap();
++        let mut command = Command::new(&executable);
++        command.args(&args);
++        let actual = bounded(command, &root, label, PROCESS_DEADLINE);
++        assert_eq!(
++            actual.stdout,
++            expected,
++            "{name}/{label}: {}",
++            String::from_utf8_lossy(&actual.stderr)
++        );
++        if let Some(diagnostic) = case["diagnostic"].as_str() {
++            assert_eq!(actual.status.code(), Some(1));
++            let stderr = String::from_utf8_lossy(&actual.stderr);
++            assert!(stderr.contains(diagnostic), "{name}/{label}: {stderr}");
++            let oracle = case["stderr"]
++                .as_str()
++                .expect("complete failure stderr oracle");
++            fs::write(root.join(format!("{label}.expected.stderr")), oracle).unwrap();
++            assert_eq!(
++                actual.stderr,
++                oracle.as_bytes(),
++                "{name}/{label}: exact failure origin/phase"
++            );
++            assert!(!stderr.contains("panicked"), "{stderr}");
++        } else {
++            assert!(
++                actual.status.success(),
++                "{}",
++                String::from_utf8_lossy(&actual.stderr)
++            );
++            assert!(actual.stderr.is_empty());
++        }
++        check_pins();
++        records.push(json!({"name":label,"arguments_os_encoded_hex":args.iter().map(|arg|arg.as_encoded_bytes().iter().map(|b|format!("{b:02x}")).collect::<String>()).collect::<Vec<_>>(),"exit_code":actual.status.code(),"stdout_sha256":digest(&actual.stdout),"stderr_sha256":digest(&actual.stderr),"expected_stdout_sha256":digest(expected),"expected_diagnostic":case["diagnostic"],"expected_stderr_sha256":case["stderr"].as_str().map(|value|digest(value.as_bytes())),"exact_complete_stderr":true,"binary_unchanged":true,"exact_complete_stdout":true}));
++    }
++    let mut receipt = data["receipt"].take();
++    assert_eq!(receipt["source_sha256"], digest(source.as_bytes()));
++    receipt["cases"] = json!(records);
++    receipt["pins"] = json!(pins);
++    receipt["linked"] = json!(true);
++    receipt["executed"] = json!(true);
++    receipt
++}
++
++#[test]
++#[ignore = "explicit linked canonical Cranelift qualification; requires clean pinned checkout and fresh external evidence"]
++fn linked_canonical_iteration_applications_are_lazy_bounded_and_atomic() {
++    let workspace = workspace().canonicalize().unwrap();
++    let commit =
++        std::env::var("MECH_CANONICAL_ITERATION_SOURCE_COMMIT").expect("pin immutable HEAD");
++    assert_eq!(commit.len(), 40);
++    assert!(commit.bytes().all(|byte| byte.is_ascii_hexdigit()));
++    let evidence = PathBuf::from(
++        std::env::var_os("MECH_CANONICAL_ITERATION_EVIDENCE_DIR")
++            .expect("new external evidence directory"),
++    );
++    assert!(evidence.is_absolute());
++    fs::create_dir(&evidence).unwrap();
++    let evidence = evidence.canonicalize().unwrap();
++    assert!(!evidence.starts_with(&workspace));
++    clean(&workspace, &evidence, &commit, "before");
++    let lock = pin(&workspace.join("Cargo.lock"));
++    let applications = [
++        qualify(&evidence, "canonical-iteration-mixed", MIXED),
++        qualify(&evidence, "canonical-iteration-ordered", ORDERED),
++    ];
++    assert_eq!(pin(&workspace.join("Cargo.lock")), lock);
++    clean(&workspace, &evidence, &commit, "after");
++    fs::write(evidence.join("qualification.json"),serde_json::to_vec_pretty(&json!({"schema":"mech.canonical-artifact-linked-iteration-qualification.v1","source_commit":commit,"source_checkout_clean_before_and_after":true,"route":"canonical-artifact-iteration-cranelift-object","linked":true,"executed":true,"benchmark_measurements":0,"applications":applications})).unwrap()).unwrap();
++}
+diff --git a/src/engine/src/native_artifact/iteration.rs b/src/engine/src/native_artifact/iteration.rs
+new file mode 100644
+index 000000000..8e91c0834
+--- /dev/null
++++ b/src/engine/src/native_artifact/iteration.rs
+@@ -0,0 +1,115 @@
++//! Read-only lowered native control graph with structurally owned counted loops.
++//!
++//! This is a compiler view of the ordinary canonical `ProgramArtifact`, never
++//! another language artifact. Constructors stay inside the engine's actual
++//! selected-implementation lowering path.
++use super::{NativeMatchAction, NativeMatchOrigin, NativeMatchTerminator, NativeMatchValue};
++
++/// The lexical invocation that owns an immutable result word. Carrier words
++/// have a separate role: only their own initializer and latch may replace them.
++#[derive(Clone, Copy, Debug, Eq, PartialEq)]
++pub enum NativeIterationValueScope {
++    Immutable { iteration: Option<u32> },
++    Carrier { iteration: u32 },
++}
++
++#[derive(Clone, Debug)]
++pub enum NativeIterationAction {
++    Scalar(NativeMatchAction),
++    Initialize { iteration: u32 },
++    Latch { iteration: u32 },
++}
++
++#[derive(Clone, Copy, Debug, Eq, PartialEq)]
++pub enum NativeIterationTerminator {
++    Scalar(NativeMatchTerminator),
++    Header {
++        iteration: u32,
++        body: u32,
++        exit: u32,
++    },
++}
++
++impl From<NativeMatchTerminator> for NativeIterationTerminator {
++    fn from(value: NativeMatchTerminator) -> Self {
++        Self::Scalar(value)
++    }
++}
++
++#[derive(Clone, Debug)]
++pub struct NativeIterationBlock {
++    pub(crate) origin: NativeMatchOrigin,
++    pub(crate) action: NativeIterationAction,
++    pub(crate) terminator: NativeIterationTerminator,
++    pub(crate) iteration: Option<u32>,
++}
++impl NativeIterationBlock {
++    pub const fn origin(&self) -> NativeMatchOrigin {
++        self.origin
++    }
++    pub fn action(&self) -> &NativeIterationAction {
++        &self.action
++    }
++    pub const fn terminator(&self) -> NativeIterationTerminator {
++        self.terminator
++    }
++    pub const fn iteration(&self) -> Option<u32> {
++        self.iteration
++    }
++}
++
++/// One literal-count carrier transition, linked to its exact lexical body.
++/// Private scalar carrier and counter storage is independent of `count`.
++#[derive(Clone, Debug)]
++pub struct NativeIterationLoop {
++    pub(crate) origin: NativeMatchOrigin,
++    pub(crate) count: u64,
++    pub(crate) parent: Option<u32>,
++    pub(crate) seed: NativeMatchValue,
++    pub(crate) carrier: NativeMatchValue,
++    pub(crate) next: NativeMatchValue,
++    pub(crate) result: NativeMatchValue,
++    pub(crate) initialize: u32,
++    pub(crate) header: u32,
++    pub(crate) body: u32,
++    pub(crate) latch: u32,
++    pub(crate) exit: u32,
++}
++impl NativeIterationLoop {
++    pub const fn origin(&self) -> NativeMatchOrigin {
++        self.origin
++    }
++    pub const fn count(&self) -> u64 {
++        self.count
++    }
++    pub const fn parent(&self) -> Option<u32> {
++        self.parent
++    }
++    pub const fn seed(&self) -> NativeMatchValue {
++        self.seed
++    }
++    pub const fn carrier(&self) -> NativeMatchValue {
++        self.carrier
++    }
++    pub const fn next(&self) -> NativeMatchValue {
++        self.next
++    }
++    pub const fn result(&self) -> NativeMatchValue {
++        self.result
++    }
++    pub const fn initialize(&self) -> u32 {
++        self.initialize
++    }
++    pub const fn header(&self) -> u32 {
++        self.header
++    }
++    pub const fn body(&self) -> u32 {
++        self.body
++    }
++    pub const fn latch(&self) -> u32 {
++        self.latch
++    }
++    pub const fn exit(&self) -> u32 {
++        self.exit
++    }
++}
+diff --git a/src/engine/src/native_artifact/iteration_validation.rs b/src/engine/src/native_artifact/iteration_validation.rs
+new file mode 100644
+index 000000000..ad7f7fe70
+--- /dev/null
++++ b/src/engine/src/native_artifact/iteration_validation.rs
+@@ -0,0 +1,390 @@
++//! Current-visit definition proof for structurally owned counted loops.
++//! Backedges are validated only through a declared loop. Each lexical body is
++//! checked once as an acyclic graph, beginning with ancestors plus its carrier;
++//! previous-visit body locals are never part of that initial definition set.
++use super::{
++    NativeIterationAction as Action, NativeIterationArtifactPlan as Plan,
++    NativeIterationTerminator as Terminator, NativeIterationValueScope as Scope,
++    NativeMatchAction as Scalar, NativeMatchTerminator as Term, NativeMatchValue as Value,
++    NativeScalarKind, NativeScalarValue,
++};
++use std::collections::VecDeque;
++
++const BAD: &str = "invalid counted-loop ownership or current-visit definitions";
++const ANALYSIS_CELLS: usize = 16 * 1024 * 1024;
++fn scalar_successors(term: Term) -> [Option<u32>; 2] {
++    match term {
++        Term::Jump(next) => [Some(next), None],
++        Term::Branch { yes, no, .. } | Term::LiteralBranch { yes, no, .. } => [Some(yes), Some(no)],
++        Term::Complete | Term::Reject => [None, None],
++    }
++}
++fn scope_ancestor(plan: &Plan, ancestor: Option<u32>, mut scope: Option<u32>) -> bool {
++    // Loop ids are pre-order; every parent must be earlier. The caller first
++    // validates this property, so the walk cannot cycle.
++    loop {
++        if scope == ancestor {
++            return true;
++        }
++        let Some(id) = scope else {
++            return false;
++        };
++        scope = plan.iterations()[id as usize].parent();
++    }
++}
++fn readable(plan: &Plan, value: Value, scope: Option<u32>, block: usize) -> bool {
++    match plan.value_scopes().get(value.get() as usize) {
++        Some(Scope::Immutable { iteration }) => scope_ancestor(plan, *iteration, scope),
++        Some(Scope::Carrier { iteration }) => {
++            scope_ancestor(plan, Some(*iteration), scope)
++                || plan.iterations()[*iteration as usize].exit() as usize == block
++        }
++        None => false,
++    }
++}
++
++/// Called before the opaque engine plan is returned, including runtime-only
++/// same-Object rederivation. No caller can construct or mutate a certified plan.
++pub(super) fn validate(plan: &Plan) -> Result<(), &'static str> {
++    let blocks = plan.blocks();
++    let count = plan.values().len();
++    if plan.entry() as usize >= blocks.len()
++        || plan.value_scopes().len() != count
++        || blocks
++            .len()
++            .checked_mul(count)
++            .is_none_or(|n| n > ANALYSIS_CELLS)
++    {
++        return Err(BAD);
++    }
++    let ty = |v: Value| plan.values().get(v.get() as usize).ok_or(BAD);
++    let mut initial = vec![false; count];
++    for input in plan.inputs() {
++        let id = input.value().get() as usize;
++        if ty(input.value())? != input.declaration().ty()
++            || plan.value_scopes()[id] != (Scope::Immutable { iteration: None })
++            || initial[id]
++        {
++            return Err(BAD);
++        }
++        initial[id] = true;
++    }
++    for constant in plan.constants() {
++        let id = constant.value().get() as usize;
++        let kind = match constant.scalar() {
++            NativeScalarValue::Bool(_) => NativeScalarKind::Bool,
++            NativeScalarValue::U64(_) => NativeScalarKind::U64,
++        };
++        if ty(constant.value())?.kind() != kind
++            || plan.value_scopes()[id] != (Scope::Immutable { iteration: None })
++            || initial[id]
++        {
++            return Err(BAD);
++        }
++        initial[id] = true;
++    }
++    let mut roles = vec![None; blocks.len()];
++    for (id, iteration) in plan.iterations().iter().enumerate() {
++        if iteration
++            .parent()
++            .is_some_and(|parent| parent as usize >= id)
++        {
++            return Err(BAD);
++        }
++        let mut depth = 0;
++        let mut parent = iteration.parent();
++        while let Some(p) = parent {
++            depth += 1;
++            if depth > crate::MAX_CONTROL_DEPTH {
++                return Err(BAD);
++            }
++            parent = plan.iterations()[p as usize].parent();
++        }
++        if ty(iteration.seed())? != ty(iteration.carrier())?
++            || ty(iteration.next())? != ty(iteration.carrier())?
++            || ty(iteration.result())? != ty(iteration.carrier())?
++            || plan.value_scopes()[iteration.carrier().get() as usize]
++                != (Scope::Carrier {
++                    iteration: id as u32,
++                })
++        {
++            return Err(BAD);
++        }
++        for (block, role) in [
++            (iteration.initialize(), 0),
++            (iteration.header(), 1),
++            (iteration.latch(), 2),
++            (iteration.exit(), 3),
++        ] {
++            let entry = roles.get_mut(block as usize).ok_or(BAD)?;
++            if entry.replace((id as u32, role)).is_some() {
++                return Err(BAD);
++            }
++        }
++        let init = &blocks[iteration.initialize() as usize];
++        let header = &blocks[iteration.header() as usize];
++        let latch = &blocks[iteration.latch() as usize];
++        let exit = &blocks[iteration.exit() as usize];
++        if init.iteration() != iteration.parent()
++            || !matches!(init.action(),Action::Initialize { iteration: n } if *n == id as u32)
++            || init.terminator() != Terminator::Scalar(Term::Jump(iteration.header()))
++            || header.iteration() != Some(id as u32)
++            || !matches!(header.action(), Action::Scalar(Scalar::None))
++            || header.terminator()
++                != (Terminator::Header {
++                    iteration: id as u32,
++                    body: iteration.body(),
++                    exit: iteration.exit(),
++                })
++            || latch.iteration() != Some(id as u32)
++            || !matches!(latch.action(),Action::Latch { iteration:n } if *n == id as u32)
++            || latch.terminator() != Terminator::Scalar(Term::Jump(iteration.header()))
++            || exit.iteration() != iteration.parent()
++            || !matches!(exit.action(), Action::Scalar(Scalar::Copy { source,output })
++                if *source==iteration.carrier() && *output==iteration.result())
++            || blocks
++                .get(iteration.body() as usize)
++                .ok_or(BAD)?
++                .iteration()
++                != Some(id as u32)
++        {
++            return Err(BAD);
++        }
++    }
++    for (id, scope) in plan.value_scopes().iter().enumerate() {
++        let owner = match scope {
++            Scope::Immutable { iteration } => *iteration,
++            Scope::Carrier { iteration } => Some(*iteration),
++        };
++        if owner.is_some_and(|n| n as usize >= plan.iterations().len()) {
++            return Err(BAD);
++        }
++        if let Scope::Carrier { iteration } = scope {
++            if plan.iterations()[*iteration as usize].carrier().get() as usize != id {
++                return Err(BAD);
++            }
++        }
++    }
++    // Check every structural edge, including dormant literal arms. Entry into
++    // a child scope is exclusively its initializer; exit is exclusively header.
++    for (id, block) in blocks.iter().enumerate() {
++        if block
++            .iteration()
++            .is_some_and(|n| n as usize >= plan.iterations().len())
++        {
++            return Err(BAD);
++        }
++        let successors = match block.terminator() {
++            Terminator::Scalar(term) => scalar_successors(term),
++            Terminator::Header { body, exit, .. } => [Some(body), Some(exit)],
++        };
++        for next in successors.into_iter().flatten() {
++            let next_block = blocks.get(next as usize).ok_or(BAD)?;
++            let special = match roles.get(next as usize).copied().flatten() {
++                Some((loop_id, 1)) => {
++                    id == plan.iterations()[loop_id as usize].initialize() as usize
++                        || id == plan.iterations()[loop_id as usize].latch() as usize
++                }
++                Some((loop_id, 3)) => id == plan.iterations()[loop_id as usize].header() as usize,
++                _ => block.iteration() == next_block.iteration(),
++            };
++            if !special {
++                return Err(BAD);
++            }
++        }
++        if let Terminator::Header { iteration, .. } = block.terminator() {
++            if roles[id] != Some((iteration, 1)) {
++                return Err(BAD);
++            }
++        }
++        match block.action() {
++            Action::Initialize { iteration } if roles[id] != Some((*iteration, 0)) => {
++                return Err(BAD);
++            }
++            Action::Latch { iteration } if roles[id] != Some((*iteration, 2)) => return Err(BAD),
++            Action::Scalar(Scalar::Primitive {
++                operands, output, ..
++            }) => {
++                ty(*output)?;
++                if operands.iter().any(|v| ty(*v).is_err()) {
++                    return Err(BAD);
++                }
++            }
++            Action::Scalar(Scalar::Copy { source, output }) if ty(*source)? != ty(*output)? => {
++                return Err(BAD);
++            }
++            _ => {}
++        }
++        match block.terminator() {
++            Terminator::Scalar(Term::Branch { condition, .. })
++                if ty(condition)?.kind() != NativeScalarKind::Bool =>
++            {
++                return Err(BAD);
++            }
++            Terminator::Scalar(Term::LiteralBranch { left, right, .. })
++                if ty(left)? != ty(right)? =>
++            {
++                return Err(BAD);
++            }
++            Terminator::Scalar(Term::Complete) if block.iteration().is_some() => return Err(BAD),
++            _ => {}
++        }
++    }
++    let mut visited = vec![false; blocks.len()];
++    check_scope(plan, None, plan.entry(), initial, &roles, &mut visited)?;
++    // Unreachable fail-closed Reject blocks still have checked structure/types;
++    // no operation with a read or write is silently omitted from the proof.
++    for (id, block) in blocks.iter().enumerate() {
++        if !visited[id]
++            && !(matches!(block.action(), Action::Scalar(Scalar::None))
++                && matches!(block.terminator(), Terminator::Scalar(Term::Reject)))
++        {
++            return Err(BAD);
++        }
++    }
++    Ok(())
++}
++fn check_scope(
++    plan: &Plan,
++    scope: Option<u32>,
++    entry: u32,
++    initial: Vec<bool>,
++    roles: &[Option<(u32, u8)>],
++    visited: &mut [bool],
++) -> Result<(), &'static str> {
++    let mut incoming = vec![Vec::new(); plan.blocks().len()];
++    let mut degrees = vec![0usize; plan.blocks().len()];
++    let mut reachable = vec![false; plan.blocks().len()];
++    let mut pending = vec![entry];
++    while let Some(id) = pending.pop() {
++        if std::mem::replace(&mut reachable[id as usize], true) {
++            continue;
++        }
++        if plan.blocks()[id as usize].iteration() != scope {
++            return Err(BAD);
++        }
++        for next in collapsed_successors(plan, id).into_iter().flatten() {
++            incoming[next as usize].push(id as usize);
++            degrees[next as usize] = degrees[next as usize].checked_add(1).ok_or(BAD)?;
++            pending.push(next);
++        }
++    }
++    let mut ends = vec![Vec::new(); plan.blocks().len()];
++    let mut ready = (0..degrees.len())
++        .filter(|&i| reachable[i] && degrees[i] == 0)
++        .collect::<VecDeque<_>>();
++    let mut seen = 0;
++    while let Some(id) = ready.pop_front() {
++        seen += 1;
++        visited[id] = true;
++        let block = &plan.blocks()[id];
++        let mut known = if let Some(&first) = incoming[id].first() {
++            ends[first].clone()
++        } else {
++            initial.clone()
++        };
++        for &previous in incoming[id].iter().skip(1) {
++            for (bit, &other) in known.iter_mut().zip(&ends[previous]) {
++                *bit &= other;
++            }
++        }
++        let read = |v: Value, known: &[bool]| -> Result<(), &'static str> {
++            if known.get(v.get() as usize).copied().unwrap_or(false) && readable(plan, v, scope, id)
++            {
++                Ok(())
++            } else {
++                Err(BAD)
++            }
++        };
++        match block.action() {
++            Action::Initialize { iteration } => {
++                let child = &plan.iterations()[*iteration as usize];
++                read(child.seed(), &known)?;
++                let mut body_initial = known.clone();
++                body_initial[child.carrier().get() as usize] = true;
++                // The header is not part of the body DAG; it owns the only
++                // backedge and always dispatches before a fresh body visit.
++                visited[child.header() as usize] = true;
++                check_scope(
++                    plan,
++                    Some(*iteration),
++                    child.body(),
++                    body_initial,
++                    roles,
++                    visited,
++                )?;
++                known[child.carrier().get() as usize] = true;
++            }
++            Action::Latch { iteration } => {
++                read(plan.iterations()[*iteration as usize].next(), &known)?
++            }
++            Action::Scalar(action) => {
++                let output = match action {
++                    Scalar::Primitive {
++                        operands, output, ..
++                    } => {
++                        for &value in operands {
++                            read(value, &known)?;
++                        }
++                        Some(*output)
++                    }
++                    Scalar::Copy { source, output } => {
++                        read(*source, &known)?;
++                        Some(*output)
++                    }
++                    Scalar::None => None,
++                };
++                if let Some(output) = output {
++                    let ordinal = output.get() as usize;
++                    if known[ordinal]
++                        || plan.value_scopes()[ordinal] != (Scope::Immutable { iteration: scope })
++                    {
++                        return Err(BAD);
++                    }
++                    known[ordinal] = true;
++                }
++            }
++        }
++        if let Terminator::Scalar(term) = block.terminator() {
++            match term {
++                Term::Branch { condition, .. } => read(condition, &known)?,
++                Term::LiteralBranch { left, right, .. } => {
++                    read(left, &known)?;
++                    read(right, &known)?;
++                }
++                Term::Complete => {
++                    for output in plan.outputs() {
++                        read(output.value(), &known)?;
++                        if plan.values()[output.value().get() as usize] != *output.ty() {
++                            return Err(BAD);
++                        }
++                    }
++                }
++                _ => {}
++            }
++        }
++        ends[id] = known;
++        for next in collapsed_successors(plan, id).into_iter().flatten() {
++            degrees[next as usize] -= 1;
++            if degrees[next as usize] == 0 {
++                ready.push_back(next as usize);
++            }
++        }
++    }
++    if seen != reachable.into_iter().filter(|v| *v).count() {
++        return Err(BAD);
++    }
++    Ok(())
++}
++fn collapsed_successors(plan: &Plan, id: u32) -> [Option<u32>; 2] {
++    match plan.blocks()[id as usize].action() {
++        Action::Initialize { iteration } => {
++            [Some(plan.iterations()[*iteration as usize].exit()), None]
++        }
++        Action::Latch { .. } => [None, None],
++        _ => match plan.blocks()[id as usize].terminator() {
++            Terminator::Scalar(term) => scalar_successors(term),
++            Terminator::Header { .. } => [None, None],
++        },
++    }
++}
+diff --git a/src/engine/src/native_artifact/mod.rs b/src/engine/src/native_artifact/mod.rs
+index 6e2885766..6a77d4976 100644
+--- a/src/engine/src/native_artifact/mod.rs
++++ b/src/engine/src/native_artifact/mod.rs
+@@ -13,3 +13,11 @@ pub use crate::resident::general::native_match_lowering::{
+     NativeMatchArtifactPlan, lower_scalar_match_artifact,
+ };
+ pub use control::*;
++
++mod iteration;
++pub use crate::resident::general::native_match_lowering::{
++    NativeIterationArtifactPlan, lower_scalar_iteration_artifact,
++};
++pub use iteration::*;
++
++pub(crate) mod iteration_validation;
+diff --git a/src/engine/src/resident/general/native_match_lowering.rs b/src/engine/src/resident/general/native_match_lowering.rs
+index a86fe30ef..3263807e3 100644
+--- a/src/engine/src/resident/general/native_match_lowering.rs
++++ b/src/engine/src/resident/general/native_match_lowering.rs
+@@ -7,8 +7,9 @@ use super::{
+     classify_nodes, forwarded_output_source, node_inputs, node_output_slot,
+ };
+ use crate::native_artifact::{
+-    NativeArtifactLoweringError, NativeInput, NativeMatchAction, NativeMatchBlock,
+-    NativeMatchConstant, NativeMatchInput, NativeMatchOrigin, NativeMatchOutput,
++    NativeArtifactLoweringError, NativeInput, NativeIterationAction, NativeIterationBlock,
++    NativeIterationLoop, NativeIterationTerminator, NativeIterationValueScope, NativeMatchAction,
++    NativeMatchBlock, NativeMatchConstant, NativeMatchInput, NativeMatchOrigin, NativeMatchOutput,
+     NativeMatchTerminator, NativeMatchValue, NativeScalarKind, NativeScalarType, NativeScalarValue,
+ };
+ use crate::resident::native_semantics;
+@@ -53,6 +54,55 @@ impl NativeMatchArtifactPlan {
+     }
+ }
+ 
++/// Private-constructor lowering of the ordinary canonical artifact into a
++/// structured counted-loop CFG. This is not a second program/source format.
++#[derive(Clone, Debug)]
++pub struct NativeIterationArtifactPlan {
++    revision: ProgramRevision,
++    inputs: Box<[NativeMatchInput]>,
++    constants: Box<[NativeMatchConstant]>,
++    values: Box<[NativeScalarType]>,
++    value_scopes: Box<[NativeIterationValueScope]>,
++    blocks: Box<[NativeIterationBlock]>,
++    iterations: Box<[NativeIterationLoop]>,
++    outputs: Box<[NativeMatchOutput]>,
++    entry: u32,
++}
++impl NativeIterationArtifactPlan {
++    /// Rechecks bounded lexical ownership/current-visit definitions without
++    /// executing an operation. The plan has no public constructor or mutator.
++    pub fn validate_current_visits(&self) -> Result<(), &'static str> {
++        crate::native_artifact::iteration_validation::validate(self)
++    }
++    pub const fn program_revision(&self) -> ProgramRevision {
++        self.revision
++    }
++    pub fn inputs(&self) -> &[NativeMatchInput] {
++        &self.inputs
++    }
++    pub fn constants(&self) -> &[NativeMatchConstant] {
++        &self.constants
++    }
++    pub fn values(&self) -> &[NativeScalarType] {
++        &self.values
++    }
++    pub fn value_scopes(&self) -> &[NativeIterationValueScope] {
++        &self.value_scopes
++    }
++    pub fn blocks(&self) -> &[NativeIterationBlock] {
++        &self.blocks
++    }
++    pub fn iterations(&self) -> &[NativeIterationLoop] {
++        &self.iterations
++    }
++    pub fn outputs(&self) -> &[NativeMatchOutput] {
++        &self.outputs
++    }
++    pub const fn entry(&self) -> u32 {
++        self.entry
++    }
++}
++
+ type Error = NativeArtifactLoweringError;
+ fn unsupported(node: NodeId, feature: &'static str) -> Error {
+     Error::UnsupportedNode { node, feature }
+@@ -66,7 +116,11 @@ struct Builder<'a> {
+     catalog: &'a FunctionCatalog,
+     values: Vec<NativeScalarType>,
+     constants: BTreeMap<ConstantId, NativeMatchValue>,
+-    blocks: Vec<NativeMatchBlock>,
++    blocks: Vec<NativeIterationBlock>,
++    value_scopes: Vec<NativeIterationValueScope>,
++    iterations: Vec<Option<NativeIterationLoop>>,
++    current_iteration: Option<u32>,
++    allow_iteration: bool,
+ }
+ impl Builder<'_> {
+     fn value(&mut self, ty: NativeScalarType) -> Result<NativeMatchValue, Error> {
+@@ -80,21 +134,26 @@ impl Builder<'_> {
+         let id =
+             u32::try_from(self.values.len()).map_err(|_| Error::InvalidBinding { node: None })?;
+         self.values.push(ty);
++        self.value_scopes
++            .push(NativeIterationValueScope::Immutable {
++                iteration: self.current_iteration,
++            });
+         Ok(NativeMatchValue(id))
+     }
+     fn block(&mut self, at: NativeMatchOrigin, action: NativeMatchAction) -> Result<u32, Error> {
+         let id = u32::try_from(self.blocks.len()).map_err(|_| Error::InvalidBinding {
+             node: Some(at.node()),
+         })?;
+-        self.blocks.push(NativeMatchBlock {
++        self.blocks.push(NativeIterationBlock {
+             origin: at,
+-            action,
+-            terminator: NativeMatchTerminator::Reject,
++            action: NativeIterationAction::Scalar(action),
++            terminator: NativeMatchTerminator::Reject.into(),
++            iteration: self.current_iteration,
+         });
+         Ok(id)
+     }
+     fn link(&mut self, from: u32, to: u32) {
+-        self.blocks[from as usize].terminator = NativeMatchTerminator::Jump(to);
++        self.blocks[from as usize].terminator = NativeMatchTerminator::Jump(to).into();
+     }
+     fn ty(&self, value: NativeMatchValue) -> &NativeScalarType {
+         &self.values[value.get() as usize]
+@@ -188,6 +247,7 @@ impl Builder<'_> {
+                     ControlParameterSource::PatternBinding(local) => binding
+                         .filter(|(id, _)| *id == local)
+                         .map(|(_, value)| value),
++                    ControlParameterSource::IterationCarrier => None,
+                 }
+                 .ok_or(Error::InvalidBinding { node: Some(owner) })?;
+                 if self.ty(value).schema() != parameter.schema {
+@@ -196,6 +256,14 @@ impl Builder<'_> {
+                 Ok(value)
+             })
+             .collect::<Result<Vec<_>, Error>>()?;
++        self.lower_block(owner, block, parameters)
++    }
++    fn lower_block(
++        &mut self,
++        owner: NodeId,
++        block: &ControlBlock,
++        parameters: Vec<NativeMatchValue>,
++    ) -> Result<(u32, u32, NativeMatchValue), Error> {
+         let at = origin(owner, Some(block.id.0), None);
+         let entry = self.block(at, NativeMatchAction::None)?;
+         let mut tail = entry;
+@@ -220,6 +288,9 @@ impl Builder<'_> {
+                     (id, id)
+                 }
+                 ControlOperationBody::Match(nested) => self.matched(at, nested, &args, result)?,
++                ControlOperationBody::Iteration(nested) if self.allow_iteration => {
++                    self.iteration(at, nested, &args, result)?
++                }
+                 _ => return Err(unsupported(owner, "non-Match scalar control operation")),
+             };
+             self.link(tail, start);
+@@ -229,6 +300,110 @@ impl Builder<'_> {
+         let yielded = self.read(block.yield_value, block, &parameters, &locals, owner)?;
+         Ok((entry, tail, yielded))
+     }
++    fn iteration(
++        &mut self,
++        at: NativeMatchOrigin,
++        declaration: &crate::IterationDeclaration,
++        arguments: &[NativeMatchValue],
++        output: NativeMatchValue,
++    ) -> Result<(u32, u32), Error> {
++        let owner = at.node();
++        if !self.allow_iteration {
++            return Err(unsupported(owner, "counted iteration in Match-only plan"));
++        }
++        let seed = *arguments
++            .get(declaration.seed as usize)
++            .ok_or(Error::InvalidBinding { node: Some(owner) })?;
++        let ty = scalar_type(self.artifact, declaration.carrier)?;
++        if self.ty(seed) != &ty || self.ty(output) != &ty {
++            return Err(Error::InvalidBinding { node: Some(owner) });
++        }
++        for capture in &declaration.captures {
++            let value = arguments
++                .get(capture.input as usize)
++                .ok_or(Error::InvalidBinding { node: Some(owner) })?;
++            if !capture.freeze_on_suspend || self.ty(*value).schema() != capture.schema {
++                return Err(Error::InvalidBinding { node: Some(owner) });
++            }
++        }
++        let id = u32::try_from(self.iterations.len())
++            .map_err(|_| Error::InvalidBinding { node: Some(owner) })?;
++        let parent = self.current_iteration;
++        self.iterations.push(None);
++        let initialize = self.block(at, NativeMatchAction::None)?;
++        self.blocks[initialize as usize].action =
++            NativeIterationAction::Initialize { iteration: id };
++        self.current_iteration = Some(id);
++        let body_result: Result<_, Error> = (|| {
++            let carrier = self.value(ty)?;
++            self.value_scopes[carrier.get() as usize] =
++                NativeIterationValueScope::Carrier { iteration: id };
++            let body_origin = origin(owner, Some(declaration.body.id.0), None);
++            let header = self.block(body_origin, NativeMatchAction::None)?;
++            let parameters = declaration
++                .body
++                .parameters
++                .iter()
++                .map(|parameter| {
++                    let value = match parameter.source {
++                        ControlParameterSource::IterationCarrier => Some(carrier),
++                        ControlParameterSource::Capture(index) => declaration
++                            .captures
++                            .get(index as usize)
++                            .and_then(|capture| arguments.get(capture.input as usize))
++                            .copied(),
++                        ControlParameterSource::Scrutinee
++                        | ControlParameterSource::PatternBinding(_) => None,
++                    }
++                    .ok_or(Error::InvalidBinding { node: Some(owner) })?;
++                    if self.ty(value).schema() != parameter.schema {
++                        return Err(Error::InvalidBinding { node: Some(owner) });
++                    }
++                    Ok(value)
++                })
++                .collect::<Result<Vec<_>, Error>>()?;
++            let (body, tail, next) = self.lower_block(owner, &declaration.body, parameters)?;
++            if self.ty(next) != self.ty(carrier) {
++                return Err(Error::InvalidBinding { node: Some(owner) });
++            }
++            let latch = self.block(body_origin, NativeMatchAction::None)?;
++            self.blocks[latch as usize].action = NativeIterationAction::Latch { iteration: id };
++            self.link(tail, latch);
++            self.link(latch, header);
++            Ok((carrier, header, body, next, latch))
++        })();
++        self.current_iteration = parent;
++        let (carrier, header, body, next, latch) = body_result?;
++        let exit = self.block(
++            at,
++            NativeMatchAction::Copy {
++                source: carrier,
++                output,
++            },
++        )?;
++        self.blocks[header as usize].terminator = NativeIterationTerminator::Header {
++            iteration: id,
++            body,
++            exit,
++        };
++        self.link(initialize, header);
++        self.iterations[id as usize] = Some(NativeIterationLoop {
++            origin: at,
++            count: declaration.count,
++            parent,
++            seed,
++            carrier,
++            next,
++            result: output,
++            initialize,
++            header,
++            body,
++            latch,
++            exit,
++        });
++        Ok((initialize, exit))
++    }
++
+     fn matched(
+         &mut self,
+         at: NativeMatchOrigin,
+@@ -307,12 +482,13 @@ impl Builder<'_> {
+                     condition,
+                     yes: body,
+                     no: next,
+-                };
++                }
++                .into();
+                 start
+             } else {
+                 body
+             };
+-            self.blocks[test as usize].terminator = if let Some(peer) = literal {
++            self.blocks[test as usize].terminator = (if let Some(peer) = literal {
+                 if self.ty(peer) != self.ty(scrutinee) {
+                     return Err(Error::InvalidBinding { node: Some(owner) });
+                 }
+@@ -324,12 +500,13 @@ impl Builder<'_> {
+                 }
+             } else {
+                 NativeMatchTerminator::Jump(selected)
+-            };
++            })
++            .into();
+             test = next;
+         }
+         // Keep a typed fail-closed terminal even though validated exhaustive
+         // patterns make this path unreachable for admitted scalar inputs.
+-        self.blocks[test as usize].terminator = NativeMatchTerminator::Reject;
++        self.blocks[test as usize].terminator = NativeMatchTerminator::Reject.into();
+         Ok((entry, join))
+     }
+ }
+@@ -340,6 +517,59 @@ pub fn lower_scalar_match_artifact(
+     artifact: &ProgramArtifact,
+     catalog: &FunctionCatalog,
+ ) -> Result<NativeMatchArtifactPlan, Error> {
++    let lowered = lower_scalar_control_artifact(artifact, catalog, false)?;
++    let blocks = lowered
++        .blocks
++        .into_vec()
++        .into_iter()
++        .map(|block| {
++            let (
++                NativeIterationAction::Scalar(action),
++                NativeIterationTerminator::Scalar(terminator),
++            ) = (block.action, block.terminator)
++            else {
++                return Err(Error::InvalidBinding {
++                    node: Some(block.origin.node()),
++                });
++            };
++            if block.iteration.is_some() {
++                return Err(Error::InvalidBinding {
++                    node: Some(block.origin.node()),
++                });
++            }
++            Ok(NativeMatchBlock {
++                origin: block.origin,
++                action,
++                terminator,
++            })
++        })
++        .collect::<Result<Box<[_]>, Error>>()?;
++    if !lowered.iterations.is_empty() {
++        return Err(Error::InvalidBinding { node: None });
++    }
++    Ok(NativeMatchArtifactPlan {
++        revision: lowered.revision,
++        inputs: lowered.inputs,
++        constants: lowered.constants,
++        values: lowered.values,
++        blocks,
++        outputs: lowered.outputs,
++        entry: lowered.entry,
++    })
++}
++
++pub fn lower_scalar_iteration_artifact(
++    artifact: &ProgramArtifact,
++    catalog: &FunctionCatalog,
++) -> Result<NativeIterationArtifactPlan, Error> {
++    lower_scalar_control_artifact(artifact, catalog, true)
++}
++
++fn lower_scalar_control_artifact(
++    artifact: &ProgramArtifact,
++    catalog: &FunctionCatalog,
++    allow_iteration: bool,
++) -> Result<NativeIterationArtifactPlan, Error> {
+     if !artifact.requirements().is_empty()
+         || !artifact.constraints().is_empty()
+         || !artifact.compute_regions().is_empty()
+@@ -353,7 +583,8 @@ pub fn lower_scalar_match_artifact(
+         if !matches!(
+             &node.body,
+             ExecutableNodeBody::Operation(_) | ExecutableNodeBody::Match(_)
+-        ) {
++        ) && !(allow_iteration && matches!(&node.body, ExecutableNodeBody::Iteration(_)))
++        {
+             return Err(unsupported(node.node, "non-Match control or lifecycle"));
+         }
+     }
+@@ -373,6 +604,10 @@ pub fn lower_scalar_match_artifact(
+         values: Vec::new(),
+         constants: BTreeMap::new(),
+         blocks: Vec::new(),
++        value_scopes: Vec::new(),
++        iterations: Vec::new(),
++        current_iteration: None,
++        allow_iteration,
+     };
+     let mut sources = BTreeMap::new();
+     let mut inputs = Vec::new();
+@@ -457,6 +692,9 @@ pub fn lower_scalar_match_artifact(
+                 (id, id)
+             }
+             ExecutableNodeBody::Match(control) => builder.matched(at, control, &args, output)?,
++            ExecutableNodeBody::Iteration(control) if allow_iteration => {
++                builder.iteration(at, control, &args, output)?
++            }
+             _ => unreachable!("node class checked before construction"),
+         };
+         builder.link(tail, start);
+@@ -469,7 +707,7 @@ pub fn lower_scalar_match_artifact(
+     }
+     let completion = builder.block(root_origin, NativeMatchAction::None)?;
+     builder.link(tail, completion);
+-    builder.blocks[completion as usize].terminator = NativeMatchTerminator::Complete;
++    builder.blocks[completion as usize].terminator = NativeMatchTerminator::Complete.into();
+     let outputs = artifact
+         .outputs()
+         .iter()
+@@ -492,13 +730,83 @@ pub fn lower_scalar_match_artifact(
+             })
+         })
+         .collect::<Result<Vec<_>, Error>>()?;
+-    Ok(NativeMatchArtifactPlan {
++    let plan = NativeIterationArtifactPlan {
+         revision: artifact.revision(),
+         inputs: inputs.into(),
+         constants: constants.into(),
+         values: builder.values.into(),
+         blocks: builder.blocks.into(),
++        value_scopes: builder.value_scopes.into(),
++        iterations: builder
++            .iterations
++            .into_iter()
++            .map(|item| item.ok_or(Error::InvalidBinding { node: None }))
++            .collect::<Result<Box<[_]>, _>>()?,
+         outputs: outputs.into(),
+         entry,
+-    })
++    };
++    if allow_iteration {
++        crate::native_artifact::iteration_validation::validate(&plan)
++            .map_err(|_| Error::InvalidBinding { node: None })?;
++    }
++    Ok(plan)
++}
++
++#[cfg(all(test, feature = "source", feature = "artifact-codec"))]
++mod iteration_proof_tests {
++    use super::*;
++    use mech_syntax::document::{
++        AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
++        parse_canonical_document,
++    };
++    use std::sync::Arc;
++    fn plan(source: &str) -> NativeIterationArtifactPlan {
++        let parsed = parse_canonical_document(
++            TextSnapshot::new(DocumentId(0x49545052), Revision(1), source).unwrap(),
++            ParseConfig::default(),
++        );
++        assert!(parsed.is_strictly_clean(), "{:?}", parsed.diagnostics);
++        // Identity requires no operation factory. A replacement with a cost
++        // tag cannot become semantic authority through this test catalog.
++        let catalog = Arc::new(mech_core::FunctionCatalogBuilder::new().build().unwrap());
++        let artifact = crate::CanonicalSourceFrontend
++            .compile_document_with_catalog(
++                &DocumentSyntax::cast(parsed.syntax()).unwrap(),
++                catalog.clone(),
++            )
++            .unwrap()
++            .compile_artifact()
++            .unwrap();
++        lower_scalar_iteration_artifact(&artifact, &catalog).unwrap()
++    }
++    #[test]
++    fn iteration_current_visit_proof_accepts_nested_identity_and_zero_count() {
++        for count in [0, 1, 25, u64::MAX] {
++            let source = format!(
++                "identity(x<u64>) => (next<u64>) := next := x.\nouter(x<u64>) => (next<u64>) := next := x |3> identity.\nseed<u64> |{count}> outer\n"
++            );
++            let plan = plan(&source);
++            assert_eq!(plan.iterations.len(), 2);
++            plan.validate_current_visits().unwrap();
++        }
++    }
++    #[test]
++    fn iteration_current_visit_proof_rejects_later_result_and_unowned_backedge() {
++        let source = "identity(x<u64>) => (next<u64>) := next := x.\nseed<u64> |25> identity\n";
++        let valid = plan(source);
++        let mut previous_visit = valid.clone();
++        // This physical word exists and is zero-initialized, but has no
++        // definition in the current body invocation. It must not be readable.
++        previous_visit.iterations[0].next = previous_visit.iterations[0].result;
++        assert!(previous_visit.validate_current_visits().is_err());
++        let mut skipped_header = valid.clone();
++        let iteration = &valid.iterations[0];
++        skipped_header.blocks[iteration.latch() as usize].terminator =
++            NativeIterationTerminator::Scalar(NativeMatchTerminator::Jump(iteration.body()));
++        assert!(skipped_header.validate_current_visits().is_err());
++        let mut forged_scope = valid.clone();
++        forged_scope.value_scopes[iteration.carrier().get() as usize] =
++            NativeIterationValueScope::Immutable { iteration: Some(0) };
++        assert!(forged_scope.validate_current_visits().is_err());
++    }
+ }

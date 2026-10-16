@@ -1,0 +1,53 @@
+diff --git a/hosts/gpu/tests/fixtures/native/binarytrees-idiomatic.mec b/hosts/gpu/tests/fixtures/native/binarytrees-idiomatic.mec
+new file mode 100644
+--- /dev/null
++++ b/hosts/gpu/tests/fixtures/native/binarytrees-idiomatic.mec
+@@ -0,0 +1,48 @@
+++> memory
+++> number
+++> parallel
+++> stats
+++> text
+++> @args := cli/args
+++> @out := cli/stdout
++
++<node> := <{left<ref>, right<ref>}>
++
++make(depth<u64>) => (root<ref>) :=
++  root := depth?
++    | 0u64 => memory/allocate({left: memory/null(), right: memory/null()})
++    | * => memory/allocate({left: make(depth - 1u64), right: make(depth - 1u64)}).
++
++count(root<ref>) => (check<u64>) :=
++  node := memory/read(root, <node>)
++  check := node.left?
++    | memory/null() => 1u64
++    | * => 1u64 + count(node.left) + count(node.right).
++
++tree(depth<u64>) => (check<u64>) :=
++  check := depth |> make |> count.
++
++allocated-chunk(start<u64>, end<u64>, depth<u64>) => (check<u64>) :=
++  check := stats/sum([memory/with-frame(tree, depth) | index <- start..end]).
++
++chunk(start<u64>, end<u64>, depth<u64>) => (check<u64>) :=
++  capacity := number/shift-left(1u64, depth + 1u64) - 1u64
++  check := memory/with-arena(capacity, <node>, allocated-chunk, (start, end, depth)).
++
++depth-line(depth<u64>, maximum<u64>) => (line<string>) :=
++  iterations := number/shift-left(1u64, maximum - depth + 4u64)
++  check := parallel/reduce-ranges(0u64, iterations, number/max(1u64, iterations / 64u64), chunk, depth, "sum")
++  line := number/format(iterations, 0u64) + "\t trees of depth " + number/format(depth, 0u64) + "\t check: " + number/format(check, 0u64) + "\n".
++
++long-lived(maximum<u64>) => (check<u64>, lines<string>) :=
++  root := make(maximum)
++  lines := text/join([depth-line(depth, maximum) | depth <- 4u64..2u64..=maximum], "")
++  check := count(root).
++
++n := number/bounded(number/parse-u64(@args/1), 0u64, 21u64)
++maximum := number/max(6u64, n)
++stretch := memory/with-arena(number/shift-left(1u64, maximum + 2u64) - 1u64, <node>, tree, maximum + 1u64)
++@out/text <- "stretch tree of depth " + number/format(maximum + 1u64, 0u64) + "\t check: " + number/format(stretch, 0u64) + "\n"
++(check, lines) := memory/with-arena(number/shift-left(1u64, maximum + 1u64) - 1u64, <node>, long-lived, maximum)
++@out/text <- lines
++@out/text <- "long lived tree of depth " + number/format(maximum, 0u64) + "\t check: " + number/format(check, 0u64) + "\n"

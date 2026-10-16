@@ -1,0 +1,30 @@
+{
+  "status": "UNAPPLIED / UNRUN",
+  "qualification_credit": 0,
+  "scope": [
+    "private witness-derived Bool/U64 scalar Iteration lowering from actual ordinary artifact; no source names/IDs/cost tags as semantic proof",
+    "bounded per-lexical-scope DAG proof with structurally declared loops collapsed; current body invocation never inherits previous visit locals",
+    "shared Module definition for JIT/Object actual header/latch/backedge with one private carrier and counter per loop",
+    "shared certified scalar operation/branch emission factored from existing Match without changing its plan or DAG validator",
+    "ABI3 while frozen scalar ABI1 and Match ABI2 retained",
+    "finite cumulative visit work, disjoint managed machine counters/callback progress, exact literal count checked at legal header transitions",
+    "atomic staged outputs; early arithmetic before later node denial",
+    "runtime-only same-Object entry and explicit typed CFG/count/scope/target identity; common pinned workspace generator reused"
+  ],
+  "tests": {
+    "engine_private_current_visit": 2,
+    "gpu_source_original_decoded_resident_jit_object": 5,
+    "gpu_runtime_private_admission_progress": 2,
+    "gpu_identity_private": 1,
+    "linked_ignored_worker_and_qualification": 2
+  },
+  "limits": [
+    "Bool/U64 scalar subproof only",
+    "managed matrix NativeHost carrier/capture/leaf ABI remains required; matrix candidate supplies matrix implementation slice",
+    "I64/F64/casts require explicit additive kind/op/transport/literal-equality/identity composition",
+    "computed Activation nodes, state, Recur/FSM/lifecycle and resources rejected",
+    "no benchmark execution, timing or secure/trusted process comparison",
+    "no Cargo, JIT invocation, Object execution or linked build has run for this source candidate"
+  ],
+  "composition": "After ordinary Iteration, native Match and linked Match. Explicitly compose later scalar and matrix changes. Scalar Bool/U64 subproof only."
+}

@@ -1,0 +1,261 @@
+{
+  "schema": "mech.idiomatic-source-compiler-gap-workmap.v1",
+  "status": "source-review-only-not-compiler-support-evidence",
+  "inspected_catalogs": [
+    {
+      "path": "repository/src/stdlib/src/native_sequence.rs",
+      "sha256": "af67c3044b938b3ffabb73a05284aff8af64ccad446ec76af677d4c3a27a4d36",
+      "bytes": 6032
+    },
+    {
+      "path": "repository/src/core/src/operation_contract/maintained.rs",
+      "sha256": "fb86f208bc8e9e93ad04a01523f3afc8cb84afe84c9cb069e362af88888ed364",
+      "bytes": 14284
+    },
+    {
+      "path": "repository/src/engine/src/intrinsics/pure_text.rs",
+      "sha256": "563a41a9acf0f04757fde68ac4257c1a693b70ba83b78724b71476ca23cecce9",
+      "bytes": 36526
+    }
+  ],
+  "workloads": [
+    {
+      "benchmark": "binarytrees",
+      "source": {
+        "path": "workloads/idiomatic-six/source/hosts/gpu/tests/fixtures/native/binarytrees-idiomatic.mec",
+        "sha256": "2eab3a7c6491ce33e97ee974917100005732da9124bcf5962c4f8a0572d2cca6",
+        "bytes": 2102
+      },
+      "named_library_calls": [
+        {
+          "operation": "memory/allocate",
+          "inspected_availability": "experimental-native-sequence-or-control-catalog-only-no-canonical-contract-inferred"
+        },
+        {
+          "operation": "memory/null",
+          "inspected_availability": "experimental-native-sequence-or-control-catalog-only-no-canonical-contract-inferred"
+        },
+        {
+          "operation": "memory/read",
+          "inspected_availability": "experimental-native-sequence-or-control-catalog-only-no-canonical-contract-inferred"
+        },
+        {
+          "operation": "memory/with-arena",
+          "inspected_availability": "experimental-native-sequence-or-control-catalog-only-no-canonical-contract-inferred"
+        },
+        {
+          "operation": "memory/with-frame",
+          "inspected_availability": "experimental-native-sequence-or-control-catalog-only-no-canonical-contract-inferred"
+        },
+        {
+          "operation": "number/bounded",
+          "inspected_availability": "experimental-native-sequence-or-control-catalog-only-no-canonical-contract-inferred"
+        },
+        {
+          "operation": "number/format",
+          "inspected_availability": "maintained-canonical-source-and-resident-contract-exists-native-use-still-unqualified"
+        },
+        {
+          "operation": "number/max",
+          "inspected_availability": "experimental-native-sequence-or-control-catalog-only-no-canonical-contract-inferred"
+        },
+        {
+          "operation": "number/parse-u64",
+          "inspected_availability": "maintained-canonical-source-and-resident-contract-exists-native-use-still-unqualified"
+        },
+        {
+          "operation": "number/shift-left",
+          "inspected_availability": "experimental-native-sequence-or-control-catalog-only-no-canonical-contract-inferred"
+        },
+        {
+          "operation": "parallel/reduce-ranges",
+          "inspected_availability": "experimental-native-sequence-or-control-catalog-only-no-canonical-contract-inferred"
+        },
+        {
+          "operation": "stats/sum",
+          "inspected_availability": "experimental-native-sequence-or-control-catalog-only-no-canonical-contract-inferred"
+        },
+        {
+          "operation": "text/join",
+          "inspected_availability": "maintained-canonical-source-and-resident-contract-exists-native-use-still-unqualified"
+        }
+      ],
+      "language_requirements": [
+        "Generic recursive record/ref kind, actual node allocation, null/ref match and arena-owned read/projection; non-tail recursive calls retain errors and source order.",
+        "General arena/frame higher-order lifetime scopes: each short tree frame retires before reuse; long-lived root stays allocated during all depth work; escaping String/tuple results contain no arena references.",
+        "Generic parallel range reduction with typed callback, checked U64 shifts, ordered line assembly and genuine per-node allocation work."
+      ]
+    },
+    {
+      "benchmark": "fasta",
+      "source": {
+        "path": "workloads/idiomatic-six/source/hosts/gpu/tests/fixtures/native/fasta-idiomatic.mec",
+        "sha256": "ec2d9ecf0963bc6086c0b6b0588d398c5550cf9959e8ae576eca499ab2fa3204",
+        "bytes": 3151
+      },
+      "named_library_calls": [
+        {
+          "operation": "number/bounded",
+          "inspected_availability": "experimental-native-sequence-or-control-catalog-only-no-canonical-contract-inferred"
+        },
+        {
+          "operation": "number/mod",
+          "inspected_availability": "experimental-native-sequence-or-control-catalog-only-no-canonical-contract-inferred"
+        },
+        {
+          "operation": "number/parse-u64",
+          "inspected_availability": "maintained-canonical-source-and-resident-contract-exists-native-use-still-unqualified"
+        },
+        {
+          "operation": "sequence/length",
+          "inspected_availability": "maintained-canonical-source-and-resident-contract-exists-native-use-still-unqualified"
+        }
+      ],
+      "language_requirements": [
+        "General String scalar indexing/concatenation, [f64] probabilities and sequential cumulative selection; exact U64 to F64 conversion and checked modular LCG arithmetic.",
+        "Resource sends captured by ordinary FSM bodies with bounded source buffer, source-order sequencing and transaction staging; no io/write-scan or FASTA helper.",
+        "Qualify per-character loop/append work and bounded 65536-threshold flushing; compiler may need a general admitted mutable/growable String builder implementation for practical linear construction."
+      ]
+    },
+    {
+      "benchmark": "mandelbrot",
+      "source": {
+        "path": "workloads/idiomatic-six/source/hosts/gpu/tests/fixtures/native/mandelbrot-idiomatic.mec",
+        "sha256": "a0b0787b05d9c12e3048838d61e60903e2903923cf51beffe45ab9dc247784f2",
+        "bytes": 1905
+      },
+      "named_library_calls": [
+        {
+          "operation": "number/mod",
+          "inspected_availability": "experimental-native-sequence-or-control-catalog-only-no-canonical-contract-inferred"
+        },
+        {
+          "operation": "number/parse-u64",
+          "inspected_availability": "maintained-canonical-source-and-resident-contract-exists-native-use-still-unqualified"
+        }
+      ],
+      "language_requirements": [
+        "Proposed @out/bytes port accepts exactly canonical rank2 U8 row payload [u8]:1,N and writes raw bytes; it is unimplemented and must never marshal through String.",
+        "Ordinary dynamic U8 row block concatenation, comprehensions, indexed values and checked U64->U8 conversion; source exposes decimal header serialization and MSB-first packing.",
+        "Canonical F64 orbit arithmetic and Bool/U64 selection with lazy escape guard; ordinary nested per-byte/per-pixel FSM codegen, exact 50-step/nonaligned-row semantics and no grid/image workload route."
+      ]
+    },
+    {
+      "benchmark": "pidigits",
+      "source": {
+        "path": "workloads/idiomatic-six/source/hosts/gpu/tests/fixtures/native/pidigits-idiomatic.mec",
+        "sha256": "e84677467e5ab7a4e561839b5b91ae6503742d40e9e244c52f49b5aec0964a4a",
+        "bytes": 2134
+      },
+      "named_library_calls": [
+        {
+          "operation": "bigint/floor-u64",
+          "inspected_availability": "experimental-native-sequence-or-control-catalog-only-no-canonical-contract-inferred"
+        },
+        {
+          "operation": "bigint/less-equal",
+          "inspected_availability": "experimental-native-sequence-or-control-catalog-only-no-canonical-contract-inferred"
+        },
+        {
+          "operation": "bigint/new",
+          "inspected_availability": "experimental-native-sequence-or-control-catalog-only-no-canonical-contract-inferred"
+        },
+        {
+          "operation": "number/format",
+          "inspected_availability": "maintained-canonical-source-and-resident-contract-exists-native-use-still-unqualified"
+        },
+        {
+          "operation": "number/parse-u64",
+          "inspected_availability": "maintained-canonical-source-and-resident-contract-exists-native-use-still-unqualified"
+        },
+        {
+          "operation": "sequence/length",
+          "inspected_availability": "maintained-canonical-source-and-resident-contract-exists-native-use-still-unqualified"
+        },
+        {
+          "operation": "text/join",
+          "inspected_availability": "maintained-canonical-source-and-resident-contract-exists-native-use-still-unqualified"
+        }
+      ],
+      "language_requirements": [
+        "Canonical arbitrary-precision signed values, exact mixed U64 arithmetic, immutable value storage/recycling, comparison and checked floor quotient extraction.",
+        "Selected bigint/new, bigint/floor-u64 and bigint/less-equal leaf contracts; no entire spigot helper or workload dispatch.",
+        "Source uses owned value arithmetic rather than alias-sensitive mutable scratch buffers; prove exact spigot state and finite value storage across both FSMs.",
+        "Growing output String is explicit source state; qualify finite admitted buffering and append cost without hiding emission or excluding preparation."
+      ]
+    },
+    {
+      "benchmark": "regexredux",
+      "source": {
+        "path": "workloads/idiomatic-six/source/hosts/gpu/tests/fixtures/native/regexredux-idiomatic.mec",
+        "sha256": "19fbd7faddf7a9be092605a7c8f9a6d05501d63b350307b60f180b4189f22c94",
+        "bytes": 1136
+      },
+      "named_library_calls": [
+        {
+          "operation": "number/format",
+          "inspected_availability": "maintained-canonical-source-and-resident-contract-exists-native-use-still-unqualified"
+        },
+        {
+          "operation": "regex/count-bytes",
+          "inspected_availability": "experimental-native-sequence-or-control-catalog-only-no-canonical-contract-inferred"
+        },
+        {
+          "operation": "regex/replace-bytes",
+          "inspected_availability": "experimental-native-sequence-or-control-catalog-only-no-canonical-contract-inferred"
+        },
+        {
+          "operation": "text/join",
+          "inspected_availability": "maintained-canonical-source-and-resident-contract-exists-native-use-still-unqualified"
+        },
+        {
+          "operation": "text/length",
+          "inspected_availability": "experimental-native-sequence-or-control-catalog-only-no-canonical-contract-inferred"
+        }
+      ],
+      "language_requirements": [
+        "regex/count-bytes and regex/replace-bytes exist in the experimental catalog only; promote genuine reusable selected regex leaf contracts with byte mode, full scan admission, compile lifetime and global leftmost nonoverlap behavior.",
+        "text/length is the retained byte-length spelling, not sequence/length (graphemes); provide its canonical checked UTF-8 byte-length contract.",
+        "Preserve nine separate scans and five sequential replacements in source order, including exact escaping and errors; no benchmark-shaped fused regex operation."
+      ]
+    },
+    {
+      "benchmark": "revcomp",
+      "source": {
+        "path": "workloads/idiomatic-six/source/hosts/gpu/tests/fixtures/native/revcomp-idiomatic.mec",
+        "sha256": "d6386f38994d5a9be0423fc9bac8f1d7a1079be194f1ca6439267849c8deb81f",
+        "bytes": 2619
+      },
+      "named_library_calls": [
+        {
+          "operation": "number/min",
+          "inspected_availability": "not-in-inspected-maintained-or-experimental-catalogs-generic-operation-design-required"
+        },
+        {
+          "operation": "sequence/length",
+          "inspected_availability": "maintained-canonical-source-and-resident-contract-exists-native-use-still-unqualified"
+        }
+      ],
+      "language_requirements": [
+        "Proposed @in/bytes snapshots canonical rank2 U8 row [u8]:1,N without UTF-8 decoding; proposed @out/bytes emits that row unchanged. Both ports are unimplemented general CLI capabilities.",
+        "Canonical U8-keyed/U8-valued map, numeric byte comparisons, dynamic U8 row block append/slice, empty row type and matrix comprehensions; no bytes/table/translate or record driver.",
+        "Preserve arbitrary binary header bytes, CR/LF/CRLF, comment and preheader rules, reverse invalid-byte error order, empty records and exact wrapping.",
+        "Whole-record source retention is explicit; prove finite admission for input/record/reverse/output buffers and atomic rollback of staged earlier records on late invalid input."
+      ]
+    }
+  ],
+  "provider_workmap": {
+    "path": "workloads/idiomatic-six/provider-workmap.json",
+    "original_sha256": "85d3a03bc51dd2335d4445d2cb4977e6d9c89e182b6dbb9c4e6f3bde716adbf5"
+  },
+  "qualification": {
+    "parse": false,
+    "compile": false,
+    "resident": false,
+    "native": false,
+    "secure_trusted": false,
+    "benchmark": false
+  },
+  "note": "Call inventory is lexical source inventory only. Catalog presence gives no parse, type, lowering, authority, transaction or execution credit. Operator, syntax and resource gaps are listed separately.",
+  "preservation_status": "SOURCE DESIGN ONLY; UNAPPLIED / UNRUN"
+}

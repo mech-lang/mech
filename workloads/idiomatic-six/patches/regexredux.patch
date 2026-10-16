@@ -1,0 +1,37 @@
+diff --git a/hosts/gpu/tests/fixtures/native/regexredux-idiomatic.mec b/hosts/gpu/tests/fixtures/native/regexredux-idiomatic.mec
+new file mode 100644
+--- /dev/null
++++ b/hosts/gpu/tests/fixtures/native/regexredux-idiomatic.mec
+@@ -0,0 +1,32 @@
+++> number
+++> regex
+++> text
+++> @in := cli/stdin
+++> @out := cli/stdout
++
++count-line(dna<string>, pattern<string>) => (line<string>) :=
++  count := regex/count-bytes(dna, pattern)
++  line := pattern + " " + number/format(count, 0u64) + "\n".
++
++raw := @in/text
++initial := text/length(raw)
++dna := regex/replace-bytes(raw, ">[^\n]*\n|\n", "")
++cleaned := text/length(dna)
++patterns := [
++  "agggtaaa|tttaccct"
++  "[cgt]gggtaaa|tttaccc[acg]"
++  "a[act]ggtaaa|tttacc[agt]t"
++  "ag[act]gtaaa|tttac[agt]ct"
++  "agg[act]taaa|ttta[agt]cct"
++  "aggg[acg]aaa|ttt[cgt]ccct"
++  "agggt[cgt]aa|tt[acg]accct"
++  "agggta[cgt]a|t[acg]taccct"
++  "agggtaa[cgt]|[acg]ttaccct"
++]
++@out/text <- text/join([count-line(dna, pattern) | pattern <- patterns], "")
++four := regex/replace-bytes(dna, "tHa[Nt]", "<4>")
++three := regex/replace-bytes(four, "aND|caN|Ha[DS]|WaS", "<3>")
++two := regex/replace-bytes(three, "a[NSt]|BY", "<2>")
++bars := regex/replace-bytes(two, "<[^>]*>", "|")
++final := regex/replace-bytes(bars, "\\|[^|][^|]*\\|", "-")
++@out/text <- "\n" + number/format(initial, 0u64) + "\n" + number/format(cleaned, 0u64) + "\n" + number/format(text/length(final), 0u64) + "\n"

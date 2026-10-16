@@ -1,0 +1,46 @@
+{
+  "status": "UNAPPLIED / UNRUN",
+  "qualification_credit": 0,
+  "scope": {
+    "operations": [
+      "U64ToI64",
+      "I64ToU64",
+      "U64ToF64",
+      "I64ToF64",
+      "F64ToU64",
+      "F64ToI64"
+    ],
+    "authority": "Only the actual completed maintained convert/kind binder, carrying its immutable private Explicit Scalar Builtin ConversionPlan, may attach a candidate. Wrapping, dynamic payload and live matrix conversion plans are excluded. The exact scalar schemas, genuine layouts and finished request are checked again before the private final BoundCall seal.",
+    "contract": "Cast-only FullWrite SameAsInput0 and KernelReported, pure ReadSignal/WriteSignal with no alias. Existing arithmetic/comparison ExactScalar and operation-specific shape rules remain unchanged.",
+    "integer_boundaries": "U64-to-I64 rejects above i64::MAX; I64-to-U64 rejects negative. Integer-to-F64 uses correctly rounded Cranelift signed/unsigned conversion, with actual core/resident execution supplying the differential oracle, including values above2^53 and signed/unsigned maxima.",
+    "floating_boundaries": "F64 raw exponent rejects nonfinite values before FP truncation. Truncate toward zero, check exact representable half-open ranges [-2^63,2^63) or [0,2^64), then use the trapping signed/unsigned conversion only after the guard. Fractions in (-1,0), signed zero and subnormals legitimately become unsigned0. Failure maps to the actual resident Arithmetic boundary and exact scheduled node.",
+    "transport": "F64Bits raw transport accepts all input bit patterns. Nonfinite rejection belongs only to executed float-to-integer casts. I64 two's-complement and eight-byte lane representation remain unchanged.",
+    "ordering": "Shared JIT/Object checked emitter retains every ordered Let and its admission callback. No evaluator, placeholder, constant folding, resident fallback, source recognition or global solver relaxation is introduced.",
+    "identity": "Typed executable IR version4 appends op tags42-47. Existing tags and raw value encodings remain. C ABI1 and work policy1 remain because call frame/transport layout is unchanged.",
+    "admission": "Each new primitive explicitly uses the existing256 logical work bound, with emitted CLIF delta plus fixed64 callback bookkeeping checked during definition. Setup, memory, compiled-frame, completion and atomic output validation remain the shared managed runtime.",
+    "generated_runtime": "The only generator feature-list addition is maintained convert. Root runtime-only path dependency/provenance corrections are preserved. No source parser/JIT/codegen is enabled in the generated executable by this addition. Actual compiled-unit closure still requires qualification."
+  },
+  "tests": {
+    "private_engine_units_added": 1,
+    "stdlib_metadata_source_tests_added": 3,
+    "gpu_integration_tests_added": 4,
+    "corpus_inputs_by_source_kind": {
+      "U64": 18,
+      "I64": 19,
+      "F64_raw_patterns": 37
+    },
+    "six_directed_cast_sample_cases": 148,
+    "metadata": "All six casts original/decoded, actual contracts and genuine NativeHost scalar storage; same-name/public work-policy replacement cannot certify; unsupported F32, matrix, String, state and computed Activation domains remain rejected.",
+    "runtime": "Actual core conversion and ordinary resident execution versus JIT original/decoded, exact integer/raw floating results, nonfinite/range error classes, earlier failure before later admission, setup/completion/memory/shared-budget/type denials, unchanged outputs and recovery.",
+    "object": "Separate emission-only test explicitly asserts linked=false, executed=false and zero timing samples.",
+    "linked": {
+      "ignored_outer_tests_added": 1,
+      "new_programs_built_once_each": 6,
+      "sample_launches": 148,
+      "additional_cases_per_program": "12 when the host supports construction of a nonUnicode OsString; otherwise11",
+      "total_launches_with_nonunicode_case": 220,
+      "checks": "Original/decoded real resident/JIT oracles, exact output/error/node/phase; setup/node/completion/memory/shared-budget denials, malformed/missing/extra/nonUnicode raw arguments, recovery; exact clean source commit plus bytecode/IR/Object/generated inputs/lock/binary pins before and after every launch; actual successful Cargo compiler-artifact provenance; bounded owned worker/process tree."
+    }
+  },
+  "composition": "Apply cast patch after I64/F64, then separate catalog-borrow test follow-up. Compose explicitly with native control kind, transport, literal equality and identity handling."
+}

@@ -1,0 +1,55 @@
+{
+  "status": "UNAPPLIED / UNRUN",
+  "qualification_credit": 0,
+  "scope": "Exact 77-line five-body source, six complete expected outputs and eleven prepared activated-host tests.",
+  "tests": {
+    "platform_test_count": 11,
+    "numerical_tests": 6,
+    "n": [
+      0,
+      1,
+      2,
+      10,
+      1000,
+      10000
+    ],
+    "encodings": [
+      "original",
+      "decoded"
+    ],
+    "numerical_oracle": "exact complete26bytes; distinct initial/final sends in order; empty stderr",
+    "initializer_probe": "same unmodified source compiled with genuine interactive-root projection; original+decoded; all15positions+15momentum-adjusted velocities+five masses; canonical row-major comparison to copied retained column-major constants",
+    "initializer_30_constants": "source-only metadata check confirms all30 literal decimal strings exactly match retained generated.c; no algorithm/reference execution",
+    "host_route": "actual maintained CliHostFactory+ArgumentSnapshotCliBackend, external args1 read/stdout text write grants, RuntimeBuilder load_compiled_program ResidentExternal, provider delivery",
+    "canonical_program": "ParsedProgram has no legacy instructions, nonempty canonical artifact, actual resource requirements and two distinct send nodes",
+    "invalid_inputs": [
+      "missing",
+      "empty",
+      "negative",
+      "plus prefix",
+      "leading whitespace",
+      "trailing whitespace",
+      "decimal point",
+      "trailing character",
+      "Unicode non-digit",
+      "u64 overflow",
+      "non-Unicode OS string"
+    ],
+    "atomicity": "all invalid cases require failed load, actual observation, no delivered stdout/stderr",
+    "extra_arity": "Explicit separate UNIGNORED required_single_payload_arity_rejects_extra_arguments. Known unmet external fixture contract: source requests only args1 and cannot see count; test requires error/no effects but prescribes no observation count for a future genuine generic boundary. Do not count as passing or as numerical/full-source qualification.",
+    "not_prepared_or_claimed": [
+      "full50000000step run",
+      "Cranelift AOT",
+      "same-binary secure/trusted launches",
+      "timing or speedup",
+      "full ten workloads"
+    ]
+  },
+  "limits": [
+    "Full source has never been parsed/compiled/executed in this candidate; exact syntax/type/control/library gaps must be surfaced without shrinking source.",
+    "Exact9decimal bytes are stronger than retained corpus1e-8 tolerance; mismatches require inspection, not oracle relaxation.",
+    "All30 initializer bits are strict expected equivalence to actual retained generated state; tests intentionally expose layout/arithmetic differences.",
+    "Current finite FSM budgets may reject1000/10000; no raised limits or skipped tests credited.",
+    "Strict extra payload arity remains unresolved and its required-contract regression is intentionally visible; pure parse-u64 is ASCII digits only, unlike historical strtoull leading whitespace/plus acceptance."
+  ]
+}

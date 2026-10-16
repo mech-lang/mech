@@ -1,0 +1,140 @@
+{
+  "schema": "mech.generic-byte-cli-design-workmap.v1",
+  "status": "design-proposal-unimplemented",
+  "reference": {
+    "path": "repository/hosts/terminal/src/provider.rs",
+    "sha256": "9018426f29d02b3e0f5ccf51b4b9ba504a07e3d44d5b2ace5bc61cef771d9d6f",
+    "bytes": 21621
+  },
+  "proposed_ports": [
+    {
+      "source": "@in/bytes",
+      "base": "cli/stdin",
+      "path": "bytes",
+      "value": "canonical U8 matrix [u8]:1,N, including 1,0",
+      "semantics": "immutable authorized raw byte snapshot; invalid UTF-8 retained"
+    },
+    {
+      "source": "@out/bytes",
+      "base": "cli/stdout",
+      "path": "bytes",
+      "value": "canonical U8 matrix [u8]:1,N, including 1,0",
+      "semantics": "ordered raw byte send, no suffix/transcoding"
+    }
+  ],
+  "steps": [
+    {
+      "component": "CliBackend / StdCliBackend / ArgumentSnapshotCliBackend",
+      "work": "Add real raw byte acquisition/output methods, delegating through argument snapshots. Read stdin once as bytes; text views validate the same retained snapshot as UTF-8. A missing raw backend must fail explicitly rather than synthesize bytes from a decoded String."
+    },
+    {
+      "component": "CliResourceProvider::plan_read / read / validate_stdin_read",
+      "work": "Declare and construct a canonical U8 row schema for /bytes; admit and retain actual input storage/work. Cache one stream acquisition across /text and /bytes, including failures; planning must not consume stdin."
+    },
+    {
+      "component": "preflight_write / preflight_write_schema / plan_write / prepare_output",
+      "work": "Accept /bytes only with exact U8 row payload; reject wrong element kinds or non-row matrices before observable effects. Copy/retain admitted raw bytes without flattening hidden nested elements or transcoding."
+    },
+    {
+      "component": "CliOutputEffect / RuntimeAfterCommitEffect",
+      "work": "Stage byte payload with exact metadata byte count and selected memory cost; retain existing ordered transaction, revocation, cancellation, denial, rollback and after-commit delivery behavior."
+    },
+    {
+      "component": "canonical source resource requirements / activation / artifact codec / native selected ABI",
+      "work": "Carry the byte schema and real capabilities through all existing boundaries, original/decoded equivalence and native lowering; do not route these programs to an experimental grid/record/whole-workload driver."
+    },
+    {
+      "component": "qualification",
+      "work": "Run the unchanged complete Mandelbrot/revcomp sources, retained binary inputs/expected outputs and invalid-byte cases. Add mixed text/byte snapshot checks, empty payload, wrong rank/kind, finite denial/recovery, late invalid input rollback, original/decoded, same-binary secure/trusted full lifetime. Nothing in this candidate executes those checks."
+    }
+  ],
+  "binary_fixture_examples": [
+    {
+      "benchmark": "mandelbrot",
+      "case": "n-1",
+      "n": 1,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-1",
+          "n": 1,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-mandelbrot-compact/n-1/expected.stdout",
+            "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      },
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-1/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-1/expected.stdout",
+        "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+        "bytes": 8
+      }
+    },
+    {
+      "benchmark": "mandelbrot",
+      "case": "n-9",
+      "n": 9,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-9",
+          "n": 9,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-mandelbrot-compact/n-9/expected.stdout",
+            "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      },
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-9/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-9/expected.stdout",
+        "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+        "bytes": 25
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-binary-header",
+      "n": 0,
+      "input_kind": "stdin",
+      "expected_exit": 0,
+      "validation": "exact-complete-bytes",
+      "provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "binary-header"
+      },
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-binary-header/stdin.bin",
+        "sha256": "e6335636c0d8c5b9e3fcec07937c25d77d2b98393cb11c1cd6cb37de2601396c",
+        "bytes": 24
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-binary-header/expected.stdout",
+        "sha256": "8abc3ad471944cf531634840ff3b74d80ae044f47ae62c95beac67df301d6a97",
+        "bytes": 24
+      }
+    }
+  ],
+  "preservation_status": "SOURCE DESIGN ONLY; UNAPPLIED / UNRUN"
+}

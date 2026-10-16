@@ -1,0 +1,12 @@
+diff --git a/hosts/gpu/tests/canonical_artifact_match.rs b/hosts/gpu/tests/canonical_artifact_match.rs
+--- a/hosts/gpu/tests/canonical_artifact_match.rs
++++ b/hosts/gpu/tests/canonical_artifact_match.rs
+@@ -109,7 +109,7 @@
+             let ordinal = artifact
+                 .inputs()
+                 .iter()
+-                .position(|v| v.slot.get() == input.slot.get())
++                .position(|v| v.slot == input.artifact_slot)
+                 .unwrap();
+             CapturedValueInput {
+                 slot: input.slot,

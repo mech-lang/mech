@@ -1,0 +1,136 @@
+{
+  "status": "SOURCE CONTRACTS ONLY; PARSE/COMPILE/EXECUTION UNRUN",
+  "workloads": [
+    {
+      "benchmark": "binarytrees",
+      "contract": {
+        "argument": "one ASCII unsigned decimal n, 0..21",
+        "benchmark_n": 21,
+        "minimum_maximum_depth": 6,
+        "minimum_iteration_depth": 4,
+        "depth_stride": 2,
+        "output": "stretch line, increasing even depth lines, long-lived line; exact tabs/spaces/newlines; all nodes allocated and traversed; retained long-lived root survives all short-lived work"
+      },
+      "common_compiler_and_qualification_work": [
+        "Actual canonical parser/typechecking, original and decoded ProgramArtifact equivalence, resident semantics and native compilation remain unexecuted.",
+        "Lower ordinary functions, lazy match, FSM carriers/transitions/captures, comprehensions, projections and checked numeric casts into certified native control; never dispatch by workload name.",
+        "Use the actual selected generic library implementations under declared ABI, storage, total scan/allocation work and finite admission, rather than experimental native_sequence program drivers.",
+        "Activate real CLI grants/read/send providers and execute a whole-process effect transaction: errors and denial must publish no partial output; staged buffers must be finite and authorized.",
+        "Keep one binary hash for secure/trusted policies, include startup/input/preparation/output/shutdown in later qualification, and retain exact source/artifact/object/input/output pins.",
+        "Single numeric payload arity is not observable through @args/1 alone; a genuine general argument snapshot/count contract must reject extra payloads before effects if the strict fixture contract requires it.",
+        "Physical line and nonblank line counts are source inventory only; canonical publication LOC normalization remains root-owned and unqualified."
+      ],
+      "proposed_host_capabilities": []
+    },
+    {
+      "benchmark": "fasta",
+      "contract": {
+        "argument": "one ASCII unsigned decimal n, 0..1844674407370955161",
+        "benchmark_n": 25000000,
+        "output": "ONE/TWO/THREE headers exactly; record lengths 2n/3n/5n; <=60 bases per line with LF only for nonempty sequence lines; n=0 headers only; seed 42 continuous across TWO then THREE; 3877/29573/139968 LCG"
+      },
+      "common_compiler_and_qualification_work": [
+        "Actual canonical parser/typechecking, original and decoded ProgramArtifact equivalence, resident semantics and native compilation remain unexecuted.",
+        "Lower ordinary functions, lazy match, FSM carriers/transitions/captures, comprehensions, projections and checked numeric casts into certified native control; never dispatch by workload name.",
+        "Use the actual selected generic library implementations under declared ABI, storage, total scan/allocation work and finite admission, rather than experimental native_sequence program drivers.",
+        "Activate real CLI grants/read/send providers and execute a whole-process effect transaction: errors and denial must publish no partial output; staged buffers must be finite and authorized.",
+        "Keep one binary hash for secure/trusted policies, include startup/input/preparation/output/shutdown in later qualification, and retain exact source/artifact/object/input/output pins.",
+        "Single numeric payload arity is not observable through @args/1 alone; a genuine general argument snapshot/count contract must reject extra payloads before effects if the strict fixture contract requires it.",
+        "Physical line and nonblank line counts are source inventory only; canonical publication LOC normalization remains root-owned and unqualified."
+      ],
+      "proposed_host_capabilities": []
+    },
+    {
+      "benchmark": "mandelbrot",
+      "contract": {
+        "argument": "one ASCII unsigned decimal size",
+        "benchmark_n": 16000,
+        "output": "binary P4 LF, decimal width space decimal height LF; top-to-bottom rows; ceil(n/8) bytes per row; MSB first; right padding zero; 50 iterations; z0=0; cr=2*x/n-1.5, ci=2*y/n-1.0; n=0 header only"
+      },
+      "common_compiler_and_qualification_work": [
+        "Actual canonical parser/typechecking, original and decoded ProgramArtifact equivalence, resident semantics and native compilation remain unexecuted.",
+        "Lower ordinary functions, lazy match, FSM carriers/transitions/captures, comprehensions, projections and checked numeric casts into certified native control; never dispatch by workload name.",
+        "Use the actual selected generic library implementations under declared ABI, storage, total scan/allocation work and finite admission, rather than experimental native_sequence program drivers.",
+        "Activate real CLI grants/read/send providers and execute a whole-process effect transaction: errors and denial must publish no partial output; staged buffers must be finite and authorized.",
+        "Keep one binary hash for secure/trusted policies, include startup/input/preparation/output/shutdown in later qualification, and retain exact source/artifact/object/input/output pins.",
+        "Single numeric payload arity is not observable through @args/1 alone; a genuine general argument snapshot/count contract must reject extra payloads before effects if the strict fixture contract requires it.",
+        "Physical line and nonblank line counts are source inventory only; canonical publication LOC normalization remains root-owned and unqualified."
+      ],
+      "proposed_host_capabilities": [
+        {
+          "port": "cli/stdout /bytes",
+          "payload": "[u8]:1,N",
+          "status": "unimplemented-design-proposal",
+          "semantics": "raw ordered byte write; no UTF-8 transcoding; same transaction/grant/admission/rollback contract as text sends"
+        }
+      ]
+    },
+    {
+      "benchmark": "pidigits",
+      "contract": {
+        "argument": "one ASCII unsigned decimal n",
+        "benchmark_n": 10000,
+        "output": "n pi digits; rows of ten, tab colon emitted digit count and LF; final partial row right-padded with ASCII spaces to ten digits; n=0 empty; both extract(3) and extract(4) required"
+      },
+      "common_compiler_and_qualification_work": [
+        "Actual canonical parser/typechecking, original and decoded ProgramArtifact equivalence, resident semantics and native compilation remain unexecuted.",
+        "Lower ordinary functions, lazy match, FSM carriers/transitions/captures, comprehensions, projections and checked numeric casts into certified native control; never dispatch by workload name.",
+        "Use the actual selected generic library implementations under declared ABI, storage, total scan/allocation work and finite admission, rather than experimental native_sequence program drivers.",
+        "Activate real CLI grants/read/send providers and execute a whole-process effect transaction: errors and denial must publish no partial output; staged buffers must be finite and authorized.",
+        "Keep one binary hash for secure/trusted policies, include startup/input/preparation/output/shutdown in later qualification, and retain exact source/artifact/object/input/output pins.",
+        "Single numeric payload arity is not observable through @args/1 alone; a genuine general argument snapshot/count contract must reject extra payloads before effects if the strict fixture contract requires it.",
+        "Physical line and nonblank line counts are source inventory only; canonical publication LOC normalization remains root-owned and unqualified."
+      ],
+      "proposed_host_capabilities": []
+    },
+    {
+      "benchmark": "regexredux",
+      "contract": {
+        "input": "raw stdin text; benchmark ASCII FASTA; exact original UTF-8 byte lengths, not grapheme counts",
+        "benchmark_fasta_n": 5000000,
+        "output": "nine separate nonoverlapping regex count lines in written order; blank line; original, cleaned and final byte lengths each followed by LF; header-at-EOF without LF is preserved by the exact cleanup regex"
+      },
+      "common_compiler_and_qualification_work": [
+        "Actual canonical parser/typechecking, original and decoded ProgramArtifact equivalence, resident semantics and native compilation remain unexecuted.",
+        "Lower ordinary functions, lazy match, FSM carriers/transitions/captures, comprehensions, projections and checked numeric casts into certified native control; never dispatch by workload name.",
+        "Use the actual selected generic library implementations under declared ABI, storage, total scan/allocation work and finite admission, rather than experimental native_sequence program drivers.",
+        "Activate real CLI grants/read/send providers and execute a whole-process effect transaction: errors and denial must publish no partial output; staged buffers must be finite and authorized.",
+        "Keep one binary hash for secure/trusted policies, include startup/input/preparation/output/shutdown in later qualification, and retain exact source/artifact/object/input/output pins.",
+        "Single numeric payload arity is not observable through @args/1 alone; a genuine general argument snapshot/count contract must reject extra payloads before effects if the strict fixture contract requires it.",
+        "Physical line and nonblank line counts are source inventory only; canonical publication LOC normalization remains root-owned and unqualified."
+      ],
+      "proposed_host_capabilities": []
+    },
+    {
+      "benchmark": "revcomp",
+      "contract": {
+        "input": "raw stdin bytes; independent CR and LF line separators; preserve raw headers; ignore preheader data and whole comment lines beginning semicolon; valid IUPAC sequence bytes only",
+        "benchmark_fasta_n": 25000000,
+        "output": "records in source order; raw header then LF; uppercase complemented reversed data; <=60 bytes per sequence line, LF after every nonempty chunk; empty records emit only header LF; invalid sequence key fails in reversed traversal order"
+      },
+      "common_compiler_and_qualification_work": [
+        "Actual canonical parser/typechecking, original and decoded ProgramArtifact equivalence, resident semantics and native compilation remain unexecuted.",
+        "Lower ordinary functions, lazy match, FSM carriers/transitions/captures, comprehensions, projections and checked numeric casts into certified native control; never dispatch by workload name.",
+        "Use the actual selected generic library implementations under declared ABI, storage, total scan/allocation work and finite admission, rather than experimental native_sequence program drivers.",
+        "Activate real CLI grants/read/send providers and execute a whole-process effect transaction: errors and denial must publish no partial output; staged buffers must be finite and authorized.",
+        "Keep one binary hash for secure/trusted policies, include startup/input/preparation/output/shutdown in later qualification, and retain exact source/artifact/object/input/output pins.",
+        "Single numeric payload arity is not observable through @args/1 alone; a genuine general argument snapshot/count contract must reject extra payloads before effects if the strict fixture contract requires it.",
+        "Physical line and nonblank line counts are source inventory only; canonical publication LOC normalization remains root-owned and unqualified."
+      ],
+      "proposed_host_capabilities": [
+        {
+          "port": "cli/stdout /bytes",
+          "payload": "[u8]:1,N",
+          "status": "unimplemented-design-proposal",
+          "semantics": "raw ordered byte write; no UTF-8 transcoding; same transaction/grant/admission/rollback contract as text sends"
+        },
+        {
+          "port": "cli/stdin /bytes",
+          "payload": "[u8]:1,N",
+          "status": "unimplemented-design-proposal",
+          "semantics": "raw immutable stdin snapshot; no UTF-8 decoding; authorized bounded acquisition exactly once"
+        }
+      ]
+    }
+  ]
+}

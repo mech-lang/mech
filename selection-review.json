@@ -1,0 +1,14 @@
+{
+  "scope": "All selected decodable text scanned; binary fixture bytes preserved without rendering.",
+  "blocking_entries": [],
+  "limits": "Heuristic secret/chatter scan and source selection review, not exhaustive security analysis.",
+  "excluded": [
+    "Original machine-specific receipts and handoffs",
+    "Private chat/log material",
+    "Build caches and generated application outputs",
+    "Superseded intermediate iteration packages",
+    "Earlier symbolic matrix-template patch already included in final engine aggregate",
+    "Already committed scalar baseline source"
+  ],
+  "omitted_byte_identical_committed_test_sources": []
+}

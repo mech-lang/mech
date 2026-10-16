@@ -1,0 +1,103 @@
+{
+  "schema": "mech.external-source-pins.v1",
+  "files": [
+    {
+      "path": "hosts/gpu/src/native_artifact/application.rs",
+      "base_sha256": "7efc28b87211337e12d66fff4a4d7bc47c8630fae5f0b4d5955b04855c8bac7b",
+      "candidate_sha256": "d46d1360c2a0ed3a2611840f0a4ba06ce655c6a81e4505778b273884af89c158",
+      "new_file": false,
+      "bytes": 11645
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/control_abi.rs",
+      "base_sha256": "68b5a9de2f20cc3727621bd8788f51477ba77e24550eba68229a69ca75756818",
+      "candidate_sha256": "779e0d2632619c62b65281960c05d8609265b2486c90171ef0a6686d6fb9ea7c",
+      "new_file": false,
+      "bytes": 4739
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/control_application.rs",
+      "base_sha256": null,
+      "candidate_sha256": "b0a8c6e428ef43be0b4740cf146a9565e5eb975108951cf543b37677253c5a5d",
+      "new_file": true,
+      "bytes": 2074
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/control_compiler.rs",
+      "base_sha256": "ee60524d5e05990499dd007efaff177957bc3888bb837b27733b68d4cc2c3320",
+      "candidate_sha256": "1450351aeeb163060704e1a3540b61643b800890d8ed7ac933b1c0ced8722559",
+      "new_file": false,
+      "bytes": 23436
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/control_identity.rs",
+      "base_sha256": "7507f13c9938417d1ffe094ddad9833a39ec55b89d789d595e71068814e7d9ae",
+      "candidate_sha256": "9b18f7d5d3e841bfff7bc7fe2b62930276f676165ee495328263859f5ef83422",
+      "new_file": false,
+      "bytes": 11169
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/control_linked.rs",
+      "base_sha256": null,
+      "candidate_sha256": "4729cb713da7e3e5e352aacf2699fcc0854386fc54223b2079264d879da95c04",
+      "new_file": true,
+      "bytes": 2630
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/control_runtime.rs",
+      "base_sha256": "8f46c2d10bd97e6eee171aa31008b84b2e8d661c2e0ab0c66ec31dc0708e96fd",
+      "candidate_sha256": "cc9e8c9e5316f1d7f317f2d22f2e6c6aad0ba01dbb63b8b0581ccc74f54181f6",
+      "new_file": false,
+      "bytes": 15622
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/linked.rs",
+      "base_sha256": "9664a93ce3e4193a0bf05ab70015423d8640dd311e6a794885f023cce81585df",
+      "candidate_sha256": "904804672de6dfb351165eccdb7e9f662544995ce03dab3a854dd811ead2b839",
+      "new_file": false,
+      "bytes": 3603
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/mod.rs",
+      "base_sha256": "97ae76ee4a11f2370815d2e94bf4cb1185809c71a9fad9f29fddfc930fb8b7a6",
+      "candidate_sha256": "bf23b720672da168d5b6432bb68efffc0e38aa7d8ed0c1dacc71caf56c32de42",
+      "new_file": false,
+      "bytes": 1978
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/templates/linked_arguments.rs.in",
+      "base_sha256": null,
+      "candidate_sha256": "c44a5f2e8368534eccfbfc35c8cae64fdb1258e8871549e71d6b030f2c65ec57",
+      "new_file": true,
+      "bytes": 2529
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/templates/linked_build.rs.in",
+      "base_sha256": "fdd6953622a7ba7bcaae4f9873a9502da154b372b587e944593f37e9f047f26d",
+      "candidate_sha256": "e63c7f26ed86043fd3507aeb1a952d4ff79db5ffa7dba526bb140eebc0949e98",
+      "new_file": false,
+      "bytes": 1634
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/templates/linked_main.rs.in",
+      "base_sha256": "375fb0b13a2acb97bab2a569321ea46829aa7fa4b555d071486bba115584d2b3",
+      "candidate_sha256": "85b0c5c0f7f9ddd0ec8cd551e82505a57d89a57ef1494020fb271e05e88e7aad",
+      "new_file": false,
+      "bytes": 3811
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/templates/linked_match_main.rs.in",
+      "base_sha256": null,
+      "candidate_sha256": "92e05408fffad57c373c71412e22cdcccfd2dde4ddb1e25fb80076286ae4f6fd",
+      "new_file": true,
+      "bytes": 3841
+    },
+    {
+      "path": "hosts/gpu/tests/canonical_artifact_match_application.rs",
+      "base_sha256": null,
+      "candidate_sha256": "c9d6986486a4fecffa51f184f8e82a075ad245ac0f2fcdb5b0032074121dc81e",
+      "new_file": true,
+      "bytes": 41605
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "status": "UNAPPLIED / UNRUN",
+  "qualification_credit": 0,
+  "scope": {
+    "new_kind": "F64 with F64Bits raw transport",
+    "new_operations": [
+      "F64Add",
+      "F64Sub",
+      "F64Mul",
+      "F64Div",
+      "F64Neg",
+      "F64Sqrt",
+      "F64Eq",
+      "F64Ne",
+      "F64Lt",
+      "F64Le",
+      "F64Gt",
+      "F64Ge"
+    ],
+    "authority": "Only actual finished maintained dense F64 binder branches attach the private scalar certificate. Exact scalar FloatingPoint(W64) schema, empty dimensions/shape and genuine dense F64 layout are checked. Final private seal remains bound to exact request and BoundCall; names, public work tags and public primitive enums grant no semantics.",
+    "contracts": "Only I64Neg, F64Neg and F64Sqrt admit maintained SameAsInput0. All other certified operations retain Declared FullWrite. Pure ReadSignal/WriteSignal, no alias and ExactScalar are still required.",
+    "sqrt": "Certifies only dense bind_unary_f64 with square_root=f64::sqrt. The existing alternate Snapshot/libm square_root_f32 path remains selectable for resident execution but is not certified.",
+    "ieee": "Ordinary Cranelift F64 operations with optimizer disabled, NaN canonicalization explicitly disabled, no fast-math, reassociation or FMA. Ordered Lets are preserved. Numeric comparisons use IEEE unordered behavior for != and ordered behavior for < <= > >=. Division by zero and nonfinite values retain floating behavior rather than integer Arithmetic guards.",
+    "transport": "Encode/decode uses F64Bits bits/from_bits and actual eight-byte transport. All 64-bit patterns are accepted, including nonfinite and signed NaN payloads. Setup, per-Let, completion, finite frame/work limits and staged atomic output publication use the same real managed runtime as JIT and linked entry.",
+    "identity": "Typed IR identity version3 appends kind/value tag4 and op tags30..41. Existing tags remain. C ABI1 and work policy1 remain because physical record/lane layout is unchanged. Raw bits are encoded explicitly, never Debug formatting.",
+    "generated_shell": "F64 input/output uses exact f64: followed by 16 ASCII hex digits. It accepts every valid raw bit pattern and rejects malformed transport spelling. Decimal/NaN text is not the binary-preserving protocol.",
+    "native_memory": "NativeHost uses actual FunctionValueRepresentation::F64 with Float(W64) physical storage. Bool semantic storage and eight-byte ABI backing remain distinct.",
+    "admission": "Each primitive retains the documented finite per-Let256 bound and actual emitted CLIF instruction delta plus fixed64 callback bound. Metadata compilation remains outside evaluation. No extra per-call full-plan clone or unadmitted transport traversal is introduced."
+  },
+  "tests": {
+    "engine_private_units_added": 1,
+    "stdlib_metadata_source_tests_added": 3,
+    "gpu_integration_tests_added": 5,
+    "bit_corpus": {
+      "binary_pairs": 28,
+      "unary_patterns": 18,
+      "coverage": "Signed zeros, smallest/largest subnormal and minimum normal, rounding-sensitive values, finite overflow, infinities, multiple quiet/signaling signed NaN payloads in both operand positions. Expected arithmetic bits come from the actual resident implementation, not an invented corpus oracle."
+    },
+    "metadata": "All12 operations original and decoded, genuine NativeHost F64/Bool storage, direct constants/output forwarding, dead IEEE node order, exact dense vs Snapshot/libm certification and private contract/mutation negatives. Rem/pow/F32/matrix/Activation/state/Match reject; public RuntimeMetered replacement cannot certify.",
+    "runtime": "Original/decoded actual resident vs JIT bitwise arithmetic/unary results; numeric comparisons; no-FMA and no-reassociation discriminators; dead IEEE computation retained; earlier checked U64 error precedes later F64 and later denial. Setup/completion/memory/shared-budget/type denial leaves outputs unchanged, then same compiled instance recovers.",
+    "object": "Emission-only case explicitly reports linked=false, executed=false and timing_samples=0.",
+    "linked_extension": {
+      "new_builds": 1,
+      "total_builds_after_i64": 4,
+      "floating_cases": 57,
+      "valid_cases": 46,
+      "denial_cases": 5,
+      "malformed_argument_cases": 5,
+      "recovery_cases": 1,
+      "description": "Fourth program retains identity plus all12 operations; original and decoded actual resident/JIT typed references, exact raw-bit stdout/errors/node/phase and unchanged binary/object/IR/bytecode/source pins. Original three build-once program suites remain."
+    },
+    "retained_fixture_updates": "Two former F64-negative source cases become F32-negative now that F64 is actually supported. Existing typed reference helpers become exhaustive for the new F64 variant."
+  },
+  "composition": "Incremental after I64. Preserve committed local-dependency and runtime-only generator corrections; frozen F64 source does not supply them. Raw-bit differential checks remain unrun."
+}

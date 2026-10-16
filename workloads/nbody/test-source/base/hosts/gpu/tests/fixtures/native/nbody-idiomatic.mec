@@ -1,0 +1,77 @@
++> combinatorics
++> number
++> stats
++> @args := cli/args
++> @out := cli/stdout
+
+<phase> := <[f64]:5,3>
+
+solar-mass<f64> := 4.0 * 3.141592653589793 * 3.141592653589793
+days-per-year<f64> := 365.24
+dt<f64> := 0.01
+
+masses<[f64]:5,1> := [
+  1.0;
+  0.000954791938424326609;
+  0.000285885980666130812;
+  0.0000436624404335156298;
+  0.0000515138902046611451
+] * solar-mass
+
+initial-x<phase> := [
+  0.0 0.0 0.0;
+  4.84143144246472090 -1.16032004402742839 -0.103622044471123109;
+  8.34336671824457987 4.12479856412430479 -0.403523417114321381;
+  12.8943695621391310 -15.1111514016986312 -0.223307578892655734;
+  15.3796971148509165 -25.9193146099879641 0.179258772950371181
+]
+
+unadjusted-v<phase> := [
+  0.0 0.0 0.0;
+  0.00166007664274403694 0.00769901118419740425 -0.0000690460016972063023;
+  -0.00276742510726862411 0.00499852801234917238 0.0000230417297573763929;
+  0.00296460137564761618 0.00237847173959480950 -0.0000296589568540237556;
+  0.00268067772490389322 0.00162824170038242295 -0.000095159225451971587
+] * days-per-year
+
+initial-v<phase> := [
+  -stats/sum/row(unadjusted-v * masses) / solar-mass;
+  unadjusted-v[2u64..=5u64,:]
+]
+
+pairs := combinatorics/n-choose-k(1u64..=5u64, 2u64)
+pair-left := [pairs[1u64,k] | k <- 1u64..=10u64]'
+pair-right := [pairs[2u64,k] | k <- 1u64..=10u64]'
+
+energy(x<phase>, v<phase>) => (value<f64>) :=
+  d := x[pair-left,:] - x[pair-right,:]
+  distance-squared := stats/sum/column(d ^ 2.0)
+  kinetic := stats/sum/row(0.5 * masses * stats/sum/column(v ^ 2.0))
+  potential := stats/sum/row(masses[pair-left] * masses[pair-right] / distance-squared ^ 0.5)
+  value := kinetic[1u64] - potential[1u64].
+
+advance(x<phase>, v<phase>) => (next-x<phase>, next-v<phase>) :=
+  d := x[pair-left,:] - x[pair-right,:]
+  distance-squared := stats/sum/column(d ^ 2.0)
+  magnitude := dt / (distance-squared * distance-squared ^ 0.5)
+  ~updated-v := v
+  updated-v[pair-left,:] -= d * masses[pair-right] * magnitude
+  updated-v[pair-right,:] += d * masses[pair-left] * magnitude
+  next-v := updated-v
+  next-x := x + next-v * dt.
+
+#Integrate(x<phase>, v<phase>, steps<u64>) => <(phase,phase)>
+  | :Step(x<phase>, v<phase>, remaining<u64>)
+  | :Done(x<phase>, v<phase>).
+#Integrate(x, v, steps) -> :Step(x, v, steps)
+  :Step(x, v, remaining)
+    | remaining == 0u64 -> :Done(x, v)
+    | * -> {
+        (next-x, next-v) := advance(x, v)
+      } -> :Step(next-x, next-v, remaining - 1u64)
+  :Done(x, v) => (x, v).
+
+steps := number/parse-u64(@args/1)
+@out/text <- number/format(energy(initial-x, initial-v), 9u64) + "\n"
+(final-x, final-v) := #Integrate(initial-x, initial-v, steps)
+@out/text <- number/format(energy(final-x, final-v), 9u64) + "\n"

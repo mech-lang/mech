@@ -1,0 +1,15 @@
+{
+  "status": "UNAPPLIED / UNRUN",
+  "qualification_credit": 0,
+  "scope": "Generic byte acquisition, shared text/raw snapshot and staged raw stdout/stderr provider output.",
+  "tests": {
+    "provider": 9,
+    "activated_source_session": 8,
+    "all": "UNRUN"
+  },
+  "composition": "Apply provider patch then test-only source-order oracle overlay.",
+  "limits": [
+    "Strict payload argument count remains unresolved.",
+    "Whole workload/native resource ABI and same-binary secure/trusted lifecycle qualification remain absent."
+  ]
+}

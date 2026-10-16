@@ -1,0 +1,56 @@
+{
+  "status": "UNAPPLIED / UNRUN",
+  "qualification_credit": 0,
+  "scope": {
+    "scalar_kinds": [
+      "Bool",
+      "U64"
+    ],
+    "entry": "lower_scalar_match_artifact",
+    "jit": "JitMatchArtifact",
+    "object": "emit_match_object",
+    "control_abi_version": 2,
+    "control_identity_version": 1,
+    "work_policy_version": 1,
+    "graph": "constructor-private acyclic scalar CFG from actual canonical MatchDeclaration and ControlBlock; only exhaustive full Match",
+    "admission": "one legal successor visit before each primitive, copy, branch or completion; checked cumulative finite work and real managed transport backing",
+    "semantics": "selected private scalar witnesses and actual NativeHost BoundCall metadata; shared scalar emitter; exact lexical identities and lazy source arm/guard/body order",
+    "outputs": "private staged words; all types and completion validated before all-output publication",
+    "whole_program_rejections": [
+      "partial/sticky Match",
+      "computed Activation nodes",
+      "State",
+      "Recur",
+      "FSM",
+      "Suspend",
+      "Publish",
+      "resources",
+      "collections",
+      "unsupported scalar kinds or uncertified kernels"
+    ],
+    "not_included": [
+      "linked control application/runtime-only control ABI",
+      "I64/F64 extension",
+      "benchmark qualification",
+      "process lifecycle or host I/O"
+    ]
+  },
+  "tests": {
+    "stdlib_integration_tests": 3,
+    "gpu_integration_tests": 5,
+    "gpu_private_tests": 2,
+    "coverage": [
+      "original/decoded artifact parity",
+      "exact captures and scalar binding patterns",
+      "same-name public-tag replacement rejected without executor use",
+      "unused checked operations retained",
+      "nested lazy guards and bodies",
+      "arithmetic error before later work denial",
+      "legal visit enforcement",
+      "work/transport/stack/shared-memory denial and recovery",
+      "all-output atomicity",
+      "JIT/resident comparison and Object identity parity"
+    ]
+  },
+  "composition": "Independent Bool/U64 lazy Match slice on committed scalar baseline. Wider scalar variants require explicit composition, not implicit acceptance."
+}

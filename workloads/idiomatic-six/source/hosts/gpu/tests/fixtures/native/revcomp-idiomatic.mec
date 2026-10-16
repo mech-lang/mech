@@ -1,0 +1,69 @@
++> number
++> sequence
++> @in := cli/stdin
++> @out := cli/stdout
+
+complement := {
+  65u8: 84u8, 67u8: 71u8, 71u8: 67u8, 84u8: 65u8,
+  85u8: 65u8, 77u8: 75u8, 82u8: 89u8, 87u8: 87u8,
+  83u8: 83u8, 89u8: 82u8, 75u8: 77u8, 86u8: 66u8,
+  72u8: 68u8, 68u8: 72u8, 66u8: 86u8, 78u8: 78u8,
+  97u8: 84u8, 99u8: 71u8, 103u8: 67u8, 116u8: 65u8,
+  117u8: 65u8, 109u8: 75u8, 114u8: 89u8, 119u8: 87u8,
+  115u8: 83u8, 121u8: 82u8, 107u8: 77u8, 118u8: 66u8,
+  104u8: 68u8, 100u8: 72u8, 98u8: 86u8, 110u8: 78u8
+}
+
+is-break(byte<u8>) => (found<bool>) :=
+  found := byte? | 10u8 => true | 13u8 => true | * => false.
+
+#Wrap(data<[u8]>) => <[u8]>
+  | :Line(index<u64>, output<[u8]>)
+  | :Done(output<[u8]>).
+#Wrap(data) -> :Line(1u64, [])
+  :Line(index, output)
+    | index > sequence/length(data) -> :Done(output)
+    | * -> {
+        end := number/min(index + 60u64, sequence/length(data) + 1u64)
+      } -> :Line(end, [output data[index..end] 10u8])
+  :Done(output) => output.
+
+transform(header<[u8]>, data<[u8]>) => (output<[u8]>) :=
+  n := sequence/length(data)
+  reversed := [complement{data[n - index]} | index <- 0u64..n]
+  output := [header 10u8 #Wrap(reversed)].
+
+#Records(raw<[u8]>) => <u64>
+  | :Seek(index<u64>, start<bool>)
+  | :Header(first<u64>, index<u64>)
+  | :Data(index<u64>, header<[u8]>, data<[u8]>, start<bool>)
+  | :Comment(index<u64>, header<[u8]>, data<[u8]>)
+  | :Finish(header<[u8]>, data<[u8]>)
+  | :Done.
+#Records(raw) -> :Seek(1u64, true)
+  :Seek(index, start)
+    | index > sequence/length(raw) -> :Done
+    | start && raw[index] == 62u8 -> :Header(index, index + 1u64)
+    | * -> :Seek(index + 1u64, is-break(raw[index]))
+  :Header(first, index)
+    | index > sequence/length(raw) -> :Finish(raw[first..index], [])
+    | is-break(raw[index]) -> :Data(index + 1u64, raw[first..index], [], true)
+    | * -> :Header(first, index + 1u64)
+  :Data(index, header, data, start)
+    | index > sequence/length(raw) -> :Finish(header, data)
+    | is-break(raw[index]) -> :Data(index + 1u64, header, data, true)
+    | start && raw[index] == 62u8 -> {
+        @out/bytes <- transform(header, data)
+      } -> :Header(index, index + 1u64)
+    | start && raw[index] == 59u8 -> :Comment(index + 1u64, header, data)
+    | * -> :Data(index + 1u64, header, [data raw[index]], false)
+  :Comment(index, header, data)
+    | index > sequence/length(raw) -> :Finish(header, data)
+    | is-break(raw[index]) -> :Data(index + 1u64, header, data, true)
+    | * -> :Comment(index + 1u64, header, data)
+  :Finish(header, data) -> {
+      @out/bytes <- transform(header, data)
+    } -> :Done
+  :Done => 0u64.
+
+done := #Records(@in/bytes)

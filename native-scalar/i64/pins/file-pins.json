@@ -1,0 +1,131 @@
+{
+  "schema": "mech.canonical-native-i64-file-pins.v1",
+  "files": [
+    {
+      "path": "hosts/gpu/Cargo.toml",
+      "base_sha256": "5f44e6e880791eba2a3c36e6d19c2a857f144c5024dd0f6c155043379067440b",
+      "candidate_sha256": "9fb1f2add98858f6386c924d7f872804d63095ce5ac84ac8a532ec0f33ec6cce",
+      "candidate_bytes": 5633,
+      "status": "modified"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/abi.rs",
+      "base_sha256": "16fc25aeda0c77ac0bc6828766a420d98f32395e4adc31c236dda8471bade08b",
+      "candidate_sha256": "e38f013848713dc78dd73893eb6cd6970fed32b07d49417125e3531ef6880744",
+      "candidate_bytes": 4736,
+      "status": "modified"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/application.rs",
+      "base_sha256": "89e62630dbfa4a03980dd29e2b6a944e9642cf10d55711f4662bde8eaec4d99c",
+      "candidate_sha256": "8121059ec22e817238cc193f70efdc18a19db1d322b903625041c7a030d7ba22",
+      "candidate_bytes": 7611,
+      "status": "modified"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/compiler.rs",
+      "base_sha256": "5b6d4f4d9e9a4ebebb14a45992501ffc1997d3191021b3480d73c626749dd046",
+      "candidate_sha256": "849bef87826a4886ced74bb5abb5157d0717e27792960e617411e78aacbd4c2a",
+      "candidate_bytes": 35875,
+      "status": "modified"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/identity.rs",
+      "base_sha256": "4ab21683fb472c26fcbfc01e28421ec9dc019f7551da3cf67a0fe219aa30cce9",
+      "candidate_sha256": "836f9525a4fcd69831aad58b37dbff242e6ba47e3553e3f2fa4fab1beb4f7c5f",
+      "candidate_bytes": 11880,
+      "status": "modified"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/runtime.rs",
+      "base_sha256": "06102cd6ff3c72c7565776b251af2c821dde8f80edf7e2b7051f2dcb3a8fb85e",
+      "candidate_sha256": "454aa83b9ca816abd1905f942138752bb6c87aca5fa2f881661c10d6b6c2cd29",
+      "candidate_bytes": 14080,
+      "status": "modified"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/templates/linked_main.rs.in",
+      "base_sha256": "375fb0b13a2acb97bab2a569321ea46829aa7fa4b555d071486bba115584d2b3",
+      "candidate_sha256": "0b93f2e3793990c79d2eab4ccd267c4b4ccde0feb7384c5a3603bd2cc27912c4",
+      "candidate_bytes": 6454,
+      "status": "modified"
+    },
+    {
+      "path": "hosts/gpu/tests/canonical_artifact_application.rs",
+      "base_sha256": "26e69feb7d9a0e5ede1c1cbc05093405d29915d486f8133082cb833a1fd87475",
+      "candidate_sha256": "42eb969dfe18b843d6d46222b178786855b7042a844873668eb9fe55f473dfdf",
+      "candidate_bytes": 42921,
+      "status": "modified"
+    },
+    {
+      "path": "hosts/gpu/tests/canonical_artifact_i64.rs",
+      "base_sha256": null,
+      "candidate_sha256": "9d4f1e3aec93ad3df9ab16f3656b968d03d6f41c39f1b71358b7b2f7aa13b0d8",
+      "candidate_bytes": 11625,
+      "status": "added"
+    },
+    {
+      "path": "hosts/gpu/tests/canonical_artifact_native.rs",
+      "base_sha256": "15eb3d7a5fc1f50612a353b5723bcd62068c33230ccc260d1f4e33e309f6ee6a",
+      "candidate_sha256": "5c8b4c13a0c6c93ac6071bf30825d5bc27120b17cc35c1ec376cd1dbc816f367",
+      "candidate_bytes": 17258,
+      "status": "modified"
+    },
+    {
+      "path": "src/engine/Cargo.toml",
+      "base_sha256": "6c5e1c5a8b73c23564ceb67be7e686e1d5d17f1960eda2bc5afc8ad3e582cc76",
+      "candidate_sha256": "dca80aa8ffdef465c114680179c04f574bac42b22a5aa2eb393a1d7aee9fbe26",
+      "candidate_bytes": 18187,
+      "status": "modified"
+    },
+    {
+      "path": "src/engine/src/native_artifact/ir.rs",
+      "base_sha256": "2abfca857a044c6e9dd8073609bec1a99932f47d865eabf6d9b0204a58272ffd",
+      "candidate_sha256": "7c036fda158ddc7e23325061cc8d875efdc9ba82a7426d9553a1b32d79e0d6e0",
+      "candidate_bytes": 4481,
+      "status": "modified"
+    },
+    {
+      "path": "src/engine/src/resident/general/mod.rs",
+      "base_sha256": "12d20e64c6e0e82bd2e8e67049aec47a9d13c883beb3f4297f33eae9c380d5ab",
+      "candidate_sha256": "3dc9cfb067071b211d8b6cc7f2e67fcdc1045d376b09bdf11d55d7bfe135deee",
+      "candidate_bytes": 970493,
+      "status": "modified"
+    },
+    {
+      "path": "src/engine/src/resident/general/native_lowering.rs",
+      "base_sha256": "8096404ac680fbdd7c5dd8d2a0259d554bcbc30d36add5d46035887477a5ae73",
+      "candidate_sha256": "bd869481031a4acc01fc53d58bc834c1f3ead0a19fae1ac2a5f086537c674d8b",
+      "candidate_bytes": 18480,
+      "status": "modified"
+    },
+    {
+      "path": "src/engine/src/resident/native_semantics.rs",
+      "base_sha256": "8683db8ae4c34b2dad825257e03a9622c99e798d8d3aa7c4dcdfa7eec9d416b4",
+      "candidate_sha256": "d1665deb944407e8ff6abb5f545bb311b648f5723a8d5cacdf2f510fe6e58c43",
+      "candidate_bytes": 26417,
+      "status": "modified"
+    },
+    {
+      "path": "src/engine/src/resident/numeric/mod.rs",
+      "base_sha256": "6162cb44c10877c2dd72b655633e8cf8ee5faa310da16fa50d0c7eaf5dc2cc26",
+      "candidate_sha256": "3c6360558254b8997cbba06b653741325c55e613eee5cf5102b07076f3d76009",
+      "candidate_bytes": 1124177,
+      "status": "modified"
+    },
+    {
+      "path": "src/stdlib/Cargo.toml",
+      "base_sha256": "dfeb0486ee0bd5511d24d21473cdd0996376cd2eee8dfbeb390c5b6b07b81feb",
+      "candidate_sha256": "27bb4475cae7c1529a156b99f7f9dfa686982bb1863bdb6d0e459a97be2073ae",
+      "candidate_bytes": 23306,
+      "status": "modified"
+    },
+    {
+      "path": "src/stdlib/tests/native_artifact_i64_lowering.rs",
+      "base_sha256": null,
+      "candidate_sha256": "e8490e205c971f6a969fd4ee86c132d0e3a117146990a8fc8956ad0453066f33",
+      "candidate_bytes": 8112,
+      "status": "added"
+    }
+  ]
+}

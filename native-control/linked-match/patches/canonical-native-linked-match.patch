@@ -1,0 +1,2041 @@
+diff --git a/hosts/gpu/src/native_artifact/application.rs b/hosts/gpu/src/native_artifact/application.rs
+--- a/hosts/gpu/src/native_artifact/application.rs
++++ b/hosts/gpu/src/native_artifact/application.rs
+@@ -114,6 +114,62 @@
+     Ok(result)
+ }
+ 
++pub(super) fn prepare_destination(
++    workspace: &Path,
++    directory: &Path,
++    binary_name: &str,
++) -> Result<PathBuf, NativeApplicationError> {
++    if binary_name.is_empty()
++        || binary_name.len() > 64
++        || !binary_name
++            .bytes()
++            .all(|c| c.is_ascii_alphanumeric() || c == b'-')
++        || !binary_name.as_bytes()[0].is_ascii_alphabetic()
++    {
++        return Err(NativeApplicationError::Invalid("invalid binary name"));
++    }
++    let workspace = workspace.canonicalize()?;
++    if !workspace.join("hosts/gpu/Cargo.toml").is_file()
++        || !workspace.join("src/stdlib/Cargo.toml").is_file()
++    {
++        return Err(NativeApplicationError::Invalid(
++            "workspace dependencies are absent",
++        ));
++    }
++    if !directory.is_absolute() || directory.exists() {
++        return Err(NativeApplicationError::Invalid(
++            "destination must be new and absolute",
++        ));
++    }
++    workspace.to_str().ok_or(NativeApplicationError::Invalid(
++        "workspace path is not Unicode",
++    ))?;
++    Ok(workspace)
++}
++
++pub(super) struct LinkedApplicationInputs<'a> {
++    pub source_provenance: &'a [u8],
++    pub bytecode: Vec<u8>,
++    pub object: &'a [u8],
++    pub identity: &'a [u8],
++    pub main: String,
++    pub revision: &'a [u8],
++    pub typed_ir_sha256: &'a [u8],
++    pub object_metadata: Value,
++    pub manifest_schema: &'static str,
++    pub route: &'static str,
++}
++
++pub(super) fn render_main(template: &str, symbol: &str, bytecode: &[u8]) -> String {
++    template
++        .replace("@IDENTITY_SYMBOL@", symbol)
++        .replace("@BYTECODE_SHA256@", &digest(bytecode))
++        .replace(
++            "@ARGUMENT_HELPERS@",
++            include_str!("templates/linked_arguments.rs.in"),
++        )
++}
++
+ /// Derives a real private-witness plan from `artifact` and the actual catalog,
+ /// emits its Object, and creates a Rust runtime-only linked application.
+ /// No source interpreter, resident executor, JIT or compiler runs in that app.
+@@ -129,39 +185,45 @@
+     catalog: &FunctionCatalog,
+     source_provenance: &[u8],
+ ) -> Result<GeneratedLinkedApplication, NativeApplicationError> {
+-    if binary_name.is_empty()
+-        || binary_name.len() > 64
+-        || !binary_name
+-            .bytes()
+-            .all(|c| c.is_ascii_alphanumeric() || c == b'-')
+-        || !binary_name.as_bytes()[0].is_ascii_alphabetic()
+-    {
+-        return Err(NativeApplicationError::Invalid("invalid binary name"));
+-    }
+-    let workspace = workspace.canonicalize()?;
+-    if !workspace.join("hosts/gpu/Cargo.toml").is_file()
+-        || !workspace.join("src/stdlib/Cargo.toml").is_file()
+-    {
+-        return Err(NativeApplicationError::Invalid(
+-            "workspace dependencies are absent",
+-        ));
+-    }
+-    if !directory.is_absolute() || directory.exists() {
+-        return Err(NativeApplicationError::Invalid(
+-            "destination must be new and absolute",
+-        ));
+-    }
+-    let workspace_text = workspace.to_str().ok_or(NativeApplicationError::Invalid(
+-        "workspace path is not Unicode",
+-    ))?;
++    let workspace = prepare_destination(workspace, directory, binary_name)?;
+     let plan =
+         lower_pure_native_artifact(artifact, catalog).map_err(NativeApplicationError::Lowering)?;
+     let object = emit_object(&plan).map_err(NativeApplicationError::Compile)?;
+     let bytecode = encode_program_artifact_bytecode_v1(artifact)
+         .map_err(|error| NativeApplicationError::Encoding(format!("{error:?}")))?;
+-    let main = include_str!("templates/linked_main.rs.in")
+-        .replace("@IDENTITY_SYMBOL@", object.identity().symbol())
+-        .replace("@BYTECODE_SHA256@", &digest(&bytecode));
++    let main = render_main(
++        include_str!("templates/linked_main.rs.in"),
++        object.identity().symbol(),
++        &bytecode,
++    );
++    write_linked_application(
++        &workspace,
++        directory,
++        binary_name,
++        LinkedApplicationInputs {
++            source_provenance,
++            bytecode,
++            object: object.bytes(),
++            identity: object.identity().bytes(),
++            main,
++            revision: artifact.revision().as_bytes(),
++            typed_ir_sha256: object.descriptor().typed_ir_sha256(),
++            object_metadata: object.metadata(),
++            manifest_schema: "mech.canonical-linked-application.v1",
++            route: "canonical-artifact-cranelift-object",
++        },
++    )
++}
++
++pub(super) fn write_linked_application(
++    workspace: &Path,
++    directory: &Path,
++    binary_name: &str,
++    inputs: LinkedApplicationInputs<'_>,
++) -> Result<GeneratedLinkedApplication, NativeApplicationError> {
++    let workspace_text = workspace.to_str().ok_or(NativeApplicationError::Invalid(
++        "workspace path is not Unicode",
++    ))?;
+     let mut cargo = format!(
+         r#"[package]
+ name = {name}
+@@ -189,21 +251,18 @@
+         gpu = json_string(&format!("{workspace_text}/hosts/gpu")),
+         stdlib = json_string(&format!("{workspace_text}/src/stdlib")),
+     );
+-    cargo.push_str(&workspace_resolution_patches(&workspace)?);
++    cargo.push_str(&workspace_resolution_patches(workspace)?);
+     let mut files = BTreeMap::<String, Vec<u8>>::from([
+-        ("application.mec".into(), source_provenance.to_vec()),
+-        ("program.mecb".into(), bytecode),
+-        ("program.o".into(), object.bytes().to_vec()),
+-        (
+-            "object-identity.bin".into(),
+-            object.identity().bytes().to_vec(),
+-        ),
++        ("application.mec".into(), inputs.source_provenance.to_vec()),
++        ("program.mecb".into(), inputs.bytecode),
++        ("program.o".into(), inputs.object.to_vec()),
++        ("object-identity.bin".into(), inputs.identity.to_vec()),
+         ("Cargo.toml".into(), cargo.into_bytes()),
+         (
+             "rust-toolchain.toml".into(),
+             b"[toolchain]\nchannel = \"nightly-2026-03-03\"\nprofile = \"minimal\"\n".to_vec(),
+         ),
+-        ("src/main.rs".into(), main.into_bytes()),
++        ("src/main.rs".into(), inputs.main.into_bytes()),
+     ]);
+     let mut pins = files
+         .iter()
+@@ -211,18 +270,20 @@
+         .collect::<BTreeMap<_, _>>();
+     // The script pins the independent immutable inputs; the manifest pins the
+     // script after it is rendered, avoiding a self-referential digest.
+-    let build = include_str!("templates/linked_build.rs.in").replace(
+-        "@PIN_JSON_LITERAL@",
+-        &json_string(&serde_json::to_string(&pins).unwrap()),
+-    );
++    let build = include_str!("templates/linked_build.rs.in")
++        .replace("@MANIFEST_SCHEMA@", inputs.manifest_schema)
++        .replace(
++            "@PIN_JSON_LITERAL@",
++            &json_string(&serde_json::to_string(&pins).unwrap()),
++        );
+     pins.insert("build.rs".into(), digest(build.as_bytes()));
+     files.insert("build.rs".into(), build.into_bytes());
+     let metadata = json!({
+-        "schema": "mech.canonical-linked-application.v1",
+-        "route": "canonical-artifact-cranelift-object",
+-        "program_revision": super::identity::hex(artifact.revision().as_bytes()),
+-        "typed_ir_sha256": super::identity::hex(object.descriptor().typed_ir_sha256()),
+-        "object": object.metadata(), "pins": pins,
++        "schema": inputs.manifest_schema,
++        "route": inputs.route,
++        "program_revision": super::identity::hex(inputs.revision),
++        "typed_ir_sha256": super::identity::hex(inputs.typed_ir_sha256),
++        "object": inputs.object_metadata, "pins": pins,
+         "source_is_provenance_only": true,
+         "runtime_features": ["mech-gpu/canonical-native-runtime", "mech-engine/native-artifact", "mech-stdlib/native-plan"],
+         "linked": false, "executed": false, "timing_samples": 0,
+diff --git a/hosts/gpu/src/native_artifact/control_abi.rs b/hosts/gpu/src/native_artifact/control_abi.rs
+--- a/hosts/gpu/src/native_artifact/control_abi.rs
++++ b/hosts/gpu/src/native_artifact/control_abi.rs
+@@ -1,13 +1,17 @@
+ //! Versioned scalar CFG ABI, separate from the frozen straight-line protocol.
+-use super::{NativeCompileError, abi::NativeEntryFrame, compiler::backend};
++#[cfg(feature = "canonical-native")]
++use super::abi::NativeEntryFrame;
++use mech_core::ProgramRevision;
+ use mech_engine::native_artifact::{
+     NativeMatchAction, NativeMatchArtifactPlan, NativeMatchOrigin, NativeMatchTerminator,
+     NativeScalarType,
+ };
+ 
+ pub(super) const VERSION: u64 = 2;
++#[cfg(feature = "canonical-native")]
+ pub(super) const ENTRY: &str = "mech_canonical_scalar_match_entry_v1";
+ pub(super) const STATUS_REJECT: u64 = 4;
++#[cfg(feature = "canonical-native")]
+ pub(super) type Entry = unsafe extern "C" fn(*mut NativeEntryFrame) -> u64;
+ 
+ #[derive(Clone, Debug)]
+@@ -37,6 +41,7 @@
+ #[derive(Clone, Debug)]
+ pub struct NativeMatchDescriptor {
+     pub(super) entry: u32,
++    pub(super) revision: ProgramRevision,
+     pub(super) inputs: Box<[NativeScalarType]>,
+     pub(super) outputs: Box<[NativeScalarType]>,
+     pub(super) value_count: usize,
+@@ -47,15 +52,15 @@
+     pub(super) identity: [u8; 32],
+ }
+ impl NativeMatchDescriptor {
+-    pub(super) fn from_compiled(
++    pub(super) fn from_plan(
+         plan: &NativeMatchArtifactPlan,
+         stack_bytes: u64,
+         code_bytes: u64,
+-    ) -> Result<Self, NativeCompileError> {
++    ) -> Result<Self, &'static str> {
+         let completion = (plan.outputs().len() as u64)
+             .checked_mul(8)
+             .and_then(|n| n.checked_add(128))
+-            .ok_or_else(|| backend("Match completion work overflow"))?;
++            .ok_or("Match completion work overflow")?;
+         let visits = plan
+             .blocks()
+             .iter()
+@@ -88,6 +93,7 @@
+             .collect();
+         Ok(Self {
+             entry: plan.entry(),
++            revision: plan.program_revision(),
+             inputs: plan
+                 .inputs()
+                 .iter()
+@@ -105,6 +111,9 @@
+             code_bytes,
+             identity: super::control_identity::typed_ir_sha256(plan),
+         })
++    }
++    pub const fn revision(&self) -> ProgramRevision {
++        self.revision
+     }
+     pub const fn entry(&self) -> u32 {
+         self.entry
+diff --git a/hosts/gpu/src/native_artifact/control_application.rs b/hosts/gpu/src/native_artifact/control_application.rs
+new file mode 100644
+--- /dev/null
++++ b/hosts/gpu/src/native_artifact/control_application.rs
+@@ -0,0 +1,50 @@
++//! Thin canonical Match route over the common pinned workspace generator.
++use super::application::{
++    GeneratedLinkedApplication, LinkedApplicationInputs, NativeApplicationError,
++    prepare_destination, render_main, write_linked_application,
++};
++use super::emit_match_object;
++use mech_core::FunctionCatalog;
++use mech_engine::native_artifact::lower_scalar_match_artifact;
++use mech_engine::{ProgramArtifact, encode_program_artifact_bytecode_v1};
++use std::path::Path;
++
++/// Emits and pins a real checked Match Object application. Source bytes are
++/// provenance only. Generation does not run Cargo, a linker or an executable.
++pub fn generate_linked_match_application(
++    workspace: &Path,
++    directory: &Path,
++    binary_name: &str,
++    artifact: &ProgramArtifact,
++    catalog: &FunctionCatalog,
++    source_provenance: &[u8],
++) -> Result<GeneratedLinkedApplication, NativeApplicationError> {
++    let workspace = prepare_destination(workspace, directory, binary_name)?;
++    let plan =
++        lower_scalar_match_artifact(artifact, catalog).map_err(NativeApplicationError::Lowering)?;
++    let object = emit_match_object(&plan).map_err(NativeApplicationError::Compile)?;
++    let bytecode = encode_program_artifact_bytecode_v1(artifact)
++        .map_err(|error| NativeApplicationError::Encoding(format!("{error:?}")))?;
++    let main = render_main(
++        include_str!("templates/linked_match_main.rs.in"),
++        object.identity().symbol(),
++        &bytecode,
++    );
++    write_linked_application(
++        &workspace,
++        directory,
++        binary_name,
++        LinkedApplicationInputs {
++            source_provenance,
++            bytecode,
++            object: object.bytes(),
++            identity: object.identity().bytes(),
++            main,
++            revision: artifact.revision().as_bytes(),
++            typed_ir_sha256: object.descriptor().typed_ir_sha256(),
++            object_metadata: object.metadata(),
++            manifest_schema: "mech.canonical-linked-match-application.v1",
++            route: "canonical-artifact-match-cranelift-object",
++        },
++    )
++}
+diff --git a/hosts/gpu/src/native_artifact/control_compiler.rs b/hosts/gpu/src/native_artifact/control_compiler.rs
+--- a/hosts/gpu/src/native_artifact/control_compiler.rs
++++ b/hosts/gpu/src/native_artifact/control_compiler.rs
+@@ -85,8 +85,7 @@
+ pub struct NativeMatchObject {
+     bytes: Vec<u8>,
+     descriptor: NativeMatchDescriptor,
+-    identity: [u8; 168],
+-    symbol: String,
++    identity: super::control_identity::NativeMatchObjectIdentity,
+ }
+ impl NativeMatchObject {
+     pub fn bytes(&self) -> &[u8] {
+@@ -96,16 +95,19 @@
+         &self.descriptor
+     }
+     pub fn identity_bytes(&self) -> &[u8; 168] {
++        self.identity.bytes()
++    }
++    pub fn identity_symbol(&self) -> &str {
++        self.identity.symbol()
++    }
++    pub fn identity(&self) -> &super::control_identity::NativeMatchObjectIdentity {
+         &self.identity
+-    }
+-    pub fn identity_symbol(&self) -> &str {
+-        &self.symbol
+     }
+     pub fn metadata(&self) -> serde_json::Value {
+         serde_json::json!({
+             "schema":"mech.canonical-scalar-match-object.v1","control_abi_version":VERSION,
+             "typed_ir_sha256":super::identity::hex(self.descriptor.typed_ir_sha256()),
+-            "identity_symbol":self.symbol,"stack_bytes":self.descriptor.stack_bytes(),"code_bytes":self.descriptor.code_bytes(),
++            "identity_symbol":self.identity.symbol(),"stack_bytes":self.descriptor.stack_bytes(),"code_bytes":self.descriptor.code_bytes(),
+             "linked":false,"executed":false,"timing_samples":0,
+         })
+     }
+@@ -138,16 +140,13 @@
+             .map_err(backend)?,
+     );
+     let (_, descriptor) = define(plan, &mut module, limits)?;
+-    let identity = super::control_identity::object_record(plan, &descriptor)?;
+-    let symbol = format!(
+-        "mech_canonical_scalar_match_identity_v1_{}",
+-        super::identity::hex(descriptor.typed_ir_sha256())
+-    );
++    let identity = super::control_identity::NativeMatchObjectIdentity::from_descriptor(&descriptor)
++        .map_err(backend)?;
+     let id = module
+-        .declare_data(&symbol, Linkage::Export, false, false)
++        .declare_data(identity.symbol(), Linkage::Export, false, false)
+         .map_err(backend)?;
+     let mut data = DataDescription::new();
+-    data.define(identity.to_vec().into_boxed_slice());
++    data.define(identity.bytes().to_vec().into_boxed_slice());
+     data.set_align(8);
+     module.define_data(id, &data).map_err(backend)?;
+     let bytes = module.finish().emit().map_err(backend)?;
+@@ -155,7 +154,6 @@
+         bytes,
+         descriptor,
+         identity,
+-        symbol,
+     })
+ }
+ 
+@@ -615,6 +613,6 @@
+     limit("Match code", code, limits.max_code_bytes)?;
+     Ok((
+         function,
+-        NativeMatchDescriptor::from_compiled(plan, stack, code)?,
++        NativeMatchDescriptor::from_plan(plan, stack, code).map_err(backend)?,
+     ))
+ }
+diff --git a/hosts/gpu/src/native_artifact/control_identity.rs b/hosts/gpu/src/native_artifact/control_identity.rs
+--- a/hosts/gpu/src/native_artifact/control_identity.rs
++++ b/hosts/gpu/src/native_artifact/control_identity.rs
+@@ -11,39 +11,111 @@
+     word(hash, value.len() as u64);
+     hash.update(value);
+ }
+-pub(super) fn object_record(
++pub const NATIVE_MATCH_LINK_IDENTITY_BYTES: usize = 168;
++pub const NATIVE_MATCH_TYPED_IR_VERSION: u64 = 1;
++pub const NATIVE_MATCH_WORK_POLICY_VERSION: u64 = 1;
++const MAGIC: &[u8; 16] = b"MECHNATIVEMATCH\0";
++
++/// Read-only same-Object metadata; only the checked emitter constructs it.
++#[derive(Clone, Debug)]
++pub struct NativeMatchObjectIdentity {
++    bytes: [u8; NATIVE_MATCH_LINK_IDENTITY_BYTES],
++    symbol: String,
++}
++impl NativeMatchObjectIdentity {
++    #[cfg(feature = "canonical-native")]
++    pub(super) fn from_descriptor(
++        descriptor: &super::control_abi::NativeMatchDescriptor,
++    ) -> Result<Self, &'static str> {
++        let mut bytes = [0; NATIVE_MATCH_LINK_IDENTITY_BYTES];
++        bytes[..16].copy_from_slice(MAGIC);
++        for (at, value) in [
++            (16, NATIVE_MATCH_TYPED_IR_VERSION),
++            (24, super::control_abi::VERSION),
++            (32, NATIVE_MATCH_WORK_POLICY_VERSION),
++            (112, descriptor.stack_bytes()),
++            (120, descriptor.code_bytes()),
++            (128, descriptor.inputs().len() as u64),
++            (136, descriptor.value_count() as u64),
++            (144, descriptor.visits().len() as u64),
++            (152, descriptor.outputs().len() as u64),
++            (160, descriptor.entry() as u64),
++        ] {
++            bytes[at..at + 8].copy_from_slice(&value.to_le_bytes());
++        }
++        bytes[40..72].copy_from_slice(descriptor.revision().as_bytes());
++        bytes[72..104].copy_from_slice(descriptor.typed_ir_sha256());
++        bytes[104..112].copy_from_slice(
++            &super::identity::host_target_tag().ok_or("unsupported linked Match host target")?,
++        );
++        Ok(Self {
++            bytes,
++            symbol: format!(
++                "mech_canonical_scalar_match_identity_v1_{}",
++                super::identity::hex(descriptor.typed_ir_sha256())
++            ),
++        })
++    }
++    pub fn bytes(&self) -> &[u8; NATIVE_MATCH_LINK_IDENTITY_BYTES] {
++        &self.bytes
++    }
++    pub fn symbol(&self) -> &str {
++        &self.symbol
++    }
++}
++fn get(bytes: &[u8; NATIVE_MATCH_LINK_IDENTITY_BYTES], offset: usize) -> u64 {
++    u64::from_le_bytes(
++        bytes[offset..offset + 8]
++            .try_into()
++            .expect("fixed identity field"),
++    )
++}
++
++/// Metadata binding only. Matching record bytes do not authenticate a foreign
++/// entry; the unsafe build-owned constructor supplies that independent duty.
++pub(super) fn descriptor_from_identity(
+     plan: &NativeMatchArtifactPlan,
+-    descriptor: &super::control_abi::NativeMatchDescriptor,
+-) -> Result<[u8; 168], super::NativeCompileError> {
+-    let mut bytes = [0; 168];
+-    bytes[..16].copy_from_slice(b"MECHNATIVEMATCH\0");
+-    for (at, value) in [
+-        (16, 1u64),
+-        (24, super::control_abi::VERSION),
+-        (32, 1),
+-        (112, descriptor.stack_bytes()),
+-        (120, descriptor.code_bytes()),
+-        (128, plan.inputs().len() as u64),
+-        (136, plan.values().len() as u64),
+-        (144, plan.blocks().len() as u64),
+-        (152, plan.outputs().len() as u64),
+-        (160, plan.entry() as u64),
+-    ] {
+-        bytes[at..at + 8].copy_from_slice(&value.to_le_bytes());
+-    }
+-    bytes[40..72].copy_from_slice(plan.program_revision().as_bytes());
+-    bytes[72..104].copy_from_slice(descriptor.typed_ir_sha256());
+-    bytes[104..112].copy_from_slice(
+-        &super::identity::host_target_tag().ok_or(super::NativeCompileError::UnsupportedHost)?,
+-    );
+-    Ok(bytes)
+-}
++    bytes: &[u8; NATIVE_MATCH_LINK_IDENTITY_BYTES],
++) -> Result<super::control_abi::NativeMatchDescriptor, &'static str> {
++    if &bytes[..16] != MAGIC
++        || get(bytes, 16) != NATIVE_MATCH_TYPED_IR_VERSION
++        || get(bytes, 24) != super::control_abi::VERSION
++        || get(bytes, 32) != NATIVE_MATCH_WORK_POLICY_VERSION
++    {
++        return Err("unsupported linked Match identity/ABI/work-policy version");
++    }
++    let target =
++        super::identity::host_target_tag().ok_or("unsupported linked Match host target")?;
++    if bytes[104..112] != target {
++        return Err("linked Match object target differs from this executable");
++    }
++    if bytes[40..72] != plan.program_revision().as_bytes()[..]
++        || get(bytes, 128) != plan.inputs().len() as u64
++        || get(bytes, 136) != plan.values().len() as u64
++        || get(bytes, 144) != plan.blocks().len() as u64
++        || get(bytes, 152) != plan.outputs().len() as u64
++        || get(bytes, 160) != plan.entry() as u64
++    {
++        return Err("linked Match object canonical revision/counts/entry differ from plan");
++    }
++    let stack = get(bytes, 112);
++    let code = get(bytes, 120);
++    if stack == 0 || code == 0 {
++        return Err("linked Match object has no checked frame/code metadata");
++    }
++    let descriptor = super::control_abi::NativeMatchDescriptor::from_plan(plan, stack, code)?;
++    if bytes[72..104] != descriptor.typed_ir_sha256()[..] {
++        return Err("linked Match object typed CFG differs from selected canonical plan");
++    }
++    Ok(descriptor)
++}
++
+ pub(super) fn typed_ir_sha256(plan: &NativeMatchArtifactPlan) -> [u8; 32] {
+     let mut hash = Sha256::new();
+     hash.update(b"mech.canonical-scalar-match-cfg\0");
+-    word(&mut hash, 1); // Separate control IR version, not scalar v1/v2/v3.
++    word(&mut hash, NATIVE_MATCH_TYPED_IR_VERSION); // Separate control IR version.
+     word(&mut hash, super::control_abi::VERSION);
+-    word(&mut hash, 1); // Control visit work policy.
++    word(&mut hash, NATIVE_MATCH_WORK_POLICY_VERSION);
+     hash.update(plan.program_revision().as_bytes());
+     word(&mut hash, plan.entry() as u64);
+     word(&mut hash, plan.values().len() as u64);
+@@ -145,3 +217,62 @@
+     }
+     hash.finalize().into()
+ }
++
++#[cfg(all(test, feature = "canonical-native"))]
++mod tests {
++    use super::*;
++    use mech_engine::CanonicalSourceFrontend;
++    use mech_syntax::document::{
++        AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
++        parse_canonical_document,
++    };
++    fn plan(source: &str) -> NativeMatchArtifactPlan {
++        let parsed = parse_canonical_document(
++            TextSnapshot::new(DocumentId(0x4d4c4944), Revision(1), source).unwrap(),
++            ParseConfig::default(),
++        );
++        assert!(parsed.is_strictly_clean());
++        let artifact = CanonicalSourceFrontend
++            .compile_document_with_catalog(
++                &DocumentSyntax::cast(parsed.syntax()).unwrap(),
++                mech_stdlib::source_catalog(),
++            )
++            .unwrap()
++            .compile_artifact()
++            .unwrap();
++        mech_engine::native_artifact::lower_scalar_match_artifact(
++            &artifact,
++            &mech_stdlib::source_catalog(),
++        )
++        .unwrap()
++    }
++    #[test]
++    fn match_link_identity_binds_exact_cfg_revision_target_entry_and_counts() {
++        let first = plan("(flag<bool>? | true => value<u64> + 1u64 | false => value<u64>)\n");
++        let same = plan("(flag<bool>? | true => value<u64> + 1u64 | false => value<u64>)\n");
++        let other = plan("(flag<bool>? | true => value<u64> + 2u64 | false => value<u64>)\n");
++        assert_eq!(typed_ir_sha256(&first), typed_ir_sha256(&same));
++        assert_ne!(typed_ir_sha256(&first), typed_ir_sha256(&other));
++        let descriptor =
++            super::super::control_abi::NativeMatchDescriptor::from_plan(&first, 32, 1024).unwrap();
++        let identity = NativeMatchObjectIdentity::from_descriptor(&descriptor).unwrap();
++        let restored = descriptor_from_identity(&same, identity.bytes()).unwrap();
++        assert_eq!(restored.typed_ir_sha256(), descriptor.typed_ir_sha256());
++        assert_eq!(restored.entry(), descriptor.entry());
++        assert_eq!(restored.visits().len(), descriptor.visits().len());
++        assert!(descriptor_from_identity(&other, identity.bytes()).is_err());
++        for offset in [0, 16, 24, 32, 40, 72, 104, 128, 136, 144, 152, 160] {
++            let mut corrupt = *identity.bytes();
++            corrupt[offset] ^= 1;
++            assert!(
++                descriptor_from_identity(&first, &corrupt).is_err(),
++                "field {offset}"
++            );
++        }
++        for offset in [112, 120] {
++            let mut corrupt = *identity.bytes();
++            corrupt[offset..offset + 8].fill(0);
++            assert!(descriptor_from_identity(&first, &corrupt).is_err());
++        }
++    }
++}
+diff --git a/hosts/gpu/src/native_artifact/control_linked.rs b/hosts/gpu/src/native_artifact/control_linked.rs
+new file mode 100644
+--- /dev/null
++++ b/hosts/gpu/src/native_artifact/control_linked.rs
+@@ -0,0 +1,59 @@
++//! Build-owned canonical Match entry, using the same managed evaluator as JIT.
++use super::control_abi::NativeMatchDescriptor;
++use super::control_identity::{NATIVE_MATCH_LINK_IDENTITY_BYTES, descriptor_from_identity};
++use super::{
++    NativeExecutionLimits, NativeLinkError, NativeMatchExecutionError, NativeMatchExecutionReport,
++};
++use core::ffi::c_void;
++use mech_core::ManagedMemoryBudget;
++use mech_engine::native_artifact::{NativeMatchArtifactPlan, NativeScalarValue};
++
++/// A statically linked checked Match entry. Its raw pointer is private.
++pub struct LinkedMatchArtifact {
++    entry: unsafe extern "C" fn(*mut c_void) -> u64,
++    descriptor: NativeMatchDescriptor,
++}
++impl LinkedMatchArtifact {
++    /// Binds metadata to a freshly derived canonical private-witness plan.
++    ///
++    /// # Safety
++    /// `entry` must be the process-lifetime control entry emitted by this crate's
++    /// checked shared JIT/Object definition, and `identity` must be its readonly
++    /// exported identity symbol from the SAME exact unchanged Object. The build
++    /// must verify Object, bytecode and generated source pins before linking.
++    /// The emitted entry obeys the private synchronous Match ABI/work policy:
++    /// no retained pointers, unwinding, ambient effects, foreign callbacks or
++    /// access outside admitted transport. Fabricating matching record bytes or
++    /// supplying an arbitrary foreign function does not satisfy this contract.
++    pub unsafe fn from_build_owned_entry(
++        plan: &NativeMatchArtifactPlan,
++        identity: &'static [u8; NATIVE_MATCH_LINK_IDENTITY_BYTES],
++        entry: unsafe extern "C" fn(*mut c_void) -> u64,
++    ) -> Result<Self, NativeLinkError> {
++        let descriptor = descriptor_from_identity(plan, identity).map_err(NativeLinkError::new)?;
++        Ok(Self { entry, descriptor })
++    }
++    pub fn descriptor(&self) -> &NativeMatchDescriptor {
++        &self.descriptor
++    }
++    pub fn evaluate_into(
++        &self,
++        inputs: &[NativeScalarValue],
++        outputs: &mut [NativeScalarValue],
++        limits: NativeExecutionLimits,
++        budget: Option<&ManagedMemoryBudget>,
++    ) -> Result<NativeMatchExecutionReport, NativeMatchExecutionError> {
++        super::control_runtime::execute(
++            &self.descriptor,
++            |frame| {
++                // SAFETY: constructor proves the same exact checked entry;
++                // execute owns frame/transport for this synchronous invocation.
++                unsafe { (self.entry)(frame.cast::<c_void>()) }
++            },
++            inputs,
++            outputs,
++            limits,
++            budget,
++        )
++    }
++}
+diff --git a/hosts/gpu/src/native_artifact/control_runtime.rs b/hosts/gpu/src/native_artifact/control_runtime.rs
+--- a/hosts/gpu/src/native_artifact/control_runtime.rs
++++ b/hosts/gpu/src/native_artifact/control_runtime.rs
+@@ -317,7 +317,7 @@
+     })
+ }
+ 
+-#[cfg(test)]
++#[cfg(all(test, feature = "canonical-native"))]
+ mod tests {
+     use super::super::JitMatchArtifact;
+     use super::*;
+diff --git a/hosts/gpu/src/native_artifact/linked.rs b/hosts/gpu/src/native_artifact/linked.rs
+--- a/hosts/gpu/src/native_artifact/linked.rs
++++ b/hosts/gpu/src/native_artifact/linked.rs
+@@ -9,6 +9,11 @@
+ #[derive(Clone, Debug, Eq, PartialEq)]
+ pub struct NativeLinkError {
+     reason: &'static str,
++}
++impl NativeLinkError {
++    pub(super) const fn new(reason: &'static str) -> Self {
++        Self { reason }
++    }
+ }
+ impl std::fmt::Display for NativeLinkError {
+     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+diff --git a/hosts/gpu/src/native_artifact/mod.rs b/hosts/gpu/src/native_artifact/mod.rs
+--- a/hosts/gpu/src/native_artifact/mod.rs
++++ b/hosts/gpu/src/native_artifact/mod.rs
+@@ -31,19 +31,26 @@
+     NativeExecutionError, NativeExecutionLimits, NativeExecutionPhase, NativeExecutionReport,
+ };
+ 
+-#[cfg(feature = "canonical-native")]
+ mod control_abi;
+ #[cfg(feature = "canonical-native")]
++mod control_application;
++#[cfg(feature = "canonical-native")]
+ mod control_compiler;
+-#[cfg(feature = "canonical-native")]
+ mod control_identity;
+-#[cfg(feature = "canonical-native")]
++mod control_linked;
+ mod control_runtime;
+-#[cfg(feature = "canonical-native")]
+ pub use control_abi::{NativeMatchDescriptor, NativeMatchVisit};
+ #[cfg(feature = "canonical-native")]
+ pub use control_compiler::{
+     JitMatchArtifact, NativeMatchObject, emit_match_object, emit_match_object_with_limits,
+ };
++pub use control_runtime::{NativeMatchExecutionError, NativeMatchExecutionReport};
++
++pub use control_identity::{
++    NATIVE_MATCH_LINK_IDENTITY_BYTES, NATIVE_MATCH_TYPED_IR_VERSION,
++    NATIVE_MATCH_WORK_POLICY_VERSION, NativeMatchObjectIdentity,
++};
++pub use control_linked::LinkedMatchArtifact;
++
+ #[cfg(feature = "canonical-native")]
+-pub use control_runtime::{NativeMatchExecutionError, NativeMatchExecutionReport};
++pub use control_application::generate_linked_match_application;
+diff --git a/hosts/gpu/src/native_artifact/templates/linked_arguments.rs.in b/hosts/gpu/src/native_artifact/templates/linked_arguments.rs.in
+new file mode 100644
+--- /dev/null
++++ b/hosts/gpu/src/native_artifact/templates/linked_arguments.rs.in
+@@ -0,0 +1,68 @@
++fn unsigned(text: &str) -> Result<u64, String> {
++    if text.is_empty() || !text.bytes().all(|c| c.is_ascii_digit()) {
++        return Err("invalid U64 argument".into());
++    }
++    text.parse().map_err(|_| "invalid U64 argument".into())
++}
++fn options(
++    arguments: Vec<OsString>,
++) -> Result<(NativeExecutionLimits, Option<u64>, Vec<OsString>), String> {
++    let mut limits = NativeExecutionLimits::default();
++    let mut budget = None;
++    let mut payload = Vec::new();
++    let mut controls = true;
++    for argument in arguments {
++        if controls {
++            let text = argument.to_str().ok_or("argument is not Unicode")?;
++            if text == "--" {
++                controls = false;
++                continue;
++            }
++            let mut selected = None;
++            for (prefix, slot) in [
++                ("--work=", 0),
++                ("--memory=", 1),
++                ("--stack=", 2),
++                ("--budget=", 3),
++            ] {
++                if let Some(value) = text.strip_prefix(prefix) {
++                    selected = Some((slot, unsigned(value).map_err(|_| "invalid limit argument")?));
++                    break;
++                }
++            }
++            if let Some((slot, value)) = selected {
++                match slot {
++                    0 => limits.max_work = value,
++                    1 => limits.max_transport_bytes = value,
++                    2 => limits.max_native_stack_bytes = value,
++                    _ => budget = Some(value),
++                }
++                continue;
++            }
++            if text.starts_with("--") {
++                return Err("unknown option".into());
++            }
++            controls = false;
++        }
++        payload.push(argument);
++    }
++    Ok((limits, budget, payload))
++}
++fn scalar_argument(argument: &std::ffi::OsStr, kind: NativeScalarKind) -> Result<NativeScalarValue, String> {
++    let text = argument.to_str().ok_or("argument is not Unicode")?;
++    Ok(match kind {
++        NativeScalarKind::U64 => NativeScalarValue::U64(unsigned(text)?),
++        NativeScalarKind::Bool => NativeScalarValue::Bool(match text {
++            "true" => true,
++            "false" => false,
++            _ => return Err("invalid Bool argument".into()),
++        }),
++    })
++}
++fn append_scalar(result: &mut String, value: NativeScalarValue) {
++    use std::fmt::Write;
++    match value {
++        NativeScalarValue::Bool(v) => writeln!(result, "{v}"),
++        NativeScalarValue::U64(v) => writeln!(result, "{v}"),
++    }.expect("String formatting cannot fail");
++}
+diff --git a/hosts/gpu/src/native_artifact/templates/linked_build.rs.in b/hosts/gpu/src/native_artifact/templates/linked_build.rs.in
+--- a/hosts/gpu/src/native_artifact/templates/linked_build.rs.in
++++ b/hosts/gpu/src/native_artifact/templates/linked_build.rs.in
+@@ -18,7 +18,7 @@
+     let expected: BTreeMap<String, String> = serde_json::from_str(EXPECTED).unwrap();
+     let manifest_bytes = fs::read(root.join("linked-manifest.json")).unwrap();
+     let manifest: serde_json::Value = serde_json::from_slice(&manifest_bytes).unwrap();
+-    assert_eq!(manifest["schema"], "mech.canonical-linked-application.v1");
++    assert_eq!(manifest["schema"], "@MANIFEST_SCHEMA@");
+     let mut pins: BTreeMap<String, String> =
+         serde_json::from_value(manifest["pins"].clone()).unwrap();
+     let script = pins.remove("build.rs").expect("build script pin");
+diff --git a/hosts/gpu/src/native_artifact/templates/linked_main.rs.in b/hosts/gpu/src/native_artifact/templates/linked_main.rs.in
+--- a/hosts/gpu/src/native_artifact/templates/linked_main.rs.in
++++ b/hosts/gpu/src/native_artifact/templates/linked_main.rs.in
+@@ -20,56 +20,7 @@
+ fn hex(bytes: &[u8]) -> String {
+     bytes.iter().map(|byte| format!("{byte:02x}")).collect()
+ }
+-fn unsigned(text: &str) -> Result<u64, String> {
+-    if text.is_empty() || !text.bytes().all(|c| c.is_ascii_digit()) {
+-        return Err("invalid U64 argument".into());
+-    }
+-    text.parse().map_err(|_| "invalid U64 argument".into())
+-}
+-fn options(
+-    arguments: Vec<OsString>,
+-) -> Result<(NativeExecutionLimits, Option<u64>, Vec<OsString>), String> {
+-    let mut limits = NativeExecutionLimits::default();
+-    let mut budget = None;
+-    let mut payload = Vec::new();
+-    let mut controls = true;
+-    for argument in arguments {
+-        if controls {
+-            let text = argument.to_str().ok_or("argument is not Unicode")?;
+-            if text == "--" {
+-                controls = false;
+-                continue;
+-            }
+-            let mut selected = None;
+-            for (prefix, slot) in [
+-                ("--work=", 0),
+-                ("--memory=", 1),
+-                ("--stack=", 2),
+-                ("--budget=", 3),
+-            ] {
+-                if let Some(value) = text.strip_prefix(prefix) {
+-                    selected = Some((slot, unsigned(value).map_err(|_| "invalid limit argument")?));
+-                    break;
+-                }
+-            }
+-            if let Some((slot, value)) = selected {
+-                match slot {
+-                    0 => limits.max_work = value,
+-                    1 => limits.max_transport_bytes = value,
+-                    2 => limits.max_native_stack_bytes = value,
+-                    _ => budget = Some(value),
+-                }
+-                continue;
+-            }
+-            if text.starts_with("--") {
+-                return Err("unknown option".into());
+-            }
+-            controls = false;
+-        }
+-        payload.push(argument);
+-    }
+-    Ok((limits, budget, payload))
+-}
++@ARGUMENT_HELPERS@
+ fn run() -> Result<(), String> {
+     let bytecode = include_bytes!("../program.mecb");
+     if hex(&Sha256::digest(bytecode)) != "@BYTECODE_SHA256@" {
+@@ -107,16 +58,8 @@
+         return Err(format!("expected {} typed inputs", plan.inputs().len()));
+     }
+     let mut inputs = Vec::with_capacity(arguments.len());
+-    for (argument, input) in arguments.iter().zip(plan.inputs()) {
+-        let text = argument.to_str().ok_or("argument is not Unicode")?;
+-        inputs.push(match input.ty().kind() {
+-            NativeScalarKind::U64 => NativeScalarValue::U64(unsigned(text)?),
+-            NativeScalarKind::Bool => NativeScalarValue::Bool(match text {
+-                "true" => true,
+-                "false" => false,
+-                _ => return Err("invalid Bool argument".into()),
+-            }),
+-        });
++    for (argument, input) in arguments.iter().zip(linked.descriptor().inputs()) {
++        inputs.push(scalar_argument(argument, input.kind())?);
+     }
+     let mut outputs = vec![NativeScalarValue::U64(0); plan.outputs().len()];
+     let budget = budget.map(mech_core::ManagedMemoryBudget::new);
+@@ -126,17 +69,12 @@
+     // Formatting belongs to this explicit shell, after atomic typed compute.
+     let mut result = String::new();
+     for value in outputs {
+-        use std::fmt::Write;
+-        match value {
+-            NativeScalarValue::Bool(v) => writeln!(&mut result, "{v}"),
+-            NativeScalarValue::U64(v) => writeln!(&mut result, "{v}"),
+-        }
+-        .unwrap();
++        append_scalar(&mut result, value);
+     }
+-    std::io::stdout()
+-        .lock()
+-        .write_all(result.as_bytes())
+-        .map_err(|error| error.to_string())
++    let stdout = std::io::stdout();
++    let mut stdout = stdout.lock();
++    stdout.write_all(result.as_bytes()).map_err(|error| error.to_string())?;
++    stdout.flush().map_err(|error| error.to_string())
+ }
+ fn main() {
+     if let Err(error) = run() {
+diff --git a/hosts/gpu/src/native_artifact/templates/linked_match_main.rs.in b/hosts/gpu/src/native_artifact/templates/linked_match_main.rs.in
+new file mode 100644
+--- /dev/null
++++ b/hosts/gpu/src/native_artifact/templates/linked_match_main.rs.in
+@@ -0,0 +1,84 @@
++//! Canonical artifact linked-entry shell. Kernel evaluation is not interpreted.
++use mech_engine::native_artifact::{
++    NativeScalarKind, NativeScalarValue, lower_scalar_match_artifact,
++};
++use mech_gpu::native_artifact::{
++    LinkedMatchArtifact, NATIVE_MATCH_LINK_IDENTITY_BYTES, NativeExecutionLimits,
++};
++use sha2::{Digest, Sha256};
++use std::{
++    ffi::{OsString, c_void},
++    io::Write,
++};
++
++unsafe extern "C" {
++    #[link_name = "mech_canonical_scalar_match_entry_v1"]
++    fn linked_entry(frame: *mut c_void) -> u64;
++    #[link_name = "@IDENTITY_SYMBOL@"]
++    static LINKED_IDENTITY: [u8; NATIVE_MATCH_LINK_IDENTITY_BYTES];
++}
++fn hex(bytes: &[u8]) -> String {
++    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
++}
++@ARGUMENT_HELPERS@
++fn run() -> Result<(), String> {
++    let bytecode = include_bytes!("../program.mecb");
++    if hex(&Sha256::digest(bytecode)) != "@BYTECODE_SHA256@" {
++        return Err("embedded canonical bytecode identity mismatch".into());
++    }
++    let artifact = mech_engine::decode_program_artifact_bytecode_v1(bytecode)
++        .map_err(|error| format!("canonical artifact decode: {error:?}"))?;
++    // Metadata selection only: no activation, value folding, resident kernel
++    // execution, source compilation, JIT, or machine-code generation here.
++    let catalog = std::thread::Builder::new()
++        .name("canonical-native-catalog".into())
++        .stack_size(64 * 1024 * 1024)
++        .spawn(|| -> Result<_, String> {
++            let mut builder = mech_core::FunctionCatalogBuilder::new();
++            mech_stdlib::install_native_plan(&mut builder).map_err(|error| format!("{error:?}"))?;
++            mech_engine::install_intrinsic_resident(&mut builder)
++                .map_err(|error| format!("{error:?}"))?;
++            builder.build().map_err(|error| format!("{error:?}"))
++        })
++        .map_err(|error| error.to_string())?
++        .join()
++        .map_err(|_| "canonical metadata catalog construction panicked")??;
++    let plan =
++        lower_scalar_match_artifact(&artifact, &catalog).map_err(|error| error.to_string())?;
++    // SAFETY: build.rs verifies all generated inputs and exact Object pin.
++    // Both symbols are linked from that one unchanged checked emitter object;
++    // the digest-qualified identity symbol makes a different-IR substitution
++    // fail at link time. Both symbols live for the process. The constructor
++    // checks its revision/IR/ABI/target/frame/counts against the actual plan.
++    let linked =
++        unsafe { LinkedMatchArtifact::from_build_owned_entry(&plan, &LINKED_IDENTITY, linked_entry) }
++            .map_err(|error| error.to_string())?;
++    let (limits, budget, arguments) = options(std::env::args_os().skip(1).collect())?;
++    if arguments.len() != plan.inputs().len() {
++        return Err(format!("expected {} typed inputs", plan.inputs().len()));
++    }
++    let mut inputs = Vec::with_capacity(arguments.len());
++    for (argument, input) in arguments.iter().zip(linked.descriptor().inputs()) {
++        inputs.push(scalar_argument(argument, input.kind())?);
++    }
++    let mut outputs = vec![NativeScalarValue::U64(0); plan.outputs().len()];
++    let budget = budget.map(mech_core::ManagedMemoryBudget::new);
++    linked
++        .evaluate_into(&inputs, &mut outputs, limits, budget.as_ref())
++        .map_err(|error| error.to_string())?;
++    // Formatting belongs to this explicit shell, after atomic typed compute.
++    let mut result = String::new();
++    for value in outputs {
++        append_scalar(&mut result, value);
++    }
++    let stdout = std::io::stdout();
++    let mut stdout = stdout.lock();
++    stdout.write_all(result.as_bytes()).map_err(|error| error.to_string())?;
++    stdout.flush().map_err(|error| error.to_string())
++}
++fn main() {
++    if let Err(error) = run() {
++        eprintln!("{error}");
++        std::process::exit(1);
++    }
++}
+diff --git a/hosts/gpu/tests/canonical_artifact_match_application.rs b/hosts/gpu/tests/canonical_artifact_match_application.rs
+new file mode 100644
+--- /dev/null
++++ b/hosts/gpu/tests/canonical_artifact_match_application.rs
+@@ -0,0 +1,1033 @@
++//! Explicit linked qualification of canonical artifact Cranelift object code.
++//!
++//! Run from a clean committed checkout with MECH_CANONICAL_MATCH_SOURCE_COMMIT
++//! and a fresh external MECH_CANONICAL_MATCH_EVIDENCE_DIR. This records no timings.
++#![cfg(feature = "canonical-native")]
++#![cfg_attr(windows, feature(windows_process_extensions_main_thread_handle))]
++
++use std::{
++    collections::{BTreeMap, BTreeSet},
++    ffi::OsString,
++    fs::{self, File},
++    io::Cursor,
++    path::{Path, PathBuf},
++    process::{Command, ExitStatus, Stdio},
++    thread,
++    time::{Duration, Instant},
++};
++
++use mech_build::{CargoInvocation, parse_cargo_build_messages, process::ContainedChild};
++use mech_core::{
++    ReactiveInstanceId, ValueData, ValueDataDraft,
++    snapshot::{SnapshotValidationContext, ValueDraft},
++};
++use mech_engine::native_artifact::{
++    NativeMatchAction, NativeMatchArtifactPlan, NativeScalarKind, NativeScalarValue,
++    lower_scalar_match_artifact,
++};
++use mech_engine::resident::{ActivationFacts, CapturedValueInput, activate};
++use mech_engine::{CanonicalSourceFrontend, ProgramArtifact, SourceDocumentOutputKind};
++use mech_gpu::native_artifact::{
++    JitMatchArtifact, NativeExecutionError, NativeExecutionLimits, NativeMatchExecutionError,
++    generate_linked_match_application,
++};
++use mech_syntax::document::{
++    AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
++    parse_canonical_document,
++};
++use serde_json::{Value, json};
++use sha2::{Digest, Sha256};
++
++const MIXED: &str = "selected := (enabled<bool>? | true, (gate<bool>? | true => left<u64> / divisor<u64> == 1u64 | false => false) => left<u64> + step<u64> | true => left<u64> | false => (left<u64>? | 0u64 => 1u64 | found => found - 1u64))\nflag := !enabled<bool>\nselected\n";
++const ORDERED: &str = "unused := left<u64> / divisor<u64>\nselected := (enabled<bool>? | true => left<u64> + 1u64 | false => left<u64>)\nselected\n";
++const PROCESS_DEADLINE: Duration = Duration::from_secs(15);
++const WORKER_DEADLINE: Duration = Duration::from_secs(20 * 60);
++
++fn digest(bytes: &[u8]) -> String {
++    Sha256::digest(bytes)
++        .iter()
++        .map(|byte| format!("{byte:02x}"))
++        .collect()
++}
++fn pin(path: &Path) -> String {
++    digest(&fs::read(path).unwrap())
++}
++fn workspace() -> PathBuf {
++    Path::new(env!("CARGO_MANIFEST_DIR"))
++        .parent()
++        .unwrap()
++        .parent()
++        .unwrap()
++        .to_path_buf()
++}
++
++struct Captured {
++    status: ExitStatus,
++    stdout: Vec<u8>,
++    stderr: Vec<u8>,
++}
++
++/// File-backed streams and an owned process group/job contain the complete
++/// synchronous generation, lock resolution, metadata, build and link worker.
++fn bounded(mut command: Command, root: &Path, name: &str, deadline: Duration) -> Captured {
++    let stdout = root.join(format!("{name}.stdout"));
++    let stderr = root.join(format!("{name}.stderr"));
++    command
++        .stdin(Stdio::null())
++        .stdout(Stdio::from(File::create(&stdout).unwrap()))
++        .stderr(Stdio::from(File::create(&stderr).unwrap()));
++    let mut child = ContainedChild::spawn(&mut command).unwrap();
++    let end = Instant::now() + deadline;
++    let status = loop {
++        if let Some(status) = child.child_mut().try_wait().unwrap() {
++            break status;
++        }
++        if Instant::now() >= end {
++            child.terminate_tree().unwrap();
++            let reap = Instant::now() + Duration::from_secs(5);
++            while child.child_mut().try_wait().unwrap().is_none() && Instant::now() < reap {
++                thread::sleep(Duration::from_millis(20));
++            }
++            panic!("{name} exceeded deadline; diagnostics {}", stderr.display());
++        }
++        thread::sleep(Duration::from_millis(20));
++    };
++    child.terminate_tree().unwrap();
++    Captured {
++        status,
++        stdout: fs::read(stdout).unwrap(),
++        stderr: fs::read(stderr).unwrap(),
++    }
++}
++
++fn clean(workspace: &Path, evidence: &Path, commit: &str, label: &str) {
++    let mut command = Command::new("git");
++    command.args(["rev-parse", "HEAD"]).current_dir(workspace);
++    let head = bounded(
++        command,
++        evidence,
++        &format!("{label}-head"),
++        PROCESS_DEADLINE,
++    );
++    assert!(head.status.success());
++    assert_eq!(String::from_utf8(head.stdout).unwrap().trim(), commit);
++    let mut command = Command::new("git");
++    command
++        .args(["status", "--porcelain", "--untracked-files=all"])
++        .current_dir(workspace);
++    let status = bounded(
++        command,
++        evidence,
++        &format!("{label}-status"),
++        PROCESS_DEADLINE,
++    );
++    assert!(status.status.success());
++    assert!(
++        status.stdout.is_empty(),
++        "requires a clean immutable checkout"
++    );
++}
++
++fn compile(source: &str, interactive: bool) -> ([ProgramArtifact; 2], usize) {
++    let parsed = parse_canonical_document(
++        TextSnapshot::new(DocumentId(0x4c494e4b), Revision(1), source).unwrap(),
++        ParseConfig::default(),
++    );
++    assert!(parsed.is_strictly_clean(), "{:?}", parsed.diagnostics);
++    // Public interactive compilation retains real named Bool/U64 outputs;
++    // no artifact output, graph, operation or semantic witness is fabricated.
++    let document = DocumentSyntax::cast(parsed.syntax()).unwrap();
++    let product = if interactive {
++        CanonicalSourceFrontend
++            .compile_interactive_document_with_catalog(&document, mech_stdlib::source_catalog())
++    } else {
++        CanonicalSourceFrontend
++            .compile_document_with_catalog(&document, mech_stdlib::source_catalog())
++    }
++    .unwrap();
++    let result = product
++        .document_outputs()
++        .iter()
++        .find(|output| output.kind == SourceDocumentOutputKind::Program)
++        .unwrap()
++        .output as usize;
++    let original = product.compile_artifact().unwrap();
++    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap();
++    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
++    assert_eq!(original.revision(), decoded.revision());
++    assert_eq!(
++        bytes,
++        mech_engine::encode_program_artifact_bytecode_v1(&decoded).unwrap()
++    );
++    ([original, decoded], result)
++}
++
++fn inputs(
++    artifact: &ProgramArtifact,
++    named: &[(&str, NativeScalarValue)],
++) -> Vec<NativeScalarValue> {
++    artifact
++        .inputs()
++        .iter()
++        .map(|input| {
++            let name = mech_engine::decode_source_input_name(&input.name).unwrap();
++            named.iter().find(|(key, _)| *key == name).unwrap().1
++        })
++        .collect()
++}
++fn arguments(values: &[NativeScalarValue]) -> Vec<String> {
++    values
++        .iter()
++        .map(|value| match value {
++            NativeScalarValue::Bool(value) => value.to_string(),
++            NativeScalarValue::U64(value) => value.to_string(),
++        })
++        .collect()
++}
++fn stdout(values: &[NativeScalarValue]) -> String {
++    arguments(values)
++        .into_iter()
++        .map(|value| value + "\n")
++        .collect()
++}
++
++fn resident(
++    artifact: &ProgramArtifact,
++    arguments: &[NativeScalarValue],
++) -> Result<Vec<NativeScalarValue>, String> {
++    let mut instance = activate(
++        ReactiveInstanceId::new(0x4c494e4b, 0),
++        artifact,
++        &mech_stdlib::source_catalog(),
++        &ActivationFacts::default(),
++    )
++    .map_err(|error| format!("{error:?}"))?;
++    let values = artifact
++        .inputs()
++        .iter()
++        .zip(arguments)
++        .map(|(input, value)| {
++            ValueDraft {
++                schema: input.schema,
++                shape_values: Box::new([]),
++                data: match value {
++                    NativeScalarValue::Bool(value) => ValueDataDraft::Bool(*value),
++                    NativeScalarValue::U64(value) => ValueDataDraft::U64(*value),
++                },
++            }
++            .finalize(&SnapshotValidationContext::new(artifact.schemas()))
++            .unwrap()
++        })
++        .collect::<Vec<_>>();
++    let captured = instance
++        .plan
++        .inputs
++        .iter()
++        .map(|input| {
++            let ordinal = artifact
++                .inputs()
++                .iter()
++                .position(|value| value.slot == input.artifact_slot)
++                .unwrap();
++            CapturedValueInput {
++                slot: input.slot,
++                value: &values[ordinal],
++            }
++        })
++        .collect::<Vec<_>>();
++    instance
++        .prepare_turn_values(&captured)
++        .and_then(|prepared| prepared.publish())
++        .map_err(|error| format!("{error:?}"))?;
++    Ok((0..artifact.outputs().len())
++        .map(
++            |index| match instance.copied_output(index).unwrap().data() {
++                ValueData::Bool(value) => NativeScalarValue::Bool(*value),
++                ValueData::U64(value) => NativeScalarValue::U64(*value),
++                value => panic!("unexpected scalar {value:?}"),
++            },
++        )
++        .collect())
++}
++
++fn jit_success(
++    jit: &JitMatchArtifact,
++    arguments: &[NativeScalarValue],
++) -> (Vec<NativeScalarValue>, u64) {
++    let mut output = vec![NativeScalarValue::U64(0xfeed); jit.descriptor().outputs().len()];
++    let report = jit
++        .evaluate_into(
++            arguments,
++            &mut output,
++            NativeExecutionLimits::default(),
++            None,
++        )
++        .unwrap();
++    (output, report.work)
++}
++fn jit_error(
++    jit: &JitMatchArtifact,
++    arguments: &[NativeScalarValue],
++    limits: NativeExecutionLimits,
++) -> NativeMatchExecutionError {
++    let mut output = vec![NativeScalarValue::U64(0xfeed); jit.descriptor().outputs().len()];
++    let before = output.clone();
++    let error = jit
++        .evaluate_into(arguments, &mut output, limits, None)
++        .unwrap_err();
++    assert_eq!(output, before, "failed evaluation published an output");
++    error
++}
++fn success_case(name: &str, arguments: Vec<String>, output: &[NativeScalarValue]) -> Value {
++    json!({"name": name, "arguments": arguments, "stdout": stdout(output), "diagnostic": null})
++}
++fn failure_case(name: &str, arguments: Vec<String>, diagnostic: &str) -> Value {
++    json!({"name": name, "arguments": arguments, "stdout": "", "diagnostic": diagnostic})
++}
++fn exact_failure_case(
++    name: &str,
++    arguments: Vec<String>,
++    error: &NativeMatchExecutionError,
++) -> Value {
++    let mut case = failure_case(name, arguments, &error.to_string());
++    case["stderr"] = json!(format!("{error}\n"));
++    case
++}
++fn invalid_unicode_argument() -> Option<OsString> {
++    #[cfg(unix)]
++    {
++        use std::os::unix::ffi::OsStringExt;
++        Some(OsString::from_vec(vec![0xff, b'X']))
++    }
++    #[cfg(windows)]
++    {
++        use std::os::windows::ffi::OsStringExt;
++        Some(OsString::from_wide(&[0xd800]))
++    }
++    #[cfg(not(any(unix, windows)))]
++    {
++        None
++    }
++}
++fn with_limit(limit: &str, arguments: &[NativeScalarValue]) -> Vec<String> {
++    std::iter::once(limit.to_owned())
++        .chain(self::arguments(arguments))
++        .collect()
++}
++
++fn reference_cases(name: &str, artifacts: &[ProgramArtifact; 2], result: usize) -> Vec<Value> {
++    let plans = artifacts.each_ref().map(|artifact| {
++        lower_scalar_match_artifact(artifact, &mech_stdlib::source_catalog()).unwrap()
++    });
++    let jits = plans
++        .each_ref()
++        .map(|plan| JitMatchArtifact::compile(plan).unwrap());
++    let mut cases = Vec::new();
++    if name == "canonical-match-mixed" {
++        assert!(
++            plans[0]
++                .outputs()
++                .iter()
++                .any(|output| output.ty().kind() == NativeScalarKind::Bool)
++        );
++        assert!(
++            plans[0]
++                .outputs()
++                .iter()
++                .any(|output| output.ty().kind() == NativeScalarKind::U64)
++        );
++        for (label, left, step, divisor, enabled, gate, answer) in [
++            (
++                "above-f64-exact-range",
++                (1u64 << 53) + 1,
++                1,
++                0,
++                true,
++                false,
++                (1u64 << 53) + 1,
++            ),
++            ("u64-max-lazy-guard", u64::MAX, 1, 0, true, false, u64::MAX),
++            ("selected-guard-and-body", 7, 2, 7, true, true, 9),
++            ("nested-zero-lazy", 0, 1, 0, false, true, 1),
++            ("nested-bind", 9, 1, 0, false, true, 8),
++        ] {
++            let args = inputs(
++                &artifacts[0],
++                &[
++                    ("left", NativeScalarValue::U64(left)),
++                    ("step", NativeScalarValue::U64(step)),
++                    ("divisor", NativeScalarValue::U64(divisor)),
++                    ("enabled", NativeScalarValue::Bool(enabled)),
++                    ("gate", NativeScalarValue::Bool(gate)),
++                ],
++            );
++            let expected = resident(&artifacts[0], &args).unwrap();
++            assert_eq!(expected[result], NativeScalarValue::U64(answer));
++            for index in 0..2 {
++                assert_eq!(resident(&artifacts[index], &args).unwrap(), expected);
++                assert_eq!(jit_success(&jits[index], &args).0, expected);
++            }
++            cases.push(success_case(label, arguments(&args), &expected));
++            if label != "above-f64-exact-range" {
++                continue;
++            }
++            cases.push(success_case(
++                "explicit-boundary",
++                std::iter::once("--".into())
++                    .chain(arguments(&args))
++                    .collect(),
++                &expected,
++            ));
++            let work = jit_success(&jits[0], &args).1;
++            for (label, option, limits) in [
++                (
++                    "completion-denial",
++                    format!("--work={}", work - 1),
++                    NativeExecutionLimits {
++                        max_work: work - 1,
++                        ..NativeExecutionLimits::default()
++                    },
++                ),
++                (
++                    "setup-denial",
++                    "--work=0".into(),
++                    NativeExecutionLimits {
++                        max_work: 0,
++                        ..NativeExecutionLimits::default()
++                    },
++                ),
++                (
++                    "memory-denial",
++                    "--memory=0".into(),
++                    NativeExecutionLimits {
++                        max_transport_bytes: 0,
++                        ..NativeExecutionLimits::default()
++                    },
++                ),
++            ] {
++                let error = jit_error(&jits[0], &args, limits);
++                assert_eq!(jit_error(&jits[1], &args, limits), error);
++                cases.push(exact_failure_case(
++                    label,
++                    with_limit(&option, &args),
++                    &error,
++                ));
++            }
++            let budget = mech_core::ManagedMemoryBudget::new(0);
++            let mut outputs = vec![NativeScalarValue::U64(77); plans[0].outputs().len()];
++            let before = outputs.clone();
++            let error = jits[0]
++                .evaluate_into(
++                    &args,
++                    &mut outputs,
++                    NativeExecutionLimits::default(),
++                    Some(&budget),
++                )
++                .unwrap_err();
++            assert!(matches!(
++                error,
++                NativeMatchExecutionError::Base(NativeExecutionError::Memory { .. })
++            ));
++            assert_eq!(outputs, before);
++            assert_eq!(budget.used_bytes(), 0);
++            cases.push(exact_failure_case(
++                "shared-budget-denial",
++                with_limit("--budget=0", &args),
++                &error,
++            ));
++            cases.push(failure_case(
++                "stack-denial",
++                with_limit("--stack=0", &args),
++                "StackLimit",
++            ));
++            let numeric = plans[0]
++                .inputs()
++                .iter()
++                .position(|input| input.declaration().ty().kind() == NativeScalarKind::U64)
++                .unwrap();
++            let boolean = plans[0]
++                .inputs()
++                .iter()
++                .position(|input| input.declaration().ty().kind() == NativeScalarKind::Bool)
++                .unwrap();
++            for (label, text) in [
++                ("u64-overflow-input", "18446744073709551616"),
++                ("signed-u64-input", "-1"),
++                ("whitespace-u64-input", " 1"),
++            ] {
++                let mut invalid = arguments(&args);
++                invalid[numeric] = text.into();
++                invalid.insert(0, "--".into());
++                cases.push(failure_case(label, invalid, "invalid U64 argument"));
++            }
++            if invalid_unicode_argument().is_some() {
++                let mut invalid = failure_case(
++                    "invalid-unicode-input",
++                    arguments(&args),
++                    "argument is not Unicode",
++                );
++                invalid["invalid_os_argument"] = json!(numeric);
++                cases.push(invalid);
++            }
++            let mut invalid = arguments(&args);
++            invalid[boolean] = "TRUE".into();
++            cases.push(failure_case(
++                "invalid-bool-input",
++                invalid,
++                "invalid Bool argument",
++            ));
++            cases.push(failure_case("missing-input", vec![], "typed inputs"));
++            let mut extra = arguments(&args);
++            extra.push("tail".into());
++            cases.push(failure_case("extra-input", extra, "typed inputs"));
++            cases.push(failure_case(
++                "unknown-option",
++                vec!["--unknown".into()],
++                "unknown option",
++            ));
++            cases.push(failure_case(
++                "invalid-limit",
++                vec!["--work=invalid".into()],
++                "limit",
++            ));
++            cases.push(success_case(
++                "recovery-after-denials",
++                arguments(&args),
++                &expected,
++            ));
++        }
++        let bad = inputs(
++            &artifacts[0],
++            &[
++                ("left", NativeScalarValue::U64(8)),
++                ("step", NativeScalarValue::U64(1)),
++                ("divisor", NativeScalarValue::U64(0)),
++                ("enabled", NativeScalarValue::Bool(true)),
++                ("gate", NativeScalarValue::Bool(true)),
++            ],
++        );
++        for index in 0..2 {
++            assert!(
++                resident(&artifacts[index], &bad)
++                    .unwrap_err()
++                    .contains("Arithmetic")
++            );
++        }
++        let error = jit_error(&jits[0], &bad, NativeExecutionLimits::default());
++        assert!(
++            matches!(error,NativeMatchExecutionError::Arithmetic { origin } if origin.block().is_some() && origin.local().is_some())
++        );
++        assert_eq!(
++            jit_error(&jits[1], &bad, NativeExecutionLimits::default()),
++            error
++        );
++        cases.push(exact_failure_case(
++            "selected-nested-guard-error",
++            arguments(&bad),
++            &error,
++        ));
++    } else {
++        let args = |left, divisor| {
++            inputs(
++                &artifacts[0],
++                &[
++                    ("left", NativeScalarValue::U64(left)),
++                    ("divisor", NativeScalarValue::U64(divisor)),
++                    ("enabled", NativeScalarValue::Bool(true)),
++                ],
++            )
++        };
++        let good = args(3, 1);
++        let first_bad = args(u64::MAX, 0);
++        let later_bad = args(u64::MAX, 1);
++        let expected = resident(&artifacts[0], &good).unwrap();
++        assert_eq!(expected[result], NativeScalarValue::U64(4));
++        for index in 0..2 {
++            assert_eq!(resident(&artifacts[index], &good).unwrap(), expected);
++            assert_eq!(jit_success(&jits[index], &good).0, expected);
++            assert!(
++                resident(&artifacts[index], &first_bad)
++                    .unwrap_err()
++                    .contains("Arithmetic")
++            );
++            assert!(
++                resident(&artifacts[index], &later_bad)
++                    .unwrap_err()
++                    .contains("Arithmetic")
++            );
++        }
++        cases.push(success_case("success", arguments(&good), &expected));
++        // Find the finite budget admitting exactly the first failing checked
++        // operation. No later branch/node is admitted before its arithmetic error.
++        let mut low = 0;
++        let mut high = NativeExecutionLimits::default().max_work;
++        while low < high {
++            let mid = low + (high - low) / 2;
++            let limits = NativeExecutionLimits {
++                max_work: mid,
++                ..NativeExecutionLimits::default()
++            };
++            match jit_error(&jits[0], &first_bad, limits) {
++                NativeMatchExecutionError::Arithmetic { .. } => high = mid,
++                NativeMatchExecutionError::Work { .. } => low = mid + 1,
++                other => panic!("unexpected error {other:?}"),
++            }
++        }
++        let limits = NativeExecutionLimits {
++            max_work: low,
++            ..NativeExecutionLimits::default()
++        };
++        let first = jit_error(&jits[0], &first_bad, limits);
++        assert!(
++            matches!(first,NativeMatchExecutionError::Arithmetic {origin} if origin.block().is_none())
++        );
++        let later = jit_error(&jits[0], &later_bad, limits);
++        assert!(matches!(later, NativeMatchExecutionError::Work { .. }));
++        let overflow = jit_error(&jits[0], &later_bad, NativeExecutionLimits::default());
++        assert!(
++            matches!(overflow,NativeMatchExecutionError::Arithmetic {origin} if origin.block().is_some())
++        );
++        for index in 0..2 {
++            assert_eq!(jit_error(&jits[index], &first_bad, limits), first);
++            assert_eq!(jit_error(&jits[index], &later_bad, limits), later);
++            assert_eq!(
++                jit_error(&jits[index], &later_bad, NativeExecutionLimits::default()),
++                overflow
++            );
++        }
++        cases.push(exact_failure_case(
++            "unused-error-before-later-denial",
++            with_limit(&format!("--work={low}"), &first_bad),
++            &first,
++        ));
++        cases.push(exact_failure_case(
++            "later-node-denial-before-overflow",
++            with_limit(&format!("--work={low}"), &later_bad),
++            &later,
++        ));
++        cases.push(exact_failure_case(
++            "later-arithmetic-is-atomic",
++            arguments(&later_bad),
++            &overflow,
++        ));
++        cases.push(success_case("recovery", arguments(&good), &expected));
++    }
++    cases
++}
++
++/// Only called in the contained worker. Subprocesses inherit its owned group;
++/// they do not open another process group that could escape its deadline.
++fn worker_command(mut command: Command, root: &Path, label: &str) -> Captured {
++    command
++        .stdin(Stdio::null())
++        .stdout(Stdio::from(
++            File::create(root.join(format!("{label}.stdout"))).unwrap(),
++        ))
++        .stderr(Stdio::from(
++            File::create(root.join(format!("{label}.stderr"))).unwrap(),
++        ));
++    let status = command.status().unwrap();
++    Captured {
++        status,
++        stdout: fs::read(root.join(format!("{label}.stdout"))).unwrap(),
++        stderr: fs::read(root.join(format!("{label}.stderr"))).unwrap(),
++    }
++}
++
++fn compiled_feature_closure(metadata: &Value, build_stdout: &[u8]) -> Vec<Value> {
++    let packages = metadata["packages"]
++        .as_array()
++        .unwrap()
++        .iter()
++        .map(|package| (package["id"].as_str().unwrap(), package))
++        .collect::<BTreeMap<_, _>>();
++    let root = metadata["resolve"]["root"].as_str().unwrap();
++    // Metadata can retain weak optional dependency edges that Cargo does not
++    // build. Every actual compiler-artifact unit (including fresh units) is
++    // authoritative for the successful build's selected packages/features.
++    let mut seen = BTreeSet::new();
++    let mut seen_packages = BTreeSet::new();
++    let mut result = Vec::new();
++    for line in build_stdout.split(|byte| *byte == b'\n') {
++        if line.is_empty() {
++            continue;
++        }
++        let message: Value = serde_json::from_slice(line).unwrap();
++        if message["reason"] != "compiler-artifact" {
++            continue;
++        }
++        let id = message["package_id"].as_str().unwrap();
++        let package = packages[id];
++        let name = package["name"].as_str().unwrap();
++        seen_packages.insert(name.to_owned());
++        if name.starts_with("mech-") {
++            assert!(package["source"].is_null(), "registry Mech crate {name}");
++            let manifest = Path::new(package["manifest_path"].as_str().unwrap())
++                .canonicalize()
++                .unwrap();
++            assert!(
++                manifest.starts_with(workspace().canonicalize().unwrap()),
++                "Mech crate {name} is outside the pinned workspace"
++            );
++        }
++        assert_ne!(name, "mech-syntax");
++        assert!(
++            !name.starts_with("cranelift-"),
++            "runtime graph contains compiler crate {name}"
++        );
++        let forbidden: &[&str] = match name {
++            "mech-gpu" => &[
++                "canonical-native",
++                "jit",
++                "aot",
++                "sequence-cli",
++                "native-build",
++                "fused-cli",
++            ],
++            "mech-engine" | "mech-stdlib" => &[
++                "source",
++                "semantic-compiler",
++                "compiler",
++                "full_compiler",
++                "standard_compiler",
++                "native-sequence",
++            ],
++            _ => &[],
++        };
++        for feature in message["features"].as_array().unwrap() {
++            assert!(
++                !forbidden.contains(&feature.as_str().unwrap()),
++                "runtime-only graph enabled {name}/{feature}"
++            );
++        }
++        if seen.insert((
++            id.to_owned(),
++            message["target"].to_string(),
++            message["features"].to_string(),
++        )) {
++            result.push(json!({"id":id, "name":name, "version":package["version"], "features":message["features"], "target_name":message["target"]["name"], "target_kind":message["target"]["kind"]}));
++        }
++    }
++    assert!(result.iter().any(|unit| unit["id"] == root));
++    for required in ["mech-core", "mech-engine", "mech-gpu", "mech-stdlib"] {
++        assert!(
++            seen_packages.contains(required),
++            "missing compiled {required}"
++        );
++    }
++    result.sort_by(|a, b| a["id"].as_str().cmp(&b["id"].as_str()));
++    result
++}
++
++fn review_ir(plan: &NativeMatchArtifactPlan) -> Value {
++    json!({
++        "revision":format!("{:?}",plan.program_revision()),"entry":plan.entry(),
++        "inputs":plan.inputs().iter().map(|input|json!({"id":input.declaration().input().get(),"name":input.declaration().name(),"value":input.value().get(),"kind":format!("{:?}",input.declaration().ty().kind())})).collect::<Vec<_>>(),
++        "constants":plan.constants().iter().map(|value|json!({"id":value.value().get(),"value":format!("{:?}",value.scalar())})).collect::<Vec<_>>(),
++        "blocks":plan.blocks().iter().map(|block|json!({"origin":format!("{:?}",block.origin()),"action":match block.action() {NativeMatchAction::Primitive{op,operands,output,..}=>json!({"op":format!("{op:?}"),"operands":operands.iter().map(|v|v.get()).collect::<Vec<_>>(),"output":output.get()}),NativeMatchAction::Copy{source,output}=>json!({"copy":source.get(),"output":output.get()}),NativeMatchAction::None=>Value::Null},"terminator":format!("{:?}",block.terminator())})).collect::<Vec<_>>(),
++        "outputs":plan.outputs().iter().map(|output|json!({"id":output.output().get(),"name":output.name(),"value":output.value().get(),"kind":format!("{:?}",output.ty().kind()),"interactive_binding":format!("{:?}",output.interactive_binding())})).collect::<Vec<_>>(),
++    })
++}
++
++#[test]
++#[ignore = "internal worker; the outer qualification owns this complete process tree"]
++fn canonical_match_link_build_worker() {
++    let name = std::env::var("MECH_CANONICAL_MATCH_WORKER_NAME").unwrap();
++    assert!(matches!(
++        name.as_str(),
++        "canonical-match-mixed" | "canonical-match-ordered"
++    ));
++    let evidence = PathBuf::from(std::env::var_os("MECH_CANONICAL_MATCH_EVIDENCE_DIR").unwrap());
++    let root = evidence.join(&name);
++    let source = fs::read_to_string(root.join("application.mec")).unwrap();
++    // Only the mixed fixture requests real interactive named outputs. The
++    // ordered fixture uses ordinary compilation, so its first checked node is
++    // genuinely unused by outputs and must nevertheless retain its error.
++    let interactive = name == "canonical-match-mixed";
++    let (artifacts, result) = compile(&source, interactive);
++    let catalog = mech_stdlib::source_catalog();
++    let plan = lower_scalar_match_artifact(&artifacts[0], &catalog).unwrap();
++    let decoded_plan = lower_scalar_match_artifact(&artifacts[1], &catalog).unwrap();
++    assert_eq!(review_ir(&plan), review_ir(&decoded_plan));
++    fs::write(
++        root.join("typed-ir-review.json"),
++        serde_json::to_vec_pretty(&review_ir(&plan)).unwrap(),
++    )
++    .unwrap();
++    let mut cases = reference_cases(&name, &artifacts, result);
++    let generated = generate_linked_match_application(
++        &workspace(),
++        &root.join("project"),
++        &name,
++        &artifacts[0],
++        &catalog,
++        source.as_bytes(),
++    )
++    .unwrap();
++    let decoded = generate_linked_match_application(
++        &workspace(),
++        &root.join("decoded-project"),
++        &name,
++        &artifacts[1],
++        &catalog,
++        source.as_bytes(),
++    )
++    .unwrap();
++    assert_eq!(generated.pins(), decoded.pins());
++    assert_eq!(
++        generated.metadata()["program_revision"],
++        decoded.metadata()["program_revision"]
++    );
++    assert_eq!(
++        generated.metadata()["typed_ir_sha256"],
++        decoded.metadata()["typed_ir_sha256"]
++    );
++    let bytecode = mech_engine::encode_program_artifact_bytecode_v1(&artifacts[0]).unwrap();
++    assert_eq!(
++        fs::read(generated.root().join("program.mecb")).unwrap(),
++        bytecode
++    );
++    assert_eq!(
++        fs::read(generated.root().join("application.mec")).unwrap(),
++        source.as_bytes()
++    );
++    for project in [&generated, &decoded] {
++        for (relative, expected) in project.pins() {
++            assert_eq!(&pin(&project.root().join(relative)), expected);
++        }
++    }
++    // Use the immutable workspace lock as a resolution seed, retaining the
++    // actual resolved lock and complete feature graph before the locked build.
++    fs::copy(
++        workspace().join("Cargo.lock"),
++        generated.root().join("Cargo.lock"),
++    )
++    .unwrap();
++    let cargo_home = std::env::var_os("CARGO_HOME")
++        .map(PathBuf::from)
++        .or_else(|| std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".cargo")));
++    if let Some(home) = cargo_home {
++        assert!(
++            !home.join("config").exists() && !home.join("config.toml").exists(),
++            "ambient Cargo configuration is unsupported for this pinned qualification"
++        );
++    }
++    let isolated = generated.root().ancestors().last().unwrap();
++    let locked = worker_command(
++        CargoInvocation::resolve_lockfile(generated.manifest_path(), true)
++            .with_current_dir(isolated)
++            .command(),
++        &root,
++        "metadata",
++    );
++    assert!(
++        locked.status.success(),
++        "{}",
++        String::from_utf8_lossy(&locked.stderr)
++    );
++    let metadata: Value = serde_json::from_slice(&locked.stdout).unwrap();
++    let mut command = CargoInvocation::build(
++        generated.manifest_path(),
++        &name,
++        None,
++        evidence.join("cargo-target"),
++        false,
++        true,
++    )
++    .unwrap()
++    .with_current_dir(isolated)
++    .command();
++    command
++        .env("CARGO_INCREMENTAL", "0")
++        .env("CARGO_PROFILE_DEV_DEBUG", "0")
++        .env("CARGO_BUILD_JOBS", "2");
++    let built = worker_command(command, &root, "build");
++    assert!(
++        built.status.success(),
++        "{}",
++        String::from_utf8_lossy(&built.stderr)
++    );
++    let messages = parse_cargo_build_messages(Cursor::new(&built.stdout)).unwrap();
++    assert_eq!(messages.build_finished, Some(true));
++    let closure = compiled_feature_closure(&metadata, &built.stdout);
++    let executable = messages.select_binary(&name).unwrap().executable;
++    let mut pins = BTreeMap::new();
++    for (label, project) in [("original", &generated), ("decoded", &decoded)] {
++        for (relative, expected) in project.pins() {
++            let path = project.root().join(relative);
++            assert_eq!(&pin(&path), expected);
++            pins.insert(path, expected.clone());
++        }
++        let path = project.root().join("linked-manifest.json");
++        pins.insert(path.clone(), pin(&path));
++        fs::write(
++            root.join(format!("{label}-generation.json")),
++            serde_json::to_vec_pretty(project.metadata()).unwrap(),
++        )
++        .unwrap();
++    }
++    for path in [
++        root.join("application.mec"),
++        root.join("typed-ir-review.json"),
++        generated.root().join("Cargo.lock"),
++        workspace().join("Cargo.lock"),
++        executable.clone(),
++        root.join("metadata.stdout"),
++        root.join("original-generation.json"),
++        root.join("decoded-generation.json"),
++    ] {
++        pins.insert(path.clone(), pin(&path));
++    }
++    // Every failure oracle is complete stderr, including the exact checked
++    // NodeId/admission phase. Object stack metadata belongs to that object,
++    // rather than assuming its compiled frame equals the JIT frame.
++    for case in &mut cases {
++        if case["diagnostic"].is_null() || case["stderr"].is_string() {
++            continue;
++        }
++        let error = match case["name"].as_str().unwrap() {
++            "stack-denial" => NativeMatchExecutionError::Base(NativeExecutionError::StackLimit {
++                required: generated.metadata()["object"]["stack_bytes"]
++                    .as_u64()
++                    .unwrap(),
++                limit: 0,
++            })
++            .to_string(),
++            "u64-overflow-input" | "signed-u64-input" | "whitespace-u64-input" => {
++                "invalid U64 argument".into()
++            }
++            "invalid-bool-input" => "invalid Bool argument".into(),
++            "invalid-unicode-input" => "argument is not Unicode".into(),
++            "missing-input" | "extra-input" => {
++                format!("expected {} typed inputs", plan.inputs().len())
++            }
++            "unknown-option" => "unknown option".into(),
++            "invalid-limit" => "invalid limit argument".into(),
++            other => panic!("failure oracle missing for {other}"),
++        };
++        case["stderr"] = json!(format!("{error}\n"));
++    }
++    let receipt = json!({"name":name,"source_compile_mode":if interactive {"interactive"} else {"ordinary"},"source_sha256":digest(source.as_bytes()),"program_revision":generated.metadata()["program_revision"],"bytecode_sha256":digest(&bytecode),"typed_ir_sha256":generated.metadata()["typed_ir_sha256"],"typed_ir_review_sha256":pin(&root.join("typed-ir-review.json")),"original_and_decoded_pair_equal":true,"generator":generated.metadata(),"generated_runtime_feature_closure":closure,"binary":executable,"binary_sha256":pin(&executable),"build_count":1,"object_emissions":2,"reference":"ordinary canonical resident and JIT original+decoded; all outputs exact; finite native denials compared with JIT, not resident cost policy","benchmark_measurements":0});
++    fs::write(
++        root.join("application-build.json"),
++        serde_json::to_vec_pretty(
++            &json!({"executable":executable,"pins":pins,"receipt":receipt,"cases":cases}),
++        )
++        .unwrap(),
++    )
++    .unwrap();
++}
++
++fn qualify(evidence: &Path, name: &str, source: &str) -> Value {
++    let root = evidence.join(name);
++    fs::create_dir(&root).unwrap();
++    fs::write(root.join("application.mec"), source).unwrap();
++    let mut worker = Command::new(std::env::current_exe().unwrap());
++    worker
++        .args([
++            "--ignored",
++            "--exact",
++            "canonical_match_link_build_worker",
++            "--nocapture",
++            "--test-threads=1",
++        ])
++        .env("MECH_CANONICAL_MATCH_WORKER_NAME", name);
++    let built = bounded(worker, &root, "build-worker", WORKER_DEADLINE);
++    assert!(
++        built.status.success(),
++        "{}",
++        String::from_utf8_lossy(&built.stderr)
++    );
++    let evidence_path = root.join("application-build.json");
++    let mut data: Value = serde_json::from_slice(&fs::read(&evidence_path).unwrap()).unwrap();
++    let executable: PathBuf = serde_json::from_value(data["executable"].take()).unwrap();
++    let mut pins: BTreeMap<PathBuf, String> = serde_json::from_value(data["pins"].take()).unwrap();
++    pins.insert(evidence_path.clone(), pin(&evidence_path));
++    let check_pins = || {
++        for (path, expected) in &pins {
++            assert_eq!(&pin(path), expected, "changed {}", path.display());
++        }
++    };
++    check_pins();
++    let mut records = Vec::new();
++    for case in data["cases"].as_array().unwrap() {
++        let label = case["name"].as_str().unwrap();
++        let mut args = case["arguments"]
++            .as_array()
++            .unwrap()
++            .iter()
++            .map(|value| OsString::from(value.as_str().unwrap()))
++            .collect::<Vec<_>>();
++        if let Some(index) = case["invalid_os_argument"].as_u64() {
++            args[index as usize] = invalid_unicode_argument().unwrap();
++        }
++        let expected = case["stdout"].as_str().unwrap().as_bytes();
++        fs::write(root.join(format!("{label}.expected.stdout")), expected).unwrap();
++        let mut command = Command::new(&executable);
++        command.args(&args);
++        let actual = bounded(command, &root, label, PROCESS_DEADLINE);
++        assert_eq!(
++            actual.stdout,
++            expected,
++            "{name}/{label}: {}",
++            String::from_utf8_lossy(&actual.stderr)
++        );
++        if let Some(diagnostic) = case["diagnostic"].as_str() {
++            assert_eq!(actual.status.code(), Some(1));
++            let stderr = String::from_utf8_lossy(&actual.stderr);
++            assert!(stderr.contains(diagnostic), "{name}/{label}: {stderr}");
++            let oracle = case["stderr"]
++                .as_str()
++                .expect("complete failure stderr oracle");
++            fs::write(root.join(format!("{label}.expected.stderr")), oracle).unwrap();
++            assert_eq!(
++                actual.stderr,
++                oracle.as_bytes(),
++                "{name}/{label}: exact failure origin/phase"
++            );
++            assert!(!stderr.contains("panicked"), "{stderr}");
++        } else {
++            assert!(
++                actual.status.success(),
++                "{}",
++                String::from_utf8_lossy(&actual.stderr)
++            );
++            assert!(actual.stderr.is_empty());
++        }
++        check_pins();
++        records.push(json!({"name":label,"arguments_os_encoded_hex":args.iter().map(|arg|arg.as_encoded_bytes().iter().map(|b|format!("{b:02x}")).collect::<String>()).collect::<Vec<_>>(),"exit_code":actual.status.code(),"stdout_sha256":digest(&actual.stdout),"stderr_sha256":digest(&actual.stderr),"expected_stdout_sha256":digest(expected),"expected_diagnostic":case["diagnostic"],"expected_stderr_sha256":case["stderr"].as_str().map(|value|digest(value.as_bytes())),"exact_complete_stderr":true,"binary_unchanged":true,"exact_complete_stdout":true}));
++    }
++    let mut receipt = data["receipt"].take();
++    assert_eq!(receipt["source_sha256"], digest(source.as_bytes()));
++    receipt["cases"] = json!(records);
++    receipt["pins"] = json!(pins);
++    receipt["linked"] = json!(true);
++    receipt["executed"] = json!(true);
++    receipt
++}
++
++#[test]
++#[ignore = "explicit linked canonical Cranelift qualification; requires clean pinned checkout and fresh external evidence"]
++fn linked_canonical_match_applications_are_lazy_bounded_and_atomic() {
++    let workspace = workspace().canonicalize().unwrap();
++    let commit = std::env::var("MECH_CANONICAL_MATCH_SOURCE_COMMIT").expect("pin immutable HEAD");
++    assert_eq!(commit.len(), 40);
++    assert!(commit.bytes().all(|byte| byte.is_ascii_hexdigit()));
++    let evidence = PathBuf::from(
++        std::env::var_os("MECH_CANONICAL_MATCH_EVIDENCE_DIR")
++            .expect("new external evidence directory"),
++    );
++    assert!(evidence.is_absolute());
++    fs::create_dir(&evidence).unwrap();
++    let evidence = evidence.canonicalize().unwrap();
++    assert!(!evidence.starts_with(&workspace));
++    clean(&workspace, &evidence, &commit, "before");
++    let lock = pin(&workspace.join("Cargo.lock"));
++    let applications = [
++        qualify(&evidence, "canonical-match-mixed", MIXED),
++        qualify(&evidence, "canonical-match-ordered", ORDERED),
++    ];
++    assert_eq!(pin(&workspace.join("Cargo.lock")), lock);
++    clean(&workspace, &evidence, &commit, "after");
++    fs::write(evidence.join("qualification.json"),serde_json::to_vec_pretty(&json!({"schema":"mech.canonical-artifact-linked-match-qualification.v1","source_commit":commit,"source_checkout_clean_before_and_after":true,"route":"canonical-artifact-match-cranelift-object","linked":true,"executed":true,"benchmark_measurements":0,"applications":applications})).unwrap()).unwrap();
++}

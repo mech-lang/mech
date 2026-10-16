@@ -1,0 +1,118 @@
+{
+  "schema": "mech.pending-compiler-workload-preservation.v1",
+  "status": "UNAPPLIED / UNRUN",
+  "qualification_credit": 0,
+  "baseline_commit": "eb562ece317ecb78fb9a02800cc21a1507281aa1",
+  "features": [
+    {
+      "feature": "ordinary-iteration",
+      "status": "UNAPPLIED / UNRUN",
+      "patches": [
+        "ordinary-iteration/patches/canonical-application-iteration.patch"
+      ],
+      "prepared_test_sources": 12
+    },
+    {
+      "feature": "native-scalar/i64",
+      "status": "UNAPPLIED / UNRUN",
+      "patches": [
+        "native-scalar/i64/patches/canonical-native-i64.patch"
+      ],
+      "prepared_test_sources": 4
+    },
+    {
+      "feature": "native-scalar/f64",
+      "status": "UNAPPLIED / UNRUN",
+      "patches": [
+        "native-scalar/f64/patches/canonical-native-f64.patch"
+      ],
+      "prepared_test_sources": 8
+    },
+    {
+      "feature": "native-scalar/casts",
+      "status": "UNAPPLIED / UNRUN",
+      "patches": [
+        "native-scalar/casts/patches/canonical-native-cast.patch",
+        "native-scalar/casts/patches/cast-catalog-borrow.patch"
+      ],
+      "prepared_test_sources": 5
+    },
+    {
+      "feature": "native-control/match",
+      "status": "UNAPPLIED / UNRUN",
+      "patches": [
+        "native-control/match/patches/canonical-native-match.patch"
+      ],
+      "prepared_test_sources": 2
+    },
+    {
+      "feature": "native-control/linked-match",
+      "status": "UNAPPLIED / UNRUN",
+      "patches": [
+        "native-control/linked-match/patches/canonical-native-linked-match.patch",
+        "native-control/linked-match/patches/native-match-reference-slot-followup.patch"
+      ],
+      "prepared_test_sources": 2
+    },
+    {
+      "feature": "native-iteration",
+      "status": "UNAPPLIED / UNRUN",
+      "patches": [
+        "native-iteration/patches/native-iteration-scalar.patch"
+      ],
+      "prepared_test_sources": 2
+    },
+    {
+      "feature": "native-matrix",
+      "status": "UNAPPLIED / UNRUN",
+      "patches": [
+        "native-matrix/patches/engine-matrix.patch",
+        "native-matrix/patches/gpu-matrix.patch",
+        "native-matrix/patches/constant-output-consistency.patch"
+      ],
+      "prepared_test_sources": 12
+    },
+    {
+      "feature": "cli-bytes",
+      "status": "UNAPPLIED / UNRUN",
+      "patches": [
+        "cli-bytes/patches/generic-cli-bytes.patch",
+        "cli-bytes/patches/mixed-byte-order-oracle.patch"
+      ],
+      "prepared_test_sources": 3
+    },
+    {
+      "feature": "workloads/nbody",
+      "status": "UNAPPLIED / UNRUN",
+      "patches": [
+        "workloads/nbody/patches/nbody-source-qualification.patch"
+      ],
+      "prepared_test_sources": 8
+    },
+    {
+      "feature": "workloads/idiomatic-six",
+      "status": "UNAPPLIED / UNRUN",
+      "patches": [
+        "workloads/idiomatic-six/patches/binarytrees.patch",
+        "workloads/idiomatic-six/patches/fasta.patch",
+        "workloads/idiomatic-six/patches/mandelbrot.patch",
+        "workloads/idiomatic-six/patches/pidigits.patch",
+        "workloads/idiomatic-six/patches/regexredux.patch",
+        "workloads/idiomatic-six/patches/revcomp.patch"
+      ],
+      "prepared_test_sources": 0
+    }
+  ],
+  "file_inventory": {
+    "path": "file-inventory.json",
+    "sha256": "2d035619ce83541d3868fe88516ed518feecd1a22e78b5b53ed4e8dfc6057cf8"
+  },
+  "selection_review": {
+    "path": "selection-review.json",
+    "blocking_entries": []
+  },
+  "byte_preservation": "Every patch, Mech fixture, Rust test source and binary input/oracle fixture copied byte-for-byte; portable metadata regenerated.",
+  "no_execution": true,
+  "no_git_writes": true,
+  "no_checkout_writes": true
+}

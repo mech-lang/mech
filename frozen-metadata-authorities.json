@@ -1,0 +1,55 @@
+{
+  "status": "IDENTITY ONLY; ORIGINAL PRIVATE RECEIPTS NOT INCLUDED",
+  "receipts": [
+    {
+      "feature": "ordinary-iteration",
+      "frozen_receipt_name": "candidate.json",
+      "frozen_receipt_sha256": "a0f85416d34c8be02c5daa88e47a0fd44300bb2b1a019bb4cccb45ef83cb500d"
+    },
+    {
+      "feature": "native-scalar/i64",
+      "frozen_receipt_name": "candidate-manifest.json",
+      "frozen_receipt_sha256": "da4e2b25e1c5e78dc3577f4d82010942a325c3645f6e5fed55f7a5d37bf8496c"
+    },
+    {
+      "feature": "native-scalar/f64",
+      "frozen_receipt_name": "candidate-manifest.json",
+      "frozen_receipt_sha256": "9ed9148d31f936566eb74d9bfff1f4071c8c54fb288859c61da0e66c5d46eeb0"
+    },
+    {
+      "feature": "native-scalar/casts",
+      "frozen_receipt_name": "candidate-manifest.json",
+      "frozen_receipt_sha256": "8c53819abcff960f668a5e21a245a89aaf34e588d8131e38e3748aaee624e70f"
+    },
+    {
+      "feature": "native-control/match",
+      "frozen_receipt_name": "source-receipt.json",
+      "frozen_receipt_sha256": "45a5337675d5b70d59ae17799feef21f685dc8af0c1ccd1b3de86aa9f2644a45"
+    },
+    {
+      "feature": "native-control/linked-match",
+      "frozen_receipt_name": "source-receipt.json",
+      "frozen_receipt_sha256": "28a0bdfb816e6d916604c559d9abda25d89d93e7b1bafee85d5a27a49ed26b97"
+    },
+    {
+      "feature": "native-iteration",
+      "frozen_receipt_name": "native-iteration-candidate.json",
+      "frozen_receipt_sha256": "88187e720a25b6a8dadfc12900dc99c4fb8d583cc48a46da394ca0ec5d99449d"
+    },
+    {
+      "feature": "native-matrix",
+      "frozen_receipt_name": "engine-matrix-candidate.json",
+      "frozen_receipt_sha256": "60a451b3ea8cacf65e53613ada561ed50171acd9118292fed308780ab8b88b76"
+    },
+    {
+      "feature": "cli-bytes",
+      "frozen_receipt_name": "candidate.json",
+      "frozen_receipt_sha256": "f16cd60cfe0d6b53447ed22c9ca1f08f7f508558cc0de9e8ba3d8a8058961ff3"
+    },
+    {
+      "feature": "workloads/nbody",
+      "frozen_receipt_name": "candidate.json",
+      "frozen_receipt_sha256": "0be7ea871929334960390f8dc5c19e41eec35006035b0d2b1a7c04c2c80e0e57"
+    }
+  ]
+}

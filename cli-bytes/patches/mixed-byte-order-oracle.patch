@@ -1,0 +1,30 @@
+diff --git a/src/build/tests/canonical_cli_bytes.rs b/src/build/tests/canonical_cli_bytes.rs
+--- a/src/build/tests/canonical_cli_bytes.rs
++++ b/src/build/tests/canonical_cli_bytes.rs
+@@ -171,7 +171,7 @@
+ #[test]
+ fn mixed_text_and_byte_sends_share_one_valid_input_snapshot_in_source_order() {
+     let backend = Backend::default();
+-    let source = "+> @in := cli/stdin\n+> @out := cli/stdout\n@out/bytes <- @in/bytes\n@out/text <- @in/text\n@out/bytes <- @in/bytes\n";
++    let source = "+> @in := cli/stdin\n+> @out := cli/stdout\n@out/bytes <- @in/bytes\n@out/line <- @in/text\n@out/bytes <- @in/bytes\n";
+     for artifact in artifacts(source, backend.clone()) {
+         let input = "héllo\r\n".as_bytes();
+         reset(&backend, input);
+@@ -182,7 +182,16 @@
+         runtime.shutdown().unwrap();
+         let state = backend.0.lock().unwrap();
+         assert_eq!(state.reads, 1);
+-        assert_eq!(state.output, vec![("stdout".into(), input.to_vec()); 3]);
++        let mut line = input.to_vec();
++        line.push(b'\n');
++        assert_eq!(
++            state.output,
++            vec![
++                ("stdout".into(), input.to_vec()),
++                ("stdout".into(), line),
++                ("stdout".into(), input.to_vec()),
++            ]
++        );
+     }
+ }
+ #[test]

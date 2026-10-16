@@ -1,0 +1,15 @@
+{
+  "format": "mech-source-file-pins-v1",
+  "files": [
+    {
+      "path": "src/engine/src/resident/general/native_matrix_templates.rs",
+      "base_sha256": "4d6d2af2aa8dcde9ab77141390af196427d4a18e2ce354b6e07704e478a4d9a9",
+      "candidate_sha256": "e3e342dc06209da8a309f007483b764af86bb4965a4044833839c18e3d4ababb"
+    },
+    {
+      "path": "src/engine/tests/native_matrix_constant_outputs.rs",
+      "base_sha256": null,
+      "candidate_sha256": "9816fbb131557cfb410cfdd4423f853d1c08bc5a29aa97d9ca126211e817356e"
+    }
+  ]
+}

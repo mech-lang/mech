@@ -1,0 +1,104 @@
+{
+  "schema": "mech.external-source-pins.v1",
+  "base_commit": "2e9e7164178aef3fe564f53772e754b4219c6b5d",
+  "files": [
+    {
+      "path": "hosts/gpu/src/native_artifact/compiler.rs",
+      "base_sha256": "5b6d4f4d9e9a4ebebb14a45992501ffc1997d3191021b3480d73c626749dd046",
+      "candidate_sha256": "454cfc346034a1ec6d5ef7ee82c7e6a6b141912e47b1f6abd56f81e8d9b7f800",
+      "bytes": 33809,
+      "new_file": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/control_abi.rs",
+      "base_sha256": null,
+      "candidate_sha256": "68b5a9de2f20cc3727621bd8788f51477ba77e24550eba68229a69ca75756818",
+      "bytes": 4493,
+      "new_file": true
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/control_compiler.rs",
+      "base_sha256": null,
+      "candidate_sha256": "ee60524d5e05990499dd007efaff177957bc3888bb837b27733b68d4cc2c3320",
+      "bytes": 23356,
+      "new_file": true
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/control_identity.rs",
+      "base_sha256": null,
+      "candidate_sha256": "7507f13c9938417d1ffe094ddad9833a39ec55b89d789d595e71068814e7d9ae",
+      "bytes": 5506,
+      "new_file": true
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/control_runtime.rs",
+      "base_sha256": null,
+      "candidate_sha256": "8f46c2d10bd97e6eee171aa31008b84b2e8d661c2e0ab0c66ec31dc0708e96fd",
+      "bytes": 15587,
+      "new_file": true
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/identity.rs",
+      "base_sha256": "a75938f5ddd1579e2ae27ad379a5931d87fb1b2a002c017db75e16b0dfff5426",
+      "candidate_sha256": "c6897091e4a8c0999dc4d8a6898d1b82bbfec07795525d6d6a1b13442b96e5e0",
+      "bytes": 11382,
+      "new_file": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/mod.rs",
+      "base_sha256": "b36d243811b2f834b1ef244d6038ea249f73df8204059a4aee2e307c7eafdd93",
+      "candidate_sha256": "97ae76ee4a11f2370815d2e94bf4cb1185809c71a9fad9f29fddfc930fb8b7a6",
+      "bytes": 1768,
+      "new_file": false
+    },
+    {
+      "path": "hosts/gpu/tests/canonical_artifact_match.rs",
+      "base_sha256": null,
+      "candidate_sha256": "5b2427b49e5ffe756b4db0006e834b8b44a8b6e51d13e540fe17f549500c208f",
+      "bytes": 15152,
+      "new_file": true
+    },
+    {
+      "path": "src/engine/src/native_artifact/control.rs",
+      "base_sha256": null,
+      "candidate_sha256": "4bb8b061b41fb93c8b5f89798d8f899f630c968baa9cdd620bea901303a99d74",
+      "bytes": 3916,
+      "new_file": true
+    },
+    {
+      "path": "src/engine/src/native_artifact/mod.rs",
+      "base_sha256": "31db67c06c83256d773ccc6ef5d3a5406644e4e8a18813a664e379c209262248",
+      "candidate_sha256": "975abce12fa29c3f4c30ab999b606555f8d039ff14c74e4b10501e9b62054f0c",
+      "bytes": 534,
+      "new_file": false
+    },
+    {
+      "path": "src/engine/src/resident/general/mod.rs",
+      "base_sha256": "12d20e64c6e0e82bd2e8e67049aec47a9d13c883beb3f4297f33eae9c380d5ab",
+      "candidate_sha256": "fea6b2ec41a351aadc026281660fc2caf7b3158f198ae74e7f59e52bceff141d",
+      "bytes": 970454,
+      "new_file": false
+    },
+    {
+      "path": "src/engine/src/resident/general/native_lowering.rs",
+      "base_sha256": "8096404ac680fbdd7c5dd8d2a0259d554bcbc30d36add5d46035887477a5ae73",
+      "candidate_sha256": "a5f8eb19bb749d2b5c56ce41279f63a5aa5ce286c35abe44b56a629171d8d4d8",
+      "bytes": 17800,
+      "new_file": false
+    },
+    {
+      "path": "src/engine/src/resident/general/native_match_lowering.rs",
+      "base_sha256": null,
+      "candidate_sha256": "a42c9c395865d19dc65def1b89b35a3f53a2dc7de328c401009aaea9bb644fce",
+      "bytes": 19755,
+      "new_file": true
+    },
+    {
+      "path": "src/stdlib/tests/native_artifact_match_lowering.rs",
+      "base_sha256": null,
+      "candidate_sha256": "736237e3e24b0eef073cc8146188ae7040502360e9a90cf378d061b3eeaf88b2",
+      "bytes": 6214,
+      "new_file": true
+    }
+  ]
+}

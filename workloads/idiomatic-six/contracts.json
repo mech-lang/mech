@@ -1,0 +1,3939 @@
+{
+  "status": "RETAINED CONTRACTS; CANDIDATE TESTS UNRUN",
+  "case_count": 113,
+  "success_cases": 106,
+  "rejection_cases": 7,
+  "cases": [
+    {
+      "benchmark": "mandelbrot",
+      "case": "n-1",
+      "n": 1,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-1/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-1/expected.stdout",
+        "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+        "bytes": 8
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-1",
+          "n": 1,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-mandelbrot-compact/n-1/expected.stdout",
+            "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/052-prolog-mandelbrot-compact.json",
+            "sha256": "b842ec9f7b540ff00447e789e800cc6e889b22d733c9f77c67478c2d7b7e3efa"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/052-prolog-mandelbrot-compact.supervisor.json",
+            "sha256": "2fdbac227da9e795602afd3920afd9306acebea652757ca184db0d82cbe6cf1f"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-mandelbrot-compact/n-1/actual.stdout",
+            "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "mandelbrot",
+      "case": "n-2",
+      "n": 2,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-2/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-2/expected.stdout",
+        "sha256": "2e4e5f9f953fd314adbaa1326f7020d08d403929fec8e60c1ef777440af987dd",
+        "bytes": 9
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-2",
+          "n": 2,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-mandelbrot-compact/n-2/expected.stdout",
+            "sha256": "2e4e5f9f953fd314adbaa1326f7020d08d403929fec8e60c1ef777440af987dd"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/053-prolog-mandelbrot-compact.json",
+            "sha256": "48563e0ce021f0ac1975a6a1e0318a776e694db8ca6007e22943b0527e1344e1"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/053-prolog-mandelbrot-compact.supervisor.json",
+            "sha256": "db8371f7a05d2b5c2278bc0568549ff4b729cb9f00dab11caa7a8fe0b84de3f9"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-mandelbrot-compact/n-2/actual.stdout",
+            "sha256": "2e4e5f9f953fd314adbaa1326f7020d08d403929fec8e60c1ef777440af987dd"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "mandelbrot",
+      "case": "n-3",
+      "n": 3,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-3/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-3/expected.stdout",
+        "sha256": "283b41658c4a4006825d9a3a188f42018305cdc5a19247921d2470c56121ee76",
+        "bytes": 10
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-3",
+          "n": 3,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-mandelbrot-compact/n-3/expected.stdout",
+            "sha256": "283b41658c4a4006825d9a3a188f42018305cdc5a19247921d2470c56121ee76"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/054-prolog-mandelbrot-compact.json",
+            "sha256": "a08163e9cc626b43b7f37273f5d57ed12489ef1a49c593bc6898871e49608162"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/054-prolog-mandelbrot-compact.supervisor.json",
+            "sha256": "7a683e4354a637ec538a733cafbb947e46ced070f969a410a51091bdd5497bda"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-mandelbrot-compact/n-3/actual.stdout",
+            "sha256": "283b41658c4a4006825d9a3a188f42018305cdc5a19247921d2470c56121ee76"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "mandelbrot",
+      "case": "n-7",
+      "n": 7,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-7/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-7/expected.stdout",
+        "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+        "bytes": 14
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-7",
+          "n": 7,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-mandelbrot-compact/n-7/expected.stdout",
+            "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/055-prolog-mandelbrot-compact.json",
+            "sha256": "e7f14a963210f7ba3eb1f139e88d165189caa0de9f862d31ee14d9e38b31f172"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/055-prolog-mandelbrot-compact.supervisor.json",
+            "sha256": "3e01f58400a39bd68f515126c88f86fb26f47994cb7d95cb47078af5f93fc2b8"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-mandelbrot-compact/n-7/actual.stdout",
+            "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "mandelbrot",
+      "case": "n-8",
+      "n": 8,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-8/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-8/expected.stdout",
+        "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+        "bytes": 15
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-8",
+          "n": 8,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-mandelbrot-compact/n-8/expected.stdout",
+            "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/056-prolog-mandelbrot-compact.json",
+            "sha256": "e7c61247b92038de0c3fd9984edcf65a85e318bf26aab40631eb07cba35e2964"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/056-prolog-mandelbrot-compact.supervisor.json",
+            "sha256": "0d7ea5e3225d5f7b636fdc65e4e88919aaf28945b39f1172edb999608520894f"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-mandelbrot-compact/n-8/actual.stdout",
+            "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "mandelbrot",
+      "case": "n-9",
+      "n": 9,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-9/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-9/expected.stdout",
+        "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+        "bytes": 25
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-9",
+          "n": 9,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-mandelbrot-compact/n-9/expected.stdout",
+            "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/057-prolog-mandelbrot-compact.json",
+            "sha256": "79aa226164f9064c8583e28609072adb85425e930d3d24765afd642b1a98a3fa"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/057-prolog-mandelbrot-compact.supervisor.json",
+            "sha256": "d60b524cc5de0a805b2bf7496ebbb748dee566454ed85d12ea25974b57bc0277"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-mandelbrot-compact/n-9/actual.stdout",
+            "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "mandelbrot",
+      "case": "n-15",
+      "n": 15,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-15/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-15/expected.stdout",
+        "sha256": "54a9b8222c44b98bb617334737b4932c611208958df4acaee3f9fa7c90d1ee93",
+        "bytes": 39
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-15",
+          "n": 15,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-mandelbrot-compact/n-15/expected.stdout",
+            "sha256": "54a9b8222c44b98bb617334737b4932c611208958df4acaee3f9fa7c90d1ee93"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/058-prolog-mandelbrot-compact.json",
+            "sha256": "be9d1df89461f2cd2da2c73304bb28fcb0219e474cf7a3d65758fec5de76096f"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/058-prolog-mandelbrot-compact.supervisor.json",
+            "sha256": "64105ca812e61564f55652d9e770135d42c4c2a975bd9f396ee74b74a104b633"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-mandelbrot-compact/n-15/actual.stdout",
+            "sha256": "54a9b8222c44b98bb617334737b4932c611208958df4acaee3f9fa7c90d1ee93"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "mandelbrot",
+      "case": "n-16",
+      "n": 16,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-16/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-16/expected.stdout",
+        "sha256": "8560a9f45ef36c9d5d15f5024ad4c91a322a4b373d675d163f6cf51f54d5b141",
+        "bytes": 41
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-16",
+          "n": 16,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-mandelbrot-compact/n-16/expected.stdout",
+            "sha256": "8560a9f45ef36c9d5d15f5024ad4c91a322a4b373d675d163f6cf51f54d5b141"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/059-prolog-mandelbrot-compact.json",
+            "sha256": "d31d9daa862ffa0ffdf1caee32551829b2f6a1016a917d616611d1155fadd10a"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/059-prolog-mandelbrot-compact.supervisor.json",
+            "sha256": "1200ab7085cff5be7a9815bf15829fdddd65a1ef1e2345f40ab1e99c85cb7653"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-mandelbrot-compact/n-16/actual.stdout",
+            "sha256": "8560a9f45ef36c9d5d15f5024ad4c91a322a4b373d675d163f6cf51f54d5b141"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "mandelbrot",
+      "case": "n-17",
+      "n": 17,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-17/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-17/expected.stdout",
+        "sha256": "11a01916753a7774492b5b818545d4d6dfaabcd93de1da2c4eb5dd3597fcaf79",
+        "bytes": 60
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-17",
+          "n": 17,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-mandelbrot-compact/n-17/expected.stdout",
+            "sha256": "11a01916753a7774492b5b818545d4d6dfaabcd93de1da2c4eb5dd3597fcaf79"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/060-prolog-mandelbrot-compact.json",
+            "sha256": "b14d509e4fd0cbeb0db3f50001427e430c90d0b5e5c25d10fcdfbadbed18b18b"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/060-prolog-mandelbrot-compact.supervisor.json",
+            "sha256": "56a9d22ffcead68d8a04c3daf0c374a771cbbbd001102068c3bf873f65beff11"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-mandelbrot-compact/n-17/actual.stdout",
+            "sha256": "11a01916753a7774492b5b818545d4d6dfaabcd93de1da2c4eb5dd3597fcaf79"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "mandelbrot",
+      "case": "n-31",
+      "n": 31,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-31/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-31/expected.stdout",
+        "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+        "bytes": 133
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-31",
+          "n": 31,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-mandelbrot-compact/n-31/expected.stdout",
+            "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/061-prolog-mandelbrot-compact.json",
+            "sha256": "c1de82dced498fb065ab831fe61b032030b3d36ef3af7823ba32ce9a867ed82c"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/061-prolog-mandelbrot-compact.supervisor.json",
+            "sha256": "d645c0d0e57bb14d320c7215b81c3cd94fda38ac4d0e56c189377f315cd995fb"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-mandelbrot-compact/n-31/actual.stdout",
+            "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "mandelbrot",
+      "case": "n-65",
+      "n": 65,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-65/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-65/expected.stdout",
+        "sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c",
+        "bytes": 594
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-65",
+          "n": 65,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-mandelbrot-compact/n-65/expected.stdout",
+            "sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/062-prolog-mandelbrot-compact.json",
+            "sha256": "fc514cbd9e966823232aa3f0b9cf4b967b995361883e8236af871a942e5aecfd"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/062-prolog-mandelbrot-compact.supervisor.json",
+            "sha256": "aa3e469804ffdda59cb718fde41909512ae9d4e7c023b06d2c9b228713bfea7a"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-mandelbrot-compact/n-65/actual.stdout",
+            "sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "mandelbrot",
+      "case": "n-129",
+      "n": 129,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-129/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-129/expected.stdout",
+        "sha256": "9285001b8e46c26687a2fd422846eab8601aae328fc69dc3fa8265bcefdd6ba9",
+        "bytes": 2204
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-129",
+          "n": 129,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-mandelbrot-compact/n-129/expected.stdout",
+            "sha256": "9285001b8e46c26687a2fd422846eab8601aae328fc69dc3fa8265bcefdd6ba9"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/063-prolog-mandelbrot-compact.json",
+            "sha256": "24d70471dec84f56c2b9ce8dac29caa72e7af4391f91474ffc716db7591455e2"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/063-prolog-mandelbrot-compact.supervisor.json",
+            "sha256": "b0454a0b87618db99dbfc29b44330aeee6214eda3f1ba22794329707553628d4"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-mandelbrot-compact/n-129/actual.stdout",
+            "sha256": "9285001b8e46c26687a2fd422846eab8601aae328fc69dc3fa8265bcefdd6ba9"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "mandelbrot",
+      "case": "n-200",
+      "n": 200,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-200/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-200/expected.stdout",
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "bytes": 5011
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-200",
+          "n": 200,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-mandelbrot-compact/n-200/expected.stdout",
+            "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/064-prolog-mandelbrot-compact.json",
+            "sha256": "5ef003064b8dcd9487d5b094a46d8a8e7e4810b954a52f8a601b23c5415eae29"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/064-prolog-mandelbrot-compact.supervisor.json",
+            "sha256": "0de622dfc5ed29df083dec77437e5477d16e7bb41ccafe450e5b494b03d04b18"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-mandelbrot-compact/n-200/actual.stdout",
+            "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "binarytrees",
+      "case": "n-0",
+      "n": 0,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/binarytrees/n-0/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/binarytrees/n-0/expected.stdout",
+        "sha256": "1e93372ab23c98137fc156de0f57f67fb53ced95d810e56cf784bd18f6c439fd",
+        "bytes": 143
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-0",
+          "n": 0,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-binarytrees-compact/n-0/expected.stdout",
+            "sha256": "1e93372ab23c98137fc156de0f57f67fb53ced95d810e56cf784bd18f6c439fd"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/124-prolog-binarytrees-compact.json",
+            "sha256": "d5fd013f821c2cc98ccfa7b33079634326d273ae54785aa6f4eb7f7d08e4ae4a"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/124-prolog-binarytrees-compact.supervisor.json",
+            "sha256": "ecd3412817d9b7588413528f3c33edadf96b9db28e8c91b532e5eec0728e65ec"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-binarytrees-compact/n-0/actual.stdout",
+            "sha256": "1e93372ab23c98137fc156de0f57f67fb53ced95d810e56cf784bd18f6c439fd"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "binarytrees",
+      "case": "n-4",
+      "n": 4,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/binarytrees/n-4/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/binarytrees/n-4/expected.stdout",
+        "sha256": "1e93372ab23c98137fc156de0f57f67fb53ced95d810e56cf784bd18f6c439fd",
+        "bytes": 143
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-4",
+          "n": 4,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-binarytrees-compact/n-4/expected.stdout",
+            "sha256": "1e93372ab23c98137fc156de0f57f67fb53ced95d810e56cf784bd18f6c439fd"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/125-prolog-binarytrees-compact.json",
+            "sha256": "d85b3bde0e489e146fbdf92de5438339804fd24dc8e80b33c76986a8a2b759b8"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/125-prolog-binarytrees-compact.supervisor.json",
+            "sha256": "f80f60cbab9f98c7f6e20c748347690afcbd524ee3239ec9a0462eb9116f0686"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-binarytrees-compact/n-4/actual.stdout",
+            "sha256": "1e93372ab23c98137fc156de0f57f67fb53ced95d810e56cf784bd18f6c439fd"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "binarytrees",
+      "case": "n-7",
+      "n": 7,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/binarytrees/n-7/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/binarytrees/n-7/expected.stdout",
+        "sha256": "3d9a43f3106a474d5f2891d8f02d74ae4bb12795becba68713091f2450c78dda",
+        "bytes": 144
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-7",
+          "n": 7,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-binarytrees-compact/n-7/expected.stdout",
+            "sha256": "3d9a43f3106a474d5f2891d8f02d74ae4bb12795becba68713091f2450c78dda"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/126-prolog-binarytrees-compact.json",
+            "sha256": "a17ec82d3fd95ec44771f706092f2d0c1b3835636dc6f3209e31dad4c9955b38"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/126-prolog-binarytrees-compact.supervisor.json",
+            "sha256": "e874e06bd956223f64523a9b3647e46d1101d74781b1995a98d2137471ad4c2d"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-binarytrees-compact/n-7/actual.stdout",
+            "sha256": "3d9a43f3106a474d5f2891d8f02d74ae4bb12795becba68713091f2450c78dda"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "binarytrees",
+      "case": "n-9",
+      "n": 9,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/binarytrees/n-9/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/binarytrees/n-9/expected.stdout",
+        "sha256": "fc6ca49b3987467168c413810504d644350f21504f5a51ed658e9f879832ddaf",
+        "bytes": 185
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-9",
+          "n": 9,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-binarytrees-compact/n-9/expected.stdout",
+            "sha256": "fc6ca49b3987467168c413810504d644350f21504f5a51ed658e9f879832ddaf"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/127-prolog-binarytrees-compact.json",
+            "sha256": "745e593e88f8bc394f18d03d58620fca040faf6368734a920b873b4a2999b0d4"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/127-prolog-binarytrees-compact.supervisor.json",
+            "sha256": "54c230ba2859548ec003d09f759aa86f6ec63b32d0d2419713b481613038a048"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-binarytrees-compact/n-9/actual.stdout",
+            "sha256": "fc6ca49b3987467168c413810504d644350f21504f5a51ed658e9f879832ddaf"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "pidigits",
+      "case": "n-0",
+      "n": 0,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/pidigits/n-0/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/pidigits/n-0/expected.stdout",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-0",
+          "n": 0,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-pidigits-compact/n-0/expected.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/022-prolog-pidigits-compact.json",
+            "sha256": "3cdfa4978a8ce300a49b93ce1d34d6e970feaaa387959a3e25738c338483a232"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/022-prolog-pidigits-compact.supervisor.json",
+            "sha256": "72c9787ddcddf02dfc87791906e1012d8de7b2f3e35f80ffeab39dd8dd12ba85"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-pidigits-compact/n-0/actual.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "pidigits",
+      "case": "n-1",
+      "n": 1,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/pidigits/n-1/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/pidigits/n-1/expected.stdout",
+        "sha256": "596c1871af06291c3271a166e1060607abffd68b8dce42308a009847de2c9f40",
+        "bytes": 14
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-1",
+          "n": 1,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-pidigits-compact/n-1/expected.stdout",
+            "sha256": "596c1871af06291c3271a166e1060607abffd68b8dce42308a009847de2c9f40"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/023-prolog-pidigits-compact.json",
+            "sha256": "800b36e1d38cfa7bac518960544ffec56a64160f29a5042d90b13f96860e8a11"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/023-prolog-pidigits-compact.supervisor.json",
+            "sha256": "ace967cbd907fc3036bfd6e595849f808ef2f57a7410ddeb9cd8438b541de8bc"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-pidigits-compact/n-1/actual.stdout",
+            "sha256": "596c1871af06291c3271a166e1060607abffd68b8dce42308a009847de2c9f40"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "pidigits",
+      "case": "n-9",
+      "n": 9,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/pidigits/n-9/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/pidigits/n-9/expected.stdout",
+        "sha256": "3e53fc2b63dd136ac6da30bd2e75569a8c0ebbe57ee829ce3ef14abc97cd5d95",
+        "bytes": 14
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-9",
+          "n": 9,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-pidigits-compact/n-9/expected.stdout",
+            "sha256": "3e53fc2b63dd136ac6da30bd2e75569a8c0ebbe57ee829ce3ef14abc97cd5d95"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/024-prolog-pidigits-compact.json",
+            "sha256": "a81e9774f166b7630fd5eb3158d060a69bb3091b9c10c863a55fc19f1eb91688"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/024-prolog-pidigits-compact.supervisor.json",
+            "sha256": "37b5f3508ced80bc841dbe1c3c772707a627588590ba45c1176f609bc36adbe0"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-pidigits-compact/n-9/actual.stdout",
+            "sha256": "3e53fc2b63dd136ac6da30bd2e75569a8c0ebbe57ee829ce3ef14abc97cd5d95"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "pidigits",
+      "case": "n-10",
+      "n": 10,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/pidigits/n-10/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/pidigits/n-10/expected.stdout",
+        "sha256": "7ea0f183877af01484fe7164276fe2c7cf22e64b513401f44078c86cea239773",
+        "bytes": 15
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-10",
+          "n": 10,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-pidigits-compact/n-10/expected.stdout",
+            "sha256": "7ea0f183877af01484fe7164276fe2c7cf22e64b513401f44078c86cea239773"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/025-prolog-pidigits-compact.json",
+            "sha256": "b88c3c996de9f177abcf7836c8350c945bb47903108f6c949862a5bbffb50bde"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/025-prolog-pidigits-compact.supervisor.json",
+            "sha256": "110ef6846277b38d76b7f3f1561eb9dc4bccaafbdcc1a3de108e801fd631e7b7"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-pidigits-compact/n-10/actual.stdout",
+            "sha256": "7ea0f183877af01484fe7164276fe2c7cf22e64b513401f44078c86cea239773"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "pidigits",
+      "case": "n-11",
+      "n": 11,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/pidigits/n-11/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/pidigits/n-11/expected.stdout",
+        "sha256": "3f56cea8613552803edb2a1c3e3fd88c5e38792cbdd6bba5079468c77d83dea0",
+        "bytes": 30
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-11",
+          "n": 11,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-pidigits-compact/n-11/expected.stdout",
+            "sha256": "3f56cea8613552803edb2a1c3e3fd88c5e38792cbdd6bba5079468c77d83dea0"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/026-prolog-pidigits-compact.json",
+            "sha256": "c456930005f5d733a0961cf46045ec43fac1b70c0272caf60a3581d615d518f2"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/026-prolog-pidigits-compact.supervisor.json",
+            "sha256": "66fb27cd7706c025a1eac77c2db53c9b429027ff152b53e4b351523823462622"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-pidigits-compact/n-11/actual.stdout",
+            "sha256": "3f56cea8613552803edb2a1c3e3fd88c5e38792cbdd6bba5079468c77d83dea0"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "pidigits",
+      "case": "n-20",
+      "n": 20,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/pidigits/n-20/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/pidigits/n-20/expected.stdout",
+        "sha256": "322d3599b68a2c0d0e5b43db55ced9f209234ff065b1a138e136b25f6d9590fb",
+        "bytes": 30
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-20",
+          "n": 20,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-pidigits-compact/n-20/expected.stdout",
+            "sha256": "322d3599b68a2c0d0e5b43db55ced9f209234ff065b1a138e136b25f6d9590fb"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/027-prolog-pidigits-compact.json",
+            "sha256": "2236a2c33df74fd73917c189d17f7514a56c3a800d25df214ed6f30c079f2d0f"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/027-prolog-pidigits-compact.supervisor.json",
+            "sha256": "ffb989960c73fa5b3b2a6ac6784088e5af57c978812cfabc107652f7a707f521"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-pidigits-compact/n-20/actual.stdout",
+            "sha256": "322d3599b68a2c0d0e5b43db55ced9f209234ff065b1a138e136b25f6d9590fb"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "pidigits",
+      "case": "n-21",
+      "n": 21,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/pidigits/n-21/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/pidigits/n-21/expected.stdout",
+        "sha256": "a2f931b149a95b5b4b9786b3265674d55d48fbf7d7e5cb859c78ae999e5c4012",
+        "bytes": 45
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-21",
+          "n": 21,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-pidigits-compact/n-21/expected.stdout",
+            "sha256": "a2f931b149a95b5b4b9786b3265674d55d48fbf7d7e5cb859c78ae999e5c4012"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/028-prolog-pidigits-compact.json",
+            "sha256": "c4500886d5c0a13da123190cd259f563637fe22236ac1333eb2db98bcd6e2854"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/028-prolog-pidigits-compact.supervisor.json",
+            "sha256": "b23df2d3515662d81f594eccef5fc17bc3b0355fec4ab1e29df6e9beb314f516"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-pidigits-compact/n-21/actual.stdout",
+            "sha256": "a2f931b149a95b5b4b9786b3265674d55d48fbf7d7e5cb859c78ae999e5c4012"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "pidigits",
+      "case": "n-27",
+      "n": 27,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/pidigits/n-27/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/pidigits/n-27/expected.stdout",
+        "sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+        "bytes": 45
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-27",
+          "n": 27,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-pidigits-compact/n-27/expected.stdout",
+            "sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/029-prolog-pidigits-compact.json",
+            "sha256": "56ef488c3486a1ebf1811aa98cb4b75681a4b1ab7f19fc63545c3d995cb3c35b"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/029-prolog-pidigits-compact.supervisor.json",
+            "sha256": "6ff36b6cf9c2fce0e8e2b967330555c5cb465211c79f1a3281e87511160f6827"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-pidigits-compact/n-27/actual.stdout",
+            "sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "pidigits",
+      "case": "n-97",
+      "n": 97,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/pidigits/n-97/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/pidigits/n-97/expected.stdout",
+        "sha256": "91fdb144a6af8be158456a5f9fa2ae1e45348d8621d5b679000fe04fc54e4230",
+        "bytes": 150
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-97",
+          "n": 97,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-pidigits-compact/n-97/expected.stdout",
+            "sha256": "91fdb144a6af8be158456a5f9fa2ae1e45348d8621d5b679000fe04fc54e4230"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/030-prolog-pidigits-compact.json",
+            "sha256": "89c3cbc38ea3fc7de56a6f318613e0639e47a67f44458a68a050f202a78da7f7"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/030-prolog-pidigits-compact.supervisor.json",
+            "sha256": "2cb62b1b4fd65ccee2864b814b481574cbb488d70bf52148fd188857548770be"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-pidigits-compact/n-97/actual.stdout",
+            "sha256": "91fdb144a6af8be158456a5f9fa2ae1e45348d8621d5b679000fe04fc54e4230"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "fasta",
+      "case": "n-0",
+      "n": 0,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/fasta/n-0/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/fasta/n-0/expected.stdout",
+        "sha256": "585adac6f7b1f9bbad88ad6c7256cf6fe5238b9dac6bb56cfc1eb303d4634db1",
+        "bytes": 77
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-0",
+          "n": 0,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-fasta-compact/n-0/expected.stdout",
+            "sha256": "585adac6f7b1f9bbad88ad6c7256cf6fe5238b9dac6bb56cfc1eb303d4634db1"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/078-prolog-fasta-compact.json",
+            "sha256": "326113e68cd52f3a3833e3d22869d57f142ea5c355ea39736bb7e2004b5cb689"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/078-prolog-fasta-compact.supervisor.json",
+            "sha256": "3514139ccc2df3dd7b4789f35b9cb9620bface3f8868cb567d8d6ed088ee1100"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-fasta-compact/n-0/actual.stdout",
+            "sha256": "585adac6f7b1f9bbad88ad6c7256cf6fe5238b9dac6bb56cfc1eb303d4634db1"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "fasta",
+      "case": "n-1",
+      "n": 1,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/fasta/n-1/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/fasta/n-1/expected.stdout",
+        "sha256": "bc2d94bbf4bc00febcf2923e99da45fae29b0739d79c642c4a63538a58bf124c",
+        "bytes": 90
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-1",
+          "n": 1,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-fasta-compact/n-1/expected.stdout",
+            "sha256": "bc2d94bbf4bc00febcf2923e99da45fae29b0739d79c642c4a63538a58bf124c"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/079-prolog-fasta-compact.json",
+            "sha256": "2dc30df0cc61aa800574d4c61840b8e7690f426387eac3189e11c46ef96d876e"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/079-prolog-fasta-compact.supervisor.json",
+            "sha256": "080e4db229f7363a66a5ea978a2a1d4b58d8ad562de5f18f8c035ae9b7f63599"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-fasta-compact/n-1/actual.stdout",
+            "sha256": "bc2d94bbf4bc00febcf2923e99da45fae29b0739d79c642c4a63538a58bf124c"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "fasta",
+      "case": "n-2",
+      "n": 2,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/fasta/n-2/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/fasta/n-2/expected.stdout",
+        "sha256": "6a88bbb8e503afd1f389eff7440feceb134b1f525ccfdd93459a9043c5955ac0",
+        "bytes": 100
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-2",
+          "n": 2,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-fasta-compact/n-2/expected.stdout",
+            "sha256": "6a88bbb8e503afd1f389eff7440feceb134b1f525ccfdd93459a9043c5955ac0"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/080-prolog-fasta-compact.json",
+            "sha256": "b1b76fdcc87223d9aeca0a7753eca702c029eeee8ace74774486bacbe337d0db"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/080-prolog-fasta-compact.supervisor.json",
+            "sha256": "5116d251f3f797bb075b15a496d3a2f5fbec7dca5bee34ad40ff8208c167667c"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-fasta-compact/n-2/actual.stdout",
+            "sha256": "6a88bbb8e503afd1f389eff7440feceb134b1f525ccfdd93459a9043c5955ac0"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "fasta",
+      "case": "n-29",
+      "n": 29,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/fasta/n-29/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/fasta/n-29/expected.stdout",
+        "sha256": "969c687cb04ef79ef68ba80582c6e2a20a5bfab76cdeab0110433ee5a7bd9657",
+        "bytes": 373
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-29",
+          "n": 29,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-fasta-compact/n-29/expected.stdout",
+            "sha256": "969c687cb04ef79ef68ba80582c6e2a20a5bfab76cdeab0110433ee5a7bd9657"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/081-prolog-fasta-compact.json",
+            "sha256": "8082dabb18741d49afe2cb41f8e5cbf304db00c76acb474487ccc84f097d443a"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/081-prolog-fasta-compact.supervisor.json",
+            "sha256": "d7f7e0d94c3a7552b5d6888e855850862fdca929865403fbce907cbfb0d333af"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-fasta-compact/n-29/actual.stdout",
+            "sha256": "969c687cb04ef79ef68ba80582c6e2a20a5bfab76cdeab0110433ee5a7bd9657"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "fasta",
+      "case": "n-30",
+      "n": 30,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/fasta/n-30/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/fasta/n-30/expected.stdout",
+        "sha256": "4614e8f02cb5252cebed238fe1744f81bd0c87b828437c1d7aea98086daa0cee",
+        "bytes": 383
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-30",
+          "n": 30,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-fasta-compact/n-30/expected.stdout",
+            "sha256": "4614e8f02cb5252cebed238fe1744f81bd0c87b828437c1d7aea98086daa0cee"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/082-prolog-fasta-compact.json",
+            "sha256": "34ea9fff2942aa211c8ecab389c8b65195ce07ca22ef9b4704c6c9051ba03504"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/082-prolog-fasta-compact.supervisor.json",
+            "sha256": "55a0aebb3ee31c5a67ef9ffb13311d85cf3680ba1ce1e350338efd21aa8fbf82"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-fasta-compact/n-30/actual.stdout",
+            "sha256": "4614e8f02cb5252cebed238fe1744f81bd0c87b828437c1d7aea98086daa0cee"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "fasta",
+      "case": "n-31",
+      "n": 31,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/fasta/n-31/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/fasta/n-31/expected.stdout",
+        "sha256": "c3011a2455e766d0e4d199164c0c6f41e46fd866586da89f65ba7ff9364a2f7d",
+        "bytes": 394
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-31",
+          "n": 31,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-fasta-compact/n-31/expected.stdout",
+            "sha256": "c3011a2455e766d0e4d199164c0c6f41e46fd866586da89f65ba7ff9364a2f7d"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/083-prolog-fasta-compact.json",
+            "sha256": "cba28e33c598ef3e48e56f96291eb45c888b895c10b022a62a9a850ff71db3c2"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/083-prolog-fasta-compact.supervisor.json",
+            "sha256": "8c58e9ff85582db7e9c3adb5054d65341c2b58f2c93b2c4e878e001bd474ec51"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-fasta-compact/n-31/actual.stdout",
+            "sha256": "c3011a2455e766d0e4d199164c0c6f41e46fd866586da89f65ba7ff9364a2f7d"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "fasta",
+      "case": "n-60",
+      "n": 60,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/fasta/n-60/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/fasta/n-60/expected.stdout",
+        "sha256": "d4f1059c3c47b7de5d11ab3d78778ab3141c15555a91bfd6a56f2b9b10fe272b",
+        "bytes": 687
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-60",
+          "n": 60,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-fasta-compact/n-60/expected.stdout",
+            "sha256": "d4f1059c3c47b7de5d11ab3d78778ab3141c15555a91bfd6a56f2b9b10fe272b"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/084-prolog-fasta-compact.json",
+            "sha256": "1e421b74121fe091b8bfed54ad82a937ca7ae6b2d50d76b9f98817bccf7884a0"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/084-prolog-fasta-compact.supervisor.json",
+            "sha256": "9b70b72437bde6e98e100384c5c430fa483aa314699aae05dc4c09e972ad6ec5"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-fasta-compact/n-60/actual.stdout",
+            "sha256": "d4f1059c3c47b7de5d11ab3d78778ab3141c15555a91bfd6a56f2b9b10fe272b"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "fasta",
+      "case": "n-61",
+      "n": 61,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/fasta/n-61/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/fasta/n-61/expected.stdout",
+        "sha256": "2cc46407f201985a5d635236e4a016eec338b3b4a6f00149521043ddefe84926",
+        "bytes": 700
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-61",
+          "n": 61,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-fasta-compact/n-61/expected.stdout",
+            "sha256": "2cc46407f201985a5d635236e4a016eec338b3b4a6f00149521043ddefe84926"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/085-prolog-fasta-compact.json",
+            "sha256": "6b2be541858424de4b26bac77ec0bb1a0bd2bd3652db99538666674cf7176a66"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/085-prolog-fasta-compact.supervisor.json",
+            "sha256": "23dc92bc0cfe4f50771f44eabc65f578e9123894b9ea2bf755038c215b5ac065"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-fasta-compact/n-61/actual.stdout",
+            "sha256": "2cc46407f201985a5d635236e4a016eec338b3b4a6f00149521043ddefe84926"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "fasta",
+      "case": "n-287",
+      "n": 287,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/fasta/n-287/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/fasta/n-287/expected.stdout",
+        "sha256": "d4cde0829fe7376ffc0a61f248d1d44db166b73a79578b869f97ba1cda4d7037",
+        "bytes": 2996
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-287",
+          "n": 287,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-fasta-compact/n-287/expected.stdout",
+            "sha256": "d4cde0829fe7376ffc0a61f248d1d44db166b73a79578b869f97ba1cda4d7037"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/086-prolog-fasta-compact.json",
+            "sha256": "5866e3be414b7eb02988d24bc2feee79191e96ecda090af4dac1b134d05a7aad"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/086-prolog-fasta-compact.supervisor.json",
+            "sha256": "d9c60ed4873b41c7e4ef968cf915eefb545069c687d694373865a6c2a7a93f83"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-fasta-compact/n-287/actual.stdout",
+            "sha256": "d4cde0829fe7376ffc0a61f248d1d44db166b73a79578b869f97ba1cda4d7037"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "fasta",
+      "case": "n-574",
+      "n": 574,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/fasta/n-574/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/fasta/n-574/expected.stdout",
+        "sha256": "708ec5a72487245c30630213306bf706585836d0b5db926500ff408b15ef5bc8",
+        "bytes": 5914
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-574",
+          "n": 574,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-fasta-compact/n-574/expected.stdout",
+            "sha256": "708ec5a72487245c30630213306bf706585836d0b5db926500ff408b15ef5bc8"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/087-prolog-fasta-compact.json",
+            "sha256": "55ae0c3d526bb28eeeabf7ea4748d0bf0211b77c30aecaefdab19936cae20231"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/087-prolog-fasta-compact.supervisor.json",
+            "sha256": "7224cb1a2ab585b6c5c43a6769b2675d84733034e73a9fa0abdcfd2b47b7e4da"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-fasta-compact/n-574/actual.stdout",
+            "sha256": "708ec5a72487245c30630213306bf706585836d0b5db926500ff408b15ef5bc8"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "fasta",
+      "case": "n-20000",
+      "n": 20000,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/fasta/n-20000/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/fasta/n-20000/expected.stdout",
+        "sha256": "0ce07366d3a3bf8dd9dd7b993c1d6490687a5bea1c7919bce5673d4349b491b7",
+        "bytes": 203411
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "n-20000",
+          "n": 20000,
+          "stdin": null,
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-fasta-compact/n-20000/expected.stdout",
+            "sha256": "0ce07366d3a3bf8dd9dd7b993c1d6490687a5bea1c7919bce5673d4349b491b7"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/088-prolog-fasta-compact.json",
+            "sha256": "9d6dd743c33e77ee344aafa597fd6dbbba0f9c59ec8df583f6a716d5664f3aeb"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/088-prolog-fasta-compact.supervisor.json",
+            "sha256": "fdf4e2d4043c8f7ca4b07ee8aeecd39fed80698afd82b0c92991cd1fe53b2a1f"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-fasta-compact/n-20000/actual.stdout",
+            "sha256": "0ce07366d3a3bf8dd9dd7b993c1d6490687a5bea1c7919bce5673d4349b491b7"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "regexredux",
+      "case": "all-replacements",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/regexredux/all-replacements/stdin.bin",
+        "sha256": "8a62556ef328e4acb3232c00cfbaac847d19af8cc31ee2a2835f3ecdb138c3f4",
+        "bytes": 67
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/regexredux/all-replacements/expected.stdout",
+        "sha256": "cab36666f9ebc62cafa303203e3f7031a7eabec7e1b44d00429773b72b153b53",
+        "bytes": 254
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "all-replacements",
+          "n": 0,
+          "stdin": {
+            "path": "archive/languages/prolog/20261013/qualification/explicit-goal-first-case-v1/bounded-output/prolog-regexredux-compact/all-replacements-explicit-goal/stdin.fasta",
+            "sha256": "8a62556ef328e4acb3232c00cfbaac847d19af8cc31ee2a2835f3ecdb138c3f4"
+          },
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/explicit-goal-first-case-v1/bounded-output/prolog-regexredux-compact/all-replacements-explicit-goal/expected.stdout",
+            "sha256": "cab36666f9ebc62cafa303203e3f7031a7eabec7e1b44d00429773b72b153b53"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/explicit-goal-first-case-v1/attempts/001-prolog-regexredux-compact.json",
+            "sha256": "f67710f52c668343b98c12d8bb4f0af8d072a96d0879ca78fbd9db5612b99ac3"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/explicit-goal-first-case-v1/attempts/001-prolog-regexredux-compact.supervisor.json",
+            "sha256": "39f671012db02b704fd544ec22dbf3120e7d7070e80115ebb8471c2f10a8f312"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/explicit-goal-first-case-v1/bounded-output/prolog-regexredux-compact/all-replacements-explicit-goal/actual.stdout",
+            "sha256": "cab36666f9ebc62cafa303203e3f7031a7eabec7e1b44d00429773b72b153b53"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "regexredux",
+      "case": "records",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/regexredux/records/stdin.bin",
+        "sha256": "b74ec320fa6872213ada9668e7adae50394f3ad3d76a516a072e426121b2c1d0",
+        "bytes": 28
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/regexredux/records/expected.stdout",
+        "sha256": "4ec84e9ad994dc5841d07441b18fb0b64da1695742d13e6cf7a48e8066487f52",
+        "bytes": 254
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "records",
+          "n": 0,
+          "stdin": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-regexredux-compact/records/stdin.fasta",
+            "sha256": "b74ec320fa6872213ada9668e7adae50394f3ad3d76a516a072e426121b2c1d0"
+          },
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-regexredux-compact/records/expected.stdout",
+            "sha256": "4ec84e9ad994dc5841d07441b18fb0b64da1695742d13e6cf7a48e8066487f52"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/001-prolog-regexredux-compact.json",
+            "sha256": "78e4f186c02890ccfc68b3bd37e2e72da360797341f21efa4cdcecc524e8f611"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/001-prolog-regexredux-compact.supervisor.json",
+            "sha256": "0bbd38678ed26eb1e50b14df73c5119516330717764867d04f7d66607e93ff3e"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-regexredux-compact/records/actual.stdout",
+            "sha256": "4ec84e9ad994dc5841d07441b18fb0b64da1695742d13e6cf7a48e8066487f52"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "regexredux",
+      "case": "header-eof",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/regexredux/header-eof/stdin.bin",
+        "sha256": "391be4e79c47dd3092cbdb2e9d4b16753b78fb0148fa5d30b9b276570b6e72f2",
+        "bytes": 27
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/regexredux/header-eof/expected.stdout",
+        "sha256": "9b4606a445208bbf134ef6f4e9731824919ffc90b8b07b18215a1945f38593e2",
+        "bytes": 254
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "header-eof",
+          "n": 0,
+          "stdin": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-regexredux-compact/header-eof/stdin.fasta",
+            "sha256": "391be4e79c47dd3092cbdb2e9d4b16753b78fb0148fa5d30b9b276570b6e72f2"
+          },
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-regexredux-compact/header-eof/expected.stdout",
+            "sha256": "9b4606a445208bbf134ef6f4e9731824919ffc90b8b07b18215a1945f38593e2"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/002-prolog-regexredux-compact.json",
+            "sha256": "97721566c4b4363a01b4eea3527c9e4a054eedfba21e6dfa721dcc93f80de5ee"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/002-prolog-regexredux-compact.supervisor.json",
+            "sha256": "a668613b8d5cb23869ea5bc220b7cc9d3519862f9c8f50e71a30b923f0a963cc"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-regexredux-compact/header-eof/actual.stdout",
+            "sha256": "9b4606a445208bbf134ef6f4e9731824919ffc90b8b07b18215a1945f38593e2"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "regexredux",
+      "case": "replacement-boundaries",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/regexredux/replacement-boundaries/stdin.bin",
+        "sha256": "aa3ed8de39abd637aa2c2c82e619d5894ecc31ec8ebbc7624b5846f58a2d6426",
+        "bytes": 52
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/regexredux/replacement-boundaries/expected.stdout",
+        "sha256": "6addd585c9972ffd65697bede209df156f70dfc6eba5eb3dbbb0e588406911a2",
+        "bytes": 254
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "replacement-boundaries",
+          "n": 0,
+          "stdin": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-regexredux-compact/replacement-boundaries/stdin.fasta",
+            "sha256": "aa3ed8de39abd637aa2c2c82e619d5894ecc31ec8ebbc7624b5846f58a2d6426"
+          },
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-regexredux-compact/replacement-boundaries/expected.stdout",
+            "sha256": "6addd585c9972ffd65697bede209df156f70dfc6eba5eb3dbbb0e588406911a2"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/003-prolog-regexredux-compact.json",
+            "sha256": "947b5e224ed268b8352f8f368c22417c2e7716615334a7ac5a0be3d36edcafb6"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/003-prolog-regexredux-compact.supervisor.json",
+            "sha256": "6f9e977c33154c616665f91a327aa821a3e9ccd3f41b8e74e8ff5c8ac3003203"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-regexredux-compact/replacement-boundaries/actual.stdout",
+            "sha256": "6addd585c9972ffd65697bede209df156f70dfc6eba5eb3dbbb0e588406911a2"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "regexredux",
+      "case": "empty",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/regexredux/empty/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/regexredux/empty/expected.stdout",
+        "sha256": "f081054482d3004e3643f41a3e11674f4c63c7c33fc830773b743138667a7aba",
+        "bytes": 251
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "empty",
+          "n": 0,
+          "stdin": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-regexredux-compact/empty/stdin.fasta",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-regexredux-compact/empty/expected.stdout",
+            "sha256": "f081054482d3004e3643f41a3e11674f4c63c7c33fc830773b743138667a7aba"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/004-prolog-regexredux-compact.json",
+            "sha256": "0287bc4871ab5d7a86ef5e49d5bf79716ba71162588f9fe8de4deb89501044ed"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/004-prolog-regexredux-compact.supervisor.json",
+            "sha256": "9f795c02506816d83f8b48d32d13d86880486da64f345d6e5c57d7e5378b8ba0"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-regexredux-compact/empty/actual.stdout",
+            "sha256": "f081054482d3004e3643f41a3e11674f4c63c7c33fc830773b743138667a7aba"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "iupac",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/iupac/stdin.bin",
+        "sha256": "1d77cdcd0e8f47580d07b3d9906c571242d655ca7cb04a6fb158b249123ea60a",
+        "bytes": 58
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/iupac/expected.stdout",
+        "sha256": "221f3ce31f284b417e4774fb43cb066c5263a52e4ff4a71e8e5cd2b5000db855",
+        "bytes": 59
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "iupac",
+          "n": 0,
+          "stdin": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-revcomp-compact/iupac/stdin.fasta",
+            "sha256": "1d77cdcd0e8f47580d07b3d9906c571242d655ca7cb04a6fb158b249123ea60a"
+          },
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-revcomp-compact/iupac/expected.stdout",
+            "sha256": "221f3ce31f284b417e4774fb43cb066c5263a52e4ff4a71e8e5cd2b5000db855"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/010-prolog-revcomp-compact.json",
+            "sha256": "3d66d86569563813235ffa018a156128260bd2e1932e6599c72a23a71e75cf59"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/010-prolog-revcomp-compact.supervisor.json",
+            "sha256": "f3fc4ce76cea68c552d009e011ac9e7af50b95e2658fbbefe681e5e6514ebf32"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-revcomp-compact/iupac/actual.stdout",
+            "sha256": "221f3ce31f284b417e4774fb43cb066c5263a52e4ff4a71e8e5cd2b5000db855"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "comment-crlf-eof",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/comment-crlf-eof/stdin.bin",
+        "sha256": "c82ecd86cfe91d1457180e195db43362aa59354c9efb04fa585a7d43fb389e2d",
+        "bytes": 35
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/comment-crlf-eof/expected.stdout",
+        "sha256": "b2da7c0f1ffcc8ba81b168b53d499da9d3975a4717ffd3160c5201141557dfb6",
+        "bytes": 22
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "comment-crlf-eof",
+          "n": 0,
+          "stdin": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-revcomp-compact/comment-crlf-eof/stdin.fasta",
+            "sha256": "c82ecd86cfe91d1457180e195db43362aa59354c9efb04fa585a7d43fb389e2d"
+          },
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-revcomp-compact/comment-crlf-eof/expected.stdout",
+            "sha256": "b2da7c0f1ffcc8ba81b168b53d499da9d3975a4717ffd3160c5201141557dfb6"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/011-prolog-revcomp-compact.json",
+            "sha256": "1229afa300bd01721ab477305358e55925619a72b9d978f201ff0b7b337ebb2c"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/011-prolog-revcomp-compact.supervisor.json",
+            "sha256": "30bfefbaf36e7b040498d6ef8cf13e222ddf4c5c7c274e217b35cbf20361e6cd"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-revcomp-compact/comment-crlf-eof/actual.stdout",
+            "sha256": "b2da7c0f1ffcc8ba81b168b53d499da9d3975a4717ffd3160c5201141557dfb6"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "tail",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/tail/stdin.bin",
+        "sha256": "f6575a0802894e8c04fb71c536f5eb7725e35ec7dae0c6fcffb0dfc0852bc1f1",
+        "bytes": 213
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/tail/expected.stdout",
+        "sha256": "679848b0544da05322ac1ae80d4db5932c8af9db4c52b3af3e22ac612f29e9c4",
+        "bytes": 217
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "tail",
+          "n": 0,
+          "stdin": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-revcomp-compact/tail/stdin.fasta",
+            "sha256": "f6575a0802894e8c04fb71c536f5eb7725e35ec7dae0c6fcffb0dfc0852bc1f1"
+          },
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-revcomp-compact/tail/expected.stdout",
+            "sha256": "679848b0544da05322ac1ae80d4db5932c8af9db4c52b3af3e22ac612f29e9c4"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/012-prolog-revcomp-compact.json",
+            "sha256": "6cf26a7e17a48ef2b94faa227f4b01506b6e00abc2dcb55cbb454bc0a906e15e"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/012-prolog-revcomp-compact.supervisor.json",
+            "sha256": "dc5b318a7cc1b2b33ef6163db3314f18da335a43843499c25503e59a2e81c195"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-revcomp-compact/tail/actual.stdout",
+            "sha256": "679848b0544da05322ac1ae80d4db5932c8af9db4c52b3af3e22ac612f29e9c4"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "empty",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/empty/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/empty/expected.stdout",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "empty",
+          "n": 0,
+          "stdin": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-revcomp-compact/empty/stdin.fasta",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-revcomp-compact/empty/expected.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/013-prolog-revcomp-compact.json",
+            "sha256": "ccdeda01ce001c366ce71beb738b33bdf1fe0ba8cd4c6daf96e420b6a3abf24f"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/013-prolog-revcomp-compact.supervisor.json",
+            "sha256": "0b11f9a89586fae94b7ee3976f914c1b67dc3550334d05563a89a345c7c06bc2"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-revcomp-compact/empty/actual.stdout",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "header-eof",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/header-eof/stdin.bin",
+        "sha256": "01a4b266ee96256802e008a65b5163b1b9828ce797fa7a907a84a53ce3830b50",
+        "bytes": 4
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/header-eof/expected.stdout",
+        "sha256": "54a941417e7d70237d6499a28ff64ea9ac0711a0f6345a74a08c9aa023cad368",
+        "bytes": 5
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "header-eof",
+          "n": 0,
+          "stdin": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-revcomp-compact/header-eof/stdin.fasta",
+            "sha256": "01a4b266ee96256802e008a65b5163b1b9828ce797fa7a907a84a53ce3830b50"
+          },
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-revcomp-compact/header-eof/expected.stdout",
+            "sha256": "54a941417e7d70237d6499a28ff64ea9ac0711a0f6345a74a08c9aa023cad368"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/014-prolog-revcomp-compact.json",
+            "sha256": "505415bbf81b5acaa2129af32f877ba2c8dfe14a60ef9556315ab2f3b6dca5f3"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/014-prolog-revcomp-compact.supervisor.json",
+            "sha256": "0c87fa6accd4f81b60c35434028109ef0ff2b779022a503ec67c625cfedf6221"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-revcomp-compact/header-eof/actual.stdout",
+            "sha256": "54a941417e7d70237d6499a28ff64ea9ac0711a0f6345a74a08c9aa023cad368"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "preheader-ignored",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/preheader-ignored/stdin.bin",
+        "sha256": "7376993f7057d66669b8c41df88be4b2281906e9cbb860b75781c0ea5e7c74d0",
+        "bytes": 12
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/preheader-ignored/expected.stdout",
+        "sha256": "5bc01206261ab71260d1b7855a3a7cb76f0498d8bc2d619137de0ae0415d8e89",
+        "bytes": 7
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-reference",
+        "evidence": {
+          "case": "preheader-ignored",
+          "n": 0,
+          "stdin": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-revcomp-compact/preheader-ignored/stdin.fasta",
+            "sha256": "7376993f7057d66669b8c41df88be4b2281906e9cbb860b75781c0ea5e7c74d0"
+          },
+          "expected": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-revcomp-compact/preheader-ignored/expected.stdout",
+            "sha256": "5bc01206261ab71260d1b7855a3a7cb76f0498d8bc2d619137de0ae0415d8e89"
+          },
+          "oracle_raw": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/015-prolog-revcomp-compact.json",
+            "sha256": "765dae672cd547ab9570354f2d9edcfcf41472aa7b0fcf199933802fb0a1bfde"
+          },
+          "oracle_supervisor": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/attempts/015-prolog-revcomp-compact.supervisor.json",
+            "sha256": "ae41b29fdee0941d1465955fcff1a43a291007a66a5f85c3af4197fc6059d6e1"
+          },
+          "retained_actual": {
+            "path": "archive/languages/prolog/20261013/qualification/prepare-explicit-goal-rest-v1/bounded-output/prolog-revcomp-compact/preheader-ignored/actual.stdout",
+            "sha256": "5bc01206261ab71260d1b7855a3a7cb76f0498d8bc2d619137de0ae0415d8e89"
+          },
+          "validation": "exact-complete-bytes"
+        }
+      }
+    },
+    {
+      "benchmark": "fasta",
+      "case": "n-19",
+      "n": 19,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/fasta/n-19/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/fasta/n-19/expected.stdout",
+        "sha256": "e75074d982baf30070a839b02eccba7819db23b2bd43b897e7670f0e59cd393d",
+        "bytes": 271
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-supplement",
+        "evidence": {
+          "case": "n-19",
+          "n": 19,
+          "stdin": null,
+          "expected": {
+            "path": "experiments/kotlin/specified-cases-v1/plan-v1-references/fasta/n-19/expected.stdout",
+            "sha256": "e75074d982baf30070a839b02eccba7819db23b2bd43b897e7670f0e59cd393d"
+          },
+          "fixture": {
+            "benchmark": "fasta",
+            "case": "n-19",
+            "n": 19
+          },
+          "oracle_source": {
+            "path": "experiments/kotlin/specified-cases-v1/oracles.py",
+            "sha256": "41eccf199c089af924ecfaad4b8cfd58a23df4538b0160ca9a679a55db3ab585"
+          },
+          "retained_independent_oracle": {
+            "path": "archive/languages/c3/20261012/revisions/private-v1/references.py",
+            "sha256": "6ba2d8d70f23ac04f2bd24e73356f14a1c3a046da35f25e936332b10a7cba1f3"
+          },
+          "validation": "exact-complete-bytes"
+        },
+        "validation_receipt": {
+          "path": "experiments/kotlin/specified-cases-v1/run-v1/kotlin-fasta-compact/n-19/validated.json",
+          "sha256": "b7754fa90e420aad53e24cc329293e6390f51fe492d8b6b4afc74a11592f4c59"
+        }
+      }
+    },
+    {
+      "benchmark": "fasta",
+      "case": "n-20",
+      "n": 20,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/fasta/n-20/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/fasta/n-20/expected.stdout",
+        "sha256": "435fc49ae0cd2a9c08e5dc36ab5cf1f0fb43e86f49c5927c96b8923d583db52a",
+        "bytes": 281
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-supplement",
+        "evidence": {
+          "case": "n-20",
+          "n": 20,
+          "stdin": null,
+          "expected": {
+            "path": "experiments/kotlin/specified-cases-v1/plan-v1-references/fasta/n-20/expected.stdout",
+            "sha256": "435fc49ae0cd2a9c08e5dc36ab5cf1f0fb43e86f49c5927c96b8923d583db52a"
+          },
+          "fixture": {
+            "benchmark": "fasta",
+            "case": "n-20",
+            "n": 20
+          },
+          "oracle_source": {
+            "path": "experiments/kotlin/specified-cases-v1/oracles.py",
+            "sha256": "41eccf199c089af924ecfaad4b8cfd58a23df4538b0160ca9a679a55db3ab585"
+          },
+          "retained_independent_oracle": {
+            "path": "archive/languages/c3/20261012/revisions/private-v1/references.py",
+            "sha256": "6ba2d8d70f23ac04f2bd24e73356f14a1c3a046da35f25e936332b10a7cba1f3"
+          },
+          "validation": "exact-complete-bytes"
+        },
+        "validation_receipt": {
+          "path": "experiments/kotlin/specified-cases-v1/run-v1/kotlin-fasta-compact/n-20/validated.json",
+          "sha256": "7f25269010ff71d363bf655cb8ca034a47e44265d170e2072b2c4d3fcf5212a2"
+        }
+      }
+    },
+    {
+      "benchmark": "fasta",
+      "case": "n-21",
+      "n": 21,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/fasta/n-21/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/fasta/n-21/expected.stdout",
+        "sha256": "f6bf15c835fc19ff1cff7e90459667bb7714bb5ea625df5c725ca505d6206819",
+        "bytes": 292
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-supplement",
+        "evidence": {
+          "case": "n-21",
+          "n": 21,
+          "stdin": null,
+          "expected": {
+            "path": "experiments/kotlin/specified-cases-v1/plan-v1-references/fasta/n-21/expected.stdout",
+            "sha256": "f6bf15c835fc19ff1cff7e90459667bb7714bb5ea625df5c725ca505d6206819"
+          },
+          "fixture": {
+            "benchmark": "fasta",
+            "case": "n-21",
+            "n": 21
+          },
+          "oracle_source": {
+            "path": "experiments/kotlin/specified-cases-v1/oracles.py",
+            "sha256": "41eccf199c089af924ecfaad4b8cfd58a23df4538b0160ca9a679a55db3ab585"
+          },
+          "retained_independent_oracle": {
+            "path": "archive/languages/c3/20261012/revisions/private-v1/references.py",
+            "sha256": "6ba2d8d70f23ac04f2bd24e73356f14a1c3a046da35f25e936332b10a7cba1f3"
+          },
+          "validation": "exact-complete-bytes"
+        },
+        "validation_receipt": {
+          "path": "experiments/kotlin/specified-cases-v1/run-v1/kotlin-fasta-compact/n-21/validated.json",
+          "sha256": "2c054f73764cfe925ea28e1c30b53e98af957844db293c545370f6f5a0d5302d"
+        }
+      }
+    },
+    {
+      "benchmark": "fasta",
+      "case": "n-59",
+      "n": 59,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/fasta/n-59/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/fasta/n-59/expected.stdout",
+        "sha256": "00f6b60c806a18f105b90887951eb2755b9cffa0200dc7ca6aed10e35f7e7ecf",
+        "bytes": 677
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-supplement",
+        "evidence": {
+          "case": "n-59",
+          "n": 59,
+          "stdin": null,
+          "expected": {
+            "path": "experiments/kotlin/specified-cases-v1/plan-v1-references/fasta/n-59/expected.stdout",
+            "sha256": "00f6b60c806a18f105b90887951eb2755b9cffa0200dc7ca6aed10e35f7e7ecf"
+          },
+          "fixture": {
+            "benchmark": "fasta",
+            "case": "n-59",
+            "n": 59
+          },
+          "oracle_source": {
+            "path": "experiments/kotlin/specified-cases-v1/oracles.py",
+            "sha256": "41eccf199c089af924ecfaad4b8cfd58a23df4538b0160ca9a679a55db3ab585"
+          },
+          "retained_independent_oracle": {
+            "path": "archive/languages/c3/20261012/revisions/private-v1/references.py",
+            "sha256": "6ba2d8d70f23ac04f2bd24e73356f14a1c3a046da35f25e936332b10a7cba1f3"
+          },
+          "validation": "exact-complete-bytes"
+        },
+        "validation_receipt": {
+          "path": "experiments/kotlin/specified-cases-v1/run-v1/kotlin-fasta-compact/n-59/validated.json",
+          "sha256": "e18384c7a02039527cadd0df9fa2effc764cc393c99e7c6fbfd6e1983e691c50"
+        }
+      }
+    },
+    {
+      "benchmark": "fasta",
+      "case": "n-1000",
+      "n": 1000,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/fasta/n-1000/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/fasta/n-1000/expected.stdout",
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "bytes": 10245
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-supplement",
+        "evidence": {
+          "case": "n-1000",
+          "n": 1000,
+          "stdin": null,
+          "expected": {
+            "path": "experiments/kotlin/specified-cases-v1/plan-v1-references/fasta/n-1000/expected.stdout",
+            "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73"
+          },
+          "fixture": {
+            "benchmark": "fasta",
+            "case": "n-1000",
+            "n": 1000
+          },
+          "oracle_source": {
+            "path": "experiments/kotlin/specified-cases-v1/oracles.py",
+            "sha256": "41eccf199c089af924ecfaad4b8cfd58a23df4538b0160ca9a679a55db3ab585"
+          },
+          "retained_independent_oracle": {
+            "path": "archive/languages/c3/20261012/revisions/private-v1/references.py",
+            "sha256": "6ba2d8d70f23ac04f2bd24e73356f14a1c3a046da35f25e936332b10a7cba1f3"
+          },
+          "validation": "exact-complete-bytes"
+        },
+        "validation_receipt": {
+          "path": "experiments/kotlin/specified-cases-v1/run-v1/kotlin-fasta-compact/n-1000/validated.json",
+          "sha256": "a7e0c8b3181940230402ee57220344794e993734066dea26ce432b414488759c"
+        }
+      }
+    },
+    {
+      "benchmark": "mandelbrot",
+      "case": "n-64",
+      "n": 64,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-64/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-64/expected.stdout",
+        "sha256": "54e0a14da37569cba6fa618c771c2704f6711783326b2b42197fc533c8f1337b",
+        "bytes": 521
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-supplement",
+        "evidence": {
+          "case": "n-64",
+          "n": 64,
+          "stdin": null,
+          "expected": {
+            "path": "experiments/kotlin/specified-cases-v1/plan-v1-references/mandelbrot/n-64/expected.stdout",
+            "sha256": "54e0a14da37569cba6fa618c771c2704f6711783326b2b42197fc533c8f1337b"
+          },
+          "fixture": {
+            "benchmark": "mandelbrot",
+            "case": "n-64",
+            "n": 64
+          },
+          "oracle_source": {
+            "path": "experiments/kotlin/specified-cases-v1/oracles.py",
+            "sha256": "41eccf199c089af924ecfaad4b8cfd58a23df4538b0160ca9a679a55db3ab585"
+          },
+          "retained_independent_oracle": {
+            "path": "archive/languages/c3/20261012/revisions/private-v1/references.py",
+            "sha256": "6ba2d8d70f23ac04f2bd24e73356f14a1c3a046da35f25e936332b10a7cba1f3"
+          },
+          "validation": "exact-complete-bytes"
+        },
+        "validation_receipt": {
+          "path": "experiments/kotlin/specified-cases-v1/run-v1/kotlin-mandelbrot-compact/n-64/validated.json",
+          "sha256": "90201dd6a3efe07861258263fc4cbe353d7fe2bd4c15190e2a281a20233157f6"
+        }
+      }
+    },
+    {
+      "benchmark": "pidigits",
+      "case": "n-100",
+      "n": 100,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/pidigits/n-100/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/pidigits/n-100/expected.stdout",
+        "sha256": "c58ccf8f972ea587a5fc489e902b5b04f8d2512f969228136a604b8acfa66111",
+        "bytes": 151
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-supplement",
+        "evidence": {
+          "case": "n-100",
+          "n": 100,
+          "stdin": null,
+          "expected": {
+            "path": "experiments/kotlin/specified-cases-v1/plan-v1-references/pidigits/n-100/expected.stdout",
+            "sha256": "c58ccf8f972ea587a5fc489e902b5b04f8d2512f969228136a604b8acfa66111"
+          },
+          "fixture": {
+            "benchmark": "pidigits",
+            "case": "n-100",
+            "n": 100
+          },
+          "oracle_source": {
+            "path": "experiments/kotlin/specified-cases-v1/oracles.py",
+            "sha256": "41eccf199c089af924ecfaad4b8cfd58a23df4538b0160ca9a679a55db3ab585"
+          },
+          "retained_independent_oracle": {
+            "path": "archive/languages/c3/20261012/revisions/private-v1/references.py",
+            "sha256": "6ba2d8d70f23ac04f2bd24e73356f14a1c3a046da35f25e936332b10a7cba1f3"
+          },
+          "validation": "exact-complete-bytes"
+        },
+        "validation_receipt": {
+          "path": "experiments/kotlin/specified-cases-v1/run-v1/kotlin-pidigits-compact/n-100/validated.json",
+          "sha256": "5d6e83c12347405daa7feccc7d8ab17396bd75b85e917302303de1d1bb874843"
+        }
+      }
+    },
+    {
+      "benchmark": "regexredux",
+      "case": "specified-all-count-alternatives",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/regexredux/specified-all-count-alternatives/stdin.bin",
+        "sha256": "34710842a7dcc94bad1cd3fbcb8e3f515f4ab6541cc0ce93d413e86a6d5ccb5f",
+        "bytes": 941
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/regexredux/specified-all-count-alternatives/expected.stdout",
+        "sha256": "925f2d5ed25d3435c89f1b426bcaaa6aa6c83b65b51cfdb1ecb899cdab5dcf5a",
+        "bytes": 257
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-supplement",
+        "evidence": {
+          "case": "specified-all-count-alternatives",
+          "n": 0,
+          "stdin": {
+            "path": "experiments/kotlin/specified-cases-v1/plan-v1-references/regexredux/specified-all-count-alternatives/stdin.bin",
+            "sha256": "34710842a7dcc94bad1cd3fbcb8e3f515f4ab6541cc0ce93d413e86a6d5ccb5f"
+          },
+          "expected": {
+            "path": "experiments/kotlin/specified-cases-v1/plan-v1-references/regexredux/specified-all-count-alternatives/expected.stdout",
+            "sha256": "925f2d5ed25d3435c89f1b426bcaaa6aa6c83b65b51cfdb1ecb899cdab5dcf5a"
+          },
+          "fixture": {
+            "benchmark": "regexredux",
+            "case": "specified-all-count-alternatives",
+            "n": 0,
+            "stdin_ascii": ">all fifty lowercase and uppercase words\nagggtaaaZtttaccctZcgggtaaaZggggtaaaZtgggtaaaZtttacccaZtttaccccZtttacccgZaaggtaaaZacggtaaaZatggtaaaZtttaccatZtttaccgtZtttaccttZagagtaaaZagcgtaaaZagtgtaaaZtttacactZtttacgctZtttactctZaggataaaZaggctaaaZaggttaaaZtttaacctZtttagcctZtttatcctZagggaaaaZagggcaaaZaggggaaaZtttcccctZtttgccctZttttccctZagggtcaaZagggtgaaZagggttaaZttaaccctZttcaccctZttgaccctZagggtacaZagggtagaZagggtataZtataccctZtctaccctZtgtaccctZagggtaacZagggtaagZagggtaatZattaccctZcttaccctZgttaccctZAGGGTAAAZTTTACCCTZCGGGTAAAZGGGGTAAAZTGGGTAAAZTTTACCCAZTTTACCCCZTTTACCCGZAAGGTAAAZACGGTAAAZATGGTAAAZTTTACCATZTTTACCGTZTTTACCTTZAGAGTAAAZAGCGTAAAZAGTGTAAAZTTTACACTZTTTACGCTZTTTACTCTZAGGATAAAZAGGCTAAAZAGGTTAAAZTTTAACCTZTTTAGCCTZTTTATCCTZAGGGAAAAZAGGGCAAAZAGGGGAAAZTTTCCCCTZTTTGCCCTZTTTTCCCTZAGGGTCAAZAGGGTGAAZAGGGTTAAZTTAACCCTZTTCACCCTZTTGACCCTZAGGGTACAZAGGGTAGAZAGGGTATAZTATACCCTZTCTACCCTZTGTACCCTZAGGGTAACZAGGGTAAGZAGGGTAATZATTACCCTZCTTACCCTZGTTACCCT\n",
+            "expected_counts": [
+              2,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6
+            ],
+            "overlapping_candidate_counts": [
+              2,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6
+            ]
+          },
+          "oracle_source": {
+            "path": "experiments/kotlin/specified-cases-v1/oracles.py",
+            "sha256": "41eccf199c089af924ecfaad4b8cfd58a23df4538b0160ca9a679a55db3ab585"
+          },
+          "retained_independent_oracle": {
+            "path": "archive/languages/c3/20261012/revisions/private-v1/references.py",
+            "sha256": "6ba2d8d70f23ac04f2bd24e73356f14a1c3a046da35f25e936332b10a7cba1f3"
+          },
+          "validation": "exact-complete-bytes"
+        },
+        "validation_receipt": {
+          "path": "experiments/kotlin/specified-cases-v1/run-v1/kotlin-regexredux-compact/specified-all-count-alternatives/validated.json",
+          "sha256": "86fa892b69e00f9c2ceb0b55d5c14c744f89ee743e631da1d9b3361b863cf73d"
+        }
+      }
+    },
+    {
+      "benchmark": "regexredux",
+      "case": "specified-overlapping-candidates",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/regexredux/specified-overlapping-candidates/stdin.bin",
+        "sha256": "127c72ced2ca2ed8d80bffe7d8f69d6614addfa60588d682fa66cb041dabbdb7",
+        "bytes": 41
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/regexredux/specified-overlapping-candidates/expected.stdout",
+        "sha256": "bf058011a457f0648449e81bab312e66b5748361550a0bcb34300b40b185717f",
+        "bytes": 254
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-supplement",
+        "evidence": {
+          "case": "specified-overlapping-candidates",
+          "n": 0,
+          "stdin": {
+            "path": "experiments/kotlin/specified-cases-v1/plan-v1-references/regexredux/specified-overlapping-candidates/stdin.bin",
+            "sha256": "127c72ced2ca2ed8d80bffe7d8f69d6614addfa60588d682fa66cb041dabbdb7"
+          },
+          "expected": {
+            "path": "experiments/kotlin/specified-cases-v1/plan-v1-references/regexredux/specified-overlapping-candidates/expected.stdout",
+            "sha256": "bf058011a457f0648449e81bab312e66b5748361550a0bcb34300b40b185717f"
+          },
+          "fixture": {
+            "benchmark": "regexredux",
+            "case": "specified-overlapping-candidates",
+            "n": 0,
+            "stdin_ascii": ">overlap\nagggtaaagggtaaaZtttaccctttaccct\n",
+            "expected_counts": [
+              2,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "overlapping_candidate_counts": [
+              4,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "oracle_source": {
+            "path": "experiments/kotlin/specified-cases-v1/oracles.py",
+            "sha256": "41eccf199c089af924ecfaad4b8cfd58a23df4538b0160ca9a679a55db3ab585"
+          },
+          "retained_independent_oracle": {
+            "path": "archive/languages/c3/20261012/revisions/private-v1/references.py",
+            "sha256": "6ba2d8d70f23ac04f2bd24e73356f14a1c3a046da35f25e936332b10a7cba1f3"
+          },
+          "validation": "exact-complete-bytes"
+        },
+        "validation_receipt": {
+          "path": "experiments/kotlin/specified-cases-v1/run-v1/kotlin-regexredux-compact/specified-overlapping-candidates/validated.json",
+          "sha256": "a03844a96cfb6894e78536325815f187fbecd4c67dd891406759e1b997adf2ae"
+        }
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "specified-record-boundaries-and-cr",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/specified-record-boundaries-and-cr/stdin.bin",
+        "sha256": "047f056fcfc2c1e094821471ab2a0e80be82304d4797156f69de1f2581e839c3",
+        "bytes": 428
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/specified-record-boundaries-and-cr/expected.stdout",
+        "sha256": "18eebc8481b2ca2c6a2b5e04e0b8fb4d6118f0e1f7e0d846c2f489f6cc9fe4c5",
+        "bytes": 375
+      },
+      "oracle_provenance": {
+        "kind": "retained-independent-supplement",
+        "evidence": {
+          "case": "specified-record-boundaries-and-cr",
+          "n": 0,
+          "stdin": {
+            "path": "experiments/kotlin/specified-cases-v1/plan-v1-references/revcomp/specified-record-boundaries-and-cr/stdin.bin",
+            "sha256": "047f056fcfc2c1e094821471ab2a0e80be82304d4797156f69de1f2581e839c3"
+          },
+          "expected": {
+            "path": "experiments/kotlin/specified-cases-v1/plan-v1-references/revcomp/specified-record-boundaries-and-cr/expected.stdout",
+            "sha256": "18eebc8481b2ca2c6a2b5e04e0b8fb4d6118f0e1f7e0d846c2f489f6cc9fe4c5"
+          },
+          "fixture": {
+            "benchmark": "revcomp",
+            "case": "specified-record-boundaries-and-cr",
+            "n": 0,
+            "stdin_ascii": ">length-0\r>length-1\nA\n;ignored\n\n>length-59\r\nACGTUMRWSYKVHDBNa\r\n;ignored\r\ncgtumrwsykvhdbnACGTUMRWSYKVHDBNacgtumrwsyk\r\n>length-60\rACGTUMRWSYKVHDBNa\r;ignored\rcgtumrwsykvhdbnACGTUMRWSYKVHDBNacgtumrwsykv\r>length-61\nACGTUMRWSYKVHDBNa\n;ignored\ncgtumrwsykvhdbnACGTUMRWSYKVHDBNacgtumrwsykvh\n>length-121\r\nACGTUMRWSYKVHDBNa\r\n;ignored\r\ncgtumrwsykvhdbnACGTUMRWSYKVHDBNacgtumrwsykvhdbnACGTUMRWSYKVHDBNacgtumrwsykvhdbnACGTUMRWSYKVHDBNacgtumrws",
+            "record_lengths": [
+              0,
+              1,
+              59,
+              60,
+              61,
+              121
+            ]
+          },
+          "oracle_source": {
+            "path": "experiments/kotlin/specified-cases-v1/oracles.py",
+            "sha256": "41eccf199c089af924ecfaad4b8cfd58a23df4538b0160ca9a679a55db3ab585"
+          },
+          "retained_independent_oracle": {
+            "path": "archive/languages/c3/20261012/revisions/private-v1/references.py",
+            "sha256": "6ba2d8d70f23ac04f2bd24e73356f14a1c3a046da35f25e936332b10a7cba1f3"
+          },
+          "validation": "exact-complete-bytes"
+        },
+        "validation_receipt": {
+          "path": "experiments/kotlin/specified-cases-v1/run-v1/kotlin-revcomp-compact/specified-record-boundaries-and-cr/validated.json",
+          "sha256": "523d8e9145fb8764dbe2514a678134ba15d861b917943633dc19808a4d16fc5e"
+        }
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-empty",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-empty/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-empty/expected.stdout",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "empty"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-no-header",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-no-header/stdin.bin",
+        "sha256": "4adddca66adebec6a2747d54c87f62d7552c88cf7074cb306b41c09a75554bd0",
+        "bytes": 26
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-no-header/expected.stdout",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "no-header"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-header-eof",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-header-eof/stdin.bin",
+        "sha256": "279b344acfd345abd7072c3a886164aacee36a6b5a205ebe9a4301d28071ca73",
+        "bytes": 29
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-header-eof/expected.stdout",
+        "sha256": "54490514f777a3f164c9a0e6096871225e57fdb110d145434c3f4d09be95e43e",
+        "bytes": 30
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "header-eof"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-header-lf",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-header-lf/stdin.bin",
+        "sha256": "a9dfd1954ad6321d723aa0e8944858214c2c10e5e51585505abb7448b3957f42",
+        "bytes": 8
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-header-lf/expected.stdout",
+        "sha256": "a9dfd1954ad6321d723aa0e8944858214c2c10e5e51585505abb7448b3957f42",
+        "bytes": 8
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "header-lf"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-empty-records",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-empty-records/stdin.bin",
+        "sha256": "08780be093887db3f7896cecb6b6d3cc7a4368c83c4581304dd1d658d775c992",
+        "bytes": 23
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-empty-records/expected.stdout",
+        "sha256": "6d24f0f675b3ffd474f02b861b632b6741fbabd53d2d8ba90a491cbd06335518",
+        "bytes": 23
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "empty-records"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-all-iupac",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-all-iupac/stdin.bin",
+        "sha256": "6ccea30756346d0975a2def65b25f2e59fb227eaa0dc9c7e576ac28895df756b",
+        "bytes": 40
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-all-iupac/expected.stdout",
+        "sha256": "bba687065e5be8874b062f3dc34af2902b6131610dee3393fff789ca19e565df",
+        "bytes": 40
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "all-iupac"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-mixed-records",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-mixed-records/stdin.bin",
+        "sha256": "4f41d2ffadd9f0a5d8762c1e4a75c9066b2f71a590cbede5811ca34564bfb170",
+        "bytes": 68
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-mixed-records/expected.stdout",
+        "sha256": "10a9bd7bce0a1f73bca205f7b2225ea956d1cbafc1c0836449a4e547536e68b1",
+        "bytes": 37
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "mixed-records"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-binary-header",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-binary-header/stdin.bin",
+        "sha256": "e6335636c0d8c5b9e3fcec07937c25d77d2b98393cb11c1cd6cb37de2601396c",
+        "bytes": 24
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-binary-header/expected.stdout",
+        "sha256": "8abc3ad471944cf531634840ff3b74d80ae044f47ae62c95beac67df301d6a97",
+        "bytes": 24
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "binary-header"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-comments-and-blanks",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-comments-and-blanks/stdin.bin",
+        "sha256": "18adb7c0786845f254d46081299e5c436c30cf1008731b4a9eb7f00f5f9c89dc",
+        "bytes": 30
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-comments-and-blanks/expected.stdout",
+        "sha256": "5c781a7b27bf76bd5a8d94e33d480ff63e34e52e324a6356e5bcb556ebde3342",
+        "bytes": 8
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "comments-and-blanks"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-unequal-records",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-unequal-records/stdin.bin",
+        "sha256": "c2ad49e152dcef0f06d2fba35fdaa10ae834052fc3ace18e79d45c16a4e9afe5",
+        "bytes": 137
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-unequal-records/expected.stdout",
+        "sha256": "565a4551a099fd85217da7d3759192407bc2929cd1ccf14be50d43b8bda53a2a",
+        "bytes": 140
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "unequal-records"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-line-endings-lf",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-line-endings-lf/stdin.bin",
+        "sha256": "5396b815a341fbba8b0b5ac864c0220373b4985aa444e92e26775c605b47cc8e",
+        "bytes": 33
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-line-endings-lf/expected.stdout",
+        "sha256": "6e573ffa6fcf3d2f1b0383cf9ea19e37fe7226a0aecf76e3942e64fe8ea07733",
+        "bytes": 24
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "line-endings-lf"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-line-endings-cr",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-line-endings-cr/stdin.bin",
+        "sha256": "2ad9223ebffbb65217ccc72f3c719ffaa8c83c7dda75dda949379adf9bdb9398",
+        "bytes": 33
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-line-endings-cr/expected.stdout",
+        "sha256": "6e573ffa6fcf3d2f1b0383cf9ea19e37fe7226a0aecf76e3942e64fe8ea07733",
+        "bytes": 24
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "line-endings-cr"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-line-endings-crlf",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-line-endings-crlf/stdin.bin",
+        "sha256": "57693c3021b0c7bf8764070ef45a880d411e1c6099baf355fd0976911d036bdf",
+        "bytes": 38
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-line-endings-crlf/expected.stdout",
+        "sha256": "6e573ffa6fcf3d2f1b0383cf9ea19e37fe7226a0aecf76e3942e64fe8ea07733",
+        "bytes": 24
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "line-endings-crlf"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-single-line-0",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-0/stdin.bin",
+        "sha256": "de7acb403df956a66bf7043ce12fbd7f9a0b902bfbf06b2e169083806755f2ab",
+        "bytes": 8
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-0/expected.stdout",
+        "sha256": "de7acb403df956a66bf7043ce12fbd7f9a0b902bfbf06b2e169083806755f2ab",
+        "bytes": 8
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "single-line-0"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-single-line-1",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-1/stdin.bin",
+        "sha256": "0be1fe1552ee02dc137054f31436a23f6805a4c3e3c9e9fa40007e1faac5816e",
+        "bytes": 9
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-1/expected.stdout",
+        "sha256": "abc20c04f5083ffdc7bc4e8620833a338cb03e90c33890a63a103bcf10500ee7",
+        "bytes": 10
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "single-line-1"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-single-line-2",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-2/stdin.bin",
+        "sha256": "4b6d5e4a1f6257eb27e5c30fd88dd71bcc057fd79c90604aad369367cfbbba18",
+        "bytes": 10
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-2/expected.stdout",
+        "sha256": "fd42ea69450aaba9e33a440789b742d2f472906ef29eb779d327f2c734378da4",
+        "bytes": 11
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "single-line-2"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-single-line-59",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-59/stdin.bin",
+        "sha256": "75508da50469e4b6818f4e4d5884fec5fd9a5493e958198bd3f1e628f662f073",
+        "bytes": 67
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-59/expected.stdout",
+        "sha256": "92976b351dbaf52ae79ddd75f1ae705158278a2a6e5a51c304c567310e9dcada",
+        "bytes": 68
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "single-line-59"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-single-line-60",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-60/stdin.bin",
+        "sha256": "121d95bdc1f3f69b5b13a1353fa237172f99da32779559315b8accaf61e75c7e",
+        "bytes": 68
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-60/expected.stdout",
+        "sha256": "3332fc16965878860a4c976dfd87e13267e68c2dbf9c63942fb3ee4a4cd67c19",
+        "bytes": 69
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "single-line-60"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-single-line-61",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-61/stdin.bin",
+        "sha256": "200f60d47bf662d20c296f47b43a811f766e8c7492205d2310a93638e73e58b7",
+        "bytes": 69
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-61/expected.stdout",
+        "sha256": "4cc2067715d978221c10b1fa7887f541981fe46bf9ded64deb1b56d03450ee77",
+        "bytes": 71
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "single-line-61"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-single-line-63",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-63/stdin.bin",
+        "sha256": "2a5b875f7d86a7421ad3ef900359482dde0288deb438c3a86b6393d066d5c295",
+        "bytes": 71
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-63/expected.stdout",
+        "sha256": "9aaaaf4456a10299ad6de7126ef17a7f1065e60bde35558e81ca4865a0e60b3c",
+        "bytes": 73
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "single-line-63"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-single-line-64",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-64/stdin.bin",
+        "sha256": "2ba63d2147ed5fb765e4fe2c886c34c723971517627508169abcc1f9ad47f2bf",
+        "bytes": 72
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-64/expected.stdout",
+        "sha256": "1e7e4b7a796b6550ffe24ab398ca9684c6be1e82cd95a866a1948880626f0163",
+        "bytes": 74
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "single-line-64"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-single-line-65",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-65/stdin.bin",
+        "sha256": "e1372bc627a569af8eb5761bcf31d3cf522e4e73b2cb7714fe8c91e9f52cd0e8",
+        "bytes": 73
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-65/expected.stdout",
+        "sha256": "4f418db15fc1911362bab12a8d4a411ee372ceb310dc854d3dc129d5803e797f",
+        "bytes": 75
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "single-line-65"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-single-line-126",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-126/stdin.bin",
+        "sha256": "f96be459a340b84763eb522e53434f385f5c4185400c92c5209d22dc7ece06b1",
+        "bytes": 134
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-126/expected.stdout",
+        "sha256": "85299ea4d8ae7dffbf92187f3a4406a0de0d30763e0ad2ec7df96f36fe22fcdf",
+        "bytes": 137
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "single-line-126"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-single-line-127",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-127/stdin.bin",
+        "sha256": "b96c7fd9f3518242ab8aab7080f2a5a45e247bb16f145e03e8e6a326a7520c55",
+        "bytes": 135
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-127/expected.stdout",
+        "sha256": "368987581963774943625a9fb719329d137e67792de1a34efa586e4f4bc4cb72",
+        "bytes": 138
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "single-line-127"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-single-line-128",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-128/stdin.bin",
+        "sha256": "7e722a02fdd06533bb0cb98fec3c28c20213ae4c048acb0c8d1935ab3bf6db22",
+        "bytes": 136
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-128/expected.stdout",
+        "sha256": "e111546341432efd9840a6ffaa3957fc750bcdeef7d17bd2ad60e45fc66c07b5",
+        "bytes": 139
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "single-line-128"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-single-line-129",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-129/stdin.bin",
+        "sha256": "49968d561fe25d0e35dabc850039d471e7558844d4735fa6fbd14c0ef9a49cce",
+        "bytes": 137
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-129/expected.stdout",
+        "sha256": "9f01f9bc368e825ac124785877c88898ea85d421a2258bb132e7e61d2910bb9d",
+        "bytes": 140
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "single-line-129"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-single-line-255",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-255/stdin.bin",
+        "sha256": "cdb3136b447b1212d08c7e21e941e6a6c1d52dff3c332c85adaa196b121606d7",
+        "bytes": 263
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-255/expected.stdout",
+        "sha256": "89c2d44145cb33e665b4bd1d5a5ca181ec62b60548c3c895a321ab1637cdb02e",
+        "bytes": 268
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "single-line-255"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-single-line-256",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-256/stdin.bin",
+        "sha256": "b6dabf3133b8636e82f65d2012be4868fcbd7e7d932681dab00836f7054cdf74",
+        "bytes": 264
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-256/expected.stdout",
+        "sha256": "3f20f39579c8c8d07f6d848bbccd4a6fa4ec6f81e1c7ad5ec1548b42ce6f1311",
+        "bytes": 269
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "single-line-256"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-single-line-257",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-257/stdin.bin",
+        "sha256": "02e63ed99c899c295dcd884a1168f17d931a56abbbc2b5e18a43705e349a39c7",
+        "bytes": 265
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-257/expected.stdout",
+        "sha256": "d3dffc9926313949094485ebb1900962b606afe4ed17013daa543af74313090b",
+        "bytes": 270
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "single-line-257"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-single-line-1023",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-1023/stdin.bin",
+        "sha256": "1fbd54de28a932f8a58046bb32b63bdc5e1a3a4f6c9704689098f357e69df153",
+        "bytes": 1031
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-1023/expected.stdout",
+        "sha256": "817f32942f69f60f33da7aabf8cd7eb378553beaba8f0229b24a9ca8b5a5305c",
+        "bytes": 1049
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "single-line-1023"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-single-line-1024",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-1024/stdin.bin",
+        "sha256": "407cc4b9fce13af8e2d1b9b3042475e5a2a39275b469a245d6f45ba717785421",
+        "bytes": 1032
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-1024/expected.stdout",
+        "sha256": "02c9265f7c2ebaff1985e3951af3614dc56914f43a2ee8bf53eed88690b341b4",
+        "bytes": 1050
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "single-line-1024"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-single-line-1025",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-1025/stdin.bin",
+        "sha256": "f45e7bc02a03c43c0791750c82c306aa075b0e468cab8c89e409ceca6e3c62ce",
+        "bytes": 1033
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-1025/expected.stdout",
+        "sha256": "f84347b3907919d9cd3f95ae7fc7804449b6e4ecf7435b48b9c7c29c7ecd6316",
+        "bytes": 1051
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "single-line-1025"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-single-line-4095",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-4095/stdin.bin",
+        "sha256": "7a482b1380f4252bb6609cc4e5936a012adb3c1984c733aa8c97667e59860e3a",
+        "bytes": 4103
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-4095/expected.stdout",
+        "sha256": "a1f7de40e79f4cf495715c4fc55d27b2049ddad2c09c3c58e3c79b01e045f1e4",
+        "bytes": 4172
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "single-line-4095"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-single-line-4096",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-4096/stdin.bin",
+        "sha256": "0513a9d369b44c086556577eb3b50a3d6a1776d38050f0c50e530bf5e3c493bb",
+        "bytes": 4104
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-4096/expected.stdout",
+        "sha256": "d033262d8a922f10de261c59213fe7107d4e9e118b9987c7d54b6ebd8ac8059a",
+        "bytes": 4173
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "single-line-4096"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-single-line-4097",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-4097/stdin.bin",
+        "sha256": "52e861baf6f0e8e4176183069bb5cf909bc1a8e2ffe5de3d162983948d6b1c82",
+        "bytes": 4105
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-4097/expected.stdout",
+        "sha256": "3e5394d2319473b25764aec9851cc732b101b4992c67dd398749b47ccc2ec19b",
+        "bytes": 4174
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "single-line-4097"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-single-line-65535",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-65535/stdin.bin",
+        "sha256": "23a207dcdfdb1a8ed1632fc4b91702abf169f7bf46635343bf87d73e8feb9f03",
+        "bytes": 65543
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-65535/expected.stdout",
+        "sha256": "6a4282cb958c0bae7c20f0ee81e2604cf27231cdfa37e1ecbd64d2d6001fa138",
+        "bytes": 66636
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "single-line-65535"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-single-line-65536",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-65536/stdin.bin",
+        "sha256": "b86009c150a78c85dc03df0bf6aa435a5935097972e4d140c857d1a9e98e2525",
+        "bytes": 65544
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-65536/expected.stdout",
+        "sha256": "a50cf58e435f253c09280c5a49a98a01fc63748fbed6f165eea0c75bf4624918",
+        "bytes": 66637
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "single-line-65536"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-single-line-65537",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-65537/stdin.bin",
+        "sha256": "1a80c97d7f33c35584bdbcc5ecde7f5dfdbbcfd024bf431a0648b77ccf52ca71",
+        "bytes": 65545
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-65537/expected.stdout",
+        "sha256": "06229a2b61ae0ac9d0854b2f66e88daa1da6d46aa0dc4a5f029ee79392c65259",
+        "bytes": 66638
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "single-line-65537"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-single-line-131073",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-131073/stdin.bin",
+        "sha256": "5c5a2c454619cdbaed3f3419a247638a3c1651e7624fe91d00d37aa9da41173d",
+        "bytes": 131081
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-single-line-131073/expected.stdout",
+        "sha256": "acfeb3450a6901a472ce2d08534ee0be000805d683a73c406a21cc10de577408",
+        "bytes": 133266
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "single-line-131073"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-wrapped-1",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-wrapped-1/stdin.bin",
+        "sha256": "a274ff569cd330c88b6775a325734825360964dd429cf505eec41c01a1e09f42",
+        "bytes": 797
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-wrapped-1/expected.stdout",
+        "sha256": "bf40f861acffb0c13ba4d0c024a6520796ff8aeb16f26d7b13c576da2f0b12b4",
+        "bytes": 277
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "wrapped-1"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-wrapped-7",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-wrapped-7/stdin.bin",
+        "sha256": "be376538e5cc0c5c3b5e4ea6c701c5faafe6db90e4c7333030afc83f80869214",
+        "bytes": 347
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-wrapped-7/expected.stdout",
+        "sha256": "bf40f861acffb0c13ba4d0c024a6520796ff8aeb16f26d7b13c576da2f0b12b4",
+        "bytes": 277
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "wrapped-7"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-wrapped-59",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-wrapped-59/stdin.bin",
+        "sha256": "893102af90dd09c4fab2a4f6d84485123f94ada62f73171148a77d6f5c4dadc7",
+        "bytes": 281
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-wrapped-59/expected.stdout",
+        "sha256": "bf40f861acffb0c13ba4d0c024a6520796ff8aeb16f26d7b13c576da2f0b12b4",
+        "bytes": 277
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "wrapped-59"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-wrapped-60",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-wrapped-60/stdin.bin",
+        "sha256": "0c883586a14af2cdac54f625891306ffdd60fa3db25a163f52a37a661d723a26",
+        "bytes": 281
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-wrapped-60/expected.stdout",
+        "sha256": "bf40f861acffb0c13ba4d0c024a6520796ff8aeb16f26d7b13c576da2f0b12b4",
+        "bytes": 277
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "wrapped-60"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-wrapped-61",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-wrapped-61/stdin.bin",
+        "sha256": "b80aa2edaabc738c769478f9ab3e15091424a131a59b3a69bb3b18aebc3e0adf",
+        "bytes": 281
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-wrapped-61/expected.stdout",
+        "sha256": "bf40f861acffb0c13ba4d0c024a6520796ff8aeb16f26d7b13c576da2f0b12b4",
+        "bytes": 277
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "wrapped-61"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-wrapped-127",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-wrapped-127/stdin.bin",
+        "sha256": "d8ac38ea163982171594565ed9c80c06f77bef3e6b512bd6c4e51266dbba060f",
+        "bytes": 277
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-wrapped-127/expected.stdout",
+        "sha256": "bf40f861acffb0c13ba4d0c024a6520796ff8aeb16f26d7b13c576da2f0b12b4",
+        "bytes": 277
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "wrapped-127"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-long-header",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-long-header/stdin.bin",
+        "sha256": "293eb7d30ca66df5d578370d331929c8258200674b58408d2394d2475a8d1ad1",
+        "bytes": 84008
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-long-header/expected.stdout",
+        "sha256": "871720424cf3e77153932db2cef0993d55ba5ac041d3ba8c56930e1652959754",
+        "bytes": 84008
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "long-header"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-long-comment",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-long-comment/stdin.bin",
+        "sha256": "27849a89b26e2fa079c087e54d8c5124c74e146ab328b33031068d566a7d43df",
+        "bytes": 144012
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-long-comment/expected.stdout",
+        "sha256": "cf703267709399b06d181480c01efea0740fff43bd52604fe3d3aee20b1bc676",
+        "bytes": 9
+      },
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "long-comment"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-invalid-space",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "language-specific-invalid-iupac",
+      "expected_exit": "nonzero",
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-invalid-space/stdin.bin",
+        "sha256": "0c751fc236750ed80e3bccb02b92c6c81204cae21be51ab126182b0930cd67cf",
+        "bytes": 9
+      },
+      "expected": null,
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "invalid-space"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-invalid-tab",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "language-specific-invalid-iupac",
+      "expected_exit": "nonzero",
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-invalid-tab/stdin.bin",
+        "sha256": "c90d20e7d9eeed5657cad1397631b1757c0d8d932102320a43e723b6142dc7d2",
+        "bytes": 9
+      },
+      "expected": null,
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "invalid-tab"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-invalid-nul",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "language-specific-invalid-iupac",
+      "expected_exit": "nonzero",
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-invalid-nul/stdin.bin",
+        "sha256": "b81c71a522cb466a8fda39e8022701c4fa3764f8d2b0868c082d32bf6b1dbd09",
+        "bytes": 9
+      },
+      "expected": null,
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "invalid-nul"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-invalid-high-byte",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "language-specific-invalid-iupac",
+      "expected_exit": "nonzero",
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-invalid-high-byte/stdin.bin",
+        "sha256": "5f23a2102f301acf92e27b667eb0a3da7a69e810971aaf19614d446e9dcabeec",
+        "bytes": 9
+      },
+      "expected": null,
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "invalid-high-byte"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-inline-header-marker",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "language-specific-invalid-iupac",
+      "expected_exit": "nonzero",
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-inline-header-marker/stdin.bin",
+        "sha256": "32fda7d0d172a2d1c33da016d5cc2259d9e0279ac347b0aa70cdd0ba2e780a44",
+        "bytes": 9
+      },
+      "expected": null,
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "inline-header-marker"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-inline-comment-marker",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "language-specific-invalid-iupac",
+      "expected_exit": "nonzero",
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-inline-comment-marker/stdin.bin",
+        "sha256": "dd9cc5a28afe1ec8af2dcb892b98212b0f57c9b4a961791ea9e5b69383414e14",
+        "bytes": 9
+      },
+      "expected": null,
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "inline-comment-marker"
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "case": "extended-invalid-reverse-order",
+      "n": 0,
+      "input_kind": "stdin",
+      "validation": "language-specific-invalid-iupac",
+      "expected_exit": "nonzero",
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/revcomp/extended-invalid-reverse-order/stdin.bin",
+        "sha256": "4a48eb0135ae637fdc5aa97ae3ba879e22e23c72c1826d6bd8fe6bb4e6f1ed4a",
+        "bytes": 8
+      },
+      "expected": null,
+      "oracle_provenance": {
+        "kind": "independent-python-byte-oracle",
+        "path": "experiments/prolog/revcomp-linear-v1/fixtures.py",
+        "sha256": "0e761400188ce52ec987135fca94975cea41cef8eaac7af5fcc89c4c92f79e4a",
+        "oracle_case": "invalid-reverse-order"
+      }
+    },
+    {
+      "benchmark": "mandelbrot",
+      "case": "n-0",
+      "n": 0,
+      "input_kind": "integer-argument",
+      "validation": "exact-complete-bytes",
+      "expected_exit": 0,
+      "stdin": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-0/stdin.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "expected": {
+        "path": "workloads/idiomatic-six/contracts/mandelbrot/n-0/expected.stdout",
+        "sha256": "636415170043dd6d03f2099060158760eed57cd15a545377e78359eca4611a38",
+        "bytes": 7
+      },
+      "oracle_provenance": {
+        "kind": "handwritten-empty-workload",
+        "rationale": "Zero pixels or zero-element permutation summary."
+      }
+    }
+  ]
+}

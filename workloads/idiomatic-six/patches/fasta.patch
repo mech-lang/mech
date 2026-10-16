@@ -1,0 +1,63 @@
+diff --git a/hosts/gpu/tests/fixtures/native/fasta-idiomatic.mec b/hosts/gpu/tests/fixtures/native/fasta-idiomatic.mec
+new file mode 100644
+--- /dev/null
++++ b/hosts/gpu/tests/fixtures/native/fasta-idiomatic.mec
+@@ -0,0 +1,58 @@
+++> number
+++> sequence
+++> @args := cli/args
+++> @out := cli/stdout
++
++#Choose(r<f64>, probabilities<[f64]>, alphabet<string>) => <string>
++  | :Search(index<u64>, cumulative<f64>)
++  | :Done(char<string>).
++#Choose(r, probabilities, alphabet) -> :Search(1u64, 0.0)
++  :Search(index, cumulative)
++    | index >= sequence/length(probabilities) -> :Done(alphabet[index])
++    | r < cumulative + probabilities[index] -> :Done(alphabet[index])
++    | * -> :Search(index + 1u64, cumulative + probabilities[index])
++  :Done(char) => char.
++
++random-char(seed<u64>, probabilities<[f64]>, alphabet<string>) => (next<u64>, char<string>) :=
++  next := number/mod(seed * 3877u64 + 29573u64, 139968u64)
++  value<f64> := next
++  char := #Choose(value / 139968.0, probabilities, alphabet).
++
++#WriteRecord(count<u64>, initial-seed<u64>, alphabet<string>, probabilities<[f64]>, random<bool>) => <u64>
++  | :Carry(remaining<u64>, index<u64>, seed<u64>, column<u64>, buffer<string>)
++  | :Ready(remaining<u64>, index<u64>, seed<u64>, column<u64>, buffer<string>)
++  | :Flush(remaining<u64>, index<u64>, seed<u64>, column<u64>, buffer<string>)
++  | :Finish(seed<u64>, buffer<string>)
++  | :Done(seed<u64>).
++#WriteRecord(count, initial-seed, alphabet, probabilities, random) -> :Carry(count, 0u64, initial-seed, 0u64, "")
++  :Carry(remaining, index, seed, column, buffer)
++    | remaining == 0u64 -> :Finish(seed, buffer)
++    | * -> {
++        (next-seed, char) := random?
++          | true => random-char(seed, probabilities, alphabet)
++          | false => (seed, alphabet[number/mod(index, sequence/length(alphabet)) + 1u64]).
++        end-line := column + 1u64 == 60u64 || remaining == 1u64
++        suffix := end-line? | true => "\n" | false => "".
++        next-column := end-line? | true => 0u64 | false => column + 1u64.
++      } -> :Ready(remaining - 1u64, index + 1u64, next-seed, next-column, buffer + char + suffix)
++  :Ready(remaining, index, seed, column, buffer)
++    | sequence/length(buffer) >= 65536u64 -> :Flush(remaining, index, seed, column, buffer)
++    | * -> :Carry(remaining, index, seed, column, buffer)
++  :Flush(remaining, index, seed, column, buffer) -> {
++      @out/text <- buffer
++    } -> :Carry(remaining, index, seed, column, "")
++  :Finish(seed, buffer) -> {
++      @out/text <- buffer
++    } -> :Done(seed)
++  :Done(seed) => seed.
++
++alu := "GGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAA"
++iub := [0.27 0.12 0.12 0.27 0.02 0.02 0.02 0.02 0.02 0.02 0.02 0.02 0.02 0.02 0.02]
++human := [0.3029549426680 0.1979883004921 0.1975473066391 0.3015094502008]
++n := number/bounded(number/parse-u64(@args/1), 0u64, 1844674407370955161u64)
++@out/text <- ">ONE Homo sapiens alu\n"
++repeat := #WriteRecord(n * 2u64, 0u64, alu, [0.0], false)
++@out/text <- ">TWO IUB ambiguity codes\n"
++seed := #WriteRecord(n * 3u64, 42u64, "acgtBDHKMNRSVWY", iub, true)
++@out/text <- ">THREE Homo sapiens frequency\n"
++last := #WriteRecord(n * 5u64, seed, "acgt", human, true)

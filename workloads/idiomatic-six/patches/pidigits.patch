@@ -1,0 +1,61 @@
+diff --git a/hosts/gpu/tests/fixtures/native/pidigits-idiomatic.mec b/hosts/gpu/tests/fixtures/native/pidigits-idiomatic.mec
+new file mode 100644
+--- /dev/null
++++ b/hosts/gpu/tests/fixtures/native/pidigits-idiomatic.mec
+@@ -0,0 +1,56 @@
+++> bigint
+++> number
+++> sequence
+++> text
+++> @args := cli/args
+++> @out := cli/stdout
++
++<spigot> := <{k<u64>, count<u64>, q<bigint>, r<bigint>, t<bigint>}>
++
++extract(s<spigot>, j<u64>) => (digit<u64>) :=
++  digit := bigint/floor-u64(s.q * j + s.r, s.t).
++
++consume(s<spigot>) => (next<spigot>) :=
++  factor := 2u64 * s.k + 1u64
++  next := {k: s.k + 1u64, count: s.count, q: s.q * s.k, r: (s.r + s.q * 2u64) * factor, t: s.t * factor}.
++
++produce(s<spigot>, digit<u64>) => (next<spigot>) :=
++  next := {k: s.k, count: s.count + 1u64, q: s.q * 10u64, r: (s.r - s.t * digit) * 10u64, t: s.t}.
++
++finish-row(row<string>, count<u64>) => (line<string>) :=
++  spaces := text/join([" " | column <- sequence/length(row)..10u64], "")
++  line := row + spaces + "\t:" + number/format(count, 0u64) + "\n".
++
++#NextDigit(s<spigot>) => <(spigot,u64)>
++  | :Consume(s<spigot>)
++  | :Check(s<spigot>)
++  | :Extract(s<spigot>, first<u64>, second<u64>)
++  | :Done(s<spigot>, digit<u64>).
++#NextDigit(s) -> :Consume(s)
++  :Consume(s) -> :Check(consume(s))
++  :Check(s)
++    | bigint/less-equal(s.q, s.r) -> :Extract(s, extract(s, 3u64), extract(s, 4u64))
++    | * -> :Consume(s)
++  :Extract(s, first, second)
++    | first == second -> :Done(produce(s, first), first)
++    | * -> :Consume(s)
++  :Done(s, digit) => (s, digit).
++
++#Digits(n<u64>, initial<spigot>) => <string>
++  | :Carry(s<spigot>, row<string>, output<string>)
++  | :Done(output<string>).
++#Digits(n, initial) -> :Carry(initial, "", "")
++  :Carry(s, row, output)
++    | s.count >= n -> :Done(output + ((sequence/length(row) == 0u64)? | true => "" | false => finish-row(row, s.count)))
++    | * -> {
++        (next, digit) := #NextDigit(s)
++        digits := row + number/format(digit, 0u64)
++        full := sequence/length(digits) == 10u64
++        next-row := full? | true => "" | false => digits.
++        next-output := full? | true => output + finish-row(digits, next.count) | false => output.
++      } -> :Carry(next, next-row, next-output)
++  :Done(output) => output.
++
++n := number/parse-u64(@args/1)
++initial := {k: 1u64, count: 0u64, q: bigint/new(1u64), r: bigint/new(0u64), t: bigint/new(1u64)}
++@out/text <- #Digits(n, initial)

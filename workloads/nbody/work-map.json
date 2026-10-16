@@ -1,0 +1,113 @@
+{
+  "schema": "mech.nbody-ordinary-work-map.v1",
+  "status": "SOURCE DESIGN ONLY; UNAPPLIED / UNRUN",
+  "algorithm_reference": {
+    "sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175"
+  },
+  "secondary_reference": {
+    "sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa"
+  },
+  "generated_driver_and_state_reference": {
+    "sha256": "6c91c6d0c593dbd4294d46334fef90d32947ac5d8a4f2856f86d46ed0c6fda04"
+  },
+  "items": [
+    {
+      "work": "input",
+      "retained": "generated C main argc/strtoull",
+      "candidate": "number/parse-u64(@args/1)",
+      "required_semantics": "Runtime requested step count, no hardcoded short count or ceiling; current strict malformed/extra-argument compatibility boundary recorded separately."
+    },
+    {
+      "work": "constants",
+      "retained": "solar-mass/m/initial-v literals",
+      "candidate": "solar-mass/days-per-year/dt/masses/unadjusted-v",
+      "required_semantics": "Exact retained five-body decimal constants, solar mass4*pi*pi, year365.24, dt0.01; only integer-valued floating tokens made explicit."
+    },
+    {
+      "work": "position geometry",
+      "retained": "x3coordinate rows then transpose",
+      "candidate": "initial-x<phase>5body rows",
+      "required_semantics": "Same five15position values. Explicit5×3 body-row geometry agrees retained generated30-lane runtime state; do not reinterpret related ten-body examples."
+    },
+    {
+      "work": "velocity geometry",
+      "retained": "historical initial-v text3×5; actual generated state15velocity lanes",
+      "candidate": "unadjusted-v<phase>5body rows",
+      "required_semantics": "Textual historical orientation is ambiguous/inconsistent with later row slicing. Candidate explicitly uses the intended actual five-body5×3 values; exact initial-state equivalence is a required runtime proof, not asserted by this source preparation."
+    },
+    {
+      "work": "momentum offset",
+      "retained": "-stats/sum/row(initial-v*m)/solar-mass",
+      "candidate": "initial-v vertical block",
+      "required_semantics": "Same ordered per-column momentum reduction, negative division and replacement of Sun row; remaining four rows unchanged."
+    },
+    {
+      "work": "pairs",
+      "retained": "combinatorics/n-choose-k(1..=5,2)",
+      "candidate": "pairs plus pair-left/right indexed comprehensions",
+      "required_semantics": "Same ten unordered pairs in actual library source order; projection visitsk1..10 and makes10×1 selector geometry explicit. Pair table must be qualified as lexicographic1,2;1,3;1,4;1,5;2,3;2,4;2,5;3,4;3,5;4,5."
+    },
+    {
+      "work": "displacements",
+      "retained": "x[pairs1,:]-x[pairs2,:]",
+      "candidate": "energy/advance d",
+      "required_semantics": "Ten pair displacements from one unchanged current position state."
+    },
+    {
+      "work": "squared distance",
+      "retained": "stats/sum/column(d^2)",
+      "candidate": "distance-squared",
+      "required_semantics": "Same ordered x/y/z square sum and per-pair value; no reciprocal-square-root or reassociated reduction introduced."
+    },
+    {
+      "work": "magnitude",
+      "retained": "0.01/(distance²*(distance²^0.5))",
+      "candidate": "dt/(distance-squared*distance-squared^0.5)",
+      "required_semantics": "Exact grouping retained; no multiply-by-reciprocal, dt rewrite, approximate math or FMA assumption."
+    },
+    {
+      "work": "left velocity",
+      "retained": "v[pairs1,:]-=d*m[pairs2]*mag",
+      "candidate": "updated-v[pair-left,:]-=...",
+      "required_semantics": "Complete first phase before right phase; preserve left-associated(d*m_other)*mag, pair/source order and repeated-index accumulation rather than last-writer replacement."
+    },
+    {
+      "work": "right velocity",
+      "retained": "v[pairs2,:]+=d*m[pairs1]*mag",
+      "candidate": "updated-v[pair-right,:]+=...",
+      "required_semantics": "Complete second phase after first using same displacements/magnitude; no unordered scatter reduction or interleaving rewrite without semantic proof."
+    },
+    {
+      "work": "position step",
+      "retained": "x+=v*0.01",
+      "candidate": "next-x:=x+next-v*dt",
+      "required_semantics": "Uses fully updated velocity exactly once, after all pair velocity updates."
+    },
+    {
+      "work": "energy",
+      "retained": "sumrow(0.5*m*sumcolumn(v^2))-sumrow(m_i*m_j/(distance²^0.5))",
+      "candidate": "energy named function",
+      "required_semantics": "Same grouped kinetic/potential totals and arithmetic association. Pure observation mutates no state. Selects the sole element of1×1 reductions explicitly."
+    },
+    {
+      "work": "step driver",
+      "retained": "generated C mech_turns(state,n)",
+      "candidate": "Integrate Step/Done FSM",
+      "required_semantics": "Owns all iterations in ordinary Mech; remaining0 selects Done without advance, otherwise one advance then checkedremaining-1. Output after exactlynsteps."
+    },
+    {
+      "work": "output driver",
+      "retained": "mech_observe/printf%.9f before/after",
+      "candidate": "two @out/text sends using format9+LF",
+      "required_semantics": "Two finite nine-decimal lines, initial then final; no diagnostic, state dump or timing output added. Secure transaction may stage both until successful whole execution."
+    }
+  ],
+  "fairness_constraints": [
+    "All five bodies, all ten pairs and allnsteps remain; initial/final energy calculation and exact two output lines included.",
+    "Preserve arithmetic graph association, ordered reductions and duplicate-index update order. Reassociation, FMA, approximate sqrt and physical allocation elimination require genuine compiler legality/proof; this candidate grants no new numerical optimization contract.",
+    "State/initialization and argument/resource setup remain part of complete process execution; no pre-run state evolution or expected-output constants.",
+    "Full benchmarkn=50000000 is the same workload; do not credit small reference cases as full-input execution.",
+    "No fallback to ten-body example, whole-program Rust helper, native_sequence source recognizer or resident interpreter inside claimed canonical native code."
+  ],
+  "required_initial_state_proof": "Before qualification, compare all15position/15velocity lanes and masses against exact retained generated state after momentum offset, with documented layout mapping and declared floating semantics."
+}

@@ -1,0 +1,21 @@
+diff --git a/src/stdlib/tests/native_artifact_cast_lowering.rs b/src/stdlib/tests/native_artifact_cast_lowering.rs
+--- a/src/stdlib/tests/native_artifact_cast_lowering.rs
++++ b/src/stdlib/tests/native_artifact_cast_lowering.rs
+@@ -50,7 +50,7 @@
+     ] {
+         for artifact in compile(source) {
+             let plan =
+-                lower_pure_native_artifact(&artifact, mech_stdlib::source_catalog()).unwrap();
++                lower_pure_native_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
+             assert_eq!(plan.inputs().len(), 1);
+             assert_eq!(plan.inputs()[0].ty().kind(), input);
+             assert_eq!(plan.lets().len(), 1);
+@@ -140,7 +140,7 @@
+     ] {
+         for artifact in compile(source) {
+             assert!(
+-                lower_pure_native_artifact(&artifact, mech_stdlib::source_catalog()).is_err(),
++                lower_pure_native_artifact(&artifact, &mech_stdlib::source_catalog()).is_err(),
+                 "{source}"
+             );
+         }

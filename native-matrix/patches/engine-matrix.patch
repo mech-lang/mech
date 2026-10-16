@@ -1,0 +1,2639 @@
+diff --git a/src/core/src/function/catalog.rs b/src/core/src/function/catalog.rs
+index c33fbde..0472134 100644
+--- a/src/core/src/function/catalog.rs
++++ b/src/core/src/function/catalog.rs
+@@ -1633,7 +1633,35 @@ impl FunctionCatalogBuilder {
+             )
+             .with_compiler_loc());
+         };
+-        if self.resident_factories.contains_key(&key) {
++        self.insert_resident_factory_entry(ResidentKernelFactoryEntry::new(
++            key,
++            implementation_memory,
++            factory,
++        ))
++    }
++
++    /// Installs an unchanged implementation entry. Existing registration
++    /// callers use insert_resident_factory and start without an attachment.
++    pub fn insert_resident_factory_entry(
++        &mut self,
++        entry: ResidentKernelFactoryEntry,
++    ) -> MResult<()> {
++        let key = entry.key();
++        if key.module_path.is_empty()
++            || key.module_path.iter().any(String::is_empty)
++            || key.operation_name.is_empty()
++        {
++            return Err(MechError::new(
++                FunctionCatalogInvalidName {
++                    category: "resident function",
++                    name: String::new(),
++                    id: 0,
++                },
++                None,
++            )
++            .with_compiler_loc());
++        }
++        if self.resident_factories.contains_key(key) {
+             return Err(MechError::new(
+                 FunctionCatalogInvalidName {
+                     category: "duplicate resident function",
+@@ -1644,14 +1672,7 @@ impl FunctionCatalogBuilder {
+             )
+             .with_compiler_loc());
+         }
+-        self.resident_factories.insert(
+-            key.clone(),
+-            ResidentKernelFactoryEntry {
+-                key,
+-                implementation_memory,
+-                factory,
+-            },
+-        );
++        self.resident_factories.insert(key.clone(), entry);
+         Ok(())
+     }
+ 
+diff --git a/src/core/src/function/resident.rs b/src/core/src/function/resident.rs
+index ecce9ac..112667f 100644
+--- a/src/core/src/function/resident.rs
++++ b/src/core/src/function/resident.rs
+@@ -775,9 +775,79 @@ impl ResidentOperationKey {
+     }
+ }
+ 
+-#[derive(Clone, Debug)]
++/// One immutable selected implementation registration. A defining library may
++/// attach private typed lowering metadata; public semantic/cost replacements
++/// always invalidate that metadata, including same-value replacements.
++#[derive(Clone)]
+ pub struct ResidentKernelFactoryEntry {
+-    pub key: ResidentOperationKey,
+-    pub implementation_memory: ImplementationMemoryClass,
+-    pub factory: ResidentKernelFactory,
++    key: ResidentOperationKey,
++    implementation_memory: ImplementationMemoryClass,
++    factory: ResidentKernelFactory,
++    lowering_witness: Option<Arc<dyn Any + Send + Sync>>,
++}
++
++impl core::fmt::Debug for ResidentKernelFactoryEntry {
++    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
++        formatter
++            .debug_struct("ResidentKernelFactoryEntry")
++            .field("key", &self.key)
++            .field("implementation_memory", &self.implementation_memory)
++            .field("factory", &"<prebound>")
++            .field("lowering_witness", &self.lowering_witness.is_some())
++            .finish()
++    }
++}
++
++impl ResidentKernelFactoryEntry {
++    pub fn new(
++        key: ResidentOperationKey,
++        implementation_memory: ImplementationMemoryClass,
++        factory: ResidentKernelFactory,
++    ) -> Self {
++        Self {
++            key,
++            implementation_memory,
++            factory,
++            lowering_witness: None,
++        }
++    }
++
++    pub fn key(&self) -> &ResidentOperationKey {
++        &self.key
++    }
++    pub const fn implementation_memory(&self) -> ImplementationMemoryClass {
++        self.implementation_memory
++    }
++    pub const fn factory(&self) -> ResidentKernelFactory {
++        self.factory
++    }
++
++    pub fn with_key(mut self, key: ResidentOperationKey) -> Self {
++        self.key = key;
++        self.lowering_witness = None;
++        self
++    }
++    pub fn with_implementation_memory(
++        mut self,
++        implementation_memory: ImplementationMemoryClass,
++    ) -> Self {
++        self.implementation_memory = implementation_memory;
++        self.lowering_witness = None;
++        self
++    }
++    pub fn with_factory(mut self, factory: ResidentKernelFactory) -> Self {
++        self.factory = factory;
++        self.lowering_witness = None;
++        self
++    }
++
++    /// The defining library owns T. There is deliberately no erased getter or
++    /// Arc accessor that can copy its private certificate onto another entry.
++    pub fn with_lowering_witness<T: Any + Send + Sync>(mut self, witness: Arc<T>) -> Self {
++        self.lowering_witness = Some(witness);
++        self
++    }
++    pub fn lowering_witness<T: Any + Send + Sync>(&self) -> Option<&T> {
++        self.lowering_witness.as_deref()?.downcast_ref()
++    }
+ }
+diff --git a/src/core/tests/resident_factory_lowering_attachment.rs b/src/core/tests/resident_factory_lowering_attachment.rs
+new file mode 100644
+index 0000000..666ff36
+--- /dev/null
++++ b/src/core/tests/resident_factory_lowering_attachment.rs
+@@ -0,0 +1,119 @@
++#![cfg(feature = "functions")]
++use mech_core::{
++    BoundResidentKernel, FunctionCatalogBuilder, ImplementationMemoryClass,
++    ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelFactoryEntry,
++    ResidentOperationKey,
++};
++use std::sync::Arc;
++
++#[derive(Debug, Eq, PartialEq)]
++struct Marker(u64);
++
++fn factory(
++    _: &ResidentKernelBindRequest<'_>,
++) -> Result<BoundResidentKernel, ResidentKernelBindError> {
++    panic!("factory lifecycle tests must not bind or execute a kernel")
++}
++
++fn key() -> ResidentOperationKey {
++    ResidentOperationKey::new(Box::new(["test".into()]), "factory".into()).unwrap()
++}
++
++fn entry() -> ResidentKernelFactoryEntry {
++    ResidentKernelFactoryEntry::new(
++        key(),
++        ImplementationMemoryClass::NoAdditionalScratch,
++        factory,
++    )
++}
++
++#[test]
++fn constructors_and_unchanged_registration_begin_without_lowering_metadata() {
++    let plain = entry();
++    assert_eq!(plain.key(), &key());
++    assert_eq!(
++        plain.implementation_memory(),
++        ImplementationMemoryClass::NoAdditionalScratch
++    );
++    assert!(plain.lowering_witness::<Marker>().is_none());
++    let mut builder = FunctionCatalogBuilder::new();
++    builder
++        .insert_resident_factory(
++            ["test"],
++            "factory",
++            ImplementationMemoryClass::NoAdditionalScratch,
++            factory,
++        )
++        .unwrap();
++    let catalog = builder.build().unwrap();
++    assert!(
++        catalog
++            .resident_factory(&["test".into()], "factory")
++            .unwrap()
++            .lowering_witness::<Marker>()
++            .is_none()
++    );
++}
++
++#[test]
++fn typed_attachment_unchanged_clone_and_catalog_clone_preserve_private_owner() {
++    let original = entry().with_lowering_witness(Arc::new(Marker(41)));
++    let cloned = original.clone();
++    assert_eq!(cloned.lowering_witness::<Marker>(), Some(&Marker(41)));
++    assert!(cloned.lowering_witness::<u64>().is_none());
++    assert!(std::ptr::eq(
++        original.lowering_witness::<Marker>().unwrap(),
++        cloned.lowering_witness::<Marker>().unwrap()
++    ));
++    let mut builder = FunctionCatalogBuilder::new();
++    builder.insert_resident_factory_entry(cloned).unwrap();
++    let catalog = builder.build().unwrap();
++    let copy = FunctionCatalogBuilder::from_catalog(&catalog)
++        .build()
++        .unwrap();
++    let copy = copy.resident_factory(&["test".into()], "factory").unwrap();
++    assert!(std::ptr::eq(
++        original.lowering_witness::<Marker>().unwrap(),
++        copy.lowering_witness::<Marker>().unwrap()
++    ));
++    let debug = format!("{copy:?}");
++    assert!(debug.contains("lowering_witness: true"));
++    assert!(!debug.contains("Marker"));
++    assert!(!debug.contains("41"));
++}
++
++#[test]
++fn all_factory_semantic_and_cost_mutations_invalidate_even_same_values() {
++    let original = entry().with_lowering_witness(Arc::new(Marker(7)));
++    for changed in [
++        original.clone().with_key(original.key().clone()),
++        original
++            .clone()
++            .with_implementation_memory(original.implementation_memory()),
++        original.clone().with_factory(original.factory()),
++    ] {
++        assert!(changed.lowering_witness::<Marker>().is_none());
++        assert!(changed.clone().lowering_witness::<Marker>().is_none());
++    }
++    let replaced = original.clone().with_lowering_witness(Arc::new(7u64));
++    assert!(replaced.lowering_witness::<Marker>().is_none());
++    assert_eq!(replaced.lowering_witness::<u64>(), Some(&7));
++    assert_eq!(original.lowering_witness::<Marker>(), Some(&Marker(7)));
++}
++
++#[test]
++fn entry_insertion_preserves_name_validation_and_duplicate_rejection() {
++    let mut builder = FunctionCatalogBuilder::new();
++    builder.insert_resident_factory_entry(entry()).unwrap();
++    assert!(builder.insert_resident_factory_entry(entry()).is_err());
++    let invalid = entry().with_key(ResidentOperationKey {
++        module_path: Box::new([]),
++        operation_name: "invalid".into(),
++    });
++    assert!(builder.insert_resident_factory_entry(invalid).is_err());
++    let invalid = entry().with_key(ResidentOperationKey {
++        module_path: Box::new(["test".into()]),
++        operation_name: String::new(),
++    });
++    assert!(builder.insert_resident_factory_entry(invalid).is_err());
++}
+diff --git a/src/engine/src/lib.rs b/src/engine/src/lib.rs
+index e2648ca..c026df0 100644
+--- a/src/engine/src/lib.rs
++++ b/src/engine/src/lib.rs
+@@ -23,16 +23,17 @@ pub mod intrinsics;
+ pub mod memory_planner;
+ #[cfg(any(feature = "semantic-compiler", feature = "resident-artifact"))]
+ pub mod memory_runtime;
++// Allocation-free selected F64 leaves. Resident wrappers and native ABI shims
++// share these algorithms; this module does not execute a ProgramArtifact.
++#[cfg(any(feature = "resident-artifact", feature = "native-artifact"))]
++#[path = "native_matrix_leaf.rs"]
++#[doc(hidden)]
++pub mod __native_matrix;
+ #[cfg(feature = "native-artifact")]
+ pub mod native_artifact;
+ #[cfg(feature = "native-sequence")]
+ pub mod native_sequence;
+ pub mod numeric_optimizations;
+-#[cfg(any(
+-    feature = "resident-artifact",
+-    all(feature = "semantic-compiler", feature = "access")
+-))]
+-mod text_index;
+ #[cfg(feature = "semantic-compiler")]
+ pub mod program;
+ #[cfg(all(feature = "resident-ekf", not(feature = "resident-artifact")))]
+@@ -41,6 +42,11 @@ mod resident;
+ pub mod resident;
+ #[cfg(feature = "resident-artifact")]
+ mod resident_value_adapter;
++#[cfg(any(
++    feature = "resident-artifact",
++    all(feature = "semantic-compiler", feature = "access")
++))]
++mod text_index;
+ #[cfg(feature = "resident-ekf")]
+ #[doc(hidden)]
+ pub mod __resident_ekf {
+diff --git a/src/engine/src/native_artifact/matrix.rs b/src/engine/src/native_artifact/matrix.rs
+new file mode 100644
+index 0000000..6a369d1
+--- /dev/null
++++ b/src/engine/src/native_artifact/matrix.rs
+@@ -0,0 +1,687 @@
++//! Typed, constructor-private dynamic Matrix<F64> native plan.
++//! Selected factory templates supply semantics; current descriptors and shapes
++//! are instantiated only from actual invocation values, never fake extents.
++use super::{NativeMatrixOperationTemplate, NativeMatrixPrimitive, NativeMatrixTemplateError};
++use crate::{ArtifactSource, ProducerReference, ProgramArtifact};
++use mech_core::{
++    BoundCall, CallMemoryPlan, CallMemoryPlanningRequest, CellSlotId, ConstantId,
++    CurrentMemoryFootprint, DimensionExpr, DimensionLifetime, ExecutionTarget, FloatWidth,
++    FunctionCatalog, FunctionMatrixElement, FunctionMatrixRepresentation,
++    FunctionMatrixStoragePattern, FunctionValueRepresentation, InputId, MemoryFootprintWitness,
++    MemoryLifetime, MemoryPlanPoint, NodeId, OutputId, ProgramRevision, RegionAccessPlan,
++    ResolvedOperationDescriptor, ResolvedValueDescriptor, Schema, SchemaBody, SchemaId, SchemaKey,
++    SchemaTable, TargetMemoryProfile, Value,
++};
++use std::{collections::BTreeMap, sync::Arc};
++
++/// Cost metadata, never semantic authority. Computed outside evaluation from
++/// the sealed finite schemas; the evaluator must admit it before cloning or
++/// traversing call descriptors and invoking the core memory planner.
++#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
++pub struct NativeMatrixPlanningDemand {
++    pub work: u64,
++    pub temporary_bytes: u64,
++    pub retained_nodes: u64,
++}
++#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
++pub struct NativeMatrixValueId(u32);
++impl NativeMatrixValueId {
++    pub const fn get(self) -> u32 {
++        self.0
++    }
++}
++#[derive(Clone, Debug)]
++pub struct NativeMatrixType {
++    schema_id: SchemaId,
++    schema_key: SchemaKey,
++    schema: Schema,
++    metadata: NativeMatrixPlanningDemand,
++}
++impl NativeMatrixType {
++    pub const fn schema_id(&self) -> SchemaId {
++        self.schema_id
++    }
++    pub const fn schema_key(&self) -> SchemaKey {
++        self.schema_key
++    }
++    pub fn schema(&self) -> &Schema {
++        &self.schema
++    }
++    pub const fn planning_demand(&self) -> NativeMatrixPlanningDemand {
++        self.metadata
++    }
++}
++#[derive(Clone, Debug)]
++pub struct NativeMatrixInput {
++    id: InputId,
++    slot: CellSlotId,
++    name: String,
++    value: NativeMatrixValueId,
++}
++impl NativeMatrixInput {
++    pub const fn input(&self) -> InputId {
++        self.id
++    }
++    pub const fn slot(&self) -> CellSlotId {
++        self.slot
++    }
++    pub fn name(&self) -> &str {
++        &self.name
++    }
++    pub const fn value(&self) -> NativeMatrixValueId {
++        self.value
++    }
++}
++#[derive(Clone, Debug)]
++pub struct NativeMatrixConstant {
++    constant: ConstantId,
++    value: NativeMatrixValueId,
++    canonical: Value,
++}
++impl NativeMatrixConstant {
++    pub const fn constant(&self) -> ConstantId {
++        self.constant
++    }
++    pub const fn value(&self) -> NativeMatrixValueId {
++        self.value
++    }
++    pub fn canonical(&self) -> &Value {
++        &self.canonical
++    }
++}
++#[derive(Clone, Debug)]
++pub struct NativeMatrixCall {
++    template: NativeMatrixOperationTemplate,
++    operands: Box<[NativeMatrixValueId]>,
++    output: NativeMatrixValueId,
++    demand: NativeMatrixPlanningDemand,
++}
++impl NativeMatrixCall {
++    pub fn template(&self) -> &NativeMatrixOperationTemplate {
++        &self.template
++    }
++    pub fn operands(&self) -> &[NativeMatrixValueId] {
++        &self.operands
++    }
++    pub const fn output(&self) -> NativeMatrixValueId {
++        self.output
++    }
++    pub const fn planning_demand(&self) -> NativeMatrixPlanningDemand {
++        self.demand
++    }
++}
++#[derive(Clone, Debug)]
++pub struct NativeMatrixOutput {
++    output: OutputId,
++    slot: CellSlotId,
++    name: String,
++    interactive_binding: Option<crate::InteractiveSymbolBinding>,
++    value: NativeMatrixValueId,
++}
++impl NativeMatrixOutput {
++    pub const fn output(&self) -> OutputId {
++        self.output
++    }
++    pub const fn slot(&self) -> CellSlotId {
++        self.slot
++    }
++    pub fn interactive_binding(&self) -> Option<&crate::InteractiveSymbolBinding> {
++        self.interactive_binding.as_ref()
++    }
++    pub fn name(&self) -> &str {
++        &self.name
++    }
++    pub const fn value(&self) -> NativeMatrixValueId {
++        self.value
++    }
++}
++#[derive(Clone, Copy, Debug, Eq, PartialEq)]
++pub struct NativeMatrixCallBounds {
++    pub rows: u64,
++    pub inner: u64,
++    pub columns: u64,
++    pub output_elements: u64,
++    pub output_bytes: u64,
++    pub compute_work: u64,
++}
++/// No public unchecked constructor, deserializer, mutable plan view or erased
++/// certificate can manufacture this executable-lowering input.
++#[derive(Clone, Debug)]
++pub struct NativeMatrixArtifactPlan {
++    revision: ProgramRevision,
++    schemas: Arc<SchemaTable>,
++    values: Box<[NativeMatrixType]>,
++    inputs: Box<[NativeMatrixInput]>,
++    constants: Box<[NativeMatrixConstant]>,
++    calls: Box<[NativeMatrixCall]>,
++    outputs: Box<[NativeMatrixOutput]>,
++    setup_demand: NativeMatrixPlanningDemand,
++}
++#[derive(Clone, Debug, Eq, PartialEq)]
++pub enum NativeMatrixPlanError {
++    Template(NativeMatrixTemplateError),
++    InvalidBinding {
++        node: Option<NodeId>,
++        reason: &'static str,
++    },
++    UnsupportedSchema {
++        schema: SchemaId,
++    },
++    UnsupportedDimensionMetadata {
++        schema: SchemaId,
++    },
++    Shape {
++        node: NodeId,
++    },
++    Planning {
++        node: NodeId,
++    },
++    Limit {
++        reason: &'static str,
++    },
++}
++impl std::fmt::Display for NativeMatrixPlanError {
++    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
++        write!(f, "canonical native matrix plan: {self:?}")
++    }
++}
++impl std::error::Error for NativeMatrixPlanError {}
++impl From<NativeMatrixTemplateError> for NativeMatrixPlanError {
++    fn from(value: NativeMatrixTemplateError) -> Self {
++        Self::Template(value)
++    }
++}
++fn limit() -> NativeMatrixPlanError {
++    NativeMatrixPlanError::Limit {
++        reason: "native matrix metadata overflow",
++    }
++}
++fn add(a: u64, b: u64) -> Result<u64, NativeMatrixPlanError> {
++    a.checked_add(b).ok_or_else(limit)
++}
++fn mul(a: u64, b: u64) -> Result<u64, NativeMatrixPlanError> {
++    a.checked_mul(b).ok_or_else(limit)
++}
++/// Conservative allocation/work model for the bounded metadata accepted by
++/// `type_of`, not an estimate based on payload bytes. The corresponding core
++/// path is ResolvedValueDescriptor::from_schema/new -> ResolvedType::from_schema
++/// (two validations), BoundCall::artifact_operation_for_target, plan_call_memory.
++///
++/// Per descriptor, reserve 64 schema-sized metadata records: two descriptor
++/// construction passes each use fewer than 16 schema/kind/environment records;
++/// caller/BoundCall/PortMemoryPlan/result copies use fewer than 8 more. The
++/// remaining 24 cover Vec growth and declaration-vs-finalized type headers.
++/// Each record has at most two constant-bound parameters and a rank-two leaf;
++/// 256 logical units per record cover normalization, equality, bound evaluation
++/// and the two-axis capacity passes. 64 fixed planner records per call below
++/// separately cover requirements, allocations, aliases and transactions.
++fn descriptor_planning_demand(
++    schema: &Schema,
++    encoded_bytes: usize,
++) -> Result<NativeMatrixPlanningDemand, NativeMatrixPlanError> {
++    let heap = schema.clone_allocation_bound_bytes().ok_or_else(limit)?;
++    let parameters = u64::try_from(schema.dimension_parameters().len()).map_err(|_| limit())?;
++    let record = add(
++        add(heap, core::mem::size_of::<ResolvedValueDescriptor>() as u64)?,
++        add(
++            core::mem::size_of::<mech_core::ResolvedType>() as u64,
++            mul(
++                parameters,
++                core::mem::size_of::<mech_core::DimensionParameterDeclaration>() as u64,
++            )?,
++        )?,
++    )?;
++    let encoded = u64::try_from(encoded_bytes).map_err(|_| limit())?;
++    Ok(NativeMatrixPlanningDemand {
++        work: add(mul(64, 256)?, mul(add(record, encoded)?, 64)?)?,
++        temporary_bytes: mul(record, 64)?,
++        retained_nodes: mul(64, add(parameters, 4)?)?,
++    })
++}
++fn merge_demand(
++    left: NativeMatrixPlanningDemand,
++    right: NativeMatrixPlanningDemand,
++) -> Result<NativeMatrixPlanningDemand, NativeMatrixPlanError> {
++    Ok(NativeMatrixPlanningDemand {
++        work: add(left.work, right.work)?,
++        temporary_bytes: add(left.temporary_bytes, right.temporary_bytes)?,
++        retained_nodes: add(left.retained_nodes, right.retained_nodes)?,
++    })
++}
++fn call_planner_headers() -> Result<NativeMatrixPlanningDemand, NativeMatrixPlanError> {
++    // Unary/binary, one output: <= 3 ports, 3 values + one stage + at most
++    // canonical construction scratch. 64 records exceeds all live/growing
++    // planner Vec/BTreeMap entries; two root plans cover caller/result overlap.
++    let record = add(
++        core::mem::size_of::<mech_core::AllocationPlan>() as u64,
++        add(
++            core::mem::size_of::<mech_core::PortMemoryPlan>() as u64,
++            core::mem::size_of::<mech_core::PhysicalStorageDescriptor>() as u64,
++        )?,
++    )?;
++    Ok(NativeMatrixPlanningDemand {
++        work: 64 * 256,
++        temporary_bytes: add(
++            mul(record, 64)?,
++            mul(core::mem::size_of::<CallMemoryPlan>() as u64, 2)?,
++        )?,
++        retained_nodes: 64,
++    })
++}
++fn type_of(
++    artifact: &ProgramArtifact,
++    id: SchemaId,
++) -> Result<NativeMatrixType, NativeMatrixPlanError> {
++    let entry = artifact
++        .schemas()
++        .entry(id)
++        .ok_or(NativeMatrixPlanError::UnsupportedSchema { schema: id })?;
++    let schema = entry.schema();
++    if !matches!(schema.body(), SchemaBody::Matrix { element, dimensions }
++        if element.as_ref()==&SchemaBody::FloatingPoint(FloatWidth::W64) && dimensions.len()==2)
++    {
++        return Err(NativeMatrixPlanError::UnsupportedSchema { schema: id });
++    }
++    // This first executable slice has a *bounded metadata language*, separate
++    // from ordinary Mech's general dimension language. At most two parameters
++    // occur under the two Constant/Parameter axes, every parameter is Turn,
++    // and every bound is Constant. No activation fact is invented by evaluation.
++    // No capacity-bound dependency graph can expand during core planning.
++    if schema.dimension_parameters().len() > 2
++        || !matches!(schema.body(), SchemaBody::Matrix { dimensions, .. }
++            if dimensions.iter().all(|axis| matches!(axis,
++                DimensionExpr::Constant(_) | DimensionExpr::Parameter(_))))
++        || schema.dimension_parameters().iter().any(|parameter| {
++            parameter.lifetime() != DimensionLifetime::Turn
++                || !matches!(parameter.lower_bound(), DimensionExpr::Constant(_))
++                || parameter
++                    .upper_bound()
++                    .is_some_and(|upper| !matches!(upper, DimensionExpr::Constant(_)))
++        })
++    {
++        return Err(NativeMatrixPlanError::UnsupportedDimensionMetadata { schema: id });
++    }
++    let metadata = descriptor_planning_demand(schema, entry.canonical_bytes().len())?;
++    Ok(NativeMatrixType {
++        schema_id: id,
++        schema_key: entry.key(),
++        schema: schema.clone(),
++        metadata,
++    })
++}
++fn source_key(
++    artifact: &ProgramArtifact,
++    mut source: ArtifactSource,
++) -> Result<ArtifactSource, NativeMatrixPlanError> {
++    for _ in 0..=artifact.slots().len() {
++        let ArtifactSource::Slot(slot) = source else {
++            return Ok(source);
++        };
++        let declaration = artifact.slots().get(slot.get() as usize).ok_or(
++            NativeMatrixPlanError::InvalidBinding {
++                node: None,
++                reason: "unknown matrix source slot",
++            },
++        )?;
++        if let ProducerReference::Output {
++            source: forwarded, ..
++        } = declaration.producer
++        {
++            source = forwarded;
++        } else {
++            return Ok(source);
++        }
++    }
++    Err(NativeMatrixPlanError::InvalidBinding {
++        node: None,
++        reason: "cyclic matrix output forwarding",
++    })
++}
++/// Metadata-only adapter. Every scheduled call comes from the actual selected
++/// factory's private symbolic certificate. No initializer or kernel is run.
++pub fn lower_matrix_artifact(
++    artifact: &ProgramArtifact,
++    catalog: &FunctionCatalog,
++) -> Result<NativeMatrixArtifactPlan, NativeMatrixPlanError> {
++    let templates = super::matrix_operation_templates(artifact, catalog)?;
++    let mut values = Vec::new();
++    let mut inputs = Vec::new();
++    let mut constants = Vec::new();
++    let mut calls = Vec::new();
++    let mut bindings = BTreeMap::new();
++    fn insert(
++        values: &mut Vec<NativeMatrixType>,
++        ty: NativeMatrixType,
++    ) -> Result<NativeMatrixValueId, NativeMatrixPlanError> {
++        let id = NativeMatrixValueId(u32::try_from(values.len()).map_err(|_| limit())?);
++        values.push(ty);
++        Ok(id)
++    }
++    for input in artifact.inputs() {
++        let value = insert(&mut values, type_of(artifact, input.schema)?)?;
++        if bindings
++            .insert(ArtifactSource::Slot(input.slot), value)
++            .is_some()
++        {
++            return Err(NativeMatrixPlanError::InvalidBinding {
++                node: None,
++                reason: "duplicate matrix input slot",
++            });
++        }
++        inputs.push(NativeMatrixInput {
++            id: input.input,
++            slot: input.slot,
++            name: input.name.clone(),
++            value,
++        });
++    }
++    // Only referenced constants participate. This is immutable canonical data,
++    // not a computed Activation expression evaluated by the compiler.
++    let constant_sources = templates
++        .iter()
++        .flat_map(|template| template.sources().iter().copied())
++        .chain(
++            artifact
++                .outputs()
++                .iter()
++                .map(|output| ArtifactSource::Slot(output.source)),
++        );
++    for source in constant_sources {
++        let key = source_key(artifact, source)?;
++        if let ArtifactSource::Constant(id) = key {
++            if let std::collections::btree_map::Entry::Vacant(slot) = bindings.entry(key) {
++                let canonical =
++                    artifact
++                        .constants()
++                        .get(id)
++                        .ok_or(NativeMatrixPlanError::InvalidBinding {
++                            node: None,
++                            reason: "unknown matrix constant",
++                        })?;
++                let value = insert(&mut values, type_of(artifact, canonical.schema())?)?;
++                slot.insert(value);
++                constants.push(NativeMatrixConstant {
++                    constant: id,
++                    value,
++                    canonical: canonical.clone(),
++                });
++            }
++        }
++    }
++    for template in templates {
++        let operands = template
++            .sources()
++            .iter()
++            .map(|&source| {
++                bindings.get(&source_key(artifact, source)?).copied().ok_or(
++                    NativeMatrixPlanError::InvalidBinding {
++                        node: Some(template.node()),
++                        reason: "non-dominating matrix input",
++                    },
++                )
++            })
++            .collect::<Result<Box<[_]>, _>>()?;
++        let target = template.target();
++        let ty = type_of(artifact, artifact.slots()[target.get() as usize].schema)?;
++        let mut demand = merge_demand(ty.metadata, call_planner_headers()?)?;
++        for &operand in &operands {
++            let input = values.get(operand.get() as usize).ok_or_else(limit)?;
++            demand = merge_demand(demand, input.metadata)?;
++        }
++        let output = insert(&mut values, ty)?;
++        if bindings
++            .insert(ArtifactSource::Slot(target), output)
++            .is_some()
++        {
++            return Err(NativeMatrixPlanError::InvalidBinding {
++                node: Some(template.node()),
++                reason: "duplicate matrix result",
++            });
++        }
++        calls.push(NativeMatrixCall {
++            template,
++            operands,
++            output,
++            demand,
++        });
++    }
++    let outputs =
++        artifact
++            .outputs()
++            .iter()
++            .map(|output| {
++                let source = source_key(artifact, ArtifactSource::Slot(output.source))?;
++                let value = bindings.get(&source).copied().ok_or(
++                    NativeMatrixPlanError::InvalidBinding {
++                        node: None,
++                        reason: "unbound matrix output alias",
++                    },
++                )?;
++                Ok(NativeMatrixOutput {
++                    output: output.output,
++                    slot: output.source,
++                    name: output.name.clone(),
++                    interactive_binding: output.interactive_binding.clone(),
++                    value,
++                })
++            })
++            .collect::<Result<Box<[_]>, NativeMatrixPlanError>>()?;
++    let mut setup_demand = call_planner_headers()?;
++    for ty in &values {
++        setup_demand = merge_demand(setup_demand, ty.metadata)?;
++    }
++    let interface_entries = add(
++        inputs.len() as u64,
++        add(constants.len() as u64, outputs.len() as u64)?,
++    )?;
++    setup_demand.work = add(setup_demand.work, mul(interface_entries, 256)?)?;
++    setup_demand.temporary_bytes = add(
++        setup_demand.temporary_bytes,
++        mul(
++            interface_entries,
++            core::mem::size_of::<NativeMatrixValueId>() as u64,
++        )?,
++    )?;
++    setup_demand.retained_nodes = add(setup_demand.retained_nodes, interface_entries)?;
++    Ok(NativeMatrixArtifactPlan {
++        revision: artifact.revision(),
++        schemas: Arc::new(artifact.schemas().clone()),
++        values: values.into(),
++        inputs: inputs.into(),
++        constants: constants.into(),
++        calls: calls.into(),
++        outputs,
++        setup_demand,
++    })
++}
++impl NativeMatrixArtifactPlan {
++    pub const fn program_revision(&self) -> ProgramRevision {
++        self.revision
++    }
++    pub fn schemas(&self) -> &Arc<SchemaTable> {
++        &self.schemas
++    }
++    /// Admit before per-invocation descriptor/interface metadata construction.
++    /// Payload import, backing buffers and leaf arithmetic are separate bounds.
++    pub const fn setup_demand(&self) -> NativeMatrixPlanningDemand {
++        self.setup_demand
++    }
++    pub fn values(&self) -> &[NativeMatrixType] {
++        &self.values
++    }
++    pub fn inputs(&self) -> &[NativeMatrixInput] {
++        &self.inputs
++    }
++    pub fn constants(&self) -> &[NativeMatrixConstant] {
++        &self.constants
++    }
++    pub fn calls(&self) -> &[NativeMatrixCall] {
++        &self.calls
++    }
++    pub fn outputs(&self) -> &[NativeMatrixOutput] {
++        &self.outputs
++    }
++    pub fn call_bounds(
++        &self,
++        ordinal: usize,
++        inputs: &[[u64; 2]],
++    ) -> Result<NativeMatrixCallBounds, NativeMatrixPlanError> {
++        let call = self
++            .calls
++            .get(ordinal)
++            .ok_or(NativeMatrixPlanError::InvalidBinding {
++                node: None,
++                reason: "unknown matrix call",
++            })?;
++        let bad = || NativeMatrixPlanError::Shape {
++            node: call.template.node(),
++        };
++        let (rows, inner, columns, compute_work) = match (call.template.primitive(), inputs) {
++            (NativeMatrixPrimitive::TransposeF64, [[rows, columns]]) => (
++                *columns,
++                0,
++                *rows,
++                add(64, mul(mul(*rows, *columns)?, 32)?)?,
++            ),
++            (NativeMatrixPrimitive::MatmulF64, [[rows, inner], [rhs, columns]]) if inner == rhs => {
++                (
++                    *rows,
++                    *inner,
++                    *columns,
++                    add(64, mul(mul(*rows, *columns)?, add(32, mul(*inner, 16)?)?)?)?,
++                )
++            }
++            _ => return Err(bad()),
++        };
++        let output_elements = mul(rows, columns)?;
++        let output_bytes = mul(output_elements, 8)?;
++        Ok(NativeMatrixCallBounds {
++            rows,
++            inner,
++            columns,
++            output_elements,
++            output_bytes,
++            compute_work,
++        })
++    }
++    /// The caller must admit call.planning_demand before this complete metadata
++    /// planning pass. No payload pointer/view or result allocation is acquired.
++    pub fn instantiate_call(
++        &self,
++        ordinal: usize,
++        inputs: &[ResolvedValueDescriptor],
++    ) -> Result<CallMemoryPlan, NativeMatrixPlanError> {
++        let call = self
++            .calls
++            .get(ordinal)
++            .ok_or(NativeMatrixPlanError::InvalidBinding {
++                node: None,
++                reason: "unknown matrix call",
++            })?;
++        let bad = || NativeMatrixPlanError::Planning {
++            node: call.template.node(),
++        };
++        if inputs.len() != call.operands.len() {
++            return Err(bad());
++        }
++        let mut extents = Vec::with_capacity(inputs.len());
++        let mut normalized_inputs = Vec::with_capacity(inputs.len());
++        for (input, &operand) in inputs.iter().zip(&call.operands) {
++            let expected = &self.values[operand.get() as usize];
++            if input.schema() != &expected.schema {
++                return Err(bad());
++            }
++            let SchemaBody::Matrix { dimensions, .. } = input.schema().body() else {
++                return Err(bad());
++            };
++            extents.push([
++                input
++                    .shape()
++                    .resolve_dimension(&dimensions[0])
++                    .map_err(|_| bad())?,
++                input
++                    .shape()
++                    .resolve_dimension(&dimensions[1])
++                    .map_err(|_| bad())?,
++            ]);
++            normalized_inputs.push(
++                ResolvedValueDescriptor::from_schema(
++                    expected.schema.clone(),
++                    input.shape().clone(),
++                )
++                .map_err(|_| bad())?,
++            );
++        }
++        let bounds = self.call_bounds(ordinal, &extents)?;
++        let output_type = &self.values[call.output.get() as usize];
++        let shape = mech_core::shape_for_resolved_extents(
++            &output_type.schema,
++            &[bounds.rows, bounds.columns],
++        )
++        .map_err(|_| bad())?;
++        let output = ResolvedValueDescriptor::from_schema(output_type.schema.clone(), shape)
++            .map_err(|_| bad())?;
++        let operation = ResolvedOperationDescriptor::from_resolved_contract(
++            format!(
++                "{}/{}",
++                call.template.selected_key().module_path.join("/"),
++                call.template.selected_key().operation_name
++            ),
++            call.template.contract(),
++        )
++        .map_err(|_| bad())?;
++        let bound = BoundCall::artifact_operation_for_target(
++            operation,
++            normalized_inputs.into(),
++            Box::new([output]),
++            call.template.selected_key().clone(),
++            ExecutionTarget::Native,
++        )
++        .map_err(|_| bad())?;
++        let target = TargetMemoryProfile::current_native_host().map_err(|_| bad())?;
++        let lifetime = MemoryLifetime::Turn {
++            first: MemoryPlanPoint::new(0),
++            last: MemoryPlanPoint::new(1),
++        };
++        let storage = mech_core::physical_storage_descriptor(
++            FunctionValueRepresentation::Matrix {
++                element: FunctionMatrixElement::F64,
++                storage: FunctionMatrixStoragePattern::Exact(FunctionMatrixRepresentation::MatrixD),
++            },
++            &target,
++            lifetime,
++        );
++        let input_storage = vec![storage.clone(); inputs.len()];
++        let footprint = |descriptor: &ResolvedValueDescriptor| -> Result<MemoryFootprintWitness, NativeMatrixPlanError> {
++            let SchemaBody::Matrix { dimensions, .. } = descriptor.schema().body() else {
++                return Err(bad());
++            };
++            Ok(MemoryFootprintWitness::Known(CurrentMemoryFootprint {
++                logical_elements: mul(
++                    descriptor.shape().resolve_dimension(&dimensions[0]).map_err(|_| bad())?,
++                    descriptor.shape().resolve_dimension(&dimensions[1]).map_err(|_| bad())?,
++                )?,
++                shape_parameter_count: descriptor.shape().parameter_values().len() as u64,
++                ..CurrentMemoryFootprint::default()
++            }))
++        };
++        let input_witnesses = bound
++            .inputs()
++            .iter()
++            .map(footprint)
++            .collect::<Result<Vec<_>, _>>()?;
++        let output_witnesses = [footprint(&bound.outputs()[0])?];
++        mech_core::plan_call_memory(CallMemoryPlanningRequest {
++            bound_call: &bound,
++            input_storage: &input_storage,
++            output_storage: &[storage],
++            input_witnesses: &input_witnesses,
++            output_witnesses: &output_witnesses,
++            published_output_witnesses: &output_witnesses,
++            implementation_memory: call.template.implementation_memory(),
++            target: &target,
++            regions: &[RegionAccessPlan::WholeValue],
++        })
++        .map_err(|_| bad())
++    }
++}
+diff --git a/src/engine/src/native_artifact/mod.rs b/src/engine/src/native_artifact/mod.rs
+index fa53e46..91cda05 100644
+--- a/src/engine/src/native_artifact/mod.rs
++++ b/src/engine/src/native_artifact/mod.rs
+@@ -7,3 +7,16 @@ pub use crate::resident::general::native_lowering::{
+     NativeArtifactLoweringError, NativeArtifactPlan, lower_pure_native_artifact,
+ };
+ pub use ir::*;
++
++// Symbolic matrix certification is metadata-only; it is not executable ABI v2.
++pub use crate::resident::general::native_matrix_templates::{
++    NativeMatrixOperationTemplate, NativeMatrixPrimitive, NativeMatrixTemplateError,
++    matrix_operation_templates,
++};
++
++mod matrix;
++pub use matrix::{
++    NativeMatrixArtifactPlan, NativeMatrixCall, NativeMatrixCallBounds, NativeMatrixConstant,
++    NativeMatrixInput, NativeMatrixOutput, NativeMatrixPlanError, NativeMatrixPlanningDemand,
++    NativeMatrixType, NativeMatrixValueId, lower_matrix_artifact,
++};
+diff --git a/src/engine/src/native_matrix_leaf.rs b/src/engine/src/native_matrix_leaf.rs
+new file mode 100644
+index 0000000..375bde6
+--- /dev/null
++++ b/src/engine/src/native_matrix_leaf.rs
+@@ -0,0 +1,142 @@
++//! Allocation-free maintained dense F64 algorithms shared by resident wrappers
++//! and certified native library calls. These are Rust implementation leaves,
++//! not new source-language operations or a program executor. Callers own work
++//! and storage admission before entering either loop.
++#[derive(Clone, Copy, Debug, Eq, PartialEq)]
++pub enum NativeMatrixLeafError {
++    InvalidShape,
++}
++fn product(a: usize, b: usize) -> Result<usize, NativeMatrixLeafError> {
++    a.checked_mul(b).ok_or(NativeMatrixLeafError::InvalidShape)
++}
++/// Exact column-major transpose; copying never performs floating arithmetic.
++pub fn transpose_f64(
++    input: &[f64],
++    output: &mut [f64],
++    rows: usize,
++    columns: usize,
++) -> Result<bool, NativeMatrixLeafError> {
++    let count = product(rows, columns)?;
++    if input.len() != count || output.len() != count {
++        return Err(NativeMatrixLeafError::InvalidShape);
++    }
++    let mut changed = false;
++    for (index, target) in output.iter_mut().enumerate() {
++        // A nonempty result proves columns>0. Zero extents never divide or
++        // dereference; geometry is still retained by the caller's descriptor.
++        let output_row = index % columns;
++        let output_column = index / columns;
++        let next = input[output_column + output_row * rows];
++        changed |= target.to_bits() != next.to_bits();
++        *target = next;
++    }
++    Ok(changed)
++}
++/// Preserve the selected resident association exactly: each column-major
++/// output uses ascending-inner iterator multiplication and Sum<f64>, including
++/// its -0 empty-inner result. No reassociation, FMA or fast-math substitute.
++pub fn matmul_f64(
++    lhs: &[f64],
++    rhs: &[f64],
++    output: &mut [f64],
++    rows: usize,
++    inner: usize,
++    columns: usize,
++) -> Result<bool, NativeMatrixLeafError> {
++    if lhs.len() != product(rows, inner)?
++        || rhs.len() != product(inner, columns)?
++        || output.len() != product(rows, columns)?
++    {
++        return Err(NativeMatrixLeafError::InvalidShape);
++    }
++    let mut changed = false;
++    for (index, target) in output.iter_mut().enumerate() {
++        // A nonempty result proves rows>0; every multiply index is bounded by
++        // the checked exact source extents above.
++        let row = index % rows;
++        let column = index / rows;
++        let next = (0..inner)
++            .map(|offset| lhs[row + offset * rows] * rhs[offset + column * inner])
++            .sum::<f64>();
++        changed |= target.to_bits() != next.to_bits();
++        *target = next;
++    }
++    Ok(changed)
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    #[test]
++    fn transpose_preserves_column_major_order_and_every_ieee_bit() {
++        let bits = [
++            (-0.0_f64).to_bits(),
++            0x7ff8_0000_0000_0042,
++            f64::INFINITY.to_bits(),
++            1.0_f64.to_bits(),
++            1,
++            f64::NEG_INFINITY.to_bits(),
++        ];
++        let input = bits.map(f64::from_bits);
++        let mut output = [0.0; 6];
++        assert!(transpose_f64(&input, &mut output, 2, 3).unwrap());
++        assert_eq!(
++            output.map(f64::to_bits),
++            [bits[0], bits[2], bits[4], bits[1], bits[3], bits[5]]
++        );
++        // A NaN bit pattern is equal for the maintained change contract;
++        // numeric != would incorrectly report changed forever here.
++        assert!(!transpose_f64(&input, &mut output, 2, 3).unwrap());
++        assert_eq!(input.map(f64::to_bits), bits);
++    }
++
++    #[test]
++    fn product_preserves_selected_column_major_algorithm_and_inner_association() {
++        let lhs = [1., 4., 2., 5., 3., 6.];
++        let rhs = [7., 9., 11., 8., 10., 12.];
++        let mut output = [0.; 4];
++        assert!(matmul_f64(&lhs, &rhs, &mut output, 2, 3, 2).unwrap());
++        assert_eq!(output, [58., 139., 64., 154.]);
++        assert!(!matmul_f64(&lhs, &rhs, &mut output, 2, 3, 2).unwrap());
++        let mut scalar = [0.];
++        matmul_f64(&[1e16, -1e16, 1.], &[1., 1., 1.], &mut scalar, 1, 3, 1).unwrap();
++        assert_eq!(scalar, [1.]);
++    }
++
++    #[test]
++    fn empty_inner_retains_the_pinned_sum_negative_zero_identity() {
++        let mut output = [0.; 6];
++        assert!(matmul_f64(&[], &[], &mut output, 2, 0, 3).unwrap());
++        assert_eq!(output.map(f64::to_bits), [(-0.0_f64).to_bits(); 6]);
++        assert!(!matmul_f64(&[], &[], &mut output, 2, 0, 3).unwrap());
++        assert!(!matmul_f64(&[], &[0.; 12], &mut [], 0, 3, 4).unwrap());
++        assert!(!transpose_f64(&[], &mut [], 0, 3).unwrap());
++        assert!(!transpose_f64(&[], &mut [], 3, 0).unwrap());
++    }
++
++    #[test]
++    fn every_fallible_geometry_check_precedes_any_output_write() {
++        let sentinel = f64::from_bits(0x7ff8_0000_0000_00b1);
++        let mut output = [sentinel, -0.0];
++        let before = output.map(f64::to_bits);
++        assert_eq!(
++            transpose_f64(&[1., 2.], &mut output, 2, 2),
++            Err(NativeMatrixLeafError::InvalidShape)
++        );
++        assert_eq!(output.map(f64::to_bits), before);
++        assert_eq!(
++            matmul_f64(&[1., 2.], &[1., 2.], &mut output, 1, 2, 1),
++            Err(NativeMatrixLeafError::InvalidShape)
++        );
++        assert_eq!(output.map(f64::to_bits), before);
++        assert_eq!(
++            matmul_f64(&[], &[], &mut output, usize::MAX, 2, 1),
++            Err(NativeMatrixLeafError::InvalidShape)
++        );
++        assert_eq!(output.map(f64::to_bits), before);
++        // The same destination is usable after rejection.
++        assert!(transpose_f64(&[2., 3.], &mut output, 2, 1).unwrap());
++        assert_eq!(output, [2., 3.]);
++    }
++}
+diff --git a/src/engine/src/resident/general/mod.rs b/src/engine/src/resident/general/mod.rs
+index 8c18976..7b2c5d5 100644
+--- a/src/engine/src/resident/general/mod.rs
++++ b/src/engine/src/resident/general/mod.rs
+@@ -9,6 +9,8 @@ pub use comprehension::{
+ mod live;
+ #[cfg(feature = "native-artifact")]
+ pub(crate) mod native_lowering;
++#[cfg(feature = "native-artifact")]
++pub(crate) mod native_matrix_templates;
+ 
+ pub use execution::*;
+ 
+@@ -12673,7 +12675,7 @@ fn bind_operation_for_target(
+                 operation.operation_name.clone(),
+             )
+         },
+-        |entry| Some(entry.key.clone()),
++        |entry| Some(entry.key().clone()),
+     );
+     let resident_operation = resident_operation.ok_or(ResidentActivationError::KernelBind {
+         node: node_id,
+@@ -12708,7 +12710,7 @@ fn bind_operation_for_target(
+     };
+     let implementation_memory = resident_entry
+         .map_or(ImplementationMemoryClass::NoAdditionalScratch, |entry| {
+-            entry.implementation_memory
++            entry.implementation_memory()
+         });
+     let memory_plan = if target == ExecutionTarget::ResidentCpu {
+         resident_call_memory_plan(
+@@ -12738,7 +12740,7 @@ fn bind_operation_for_target(
+         output: output_layout,
+     };
+     let kernel = if let Some(factory) = resident_entry {
+-        (factory.factory)(&bind_request)
++        (factory.factory())(&bind_request)
+     } else {
+         #[cfg(feature = "dynamic-modules")]
+         {
+@@ -21683,8 +21685,8 @@ mod shape_fact_tests {
+             .insert_resident_factory(
+                 ["math"],
+                 "conformance-test-producer",
+-                numeric.implementation_memory,
+-                numeric.factory,
++                numeric.implementation_memory(),
++                numeric.factory(),
+             )
+             .unwrap();
+         let extended = extended.build().unwrap();
+diff --git a/src/engine/src/resident/general/native_matrix_templates.rs b/src/engine/src/resident/general/native_matrix_templates.rs
+new file mode 100644
+index 0000000..f3ea65e
+--- /dev/null
++++ b/src/engine/src/resident/general/native_matrix_templates.rs
+@@ -0,0 +1,354 @@
++//! Symbolic metadata only. This module neither instantiates a ShapeInstance
++//! nor creates a BoundCall, native buffer, executor or executable plan.
++use super::{
++    NodeClass, ResidentActivationError, ResidentExternalAdmission, build_activation_schedule,
++    classify_nodes, node_inputs, node_output_slot,
++};
++use crate::{ArtifactSource, ExecutableNodeBody, ProgramArtifact, SlotRole};
++use mech_core::{
++    AccessMode, AliasPolicy, CellSlotId, ChangeDetectionPolicy, DeliveryMode, ExternalInteraction,
++    FloatWidth, FunctionCatalog, ImplementationMemoryClass, NodeId, OutputConstruction,
++    ProgramRevision, ResidentOperationKey, ResolvedOperationContract, Schema, SchemaBody, SchemaId,
++    ShapeRule,
++};
++
++/// Algorithm identity offered by the actual selected maintained registration.
++/// This public enum is not itself a reusable certificate or executable plan.
++#[derive(Clone, Copy, Debug, Eq, PartialEq)]
++pub enum NativeMatrixPrimitive {
++    TransposeF64,
++    MatmulF64,
++}
++
++/// A constructor-private symbolic certificate for one actual artifact node.
++/// Current shapes, native memory/work policies and execution are later work.
++#[derive(Clone, Debug)]
++pub struct NativeMatrixOperationTemplate {
++    revision: ProgramRevision,
++    node: NodeId,
++    target: CellSlotId,
++    selected_key: ResidentOperationKey,
++    primitive: NativeMatrixPrimitive,
++    sources: Box<[ArtifactSource]>,
++    inputs: Box<[Schema]>,
++    output: Schema,
++    contract: ResolvedOperationContract,
++    implementation_memory: ImplementationMemoryClass,
++}
++impl NativeMatrixOperationTemplate {
++    pub const fn program_revision(&self) -> ProgramRevision {
++        self.revision
++    }
++    pub const fn node(&self) -> NodeId {
++        self.node
++    }
++    pub const fn target(&self) -> CellSlotId {
++        self.target
++    }
++    pub fn selected_key(&self) -> &ResidentOperationKey {
++        &self.selected_key
++    }
++    pub const fn primitive(&self) -> NativeMatrixPrimitive {
++        self.primitive
++    }
++    pub fn sources(&self) -> &[ArtifactSource] {
++        &self.sources
++    }
++    pub fn inputs(&self) -> &[Schema] {
++        &self.inputs
++    }
++    pub fn output(&self) -> &Schema {
++        &self.output
++    }
++    pub fn contract(&self) -> &ResolvedOperationContract {
++        &self.contract
++    }
++    /// Source implementation metadata, not a native executor cost allowance.
++    pub const fn implementation_memory(&self) -> ImplementationMemoryClass {
++        self.implementation_memory
++    }
++    /// This relation must be evaluated from real current descriptors before a
++    /// later executor may construct a BoundCall or allocate any result.
++    pub const fn shape_rule(&self) -> ShapeRule {
++        match self.primitive {
++            NativeMatrixPrimitive::TransposeF64 => ShapeRule::TransposeOf { input: 0 },
++            NativeMatrixPrimitive::MatmulF64 => ShapeRule::MatrixProduct { lhs: 0, rhs: 1 },
++        }
++    }
++}
++
++#[derive(Clone, Debug, Eq, PartialEq)]
++pub enum NativeMatrixTemplateError {
++    UnsupportedProgram { feature: &'static str },
++    UnsupportedNode { node: NodeId, feature: &'static str },
++    UnsupportedSchema { schema: SchemaId },
++    InvalidBinding { node: NodeId },
++    MissingImplementationCertificate { node: NodeId },
++    UnsupportedContract { node: NodeId },
++    ArtifactBinding { error: ResidentActivationError },
++}
++impl std::fmt::Display for NativeMatrixTemplateError {
++    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
++        write!(formatter, "canonical native matrix template: {self:?}")
++    }
++}
++impl std::error::Error for NativeMatrixTemplateError {}
++impl From<ResidentActivationError> for NativeMatrixTemplateError {
++    fn from(error: ResidentActivationError) -> Self {
++        Self::ArtifactBinding { error }
++    }
++}
++
++fn matrix_schema(
++    artifact: &ProgramArtifact,
++    id: SchemaId,
++) -> Result<Schema, NativeMatrixTemplateError> {
++    let schema = artifact
++        .schemas()
++        .get(id)
++        .ok_or(NativeMatrixTemplateError::UnsupportedSchema { schema: id })?;
++    match schema.body() {
++        SchemaBody::Matrix {
++            element,
++            dimensions,
++        } if element.as_ref() == &SchemaBody::FloatingPoint(FloatWidth::W64)
++            && dimensions.len() == 2 =>
++        {
++            Ok(schema.clone())
++        }
++        _ => Err(NativeMatrixTemplateError::UnsupportedSchema { schema: id }),
++    }
++}
++
++fn source_schema(artifact: &ProgramArtifact, source: ArtifactSource) -> Option<SchemaId> {
++    match source {
++        ArtifactSource::Slot(slot) => artifact
++            .slots()
++            .get(slot.get() as usize)
++            .map(|slot| slot.schema),
++        ArtifactSource::Constant(constant) => artifact
++            .constants()
++            .get(constant)
++            .map(|value| value.schema()),
++    }
++}
++
++fn validate_contract(
++    node: NodeId,
++    primitive: NativeMatrixPrimitive,
++    contract: &ResolvedOperationContract,
++    input_ids: &[SchemaId],
++    output_id: SchemaId,
++) -> Result<(), NativeMatrixTemplateError> {
++    let ResolvedOperationContract::Declared(contract) = contract else {
++        return Err(NativeMatrixTemplateError::UnsupportedContract { node });
++    };
++    let arity = if primitive == NativeMatrixPrimitive::TransposeF64 {
++        1
++    } else {
++        2
++    };
++    let shape = if arity == 1 {
++        ShapeRule::TransposeOf { input: 0 }
++    } else {
++        ShapeRule::MatrixProduct { lhs: 0, rhs: 1 }
++    };
++    let valid = input_ids.len() == arity
++        && contract.inputs.len() == arity
++        && contract.interaction == ExternalInteraction::Pure
++        && contract.inputs.iter().zip(input_ids).all(|(port, id)| {
++            port.schema == *id
++                && port.access == AccessMode::Read
++                && port.delivery == DeliveryMode::Signal
++        })
++        && matches!(contract.outputs.as_ref(), [output]
++            if output.schema == output_id && output.access == AccessMode::Write
++                && output.delivery == DeliveryMode::Signal
++                && output.construction == (OutputConstruction::FullWrite { shape })
++                && output.alias == AliasPolicy::NoAlias
++                && output.change_detection == ChangeDetectionPolicy::KernelReported);
++    if valid {
++        Ok(())
++    } else {
++        Err(NativeMatrixTemplateError::UnsupportedContract { node })
++    }
++}
++
++/// Certifies a pure, stateless, matrix-only ordinary artifact without reading
++/// any live value or calling any factory/executor. Factory lookup selects the
++/// actual implementation; its engine-private certificate supplies semantics.
++/// No fallback program is run for any unsupported node or selected factory.
++pub fn matrix_operation_templates(
++    artifact: &ProgramArtifact,
++    catalog: &FunctionCatalog,
++) -> Result<Box<[NativeMatrixOperationTemplate]>, NativeMatrixTemplateError> {
++    if !artifact.requirements().is_empty()
++        || !artifact.constraints().is_empty()
++        || !artifact.compute_regions().is_empty()
++    {
++        return Err(NativeMatrixTemplateError::UnsupportedProgram {
++            feature: "resources, constraints or compute regions",
++        });
++    }
++    for slot in artifact.slots() {
++        if slot.role == SlotRole::State || slot.initializer.is_some() {
++            return Err(NativeMatrixTemplateError::UnsupportedProgram {
++                feature: "state or initializers",
++            });
++        }
++        matrix_schema(artifact, slot.schema)?;
++    }
++    for node in artifact.nodes() {
++        if !matches!(&node.body, ExecutableNodeBody::Operation(operation) if operation.requirement.is_none())
++        {
++            return Err(NativeMatrixTemplateError::UnsupportedNode {
++                node: node.node,
++                feature: "control or resource operation",
++            });
++        }
++    }
++    let classes = classify_nodes(artifact, ResidentExternalAdmission::StructuralOnly)?;
++    for node in artifact.nodes() {
++        if classes[node.node.get() as usize] != NodeClass::Turn {
++            return Err(NativeMatrixTemplateError::UnsupportedNode {
++                node: node.node,
++                feature: "non-Turn computation",
++            });
++        }
++    }
++    let schedule = build_activation_schedule(artifact, &classes)?;
++    let mut templates = Vec::with_capacity(schedule.nodes.len());
++    for node in schedule.nodes.iter().copied() {
++        let body = artifact.nodes()[node.get() as usize]
++            .as_operation()
++            .ok_or(NativeMatrixTemplateError::InvalidBinding { node })?;
++        let entry = catalog
++            .resident_factory(&body.operation.module_path, &body.operation.operation_name)
++            .ok_or(NativeMatrixTemplateError::MissingImplementationCertificate { node })?;
++        let primitive = super::super::native_matrix_semantics::primitive(entry)
++            .ok_or(NativeMatrixTemplateError::MissingImplementationCertificate { node })?;
++        let sources = node_inputs(artifact, node)?;
++        let input_ids = sources
++            .iter()
++            .map(|source| {
++                source_schema(artifact, *source)
++                    .ok_or(NativeMatrixTemplateError::InvalidBinding { node })
++            })
++            .collect::<Result<Vec<_>, _>>()?;
++        let target = node_output_slot(artifact, node)?;
++        let output_id = artifact.slots()[target.get() as usize].schema;
++        let contract = artifact
++            .contracts()
++            .get(body.contract)
++            .ok_or(NativeMatrixTemplateError::InvalidBinding { node })?;
++        validate_contract(node, primitive, contract, &input_ids, output_id)?;
++        templates.push(NativeMatrixOperationTemplate {
++            revision: artifact.revision(),
++            node,
++            target,
++            selected_key: entry.key().clone(),
++            primitive,
++            sources: sources.into_boxed_slice(),
++            inputs: input_ids
++                .iter()
++                .map(|id| matrix_schema(artifact, *id))
++                .collect::<Result<Box<[_]>, _>>()?,
++            output: matrix_schema(artifact, output_id)?,
++            contract: contract.clone(),
++            implementation_memory: entry.implementation_memory(),
++        });
++    }
++    Ok(templates.into_boxed_slice())
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use mech_core::{DeclaredOperationContract, ResolvedInputPort, ResolvedOutputPort};
++
++    fn contract(
++        primitive: NativeMatrixPrimitive,
++    ) -> (Vec<SchemaId>, SchemaId, ResolvedOperationContract) {
++        let arity = if primitive == NativeMatrixPrimitive::TransposeF64 {
++            1
++        } else {
++            2
++        };
++        let ids = (0..arity)
++            .map(|ordinal| SchemaId::new(ordinal as u32))
++            .collect::<Vec<_>>();
++        let output = SchemaId::new(arity as u32);
++        let contract = ResolvedOperationContract::Declared(DeclaredOperationContract {
++            inputs: ids
++                .iter()
++                .map(|schema| ResolvedInputPort {
++                    schema: *schema,
++                    access: AccessMode::Read,
++                    delivery: DeliveryMode::Signal,
++                })
++                .collect(),
++            outputs: Box::new([ResolvedOutputPort {
++                schema: output,
++                access: AccessMode::Write,
++                delivery: DeliveryMode::Signal,
++                construction: OutputConstruction::FullWrite {
++                    shape: if arity == 1 {
++                        ShapeRule::TransposeOf { input: 0 }
++                    } else {
++                        ShapeRule::MatrixProduct { lhs: 0, rhs: 1 }
++                    },
++                },
++                alias: AliasPolicy::NoAlias,
++                change_detection: ChangeDetectionPolicy::KernelReported,
++            }]),
++            interaction: ExternalInteraction::Pure,
++        });
++        (ids, output, contract)
++    }
++
++    #[test]
++    fn symbolic_templates_require_exact_maintained_contract_without_concrete_shapes() {
++        for primitive in [
++            NativeMatrixPrimitive::TransposeF64,
++            NativeMatrixPrimitive::MatmulF64,
++        ] {
++            let (inputs, output, original) = contract(primitive);
++            let node = NodeId::new(7);
++            validate_contract(node, primitive, &original, &inputs, output).unwrap();
++            let mut replacements = Vec::new();
++            let mut changed = original.clone();
++            let ResolvedOperationContract::Declared(contract) = &mut changed else {
++                unreachable!()
++            };
++            contract.outputs[0].construction = OutputConstruction::FullWrite {
++                shape: ShapeRule::Declared,
++            };
++            replacements.push(changed);
++            let mut changed = original.clone();
++            let ResolvedOperationContract::Declared(contract) = &mut changed else {
++                unreachable!()
++            };
++            contract.outputs[0].alias = AliasPolicy::MayAlias { input: 0 };
++            replacements.push(changed);
++            let mut changed = original.clone();
++            let ResolvedOperationContract::Declared(contract) = &mut changed else {
++                unreachable!()
++            };
++            contract.inputs[0].delivery = DeliveryMode::Stream;
++            replacements.push(changed);
++            let mut changed = original.clone();
++            let ResolvedOperationContract::Declared(contract) = &mut changed else {
++                unreachable!()
++            };
++            contract.inputs[0].schema = output;
++            replacements.push(changed);
++            for changed in replacements {
++                assert_eq!(
++                    validate_contract(node, primitive, &changed, &inputs, output),
++                    Err(NativeMatrixTemplateError::UnsupportedContract { node })
++                );
++            }
++            assert!(validate_contract(node, primitive, &original, &inputs[..0], output).is_err());
++        }
++    }
++}
+diff --git a/src/engine/src/resident/mod.rs b/src/engine/src/resident/mod.rs
+index 8d530c3..0f6ec08 100644
+--- a/src/engine/src/resident/mod.rs
++++ b/src/engine/src/resident/mod.rs
+@@ -17,6 +17,8 @@ mod kernel;
+ pub(crate) mod map_ops;
+ #[cfg(feature = "resident-artifact")]
+ pub(crate) mod matrix_literal;
++#[cfg(feature = "native-artifact")]
++mod native_matrix_semantics;
+ #[cfg(feature = "resident-artifact")]
+ pub(crate) mod native_semantics;
+ #[cfg(feature = "resident-artifact")]
+diff --git a/src/engine/src/resident/native_matrix_semantics.rs b/src/engine/src/resident/native_matrix_semantics.rs
+new file mode 100644
+index 0000000..be85618
+--- /dev/null
++++ b/src/engine/src/resident/native_matrix_semantics.rs
+@@ -0,0 +1,55 @@
++//! Private registration proof for two maintained symbolic matrix branches.
++//! The public factory entry's typed attachment is storage, not authority.
++use crate::native_artifact::NativeMatrixPrimitive;
++use mech_core::{
++    FunctionCatalogBuilder, ImplementationMemoryClass, MResult, ResidentKernelFactoryEntry,
++    ResidentOperationKey,
++};
++use std::sync::Arc;
++
++/// No state, callable, or public constructor can escape this defining module.
++/// Its only attach sites select the maintained functions directly below.
++struct MatrixFactoryWitness {
++    primitive: NativeMatrixPrimitive,
++}
++
++pub(super) fn register_matmul(
++    builder: &mut FunctionCatalogBuilder,
++    name: &'static str,
++) -> MResult<()> {
++    let key = ResidentOperationKey::new(Box::new(["matrix".into()]), name.into())
++        .expect("maintained matrix registration has a valid key");
++    builder.insert_resident_factory_entry(
++        ResidentKernelFactoryEntry::new(
++            key,
++            ImplementationMemoryClass::NoAdditionalScratch,
++            super::numeric::bind_matmul,
++        )
++        .with_lowering_witness(Arc::new(MatrixFactoryWitness {
++            primitive: NativeMatrixPrimitive::MatmulF64,
++        })),
++    )
++}
++
++pub(super) fn register_transpose(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
++    let key = ResidentOperationKey::new(Box::new(["matrix".into()]), "transpose".into())
++        .expect("maintained matrix registration has a valid key");
++    builder.insert_resident_factory_entry(
++        ResidentKernelFactoryEntry::new(
++            key,
++            ImplementationMemoryClass::CanonicalFinalize,
++            super::numeric::bind_semantic_transpose,
++        )
++        .with_lowering_witness(Arc::new(MatrixFactoryWitness {
++            primitive: NativeMatrixPrimitive::TransposeF64,
++        })),
++    )
++}
++
++/// Only a read-only opcode escapes internally. The private witness cannot be
++/// extracted/re-attached by callers; all entry mutations clear it first.
++pub(super) fn primitive(entry: &ResidentKernelFactoryEntry) -> Option<NativeMatrixPrimitive> {
++    entry
++        .lowering_witness::<MatrixFactoryWitness>()
++        .map(|witness| witness.primitive)
++}
+diff --git a/src/engine/src/resident/native_semantics.rs b/src/engine/src/resident/native_semantics.rs
+index 45a69e6..2801ac5 100644
+--- a/src/engine/src/resident/native_semantics.rs
++++ b/src/engine/src/resident/native_semantics.rs
+@@ -384,7 +384,7 @@ mod tests {
+         }
+         fn bind(&self, catalog: &FunctionCatalog, module: &str, name: &str) -> BoundResidentKernel {
+             let entry = catalog.resident_factory(&[module.into()], name).unwrap();
+-            (entry.factory)(&self.request()).unwrap()
++            (entry.factory())(&self.request()).unwrap()
+         }
+         fn snapshot_output(&self) -> ResidentSnapshotOutput {
+             ResidentSnapshotOutput {
+diff --git a/src/engine/src/resident/numeric/mod.rs b/src/engine/src/resident/numeric/mod.rs
+index 119965d..94ea4aa 100644
+--- a/src/engine/src/resident/numeric/mod.rs
++++ b/src/engine/src/resident/numeric/mod.rs
+@@ -798,7 +798,13 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+     )?;
+     // Bytecode-v1 artifacts emitted before matrix/matmul became the canonical
+     // identity persist matrix/multiply. Keep that stable operation loadable.
++    #[cfg(feature = "native-artifact")]
++    super::native_matrix_semantics::register_matmul(builder, "multiply")?;
++    #[cfg(not(feature = "native-artifact"))]
+     register_no_additional_scratch(builder, &["matrix"], "multiply", bind_matmul)?;
++    #[cfg(feature = "native-artifact")]
++    super::native_matrix_semantics::register_matmul(builder, "matmul")?;
++    #[cfg(not(feature = "native-artifact"))]
+     register_no_additional_scratch(builder, &["matrix"], "matmul", bind_matmul)?;
+     register_no_additional_scratch(builder, &["matrix"], "dot", bind_matrix_dot)?;
+     register_with_memory_class(
+@@ -808,6 +814,9 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+         ImplementationMemoryClass::MatrixSolve,
+         bind_matrix_solve,
+     )?;
++    #[cfg(feature = "native-artifact")]
++    super::native_matrix_semantics::register_transpose(builder)?;
++    #[cfg(not(feature = "native-artifact"))]
+     register_canonical_finalize(builder, &["matrix"], "transpose", bind_semantic_transpose)?;
+     register_canonical_finalize(builder, &["core"], "assign", bind_hold_state)?;
+     register_canonical_finalize(
+@@ -3635,7 +3644,7 @@ pub(crate) fn is_transpose_snapshot_schema(body: &SchemaBody) -> bool {
+     )
+ }
+ 
+-fn bind_semantic_transpose(
++pub(super) fn bind_semantic_transpose(
+     request: &ResidentKernelBindRequest<'_>,
+ ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+     bind_transpose(request).or_else(|_| super::text::bind_string_transpose(request))
+@@ -6259,7 +6268,7 @@ fn bind_snapshot_access_mode(
+     )
+ }
+ 
+-fn bind_matmul(
++pub(super) fn bind_matmul(
+     request: &ResidentKernelBindRequest<'_>,
+ ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+     validate_full_write(
+@@ -12546,7 +12555,8 @@ fn transpose_dense(
+         (ResidentValueRef::F64(input), ResidentValueMut::F64(output))
+             if input.len() == count && output.len() == count =>
+         {
+-            Ok(replace_f64(output, |index| input[source_index(index)]))
++            crate::__native_matrix::transpose_f64(input, output, rows, columns)
++                .map_err(|_| ResidentKernelError::InvalidShape)
+         }
+         _ => Err(ResidentKernelError::InvalidShape),
+     }
+@@ -17195,13 +17205,8 @@ fn matrix_multiply(
+     if lhs.len() != lhs_len || rhs.len() != rhs_len || output.len() != output_len {
+         return Err(ResidentKernelError::InvalidShape);
+     }
+-    Ok(replace_f64(output, |target| {
+-        let row = target % rows;
+-        let column = target / rows;
+-        (0..inner)
+-            .map(|offset| lhs[row + offset * rows] * rhs[offset + column * inner])
+-            .sum()
+-    }))
++    crate::__native_matrix::matmul_f64(lhs, rhs, output, rows, inner, columns)
++        .map_err(|_| ResidentKernelError::InvalidShape)
+ }
+ 
+ fn matrix_multiply_snapshot_mixed(
+diff --git a/src/engine/tests/native_matrix_planning.rs b/src/engine/tests/native_matrix_planning.rs
+new file mode 100644
+index 0000000..4e90e4c
+--- /dev/null
++++ b/src/engine/tests/native_matrix_planning.rs
+@@ -0,0 +1,364 @@
++//! Actual descriptors and NativeHost plans; no kernel/binder is executed here.
++#![cfg(feature = "native-artifact")]
++
++use mech_core::{
++    ConstantStoreBuilder, DimensionExpr, DimensionLifetime, DimensionParameterDeclaration,
++    DimensionParameterId, DimensionParameterOrigin, ExecutionTarget, FloatWidth, FunctionCatalog,
++    FunctionCatalogBuilder, MemoryFootprintWitness, MemoryTargetKind, ResolvedValueDescriptor,
++    Schema, SchemaBody, SchemaDraft, SchemaTableBuilder,
++};
++use mech_engine::{
++    ArtifactBuildContext, OperationReference, ProgramArtifact, SourceInput, SourceNode,
++    SourceNodeBody, SourceNodeOutput, SourceOutput, SourceProgram, SourceValue,
++    compile_source_program_with_contracts,
++    native_artifact::{NativeMatrixPlanError, lower_matrix_artifact},
++};
++use std::{
++    alloc::{GlobalAlloc, Layout, System},
++    cell::Cell,
++};
++
++// Count cumulative requested metadata allocations, a stronger bound than peak
++// live bytes. TLS excludes allocations on other test threads; assertions run
++// only after the probe has stopped. Payload arrays are never constructed.
++struct MetadataAllocator;
++thread_local! {
++    static TRACKING: Cell<bool> = const { Cell::new(false) };
++    static ALLOCATED: Cell<u64> = const { Cell::new(0) };
++}
++fn record(bytes: usize) {
++    TRACKING.with(|enabled| {
++        if enabled.get() {
++            ALLOCATED.with(|total| total.set(total.get().saturating_add(bytes as u64)));
++        }
++    });
++}
++unsafe impl GlobalAlloc for MetadataAllocator {
++    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
++        record(layout.size());
++        unsafe { System.alloc(layout) }
++    }
++    unsafe fn alloc_zeroed(&self, layout: Layout) -> *mut u8 {
++        record(layout.size());
++        unsafe { System.alloc_zeroed(layout) }
++    }
++    unsafe fn realloc(&self, pointer: *mut u8, layout: Layout, size: usize) -> *mut u8 {
++        record(size);
++        unsafe { System.realloc(pointer, layout, size) }
++    }
++    unsafe fn dealloc(&self, pointer: *mut u8, layout: Layout) {
++        unsafe { System.dealloc(pointer, layout) }
++    }
++}
++#[global_allocator]
++static ALLOCATOR: MetadataAllocator = MetadataAllocator;
++
++fn observed<T>(f: impl FnOnce() -> T) -> (T, u64) {
++    ALLOCATED.with(|value| value.set(0));
++    TRACKING.with(|value| value.set(true));
++    let result = f();
++    TRACKING.with(|value| value.set(false));
++    (result, ALLOCATED.with(Cell::get))
++}
++
++fn matrix(bounds: Option<[u64; 2]>, compound: bool) -> Schema {
++    SchemaDraft {
++        dimension_parameters: (0..2)
++            .map(|index| DimensionParameterDeclaration {
++                id: DimensionParameterId::new(index),
++                origin: DimensionParameterOrigin::Explicit,
++                lifetime: DimensionLifetime::Turn,
++                lower_bound: DimensionExpr::Constant(0),
++                upper_bound: bounds.map(|bounds| DimensionExpr::Constant(bounds[index as usize])),
++            })
++            .collect(),
++        body: SchemaBody::Matrix {
++            element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
++            dimensions: Box::new([
++                if compound {
++                    DimensionExpr::Add(Box::new([
++                        DimensionExpr::Parameter(DimensionParameterId::new(0)),
++                        DimensionExpr::Constant(1),
++                    ]))
++                } else {
++                    DimensionExpr::Parameter(DimensionParameterId::new(0))
++                },
++                DimensionExpr::Parameter(DimensionParameterId::new(1)),
++            ]),
++        },
++    }
++    .finalize()
++    .unwrap()
++}
++
++fn artifacts(input: Schema, transpose: bool) -> [ProgramArtifact; 2] {
++    let SchemaBody::Matrix {
++        element,
++        dimensions,
++    } = input.body()
++    else {
++        unreachable!()
++    };
++    let output = if transpose {
++        SchemaDraft {
++            dimension_parameters: input
++                .dimension_parameters()
++                .iter()
++                .enumerate()
++                .map(|(index, parameter)| DimensionParameterDeclaration {
++                    id: DimensionParameterId::new(index as u32),
++                    origin: DimensionParameterOrigin::Explicit,
++                    lifetime: parameter.lifetime(),
++                    lower_bound: parameter.lower_bound().clone(),
++                    upper_bound: parameter.upper_bound().cloned(),
++                })
++                .collect(),
++            body: SchemaBody::Matrix {
++                element: element.clone(),
++                dimensions: Box::new([dimensions[1].clone(), dimensions[0].clone()]),
++            },
++        }
++        .finalize()
++        .unwrap()
++    } else {
++        matrix(None, false)
++    };
++    let mut builder = SchemaTableBuilder::new();
++    let input = builder.insert(input).unwrap();
++    let output = builder.insert(output).unwrap();
++    let build = builder.finish().unwrap();
++    let input = build.resolve(input).unwrap();
++    let output = build.resolve(output).unwrap();
++    let schemas = build.into_parts().0;
++    let constants = ConstantStoreBuilder::new(&schemas)
++        .finish()
++        .unwrap()
++        .into_parts()
++        .0;
++    let arity = if transpose { 1 } else { 2 };
++    let name = if transpose { "transpose" } else { "matmul" };
++    let graph = SourceProgram {
++        inputs: (0..arity)
++            .map(|ordinal| SourceInput {
++                name: format!("input{ordinal}"),
++                schema: input,
++            })
++            .collect(),
++        nodes: Box::new([SourceNode {
++            body: SourceNodeBody::Operation {
++                operation: OperationReference {
++                    module_path: Box::new(["matrix".into()]),
++                    operation_name: name.into(),
++                },
++                requirement: None,
++            },
++            inputs: (0..arity).map(SourceValue::Input).collect(),
++            outputs: Box::new([SourceNodeOutput::Derived { schema: output }]),
++        }]),
++        outputs: Box::new([SourceOutput {
++            name: "result".into(),
++            interactive_symbol: None,
++            source: SourceValue::NodeOutput {
++                node: 0,
++                output_ordinal: 0,
++            },
++            schema: output,
++        }]),
++        ..SourceProgram::default()
++    };
++    let contract =
++        mech_core::maintained_operation_contract(&format!("matrix/{name}"), arity as usize, true)
++            .unwrap();
++    let original = compile_source_program_with_contracts(
++        &graph,
++        &mut ArtifactBuildContext::new(&schemas, &constants),
++        &[&contract],
++    )
++    .unwrap();
++    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap();
++    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
++    assert_eq!(original.revision(), decoded.revision());
++    [original, decoded]
++}
++fn catalog() -> FunctionCatalog {
++    let mut builder = FunctionCatalogBuilder::new();
++    mech_engine::install_intrinsic_resident(&mut builder).unwrap();
++    builder.build().unwrap()
++}
++fn descriptor(schema: &Schema, extents: [u64; 2]) -> ResolvedValueDescriptor {
++    let shape = mech_core::shape_for_resolved_extents(schema, &extents).unwrap();
++    ResolvedValueDescriptor::from_schema(schema.clone(), shape).unwrap()
++}
++
++#[test]
++fn actual_dynamic_descriptors_replan_native_geometry_including_zero_axes() {
++    let catalog = catalog();
++    for artifact in artifacts(matrix(None, false), true) {
++        let plan = lower_matrix_artifact(&artifact, &catalog).unwrap();
++        let call = &plan.calls()[0];
++        let input = &plan.values()[plan.inputs()[0].value().get() as usize];
++        for [rows, columns] in [[2, 3], [0, 4], [4, 0], [1, 1], [1000, 1000]] {
++            let inputs = [descriptor(input.schema(), [rows, columns])];
++            let (memory, allocated) = observed(|| plan.instantiate_call(0, &inputs));
++            let memory = memory.unwrap();
++            assert!(
++                allocated <= call.planning_demand().temporary_bytes,
++                "{allocated} > {:?}",
++                call.planning_demand()
++            );
++            assert_eq!(memory.bound_call.target(), ExecutionTarget::Native);
++            assert_eq!(memory.target.kind, MemoryTargetKind::NativeHost);
++            assert!(memory.deferred_witnesses.is_empty());
++            assert_eq!(memory.inputs[0].value.current_elements, rows * columns);
++            assert_eq!(
++                memory.outputs[0]
++                    .descriptor
++                    .current_extents()
++                    .unwrap()
++                    .as_ref(),
++                &[columns, rows]
++            );
++            assert_eq!(memory.outputs[0].value.current_elements, rows * columns);
++            assert!(
++                matches!(memory.input_witnesses[0], MemoryFootprintWitness::Known(value)
++                if value.logical_elements == rows * columns)
++            );
++            assert_eq!(
++                memory.outputs[0].value.strides_bytes.as_ref(),
++                &[8, columns * 8]
++            );
++        }
++        assert!(plan.setup_demand().work > 0);
++        assert!(plan.setup_demand().temporary_bytes >= call.planning_demand().temporary_bytes / 2);
++    }
++}
++
++#[test]
++fn semantic_upper_bounds_retain_real_reserved_capacity_and_padded_strides() {
++    let catalog = catalog();
++    for artifact in artifacts(matrix(Some([8, 9]), false), true) {
++        let plan = lower_matrix_artifact(&artifact, &catalog).unwrap();
++        let input = &plan.values()[plan.inputs()[0].value().get() as usize];
++        let memory = plan
++            .instantiate_call(0, &[descriptor(input.schema(), [2, 3])])
++            .unwrap();
++        assert_eq!(memory.inputs[0].value.capacity_bytes, 8 * 9 * 8);
++        assert_eq!(memory.inputs[0].value.strides_bytes.as_ref(), &[8, 8 * 8]);
++        assert_eq!(memory.inputs[0].value.current_address_span_bytes, 144);
++        assert_eq!(memory.outputs[0].value.capacity_bytes, 8 * 9 * 8);
++        assert_eq!(memory.outputs[0].value.strides_bytes.as_ref(), &[8, 9 * 8]);
++        assert_eq!(memory.outputs[0].value.current_address_span_bytes, 96);
++        // Runtime must separately admit compact leaf buffers and these actual
++        // conservative core allocations. turn_peak_bytes counts live spans;
++        // it is not a replacement for bounded capacity reservation.
++        let reserved: u64 = memory
++            .allocations
++            .iter()
++            .map(|allocation| allocation.capacity_bytes)
++            .sum();
++        assert!(reserved >= 3 * 8 * 9 * 8);
++        let compact = plan.call_bounds(0, &[[2, 3]]).unwrap();
++        assert_eq!(compact.output_bytes, 48);
++        assert!(reserved > compact.output_bytes);
++    }
++}
++
++#[test]
++fn product_rejects_current_inner_mismatch_then_accepts_later_actual_descriptors() {
++    let catalog = catalog();
++    for artifact in artifacts(matrix(None, false), false) {
++        let plan = lower_matrix_artifact(&artifact, &catalog).unwrap();
++        let schemas = plan
++            .inputs()
++            .iter()
++            .map(|input| plan.values()[input.value().get() as usize].schema())
++            .collect::<Vec<_>>();
++        let invalid = [
++            descriptor(schemas[0], [2, 3]),
++            descriptor(schemas[1], [4, 5]),
++        ];
++        assert!(matches!(
++            plan.instantiate_call(0, &invalid),
++            Err(NativeMatrixPlanError::Shape { .. })
++        ));
++        let valid = [
++            descriptor(schemas[0], [2, 3]),
++            descriptor(schemas[1], [3, 5]),
++        ];
++        let memory = plan.instantiate_call(0, &valid).unwrap();
++        assert_eq!(
++            memory.outputs[0]
++                .descriptor
++                .current_extents()
++                .unwrap()
++                .as_ref(),
++            &[2, 5]
++        );
++        let other_schema = matrix(Some([9, 9]), false);
++        let wrong = [descriptor(&other_schema, [2, 3]), valid[1].clone()];
++        assert!(matches!(
++            plan.instantiate_call(0, &wrong),
++            Err(NativeMatrixPlanError::Planning { .. })
++        ));
++        assert!(plan.instantiate_call(0, &valid[..1]).is_err());
++        assert_eq!(
++            plan.call_bounds(0, &[[2, 3], [3, 5]]).unwrap().compute_work,
++            64 + 10 * (32 + 16 * 3)
++        );
++        assert!(plan.call_bounds(0, &[[u64::MAX, 1], [1, 2]]).is_err());
++    }
++}
++
++#[test]
++fn compound_dimension_metadata_remains_a_separate_unsupported_native_obligation() {
++    let catalog = catalog();
++    for artifact in artifacts(matrix(None, true), true) {
++        // The typed ordinary artifact and unchanged symbolic template remain
++        // valid; the executable planning slice has its own bounded eligibility.
++        assert_eq!(
++            mech_engine::native_artifact::matrix_operation_templates(&artifact, &catalog)
++                .unwrap()
++                .len(),
++            1
++        );
++        assert!(matches!(
++            lower_matrix_artifact(&artifact, &catalog),
++            Err(NativeMatrixPlanError::UnsupportedDimensionMetadata { .. })
++        ));
++    }
++}
++
++#[test]
++fn activation_scoped_parameter_needs_real_binding_before_native_execution_support() {
++    let schema = matrix(None, false);
++    let activation = SchemaDraft {
++        dimension_parameters: schema
++            .dimension_parameters()
++            .iter()
++            .enumerate()
++            .map(|(index, parameter)| DimensionParameterDeclaration {
++                id: DimensionParameterId::new(index as u32),
++                origin: DimensionParameterOrigin::Explicit,
++                lifetime: DimensionLifetime::Activation,
++                lower_bound: parameter.lower_bound().clone(),
++                upper_bound: parameter.upper_bound().cloned(),
++            })
++            .collect(),
++        body: schema.body().clone(),
++    }
++    .finalize()
++    .unwrap();
++    let catalog = catalog();
++    for artifact in artifacts(activation, true) {
++        assert_eq!(
++            mech_engine::native_artifact::matrix_operation_templates(&artifact, &catalog)
++                .unwrap()
++                .len(),
++            1
++        );
++        assert!(matches!(
++            lower_matrix_artifact(&artifact, &catalog),
++            Err(NativeMatrixPlanError::UnsupportedDimensionMetadata { .. })
++        ));
++    }
++}
+diff --git a/src/stdlib/tests/comprehension_work_source.rs b/src/stdlib/tests/comprehension_work_source.rs
+index a493066..ad32dc1 100644
+--- a/src/stdlib/tests/comprehension_work_source.rs
++++ b/src/stdlib/tests/comprehension_work_source.rs
+@@ -361,7 +361,7 @@ fn mutated_concat_bind(
+     let entry = catalog
+         .resident_factory(&["string".into()], "concat")
+         .unwrap();
+-    let delegate = (entry.factory)(request)?;
++    let delegate = (entry.factory())(request)?;
+     assert_eq!(
+         delegate.work_accounting(),
+         ResidentKernelWorkAccounting::RuntimeMetered
+@@ -375,7 +375,7 @@ fn mutated_comparison_bind(
+     REPLACEMENT_BINDS.fetch_add(1, Ordering::SeqCst);
+     let catalog = mech_stdlib::source_catalog();
+     let entry = catalog.resident_factory(&["compare".into()], "gt").unwrap();
+-    let delegate = (entry.factory)(request)?;
++    let delegate = (entry.factory())(request)?;
+     assert_eq!(
+         delegate.work_accounting(),
+         ResidentKernelWorkAccounting::RuntimeMetered
+@@ -390,7 +390,7 @@ fn cloned_concat_bind(
+     let entry = catalog
+         .resident_factory(&["string".into()], "concat")
+         .unwrap();
+-    Ok((entry.factory)(request)?.clone())
++    Ok((entry.factory())(request)?.clone())
+ }
+ 
+ #[test]
+@@ -441,8 +441,12 @@ fn replacement_catalog(
+             .insert_resident_factory(
+                 key.module_path.iter().cloned(),
+                 key.operation_name.clone(),
+-                entry.implementation_memory,
+-                if replacement { factory } else { entry.factory },
++                entry.implementation_memory(),
++                if replacement {
++                    factory
++                } else {
++                    entry.factory()
++                },
+             )
+             .unwrap();
+     }
+diff --git a/src/stdlib/tests/map_keys_comprehensions.rs b/src/stdlib/tests/map_keys_comprehensions.rs
+index a9e3379..0bbbd4c 100644
+--- a/src/stdlib/tests/map_keys_comprehensions.rs
++++ b/src/stdlib/tests/map_keys_comprehensions.rs
+@@ -149,11 +149,11 @@ fn replacement_catalog() -> FunctionCatalog {
+             .insert_resident_factory(
+                 key.module_path.iter().cloned(),
+                 key.operation_name.clone(),
+-                entry.implementation_memory,
++                entry.implementation_memory(),
+                 if replace {
+                     unclassified_bind
+                 } else {
+-                    entry.factory
++                    entry.factory()
+                 },
+             )
+             .unwrap();
+diff --git a/src/stdlib/tests/matrix_block_comprehensions.rs b/src/stdlib/tests/matrix_block_comprehensions.rs
+index cf1ffa8..87a9095 100644
+--- a/src/stdlib/tests/matrix_block_comprehensions.rs
++++ b/src/stdlib/tests/matrix_block_comprehensions.rs
+@@ -671,7 +671,7 @@ fn observed_division_bind(
+     let entry = maintained
+         .resident_factory(&["math".into()], "div")
+         .unwrap();
+-    let delegate = (entry.factory)(request)?;
++    let delegate = (entry.factory())(request)?;
+     let output = delegate.snapshot_output().cloned();
+     let mut kernel = BoundResidentKernel::new(observed_division, Box::new([]))
+         .with_snapshot_schemas(request.schemas.clone())
+@@ -694,11 +694,11 @@ fn observed_division_catalog() -> FunctionCatalog {
+             .insert_resident_factory(
+                 key.module_path.iter().cloned(),
+                 key.operation_name.clone(),
+-                entry.implementation_memory,
++                entry.implementation_memory(),
+                 if selected {
+                     observed_division_bind
+                 } else {
+-                    entry.factory
++                    entry.factory()
+                 },
+             )
+             .unwrap();
+diff --git a/src/stdlib/tests/native_matrix_artifact.rs b/src/stdlib/tests/native_matrix_artifact.rs
+new file mode 100644
+index 0000000..200578a
+--- /dev/null
++++ b/src/stdlib/tests/native_matrix_artifact.rs
+@@ -0,0 +1,177 @@
++//! Ordinary source to private typed matrix plans; no native execution claim.
++#![cfg(all(feature = "full_compiler", feature = "native-artifact"))]
++
++use mech_core::{ExecutionTarget, ResolvedValueDescriptor};
++use mech_engine::{
++    CanonicalSourceFrontend, ProgramArtifact, decode_source_input_name,
++    native_artifact::{NativeMatrixPrimitive, lower_matrix_artifact},
++};
++use mech_syntax::document::{
++    AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
++    parse_canonical_document,
++};
++use std::collections::BTreeMap;
++
++fn artifacts(source: &str, interactive: bool) -> [ProgramArtifact; 2] {
++    let parsed = parse_canonical_document(
++        TextSnapshot::new(DocumentId(0x4d4154504c414e), Revision(1), source).unwrap(),
++        ParseConfig::default(),
++    );
++    assert!(
++        parsed.is_strictly_clean(),
++        "{source}: {:?}",
++        parsed.diagnostics
++    );
++    let document = DocumentSyntax::cast(parsed.syntax()).unwrap();
++    let product = if interactive {
++        CanonicalSourceFrontend
++            .compile_interactive_document_with_catalog(&document, mech_stdlib::source_catalog())
++    } else {
++        CanonicalSourceFrontend
++            .compile_document_with_catalog(&document, mech_stdlib::source_catalog())
++    }
++    .unwrap_or_else(|error| panic!("{source}: {error:?}"));
++    let original = product.compile_artifact().unwrap();
++    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap();
++    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
++    assert_eq!(original.revision(), decoded.revision());
++    assert_eq!(
++        bytes,
++        mech_engine::encode_program_artifact_bytecode_v1(&decoded).unwrap()
++    );
++    [original, decoded]
++}
++
++#[test]
++fn ordinary_transpose_product_instantiates_actual_descriptors_for_each_current_geometry() {
++    for artifact in artifacts("left<[f64]>' ** right<[f64]>\n", false) {
++        let plan = lower_matrix_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
++        assert_eq!(plan.program_revision(), artifact.revision());
++        assert_eq!(
++            plan.calls()
++                .iter()
++                .map(|call| call.template().primitive())
++                .collect::<Vec<_>>(),
++            [
++                NativeMatrixPrimitive::TransposeF64,
++                NativeMatrixPrimitive::MatmulF64
++            ]
++        );
++        for (left, right, output) in [
++            ([2, 3], [2, 4], [3, 4]),
++            ([0, 2], [0, 4], [2, 4]),
++            ([3, 0], [3, 4], [0, 4]),
++            ([2, 3], [2, 0], [3, 0]),
++        ] {
++            let mut values = BTreeMap::new();
++            for input in plan.inputs() {
++                let declaration = &artifact.inputs()[input.input().get() as usize];
++                assert_eq!(input.slot(), declaration.slot);
++                assert_eq!(input.name(), declaration.name);
++                let name = decode_source_input_name(input.name()).unwrap();
++                let extents = match name.as_str() {
++                    "left" => left,
++                    "right" => right,
++                    _ => panic!("unexpected real input {name}"),
++                };
++                let schema = plan.values()[input.value().get() as usize].schema();
++                let shape = mech_core::shape_for_resolved_extents(schema, &extents).unwrap();
++                values.insert(
++                    input.value(),
++                    ResolvedValueDescriptor::from_schema(schema.clone(), shape).unwrap(),
++                );
++            }
++            for (ordinal, call) in plan.calls().iter().enumerate() {
++                assert_eq!(call.template().node(), artifact.nodes()[ordinal].node);
++                let inputs = call
++                    .operands()
++                    .iter()
++                    .map(|input| values[input].clone())
++                    .collect::<Vec<_>>();
++                let memory = plan.instantiate_call(ordinal, &inputs).unwrap();
++                assert_eq!(memory.bound_call.target(), ExecutionTarget::Native);
++                assert_eq!(memory.inputs.len(), inputs.len());
++                for (planned, actual) in memory.inputs.iter().zip(&inputs) {
++                    assert_eq!(&planned.descriptor, actual);
++                }
++                values.insert(call.output(), memory.outputs[0].descriptor.clone());
++            }
++            assert_eq!(plan.outputs().len(), artifact.outputs().len());
++            assert_eq!(
++                values[&plan.outputs()[0].value()]
++                    .current_extents()
++                    .unwrap()
++                    .as_ref(),
++                &output
++            );
++        }
++    }
++}
++
++#[test]
++fn actual_interactive_alias_identity_and_shared_producer_are_preserved() {
++    for artifact in artifacts(
++        "transposed := input<[f64]>'\nalias := transposed\nalias\n",
++        true,
++    ) {
++        let plan = lower_matrix_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
++        assert_eq!(plan.calls().len(), 1);
++        assert_eq!(plan.outputs().len(), artifact.outputs().len());
++        assert!(
++            plan.outputs().len() >= 2,
++            "real named aliases must remain exported"
++        );
++        for (actual, declared) in plan.outputs().iter().zip(artifact.outputs()) {
++            assert_eq!(actual.output(), declared.output);
++            assert_eq!(actual.slot(), declared.source);
++            assert_eq!(actual.name(), declared.name);
++            assert_eq!(
++                actual.interactive_binding(),
++                declared.interactive_binding.as_ref()
++            );
++            assert_eq!(actual.value(), plan.calls()[0].output());
++            let ty = &plan.values()[actual.value().get() as usize];
++            assert_eq!(ty.schema_id(), declared.schema);
++            assert_eq!(
++                ty.schema_key(),
++                artifact.schemas().entry(declared.schema).unwrap().key()
++            );
++        }
++        assert!(
++            plan.outputs()
++                .iter()
++                .any(|output| output.interactive_binding().is_some())
++        );
++    }
++}
++
++#[test]
++fn an_unused_checked_matrix_call_is_not_removed_from_the_native_plan() {
++    for artifact in artifacts(
++        "unused := left<[f64]> ** right<[f64]>\ninput<[f64]>'\n",
++        false,
++    ) {
++        let plan = lower_matrix_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
++        assert_eq!(artifact.nodes().len(), 2);
++        assert_eq!(plan.calls().len(), 2);
++        assert_eq!(
++            plan.calls()[0].template().primitive(),
++            NativeMatrixPrimitive::MatmulF64
++        );
++        assert_eq!(
++            plan.calls()[1].template().primitive(),
++            NativeMatrixPrimitive::TransposeF64
++        );
++        assert_eq!(
++            plan.calls()
++                .iter()
++                .map(|call| call.template().node())
++                .collect::<Vec<_>>(),
++            artifact
++                .nodes()
++                .iter()
++                .map(|node| node.node)
++                .collect::<Vec<_>>()
++        );
++    }
++}
+diff --git a/src/stdlib/tests/native_matrix_templates.rs b/src/stdlib/tests/native_matrix_templates.rs
+new file mode 100644
+index 0000000..b4d626f
+--- /dev/null
++++ b/src/stdlib/tests/native_matrix_templates.rs
+@@ -0,0 +1,208 @@
++#![cfg(all(feature = "full_compiler", feature = "native-artifact"))]
++use mech_core::{
++    BoundResidentKernel, FunctionCatalog, FunctionCatalogBuilder, ImplementationMemoryClass,
++    ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelFactoryEntry, SchemaBody,
++    ShapeRule,
++};
++use mech_engine::native_artifact::{
++    NativeMatrixPrimitive, NativeMatrixTemplateError, matrix_operation_templates,
++};
++use mech_engine::{CanonicalSourceFrontend, ProgramArtifact};
++use mech_syntax::document::{
++    AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
++    parse_canonical_document,
++};
++use std::sync::Arc;
++
++fn compile(source: &str) -> ProgramArtifact {
++    let parsed = parse_canonical_document(
++        TextSnapshot::new(DocumentId(0x4d4154524958), Revision(1), source).unwrap(),
++        ParseConfig::default(),
++    );
++    assert!(
++        parsed.is_strictly_clean(),
++        "{source}: {:?}",
++        parsed.diagnostics
++    );
++    CanonicalSourceFrontend
++        .compile_document_with_catalog(
++            &DocumentSyntax::cast(parsed.syntax()).unwrap(),
++            mech_stdlib::source_catalog(),
++        )
++        .unwrap_or_else(|error| panic!("{source}: {error:?}"))
++        .compile_artifact()
++        .unwrap()
++}
++
++fn artifacts(source: &str) -> [ProgramArtifact; 2] {
++    let original = compile(source);
++    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap();
++    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
++    assert_eq!(original.revision(), decoded.revision());
++    [original, decoded]
++}
++
++fn forbidden_factory(
++    _: &ResidentKernelBindRequest<'_>,
++) -> Result<BoundResidentKernel, ResidentKernelBindError> {
++    panic!("symbolic template certification must not invoke a binder or executor")
++}
++
++fn with_entry(entry: ResidentKernelFactoryEntry) -> FunctionCatalog {
++    let mut builder = FunctionCatalogBuilder::new();
++    builder.insert_resident_factory_entry(entry).unwrap();
++    builder.build().unwrap()
++}
++
++#[test]
++fn dynamic_original_and_decoded_transpose_product_keep_symbolic_schemas_and_source_order() {
++    for artifact in artifacts("left<[f64]>' ** right<[f64]>\n") {
++        let templates =
++            matrix_operation_templates(&artifact, &mech_stdlib::source_catalog()).unwrap();
++        assert_eq!(templates.len(), 2);
++        assert_eq!(
++            templates
++                .iter()
++                .map(|template| template.primitive())
++                .collect::<Vec<_>>(),
++            [
++                NativeMatrixPrimitive::TransposeF64,
++                NativeMatrixPrimitive::MatmulF64
++            ]
++        );
++        assert_eq!(
++            templates
++                .iter()
++                .map(|template| template.node())
++                .collect::<Vec<_>>(),
++            artifact
++                .nodes()
++                .iter()
++                .map(|node| node.node)
++                .collect::<Vec<_>>()
++        );
++        assert_eq!(
++            templates[0].shape_rule(),
++            ShapeRule::TransposeOf { input: 0 }
++        );
++        assert_eq!(
++            templates[1].shape_rule(),
++            ShapeRule::MatrixProduct { lhs: 0, rhs: 1 }
++        );
++        for template in &templates {
++            assert_eq!(template.program_revision(), artifact.revision());
++            assert!(!template.output().dimension_parameters().is_empty());
++            for schema in template
++                .inputs()
++                .iter()
++                .chain(std::iter::once(template.output()))
++            {
++                assert!(
++                    matches!(schema.body(), SchemaBody::Matrix { element, dimensions }
++                    if element.as_ref() == &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64) && dimensions.len() == 2)
++                );
++            }
++            assert_eq!(template.sources().len(), template.inputs().len());
++        }
++    }
++}
++
++#[test]
++fn unchanged_genuine_entry_and_catalog_delegation_preserve_authority_without_binding() {
++    let maintained = mech_stdlib::source_catalog();
++    for (source, item, primitive) in [
++        (
++            "input<[f64]>'\n",
++            "transpose",
++            NativeMatrixPrimitive::TransposeF64,
++        ),
++        (
++            "left<[f64]> ** right<[f64]>\n",
++            "matmul",
++            NativeMatrixPrimitive::MatmulF64,
++        ),
++    ] {
++        let entry = maintained
++            .resident_factory(&["matrix".into()], item)
++            .unwrap()
++            .clone();
++        let catalog = with_entry(entry);
++        let cloned = FunctionCatalogBuilder::from_catalog(&catalog)
++            .build()
++            .unwrap();
++        for artifact in artifacts(source) {
++            let templates = matrix_operation_templates(&artifact, &cloned).unwrap();
++            assert_eq!(templates.len(), 1);
++            assert_eq!(templates[0].primitive(), primitive);
++            assert_eq!(templates[0].selected_key().operation_name, item);
++        }
++    }
++}
++
++#[test]
++fn same_name_public_marker_and_all_changed_delegates_are_not_certified() {
++    let maintained = mech_stdlib::source_catalog();
++    let genuine = maintained
++        .resident_factory(&["matrix".into()], "matmul")
++        .unwrap();
++    let arbitrary = ResidentKernelFactoryEntry::new(
++        genuine.key().clone(),
++        genuine.implementation_memory(),
++        forbidden_factory,
++    )
++    .with_lowering_witness(Arc::new(NativeMatrixPrimitive::MatmulF64));
++    for entry in [
++        arbitrary,
++        genuine.clone().with_factory(forbidden_factory),
++        genuine.clone().with_factory(genuine.factory()),
++        genuine.clone().with_key(genuine.key().clone()),
++        genuine
++            .clone()
++            .with_implementation_memory(genuine.implementation_memory()),
++        genuine
++            .clone()
++            .with_implementation_memory(ImplementationMemoryClass::CanonicalFinalize),
++    ] {
++        let catalog = with_entry(entry);
++        for artifact in artifacts("left<[f64]> ** right<[f64]>\n") {
++            let node = artifact.nodes()[0].node;
++            assert_eq!(
++                matrix_operation_templates(&artifact, &catalog).unwrap_err(),
++                NativeMatrixTemplateError::MissingImplementationCertificate { node }
++            );
++        }
++    }
++    let mut builder = FunctionCatalogBuilder::new();
++    builder
++        .insert_resident_factory(
++            ["matrix"],
++            "matmul",
++            genuine.implementation_memory(),
++            forbidden_factory,
++        )
++        .unwrap();
++    let catalog = builder.build().unwrap();
++    let artifact = compile("left<[f64]> ** right<[f64]>\n");
++    assert!(matches!(
++        matrix_operation_templates(&artifact, &catalog),
++        Err(NativeMatrixTemplateError::MissingImplementationCertificate { .. })
++    ));
++}
++
++#[test]
++fn non_f64_nested_collections_control_and_scalar_paths_are_rejected_without_fallback() {
++    for source in [
++        "left<[u64]> ** right<[u64]>\n",
++        "left<f64> + right<f64>\n",
++        "text<string>\n",
++        "[value | value <- input<[f64]>]\n",
++        "flag<bool> ? | true => left<[f64]:1,2> | false => right<[f64]:1,2>\n",
++    ] {
++        for artifact in artifacts(source) {
++            assert!(
++                matrix_operation_templates(&artifact, &mech_stdlib::source_catalog()).is_err(),
++                "{source}"
++            );
++        }
++    }
++}
+diff --git a/src/stdlib/tests/postfix_selection.rs b/src/stdlib/tests/postfix_selection.rs
+index 998aa65..36fb884 100644
+--- a/src/stdlib/tests/postfix_selection.rs
++++ b/src/stdlib/tests/postfix_selection.rs
+@@ -172,7 +172,7 @@ fn probe_bind(
+     let entry = catalog
+         .resident_factory(&["string".to_owned()], "concat")
+         .ok_or(ResidentKernelBindError::UnsupportedContract)?;
+-    let delegate = (entry.factory)(request)?;
++    let delegate = (entry.factory())(request)?;
+     Ok(BoundResidentKernel::new(probe_execute, Box::new([]))
+         .with_retained_state(Arc::new(delegate)))
+ }
+@@ -236,7 +236,7 @@ fn probe_catalog() -> Arc<FunctionCatalog> {
+             maintained
+                 .resident_factory(&["string".to_owned()], "concat")
+                 .unwrap()
+-                .implementation_memory,
++                .implementation_memory(),
+             probe_bind,
+         )
+         .unwrap();
+diff --git a/src/stdlib/tests/string_membership_comprehensions.rs b/src/stdlib/tests/string_membership_comprehensions.rs
+index 79cdbec..01be65c 100644
+--- a/src/stdlib/tests/string_membership_comprehensions.rs
++++ b/src/stdlib/tests/string_membership_comprehensions.rs
+@@ -205,11 +205,11 @@ fn same_name_unclassified_membership_is_rejected_before_any_execution() {
+             .insert_resident_factory(
+                 key.module_path.iter().cloned(),
+                 key.operation_name.clone(),
+-                entry.implementation_memory,
++                entry.implementation_memory(),
+                 if replace {
+                     unclassified_bind
+                 } else {
+-                    entry.factory
++                    entry.factory()
+                 },
+             )
+             .unwrap();

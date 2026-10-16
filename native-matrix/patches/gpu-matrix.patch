@@ -1,0 +1,3599 @@
+--- /dev/null
++++ b/hosts/gpu/src/native_artifact/matrix/abi.rs
+@@ -0,0 +1,56 @@
++use core::ffi::c_void;
++use mech_engine::native_artifact::NativeMatrixArtifactPlan;
++
++pub const MATRIX_ABI_VERSION: u64 = 4;
++pub const MATRIX_ENTRY_SYMBOL: &str = "mech_canonical_matrix_entry_v1";
++pub(super) const OK: u64 = 0;
++pub(super) const ERROR: u64 = 1;
++pub(super) const BAD_ABI: u64 = 2;
++
++/// Constructed only at checked emission or unsafe same-object binding.
++/// The immutable plan is copied once outside evaluation, never per call.
++#[derive(Clone, Debug)]
++pub struct NativeMatrixDescriptor {
++    pub(super) plan: NativeMatrixArtifactPlan,
++    pub(super) stack: u64,
++    pub(super) code: u64,
++    pub(super) ir: [u8; 32],
++}
++impl NativeMatrixDescriptor {
++    pub fn plan(&self) -> &NativeMatrixArtifactPlan {
++        &self.plan
++    }
++    pub const fn stack_bytes(&self) -> u64 {
++        self.stack
++    }
++    pub const fn code_bytes(&self) -> u64 {
++        self.code
++    }
++    pub const fn typed_ir_sha256(&self) -> &[u8; 32] {
++        &self.ir
++    }
++    pub(super) fn new(plan: &NativeMatrixArtifactPlan, stack: u64, code: u64) -> Self {
++        Self {
++            plan: plan.clone(),
++            stack,
++            code,
++            ir: super::identity::typed_ir_sha256(plan),
++        }
++    }
++}
++/// Synchronous private ABI. No matrix payload or Rust container representation
++/// crosses generated code. The safe evaluator installs the exact two specific
++/// leaf shims and the completion callback; callers cannot supply callbacks.
++#[repr(C)]
++pub(super) struct MatrixFrame {
++    pub version: u64,
++    pub inputs: u64,
++    pub calls: u64,
++    pub outputs: u64,
++    pub context: *mut c_void,
++    pub transpose: unsafe extern "C" fn(*mut c_void, u64) -> u64,
++    pub matmul: unsafe extern "C" fn(*mut c_void, u64) -> u64,
++    pub complete: unsafe extern "C" fn(*mut c_void, u64) -> u64,
++}
++#[cfg(feature = "canonical-native")]
++pub(super) type RawMatrixEntry = unsafe extern "C" fn(*mut MatrixFrame) -> u64;
+--- /dev/null
++++ b/hosts/gpu/src/native_artifact/matrix/application.rs
+@@ -0,0 +1,251 @@
++//! Build-owned canonical Object application generation, separate from resident apps.
++use super::super::NativeCompileError;
++use super::emit_matrix_object;
++use mech_core::FunctionCatalog;
++use mech_engine::native_artifact::lower_matrix_artifact;
++use mech_engine::{ProgramArtifact, encode_program_artifact_bytecode_v1};
++use serde_json::{Value, json};
++use sha2::{Digest, Sha256};
++use std::{
++    collections::BTreeMap,
++    fs,
++    path::{Path, PathBuf},
++};
++
++#[derive(Debug)]
++pub enum NativeMatrixApplicationError {
++    Invalid(&'static str),
++    Io(std::io::Error),
++    Lowering(mech_engine::native_artifact::NativeMatrixPlanError),
++    Compile(NativeCompileError),
++    Encoding(String),
++}
++impl std::fmt::Display for NativeMatrixApplicationError {
++    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
++        write!(
++            f,
++            "canonical native matrix application generation: {self:?}"
++        )
++    }
++}
++impl std::error::Error for NativeMatrixApplicationError {}
++impl From<std::io::Error> for NativeMatrixApplicationError {
++    fn from(value: std::io::Error) -> Self {
++        Self::Io(value)
++    }
++}
++
++/// Generated inputs only; this value makes no claim of linking or execution.
++pub struct GeneratedMatrixLinkedApplication {
++    root: PathBuf,
++    pins: BTreeMap<String, String>,
++    metadata: Value,
++}
++impl GeneratedMatrixLinkedApplication {
++    pub fn root(&self) -> &Path {
++        &self.root
++    }
++    pub fn manifest_path(&self) -> PathBuf {
++        self.root.join("Cargo.toml")
++    }
++    /// SHA256 pins of all generated immutable inputs except the manifest that
++    /// contains these pins. Cargo.lock is generated later by the owned builder.
++    pub fn pins(&self) -> &BTreeMap<String, String> {
++        &self.pins
++    }
++    pub fn metadata(&self) -> &Value {
++        &self.metadata
++    }
++}
++fn digest(bytes: &[u8]) -> String {
++    super::identity::hex(&Sha256::digest(bytes))
++}
++fn json_string(value: &str) -> String {
++    serde_json::to_string(value).expect("string serialization cannot fail")
++}
++
++/// Cargo ignores a dependency workspace's patch table. Retain the actual
++/// workspace's local resolution in the generated standalone workspace too.
++fn workspace_resolution_patches(workspace: &Path) -> Result<String, NativeMatrixApplicationError> {
++    use std::fmt::Write;
++    let source = fs::read_to_string(workspace.join("Cargo.toml"))?;
++    let manifest = source
++        .parse::<toml_edit::DocumentMut>()
++        .map_err(|error| NativeMatrixApplicationError::Encoding(error.to_string()))?;
++    let Some(patches) = manifest
++        .get("patch")
++        .and_then(|patch| patch.get("crates-io"))
++    else {
++        return Ok(String::new());
++    };
++    let patches = patches
++        .as_table_like()
++        .ok_or(NativeMatrixApplicationError::Invalid(
++            "workspace registry overrides must be a table",
++        ))?;
++    let mut result = String::from("\n[patch.crates-io]\n");
++    for (package, specification) in patches.iter() {
++        let table = specification
++            .as_table_like()
++            .ok_or(NativeMatrixApplicationError::Invalid(
++                "workspace registry override must be a local path",
++            ))?;
++        if table.len() != 1 {
++            return Err(NativeMatrixApplicationError::Invalid(
++                "workspace registry override must contain only a local path",
++            ));
++        }
++        let relative = table.get("path").and_then(toml_edit::Item::as_str).ok_or(
++            NativeMatrixApplicationError::Invalid("workspace registry override has no local path"),
++        )?;
++        let path = workspace.join(relative).canonicalize()?;
++        if !path.starts_with(workspace) || !path.join("Cargo.toml").is_file() {
++            return Err(NativeMatrixApplicationError::Invalid(
++                "workspace registry override is outside the pinned workspace",
++            ));
++        }
++        let path = path.to_str().ok_or(NativeMatrixApplicationError::Invalid(
++            "workspace registry override path is not Unicode",
++        ))?;
++        writeln!(
++            &mut result,
++            "{} = {{ path = {} }}",
++            json_string(package),
++            json_string(path)
++        )
++        .expect("String formatting cannot fail");
++    }
++    Ok(result)
++}
++
++/// Derives a real private-witness plan from `artifact` and the actual catalog,
++/// emits its Object, and creates a Rust runtime-only linked application.
++/// No source interpreter, resident executor, JIT or compiler runs in that app.
++/// `source_provenance` is retained and pinned; it is never parsed or used as a
++/// semantic substitute for the canonical artifact. Callers that claim source
++/// pairing must establish that compilation separately. The destination must
++/// be fresh. Generation does not run Cargo, a linker, or an application.
++pub fn generate_matrix_linked_application(
++    workspace: &Path,
++    directory: &Path,
++    binary_name: &str,
++    artifact: &ProgramArtifact,
++    catalog: &FunctionCatalog,
++    source_provenance: &[u8],
++) -> Result<GeneratedMatrixLinkedApplication, NativeMatrixApplicationError> {
++    if binary_name.is_empty()
++        || binary_name.len() > 64
++        || !binary_name
++            .bytes()
++            .all(|c| c.is_ascii_alphanumeric() || c == b'-')
++        || !binary_name.as_bytes()[0].is_ascii_alphabetic()
++    {
++        return Err(NativeMatrixApplicationError::Invalid("invalid binary name"));
++    }
++    let workspace = workspace.canonicalize()?;
++    if !workspace.join("hosts/gpu/Cargo.toml").is_file()
++        || !workspace.join("src/stdlib/Cargo.toml").is_file()
++    {
++        return Err(NativeMatrixApplicationError::Invalid(
++            "workspace dependencies are absent",
++        ));
++    }
++    if !directory.is_absolute() || directory.exists() {
++        return Err(NativeMatrixApplicationError::Invalid(
++            "destination must be new and absolute",
++        ));
++    }
++    let workspace_text = workspace
++        .to_str()
++        .ok_or(NativeMatrixApplicationError::Invalid(
++            "workspace path is not Unicode",
++        ))?;
++    let plan =
++        lower_matrix_artifact(artifact, catalog).map_err(NativeMatrixApplicationError::Lowering)?;
++    let object = emit_matrix_object(&plan).map_err(NativeMatrixApplicationError::Compile)?;
++    let bytecode = encode_program_artifact_bytecode_v1(artifact)
++        .map_err(|error| NativeMatrixApplicationError::Encoding(format!("{error:?}")))?;
++    let main = include_str!("templates/matrix_main.rs.in")
++        .replace("@IDENTITY_SYMBOL@", object.identity().symbol())
++        .replace("@BYTECODE_SHA256@", &digest(&bytecode));
++    let mut cargo = format!(
++        r#"[package]
++name = {name}
++version = "0.0.0"
++edition = "2024"
++publish = false
++build = "build.rs"
++[workspace]
++[dependencies]
++mech-core = {{ path = {core}, default-features = false }}
++mech-engine = {{ path = {engine}, default-features = false, features = ["native-artifact"] }}
++mech-gpu = {{ path = {gpu}, default-features = false, features = ["canonical-native-runtime"] }}
++mech-stdlib = {{ path = {stdlib}, default-features = false, features = ["std", "native-plan", "f64", "matrixd", "matrix_matmul", "matrix_transpose"] }}
++sha2 = {{ version = "0.11.0", default-features = false }}
++[build-dependencies]
++sha2 = {{ version = "0.11.0", default-features = false }}
++serde_json = "1.0"
++[profile.dev]
++debug = 0
++incremental = false
++"#,
++        name = json_string(binary_name),
++        core = json_string(&format!("{workspace_text}/src/core")),
++        engine = json_string(&format!("{workspace_text}/src/engine")),
++        gpu = json_string(&format!("{workspace_text}/hosts/gpu")),
++        stdlib = json_string(&format!("{workspace_text}/src/stdlib")),
++    );
++    cargo.push_str(&workspace_resolution_patches(&workspace)?);
++    let mut files = BTreeMap::<String, Vec<u8>>::from([
++        ("application.mec".into(), source_provenance.to_vec()),
++        ("program.mecb".into(), bytecode),
++        ("program.o".into(), object.bytes().to_vec()),
++        (
++            "object-identity.bin".into(),
++            object.identity().bytes().to_vec(),
++        ),
++        ("Cargo.toml".into(), cargo.into_bytes()),
++        (
++            "rust-toolchain.toml".into(),
++            b"[toolchain]\nchannel = \"nightly-2026-03-03\"\nprofile = \"minimal\"\n".to_vec(),
++        ),
++        ("src/main.rs".into(), main.into_bytes()),
++    ]);
++    let mut pins = files
++        .iter()
++        .map(|(name, value)| (name.clone(), digest(value)))
++        .collect::<BTreeMap<_, _>>();
++    // The script pins the independent immutable inputs; the manifest pins the
++    // script after it is rendered, avoiding a self-referential digest.
++    let build = include_str!("templates/matrix_build.rs.in").replace(
++        "@PIN_JSON_LITERAL@",
++        &json_string(&serde_json::to_string(&pins).unwrap()),
++    );
++    pins.insert("build.rs".into(), digest(build.as_bytes()));
++    files.insert("build.rs".into(), build.into_bytes());
++    let metadata = json!({
++        "schema": "mech.canonical-linked-application.v1",
++        "route": "canonical-artifact-cranelift-matrix-object",
++        "program_revision": super::identity::hex(artifact.revision().as_bytes()),
++        "typed_ir_sha256": super::identity::hex(object.descriptor().typed_ir_sha256()),
++        "object": object.metadata(), "pins": pins,
++        "source_is_provenance_only": true,
++        "runtime_features": ["mech-gpu/canonical-native-runtime", "mech-engine/native-artifact", "mech-stdlib/native-plan"],
++        "linked": false, "executed": false, "timing_samples": 0,
++    });
++    files.insert(
++        "linked-manifest.json".into(),
++        serde_json::to_vec_pretty(&metadata)
++            .map_err(|error| NativeMatrixApplicationError::Encoding(error.to_string()))?,
++    );
++    fs::create_dir(directory)?;
++    fs::create_dir(directory.join("src"))?;
++    for (name, value) in files {
++        fs::write(directory.join(name), value)?;
++    }
++    Ok(GeneratedMatrixLinkedApplication {
++        root: directory.to_path_buf(),
++        pins,
++        metadata,
++    })
++}
+--- /dev/null
++++ b/hosts/gpu/src/native_artifact/matrix/compiler.rs
+@@ -0,0 +1,433 @@
++//! One checked static leaf-call definition for both JIT and Object modules.
++use super::super::{NativeCompileError, NativeCompileLimits};
++use super::{
++    abi::{
++        BAD_ABI, ERROR, MATRIX_ABI_VERSION, MATRIX_ENTRY_SYMBOL, MatrixFrame,
++        NativeMatrixDescriptor, OK, RawMatrixEntry,
++    },
++    identity::NativeMatrixObjectIdentity,
++    runtime::{
++        NativeMatrixExecutionError, NativeMatrixExecutionLimits, NativeMatrixExecutionReport,
++        NativeMatrixValue,
++    },
++};
++use cranelift_codegen::{
++    ir::{AbiParam, InstBuilder, MemFlags, Value, condcodes::IntCC, types},
++    isa::unwind::UnwindInst,
++    settings::{self, Configurable},
++};
++use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
++use cranelift_module::{DataDescription, FuncId, Linkage, Module, default_libcall_names};
++use cranelift_object::{ObjectBuilder, ObjectModule};
++use mech_core::{ManagedMemoryBudget, Value as CanonicalValue};
++use mech_engine::native_artifact::{NativeMatrixArtifactPlan, NativeMatrixPrimitive};
++fn backend(e: impl std::fmt::Display) -> NativeCompileError {
++    NativeCompileError::Backend(e.to_string())
++}
++fn limit(dimension: &'static str, required: u64, maximum: u64) -> Result<(), NativeCompileError> {
++    if required > maximum {
++        Err(NativeCompileError::Limit {
++            dimension,
++            required,
++            limit: maximum,
++        })
++    } else {
++        Ok(())
++    }
++}
++fn host() -> Result<(), NativeCompileError> {
++    if super::super::identity::host_target_tag().is_none() {
++        Err(NativeCompileError::UnsupportedHost)
++    } else {
++        Ok(())
++    }
++}
++pub struct JitMatrixArtifact {
++    _module: cranelift_jit::JITModule,
++    entry: RawMatrixEntry,
++    descriptor: NativeMatrixDescriptor,
++}
++impl JitMatrixArtifact {
++    pub fn compile(plan: &NativeMatrixArtifactPlan) -> Result<Self, NativeCompileError> {
++        Self::compile_with_limits(plan, NativeCompileLimits::default())
++    }
++    pub fn compile_with_limits(
++        plan: &NativeMatrixArtifactPlan,
++        limits: NativeCompileLimits,
++    ) -> Result<Self, NativeCompileError> {
++        host()?;
++        let builder = cranelift_jit::JITBuilder::with_flags(
++            &[
++                ("opt_level", "none"),
++                ("is_pic", "true"),
++                ("preserve_frame_pointers", "true"),
++                ("unwind_info", "true"),
++            ],
++            default_libcall_names(),
++        )
++        .map_err(backend)?;
++        let mut module = cranelift_jit::JITModule::new(builder);
++        let (id, descriptor) = define(plan, &mut module, limits)?;
++        module.finalize_definitions().map_err(backend)?;
++        // SAFETY: shared define emits this private ABI4 and module owns code.
++        let entry = unsafe {
++            std::mem::transmute::<*const u8, RawMatrixEntry>(module.get_finalized_function(id))
++        };
++        Ok(Self {
++            _module: module,
++            entry,
++            descriptor,
++        })
++    }
++    pub fn descriptor(&self) -> &NativeMatrixDescriptor {
++        &self.descriptor
++    }
++    pub fn evaluate_into(
++        &self,
++        inputs: &[CanonicalValue],
++        outputs: &mut [Option<NativeMatrixValue>],
++        limits: NativeMatrixExecutionLimits,
++        budget: &ManagedMemoryBudget,
++    ) -> Result<NativeMatrixExecutionReport, NativeMatrixExecutionError> {
++        super::runtime::execute(
++            &self.descriptor,
++            |frame| {
++                // SAFETY: module retains the exact shared-definition code.
++                unsafe { (self.entry)(frame) }
++            },
++            inputs,
++            outputs,
++            limits,
++            budget,
++        )
++    }
++}
++/// Emission evidence only. Actual linked execution is separately qualified.
++pub struct NativeMatrixObject {
++    bytes: Vec<u8>,
++    descriptor: NativeMatrixDescriptor,
++    identity: NativeMatrixObjectIdentity,
++}
++impl NativeMatrixObject {
++    pub fn bytes(&self) -> &[u8] {
++        &self.bytes
++    }
++    pub fn descriptor(&self) -> &NativeMatrixDescriptor {
++        &self.descriptor
++    }
++    pub fn identity(&self) -> &NativeMatrixObjectIdentity {
++        &self.identity
++    }
++    pub fn metadata(&self) -> serde_json::Value {
++        serde_json::json!({"schema":"mech.canonical-native-matrix-object.v1","abi":MATRIX_ABI_VERSION,"entry":MATRIX_ENTRY_SYMBOL,"typed_ir_sha256":super::identity::hex(self.descriptor.typed_ir_sha256()),"program_revision":super::identity::hex(self.descriptor.plan().program_revision().as_bytes()),"stack_bytes":self.descriptor.stack_bytes(),"code_bytes":self.descriptor.code_bytes(),"object_bytes":self.bytes.len(),"nodes":self.descriptor.plan().calls().len(),"linked":false,"executed":false,"timing_samples":0})
++    }
++}
++pub fn emit_matrix_object(
++    plan: &NativeMatrixArtifactPlan,
++) -> Result<NativeMatrixObject, NativeCompileError> {
++    emit_matrix_object_with_limits(plan, NativeCompileLimits::default())
++}
++pub fn emit_matrix_object_with_limits(
++    plan: &NativeMatrixArtifactPlan,
++    limits: NativeCompileLimits,
++) -> Result<NativeMatrixObject, NativeCompileError> {
++    host()?;
++    let mut flags = settings::builder();
++    for (name, value) in [
++        ("opt_level", "none"),
++        ("is_pic", "true"),
++        ("preserve_frame_pointers", "true"),
++        ("unwind_info", "true"),
++    ] {
++        flags.set(name, value).map_err(backend)?;
++    }
++    let isa = cranelift_native::builder()
++        .map_err(backend)?
++        .finish(settings::Flags::new(flags))
++        .map_err(backend)?;
++    let mut module = ObjectModule::new(
++        ObjectBuilder::new(isa, "mech_canonical_matrix", default_libcall_names())
++            .map_err(backend)?,
++    );
++    let (_, descriptor) = define(plan, &mut module, limits)?;
++    let identity = NativeMatrixObjectIdentity::from_descriptor(&descriptor)
++        .ok_or(NativeCompileError::UnsupportedHost)?;
++    let id = module
++        .declare_data(identity.symbol(), Linkage::Export, false, false)
++        .map_err(backend)?;
++    let mut data = DataDescription::new();
++    data.define(identity.bytes().to_vec().into_boxed_slice());
++    data.set_align(8);
++    module.define_data(id, &data).map_err(backend)?;
++    Ok(NativeMatrixObject {
++        bytes: module.finish().emit().map_err(backend)?,
++        descriptor,
++        identity,
++    })
++}
++fn guard(
++    b: &mut FunctionBuilder<'_>,
++    valid: Value,
++    error: cranelift_codegen::ir::Block,
++    status: u64,
++) {
++    let good = b.create_block();
++    let status = b.ins().iconst(types::I64, status as i64);
++    b.ins().brif(valid, good, &[], error, &[status.into()]);
++    b.switch_to_block(good);
++}
++fn load(b: &mut FunctionBuilder<'_>, frame: Value, offset: usize) -> Value {
++    b.ins()
++        .load(types::I64, MemFlags::new(), frame, offset as i32)
++}
++fn callback(
++    b: &mut FunctionBuilder<'_>,
++    frame: Value,
++    context: Value,
++    offset: usize,
++    sig: cranelift_codegen::ir::SigRef,
++    ordinal: usize,
++    error: cranelift_codegen::ir::Block,
++) {
++    let target = load(b, frame, offset);
++    let nonnull = b.ins().icmp_imm(IntCC::NotEqual, target, 0);
++    guard(b, nonnull, error, BAD_ABI);
++    let ordinal = b.ins().iconst(types::I64, ordinal as i64);
++    let call = b.ins().call_indirect(sig, target, &[context, ordinal]);
++    let status = b.inst_results(call)[0];
++    let valid = b.ins().icmp_imm(IntCC::Equal, status, OK as i64);
++    guard(b, valid, error, ERROR);
++}
++fn define<M: Module>(
++    plan: &NativeMatrixArtifactPlan,
++    module: &mut M,
++    limits: NativeCompileLimits,
++) -> Result<(FuncId, NativeMatrixDescriptor), NativeCompileError> {
++    host()?;
++    if module.target_config().pointer_type() != types::I64 {
++        return Err(NativeCompileError::UnsupportedHost);
++    }
++    limit("matrix nodes", plan.calls().len() as u64, limits.max_nodes)?;
++    limit(
++        "matrix inputs",
++        plan.inputs().len() as u64,
++        limits.max_inputs,
++    )?;
++    limit(
++        "matrix outputs",
++        plan.outputs().len() as u64,
++        limits.max_outputs,
++    )?;
++    // Before allocating canonical encodings for identity, bound referenced
++    // immutable payload with the existing finite compile byte allowance.
++    let mut constant_bytes = 0u64;
++    for c in plan.constants() {
++        let mech_core::ValueData::Matrix(matrix) = c.canonical().data() else {
++            return Err(NativeCompileError::InvalidPlan {
++                node: None,
++                reason: "matrix constant has wrong payload",
++            });
++        };
++        let packed = (matrix.elements().len() as u64).checked_mul(8).ok_or(
++            NativeCompileError::InvalidPlan {
++                node: None,
++                reason: "matrix constant byte overflow",
++            },
++        )?;
++        limit(
++            "matrix constant pre-encoding bytes",
++            packed,
++            limits.max_code_bytes,
++        )?;
++        constant_bytes = constant_bytes
++            .checked_add(
++                c.canonical()
++                    .canonical_payload_len(plan.schemas())
++                    .map_err(backend)? as u64,
++            )
++            .ok_or(NativeCompileError::InvalidPlan {
++                node: None,
++                reason: "matrix constant byte overflow",
++            })?;
++    }
++    limit(
++        "matrix constant identity bytes",
++        constant_bytes,
++        limits.max_code_bytes,
++    )?;
++    let mut sig = module.make_signature();
++    sig.params.push(AbiParam::new(types::I64));
++    sig.returns.push(AbiParam::new(types::I64));
++    let id = module
++        .declare_function(MATRIX_ENTRY_SYMBOL, Linkage::Export, &sig)
++        .map_err(backend)?;
++    let mut ctx = module.make_context();
++    ctx.func.signature = sig;
++    let mut helper = module.make_signature();
++    helper
++        .params
++        .extend([AbiParam::new(types::I64), AbiParam::new(types::I64)]);
++    helper.returns.push(AbiParam::new(types::I64));
++    let mut function = FunctionBuilderContext::new();
++    {
++        let mut b = FunctionBuilder::new(&mut ctx.func, &mut function);
++        let entry = b.create_block();
++        let error = b.create_block();
++        b.append_block_param(error, types::I64);
++        b.append_block_params_for_function_params(entry);
++        b.switch_to_block(entry);
++        let frame = b.block_params(entry)[0];
++        let valid = b.ins().icmp_imm(IntCC::NotEqual, frame, 0);
++        guard(&mut b, valid, error, BAD_ABI);
++        for (offset, expected) in [
++            (
++                core::mem::offset_of!(MatrixFrame, version),
++                MATRIX_ABI_VERSION,
++            ),
++            (
++                core::mem::offset_of!(MatrixFrame, inputs),
++                plan.inputs().len() as u64,
++            ),
++            (
++                core::mem::offset_of!(MatrixFrame, calls),
++                plan.calls().len() as u64,
++            ),
++            (
++                core::mem::offset_of!(MatrixFrame, outputs),
++                plan.outputs().len() as u64,
++            ),
++        ] {
++            let value = load(&mut b, frame, offset);
++            let valid = b.ins().icmp_imm(IntCC::Equal, value, expected as i64);
++            guard(&mut b, valid, error, BAD_ABI);
++        }
++        let context = load(&mut b, frame, core::mem::offset_of!(MatrixFrame, context));
++        let nonnull = b.ins().icmp_imm(IntCC::NotEqual, context, 0);
++        guard(&mut b, nonnull, error, BAD_ABI);
++        let callback_sig = b.import_signature(helper);
++        for (ordinal, call) in plan.calls().iter().enumerate() {
++            let before = b.func.dfg.num_insts();
++            let offset = match call.template().primitive() {
++                NativeMatrixPrimitive::TransposeF64 => {
++                    core::mem::offset_of!(MatrixFrame, transpose)
++                }
++                NativeMatrixPrimitive::MatmulF64 => core::mem::offset_of!(MatrixFrame, matmul),
++            };
++            callback(&mut b, frame, context, offset, callback_sig, ordinal, error);
++            // The fixed callback/progress bookkeeping is conservatively128
++            // logical units; explicit checked CLIF + that bound must fit256.
++            let required = b
++                .func
++                .dfg
++                .num_insts()
++                .checked_sub(before)
++                .and_then(|n| n.checked_add(128))
++                .ok_or(NativeCompileError::InvalidPlan {
++                    node: Some(call.template().node()),
++                    reason: "matrix emitted work counter overflow",
++                })?;
++            limit("matrix static callback work", required as u64, 256)?;
++        }
++        callback(
++            &mut b,
++            frame,
++            context,
++            core::mem::offset_of!(MatrixFrame, complete),
++            callback_sig,
++            plan.calls().len(),
++            error,
++        );
++        let success = b.ins().iconst(types::I64, OK as i64);
++        b.ins().return_(&[success]);
++        b.switch_to_block(error);
++        let status = b.block_params(error)[0];
++        b.ins().return_(&[status]);
++        b.seal_all_blocks();
++        b.finalize();
++    }
++    module.define_function(id, &mut ctx).map_err(backend)?;
++    let compiled = ctx
++        .compiled_code()
++        .ok_or(NativeCompileError::StackMetadata {
++            reason: "matrix compiled code missing",
++        })?;
++    let stack = compiled_stack_bytes(&compiled.buffer)?;
++    let code = u64::from(compiled.code_info().total_size);
++    limit("matrix entry stack bytes", stack, limits.max_stack_bytes)?;
++    limit("matrix code bytes", code, limits.max_code_bytes)?;
++    Ok((id, NativeMatrixDescriptor::new(plan, stack, code)))
++}
++
++// Same pinned Cranelift unwind/frame authority as the scalar emitter.
++fn compiled_stack_bytes(
++    buffer: &cranelift_codegen::MachBufferFinalized<cranelift_codegen::Final>,
++) -> Result<u64, NativeCompileError> {
++    let layout = buffer
++        .frame_layout()
++        .ok_or(NativeCompileError::StackMetadata {
++            reason: "fixed frame layout missing",
++        })?;
++    let mut pushes = 0;
++    let mut frames = 0;
++    let mut clobbers = None;
++    let mut fixed_allocation = None;
++    for (_, inst) in &buffer.unwind_info {
++        match inst {
++            UnwindInst::PushFrameRegs {
++                offset_upward_to_caller_sp: 16,
++            } if pushes == 0 && frames == 0 => pushes += 1,
++            UnwindInst::DefineNewFrame {
++                offset_upward_to_caller_sp: 16,
++                offset_downward_to_clobbers,
++            } if pushes == 1 && frames == 0 => {
++                frames += 1;
++                clobbers = Some(*offset_downward_to_clobbers);
++            }
++            // Pinned AArch64 reports its ordinary fixed area explicitly; the
++            // field is already included in frame_to_fp_offset. No tail calls
++            // or dynamic stack allocations are emitted by this definition.
++            UnwindInst::StackAlloc { size }
++                if cfg!(target_arch = "aarch64") && frames == 1 && fixed_allocation.is_none() =>
++            {
++                fixed_allocation = Some(*size);
++            }
++            UnwindInst::PushFrameRegs { .. }
++            | UnwindInst::DefineNewFrame { .. }
++            | UnwindInst::StackAlloc { .. } => {
++                return Err(NativeCompileError::StackMetadata {
++                    reason: "unsupported or repeated frame setup",
++                });
++            }
++            UnwindInst::SaveReg { .. } if frames == 1 => {}
++            UnwindInst::Aarch64SetPointerAuth { .. } if cfg!(target_arch = "aarch64") => {}
++            _ => {
++                return Err(NativeCompileError::StackMetadata {
++                    reason: "unsupported unwind action",
++                });
++            }
++        }
++    }
++    if pushes != 1 || frames != 1 {
++        return Err(NativeCompileError::StackMetadata {
++            reason: "exact preserved native frame setup unavailable",
++        });
++    }
++    let clobbers = clobbers.ok_or(NativeCompileError::StackMetadata {
++        reason: "clobber layout missing",
++    })?;
++    if cfg!(target_arch = "aarch64") {
++        if clobbers.checked_add(fixed_allocation.unwrap_or(0)) != Some(layout.frame_to_fp_offset) {
++            return Err(NativeCompileError::StackMetadata {
++                reason: "fixed AArch64 allocation does not match complete frame",
++            });
++        }
++    } else if fixed_allocation.is_some() || clobbers > layout.frame_to_fp_offset {
++        return Err(NativeCompileError::StackMetadata {
++            reason: "unsupported x86_64 fixed-frame metadata",
++        });
++    }
++    // Pinned Cranelift frame_to_fp_offset includes clobbers, fixed/spill slots
++    // and outgoing arguments (machinst/abi.rs::sp_to_fp_offset). The supported
++    // preserved-FP prologue contributes exactly the separately verified16.
++    Ok(u64::from(layout.frame_to_fp_offset) + 16)
++}
+--- /dev/null
++++ b/hosts/gpu/src/native_artifact/matrix/identity.rs
+@@ -0,0 +1,199 @@
++//! Deterministic versioned matrix IR identity. Debug/serde text is not hashed.
++use super::abi::{MATRIX_ABI_VERSION, NativeMatrixDescriptor};
++use mech_core::ImplementationMemoryClass;
++use mech_engine::native_artifact::{
++    NativeMatrixArtifactPlan, NativeMatrixPlanningDemand, NativeMatrixPrimitive,
++};
++use sha2::{Digest, Sha256};
++pub const MATRIX_IDENTITY_BYTES: usize = 160;
++pub const MATRIX_TYPED_IR_VERSION: u64 = 1;
++pub const MATRIX_WORK_POLICY_VERSION: u64 = 1;
++const MAGIC: &[u8; 16] = b"MECHMATRIXOBJv1\0";
++
++#[derive(Clone, Debug)]
++pub struct NativeMatrixObjectIdentity {
++    bytes: [u8; MATRIX_IDENTITY_BYTES],
++    symbol: String,
++}
++fn word(h: &mut Sha256, value: u64) {
++    h.update(value.to_le_bytes());
++}
++fn bytes(h: &mut Sha256, value: &[u8]) {
++    word(h, value.len() as u64);
++    h.update(value);
++}
++fn demand(h: &mut Sha256, value: NativeMatrixPlanningDemand) {
++    word(h, value.work);
++    word(h, value.temporary_bytes);
++    word(h, value.retained_nodes);
++}
++fn memory(h: &mut Sha256, class: ImplementationMemoryClass) {
++    match class {
++        ImplementationMemoryClass::NoAdditionalScratch => word(h, 0),
++        ImplementationMemoryClass::CloneInput { input } => {
++            word(h, 1);
++            word(h, input as u64);
++        }
++        ImplementationMemoryClass::CanonicalCloneInput { input } => {
++            word(h, 2);
++            word(h, input as u64);
++        }
++        ImplementationMemoryClass::AbiContiguousBridge { input, output } => {
++            word(h, 3);
++            word(h, input as u64);
++            word(h, output as u64);
++        }
++        ImplementationMemoryClass::ExternalMarshalling => word(h, 4),
++        ImplementationMemoryClass::MatrixSolve => word(h, 5),
++        ImplementationMemoryClass::CanonicalFinalize => word(h, 6),
++        ImplementationMemoryClass::CanonicalSortUnique => word(h, 7),
++    }
++}
++pub(super) fn typed_ir_sha256(plan: &NativeMatrixArtifactPlan) -> [u8; 32] {
++    let mut h = Sha256::new();
++    h.update(b"mech.canonical-native-matrix-typed-ir\0");
++    word(&mut h, MATRIX_TYPED_IR_VERSION);
++    word(&mut h, MATRIX_ABI_VERSION);
++    word(&mut h, MATRIX_WORK_POLICY_VERSION);
++    h.update(plan.program_revision().as_bytes());
++    demand(&mut h, plan.setup_demand());
++    word(&mut h, plan.values().len() as u64);
++    for ty in plan.values() {
++        word(&mut h, ty.schema_id().get() as u64);
++        h.update(ty.schema_key().as_bytes());
++        demand(&mut h, ty.planning_demand());
++    }
++    word(&mut h, plan.inputs().len() as u64);
++    for input in plan.inputs() {
++        word(&mut h, input.input().get() as u64);
++        word(&mut h, input.slot().get() as u64);
++        bytes(&mut h, input.name().as_bytes());
++        word(&mut h, input.value().get() as u64);
++    }
++    word(&mut h, plan.constants().len() as u64);
++    for constant in plan.constants() {
++        word(&mut h, constant.constant().get() as u64);
++        word(&mut h, constant.value().get() as u64);
++        // Private plan construction obtained this genuine finalized constant
++        // from the validated artifact and exact schema identity.
++        let encoded = constant
++            .canonical()
++            .canonical_snapshot_bytes(plan.schemas())
++            .expect("sealed matrix constant retains exact canonical schema");
++        bytes(&mut h, &encoded);
++    }
++    word(&mut h, plan.calls().len() as u64);
++    for call in plan.calls() {
++        word(&mut h, call.template().node().get() as u64);
++        word(&mut h, call.template().target().get() as u64);
++        word(
++            &mut h,
++            match call.template().primitive() {
++                NativeMatrixPrimitive::TransposeF64 => 1,
++                NativeMatrixPrimitive::MatmulF64 => 2,
++            },
++        );
++        word(&mut h, call.operands().len() as u64);
++        for operand in call.operands() {
++            word(&mut h, operand.get() as u64);
++        }
++        word(&mut h, call.output().get() as u64);
++        demand(&mut h, call.planning_demand());
++        memory(&mut h, call.template().implementation_memory());
++        let selected = call.template().selected_key();
++        word(&mut h, selected.module_path.len() as u64);
++        for part in &selected.module_path {
++            bytes(&mut h, part.as_bytes());
++        }
++        bytes(&mut h, selected.operation_name.as_bytes());
++    }
++    word(&mut h, plan.outputs().len() as u64);
++    for output in plan.outputs() {
++        word(&mut h, output.output().get() as u64);
++        word(&mut h, output.slot().get() as u64);
++        bytes(&mut h, output.name().as_bytes());
++        word(&mut h, output.value().get() as u64);
++    }
++    h.finalize().into()
++}
++impl NativeMatrixObjectIdentity {
++    #[cfg(feature = "canonical-native")]
++    pub(super) fn from_descriptor(d: &NativeMatrixDescriptor) -> Option<Self> {
++        let mut result = [0; MATRIX_IDENTITY_BYTES];
++        result[..16].copy_from_slice(MAGIC);
++        let fields = [
++            (16, MATRIX_TYPED_IR_VERSION),
++            (24, MATRIX_ABI_VERSION),
++            (32, MATRIX_WORK_POLICY_VERSION),
++            (112, d.stack_bytes()),
++            (120, d.code_bytes()),
++            (128, d.plan().inputs().len() as u64),
++            (136, d.plan().calls().len() as u64),
++            (144, d.plan().outputs().len() as u64),
++            (152, d.plan().values().len() as u64),
++        ];
++        for (offset, value) in fields {
++            result[offset..offset + 8].copy_from_slice(&value.to_le_bytes());
++        }
++        result[40..72].copy_from_slice(d.plan().program_revision().as_bytes());
++        result[72..104].copy_from_slice(d.typed_ir_sha256());
++        result[104..112].copy_from_slice(&super::super::identity::host_target_tag()?);
++        Some(Self {
++            bytes: result,
++            symbol: format!(
++                "mech_canonical_matrix_identity_v1_{}",
++                hex(d.typed_ir_sha256())
++            ),
++        })
++    }
++    pub fn bytes(&self) -> &[u8; MATRIX_IDENTITY_BYTES] {
++        &self.bytes
++    }
++    pub fn symbol(&self) -> &str {
++        &self.symbol
++    }
++}
++fn get(data: &[u8], offset: usize) -> u64 {
++    u64::from_le_bytes(
++        data[offset..offset + 8]
++            .try_into()
++            .expect("fixed matrix identity field"),
++    )
++}
++pub(super) fn bind(
++    plan: &NativeMatrixArtifactPlan,
++    identity: &[u8; MATRIX_IDENTITY_BYTES],
++) -> Result<NativeMatrixDescriptor, &'static str> {
++    if &identity[..16] != MAGIC
++        || get(identity, 16) != MATRIX_TYPED_IR_VERSION
++        || get(identity, 24) != MATRIX_ABI_VERSION
++        || get(identity, 32) != MATRIX_WORK_POLICY_VERSION
++    {
++        return Err("unsupported matrix identity/ABI/work-policy version");
++    }
++    if identity[104..112]
++        != super::super::identity::host_target_tag().ok_or("unsupported matrix host")?
++    {
++        return Err("matrix object target differs");
++    }
++    if identity[40..72] != plan.program_revision().as_bytes()[..]
++        || get(identity, 128) != plan.inputs().len() as u64
++        || get(identity, 136) != plan.calls().len() as u64
++        || get(identity, 144) != plan.outputs().len() as u64
++        || get(identity, 152) != plan.values().len() as u64
++    {
++        return Err("matrix object canonical revision/counts differ");
++    }
++    if get(identity, 112) == 0 || get(identity, 120) == 0 {
++        return Err("matrix object lacks checked stack/code metadata");
++    }
++    let descriptor = NativeMatrixDescriptor::new(plan, get(identity, 112), get(identity, 120));
++    if identity[72..104] != descriptor.typed_ir_sha256()[..] {
++        return Err("matrix object typed IR differs");
++    }
++    Ok(descriptor)
++}
++#[cfg(feature = "canonical-native")]
++pub(super) fn hex(data: &[u8]) -> String {
++    data.iter().map(|b| format!("{b:02x}")).collect()
++}
+--- /dev/null
++++ b/hosts/gpu/src/native_artifact/matrix/linked.rs
+@@ -0,0 +1,59 @@
++use super::identity::MATRIX_IDENTITY_BYTES;
++use super::{
++    NativeMatrixDescriptor, NativeMatrixExecutionError, NativeMatrixExecutionLimits,
++    NativeMatrixExecutionReport, NativeMatrixValue,
++};
++use core::ffi::c_void;
++use mech_core::{ManagedMemoryBudget, Value};
++use mech_engine::native_artifact::NativeMatrixArtifactPlan;
++
++pub struct LinkedMatrixArtifact {
++    entry: unsafe extern "C" fn(*mut c_void) -> u64,
++    descriptor: NativeMatrixDescriptor,
++}
++impl LinkedMatrixArtifact {
++    /// Binds the actual selected canonical plan, outside evaluation.
++    ///
++    /// # Safety
++    /// Entry and identity MUST originate from the same unchanged Object made
++    /// by this crate's checked shared matrix emitter, with verified object,
++    /// bytecode and generated-source build pins. Identity bytes alone do not
++    /// establish this invariant. Entry obeys the synchronous private ABI4,
++    /// invokes only its frame's exact leaf callbacks in emitted order, retains
++    /// no pointers, and cannot unwind or access unadmitted data. Arbitrary
++    /// foreign code or a fabricated matching record is unsound.
++    pub unsafe fn from_build_owned_entry(
++        plan: &NativeMatrixArtifactPlan,
++        identity: &'static [u8; MATRIX_IDENTITY_BYTES],
++        entry: unsafe extern "C" fn(*mut c_void) -> u64,
++    ) -> Result<Self, &'static str> {
++        Ok(Self {
++            entry,
++            descriptor: super::identity::bind(plan, identity)?,
++        })
++    }
++    pub fn descriptor(&self) -> &NativeMatrixDescriptor {
++        &self.descriptor
++    }
++    /// Real managed admission and atomic typed publication, identical to JIT.
++    /// The explicit account bounds all backing and conservative workspace.
++    pub fn evaluate_into(
++        &self,
++        inputs: &[Value],
++        outputs: &mut [Option<NativeMatrixValue>],
++        limits: NativeMatrixExecutionLimits,
++        budget: &ManagedMemoryBudget,
++    ) -> Result<NativeMatrixExecutionReport, NativeMatrixExecutionError> {
++        super::runtime::execute(
++            &self.descriptor,
++            |frame| {
++                // SAFETY: established by the explicit build-owned constructor.
++                unsafe { (self.entry)(frame.cast()) }
++            },
++            inputs,
++            outputs,
++            limits,
++            budget,
++        )
++    }
++}
+--- /dev/null
++++ b/hosts/gpu/src/native_artifact/matrix/memory.rs
+@@ -0,0 +1,117 @@
++//! Actual compact column-major backing, distinct from the selected call plan's
++//! possibly padded/capacity-reserved NativeHost layouts and workspace.
++use super::runtime::NativeMatrixExecutionError as Error;
++use mech_core::{
++    AllocationPlan, AllocationRole, ArenaBackingKind, ArenaPlacement, ArenaPlan, FloatWidth,
++    ManagedMemoryBudget, ManagedMemoryReservation, MemoryArenaId, MemoryBudgetLimits, MemoryDomain,
++    MemoryLifetime, MemoryObjectId, MemoryObjectOwner, MemorySpace, PlannedArenaProjection,
++    PlannedSlotKind, PortDirection, ResourceDemand, RuntimePlanView, ScalarMemoryKind,
++};
++
++pub(super) struct MatrixStorage {
++    values: PlannedArenaProjection<f64>,
++    _domain: MemoryDomain,
++    _headers: ManagedMemoryReservation,
++    budget: ManagedMemoryBudget,
++    bytes: u64,
++}
++impl MatrixStorage {
++    /// Caller funds zero-initialization and compact import/leaf work first.
++    pub(super) fn new(count: usize, budget: &ManagedMemoryBudget) -> Result<Self, Error> {
++        let bytes = u64::try_from(count)
++            .ok()
++            .and_then(|n| n.checked_mul(8))
++            .ok_or(Error::Descriptor("matrix backing overflow"))?;
++        // Domain/projection/Rc headers, allocation/arena lists and realization
++        // bookkeeping are held under a separate conservative metadata claim.
++        let headers = budget.reserve_capacity(Self::header_bytes())?;
++        let domain = MemoryDomain::with_memory_budget(budget.clone())?;
++        if count == 0 {
++            return Ok(Self {
++                values: PlannedArenaProjection::empty()?,
++                _domain: domain,
++                _headers: headers,
++                budget: budget.clone(),
++                bytes,
++            });
++        }
++        let revision = domain.issue_plan_revision()?;
++        let arena = MemoryArenaId::new(0);
++        let object = MemoryObjectId::new(0);
++        let allocation = [AllocationPlan {
++            id: object,
++            owner: MemoryObjectOwner::DirectCallPort {
++                call: 0,
++                direction: PortDirection::Output,
++                port: 0,
++            },
++            role: AllocationRole::FixedStorage,
++            slot: Some(PlannedSlotKind::FixedScalar(ScalarMemoryKind::Floating(
++                FloatWidth::W64,
++            ))),
++            space: MemorySpace::Host,
++            current_bytes: bytes,
++            capacity_bytes: bytes,
++            payload_block_capacity: 0,
++            alignment: core::mem::align_of::<f64>() as u32,
++            lifetime: MemoryLifetime::Program,
++            placement: ArenaPlacement { arena, offset: 0 },
++            reuse_group: None,
++        }];
++        let arenas = [ArenaPlan {
++            id: arena,
++            space: MemorySpace::Host,
++            backing: ArenaBackingKind::ContiguousBytes,
++            alignment: 8,
++            capacity_bytes: bytes,
++            members: Box::new([object]),
++        }];
++        let reservation = domain.prepare_realization(RuntimePlanView::for_aggregate(
++            revision,
++            &allocation,
++            &arenas,
++            ResourceDemand {
++                persistent_bytes: bytes,
++                turn_peak_bytes: bytes,
++                ..ResourceDemand::default()
++            },
++            MemoryBudgetLimits {
++                max_temporary_bytes: Some(bytes),
++                max_storage_buffer_bytes: Some(bytes),
++                ..MemoryBudgetLimits::default()
++            },
++            &[],
++            1,
++            &[],
++        ))?;
++        let realized = domain.materialize(reservation)?;
++        let values = domain.project_host_arena::<f64>(&realized, arena, count)?;
++        Ok(Self {
++            values,
++            _domain: domain,
++            _headers: headers,
++            budget: budget.clone(),
++            bytes,
++        })
++    }
++    pub(super) const fn header_bytes() -> u64 {
++        // Finite private realization metadata, no schema/payload in this bound.
++        64 * (core::mem::size_of::<MatrixStorage>()
++            + core::mem::size_of::<AllocationPlan>()
++            + core::mem::size_of::<ArenaPlan>()) as u64
++    }
++    pub(super) fn values(&self) -> &[f64] {
++        &self.values
++    }
++    pub(super) fn values_mut(&mut self) -> &mut [f64] {
++        &mut self.values
++    }
++    pub(super) fn budget(&self) -> &ManagedMemoryBudget {
++        &self.budget
++    }
++    pub(super) fn retained_bytes(&self) -> Result<u64, Error> {
++        self.bytes
++            .checked_add(Self::header_bytes())
++            .ok_or(Error::Descriptor("matrix retained backing overflow"))
++    }
++}
+--- /dev/null
++++ b/hosts/gpu/src/native_artifact/matrix/mod.rs
+@@ -0,0 +1,30 @@
++//! Checked managed Matrix<F64> library leaves selected from canonical artifacts.
++//! This initial straight-line slice excludes control, collections and effects.
++mod abi;
++#[cfg(feature = "canonical-native")]
++mod application;
++#[cfg(feature = "canonical-native")]
++mod compiler;
++mod identity;
++mod linked;
++mod memory;
++mod runtime;
++pub use abi::{MATRIX_ABI_VERSION, MATRIX_ENTRY_SYMBOL, NativeMatrixDescriptor};
++#[cfg(feature = "canonical-native")]
++pub use application::{
++    GeneratedMatrixLinkedApplication, NativeMatrixApplicationError,
++    generate_matrix_linked_application,
++};
++#[cfg(feature = "canonical-native")]
++pub use compiler::{
++    JitMatrixArtifact, NativeMatrixObject, emit_matrix_object, emit_matrix_object_with_limits,
++};
++pub use identity::{
++    MATRIX_IDENTITY_BYTES, MATRIX_TYPED_IR_VERSION, MATRIX_WORK_POLICY_VERSION,
++    NativeMatrixObjectIdentity,
++};
++pub use linked::LinkedMatrixArtifact;
++pub use runtime::{
++    NativeMatrixExecutionError, NativeMatrixExecutionLimits, NativeMatrixExecutionPhase,
++    NativeMatrixExecutionReport, NativeMatrixValue,
++};
+--- /dev/null
++++ b/hosts/gpu/src/native_artifact/matrix/runtime.rs
+@@ -0,0 +1,958 @@
++//! The same managed evaluator is used by JIT and build-owned linked entries.
++//! Generated code selects exact private leaf callbacks; it never calls a
++//! resident executor or dispatches an operation by public name.
++use super::abi::{BAD_ABI, ERROR, MATRIX_ABI_VERSION, MatrixFrame, NativeMatrixDescriptor, OK};
++use super::memory::MatrixStorage;
++use mech_core::snapshot::SequenceView;
++use mech_core::{
++    CardinalitySpec, DimensionExpr, ManagedMemoryBudget, ManagedMemoryReservation,
++    MemoryRuntimeError, NodeId, ResolvedValueDescriptor, SchemaBody, Value, ValueData,
++};
++use mech_engine::native_artifact::{
++    NativeMatrixArtifactPlan, NativeMatrixPlanningDemand, NativeMatrixPrimitive,
++    NativeMatrixValueId,
++};
++use std::{
++    ffi::c_void,
++    panic::{AssertUnwindSafe, catch_unwind},
++    rc::Rc,
++};
++
++#[derive(Clone, Copy, Debug, Eq, PartialEq)]
++pub struct NativeMatrixExecutionLimits {
++    pub max_work: u64,
++    pub max_retained_nodes: u64,
++    /// Generated entry frame only; not the Rust caller/leaf stack.
++    pub max_native_stack_bytes: u64,
++}
++impl Default for NativeMatrixExecutionLimits {
++    fn default() -> Self {
++        Self {
++            max_work: 16_777_216,
++            max_retained_nodes: 262_144,
++            max_native_stack_bytes: 65_536,
++        }
++    }
++}
++#[derive(Clone, Copy, Debug, Eq, PartialEq)]
++pub enum NativeMatrixExecutionPhase {
++    Setup,
++    Node(NodeId),
++    Completion,
++}
++#[derive(Clone, Debug, Eq, PartialEq)]
++pub enum NativeMatrixExecutionError {
++    InvalidInputs {
++        expected: usize,
++        actual: usize,
++    },
++    InvalidOutputs {
++        expected: usize,
++        actual: usize,
++    },
++    Input {
++        input: usize,
++        reason: &'static str,
++    },
++    Descriptor(&'static str),
++    Planning {
++        node: NodeId,
++    },
++    Work {
++        phase: NativeMatrixExecutionPhase,
++        required: u64,
++        limit: u64,
++    },
++    Nodes {
++        required: u64,
++        limit: u64,
++    },
++    Stack {
++        required: u64,
++        limit: u64,
++    },
++    Sequence {
++        expected: u64,
++        actual: u64,
++    },
++    Leaf {
++        node: NodeId,
++    },
++    Panic,
++    Status(u64),
++    Memory(MemoryRuntimeError),
++}
++impl From<MemoryRuntimeError> for NativeMatrixExecutionError {
++    fn from(e: MemoryRuntimeError) -> Self {
++        Self::Memory(e)
++    }
++}
++impl std::fmt::Display for NativeMatrixExecutionError {
++    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
++        write!(f, "canonical native matrix execution: {self:?}")
++    }
++}
++impl std::error::Error for NativeMatrixExecutionError {}
++type Error = NativeMatrixExecutionError;
++type Phase = NativeMatrixExecutionPhase;
++fn add(a: u64, b: u64) -> Result<u64, Error> {
++    a.checked_add(b)
++        .ok_or(Error::Descriptor("matrix accounting overflow"))
++}
++fn mul(a: u64, b: u64) -> Result<u64, Error> {
++    a.checked_mul(b)
++        .ok_or(Error::Descriptor("matrix accounting overflow"))
++}
++fn count(n: usize) -> Result<u64, Error> {
++    u64::try_from(n).map_err(|_| Error::Descriptor("matrix count exceeds u64"))
++}
++fn host(n: u64) -> Result<usize, Error> {
++    usize::try_from(n).map_err(|_| Error::Descriptor("matrix extent exceeds host"))
++}
++
++/// An immutable, managed, compact column-major typed result. Construction is
++/// private. No raw buffer/descriptor setter or unchecked deserializer exists.
++#[derive(Clone)]
++pub struct NativeMatrixValue {
++    descriptor: Rc<DescriptorOwner>,
++    extents: [u64; 2],
++    storage: Rc<MatrixStorage>,
++}
++impl NativeMatrixValue {
++    pub fn descriptor(&self) -> &ResolvedValueDescriptor {
++        &self.descriptor.value
++    }
++    pub const fn extents(&self) -> [u64; 2] {
++        self.extents
++    }
++    pub fn column_major_values(&self) -> &[f64] {
++        self.storage.values()
++    }
++}
++struct DescriptorOwner {
++    value: ResolvedValueDescriptor,
++    _claim: ManagedMemoryReservation,
++    bytes: u64,
++}
++impl DescriptorOwner {
++    // Descriptor construction is separately pre-admitted metadata work. This
++    // persistent exact-root claim follows shared output aliases beyond a call.
++    fn new(
++        value: ResolvedValueDescriptor,
++        budget: &ManagedMemoryBudget,
++        sealed_descriptor_bound: u64,
++    ) -> Result<Rc<Self>, Error> {
++        // The sealed type's conservative metadata record bound includes the
++        // complete ResolvedType kind/environment/predicate evidence as well
++        // as Schema and ShapeInstance; schema heap alone is insufficient.
++        let bytes = add(
++            sealed_descriptor_bound,
++            (core::mem::size_of::<Self>() + 64) as u64,
++        )?;
++        let claim = budget.reserve_capacity(bytes)?;
++        Ok(Rc::new(Self {
++            value,
++            _claim: claim,
++            bytes,
++        }))
++    }
++}
++#[derive(Clone, Copy, Debug, Eq, PartialEq)]
++pub struct NativeMatrixExecutionReport {
++    pub work: u64,
++    pub completed_nodes: usize,
++    /// Maximum observed account capacity, including caller-retained results;
++    /// not physical RSS or a timing measurement.
++    pub peak_admitted_account_bytes: u64,
++}
++
++struct LiveValue<'a> {
++    descriptor: Rc<DescriptorOwner>,
++    extents: [u64; 2],
++    source: Option<&'a Value>,
++    storage: Option<Rc<MatrixStorage>>,
++    // The borrowed canonical source remains alive under the invocation's
++    // input lifetime. This finite ticket also accounts its actual retained
++    // payload/schema owner in this evaluator's mandatory memory account.
++    _source_claim: Option<ManagedMemoryReservation>,
++}
++struct Context<'a> {
++    descriptor: &'a NativeMatrixDescriptor,
++    budget: &'a ManagedMemoryBudget,
++    limits: NativeMatrixExecutionLimits,
++    values: Vec<Option<LiveValue<'a>>>,
++    staged: Vec<NativeMatrixValue>,
++    _metadata: ManagedMemoryReservation,
++    _foreign_outputs: ManagedMemoryReservation,
++    work: u64,
++    nodes: u64,
++    next: u64,
++    complete: bool,
++    peak: u64,
++    error: Option<Error>,
++}
++impl<'a> Context<'a> {
++    fn plan(&self) -> &NativeMatrixArtifactPlan {
++        &self.descriptor.plan
++    }
++    fn charge(&mut self, phase: Phase, amount: u64) -> Result<(), Error> {
++        let required = self.work.checked_add(amount).ok_or(Error::Work {
++            phase,
++            required: u64::MAX,
++            limit: self.limits.max_work,
++        })?;
++        if required > self.limits.max_work {
++            return Err(Error::Work {
++                phase,
++                required,
++                limit: self.limits.max_work,
++            });
++        }
++        self.work = required;
++        Ok(())
++    }
++    fn retain_nodes(&mut self, amount: u64) -> Result<(), Error> {
++        let required = add(self.nodes, amount)?;
++        if required > self.limits.max_retained_nodes {
++            return Err(Error::Nodes {
++                required,
++                limit: self.limits.max_retained_nodes,
++            });
++        }
++        self.nodes = required;
++        Ok(())
++    }
++    fn observe_peak(&mut self) {
++        self.peak = self.peak.max(self.budget.used_bytes());
++    }
++    fn metadata(
++        &mut self,
++        phase: Phase,
++        d: NativeMatrixPlanningDemand,
++    ) -> Result<ManagedMemoryReservation, Error> {
++        self.charge(phase, d.work)?;
++        self.retain_nodes(d.retained_nodes)?;
++        let claim = self.budget.reserve_capacity(d.temporary_bytes)?;
++        self.observe_peak();
++        Ok(claim)
++    }
++    fn value(&self, id: NativeMatrixValueId) -> Result<&LiveValue<'a>, Error> {
++        self.values
++            .get(id.get() as usize)
++            .and_then(Option::as_ref)
++            .ok_or(Error::Descriptor("matrix source is unavailable"))
++    }
++    /// Import only when the current ordered node requires this source. A later
++    /// incompatible shape never overtakes earlier checked work/admission.
++    fn import(
++        &mut self,
++        id: NativeMatrixValueId,
++        phase: Phase,
++    ) -> Result<Rc<MatrixStorage>, Error> {
++        let current = self.value(id)?;
++        if let Some(storage) = &current.storage {
++            return Ok(storage.clone());
++        }
++        let source = current
++            .source
++            .ok_or(Error::Descriptor("matrix source has no backing"))?;
++        let extents = current.extents;
++        let elements = mul(extents[0], extents[1])?;
++        // Fund the complete retained schema table's structural walk before
++        // memory_budget_required_bytes. Cached canonical byte lengths bound
++        // schema/parameter syntax nodes; no parameter solver is invoked here.
++        let owner = source
++            .schemas()
++            .ok_or(Error::Descriptor("matrix input lost schema owner"))?;
++        let entries = count(owner.entries().len())?;
++        self.charge(phase, add(256, mul(entries, 128)?)?)?;
++        self.retain_nodes(add(entries, 8)?)?;
++        let mut encoded = 0;
++        for entry in owner.entries() {
++            encoded = add(encoded, count(entry.canonical_bytes().len())?)?;
++        }
++        self.charge(phase, add(mul(encoded, 128)?, mul(elements, 64)?)?)?;
++        // Guard the Rust recursion used by the core owner allocation witness.
++        // Unrelated entries may have richer syntax than this plan's root; a
++        // charged depth-bounded structural walk prevents a deeply nested
++        // foreign owner from exhausting the callback stack. This is a bounded
++        // invocation metadata limit, not a language schema restriction.
++        for entry in owner.entries() {
++            owner_body(self, phase, entry.schema().body(), 0)?;
++            for parameter in entry.schema().dimension_parameters() {
++                owner_dimension(self, phase, parameter.lower_bound(), 0)?;
++                if let Some(upper) = parameter.upper_bound() {
++                    owner_dimension(self, phase, upper, 0)?;
++                }
++            }
++        }
++        // This first bounded slice deliberately accounts the full borrowed
++        // source owner even if the caller also owns a same-account import.
++        // It does not traverse the historical import-registration list or
++        // infer ownership authority from an Arc address.
++        let source_claim = self
++            .budget
++            .reserve_capacity(source.memory_budget_required_bytes()?)?;
++        let mut storage = MatrixStorage::new(host(elements)?, self.budget)?;
++        self.observe_peak();
++        let ValueData::Matrix(matrix) = source.data() else {
++            return Err(Error::Descriptor("validated matrix payload is not Matrix"));
++        };
++        let sequence = matrix.elements();
++        if count(sequence.len())? != elements {
++            return Err(Error::Descriptor(
++                "matrix payload length disagrees with exact shape",
++            ));
++        }
++        let rows = host(extents[0])?;
++        let columns = host(extents[1])?;
++        for canonical in 0..host(elements)? {
++            // A nonempty payload proves columns>0. In particular a huge
++            // rows×0 value performs no row-count loop or division.
++            let row = canonical / columns;
++            let column = canonical % columns;
++            let value = match sequence {
++                SequenceView::F64(values) => values[canonical].to_f64(),
++                SequenceView::Values(values) => match &values[canonical] {
++                    ValueData::F64(bits) => bits.to_f64(),
++                    _ => return Err(Error::Descriptor("matrix F64 source has a non-F64 lane")),
++                },
++                _ => {
++                    return Err(Error::Descriptor(
++                        "matrix F64 source has an incompatible sequence representation",
++                    ));
++                }
++            };
++            storage.values_mut()[row + column * rows] = value;
++        }
++        let storage = Rc::new(storage);
++        let target = self
++            .values
++            .get_mut(id.get() as usize)
++            .and_then(Option::as_mut)
++            .ok_or(Error::Descriptor("matrix import target disappeared"))?;
++        target.storage = Some(storage.clone());
++        target._source_claim = Some(source_claim);
++        Ok(storage)
++    }
++    fn call(&mut self, ordinal: u64, primitive: NativeMatrixPrimitive) -> Result<(), Error> {
++        if self.complete || ordinal != self.next {
++            return Err(Error::Sequence {
++                expected: self.next,
++                actual: ordinal,
++            });
++        }
++        let index = host(ordinal)?;
++        let call = self
++            .plan()
++            .calls()
++            .get(index)
++            .ok_or(Error::Descriptor("matrix node ordinal is absent"))?;
++        if call.template().primitive() != primitive {
++            return Err(Error::Descriptor(
++                "matrix entry requested a different certified leaf",
++            ));
++        }
++        let node = call.template().node();
++        let phase = Phase::Node(node);
++        self.charge(phase, 256)?;
++        let call = &self.plan().calls()[index];
++        let metadata = self.metadata(phase, call.planning_demand())?;
++        // This bounded arity is part of the sealed leaf certificate. Clone
++        // descriptors only after metadata admission, then instantiate a real
++        // current NativeHost BoundCall and its full core memory plan.
++        let call = &self.plan().calls()[index];
++        let ids = call.operands().to_vec();
++        let target = call.output();
++        let mut descriptors = Vec::with_capacity(ids.len());
++        let mut extents = Vec::with_capacity(ids.len());
++        for &id in &ids {
++            let v = self.value(id)?;
++            descriptors.push(v.descriptor.value.clone());
++            extents.push(v.extents);
++        }
++        let bounds = self
++            .plan()
++            .call_bounds(index, &extents)
++            .map_err(|_| Error::Planning { node })?;
++        let planned = self
++            .plan()
++            .instantiate_call(index, &descriptors)
++            .map_err(|_| Error::Planning { node })?;
++        if planned.bound_call.outputs().len() != 1 {
++            return Err(Error::Descriptor(
++                "matrix planner returned wrong output arity",
++            ));
++        }
++        // Full selected-plan capacity (including bounded-axis padding/staging)
++        // is conservatively reserved IN ADDITION TO compact leaf buffers.
++        // Planned column strides are never treated as compact current.rows.
++        let mut workspace_bytes = 0;
++        for allocation in &planned.allocations {
++            workspace_bytes = add(workspace_bytes, allocation.capacity_bytes)?;
++        }
++        workspace_bytes = workspace_bytes
++            .max(planned.demand.turn_peak_bytes)
++            .max(planned.demand.transaction_peak_bytes);
++        self.charge(phase, bounds.compute_work)?;
++        self.retain_nodes(add(count(planned.allocations.len())?, 4)?)?;
++        let workspace = self.budget.reserve_capacity(workspace_bytes)?;
++        self.observe_peak();
++        // Both the full metadata/shape calculation and all work/storage
++        // admissions precede the first source payload view or leaf entry.
++        let mut output = MatrixStorage::new(host(bounds.output_elements)?, self.budget)?;
++        self.observe_peak();
++        let lhs = self.import(ids[0], phase)?;
++        match primitive {
++            NativeMatrixPrimitive::TransposeF64 => {
++                mech_engine::__native_matrix::transpose_f64(
++                    lhs.values(),
++                    output.values_mut(),
++                    host(extents[0][0])?,
++                    host(extents[0][1])?,
++                )
++                .map_err(|_| Error::Leaf { node })?;
++            }
++            NativeMatrixPrimitive::MatmulF64 => {
++                let rhs = self.import(ids[1], phase)?;
++                mech_engine::__native_matrix::matmul_f64(
++                    lhs.values(),
++                    rhs.values(),
++                    output.values_mut(),
++                    host(bounds.rows)?,
++                    host(bounds.inner)?,
++                    host(bounds.columns)?,
++                )
++                .map_err(|_| Error::Leaf { node })?;
++            }
++        }
++        let descriptor_bound = self.plan().values()[target.get() as usize]
++            .planning_demand()
++            .temporary_bytes;
++        let result = LiveValue {
++            descriptor: DescriptorOwner::new(
++                planned.bound_call.outputs()[0].clone(),
++                self.budget,
++                descriptor_bound,
++            )?,
++            extents: [bounds.rows, bounds.columns],
++            source: None,
++            storage: Some(Rc::new(output)),
++            _source_claim: None,
++        };
++        self.observe_peak();
++        let destination = self
++            .values
++            .get_mut(target.get() as usize)
++            .ok_or(Error::Descriptor("matrix result id out of range"))?;
++        if destination.is_some() {
++            return Err(Error::Descriptor("matrix result was already assigned"));
++        }
++        *destination = Some(result);
++        self.next = self
++            .next
++            .checked_add(1)
++            .ok_or(Error::Descriptor("matrix node cursor overflow"))?;
++        drop(workspace);
++        drop(metadata);
++        Ok(())
++    }
++    fn finish(&mut self, ordinal: u64) -> Result<(), Error> {
++        let total = count(self.plan().calls().len())?;
++        if self.complete || ordinal != self.next || ordinal != total {
++            return Err(Error::Sequence {
++                expected: self.next,
++                actual: ordinal,
++            });
++        }
++        self.charge(
++            Phase::Completion,
++            add(128, mul(count(self.plan().outputs().len())?, 256)?)?,
++        )?;
++        for index in 0..self.plan().outputs().len() {
++            let id = self.plan().outputs()[index].value();
++            let storage = self.import(id, Phase::Completion)?;
++            let live = self.value(id)?;
++            let expected = &self.plan().values()[id.get() as usize];
++            if live.descriptor.value.schema() != expected.schema()
++                || storage.values().len() != host(mul(live.extents[0], live.extents[1])?)?
++            {
++                return Err(Error::Descriptor(
++                    "matrix output schema/shape/backing disagrees with plan",
++                ));
++            }
++            let candidate = NativeMatrixValue {
++                descriptor: live.descriptor.clone(),
++                extents: live.extents,
++                storage,
++            };
++            self.staged.push(candidate);
++        }
++        self.complete = true;
++        self.next = add(self.next, 1)?;
++        Ok(())
++    }
++}
++
++fn owner_dimension(
++    context: &mut Context<'_>,
++    phase: Phase,
++    expression: &DimensionExpr,
++    depth: u8,
++) -> Result<(), Error> {
++    context.charge(phase, 64)?;
++    if depth >= 32 {
++        return Err(Error::Descriptor(
++            "borrowed matrix schema owner exceeds bounded metadata depth",
++        ));
++    }
++    match expression {
++        DimensionExpr::Hole | DimensionExpr::Constant(_) | DimensionExpr::Parameter(_) => Ok(()),
++        DimensionExpr::Add(items)
++        | DimensionExpr::Multiply(items)
++        | DimensionExpr::Min(items)
++        | DimensionExpr::Max(items) => {
++            for item in items {
++                owner_dimension(context, phase, item, depth + 1)?;
++            }
++            Ok(())
++        }
++    }
++}
++fn owner_extent(
++    context: &mut Context<'_>,
++    phase: Phase,
++    extent: &CardinalitySpec,
++    depth: u8,
++) -> Result<(), Error> {
++    context.charge(phase, 64)?;
++    match extent {
++        CardinalitySpec::Exact(expression) => owner_dimension(context, phase, expression, depth),
++        CardinalitySpec::Dynamic { upper_bound } => {
++            if let Some(upper) = upper_bound {
++                owner_dimension(context, phase, upper, depth)?;
++            }
++            Ok(())
++        }
++    }
++}
++fn owner_body(
++    context: &mut Context<'_>,
++    phase: Phase,
++    body: &SchemaBody,
++    depth: u8,
++) -> Result<(), Error> {
++    context.charge(phase, 64)?;
++    if depth >= 32 {
++        return Err(Error::Descriptor(
++            "borrowed matrix schema owner exceeds bounded metadata depth",
++        ));
++    }
++    match body {
++        SchemaBody::Enum { variants, .. } => {
++            for variant in variants {
++                context.charge(phase, 64)?;
++                if let Some(payload) = &variant.payload {
++                    owner_body(context, phase, payload, depth + 1)?;
++                }
++            }
++        }
++        SchemaBody::Option(item) => owner_body(context, phase, item, depth + 1)?,
++        SchemaBody::Tuple(items) => {
++            for item in items {
++                owner_body(context, phase, item, depth + 1)?;
++            }
++        }
++        SchemaBody::Record(fields) => {
++            for field in fields {
++                owner_body(context, phase, &field.schema, depth + 1)?;
++            }
++        }
++        SchemaBody::Matrix {
++            element,
++            dimensions,
++        } => {
++            owner_body(context, phase, element, depth + 1)?;
++            for dimension in dimensions {
++                owner_dimension(context, phase, dimension, 0)?;
++            }
++        }
++        SchemaBody::Table { columns, rows } => {
++            for field in columns {
++                owner_body(context, phase, &field.schema, depth + 1)?;
++            }
++            owner_extent(context, phase, rows, 0)?;
++        }
++        SchemaBody::Set {
++            element,
++            cardinality,
++        } => {
++            owner_body(context, phase, element, depth + 1)?;
++            owner_extent(context, phase, cardinality, 0)?;
++        }
++        SchemaBody::Map {
++            key,
++            value,
++            cardinality,
++        } => {
++            owner_body(context, phase, key, depth + 1)?;
++            owner_body(context, phase, value, depth + 1)?;
++            owner_extent(context, phase, cardinality, 0)?;
++        }
++        SchemaBody::Dynamic
++        | SchemaBody::Bool
++        | SchemaBody::UnsignedInteger(_)
++        | SchemaBody::SignedInteger(_)
++        | SchemaBody::IntegerInterval(_)
++        | SchemaBody::FloatingPoint(_)
++        | SchemaBody::Complex(_)
++        | SchemaBody::Rational64
++        | SchemaBody::String
++        | SchemaBody::Id
++        | SchemaBody::Index
++        | SchemaBody::Atom(_)
++        | SchemaBody::ReifiedType => {}
++    }
++    Ok(())
++}
++
++/// Catches all Rust panics at the exact private synchronous FFI boundary.
++/// A failed callback stores its first typed error, so no later generated node
++/// or output publication can run after admission or shape failure.
++unsafe fn callback(
++    context: *mut c_void,
++    ordinal: u64,
++    primitive: Option<NativeMatrixPrimitive>,
++) -> u64 {
++    if context.is_null() {
++        return BAD_ABI;
++    }
++    // SAFETY: only execute creates this context and calls the paired entry
++    // synchronously. No callback or generated pointer escapes that scope.
++    let context = unsafe { &mut *context.cast::<Context<'_>>() };
++    if context.error.is_some() {
++        return ERROR;
++    }
++    match catch_unwind(AssertUnwindSafe(|| match primitive {
++        Some(p) => context.call(ordinal, p),
++        None => context.finish(ordinal),
++    })) {
++        Ok(Ok(())) => OK,
++        Ok(Err(error)) => {
++            context.error = Some(error);
++            ERROR
++        }
++        Err(_) => {
++            context.error = Some(Error::Panic);
++            ERROR
++        }
++    }
++}
++unsafe extern "C" fn transpose(context: *mut c_void, ordinal: u64) -> u64 {
++    // SAFETY: exact context lifetime established by execute.
++    unsafe { callback(context, ordinal, Some(NativeMatrixPrimitive::TransposeF64)) }
++}
++unsafe extern "C" fn matmul(context: *mut c_void, ordinal: u64) -> u64 {
++    // SAFETY: exact context lifetime established by execute.
++    unsafe { callback(context, ordinal, Some(NativeMatrixPrimitive::MatmulF64)) }
++}
++unsafe extern "C" fn complete(context: *mut c_void, ordinal: u64) -> u64 {
++    // SAFETY: exact context lifetime established by execute.
++    unsafe { callback(context, ordinal, None) }
++}
++
++fn source_value<'a>(
++    plan: &NativeMatrixArtifactPlan,
++    id: NativeMatrixValueId,
++    value: &'a Value,
++    ordinal: usize,
++    budget: &ManagedMemoryBudget,
++) -> Result<LiveValue<'a>, Error> {
++    let expected = plan
++        .values()
++        .get(id.get() as usize)
++        .ok_or(Error::Descriptor("matrix input value id is absent"))?;
++    let error = || Error::Input {
++        input: ordinal,
++        reason: "matrix input schema/key/shape does not match canonical plan",
++    };
++    if value.schema() != expected.schema_id() || value.schema_key() != expected.schema_key() {
++        return Err(error());
++    }
++    let schema = value
++        .validate_against(plan.schemas())
++        .map_err(|_| error())?;
++    if schema != expected.schema() {
++        return Err(error());
++    }
++    let SchemaBody::Matrix { dimensions, .. } = schema.body() else {
++        return Err(error());
++    };
++    let extents = [
++        value
++            .shape()
++            .resolve_dimension(&dimensions[0])
++            .map_err(|_| error())?,
++        value
++            .shape()
++            .resolve_dimension(&dimensions[1])
++            .map_err(|_| error())?,
++    ];
++    // Validate the complete authoritative parameter bounds before retaining
++    // or reading payload. The sealed executable subset has at most two
++    // constant-bound parameters, so the pre-admitted demand is finite.
++    let descriptor =
++        ResolvedValueDescriptor::from_schema(expected.schema().clone(), value.shape().clone())
++            .map_err(|_| error())?;
++    Ok(LiveValue {
++        descriptor: DescriptorOwner::new(
++            descriptor,
++            budget,
++            expected.planning_demand().temporary_bytes,
++        )?,
++        extents,
++        source: Some(value),
++        storage: None,
++        _source_claim: None,
++    })
++}
++
++pub(super) fn execute<F>(
++    descriptor: &NativeMatrixDescriptor,
++    entry: F,
++    inputs: &[Value],
++    outputs: &mut [Option<NativeMatrixValue>],
++    limits: NativeMatrixExecutionLimits,
++    budget: &ManagedMemoryBudget,
++) -> Result<NativeMatrixExecutionReport, Error>
++where
++    F: FnOnce(*mut MatrixFrame) -> u64,
++{
++    let plan = descriptor.plan();
++    // O(1) checks before the first charged descriptor/interface traversal.
++    if inputs.len() != plan.inputs().len() {
++        return Err(Error::InvalidInputs {
++            expected: plan.inputs().len(),
++            actual: inputs.len(),
++        });
++    }
++    if outputs.len() != plan.outputs().len() {
++        return Err(Error::InvalidOutputs {
++            expected: plan.outputs().len(),
++            actual: outputs.len(),
++        });
++    }
++    if descriptor.stack_bytes() > limits.max_native_stack_bytes {
++        return Err(Error::Stack {
++            required: descriptor.stack_bytes(),
++            limit: limits.max_native_stack_bytes,
++        });
++    }
++    let demand = plan.setup_demand();
++    if demand.work > limits.max_work {
++        return Err(Error::Work {
++            phase: Phase::Setup,
++            required: demand.work,
++            limit: limits.max_work,
++        });
++    }
++    let setup_nodes = add(demand.retained_nodes, count(plan.values().len())?)?;
++    if setup_nodes > limits.max_retained_nodes {
++        return Err(Error::Nodes {
++            required: setup_nodes,
++            limit: limits.max_retained_nodes,
++        });
++    }
++    let headers = add(
++        mul(
++            count(plan.values().len())?,
++            core::mem::size_of::<Option<LiveValue<'_>>>() as u64,
++        )?,
++        mul(
++            count(outputs.len())?,
++            core::mem::size_of::<NativeMatrixValue>() as u64,
++        )?,
++    )?;
++    let metadata = budget.reserve_capacity(add(demand.temporary_bytes, headers)?)?;
++    let mut foreign = 0;
++    // Previous outputs stay live through candidate evaluation. Same-account
++    // backing already consumes capacity; foreign backing is conservatively
++    // mirrored for this invocation before any candidate storage is allocated.
++    for value in outputs.iter().flatten() {
++        if value.storage.budget() != budget {
++            foreign = add(
++                foreign,
++                add(value.storage.retained_bytes()?, value.descriptor.bytes)?,
++            )?;
++        }
++    }
++    let foreign_outputs = budget.reserve_capacity(foreign)?;
++    let mut values = Vec::new();
++    values
++        .try_reserve_exact(plan.values().len())
++        .map_err(|_| Error::Descriptor("matrix value metadata allocation failed"))?;
++    values.resize_with(plan.values().len(), || None);
++    for (index, (input, value)) in plan.inputs().iter().zip(inputs).enumerate() {
++        let target = input.value().get() as usize;
++        if values[target].is_some() {
++            return Err(Error::Descriptor("matrix input assigned twice"));
++        }
++        values[target] = Some(source_value(plan, input.value(), value, index, budget)?);
++    }
++    for constant in plan.constants() {
++        let target = constant.value().get() as usize;
++        if values[target].is_some() {
++            return Err(Error::Descriptor("matrix constant assigned twice"));
++        }
++        values[target] = Some(source_value(
++            plan,
++            constant.value(),
++            constant.canonical(),
++            inputs.len(),
++            budget,
++        )?);
++    }
++    let mut staged = Vec::new();
++    staged
++        .try_reserve_exact(outputs.len())
++        .map_err(|_| Error::Descriptor("matrix output metadata allocation failed"))?;
++    let mut context = Context {
++        descriptor,
++        budget,
++        limits,
++        values,
++        staged,
++        _metadata: metadata,
++        _foreign_outputs: foreign_outputs,
++        work: demand.work,
++        nodes: setup_nodes,
++        next: 0,
++        complete: false,
++        peak: budget.used_bytes(),
++        error: None,
++    };
++    let mut frame = MatrixFrame {
++        version: MATRIX_ABI_VERSION,
++        inputs: count(inputs.len())?,
++        calls: count(plan.calls().len())?,
++        outputs: count(outputs.len())?,
++        context: (&mut context as *mut Context<'_>).cast(),
++        transpose,
++        matmul,
++        complete,
++    };
++    let original_context = frame.context;
++    let status = entry(&mut frame);
++    if let Some(error) = context.error.take() {
++        return Err(error);
++    }
++    if status != OK {
++        return Err(Error::Status(status));
++    }
++    // Full header, callback identity and progress validation precedes every
++    // caller write. Function items are explicitly cast through pointers.
++    if frame.version != MATRIX_ABI_VERSION
++        || frame.inputs != count(inputs.len())?
++        || frame.calls != count(plan.calls().len())?
++        || frame.outputs != count(outputs.len())?
++        || frame.context != original_context
++        || frame.transpose as usize != transpose as *const () as usize
++        || frame.matmul as usize != matmul as *const () as usize
++        || frame.complete as usize != complete as *const () as usize
++        || !context.complete
++        || context.next != add(count(plan.calls().len())?, 1)?
++        || context.staged.len() != outputs.len()
++    {
++        return Err(Error::Descriptor(
++            "matrix entry changed frame or failed to complete exact sequence",
++        ));
++    }
++    let report = NativeMatrixExecutionReport {
++        work: context.work,
++        completed_nodes: plan.calls().len(),
++        peak_admitted_account_bytes: context.peak,
++    };
++    // All fallible work/validation is complete. Moving admitted immutable
++    // handles does not copy payload or allocate, so publication is atomic.
++    for (target, candidate) in outputs.iter_mut().zip(context.staged.drain(..)) {
++        *target = Some(candidate);
++    }
++    Ok(report)
++}
++
++#[cfg(all(test, feature = "canonical-native"))]
++mod tests {
++    use super::*;
++    use mech_engine::CanonicalSourceFrontend;
++    use mech_syntax::document::{
++        AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
++        parse_canonical_document,
++    };
++
++    #[test]
++    fn borrowed_owner_metadata_has_finite_pre_descent_work_and_depth() {
++        // The descriptor itself comes from a genuine canonical source plan.
++        let parsed = parse_canonical_document(
++            TextSnapshot::new(DocumentId(0x4d41544f574e), Revision(1), "input<[f64]>'\n").unwrap(),
++            ParseConfig::default(),
++        );
++        assert!(parsed.is_strictly_clean());
++        let artifact = CanonicalSourceFrontend
++            .compile_document_with_catalog(
++                &DocumentSyntax::cast(parsed.syntax()).unwrap(),
++                mech_stdlib::source_catalog(),
++            )
++            .unwrap()
++            .compile_artifact()
++            .unwrap();
++        let plan = mech_engine::native_artifact::lower_matrix_artifact(
++            &artifact,
++            &mech_stdlib::source_catalog(),
++        )
++        .unwrap();
++        let jit = super::super::compiler::JitMatrixArtifact::compile(&plan).unwrap();
++        let budget = ManagedMemoryBudget::new(1024);
++        let mut context = Context {
++            descriptor: jit.descriptor(),
++            budget: &budget,
++            limits: NativeMatrixExecutionLimits::default(),
++            values: Vec::new(),
++            staged: Vec::new(),
++            _metadata: budget.reserve_capacity(0).unwrap(),
++            _foreign_outputs: budget.reserve_capacity(0).unwrap(),
++            work: 0,
++            nodes: 0,
++            next: 0,
++            complete: false,
++            peak: 0,
++            error: None,
++        };
++        let wide = SchemaBody::Tuple(vec![SchemaBody::Bool; 64].into_boxed_slice());
++        context.limits.max_work = 512;
++        assert!(matches!(
++            owner_body(&mut context, Phase::Setup, &wide, 0),
++            Err(Error::Work {
++                phase: Phase::Setup,
++                ..
++            })
++        ));
++        assert_eq!(context.work, 512);
++        context.work = 0;
++        context.limits = NativeMatrixExecutionLimits::default();
++        let mut deep = SchemaBody::Bool;
++        for _ in 0..40 {
++            deep = SchemaBody::Option(Box::new(deep));
++        }
++        assert_eq!(
++            owner_body(&mut context, Phase::Setup, &deep, 0),
++            Err(Error::Descriptor(
++                "borrowed matrix schema owner exceeds bounded metadata depth"
++            ))
++        );
++        assert_eq!(context.work, 33 * 64);
++        context.work = 0;
++        owner_body(&mut context, Phase::Setup, &SchemaBody::Bool, 0).unwrap();
++        assert_eq!(context.work, 64);
++        assert_eq!(budget.used_bytes(), 0);
++    }
++}
+--- /dev/null
++++ b/hosts/gpu/src/native_artifact/matrix/templates/matrix_build.rs.in
+@@ -0,0 +1,42 @@
++use sha2::{Digest, Sha256};
++use std::{collections::BTreeMap, fs, path::PathBuf};
++
++const EXPECTED: &str = @PIN_JSON_LITERAL@;
++fn digest(bytes: &[u8]) -> String {
++    Sha256::digest(bytes)
++        .iter()
++        .map(|byte| format!("{byte:02x}"))
++        .collect()
++}
++fn main() {
++    assert_eq!(
++        std::env::var("HOST").unwrap(),
++        std::env::var("TARGET").unwrap(),
++        "canonical native object is host-only"
++    );
++    let root = PathBuf::from(std::env::var_os("CARGO_MANIFEST_DIR").unwrap());
++    let expected: BTreeMap<String, String> = serde_json::from_str(EXPECTED).unwrap();
++    let manifest_bytes = fs::read(root.join("linked-manifest.json")).unwrap();
++    let manifest: serde_json::Value = serde_json::from_slice(&manifest_bytes).unwrap();
++    assert_eq!(manifest["schema"], "mech.canonical-linked-application.v1");
++    let mut pins: BTreeMap<String, String> =
++        serde_json::from_value(manifest["pins"].clone()).unwrap();
++    let script = pins.remove("build.rs").expect("build script pin");
++    assert_eq!(
++        digest(&fs::read(root.join("build.rs")).unwrap()),
++        script,
++        "build script changed"
++    );
++    assert_eq!(pins, expected, "manifest generated-input pins changed");
++    for (name, hash) in expected {
++        assert_eq!(
++            digest(&fs::read(root.join(&name)).unwrap()),
++            hash,
++            "changed generated input {name}"
++        );
++        println!("cargo:rerun-if-changed={name}");
++    }
++    println!("cargo:rerun-if-changed=linked-manifest.json");
++    println!("cargo:rerun-if-changed=build.rs");
++    println!("cargo:rustc-link-arg={}", root.join("program.o").display());
++}
+--- /dev/null
++++ b/hosts/gpu/src/native_artifact/matrix/templates/matrix_main.rs.in
+@@ -0,0 +1,197 @@
++//! Explicit matrix qualification shell. Kernel evaluation is typed/nonprinting;
++//! this shell alone parses raw hexadecimal F64 words and prints results.
++use mech_core::{
++    ManagedMemoryBudget, ValueDataDraft, ValueDraft,
++    snapshot::{F64Bits, SnapshotValidationContext},
++};
++use mech_engine::native_artifact::lower_matrix_artifact;
++use mech_gpu::native_artifact::matrix::{
++    LinkedMatrixArtifact, MATRIX_IDENTITY_BYTES, NativeMatrixExecutionLimits,
++};
++use sha2::{Digest, Sha256};
++use std::{
++    ffi::{OsString, c_void},
++    io::Write,
++};
++unsafe extern "C" {
++    #[link_name = "mech_canonical_matrix_entry_v1"]
++    fn linked_entry(frame: *mut c_void) -> u64;
++    #[link_name = "@IDENTITY_SYMBOL@"]
++    static LINKED_IDENTITY: [u8; MATRIX_IDENTITY_BYTES];
++}
++fn hex(bytes: &[u8]) -> String {
++    bytes.iter().map(|b| format!("{b:02x}")).collect()
++}
++fn unsigned(text: &str) -> Result<u64, String> {
++    if text.is_empty() || !text.bytes().all(|b| b.is_ascii_digit()) {
++        return Err("invalid unsigned argument".into());
++    }
++    text.parse()
++        .map_err(|_| "unsigned argument overflow".into())
++}
++fn options(
++    arguments: Vec<OsString>,
++) -> Result<(NativeMatrixExecutionLimits, u64, Vec<OsString>), String> {
++    let mut limits = NativeMatrixExecutionLimits::default();
++    let mut budget = 64 * 1024 * 1024;
++    let mut payload = Vec::new();
++    let mut controls = true;
++    for argument in arguments {
++        if controls {
++            let text = argument.to_str().ok_or("argument is not Unicode")?;
++            if text == "--" {
++                controls = false;
++                continue;
++            }
++            let mut selected = None;
++            for (prefix, kind) in [
++                ("--work=", 0),
++                ("--nodes=", 1),
++                ("--stack=", 2),
++                ("--budget=", 3),
++            ] {
++                if let Some(value) = text.strip_prefix(prefix) {
++                    selected = Some((kind, unsigned(value)?));
++                    break;
++                }
++            }
++            if let Some((kind, value)) = selected {
++                match kind {
++                    0 => limits.max_work = value,
++                    1 => limits.max_retained_nodes = value,
++                    2 => limits.max_native_stack_bytes = value,
++                    _ => budget = value,
++                }
++                continue;
++            }
++            if text.starts_with("--") {
++                return Err("unknown option".into());
++            }
++            controls = false;
++        }
++        payload.push(argument);
++    }
++    Ok((limits, budget, payload))
++}
++fn matrix(text: &str) -> Result<([u64; 2], Vec<ValueDataDraft>), String> {
++    let (shape, words) = text
++        .split_once(':')
++        .ok_or("matrix input needs rowsxcolumns:hexwords")?;
++    let (rows, columns) = shape
++        .split_once('x')
++        .ok_or("matrix input needs rowsxcolumns")?;
++    let extents = [unsigned(rows)?, unsigned(columns)?];
++    let count = extents[0]
++        .checked_mul(extents[1])
++        .ok_or("matrix element count overflow")?;
++    let mut data = Vec::new();
++    if !words.is_empty() {
++        for word in words.split(',') {
++            if word.len() != 16 || !word.bytes().all(|b| b.is_ascii_hexdigit()) {
++                return Err("invalid F64 bit word".into());
++            }
++            data.push(ValueDataDraft::F64(F64Bits::from_bits(
++                u64::from_str_radix(word, 16).map_err(|_| "invalid F64 bit word")?,
++            )));
++        }
++    }
++    if data.len() as u64 != count {
++        return Err("matrix element count differs from shape".into());
++    }
++    Ok((extents, data))
++}
++fn run() -> Result<(), String> {
++    let bytecode = include_bytes!("../program.mecb");
++    if hex(&Sha256::digest(bytecode)) != "@BYTECODE_SHA256@" {
++        return Err("embedded canonical bytecode identity mismatch".into());
++    }
++    let artifact = mech_engine::decode_program_artifact_bytecode_v1(bytecode)
++        .map_err(|e| format!("canonical artifact decode: {e:?}"))?;
++    // Only actual maintained catalog metadata is selected here. The generated
++    // app has no syntax, JIT, codegen, activation or resident evaluator route.
++    let catalog = std::thread::Builder::new()
++        .name("canonical-matrix-catalog".into())
++        .stack_size(64 * 1024 * 1024)
++        .spawn(|| -> Result<_, String> {
++            let mut builder = mech_core::FunctionCatalogBuilder::new();
++            mech_stdlib::install_native_plan(&mut builder).map_err(|e| format!("{e:?}"))?;
++            mech_engine::install_intrinsic_resident(&mut builder).map_err(|e| format!("{e:?}"))?;
++            builder.build().map_err(|e| format!("{e:?}"))
++        })
++        .map_err(|e| e.to_string())?
++        .join()
++        .map_err(|_| "matrix metadata catalog panicked")??;
++    let plan = lower_matrix_artifact(&artifact, &catalog).map_err(|e| e.to_string())?;
++    // SAFETY: the build pins all generated inputs and links both symbols from
++    // the SAME unchanged checked matrix Object. Identity alone is insufficient.
++    let linked = unsafe {
++        LinkedMatrixArtifact::from_build_owned_entry(&plan, &LINKED_IDENTITY, linked_entry)
++    }
++    .map_err(str::to_owned)?;
++    let (limits, budget, arguments) = options(std::env::args_os().skip(1).collect())?;
++    if arguments.len() != plan.inputs().len() {
++        return Err(format!("expected {} matrix inputs", plan.inputs().len()));
++    }
++    let context = SnapshotValidationContext::with_shared_schemas(plan.schemas());
++    let mut inputs = Vec::with_capacity(arguments.len());
++    for (argument, input) in arguments.iter().zip(plan.inputs()) {
++        let (extents, data) = matrix(argument.to_str().ok_or("argument is not Unicode")?)?;
++        let ty = &plan.values()[input.value().get() as usize];
++        let shape = mech_core::shape_for_resolved_extents(ty.schema(), &extents)
++            .map_err(|e| format!("matrix input shape: {e:?}"))?;
++        inputs.push(
++            ValueDraft {
++                schema: ty.schema_id(),
++                shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
++                data: ValueDataDraft::Matrix(data.into_boxed_slice()),
++            }
++            .finalize(&context)
++            .map_err(|e| format!("matrix input value: {e:?}"))?,
++        );
++    }
++    let mut outputs = vec![None; plan.outputs().len()];
++    linked
++        .evaluate_into(
++            &inputs,
++            &mut outputs,
++            limits,
++            &ManagedMemoryBudget::new(budget),
++        )
++        .map_err(|e| e.to_string())?;
++    let mut result = String::new();
++    for output in outputs {
++        let output = output.ok_or("matrix output absent")?;
++        let [rows, columns] = output.extents();
++        use std::fmt::Write;
++        write!(&mut result, "{rows}x{columns}:").unwrap();
++        for ordinal in 0..rows
++            .checked_mul(columns)
++            .ok_or("matrix output count overflow")?
++        {
++            let row = ordinal / columns;
++            let column = ordinal % columns;
++            if ordinal != 0 {
++                result.push(',');
++            }
++            let offset = usize::try_from(row + column * rows)
++                .map_err(|_| "matrix output offset overflow")?;
++            write!(
++                &mut result,
++                "{:016x}",
++                output.column_major_values()[offset].to_bits()
++            )
++            .unwrap();
++        }
++        result.push('\n');
++    }
++    std::io::stdout()
++        .lock()
++        .write_all(result.as_bytes())
++        .map_err(|e| e.to_string())
++}
++fn main() {
++    if let Err(error) = run() {
++        eprintln!("{error}");
++        std::process::exit(1);
++    }
++}
+--- a/hosts/gpu/src/native_artifact/mod.rs
++++ b/hosts/gpu/src/native_artifact/mod.rs
+@@ -30,3 +30,6 @@
+ pub use runtime::{
+     NativeExecutionError, NativeExecutionLimits, NativeExecutionPhase, NativeExecutionReport,
+ };
++
++/// Managed typed Matrix<F64> leaf lowering; straight-line first executable slice.
++pub mod matrix;
+--- /dev/null
++++ b/hosts/gpu/tests/canonical_native_matrix.rs
+@@ -0,0 +1,417 @@
++#![cfg(feature = "canonical-native")]
++//! Actual canonical source/resident/JIT differentials. Object assertions alone
++//! are non-execution evidence; linked execution has its own ignored qualifier.
++use mech_core::{
++    ManagedMemoryBudget, ReactiveInstanceId, Value, ValueData, ValueDataDraft, ValueDraft,
++    snapshot::{F64Bits, SequenceView, SnapshotValidationContext},
++};
++use mech_engine::{
++    CanonicalSourceFrontend, ProgramArtifact, decode_source_input_name,
++    native_artifact::{NativeMatrixArtifactPlan, lower_matrix_artifact},
++    resident::{ActivationFacts, CapturedValueInput, activate},
++};
++use mech_gpu::native_artifact::matrix::{
++    JitMatrixArtifact, NativeMatrixExecutionError as Error, NativeMatrixExecutionLimits as Limits,
++    NativeMatrixExecutionPhase as Phase, NativeMatrixValue, emit_matrix_object,
++};
++use mech_syntax::document::{
++    AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
++    parse_canonical_document,
++};
++
++fn artifacts(source: &str, interactive: bool) -> [ProgramArtifact; 2] {
++    let parse = parse_canonical_document(
++        TextSnapshot::new(DocumentId(0x4d41544e4154), Revision(1), source).unwrap(),
++        ParseConfig::default(),
++    );
++    assert!(
++        parse.is_strictly_clean(),
++        "{source}: {:?}",
++        parse.diagnostics
++    );
++    let doc = DocumentSyntax::cast(parse.syntax()).unwrap();
++    let product = if interactive {
++        CanonicalSourceFrontend
++            .compile_interactive_document_with_catalog(&doc, mech_stdlib::source_catalog())
++    } else {
++        CanonicalSourceFrontend.compile_document_with_catalog(&doc, mech_stdlib::source_catalog())
++    }
++    .unwrap();
++    let artifact = product.compile_artifact().unwrap();
++    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
++    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
++    assert_eq!(artifact.revision(), decoded.revision());
++    assert_eq!(
++        bytes,
++        mech_engine::encode_program_artifact_bytecode_v1(&decoded).unwrap()
++    );
++    [artifact, decoded]
++}
++fn inputs(artifact: &ProgramArtifact, named: &[(&str, [u64; 2], Vec<u64>)]) -> Vec<Value> {
++    artifact
++        .inputs()
++        .iter()
++        .map(|input| {
++            let name = decode_source_input_name(&input.name).unwrap();
++            let (_, extents, bits) = named.iter().find(|(key, _, _)| *key == name).unwrap();
++            let schema = artifact.schemas().get(input.schema).unwrap();
++            let shape = mech_core::shape_for_resolved_extents(schema, extents).unwrap();
++            ValueDraft {
++                schema: input.schema,
++                shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
++                data: ValueDataDraft::Matrix(
++                    bits.iter()
++                        .map(|bits| ValueDataDraft::F64(F64Bits::from_bits(*bits)))
++                        .collect(),
++                ),
++            }
++            .finalize(&SnapshotValidationContext::new(artifact.schemas()))
++            .unwrap()
++        })
++        .collect()
++}
++fn reference(
++    artifact: &ProgramArtifact,
++    inputs: &[Value],
++) -> Result<Vec<([u64; 2], Vec<u64>)>, String> {
++    let mut instance = activate(
++        ReactiveInstanceId::new(0x4d41544e4154, 0),
++        artifact,
++        &mech_stdlib::source_catalog(),
++        &ActivationFacts::default(),
++    )
++    .map_err(|e| format!("{e:?}"))?;
++    let captured = instance
++        .plan
++        .inputs
++        .iter()
++        .map(|input| {
++            let ordinal = artifact
++                .inputs()
++                .iter()
++                .position(|declared| declared.slot == input.artifact_slot)
++                .unwrap();
++            CapturedValueInput {
++                slot: input.slot,
++                value: &inputs[ordinal],
++            }
++        })
++        .collect::<Vec<_>>();
++    instance
++        .prepare_turn_values(&captured)
++        .and_then(|p| p.publish())
++        .map_err(|e| format!("{e:?}"))?;
++    (0..artifact.outputs().len())
++        .map(|index| {
++            let value = instance.copied_output(index).unwrap();
++            let owner = value.schemas().unwrap();
++            let schema = value.validate_against(&owner).unwrap();
++            let mech_core::SchemaBody::Matrix { dimensions, .. } = schema.body() else {
++                panic!("matrix result required")
++            };
++            let extents = [
++                value.shape().resolve_dimension(&dimensions[0]).unwrap(),
++                value.shape().resolve_dimension(&dimensions[1]).unwrap(),
++            ];
++            let ValueData::Matrix(matrix) = value.data() else {
++                panic!("matrix payload required")
++            };
++            let bits = match matrix.elements() {
++                SequenceView::F64(xs) => xs.iter().map(|v| v.bits()).collect(),
++                SequenceView::Values(xs) => xs
++                    .iter()
++                    .map(|v| match v {
++                        ValueData::F64(v) => v.bits(),
++                        _ => panic!("F64 lane required"),
++                    })
++                    .collect(),
++                other => {
++                    assert_eq!(other.len(), 0);
++                    Vec::new()
++                }
++            };
++            Ok((extents, bits))
++        })
++        .collect()
++}
++fn actual(outputs: &[Option<NativeMatrixValue>]) -> Vec<([u64; 2], Vec<u64>)> {
++    outputs
++        .iter()
++        .map(|output| {
++            let output = output.as_ref().unwrap();
++            let [rows, cols] = output.extents();
++            let mut bits = Vec::new();
++            for ordinal in 0..rows.checked_mul(cols).unwrap() {
++                let row = ordinal / cols;
++                let col = ordinal % cols;
++                bits.push(output.column_major_values()[(row + col * rows) as usize].to_bits());
++            }
++            ([rows, cols], bits)
++        })
++        .collect()
++}
++fn check(artifact: &ProgramArtifact, args: &[Value]) {
++    let expected = reference(artifact, args).unwrap();
++    let plan = lower_matrix_artifact(artifact, &mech_stdlib::source_catalog()).unwrap();
++    let jit = JitMatrixArtifact::compile(&plan).unwrap();
++    let budget = ManagedMemoryBudget::new(64 * 1024 * 1024);
++    let mut output = vec![None; plan.outputs().len()];
++    let report = jit
++        .evaluate_into(args, &mut output, Limits::default(), &budget)
++        .unwrap();
++    assert_eq!(actual(&output), expected);
++    assert_eq!(report.completed_nodes, artifact.nodes().len());
++    assert_eq!(
++        jit.descriptor().plan().program_revision(),
++        artifact.revision()
++    );
++    let retained = budget.used_bytes();
++    assert!(retained > 0);
++    drop(output);
++    assert_eq!(
++        budget.used_bytes(),
++        0,
++        "all private/result ownership must release"
++    );
++}
++#[test]
++fn transpose_preserves_rectangular_geometry_and_every_f64_transport_bit() {
++    let bits = vec![
++        0,
++        1,
++        1u64 << 63,
++        0x7ff0000000000000,
++        0xfff0000000000000,
++        0x7ff8000000001234,
++    ];
++    for artifact in artifacts("input<[f64]>'\n", false) {
++        for (shape, bits) in [
++            ([2, 3], bits.clone()),
++            ([0, 3], vec![]),
++            ([3, 0], vec![]),
++            ([1_000_000_000, 0], vec![]),
++            ([1, 1], vec![0x7ff0000000000001]),
++        ] {
++            check(&artifact, &inputs(&artifact, &[("input", shape, bits)]));
++        }
++    }
++}
++#[test]
++fn matrix_product_matches_actual_maintained_resident_association_and_empty_inner_bits() {
++    for artifact in artifacts("left<[f64]> ** right<[f64]>\n", false) {
++        for (left, right, a, b) in [
++            (
++                [2, 3],
++                [3, 2],
++                vec![1.0, 2.0, 3.0, -0.0, 4.0, 5.0],
++                vec![6.0, 7.0, 8.0, 9.0, 10.0, 11.0],
++            ),
++            ([2, 0], [0, 3], vec![], vec![]),
++            ([0, 2], [2, 3], vec![], vec![0.0; 6]),
++            ([2, 3], [3, 0], vec![0.0; 6], vec![]),
++        ] {
++            let values = inputs(
++                &artifact,
++                &[
++                    ("left", left, a.into_iter().map(f64::to_bits).collect()),
++                    ("right", right, b.into_iter().map(f64::to_bits).collect()),
++                ],
++            );
++            if left[1] == 0 && left[0] > 0 && right[1] > 0 {
++                assert!(
++                    reference(&artifact, &values).unwrap()[0]
++                        .1
++                        .iter()
++                        .all(|b| *b == (-0.0f64).to_bits())
++                );
++            }
++            check(&artifact, &values);
++        }
++        check(
++            &artifact,
++            &inputs(
++                &artifact,
++                &[
++                    ("left", [1, 2], vec![0x7ff8000000001234, 1]),
++                    ("right", [2, 1], vec![1.0f64.to_bits(), (-0.0f64).to_bits()]),
++                ],
++            ),
++        );
++    }
++}
++#[test]
++fn chained_transpose_product_and_interactive_aliases_use_real_typed_results() {
++    for artifact in artifacts("left<[f64]>' ** right<[f64]>\n", false) {
++        check(
++            &artifact,
++            &inputs(
++                &artifact,
++                &[
++                    (
++                        "left",
++                        [2, 3],
++                        (1..=6).map(|n| (n as f64).to_bits()).collect(),
++                    ),
++                    (
++                        "right",
++                        [2, 2],
++                        vec![1.0f64.to_bits(), 0, 0, 1.0f64.to_bits()],
++                    ),
++                ],
++            ),
++        );
++    }
++    for artifact in artifacts(
++        "transposed := input<[f64]>'\nalias := transposed\nalias\n",
++        true,
++    ) {
++        let args = inputs(
++            &artifact,
++            &[(
++                "input",
++                [2, 3],
++                (1..=6).map(|n| (n as f64).to_bits()).collect(),
++            )],
++        );
++        check(&artifact, &args);
++        let plan = lower_matrix_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
++        let jit = JitMatrixArtifact::compile(&plan).unwrap();
++        let budget = ManagedMemoryBudget::new(64 * 1024 * 1024);
++        let mut outputs = vec![None; plan.outputs().len()];
++        jit.evaluate_into(&args, &mut outputs, Limits::default(), &budget)
++            .unwrap();
++        let first = outputs[0].as_ref().unwrap().column_major_values().as_ptr();
++        assert!(
++            outputs
++                .iter()
++                .all(|value| value.as_ref().unwrap().column_major_values().as_ptr() == first)
++        );
++        drop(outputs);
++        assert_eq!(budget.used_bytes(), 0);
++    }
++}
++fn last(plan: &NativeMatrixArtifactPlan) -> usize {
++    plan.outputs().len()
++}
++#[test]
++fn setup_completion_and_real_memory_denials_preserve_old_outputs_and_recover() {
++    for artifact in artifacts("input<[f64]>'\n", false) {
++        let args = inputs(
++            &artifact,
++            &[(
++                "input",
++                [2, 3],
++                (1..=6).map(|n| (n as f64).to_bits()).collect(),
++            )],
++        );
++        let plan = lower_matrix_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
++        let jit = JitMatrixArtifact::compile(&plan).unwrap();
++        let budget = ManagedMemoryBudget::new(64 * 1024 * 1024);
++        let mut outputs = vec![None; last(&plan)];
++        let report = jit
++            .evaluate_into(&args, &mut outputs, Limits::default(), &budget)
++            .unwrap();
++        let before = actual(&outputs);
++        let pointer = outputs[0].as_ref().unwrap().column_major_values().as_ptr();
++        let live = budget.used_bytes();
++        let mut setup = Limits::default();
++        setup.max_work = plan.setup_demand().work - 1;
++        assert!(matches!(
++            jit.evaluate_into(&args, &mut outputs, setup, &budget),
++            Err(Error::Work {
++                phase: Phase::Setup,
++                ..
++            })
++        ));
++        assert_eq!(actual(&outputs), before);
++        assert_eq!(budget.used_bytes(), live);
++        let mut completion = Limits::default();
++        completion.max_work = report.work - 1;
++        assert!(matches!(
++            jit.evaluate_into(&args, &mut outputs, completion, &budget),
++            Err(Error::Work {
++                phase: Phase::Completion,
++                ..
++            })
++        ));
++        assert_eq!(
++            outputs[0].as_ref().unwrap().column_major_values().as_ptr(),
++            pointer
++        );
++        assert_eq!(budget.used_bytes(), live);
++        let tiny = ManagedMemoryBudget::new(1);
++        assert!(matches!(
++            jit.evaluate_into(&args, &mut outputs, Limits::default(), &tiny),
++            Err(Error::Memory(_))
++        ));
++        assert_eq!(tiny.used_bytes(), 0);
++        assert_eq!(actual(&outputs), before);
++        jit.evaluate_into(&args, &mut outputs, Limits::default(), &budget)
++            .unwrap();
++        assert_eq!(actual(&outputs), before);
++        drop(outputs);
++        assert_eq!(budget.used_bytes(), 0);
++    }
++}
++#[test]
++fn ordered_node_admission_precedes_later_shape_error_and_unused_checked_calls_are_retained() {
++    for artifact in artifacts(
++        "unused := left<[f64]> ** right<[f64]>\ninput<[f64]>'\n",
++        false,
++    ) {
++        let plan = lower_matrix_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
++        let jit = JitMatrixArtifact::compile(&plan).unwrap();
++        let values = inputs(
++            &artifact,
++            &[
++                ("left", [2, 3], vec![0; 6]),
++                ("right", [4, 2], vec![0; 8]),
++                ("input", [1, 1], vec![1.0f64.to_bits()]),
++            ],
++        );
++        let mut out = vec![None; plan.outputs().len()];
++        let budget = ManagedMemoryBudget::new(64 * 1024 * 1024);
++        assert!(
++            matches!(jit.evaluate_into(&values,&mut out,Limits::default(),&budget),Err(Error::Planning{node})if node==plan.calls()[0].template().node())
++        );
++        assert!(out.iter().all(Option::is_none));
++        assert_eq!(budget.used_bytes(), 0);
++    }
++    for artifact in artifacts("left<[f64]>' ** right<[f64]>\n", false) {
++        let plan = lower_matrix_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
++        let jit = JitMatrixArtifact::compile(&plan).unwrap();
++        let values = inputs(
++            &artifact,
++            &[("left", [2, 3], vec![0; 6]), ("right", [4, 2], vec![0; 8])],
++        );
++        let mut out = vec![None; plan.outputs().len()];
++        let budget = ManagedMemoryBudget::new(64 * 1024 * 1024);
++        let mut tiny = Limits::default();
++        tiny.max_work = plan.setup_demand().work + 256 + plan.calls()[0].planning_demand().work - 1;
++        assert!(
++            matches!(jit.evaluate_into(&values,&mut out,tiny,&budget),Err(Error::Work{phase:Phase::Node(node),..})if node==plan.calls()[0].template().node())
++        );
++        assert_eq!(budget.used_bytes(), 0);
++        assert!(
++            matches!(jit.evaluate_into(&values,&mut out,Limits::default(),&budget),Err(Error::Planning{node})if node==plan.calls()[1].template().node())
++        );
++        assert_eq!(budget.used_bytes(), 0);
++    }
++}
++#[test]
++fn object_emission_identity_is_deterministic_and_explicitly_not_linked_execution() {
++    for artifact in artifacts("left<[f64]>' ** right<[f64]>\n", false) {
++        let plan = lower_matrix_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
++        let first = emit_matrix_object(&plan).unwrap();
++        let second = emit_matrix_object(&plan).unwrap();
++        assert_eq!(first.bytes(), second.bytes());
++        assert_eq!(first.identity().bytes(), second.identity().bytes());
++        assert_eq!(first.metadata()["linked"], false);
++        assert_eq!(first.metadata()["executed"], false);
++        assert_eq!(first.metadata()["timing_samples"], 0);
++        assert_eq!(
++            first.descriptor().plan().program_revision(),
++            artifact.revision()
++        );
++    }
++}
+--- /dev/null
++++ b/hosts/gpu/tests/canonical_native_matrix_application.rs
+@@ -0,0 +1,795 @@
++//! Explicit clean-checkout linked qualification; no benchmark measurements.
++#![cfg(feature = "canonical-native")]
++#![cfg_attr(windows, feature(windows_process_extensions_main_thread_handle))]
++use mech_build::{CargoInvocation, parse_cargo_build_messages, process::ContainedChild};
++use mech_core::{
++    ManagedMemoryBudget, ReactiveInstanceId, Value, ValueData, ValueDataDraft, ValueDraft,
++    snapshot::{F64Bits, SequenceView, SnapshotValidationContext},
++};
++use mech_engine::{
++    CanonicalSourceFrontend, ProgramArtifact, decode_source_input_name,
++    native_artifact::lower_matrix_artifact,
++    resident::{ActivationFacts, CapturedValueInput, activate},
++};
++use mech_gpu::native_artifact::matrix::{
++    JitMatrixArtifact, NativeMatrixExecutionError as Error, NativeMatrixExecutionLimits as Limits,
++    NativeMatrixExecutionPhase as Phase, NativeMatrixValue, generate_matrix_linked_application,
++};
++use mech_syntax::document::{
++    AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
++    parse_canonical_document,
++};
++use serde_json::{Value as Json, json};
++use sha2::{Digest, Sha256};
++use std::{
++    collections::{BTreeMap, BTreeSet},
++    ffi::OsString,
++    fs::{self, File},
++    io::Cursor,
++    path::{Path, PathBuf},
++    process::{Command, ExitStatus, Stdio},
++    thread,
++    time::{Duration, Instant},
++};
++const PROCESS_DEADLINE: Duration = Duration::from_secs(15);
++const WORKER_DEADLINE: Duration = Duration::from_secs(20 * 60);
++fn digest(bytes: &[u8]) -> String {
++    Sha256::digest(bytes)
++        .iter()
++        .map(|byte| format!("{byte:02x}"))
++        .collect()
++}
++fn pin(path: &Path) -> String {
++    digest(&fs::read(path).unwrap())
++}
++fn workspace() -> PathBuf {
++    Path::new(env!("CARGO_MANIFEST_DIR"))
++        .parent()
++        .unwrap()
++        .parent()
++        .unwrap()
++        .to_path_buf()
++}
++
++struct Captured {
++    status: ExitStatus,
++    stdout: Vec<u8>,
++    stderr: Vec<u8>,
++}
++
++/// File-backed streams and an owned process group/job contain the complete
++/// synchronous generation, lock resolution, metadata, build and link worker.
++fn bounded(mut command: Command, root: &Path, name: &str, deadline: Duration) -> Captured {
++    let stdout = root.join(format!("{name}.stdout"));
++    let stderr = root.join(format!("{name}.stderr"));
++    command
++        .stdin(Stdio::null())
++        .stdout(Stdio::from(File::create(&stdout).unwrap()))
++        .stderr(Stdio::from(File::create(&stderr).unwrap()));
++    let mut child = ContainedChild::spawn(&mut command).unwrap();
++    let end = Instant::now() + deadline;
++    let status = loop {
++        if let Some(status) = child.child_mut().try_wait().unwrap() {
++            break status;
++        }
++        if Instant::now() >= end {
++            child.terminate_tree().unwrap();
++            let reap = Instant::now() + Duration::from_secs(5);
++            while child.child_mut().try_wait().unwrap().is_none() && Instant::now() < reap {
++                thread::sleep(Duration::from_millis(20));
++            }
++            panic!("{name} exceeded deadline; diagnostics {}", stderr.display());
++        }
++        thread::sleep(Duration::from_millis(20));
++    };
++    child.terminate_tree().unwrap();
++    Captured {
++        status,
++        stdout: fs::read(stdout).unwrap(),
++        stderr: fs::read(stderr).unwrap(),
++    }
++}
++
++fn clean(workspace: &Path, evidence: &Path, commit: &str, label: &str) {
++    let mut command = Command::new("git");
++    command.args(["rev-parse", "HEAD"]).current_dir(workspace);
++    let head = bounded(
++        command,
++        evidence,
++        &format!("{label}-head"),
++        PROCESS_DEADLINE,
++    );
++    assert!(head.status.success());
++    assert_eq!(String::from_utf8(head.stdout).unwrap().trim(), commit);
++    let mut command = Command::new("git");
++    command
++        .args(["status", "--porcelain", "--untracked-files=all"])
++        .current_dir(workspace);
++    let status = bounded(
++        command,
++        evidence,
++        &format!("{label}-status"),
++        PROCESS_DEADLINE,
++    );
++    assert!(status.status.success());
++    assert!(
++        status.stdout.is_empty(),
++        "requires a clean immutable checkout"
++    );
++}
++
++fn worker_command(mut command: Command, root: &Path, label: &str) -> Captured {
++    command
++        .stdin(Stdio::null())
++        .stdout(Stdio::from(
++            File::create(root.join(format!("{label}.stdout"))).unwrap(),
++        ))
++        .stderr(Stdio::from(
++            File::create(root.join(format!("{label}.stderr"))).unwrap(),
++        ));
++    let status = command.status().unwrap();
++    Captured {
++        status,
++        stdout: fs::read(root.join(format!("{label}.stdout"))).unwrap(),
++        stderr: fs::read(root.join(format!("{label}.stderr"))).unwrap(),
++    }
++}
++
++fn compiled_feature_closure(metadata: &Json, build_stdout: &[u8]) -> Vec<Json> {
++    let packages = metadata["packages"]
++        .as_array()
++        .unwrap()
++        .iter()
++        .map(|package| (package["id"].as_str().unwrap(), package))
++        .collect::<BTreeMap<_, _>>();
++    let root = metadata["resolve"]["root"].as_str().unwrap();
++    // Metadata can retain weak optional dependency edges that Cargo does not
++    // build. Every actual compiler-artifact unit (including fresh units) is
++    // authoritative for the successful build's selected packages/features.
++    let mut seen = BTreeSet::new();
++    let mut seen_packages = BTreeSet::new();
++    let mut result = Vec::new();
++    for line in build_stdout.split(|byte| *byte == b'\n') {
++        if line.is_empty() {
++            continue;
++        }
++        let message: Json = serde_json::from_slice(line).unwrap();
++        if message["reason"] != "compiler-artifact" {
++            continue;
++        }
++        let id = message["package_id"].as_str().unwrap();
++        let package = packages[id];
++        let name = package["name"].as_str().unwrap();
++        seen_packages.insert(name.to_owned());
++        if name.starts_with("mech-") {
++            assert!(package["source"].is_null(), "registry Mech crate {name}");
++            let manifest = Path::new(package["manifest_path"].as_str().unwrap())
++                .canonicalize()
++                .unwrap();
++            assert!(
++                manifest.starts_with(workspace().canonicalize().unwrap()),
++                "Mech crate {name} is outside the pinned workspace"
++            );
++        }
++        assert_ne!(name, "mech-syntax");
++        assert!(
++            !name.starts_with("cranelift-"),
++            "runtime graph contains compiler crate {name}"
++        );
++        let forbidden: &[&str] = match name {
++            "mech-gpu" => &[
++                "canonical-native",
++                "jit",
++                "aot",
++                "sequence-cli",
++                "native-build",
++                "fused-cli",
++            ],
++            "mech-engine" | "mech-stdlib" => &[
++                "source",
++                "semantic-compiler",
++                "compiler",
++                "full_compiler",
++                "standard_compiler",
++                "native-sequence",
++            ],
++            _ => &[],
++        };
++        for feature in message["features"].as_array().unwrap() {
++            assert!(
++                !forbidden.contains(&feature.as_str().unwrap()),
++                "runtime-only graph enabled {name}/{feature}"
++            );
++        }
++        if seen.insert((
++            id.to_owned(),
++            message["target"].to_string(),
++            message["features"].to_string(),
++        )) {
++            result.push(json!({"id":id, "name":name, "version":package["version"], "features":message["features"], "target_name":message["target"]["name"], "target_kind":message["target"]["kind"]}));
++        }
++    }
++    assert!(result.iter().any(|unit| unit["id"] == root));
++    for required in ["mech-core", "mech-engine", "mech-gpu", "mech-stdlib"] {
++        assert!(
++            seen_packages.contains(required),
++            "missing compiled {required}"
++        );
++    }
++    result.sort_by(|a, b| a["id"].as_str().cmp(&b["id"].as_str()));
++    result
++}
++
++fn artifacts(source: &str, interactive: bool) -> [ProgramArtifact; 2] {
++    let parse = parse_canonical_document(
++        TextSnapshot::new(DocumentId(0x4d41544e4154), Revision(1), source).unwrap(),
++        ParseConfig::default(),
++    );
++    assert!(
++        parse.is_strictly_clean(),
++        "{source}: {:?}",
++        parse.diagnostics
++    );
++    let doc = DocumentSyntax::cast(parse.syntax()).unwrap();
++    let product = if interactive {
++        CanonicalSourceFrontend
++            .compile_interactive_document_with_catalog(&doc, mech_stdlib::source_catalog())
++    } else {
++        CanonicalSourceFrontend.compile_document_with_catalog(&doc, mech_stdlib::source_catalog())
++    }
++    .unwrap();
++    let artifact = product.compile_artifact().unwrap();
++    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
++    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
++    assert_eq!(artifact.revision(), decoded.revision());
++    assert_eq!(
++        bytes,
++        mech_engine::encode_program_artifact_bytecode_v1(&decoded).unwrap()
++    );
++    [artifact, decoded]
++}
++fn inputs(artifact: &ProgramArtifact, named: &[(&str, [u64; 2], Vec<u64>)]) -> Vec<Value> {
++    artifact
++        .inputs()
++        .iter()
++        .map(|input| {
++            let name = decode_source_input_name(&input.name).unwrap();
++            let (_, extents, bits) = named.iter().find(|(key, _, _)| *key == name).unwrap();
++            let schema = artifact.schemas().get(input.schema).unwrap();
++            let shape = mech_core::shape_for_resolved_extents(schema, extents).unwrap();
++            ValueDraft {
++                schema: input.schema,
++                shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
++                data: ValueDataDraft::Matrix(
++                    bits.iter()
++                        .map(|bits| ValueDataDraft::F64(F64Bits::from_bits(*bits)))
++                        .collect(),
++                ),
++            }
++            .finalize(&SnapshotValidationContext::new(artifact.schemas()))
++            .unwrap()
++        })
++        .collect()
++}
++fn reference(
++    artifact: &ProgramArtifact,
++    inputs: &[Value],
++) -> Result<Vec<([u64; 2], Vec<u64>)>, String> {
++    let mut instance = activate(
++        ReactiveInstanceId::new(0x4d41544e4154, 0),
++        artifact,
++        &mech_stdlib::source_catalog(),
++        &ActivationFacts::default(),
++    )
++    .map_err(|e| format!("{e:?}"))?;
++    let captured = instance
++        .plan
++        .inputs
++        .iter()
++        .map(|input| {
++            let ordinal = artifact
++                .inputs()
++                .iter()
++                .position(|declared| declared.slot == input.artifact_slot)
++                .unwrap();
++            CapturedValueInput {
++                slot: input.slot,
++                value: &inputs[ordinal],
++            }
++        })
++        .collect::<Vec<_>>();
++    instance
++        .prepare_turn_values(&captured)
++        .and_then(|p| p.publish())
++        .map_err(|e| format!("{e:?}"))?;
++    (0..artifact.outputs().len())
++        .map(|index| {
++            let value = instance.copied_output(index).unwrap();
++            let owner = value.schemas().unwrap();
++            let schema = value.validate_against(&owner).unwrap();
++            let mech_core::SchemaBody::Matrix { dimensions, .. } = schema.body() else {
++                panic!("matrix result required")
++            };
++            let extents = [
++                value.shape().resolve_dimension(&dimensions[0]).unwrap(),
++                value.shape().resolve_dimension(&dimensions[1]).unwrap(),
++            ];
++            let ValueData::Matrix(matrix) = value.data() else {
++                panic!("matrix payload required")
++            };
++            let bits = match matrix.elements() {
++                SequenceView::F64(xs) => xs.iter().map(|v| v.bits()).collect(),
++                SequenceView::Values(xs) => xs
++                    .iter()
++                    .map(|v| match v {
++                        ValueData::F64(v) => v.bits(),
++                        _ => panic!("F64 lane required"),
++                    })
++                    .collect(),
++                other => {
++                    assert_eq!(other.len(), 0);
++                    Vec::new()
++                }
++            };
++            Ok((extents, bits))
++        })
++        .collect()
++}
++fn actual(outputs: &[Option<NativeMatrixValue>]) -> Vec<([u64; 2], Vec<u64>)> {
++    outputs
++        .iter()
++        .map(|output| {
++            let output = output.as_ref().unwrap();
++            let [rows, cols] = output.extents();
++            let mut bits = Vec::new();
++            for ordinal in 0..rows.checked_mul(cols).unwrap() {
++                let row = ordinal / cols;
++                let col = ordinal % cols;
++                bits.push(output.column_major_values()[(row + col * rows) as usize].to_bits());
++            }
++            ([rows, cols], bits)
++        })
++        .collect()
++}
++
++const TRANSPOSE: &str = "transposed := input<[f64]>'\nalias := transposed\nalias\n";
++const PRODUCT: &str = "left<[f64]> ** right<[f64]>\n";
++const CHAIN: &str = "left<[f64]>' ** right<[f64]>\n";
++fn formatted(values: &[([u64; 2], Vec<u64>)]) -> String {
++    let mut output = String::new();
++    use std::fmt::Write;
++    for (shape, bits) in values {
++        write!(&mut output, "{}x{}:", shape[0], shape[1]).unwrap();
++        for (i, bit) in bits.iter().enumerate() {
++            if i > 0 {
++                output.push(',');
++            }
++            write!(&mut output, "{bit:016x}").unwrap();
++        }
++        output.push('\n');
++    }
++    output
++}
++fn arguments(artifact: &ProgramArtifact, named: &[(&str, [u64; 2], Vec<u64>)]) -> Vec<String> {
++    artifact
++        .inputs()
++        .iter()
++        .map(|input| {
++            let name = decode_source_input_name(&input.name).unwrap();
++            let (_, shape, bits) = named.iter().find(|(key, _, _)| *key == name).unwrap();
++            formatted(&[(*shape, bits.clone())])
++                .trim_end_matches('\n')
++                .to_owned()
++        })
++        .collect()
++}
++fn success(label: &str, args: Vec<String>, values: &[([u64; 2], Vec<u64>)]) -> Json {
++    json!({"name":label,"arguments":args,"stdout":formatted(values),"stderr":"","exit":0})
++}
++fn failure(label: &str, args: Vec<String>, error: String) -> Json {
++    json!({"name":label,"arguments":args,"stdout":"","stderr":format!("{error}\n"),"exit":1})
++}
++fn cases(name: &str, artifacts: &[ProgramArtifact; 2], object_stack: u64) -> Vec<Json> {
++    let plans = artifacts
++        .iter()
++        .map(|a| lower_matrix_artifact(a, &mech_stdlib::source_catalog()).unwrap())
++        .collect::<Vec<_>>();
++    let jits = plans
++        .iter()
++        .map(|p| JitMatrixArtifact::compile(p).unwrap())
++        .collect::<Vec<_>>();
++    let one = 1.0f64.to_bits();
++    let two = 2.0f64.to_bits();
++    let datasets: Vec<(&str, Vec<(&str, [u64; 2], Vec<u64>)>)> = match name {
++        "matrix-transpose" => vec![
++            (
++                "rectangle",
++                vec![(
++                    "input",
++                    [2, 3],
++                    vec![
++                        0,
++                        1,
++                        1u64 << 63,
++                        0x7ff0000000000000,
++                        0xfff0000000000000,
++                        0x7ff8000000001234,
++                    ],
++                )],
++            ),
++            ("zero-row", vec![("input", [0, 3], vec![])]),
++            (
++                "huge-zero-column",
++                vec![("input", [1_000_000_000, 0], vec![])],
++            ),
++        ],
++        "matrix-product" => vec![
++            (
++                "rectangle",
++                vec![
++                    ("left", [2, 3], vec![one, two, one, 0, two, one]),
++                    ("right", [3, 2], vec![one, 0, 0, one, one, one]),
++                ],
++            ),
++            (
++                "empty-inner",
++                vec![("left", [2, 0], vec![]), ("right", [0, 3], vec![])],
++            ),
++            (
++                "nan-bits",
++                vec![
++                    ("left", [1, 2], vec![0x7ff8000000001234, 1]),
++                    ("right", [2, 1], vec![one, one]),
++                ],
++            ),
++        ],
++        "matrix-chain" => vec![
++            (
++                "rectangle",
++                vec![
++                    ("left", [2, 3], vec![one, two, one, 0, two, one]),
++                    ("right", [2, 2], vec![one, 0, 0, one]),
++                ],
++            ),
++            (
++                "empty-inner",
++                vec![("left", [0, 2], vec![]), ("right", [0, 3], vec![])],
++            ),
++        ],
++        _ => panic!("unexpected qualification application"),
++    };
++    let mut cases = Vec::new();
++    for (label, named) in datasets {
++        let args = inputs(&artifacts[0], &named);
++        let expected = reference(&artifacts[0], &args).unwrap();
++        let mut work = 0;
++        for i in 0..2 {
++            let other = inputs(&artifacts[i], &named);
++            assert_eq!(reference(&artifacts[i], &other).unwrap(), expected);
++            let mut out = vec![None; plans[i].outputs().len()];
++            let budget = ManagedMemoryBudget::new(64 * 1024 * 1024);
++            let report = jits[i]
++                .evaluate_into(&other, &mut out, Limits::default(), &budget)
++                .unwrap();
++            assert_eq!(actual(&out), expected);
++            work = report.work;
++            drop(out);
++            assert_eq!(budget.used_bytes(), 0);
++        }
++        let argv = arguments(&artifacts[0], &named);
++        cases.push(success(label, argv.clone(), &expected));
++        if label == "rectangle" {
++            let mut boundary = vec!["--".into()];
++            boundary.extend(argv.clone());
++            cases.push(success("explicit-boundary", boundary, &expected));
++            for (label, prefix, limits, budget) in [
++                (
++                    "setup-denial",
++                    "--work=0".to_owned(),
++                    Limits {
++                        max_work: 0,
++                        ..Limits::default()
++                    },
++                    64 * 1024 * 1024,
++                ),
++                (
++                    "completion-denial",
++                    format!("--work={}", work - 1),
++                    Limits {
++                        max_work: work - 1,
++                        ..Limits::default()
++                    },
++                    64 * 1024 * 1024,
++                ),
++                ("memory-denial", "--budget=0".into(), Limits::default(), 0),
++            ] {
++                let mut out = vec![None; plans[0].outputs().len()];
++                let error = jits[0]
++                    .evaluate_into(&args, &mut out, limits, &ManagedMemoryBudget::new(budget))
++                    .unwrap_err();
++                assert!(out.iter().all(Option::is_none));
++                if label == "completion-denial" {
++                    assert!(matches!(
++                        error,
++                        Error::Work {
++                            phase: Phase::Completion,
++                            ..
++                        }
++                    ));
++                }
++                let mut controlled = vec![prefix];
++                controlled.extend(argv.clone());
++                cases.push(failure(label, controlled, error.to_string()));
++            }
++            let mut stack = vec!["--stack=0".into()];
++            stack.extend(argv.clone());
++            cases.push(failure(
++                "stack-denial",
++                stack,
++                Error::Stack {
++                    required: object_stack,
++                    limit: 0,
++                }
++                .to_string(),
++            ));
++            let mut invalid = argv.clone();
++            invalid[0] = "1x1:not-hex".into();
++            cases.push(failure(
++                "invalid-word",
++                invalid,
++                "invalid F64 bit word".into(),
++            ));
++        }
++    }
++    if name != "matrix-transpose" {
++        let named = vec![("left", [2, 3], vec![0; 6]), ("right", [4, 2], vec![0; 8])];
++        let args = inputs(&artifacts[0], &named);
++        assert!(reference(&artifacts[0], &args).is_err());
++        let mut out = vec![None; plans[0].outputs().len()];
++        let error = jits[0]
++            .evaluate_into(
++                &args,
++                &mut out,
++                Limits::default(),
++                &ManagedMemoryBudget::new(64 * 1024 * 1024),
++            )
++            .unwrap_err();
++        assert!(matches!(error, Error::Planning { .. }));
++        cases.push(failure(
++            "actual-shape-mismatch",
++            arguments(&artifacts[0], &named),
++            error.to_string(),
++        ));
++    }
++    cases
++}
++
++#[test]
++#[ignore = "internal worker; complete generation/build subtree is parent-owned"]
++fn canonical_matrix_link_build_worker() {
++    let name = std::env::var("MECH_CANONICAL_MATRIX_WORKER_NAME").unwrap();
++    assert!(matches!(
++        name.as_str(),
++        "matrix-transpose" | "matrix-product" | "matrix-chain"
++    ));
++    let evidence = PathBuf::from(std::env::var_os("MECH_CANONICAL_MATRIX_EVIDENCE_DIR").unwrap());
++    let root = evidence.join(&name);
++    let source = fs::read_to_string(root.join("application.mec")).unwrap();
++    let artifacts = artifacts(&source, true);
++    let catalog = mech_stdlib::source_catalog();
++    let generated = generate_matrix_linked_application(
++        &workspace(),
++        &root.join("project"),
++        &name,
++        &artifacts[0],
++        &catalog,
++        source.as_bytes(),
++    )
++    .unwrap();
++    let decoded = generate_matrix_linked_application(
++        &workspace(),
++        &root.join("decoded-project"),
++        &name,
++        &artifacts[1],
++        &catalog,
++        source.as_bytes(),
++    )
++    .unwrap();
++    assert_eq!(generated.pins(), decoded.pins());
++    assert_eq!(
++        generated.metadata()["typed_ir_sha256"],
++        decoded.metadata()["typed_ir_sha256"]
++    );
++    let cases = cases(
++        &name,
++        &artifacts,
++        generated.metadata()["object"]["stack_bytes"]
++            .as_u64()
++            .unwrap(),
++    );
++    for project in [&generated, &decoded] {
++        for (relative, expected) in project.pins() {
++            assert_eq!(&pin(&project.root().join(relative)), expected);
++        }
++    }
++    let bytecode = mech_engine::encode_program_artifact_bytecode_v1(&artifacts[0]).unwrap();
++    assert_eq!(
++        fs::read(generated.root().join("program.mecb")).unwrap(),
++        bytecode
++    );
++    assert_eq!(
++        fs::read(generated.root().join("application.mec")).unwrap(),
++        source.as_bytes()
++    );
++    fs::copy(
++        workspace().join("Cargo.lock"),
++        generated.root().join("Cargo.lock"),
++    )
++    .unwrap();
++    let cargo_home = std::env::var_os("CARGO_HOME")
++        .map(PathBuf::from)
++        .or_else(|| std::env::var_os("HOME").map(|p| PathBuf::from(p).join(".cargo")));
++    if let Some(home) = cargo_home {
++        assert!(
++            !home.join("config").exists() && !home.join("config.toml").exists(),
++            "ambient Cargo config unsupported"
++        );
++    }
++    let isolated = generated.root().ancestors().last().unwrap();
++    let metadata = worker_command(
++        CargoInvocation::resolve_lockfile(generated.manifest_path(), true)
++            .with_current_dir(isolated)
++            .command(),
++        &root,
++        "metadata",
++    );
++    assert!(
++        metadata.status.success(),
++        "{}",
++        String::from_utf8_lossy(&metadata.stderr)
++    );
++    let metadata: Json = serde_json::from_slice(&metadata.stdout).unwrap();
++    let mut command = CargoInvocation::build(
++        generated.manifest_path(),
++        &name,
++        None,
++        evidence.join("cargo-target"),
++        false,
++        true,
++    )
++    .unwrap()
++    .with_current_dir(isolated)
++    .command();
++    command
++        .env("CARGO_INCREMENTAL", "0")
++        .env("CARGO_PROFILE_DEV_DEBUG", "0")
++        .env("CARGO_BUILD_JOBS", "2");
++    let built = worker_command(command, &root, "build");
++    assert!(
++        built.status.success(),
++        "{}",
++        String::from_utf8_lossy(&built.stderr)
++    );
++    let messages = parse_cargo_build_messages(Cursor::new(&built.stdout)).unwrap();
++    assert_eq!(messages.build_finished, Some(true));
++    let closure = compiled_feature_closure(&metadata, &built.stdout);
++    let executable = messages.select_binary(&name).unwrap().executable;
++    let mut pins = BTreeMap::new();
++    for project in [&generated, &decoded] {
++        for (relative, expected) in project.pins() {
++            pins.insert(project.root().join(relative), expected.clone());
++        }
++        let path = project.root().join("linked-manifest.json");
++        pins.insert(path.clone(), pin(&path));
++    }
++    for path in [
++        executable.clone(),
++        generated.root().join("Cargo.lock"),
++        workspace().join("Cargo.lock"),
++        root.join("application.mec"),
++        root.join("metadata.stdout"),
++        root.join("build.stdout"),
++    ] {
++        pins.insert(path.clone(), pin(&path));
++    }
++    let record = json!({"executable":executable,"pins":pins,"cases":cases,"build":{"name":name,"source_sha256":digest(source.as_bytes()),"bytecode_sha256":digest(&bytecode),"source_revision":hex_revision(artifacts[0].revision().as_bytes()),"generated":generated.metadata(),"runtime_compiled_units":closure,"binary_sha256":pin(&executable),"build_count":1,"object_emissions":2,"reference":"actual canonical resident + JIT original and decoded; exact bitwise row-major outputs","benchmark_measurements":0}});
++    fs::write(
++        root.join("application-build.json"),
++        serde_json::to_vec_pretty(&record).unwrap(),
++    )
++    .unwrap();
++}
++fn hex_revision(bytes: &[u8]) -> String {
++    bytes.iter().map(|b| format!("{b:02x}")).collect()
++}
++fn qualify(evidence: &Path, name: &str, source: &str) -> Json {
++    let root = evidence.join(name);
++    fs::create_dir(&root).unwrap();
++    fs::write(root.join("application.mec"), source).unwrap();
++    let mut command = Command::new(std::env::current_exe().unwrap());
++    command
++        .args([
++            "--ignored",
++            "--exact",
++            "canonical_matrix_link_build_worker",
++            "--nocapture",
++            "--test-threads=1",
++        ])
++        .env("MECH_CANONICAL_MATRIX_WORKER_NAME", name);
++    let built = bounded(command, &root, "build-worker", WORKER_DEADLINE);
++    assert!(
++        built.status.success(),
++        "{}",
++        String::from_utf8_lossy(&built.stderr)
++    );
++    let record_path = root.join("application-build.json");
++    let mut record: Json = serde_json::from_slice(&fs::read(&record_path).unwrap()).unwrap();
++    let executable: PathBuf = serde_json::from_value(record["executable"].take()).unwrap();
++    let mut pins: BTreeMap<PathBuf, String> =
++        serde_json::from_value(record["pins"].take()).unwrap();
++    pins.insert(record_path.clone(), pin(&record_path));
++    let check = || {
++        for (path, expected) in &pins {
++            assert_eq!(&pin(path), expected, "changed {}", path.display());
++        }
++    };
++    check();
++    let mut launches = Vec::new();
++    for case in record["cases"].as_array().unwrap() {
++        let label = case["name"].as_str().unwrap();
++        let arguments = case["arguments"]
++            .as_array()
++            .unwrap()
++            .iter()
++            .map(|v| OsString::from(v.as_str().unwrap()))
++            .collect::<Vec<_>>();
++        let expected_out = case["stdout"].as_str().unwrap().as_bytes();
++        let expected_err = case["stderr"].as_str().unwrap().as_bytes();
++        fs::write(root.join(format!("{label}.expected.stdout")), expected_out).unwrap();
++        fs::write(root.join(format!("{label}.expected.stderr")), expected_err).unwrap();
++        let mut command = Command::new(&executable);
++        command.args(&arguments);
++        let actual = bounded(command, &root, label, PROCESS_DEADLINE);
++        assert_eq!(
++            actual.status.code(),
++            Some(case["exit"].as_i64().unwrap() as i32),
++            "{name}/{label}: {}",
++            String::from_utf8_lossy(&actual.stderr)
++        );
++        assert_eq!(actual.stdout, expected_out, "{name}/{label}");
++        assert_eq!(actual.stderr, expected_err, "{name}/{label}");
++        check();
++        launches.push(json!({"name":label,"arguments_os_encoded_hex":arguments.iter().map(|a|hex_revision(a.as_encoded_bytes())).collect::<Vec<_>>(),"exit":actual.status.code(),"stdout_sha256":digest(&actual.stdout),"stderr_sha256":digest(&actual.stderr),"expected_stdout_sha256":digest(expected_out),"expected_stderr_sha256":digest(expected_err),"exact_complete_outputs":true,"binary_unchanged":true}));
++    }
++    let mut build = record["build"].take();
++    build["pins"] = json!(pins);
++    build["cases"] = json!(launches);
++    build["linked"] = json!(true);
++    build["executed"] = json!(true);
++    build
++}
++#[test]
++#[ignore = "explicit actual linked matrix Object qualification; clean immutable checkout + fresh external evidence required"]
++fn linked_canonical_matrix_applications_use_actual_managed_nativehost_leaves() {
++    let source =
++        std::env::var("MECH_CANONICAL_MATRIX_SOURCE_COMMIT").expect("pin immutable source HEAD");
++    assert_eq!(source.len(), 40);
++    assert!(source.bytes().all(|b| b.is_ascii_hexdigit()));
++    let evidence = PathBuf::from(
++        std::env::var_os("MECH_CANONICAL_MATRIX_EVIDENCE_DIR").expect("fresh external evidence"),
++    );
++    assert!(evidence.is_absolute());
++    fs::create_dir(&evidence).unwrap();
++    let evidence = evidence.canonicalize().unwrap();
++    assert!(!evidence.starts_with(workspace().canonicalize().unwrap()));
++    clean(&workspace(), &evidence, &source, "before");
++    let lock = pin(&workspace().join("Cargo.lock"));
++    let applications = [
++        qualify(&evidence, "matrix-transpose", TRANSPOSE),
++        qualify(&evidence, "matrix-product", PRODUCT),
++        qualify(&evidence, "matrix-chain", CHAIN),
++    ];
++    assert_eq!(pin(&workspace().join("Cargo.lock")), lock);
++    clean(&workspace(), &evidence, &source, "after");
++    fs::write(evidence.join("qualification.json"),serde_json::to_vec_pretty(&json!({"schema":"mech.canonical-native-matrix-linked-qualification.v1","source_commit":source,"clean_before_and_after":true,"route":"canonical-artifact-cranelift-object-with-selected-maintained-matrix-leaves","applications":applications,"linked":true,"executed":true,"benchmark_measurements":0})).unwrap()).unwrap();
++}

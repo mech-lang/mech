@@ -1,0 +1,24 @@
+{
+  "status": "UNAPPLIED / UNRUN",
+  "qualification_credit": 0,
+  "scope": "Ordinary canonical application, pipeline, capture and exact-count Iteration syntax, artifact encoding and resident execution.",
+  "tests": {
+    "ordinary_source_original_and_decoded": 9,
+    "canonical_batch_parser": 5,
+    "all_cut_and_finite_limit_stream": 2,
+    "typed_artifact_original_and_decoded": 6,
+    "strict_wire_unit": 2,
+    "runtime_semantic_reuse_unit": 1,
+    "restricted_config_rejection": 1,
+    "total_new_tests": 26
+  },
+  "limits": [
+    "exact u64 count remains one scalar field, no count-sized decode allocation/unrolling",
+    "body block id is sole lexical identity; exact seed/capture input ordinals and carrier-first parameters",
+    "zero count validates whole stored pure body/contracts/captures but never executes its body",
+    "all nested Recur/Suspend/Publish rejected; resource/state writes excluded",
+    "scalar Bool/Index/String/integer/float and flat rank2 primitive/String Turn Matrix carriers only",
+    "runtime actual input/yield/result shape/schema key/owner/activation-fixed bounds validated before replacement or publication"
+  ],
+  "composition": "Frozen 62-file aggregate; its exact base predates eb562. Integrate additive hunks and retain current String, retention and constructor changes."
+}

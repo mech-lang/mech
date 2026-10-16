@@ -1,0 +1,63 @@
++> number
++> @args := cli/args
++> @out := cli/stdout
+
+#Decimal(n<u64>) => <[u8]>
+  | :Carry(value<u64>, digits<[u8]>)
+  | :Done(digits<[u8]>).
+#Decimal(n) -> :Carry(n, [])
+  :Carry(value, digits)
+    | value < 10u64 -> {
+        digit<u8> := value + 48u64
+      } -> :Done([digit digits])
+    | * -> {
+        digit<u8> := number/mod(value, 10u64) + 48u64
+      } -> :Carry(value / 10u64, [digit digits])
+  :Done(digits) => digits.
+
+#Orbit(cr<f64>, ci<f64>) => <bool>
+  | :Step(real<f64>, imaginary<f64>, iteration<u64>)
+  | :Done(inside<bool>).
+#Orbit(cr, ci) -> :Step(0.0, 0.0, 0u64)
+  :Step(real, imaginary, iteration)
+    | real * real + imaginary * imaginary > 4.0 -> :Done(false)
+    | iteration >= 50u64 -> :Done(true)
+    | * -> :Step(real * real - imaginary * imaginary + cr, (real + real) * imaginary + ci, iteration + 1u64)
+  :Done(inside) => inside.
+
+pixel(x<u64>, y<u64>, size<u64>) => (inside<bool>) :=
+  horizontal<f64> := x
+  vertical<f64> := y
+  width<f64> := size
+  inside := #Orbit(horizontal * (2.0 / width) - 1.5, vertical * (2.0 / width) - 1.0).
+
+#Pack(x<u64>, y<u64>, size<u64>) => <u8>
+  | :Bit(bit<u64>, value<u64>)
+  | :Done(value<u8>).
+#Pack(x, y, size) -> :Bit(0u64, 0u64)
+  :Bit(bit, value)
+    | bit >= 8u64 -> {
+        byte<u8> := value
+      } -> :Done(byte)
+    | x + bit >= size -> :Bit(bit + 1u64, value * 2u64)
+    | * -> {
+        digit := pixel(x + bit, y, size)? | true => 1u64 | false => 0u64.
+      } -> :Bit(bit + 1u64, value * 2u64 + digit)
+  :Done(value) => value.
+
+#Rows(size<u64>) => <u64>
+  | :Row(y<u64>)
+  | :Done.
+#Rows(size) -> :Row(0u64)
+  :Row(y)
+    | y >= size -> :Done
+    | * -> {
+        row := [#Pack(x, y, size) | x <- 0u64..8u64..size]
+        @out/bytes <- row
+      } -> :Row(y + 1u64)
+  :Done => size.
+
+size := number/parse-u64(@args/1)
+decimal := #Decimal(size)
+@out/bytes <- [80u8 52u8 10u8 decimal 32u8 decimal 10u8]
+rows := #Rows(size)

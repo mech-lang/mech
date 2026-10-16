@@ -1,0 +1,85 @@
+{
+  "schema": "mech.native-iteration-file-pins.v1",
+  "rows": [
+    {
+      "path": "hosts/gpu/Cargo.toml",
+      "base_sha256": "20df82c6bfd81310e856a189395c29f28e0a6ea355d48d72199fbdb536ca2250",
+      "candidate_sha256": "99d4f942dc44716064e87b1fce7af69339453b25457ff95b48ea320a82cbc6c6"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/control_compiler.rs",
+      "base_sha256": "1450351aeeb163060704e1a3540b61643b800890d8ed7ac933b1c0ced8722559",
+      "candidate_sha256": "1d59fd3e11c6dfdc71f28615636c70823f050e17ed6044b4b816619fe270b558"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/iteration_abi.rs",
+      "base_sha256": null,
+      "candidate_sha256": "829ec13e6cd51b9f09410a24b17991b1b7efe51310ed8963399f08abf02ac3a6"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/iteration_application.rs",
+      "base_sha256": null,
+      "candidate_sha256": "396b8a1d6d5ef374b022874fa257f24cc1d6863899a45645966056abc6ffa96a"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/iteration_compiler.rs",
+      "base_sha256": null,
+      "candidate_sha256": "a4e2347be9989382ddfef237bb9e51e8437c2f518929393f865480266ab60cb4"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/iteration_identity.rs",
+      "base_sha256": null,
+      "candidate_sha256": "ac8990465bdec9e503ce63085deff851434c1fe1d12d4272b4d4a5d65ca58114"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/iteration_linked.rs",
+      "base_sha256": null,
+      "candidate_sha256": "5df98b3e94946aa6284fbe2916481f792b3fac10bb4db83c0f3a2fe3dd3c9441"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/iteration_runtime.rs",
+      "base_sha256": null,
+      "candidate_sha256": "995f0f85a45206e7959a8a2dbe06c329fde15135db0598313c37c3e49debff00"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/mod.rs",
+      "base_sha256": "bf23b720672da168d5b6432bb68efffc0e38aa7d8ed0c1dacc71caf56c32de42",
+      "candidate_sha256": "a1e87ec4e472c3d8b5a6fa022cf2d78b62ce05d972854745dd64ad19db3e88b3"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/templates/linked_iteration_main.rs.in",
+      "base_sha256": null,
+      "candidate_sha256": "c6e12ed0f10a37d4c2d7bf968b74850bf28d5ce8148862532cf98b1c9def97a2"
+    },
+    {
+      "path": "hosts/gpu/tests/canonical_artifact_iteration.rs",
+      "base_sha256": null,
+      "candidate_sha256": "bb1a064fe36386b6b2e606477dfc2a288823ebbbb9d67bd188b2f08a4ed8ce9d"
+    },
+    {
+      "path": "hosts/gpu/tests/canonical_artifact_iteration_application.rs",
+      "base_sha256": null,
+      "candidate_sha256": "5102d8b8f57b3b36a3410c435ecddf88eb95a207ed3f7c9999bdd61f204b1e2a"
+    },
+    {
+      "path": "src/engine/src/native_artifact/iteration.rs",
+      "base_sha256": null,
+      "candidate_sha256": "9949b07cc155a09316be014cf15ef46348385d68ca626a80242262ac5f46dcf4"
+    },
+    {
+      "path": "src/engine/src/native_artifact/iteration_validation.rs",
+      "base_sha256": null,
+      "candidate_sha256": "278ba6296effbd9e04e2d5c40fe9ee95c1367cb9b89488bda2589b6c49347fe9"
+    },
+    {
+      "path": "src/engine/src/native_artifact/mod.rs",
+      "base_sha256": "975abce12fa29c3f4c30ab999b606555f8d039ff14c74e4b10501e9b62054f0c",
+      "candidate_sha256": "95bbf5544441d223e0697407c40b076a996ca357f4e21fd44176e6838c4ef5a7"
+    },
+    {
+      "path": "src/engine/src/resident/general/native_match_lowering.rs",
+      "base_sha256": "a42c9c395865d19dc65def1b89b35a3f53a2dc7de328c401009aaea9bb644fce",
+      "candidate_sha256": "252263212ddf48d4b11ba3689ead06853f526c1b17ec557508c1aa146ab3e484"
+    }
+  ]
+}

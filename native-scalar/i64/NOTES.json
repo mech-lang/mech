@@ -1,0 +1,53 @@
+{
+  "status": "UNAPPLIED / UNRUN",
+  "qualification_credit": 0,
+  "scope": {
+    "new_kinds": [
+      "I64"
+    ],
+    "new_operations": [
+      "I64Add",
+      "I64Sub",
+      "I64Mul",
+      "I64Div",
+      "I64Rem",
+      "I64Neg",
+      "I64Eq",
+      "I64Ne",
+      "I64Lt",
+      "I64Le",
+      "I64Gt",
+      "I64Ge"
+    ],
+    "private_authority": "Only exact finished maintained snapshot arithmetic/comparison/negation binder branches attach the existing private candidate witness. The exact scalar SignedInteger(W64) request is independently checked and sealed against final BoundCall. No new public certification API or work-policy authority.",
+    "unary_contract": "FullWrite SameAsInput(0) is allowed only for I64Neg. All other existing certified operations retain FullWrite Declared; purity, Read/Write Signal, no alias and ExactScalar remain required.",
+    "semantics": "Checked I64 addition/subtraction/multiplication; division/remainder reject zero and MIN/-1 before machine operation; unary negation rejects MIN. Comparisons use signed order and exact 64-bit values. All ordered Lets remain, including dead checked nodes.",
+    "native_memory": "NativeHost uses actual FunctionValueRepresentation::I64 and Signed(W64) physical scalar storage. U64 and Bool storage derivation is preserved.",
+    "runtime": "I64 transport retains two’s-complement bits in one eight-byte lane. Safe wrapper validates typed variants after admitted setup; same managed runtime, error origin/order and atomic staged outputs serve JIT and linked entry. Signed CLI parsing is strict ASCII optional minus, with checked i64 range.",
+    "identity": "Append exact kind/value tag3 and operation tags18..29; deterministic typed IR encoding version2. C ABI record/word layout remains version1 because no field or physical lane changes. Old tags are retained. Identity is never derived from Debug text.",
+    "work": "Each new finite checked template uses the existing documented 256 logical-unit per-Let bound and actual emitted CLIF instruction-delta plus fixed64 callback-bound check; setup/completion/transport limits and stack-frame validation remain unchanged."
+  },
+  "tests": {
+    "engine_private_units_added": 1,
+    "stdlib_metadata_source_tests_added": 3,
+    "gpu_integration_tests_added": 4,
+    "retained_tests_extended": [
+      "Existing typed resident/JIT reference helpers handle I64 without coercion.",
+      "Existing ignored real linked qualification adds one third signed application build and exact strict-argument/arithmetic/node-denial cases; original two builds and their oracles remain."
+    ],
+    "metadata_cases": [
+      "All12 operations, genuine Signed64 NativeHost storage and Bool comparison outputs.",
+      "Direct MAX I64 constants/output forwarding/live inputs plus dead checked node order, original and bytecode-decoded artifacts.",
+      "State/computed Activation/other widths/F64/matrices/Match remain rejected. Same-name custom implementation with public RuntimeMetered claim remains uncertified; no executor invocation.",
+      "Private unary contract negative tests and semantic-mutation seal invalidation."
+    ],
+    "execution_cases_prepared": [
+      "All12 ops against actual resident original/decoded results; MIN/MAX, exact magnitudes above2^53, negative quotient/remainder signs, both comparison directions and equality.",
+      "All overflow/zero/MIN/-1/MIN-negation errors preserve outputs; same compiled JIT recovers afterward.",
+      "First arithmetic error precedes later work denial; node denial precedes later MIN negation; wrong typed U64 input and setup rejection are distinct.",
+      "Object metadata emission test explicitly asserts linked=false, executed=false, timing_samples=0.",
+      "Build-once linked signed shell checks exact decimal outputs, strict malformed/range args, exact complete runtime error/node/phase, binary pins and clean source."
+    ]
+  },
+  "composition": "Incremental after the already committed private witness, scalar adapter, codegen and linked scalar baseline. Preserve current generator and capture corrections."
+}

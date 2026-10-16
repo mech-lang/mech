@@ -1,0 +1,16 @@
+{
+  "status": "UNAPPLIED / UNRUN",
+  "qualification_credit": 0,
+  "scope": [
+    "initial certifiedBool/U64 exhaustive full canonicalMatch only",
+    "same actual shared JIT/Object compiler; separate runtime-only Matchdescriptor/identity/evaluator",
+    "unsafe build-owned sameObject constructor with private pointer",
+    "thinMatch generator over commonworkspace/pin/build helper",
+    "shared typedargument/format helper and explicit outputflush",
+    "contained clean-source original+decoded build-once ignoredqualification"
+  ],
+  "composition": "After native Match, apply linked patch and separate native-Match reference slot follow-up. Preserve existing scalar linked application behavior.",
+  "limits": [
+    "Bool/U64 exhaustive Match only; no I64/F64/cast control execution, FSM, lifecycle or resource IO."
+  ]
+}

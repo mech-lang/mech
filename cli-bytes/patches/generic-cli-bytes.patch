@@ -1,0 +1,1477 @@
+diff --git a/hosts/terminal/Cargo.toml b/hosts/terminal/Cargo.toml
+index b1a50a9..1276649 100644
+--- a/hosts/terminal/Cargo.toml
++++ b/hosts/terminal/Cargo.toml
+@@ -12,7 +12,7 @@ rust-version = "1.92"
+ 
+ [features]
+ default = []
+-provider = ["mech-core/string"]
++provider = ["mech-core/string", "mech-core/u8", "mech-core/matrix"]
+ 
+ [dependencies]
+ mech-core = { version = "0.3.5", path = "../../src/core", default-features = false }
+diff --git a/hosts/terminal/docs/stdin.mec b/hosts/terminal/docs/stdin.mec
+index 149fc45..022049c 100644
+--- a/hosts/terminal/docs/stdin.mec
++++ b/hosts/terminal/docs/stdin.mec
+@@ -1,20 +1,26 @@
+ Standard Input
+ ===============================================================================
+ 
+-The CLI standard-input context exposes one read-only Unicode text snapshot.
++The CLI standard-input context exposes one read-only input snapshot through
++Unicode text and raw byte views.
+ 
+ ```mech
+ +> @in := cli/stdin
+ text := @in/text
++bytes := @in/bytes
+ ```
+ 
+ 1. Snapshot semantics
+ -------------------------------------------------------------------------------
+ 
+-The only admitted path is text. On the first runtime read, the standard backend
+-reads stdin through EOF and returns its exact UTF-8 text, including empty input,
+-line endings and combining characters. Invalid UTF-8 and I/O failures are errors;
+-there is no lossy conversion or numeric parsing.
++The text path returns exact UTF-8 text, including empty input, line endings and
++combining characters. The bytes path returns a canonical U8 row matrix of shape
++1,N, including 1,0 for empty input. All byte values are preserved without decoding.
++
++The standard backend acquires raw stdin through EOF once. Both views reuse that
++snapshot. Invalid UTF-8 is an error only for the text view: it does not prevent
++later byte reads. Input acquisition failures are retained for both views. There
++is no lossy conversion or numeric parsing.
+ 
+ Each provider retains its first result, including an error. Later reads reuse
+ that snapshot and do not consume stdin again. A new provider starts a new
+@@ -23,7 +29,8 @@ snapshot. Reads return the complete stream rather than one line at a time.
+ 2. Planning and capabilities
+ -------------------------------------------------------------------------------
+ 
+-Planning checks the context and exact text path and supplies a string placeholder.
++Planning checks the context and exact text or bytes path. It supplies a String
++placeholder for text and an empty U8 row with dynamic width for bytes.
+ It never reads stdin or waits for EOF. No input driver is required. Assignments
+ and sends to stdin are rejected.
+ 
+@@ -33,12 +40,13 @@ from default CLI capabilities. Explicitly grant the existing read capability:
+ ```mech
+ config := {
+   run: {
+-    grants: [{ target: "cli/stdin" operations: ["read"] paths: ["text"] }]
++    grants: [{ target: "cli/stdin" operations: ["read"] paths: ["text" "bytes"] }]
+   }
+ }
+ ```
+ 
+-Configured CLI aliases use their instance target, such as term/stdin. The
++Granting text does not grant bytes. Configured CLI aliases use their instance
++target, such as term/stdin. The
+ experimental native Sequence compiler lowers the default CLI context to a
+ SnapshotTextRead observation. It retains the exact canonical cli://cli/stdin,
+ stdin context, text path and read intent in its resource requirements; its
+@@ -47,6 +55,10 @@ launcher chooses the existing secure or trusted host policy.
+ 3. Embedding
+ -------------------------------------------------------------------------------
+ 
+-Custom CLI backends implement stdin_text() to supply a text snapshot. Existing
+-backends can omit this optional method; reads then report stdin unavailable.
+-The provider caches the first success or failure for custom backends as well.
++Custom raw backends implement stdin_bytes() and return Some(result) for a real
++raw acquisition, including failure. The provider derives text from those bytes
++and never calls stdin_text() on that route. None means a legacy text-only backend;
++it must not consume input. Such a backend can retain stdin_text() support, while
++byte reads fail explicitly without synthesizing a byte stream from a String.
++The provider caches acquisition and view results independently. No new stream
++size or input-consumption defaults are introduced by the byte paths.
+diff --git a/hosts/terminal/docs/stdout-stderr.mec b/hosts/terminal/docs/stdout-stderr.mec
+index 898dfcf..12453f1 100644
+--- a/hosts/terminal/docs/stdout-stderr.mec
++++ b/hosts/terminal/docs/stdout-stderr.mec
+@@ -9,6 +9,7 @@ The CLI host exposes stdout and stderr as send-style output contexts.
+ 
+ @out/line <- "Hello"
+ @err/text <- "warning"
++@out/bytes <- [0u8 128u8 255u8]
+ ```
+ 
+ 1. Paths
+@@ -20,8 +21,29 @@ Supported paths:
+ |------|----------|
+ | `text` | Write text without adding a newline. |
+ | `line` | Write text with a trailing newline. |
++| `bytes` | Write a canonical U8 row of shape 1,N unchanged, without a suffix. |
+ 
+ 2. Operations
+ -------------------------------------------------------------------------------
+ 
+ `cli/stdout` and `cli/stderr` support output writes. Use send syntax with `<-` for stream output.
++
++The text and line paths require scalar Strings. The bytes path accepts exactly
++a rank-two U8 matrix with one row, including an empty 1,0 row. Other element
++kinds, nested arrays, columns and multiple rows are rejected. A schema with a
++dynamic row extent is checked against the real payload before preparation.
++
++Byte paths require explicit write grants naming bytes. A text grant supplies no
++authority over bytes. The existing instance aliases and read-only/send-only
++directions apply to every path.
++
++Output is validated and retained as an after-commit effect. Preparation or a
++failed source turn emits no output; successful delivery preserves source order
++and counts every byte in the existing effect-cost contract. The standard backend
++writes all bytes and flushes, reporting write or flush errors. As with text, a
++delivery failure after commit cannot undo bytes already written to an external
++stream. At-most-once delivery and shutdown do not replay failed terminal output.
++
++Custom backends implement write_stdout_bytes() and write_stderr_bytes() for raw
++delivery. The default methods report unavailable; they never decode bytes or
++fall back to text. Existing text-only backends retain their text methods.
+diff --git a/hosts/terminal/src/provider.rs b/hosts/terminal/src/provider.rs
+index c35a563..f3f6d43 100644
+--- a/hosts/terminal/src/provider.rs
++++ b/hosts/terminal/src/provider.rs
+@@ -6,9 +6,11 @@ use std::{
+ };
+ 
+ use mech_core::{
+-    AccessMode, DeliveryMode, EffectContract, EffectDeliveryPolicy, ExternalInteraction,
+-    IdempotencyRequirement, InputPortLayout, InputPortPolicy, MResult, MechError, MechErrorKind,
+-    OperationContractDeclaration, Schema, SchemaBody, Value, ValueData,
++    AccessMode, DeliveryMode, DimensionExpr, EffectContract, EffectDeliveryPolicy,
++    ExternalInteraction, IdempotencyRequirement, InputPortLayout, InputPortPolicy, IntegerWidth,
++    MResult, MechError, MechErrorKind, OperationContractDeclaration, Schema, SchemaBody, Value,
++    ValueCell, ValueData,
++    snapshot::{SequenceView, ValueDataDraft},
+ };
+ use mech_runtime::{
+     ConfigValue, HostManifestConfig, PreparedRuntimeEffect, ResourceSchemaPreflight,
+@@ -53,8 +55,28 @@ pub trait CliBackend: std::fmt::Debug {
+             "standard input is unavailable from this CLI backend",
+         ))
+     }
++    /// Optional raw stream acquisition. `None` declares a legacy text-only
++    /// backend and must not observe stdin. A supported backend returns `Some`
++    /// for both success and failure; the provider caches that one acquisition.
++    fn stdin_bytes(&self) -> Option<MResult<Vec<u8>>> {
++        None
++    }
+     fn write_stdout(&mut self, text: &str) -> MResult<()>;
+     fn write_stderr(&mut self, text: &str) -> MResult<()>;
++    /// Deliver raw bytes without decoding or adding a suffix. Implementations
++    /// must report write and flush failures through the returned result.
++    fn write_stdout_bytes(&mut self, _bytes: &[u8]) -> MResult<()> {
++        Err(cli_error(
++            "cli://stdout".into(),
++            "raw byte output is unavailable from this CLI backend",
++        ))
++    }
++    fn write_stderr_bytes(&mut self, _bytes: &[u8]) -> MResult<()> {
++        Err(cli_error(
++            "cli://stderr".into(),
++            "raw byte output is unavailable from this CLI backend",
++        ))
++    }
+ }
+ 
+ /// Supplies immutable application arguments while delegating all other CLI I/O.
+@@ -91,6 +113,10 @@ impl<B: CliBackend> CliBackend for ArgumentSnapshotCliBackend<B> {
+         self.backend.stdin_text()
+     }
+ 
++    fn stdin_bytes(&self) -> Option<MResult<Vec<u8>>> {
++        self.backend.stdin_bytes()
++    }
++
+     fn write_stdout(&mut self, text: &str) -> MResult<()> {
+         self.backend.write_stdout(text)
+     }
+@@ -98,12 +124,31 @@ impl<B: CliBackend> CliBackend for ArgumentSnapshotCliBackend<B> {
+     fn write_stderr(&mut self, text: &str) -> MResult<()> {
+         self.backend.write_stderr(text)
+     }
++
++    fn write_stdout_bytes(&mut self, bytes: &[u8]) -> MResult<()> {
++        self.backend.write_stdout_bytes(bytes)
++    }
++
++    fn write_stderr_bytes(&mut self, bytes: &[u8]) -> MResult<()> {
++        self.backend.write_stderr_bytes(bytes)
++    }
+ }
+ 
+ #[derive(Clone, Copy, Debug, Default)]
+ pub struct StdCliBackend;
+ 
+ impl CliBackend for StdCliBackend {
++    fn stdin_bytes(&self) -> Option<MResult<Vec<u8>>> {
++        Some((|| {
++            let mut bytes = Vec::new();
++            std::io::stdin()
++                .lock()
++                .read_to_end(&mut bytes)
++                .map_err(|error| cli_error("cli://stdin".into(), error.to_string()))?;
++            Ok(bytes)
++        })())
++    }
++
+     fn stdin_text(&self) -> MResult<String> {
+         let mut text = String::new();
+         std::io::stdin()
+@@ -143,13 +188,42 @@ impl CliBackend for StdCliBackend {
+         err.flush()
+             .map_err(|err| cli_error("cli://stderr".to_string(), err.to_string()))
+     }
++
++    fn write_stdout_bytes(&mut self, bytes: &[u8]) -> MResult<()> {
++        let mut out = std::io::stdout().lock();
++        out.write_all(bytes)
++            .map_err(|err| cli_error("cli://stdout".into(), err.to_string()))?;
++        out.flush()
++            .map_err(|err| cli_error("cli://stdout".into(), err.to_string()))
++    }
++
++    fn write_stderr_bytes(&mut self, bytes: &[u8]) -> MResult<()> {
++        let mut err = std::io::stderr().lock();
++        err.write_all(bytes)
++            .map_err(|error| cli_error("cli://stderr".into(), error.to_string()))?;
++        err.flush()
++            .map_err(|error| cli_error("cli://stderr".into(), error.to_string()))
++    }
++}
++
++#[derive(Debug)]
++enum CliStdinAcquisition {
++    Raw(Vec<u8>),
++    LegacyText,
++}
++
++#[derive(Debug, Default)]
++struct CliStdinSnapshot {
++    acquisition: Option<MResult<CliStdinAcquisition>>,
++    text: Option<MResult<Value>>,
++    bytes: Option<MResult<Value>>,
+ }
+ 
+ #[derive(Debug)]
+ pub struct CliResourceProvider<B: CliBackend> {
+     instance: String,
+     backend: Arc<Mutex<B>>,
+-    stdin_snapshot: Mutex<Option<MResult<Value>>>,
++    stdin_snapshot: Mutex<CliStdinSnapshot>,
+ }
+ 
+ impl<B: CliBackend> CliResourceProvider<B> {
+@@ -160,7 +234,7 @@ impl<B: CliBackend> CliResourceProvider<B> {
+         Self {
+             instance: instance.into(),
+             backend: Arc::new(Mutex::new(backend)),
+-            stdin_snapshot: Mutex::new(None),
++            stdin_snapshot: Mutex::new(CliStdinSnapshot::default()),
+         }
+     }
+     fn base(&self, context: &str) -> String {
+@@ -196,18 +270,7 @@ impl<B: CliBackend> CliResourceProvider<B> {
+             operation: request.operation.clone(),
+             intent: request.intent,
+         })?;
+-        let suffix = match request.path.as_str() {
+-            "text" => "",
+-            "line" => "\n",
+-            _ => unreachable!("cli stdout/stderr path validated by preflight_write"),
+-        };
+-        let ValueData::String(value) = request.value.data() else {
+-            return Err(cli_error(
+-                request.base_uri,
+-                "stdout/stderr sends require a scalar string payload",
+-            ));
+-        };
+-        let text = value.to_string() + suffix;
++        let payload = output_payload(&request.path, &request.value, &request.base_uri)?;
+         let stream = if self.matches_base(&request.base_uri, "stdout") {
+             CliOutputStream::Stdout
+         } else {
+@@ -216,7 +279,7 @@ impl<B: CliBackend> CliResourceProvider<B> {
+         Ok(Box::new(CliOutputEffect {
+             backend: self.backend.clone(),
+             stream,
+-            text,
++            payload,
+             resource: request.base_uri,
+         }))
+     }
+@@ -318,21 +381,60 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
+             RuntimeHostInputValue::String(value).into_value()
+         } else if self.matches_base(&request.base_uri, "stdin") {
+             validate_stdin_read(&request)?;
+-            let mut snapshot = self.stdin_snapshot.lock().map_err(|_| {
++            let mut guard = self.stdin_snapshot.lock().map_err(|_| {
+                 cli_error(request.base_uri.clone(), "CLI stdin snapshot lock poisoned")
+             })?;
+-            snapshot
+-                .get_or_insert_with(|| {
+-                    let text = self
+-                        .backend
+-                        .lock()
+-                        .map_err(|_| {
+-                            cli_error(request.base_uri.clone(), "CLI backend lock poisoned")
+-                        })?
+-                        .stdin_text()?;
+-                    RuntimeHostInputValue::String(text).into_value()
+-                })
+-                .clone()
++            let CliStdinSnapshot {
++                acquisition,
++                text,
++                bytes,
++            } = &mut *guard;
++            let acquired = acquisition.get_or_insert_with(|| {
++                let backend = self.backend.lock().map_err(|_| {
++                    cli_error(request.base_uri.clone(), "CLI backend lock poisoned")
++                })?;
++                match backend.stdin_bytes() {
++                    Some(result) => result.map(CliStdinAcquisition::Raw),
++                    None => Ok(CliStdinAcquisition::LegacyText),
++                }
++            });
++            match acquired {
++                Err(error) => Err(error.clone()),
++                Ok(CliStdinAcquisition::Raw(raw)) if request.path == "bytes" => bytes
++                    .get_or_insert_with(|| byte_row_value(raw, &request.base_uri))
++                    .clone(),
++                Ok(CliStdinAcquisition::Raw(raw)) => text
++                    .get_or_insert_with(|| {
++                        let decoded = std::str::from_utf8(raw).map_err(|_| {
++                            cli_error(
++                                request.base_uri.clone(),
++                                "standard input is not valid UTF-8",
++                            )
++                        })?;
++                        RuntimeHostInputValue::String(decoded.to_owned()).into_value()
++                    })
++                    .clone(),
++                Ok(CliStdinAcquisition::LegacyText) if request.path == "bytes" => bytes
++                    .get_or_insert_with(|| {
++                        Err(cli_error(
++                            request.base_uri.clone(),
++                            "raw byte input is unavailable from this CLI backend",
++                        ))
++                    })
++                    .clone(),
++                Ok(CliStdinAcquisition::LegacyText) => text
++                    .get_or_insert_with(|| {
++                        let decoded = self
++                            .backend
++                            .lock()
++                            .map_err(|_| {
++                                cli_error(request.base_uri.clone(), "CLI backend lock poisoned")
++                            })?
++                            .stdin_text()?;
++                        RuntimeHostInputValue::String(decoded).into_value()
++                    })
++                    .clone(),
++            }
+         } else if self.matches_base(&request.base_uri, "stdout")
+             || self.matches_base(&request.base_uri, "stderr")
+         {
+@@ -356,7 +458,11 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
+         }
+         if self.matches_base(&request.base_uri, "stdin") {
+             validate_stdin_read(&request)?;
+-            return RuntimeHostInputValue::String(String::new()).into_value();
++            return if request.path == "bytes" {
++                byte_row_value(&[], &request.base_uri)
++            } else {
++                RuntimeHostInputValue::String(String::new()).into_value()
++            };
+         }
+         Err(MechError::new(
+             RuntimeResourceReadNotPlannable {
+@@ -387,10 +493,10 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
+                 ));
+             }
+             match request.path.as_str() {
+-                "text" | "line" => Ok(()),
++                "text" | "line" | "bytes" => Ok(()),
+                 _ => Err(cli_error(
+                     request.base_uri,
+-                    "stdout/stderr support only `text` and `line` paths",
++                    "stdout/stderr support only `text`, `line` and `bytes` paths",
+                 )),
+             }
+         } else {
+@@ -404,7 +510,11 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
+         payload_schema: &Schema,
+     ) -> MResult<ResourceSchemaPreflight> {
+         let resource = request.base_uri.clone();
++        let path = request.path.clone();
+         self.preflight_write(request)?;
++        if path == "bytes" {
++            return byte_row_schema(payload_schema, &resource);
++        }
+         if !matches!(payload_schema.body(), SchemaBody::String) {
+             return Err(cli_error(
+                 resource,
+@@ -432,17 +542,12 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
+     fn plan_write(&self, request: RuntimeResourceWriteCommand) -> MResult<()> {
+         self.preflight_write(RuntimeResourceWritePreflightRequest {
+             base_uri: request.base_uri.clone(),
+-            path: request.path,
++            path: request.path.clone(),
+             context_name: request.context_name,
+             operation: request.operation,
+             intent: request.intent,
+         })?;
+-        if !matches!(request.value.data(), ValueData::String(_)) {
+-            return Err(cli_error(
+-                request.base_uri,
+-                "stdout/stderr sends require a scalar string payload",
+-            ));
+-        }
++        validate_output_value(&request.path, &request.value, &request.base_uri)?;
+         Ok(())
+     }
+ }
+@@ -453,11 +558,131 @@ enum CliOutputStream {
+     Stderr,
+ }
+ 
++#[derive(Debug)]
++enum CliOutputPayload {
++    Text(String),
++    Bytes(Vec<u8>),
++}
++
++impl CliOutputPayload {
++    fn len(&self) -> usize {
++        match self {
++            Self::Text(text) => text.len(),
++            Self::Bytes(bytes) => bytes.len(),
++        }
++    }
++}
++
++fn byte_row_value(bytes: &[u8], resource: &str) -> MResult<Value> {
++    let columns = u64::try_from(bytes.len())
++        .map_err(|_| cli_error(resource.into(), "byte input length exceeds u64"))?;
++    ValueCell::dynamic_matrix(
++        SchemaBody::UnsignedInteger(IntegerWidth::W8),
++        Box::new([1, columns]),
++        bytes.iter().copied().map(ValueDataDraft::U8).collect(),
++    )?
++    .snapshot()
++}
++
++fn byte_row_schema(schema: &Schema, resource: &str) -> MResult<ResourceSchemaPreflight> {
++    let SchemaBody::Matrix {
++        element,
++        dimensions,
++    } = schema.body()
++    else {
++        return Err(cli_error(
++            resource.into(),
++            "byte sends require a rank-two U8 row payload",
++        ));
++    };
++    if element.as_ref() != &SchemaBody::UnsignedInteger(IntegerWidth::W8) || dimensions.len() != 2 {
++        return Err(cli_error(
++            resource.into(),
++            "byte sends require a rank-two U8 row payload",
++        ));
++    }
++    match &dimensions[0] {
++        DimensionExpr::Constant(1) => Ok(ResourceSchemaPreflight::Validated),
++        DimensionExpr::Constant(_) => Err(cli_error(
++            resource.into(),
++            "byte sends require exactly one row",
++        )),
++        _ => Ok(ResourceSchemaPreflight::DeferredToRuntime),
++    }
++}
++
++fn byte_row<'a>(value: &'a Value, resource: &str) -> MResult<&'a [u8]> {
++    let schemas = value
++        .schemas()
++        .ok_or_else(|| cli_error(resource.into(), "byte payload schema is absent"))?;
++    let schema = schemas
++        .get(value.schema())
++        .ok_or_else(|| cli_error(resource.into(), "byte payload schema is absent"))?;
++    byte_row_schema(schema, resource)?;
++    let SchemaBody::Matrix { dimensions, .. } = schema.body() else {
++        unreachable!("byte_row_schema validated a matrix")
++    };
++    let rows = value
++        .shape()
++        .resolve_dimension(&dimensions[0])
++        .map_err(MechError::from)?;
++    let columns = value
++        .shape()
++        .resolve_dimension(&dimensions[1])
++        .map_err(MechError::from)?;
++    if rows != 1 {
++        return Err(cli_error(
++            resource.into(),
++            "byte sends require exactly one row",
++        ));
++    }
++    let ValueData::Matrix(matrix) = value.data() else {
++        return Err(cli_error(
++            resource.into(),
++            "byte sends require a matrix payload",
++        ));
++    };
++    let SequenceView::U8(bytes) = matrix.elements() else {
++        return Err(cli_error(resource.into(), "byte sends require U8 elements"));
++    };
++    if u64::try_from(bytes.len()).ok() != Some(columns) {
++        return Err(cli_error(
++            resource.into(),
++            "byte payload shape and length disagree",
++        ));
++    }
++    Ok(bytes)
++}
++
++fn validate_output_value(path: &str, value: &Value, resource: &str) -> MResult<()> {
++    if path == "bytes" {
++        byte_row(value, resource)?;
++    } else if !matches!(value.data(), ValueData::String(_)) {
++        return Err(cli_error(
++            resource.into(),
++            "stdout/stderr sends require a scalar string payload",
++        ));
++    }
++    Ok(())
++}
++
++fn output_payload(path: &str, value: &Value, resource: &str) -> MResult<CliOutputPayload> {
++    validate_output_value(path, value, resource)?;
++    if path == "bytes" {
++        return Ok(CliOutputPayload::Bytes(byte_row(value, resource)?.to_vec()));
++    }
++    let ValueData::String(text) = value.data() else {
++        unreachable!("validate_output_value validated text")
++    };
++    let suffix = if path == "line" { "\n" } else { "" };
++    Ok(CliOutputPayload::Text(text.to_string() + suffix))
++}
++
+ #[derive(Debug)]
+ struct CliOutputEffect<B: CliBackend> {
+     backend: Arc<Mutex<B>>,
+     stream: CliOutputStream,
+-    text: String,
++    payload: CliOutputPayload,
+     resource: String,
+ }
+ 
+@@ -474,7 +699,7 @@ impl<B: CliBackend> RuntimeAfterCommitEffect for CliOutputEffect<B> {
+         )
+         .with_resource(self.resource.clone())
+         .with_cost(RuntimeEffectCost {
+-            bytes: u64::try_from(self.text.len()).unwrap_or(u64::MAX),
++            bytes: u64::try_from(self.payload.len()).unwrap_or(u64::MAX),
+             items: 1,
+         })
+     }
+@@ -484,9 +709,15 @@ impl<B: CliBackend> RuntimeAfterCommitEffect for CliOutputEffect<B> {
+             .backend
+             .lock()
+             .map_err(|_| cli_error(self.resource.clone(), "CLI backend lock poisoned"))?;
+-        match self.stream {
+-            CliOutputStream::Stdout => backend.write_stdout(&self.text),
+-            CliOutputStream::Stderr => backend.write_stderr(&self.text),
++        match (self.stream, &self.payload) {
++            (CliOutputStream::Stdout, CliOutputPayload::Text(text)) => backend.write_stdout(text),
++            (CliOutputStream::Stderr, CliOutputPayload::Text(text)) => backend.write_stderr(text),
++            (CliOutputStream::Stdout, CliOutputPayload::Bytes(bytes)) => {
++                backend.write_stdout_bytes(bytes)
++            }
++            (CliOutputStream::Stderr, CliOutputPayload::Bytes(bytes)) => {
++                backend.write_stderr_bytes(bytes)
++            }
+         }
+     }
+ }
+@@ -507,10 +738,10 @@ fn argument_index(path: &str) -> MResult<usize> {
+ }
+ 
+ fn validate_stdin_read(request: &RuntimeResourceReadRequest) -> MResult<()> {
+-    if request.context_name != "stdin" || request.path != "text" {
++    if request.context_name != "stdin" || !matches!(request.path.as_str(), "text" | "bytes") {
+         return Err(cli_error(
+             request.base_uri.clone(),
+-            "stdin reads require context `stdin` and exactly the `text` path",
++            "stdin reads require context `stdin` and exactly the `text` or `bytes` path",
+         ));
+     }
+     Ok(())
+diff --git a/hosts/terminal/tests/provider_bytes.rs b/hosts/terminal/tests/provider_bytes.rs
+new file mode 100644
+index 0000000..ead1a39
+--- /dev/null
++++ b/hosts/terminal/tests/provider_bytes.rs
+@@ -0,0 +1,431 @@
++#![cfg(feature = "provider")]
++
++use mech_core::{
++    DimensionExpr, IntegerWidth, MResult, MechError, Schema, SchemaBody, SchemaDraft, Value,
++    ValueCell, ValueData,
++    snapshot::{SequenceView, ValueDataDraft},
++};
++use mech_runtime::{
++    PreparedRuntimeEffect, ResourceSchemaPreflight, RuntimeCapabilityOperation, RuntimeEffectId,
++    RuntimeHostFactory, RuntimeResourceProvider, RuntimeResourceReadRequest,
++    RuntimeResourceWriteCommand, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
++    TransactionId, value_string,
++};
++use mech_terminal::{ArgumentSnapshotCliBackend, CliBackend, CliHostFactory, CliResourceProvider};
++use std::{cell::Cell, ffi::OsString};
++
++#[derive(Clone, Debug, Default)]
++struct Backend {
++    input: Vec<u8>,
++    reads: Cell<usize>,
++    read_error: bool,
++    output: Vec<(String, Vec<u8>)>,
++    fail_write: bool,
++    fail_flush: bool,
++}
++fn failure(reason: &str) -> MechError {
++    MechError::new(
++        mech_terminal::CliResourceProviderError {
++            resource: "test".into(),
++            reason: reason.into(),
++        },
++        None,
++    )
++}
++impl Backend {
++    fn write(&mut self, stream: &str, bytes: &[u8]) -> MResult<()> {
++        if self.fail_write {
++            return Err(failure("injected byte write failure"));
++        }
++        self.output.push((stream.into(), bytes.to_vec()));
++        if self.fail_flush {
++            return Err(failure("injected byte flush failure"));
++        }
++        Ok(())
++    }
++}
++impl CliBackend for Backend {
++    fn env_var(&self, _: &str) -> MResult<Option<String>> {
++        Ok(None)
++    }
++    fn stdin_bytes(&self) -> Option<MResult<Vec<u8>>> {
++        self.reads.set(self.reads.get() + 1);
++        Some(if self.read_error {
++            Err(failure("injected raw input failure"))
++        } else {
++            Ok(self.input.clone())
++        })
++    }
++    fn stdin_text(&self) -> MResult<String> {
++        panic!("raw backend must not take a second text snapshot")
++    }
++    fn write_stdout(&mut self, text: &str) -> MResult<()> {
++        self.write("stdout", text.as_bytes())
++    }
++    fn write_stderr(&mut self, text: &str) -> MResult<()> {
++        self.write("stderr", text.as_bytes())
++    }
++    fn write_stdout_bytes(&mut self, bytes: &[u8]) -> MResult<()> {
++        self.write("stdout", bytes)
++    }
++    fn write_stderr_bytes(&mut self, bytes: &[u8]) -> MResult<()> {
++        self.write("stderr", bytes)
++    }
++}
++fn read(path: &str) -> RuntimeResourceReadRequest {
++    RuntimeResourceReadRequest {
++        base_uri: "cli://cli/stdin".into(),
++        path: path.into(),
++        context_name: "stdin".into(),
++    }
++}
++fn row(rows: u64, columns: u64, bytes: &[u8]) -> Value {
++    ValueCell::dynamic_matrix(
++        SchemaBody::UnsignedInteger(IntegerWidth::W8),
++        Box::new([rows, columns]),
++        bytes.iter().copied().map(ValueDataDraft::U8).collect(),
++    )
++    .unwrap()
++    .snapshot()
++    .unwrap()
++}
++fn assert_row(value: &Value, expected: &[u8]) {
++    let schemas = value.schemas().unwrap();
++    let SchemaBody::Matrix {
++        element,
++        dimensions,
++    } = schemas.get(value.schema()).unwrap().body()
++    else {
++        panic!("matrix schema")
++    };
++    assert_eq!(
++        element.as_ref(),
++        &SchemaBody::UnsignedInteger(IntegerWidth::W8)
++    );
++    assert_eq!(dimensions.len(), 2);
++    assert_eq!(value.shape().resolve_dimension(&dimensions[0]).unwrap(), 1);
++    assert_eq!(
++        value.shape().resolve_dimension(&dimensions[1]).unwrap(),
++        expected.len() as u64
++    );
++    let ValueData::Matrix(matrix) = value.data() else {
++        panic!("matrix payload")
++    };
++    let SequenceView::U8(actual) = matrix.elements() else {
++        panic!("U8 payload")
++    };
++    assert_eq!(actual, expected);
++}
++fn command(stream: &str, path: &str, value: Value) -> RuntimeResourceWriteCommand {
++    RuntimeResourceWriteCommand {
++        base_uri: format!("cli://cli/{stream}"),
++        path: path.into(),
++        context_name: stream.into(),
++        operation: RuntimeCapabilityOperation::Write,
++        value,
++        intent: RuntimeResourceWriteIntent::Send,
++    }
++}
++fn effect(
++    provider: &CliResourceProvider<impl CliBackend + 'static>,
++    stream: &str,
++    path: &str,
++    value: Value,
++) -> Box<dyn mech_runtime::RuntimeAfterCommitEffect> {
++    match provider
++        .prepare_write(command(stream, path, value).bind_effect(
++            RuntimeEffectId {
++                transaction: TransactionId::new(1),
++                sequence: 0,
++            },
++            "test:bytes".into(),
++        ))
++        .unwrap()
++    {
++        PreparedRuntimeEffect::AfterCommit(effect) => effect,
++        other => panic!("expected after-commit effect: {other:?}"),
++    }
++}
++fn schema(body: SchemaBody) -> Schema {
++    SchemaDraft {
++        body,
++        dimension_parameters: Box::new([]),
++    }
++    .finalize()
++    .unwrap()
++}
++
++#[test]
++fn raw_snapshot_retains_all_bytes_and_text_decode_failure_does_not_poison_bytes() {
++    for text_first in [false, true] {
++        let input = vec![0, 0x80, 0xff, b'\r', b'\n'];
++        let mut provider = CliResourceProvider::new(Backend {
++            input: input.clone(),
++            ..Default::default()
++        });
++        if text_first {
++            assert!(provider.read(read("text")).is_err());
++        }
++        assert_row(&provider.read(read("bytes")).unwrap(), &input);
++        provider.backend_mut().input = vec![b'x'];
++        let first = provider.read(read("text")).unwrap_err().display_message();
++        let second = provider.read(read("text")).unwrap_err().display_message();
++        assert_eq!(first, second);
++        assert!(first.contains("UTF-8"));
++        assert_row(&provider.read(read("bytes")).unwrap(), &input);
++        assert_eq!(provider.backend().reads.get(), 1);
++    }
++}
++#[test]
++fn valid_mixed_views_and_empty_input_share_one_acquisition() {
++    for input in [b"".as_slice(), "héllo\r\n".as_bytes()] {
++        for text_first in [false, true] {
++            let provider = CliResourceProvider::new(Backend {
++                input: input.to_vec(),
++                ..Default::default()
++            });
++            for path in if text_first {
++                ["text", "bytes", "text", "bytes"]
++            } else {
++                ["bytes", "text", "bytes", "text"]
++            } {
++                let value = provider.read(read(path)).unwrap();
++                if path == "bytes" {
++                    assert_row(&value, input);
++                } else {
++                    let ValueData::String(text) = value.data() else {
++                        panic!("text")
++                    };
++                    assert_eq!(text.as_bytes(), input);
++                }
++            }
++            assert_eq!(provider.backend().reads.get(), 1);
++        }
++    }
++}
++#[test]
++fn acquisition_errors_are_cached_across_both_views() {
++    let mut provider = CliResourceProvider::new(Backend {
++        read_error: true,
++        ..Default::default()
++    });
++    let first = provider.read(read("bytes")).unwrap_err().display_message();
++    provider.backend_mut().read_error = false;
++    for path in ["text", "bytes", "text"] {
++        assert_eq!(
++            provider.read(read(path)).unwrap_err().display_message(),
++            first
++        );
++    }
++    assert_eq!(provider.backend().reads.get(), 1);
++}
++#[test]
++fn planning_and_rejected_paths_do_not_observe_the_stream() {
++    let provider = CliResourceProvider::new(Backend {
++        read_error: true,
++        ..Default::default()
++    });
++    let planned = provider.plan_read(read("bytes")).unwrap();
++    assert_row(&planned, &[]);
++    let schemas = planned.schemas().unwrap();
++    let SchemaBody::Matrix { dimensions, .. } = schemas.get(planned.schema()).unwrap().body()
++    else {
++        panic!()
++    };
++    assert!(
++        matches!(&dimensions[1], DimensionExpr::Parameter(_)),
++        "width must remain dynamic after empty planning"
++    );
++    provider.plan_read(read("text")).unwrap();
++    for path in ["Bytes", "bytes/1", "/bytes", " bytes", "bytes ", ""] {
++        assert!(provider.plan_read(read(path)).is_err());
++        assert!(provider.read(read(path)).is_err());
++    }
++    let mut wrong_context = read("bytes");
++    wrong_context.context_name = "args".into();
++    assert!(provider.read(wrong_context).is_err());
++    assert!(!provider.observation_requires_input_driver(&read("bytes")));
++    assert_eq!(provider.backend().reads.get(), 0);
++}
++#[test]
++fn byte_sends_are_staged_costed_and_delivered_without_suffix_or_transcoding() {
++    let provider = CliResourceProvider::new(Backend::default());
++    for stream in ["stdout", "stderr"] {
++        let pending = effect(&provider, stream, "bytes", row(1, 3, &[0, 0x80, 0xff]));
++        assert_eq!(pending.metadata().cost.bytes, 3);
++        assert_eq!(pending.metadata().cost.items, 1);
++        drop(pending);
++        assert!(provider.backend().output.is_empty());
++    }
++    for stream in ["stdout", "stderr"] {
++        effect(&provider, stream, "bytes", row(1, 3, &[0, 0x80, 0xff]))
++            .deliver()
++            .unwrap();
++        effect(&provider, stream, "bytes", row(1, 0, &[]))
++            .deliver()
++            .unwrap();
++        effect(&provider, stream, "line", value_string("é"))
++            .deliver()
++            .unwrap();
++    }
++    assert_eq!(
++        provider.backend().output,
++        vec![
++            ("stdout".into(), vec![0, 0x80, 0xff]),
++            ("stdout".into(), vec![]),
++            ("stdout".into(), "é\n".as_bytes().to_vec()),
++            ("stderr".into(), vec![0, 0x80, 0xff]),
++            ("stderr".into(), vec![]),
++            ("stderr".into(), "é\n".as_bytes().to_vec())
++        ]
++    );
++}
++#[test]
++fn byte_values_reject_wrong_kind_rank_and_row_shape_before_delivery() {
++    let provider = CliResourceProvider::new(Backend::default());
++    let invalid = [value_string("\0"), row(2, 1, &[1, 2]), row(0, 2, &[])];
++    for value in invalid {
++        assert!(
++            provider
++                .plan_write(command("stdout", "bytes", value.clone()))
++                .is_err()
++        );
++        assert!(
++            provider
++                .prepare_output(command("stdout", "bytes", value))
++                .is_err()
++        );
++    }
++    let invalid_schemas = [
++        schema(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
++        schema(SchemaBody::Matrix {
++            element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W16)),
++            dimensions: Box::new([DimensionExpr::Constant(1), DimensionExpr::Constant(2)]),
++        }),
++        schema(SchemaBody::Matrix {
++            element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
++            dimensions: Box::new([DimensionExpr::Constant(2), DimensionExpr::Constant(1)]),
++        }),
++        schema(SchemaBody::Matrix {
++            element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
++            dimensions: Box::new([DimensionExpr::Constant(2)]),
++        }),
++    ];
++    let preflight = || RuntimeResourceWritePreflightRequest {
++        base_uri: "cli://stdout".into(),
++        path: "bytes".into(),
++        context_name: "stdout".into(),
++        operation: RuntimeCapabilityOperation::Write,
++        intent: RuntimeResourceWriteIntent::Send,
++    };
++    for invalid in invalid_schemas {
++        assert!(
++            provider
++                .preflight_write_schema(preflight(), &invalid)
++                .is_err()
++        );
++    }
++    let valid = schema(SchemaBody::Matrix {
++        element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
++        dimensions: Box::new([DimensionExpr::Constant(1), DimensionExpr::Constant(0)]),
++    });
++    assert_eq!(
++        provider
++            .preflight_write_schema(preflight(), &valid)
++            .unwrap(),
++        ResourceSchemaPreflight::Validated
++    );
++    let dynamic = row(1, 2, &[1, 2]);
++    let schemas = dynamic.schemas().unwrap();
++    assert_eq!(
++        provider
++            .preflight_write_schema(preflight(), schemas.get(dynamic.schema()).unwrap())
++            .unwrap(),
++        ResourceSchemaPreflight::DeferredToRuntime
++    );
++    assert!(provider.backend().output.is_empty());
++    assert_eq!(provider.backend().reads.get(), 0);
++}
++#[test]
++fn raw_backend_write_and_flush_errors_propagate_without_lossy_fallback() {
++    for flush in [false, true] {
++        let provider = CliResourceProvider::new(Backend {
++            fail_write: !flush,
++            fail_flush: flush,
++            ..Default::default()
++        });
++        let error = effect(&provider, "stdout", "bytes", row(1, 2, &[0x80, 0xff]))
++            .deliver()
++            .unwrap_err();
++        assert!(error.display_message().contains(if flush {
++            "flush failure"
++        } else {
++            "write failure"
++        }));
++        // A flush failure can follow a physical write. After-commit effects do
++        // not promise to undo bytes already delivered to an external stream.
++        assert_eq!(provider.backend().output.len(), usize::from(flush));
++    }
++}
++#[test]
++fn argument_snapshot_and_host_factory_delegate_raw_io_and_preserve_instance_scope() {
++    let snapshot = ArgumentSnapshotCliBackend::new(
++        Backend {
++            input: vec![0xff, 0],
++            ..Default::default()
++        },
++        vec![OsString::from("1")],
++    );
++    assert_eq!(snapshot.stdin_bytes().unwrap().unwrap(), vec![0xff, 0]);
++    let factory = CliHostFactory::with_backend(snapshot).unwrap();
++    let installation = factory
++        .instantiate("term", &mech_runtime::ConfigValue::Map(Default::default()))
++        .unwrap();
++    let provider = &installation.resource_providers[0];
++    let mut req = read("bytes");
++    req.base_uri = "cli://term/stdin".into();
++    assert_row(&provider.read(req).unwrap(), &[0xff, 0]);
++    assert!(provider.read(read("bytes")).is_err());
++    assert!(provider.equivalent_base_uri_groups().is_empty());
++}
++#[test]
++fn legacy_text_backend_remains_compatible_and_never_synthesizes_raw_input() {
++    #[derive(Debug, Default)]
++    struct Legacy {
++        reads: Cell<usize>,
++    }
++    impl CliBackend for Legacy {
++        fn env_var(&self, _: &str) -> MResult<Option<String>> {
++            Ok(None)
++        }
++        fn stdin_text(&self) -> MResult<String> {
++            self.reads.set(self.reads.get() + 1);
++            Ok("legacy é".into())
++        }
++        fn write_stdout(&mut self, _: &str) -> MResult<()> {
++            Ok(())
++        }
++        fn write_stderr(&mut self, _: &str) -> MResult<()> {
++            Ok(())
++        }
++    }
++    let provider = CliResourceProvider::new(Legacy::default());
++    assert!(
++        provider
++            .read(read("bytes"))
++            .unwrap_err()
++            .display_message()
++            .contains("unavailable")
++    );
++    assert_eq!(provider.backend().reads.get(), 0);
++    provider.read(read("text")).unwrap();
++    provider.read(read("text")).unwrap();
++    assert_eq!(provider.backend().reads.get(), 1);
++    assert!(
++        effect(&provider, "stdout", "bytes", row(1, 1, &[0xff]))
++            .deliver()
++            .unwrap_err()
++            .display_message()
++            .contains("unavailable")
++    );
++}
+diff --git a/src/build/tests/canonical_cli_bytes.rs b/src/build/tests/canonical_cli_bytes.rs
+new file mode 100644
+index 0000000..708bfb9
+--- /dev/null
++++ b/src/build/tests/canonical_cli_bytes.rs
+@@ -0,0 +1,384 @@
++//! Generic byte ports through ordinary canonical resource artifacts and real CLI hosts.
++#![cfg(feature = "standard-hosts")]
++
++use mech_core::{MResult, MechError, ParsedProgram, ResourceIntent};
++use mech_engine::ProgramArtifact;
++use mech_runtime::{
++    ConfigValue, HostInstanceConfig, ModuleBuildOptions, ResidentDurabilityPolicy,
++    ResourcePathCapability, ResourcePathScope, RunResourceGrantConfig, RuntimeBuilder,
++    RuntimeHostInputDriver, RuntimeHostInputSource, RuntimeIngress, RuntimeProgramRoute,
++    RuntimeResourceReadRequest, SourceRequest, resolver::InMemorySourceResolver,
++};
++use mech_terminal::{CliBackend, CliHostFactory, CliResourceProviderError};
++use std::{
++    collections::BTreeMap,
++    sync::{Arc, Mutex},
++};
++
++#[derive(Clone, Debug, Default)]
++struct State {
++    input: Vec<u8>,
++    reads: usize,
++    output: Vec<(String, Vec<u8>)>,
++    attempts: usize,
++    fail_write: bool,
++    fail_flush: bool,
++}
++#[derive(Clone, Debug, Default)]
++struct Backend(Arc<Mutex<State>>);
++fn failure(reason: &str) -> MechError {
++    MechError::new(
++        CliResourceProviderError {
++            resource: "test://cli".into(),
++            reason: reason.into(),
++        },
++        None,
++    )
++}
++impl Backend {
++    fn write(&self, stream: &str, bytes: &[u8]) -> MResult<()> {
++        let mut state = self.0.lock().unwrap();
++        state.attempts += 1;
++        if state.fail_write {
++            return Err(failure("injected byte write failure"));
++        }
++        state.output.push((stream.into(), bytes.to_vec()));
++        if state.fail_flush {
++            return Err(failure("injected byte flush failure"));
++        }
++        Ok(())
++    }
++}
++impl CliBackend for Backend {
++    fn env_var(&self, _: &str) -> MResult<Option<String>> {
++        Ok(None)
++    }
++    fn stdin_bytes(&self) -> Option<MResult<Vec<u8>>> {
++        let mut state = self.0.lock().unwrap();
++        state.reads += 1;
++        Some(Ok(state.input.clone()))
++    }
++    fn stdin_text(&self) -> MResult<String> {
++        panic!("raw input must be acquired once")
++    }
++    fn write_stdout(&mut self, text: &str) -> MResult<()> {
++        self.write("stdout", text.as_bytes())
++    }
++    fn write_stderr(&mut self, text: &str) -> MResult<()> {
++        self.write("stderr", text.as_bytes())
++    }
++    fn write_stdout_bytes(&mut self, bytes: &[u8]) -> MResult<()> {
++        self.write("stdout", bytes)
++    }
++    fn write_stderr_bytes(&mut self, bytes: &[u8]) -> MResult<()> {
++        self.write("stderr", bytes)
++    }
++}
++fn builder(backend: Backend, input_bytes: bool, output_bytes: bool) -> RuntimeBuilder {
++    let mut builder = RuntimeBuilder::new()
++        .function_catalog(mech_stdlib::source_catalog())
++        .host_factory(Box::new(CliHostFactory::with_backend(backend).unwrap()))
++        .unwrap()
++        .host_instance(HostInstanceConfig {
++            name: "cli".into(),
++            provider: "cli".into(),
++            settings: ConfigValue::Map(BTreeMap::new()),
++        });
++    for (context, operation, bytes) in [
++        ("stdin", "read", input_bytes),
++        ("stdout", "write", output_bytes),
++        ("stderr", "write", output_bytes),
++    ] {
++        let mut paths = vec!["text".into(), "line".into()];
++        if bytes {
++            paths.push("bytes".into());
++        }
++        builder = builder.run_resource_grant(RunResourceGrantConfig {
++            target: format!("cli/{context}"),
++            operations: vec![operation.into()],
++            paths,
++        });
++    }
++    builder
++}
++fn artifacts(source: &str, backend: Backend) -> [ProgramArtifact; 2] {
++    let mut compiler = builder(backend.clone(), true, true)
++        .source_resolver(InMemorySourceResolver::new().with_string("bytes.mec", source))
++        .build_compiler()
++        .unwrap();
++    let product = compiler
++        .compile_canonical_roots(
++            &[SourceRequest::new("bytes.mec")],
++            ModuleBuildOptions::new(env!("CARGO_PKG_VERSION"), "v0.3", "native", &[], &[]),
++        )
++        .unwrap();
++    let parsed = ParsedProgram::from_bytes(product.bytecode()).unwrap();
++    assert!(parsed.instructions.is_empty());
++    assert!(!parsed.artifact.is_empty());
++    assert!(parsed.requirements.iter().any(|r|matches!(r,mech_core::ApplicationRequirement::Resource(r) if r.path=="bytes" && r.intent==ResourceIntent::Send)));
++    let state = backend.0.lock().unwrap();
++    assert_eq!(state.reads, 0, "planning cannot consume stdin");
++    assert!(state.output.is_empty());
++    drop(state);
++    let original = product.artifact().clone();
++    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap();
++    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
++    assert_eq!(
++        encoded,
++        mech_engine::encode_program_artifact_bytecode_v1(&decoded).unwrap()
++    );
++    [original, decoded]
++}
++fn reset(backend: &Backend, input: &[u8]) {
++    *backend.0.lock().unwrap() = State {
++        input: input.to_vec(),
++        ..Default::default()
++    };
++}
++const MIRROR: &str = "+> @in := cli/stdin\n+> @out := cli/stdout\n+> @err := cli/stderr\n@out/bytes <- @in/bytes\n@out/bytes <- @in/bytes\n@err/bytes <- [0u8 128u8 255u8]\n";
++
++#[test]
++fn activated_byte_ports_preserve_binary_rows_multiplicity_and_empty_snapshots() {
++    let backend = Backend::default();
++    for artifact in artifacts(MIRROR, backend.clone()) {
++        for input in [
++            b"".as_slice(),
++            include_bytes!("fixtures/cli-bytes/revcomp-binary-header.stdin").as_slice(),
++            include_bytes!("fixtures/cli-bytes/revcomp-binary-header.stdout").as_slice(),
++            include_bytes!("fixtures/cli-bytes/mandelbrot-n1.pbm").as_slice(),
++            include_bytes!("fixtures/cli-bytes/mandelbrot-n9.pbm").as_slice(),
++        ] {
++            reset(&backend, input);
++            let mut runtime = builder(backend.clone(), true, true).build().unwrap();
++            let loaded = runtime
++                .load_compiled_program(artifact.clone(), ResidentDurabilityPolicy::Volatile)
++                .unwrap();
++            assert_eq!(loaded.route, RuntimeProgramRoute::ResidentExternal);
++            runtime.shutdown().unwrap();
++            let state = backend.0.lock().unwrap();
++            assert_eq!(state.reads, 1);
++            assert_eq!(
++                state.output,
++                vec![
++                    ("stdout".into(), input.to_vec()),
++                    ("stdout".into(), input.to_vec()),
++                    ("stderr".into(), vec![0, 128, 255])
++                ]
++            );
++        }
++    }
++}
++#[test]
++fn mixed_text_and_byte_sends_share_one_valid_input_snapshot_in_source_order() {
++    let backend = Backend::default();
++    let source = "+> @in := cli/stdin\n+> @out := cli/stdout\n@out/bytes <- @in/bytes\n@out/text <- @in/text\n@out/bytes <- @in/bytes\n";
++    for artifact in artifacts(source, backend.clone()) {
++        let input = "héllo\r\n".as_bytes();
++        reset(&backend, input);
++        let mut runtime = builder(backend.clone(), true, true).build().unwrap();
++        runtime
++            .load_compiled_program(artifact, ResidentDurabilityPolicy::Volatile)
++            .unwrap();
++        runtime.shutdown().unwrap();
++        let state = backend.0.lock().unwrap();
++        assert_eq!(state.reads, 1);
++        assert_eq!(state.output, vec![("stdout".into(), input.to_vec()); 3]);
++    }
++}
++#[test]
++fn invalid_utf8_late_text_view_aborts_all_earlier_byte_sends() {
++    let backend = Backend::default();
++    let source = "+> @in := cli/stdin\n+> @out := cli/stdout\n@out/bytes <- [0u8 255u8]\n@out/bytes <- @in/bytes\n@out/text <- @in/text\n";
++    for artifact in artifacts(source, backend.clone()) {
++        reset(&backend, &[0x80, 0xff]);
++        let mut runtime = builder(backend.clone(), true, true).build().unwrap();
++        let error = runtime
++            .load_compiled_program(artifact, ResidentDurabilityPolicy::Volatile)
++            .unwrap_err();
++        assert!(error.display_message().contains("UTF-8"));
++        runtime.shutdown().unwrap();
++        let state = backend.0.lock().unwrap();
++        assert_eq!(state.reads, 1);
++        assert_eq!(state.attempts, 0);
++        assert!(state.output.is_empty());
++    }
++}
++#[test]
++fn text_grants_do_not_authorize_byte_reads_or_sends() {
++    let backend = Backend::default();
++    for artifact in artifacts(MIRROR, backend.clone()) {
++        for (read, write) in [(false, true), (true, false), (false, false)] {
++            reset(&backend, &[0xff]);
++            let mut runtime = builder(backend.clone(), read, write).build().unwrap();
++            assert!(
++                runtime
++                    .load_compiled_program(artifact.clone(), ResidentDurabilityPolicy::Volatile)
++                    .is_err()
++            );
++            runtime.shutdown().unwrap();
++            let state = backend.0.lock().unwrap();
++            assert_eq!(state.reads, 0);
++            assert_eq!(state.attempts, 0);
++            assert!(state.output.is_empty());
++        }
++    }
++}
++#[test]
++fn revoked_byte_read_grant_denies_observation_through_the_real_provider() {
++    let backend = Backend::default();
++    let mut runtime = builder(backend.clone(), false, true).build().unwrap();
++    let grant = ResourcePathCapability::new(
++        runtime.next_capability_id(),
++        runtime.runtime_context().unwrap().subject,
++        "cli://cli/stdin",
++        ["read"],
++        [ResourcePathScope::Exact("bytes".into())],
++    )
++    .unwrap();
++    let id = runtime.grant_capability(Arc::new(grant)).unwrap();
++    runtime.revoke_capability(id).unwrap();
++    assert!(
++        runtime
++            .read_resource(RuntimeResourceReadRequest {
++                base_uri: "cli://cli/stdin".into(),
++                path: "bytes".into(),
++                context_name: "stdin".into()
++            })
++            .is_err()
++    );
++    runtime.shutdown().unwrap();
++    assert_eq!(backend.0.lock().unwrap().reads, 0);
++}
++#[test]
++fn write_and_flush_delivery_failures_surface_and_shutdown_does_not_replay_bytes() {
++    let backend = Backend::default();
++    let source = "+> @out := cli/stdout\n@out/bytes <- [0u8 128u8 255u8]\n";
++    for artifact in artifacts(source, backend.clone()) {
++        for flush in [false, true] {
++            *backend.0.lock().unwrap() = State {
++                fail_write: !flush,
++                fail_flush: flush,
++                ..Default::default()
++            };
++            let mut runtime = builder(backend.clone(), true, true).build().unwrap();
++            let error = runtime
++                .load_compiled_program(artifact.clone(), ResidentDurabilityPolicy::Volatile)
++                .unwrap_err();
++            assert!(error.display_message().contains(if flush {
++                "flush failure"
++            } else {
++                "write failure"
++            }));
++            assert!(
++                runtime.retry_resident_outbox().is_err(),
++                "failed initial activation must not install a retryable active program"
++            );
++            runtime.shutdown().unwrap();
++            let state = backend.0.lock().unwrap();
++            assert_eq!(state.attempts, 1);
++            assert_eq!(state.output.len(), usize::from(flush));
++        }
++    }
++}
++#[derive(Debug)]
++struct StopFailure {
++    ingress: Option<RuntimeIngress>,
++    stops: Arc<Mutex<usize>>,
++}
++impl RuntimeHostInputDriver for StopFailure {
++    fn drives(&self, _: &RuntimeHostInputSource) -> bool {
++        false
++    }
++    fn attach(&mut self, ingress: RuntimeIngress) -> MResult<()> {
++        self.ingress = Some(ingress);
++        Ok(())
++    }
++    fn start(&mut self) -> MResult<()> {
++        Ok(())
++    }
++    fn stop(&mut self) -> MResult<()> {
++        *self.stops.lock().unwrap() += 1;
++        assert!(self.ingress.as_ref().unwrap().is_closed()?);
++        Err(failure("injected shutdown stop failure"))
++    }
++    fn is_live(&self) -> bool {
++        false
++    }
++}
++#[test]
++fn shutdown_failure_keeps_delivered_byte_output_and_does_not_repeat_cleanup_on_drop() {
++    let backend = Backend::default();
++    let source = "+> @out := cli/stdout\n@out/bytes <- [0u8 255u8]\n";
++    for artifact in artifacts(source, backend.clone()) {
++        reset(&backend, &[]);
++        let stops = Arc::new(Mutex::new(0));
++        let mut runtime = builder(backend.clone(), true, true)
++            .input_driver(StopFailure {
++                ingress: None,
++                stops: stops.clone(),
++            })
++            .build()
++            .unwrap();
++        runtime
++            .load_compiled_program(artifact, ResidentDurabilityPolicy::Volatile)
++            .unwrap();
++        assert!(
++            runtime
++                .shutdown()
++                .unwrap_err()
++                .display_message()
++                .contains("shutdown stop failure")
++        );
++        drop(runtime);
++        assert_eq!(*stops.lock().unwrap(), 1);
++        assert_eq!(
++            backend.0.lock().unwrap().output,
++            vec![("stdout".into(), vec![0, 255])]
++        );
++    }
++}
++#[test]
++fn denied_load_recovers_in_the_same_runtime_after_explicit_byte_grants() {
++    let backend = Backend::default();
++    for artifact in artifacts(MIRROR, backend.clone()) {
++        reset(&backend, &[0, 255]);
++        let mut runtime = builder(backend.clone(), false, false).build().unwrap();
++        assert!(
++            runtime
++                .load_compiled_program(artifact.clone(), ResidentDurabilityPolicy::Volatile)
++                .is_err()
++        );
++        {
++            let state = backend.0.lock().unwrap();
++            assert_eq!(state.reads, 0);
++            assert!(state.output.is_empty());
++        }
++        for (target, operation) in [
++            ("cli/stdin", "read"),
++            ("cli/stdout", "write"),
++            ("cli/stderr", "write"),
++        ] {
++            runtime
++                .install_run_resource_grant(&RunResourceGrantConfig {
++                    target: target.into(),
++                    operations: vec![operation.into()],
++                    paths: vec!["bytes".into()],
++                })
++                .unwrap();
++        }
++        runtime
++            .load_compiled_program(artifact, ResidentDurabilityPolicy::Volatile)
++            .unwrap();
++        runtime.shutdown().unwrap();
++        let state = backend.0.lock().unwrap();
++        assert_eq!(state.reads, 1);
++        assert_eq!(
++            state.output,
++            vec![
++                ("stdout".into(), vec![0, 255]),
++                ("stdout".into(), vec![0, 255]),
++                ("stderr".into(), vec![0, 128, 255])
++            ]
++        );
++    }
++}
+diff --git a/src/build/tests/fixtures/cli-bytes/mandelbrot-n1.pbm b/src/build/tests/fixtures/cli-bytes/mandelbrot-n1.pbm
+new file mode 100644
+index 0000000000000000000000000000000000000000..fd807395ffb12089cfb5fe3637dc800d884c165b
+GIT binary patch
+literal 8
+PcmWGA;WAV(<YE8-2224P
+
+literal 0
+HcmV?d00001
+
+diff --git a/src/build/tests/fixtures/cli-bytes/mandelbrot-n9.pbm b/src/build/tests/fixtures/cli-bytes/mandelbrot-n9.pbm
+new file mode 100644
+index 0000000000000000000000000000000000000000..d0d43af4c4e395a4b0b222b34bd8342058225293
+GIT binary patch
+literal 25
+ecmWGA;j&b)<YHi8VqkCJZ?FeK{s#62CI$dFg#_6E
+
+literal 0
+HcmV?d00001
+
+diff --git a/src/build/tests/fixtures/cli-bytes/revcomp-binary-header.stdin b/src/build/tests/fixtures/cli-bytes/revcomp-binary-header.stdin
+new file mode 100644
+index 0000000000000000000000000000000000000000..be2addcc6b2bd8800c6ed0d5acadf5df44ff8f4b
+GIT binary patch
+literal 24
+fcmcD^NKH&hE#hQo_^*&uS&~}J%jKBtUg8G;Y0L;a
+
+literal 0
+HcmV?d00001
+
+diff --git a/src/build/tests/fixtures/cli-bytes/revcomp-binary-header.stdout b/src/build/tests/fixtures/cli-bytes/revcomp-binary-header.stdout
+new file mode 100644
+index 0000000000000000000000000000000000000000..58bb0f3e321e2e5ff32d701225e6f599805d9674
+GIT binary patch
+literal 24
+fcmcD^NKH&hE#hQo_^*&uS&~}J<>%<^9>N6xYD)+B
+
+literal 0
+HcmV?d00001
+

@@ -1,0 +1,103 @@
+{
+  "schema": "mech.external-source-pins.v1",
+  "files": [
+    {
+      "path": "hosts/gpu/Cargo.toml",
+      "base_sha256": "f4b4f6bbb88fc5a49c7856e1592100f5be2f56d319a2cf4201cd6a3fca2d4aa0",
+      "candidate_sha256": "0836e3cd09948bec30983339c6cad211dccf72c102295584bdbfec50d91a4cc0",
+      "new_file": false,
+      "bytes": 5950
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/abi.rs",
+      "base_sha256": "5e54e7d40184431edf43add78496edad8b757e22a802b2bd56261e98c83336a5",
+      "candidate_sha256": "2e37f67ba5549e6092aa5948e41af3c235c97e0c560c54013a376c9e2c347bff",
+      "new_file": false,
+      "bytes": 5415
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/application.rs",
+      "base_sha256": "9d77e8d0a7ec4b16056f8e2aa321af765c75776f598d50342c3b89cbf0c334a8",
+      "candidate_sha256": "a61c06cb117226076458e8a8d4018cf00835c82c8041e8041c0c98bbf29ced2a",
+      "new_file": false,
+      "bytes": 9893
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/compiler.rs",
+      "base_sha256": "d61691ba167f5a5e3eba9e0a2dfcdb367fd711076add48f25f01110595c362da",
+      "candidate_sha256": "1430dd12b37aceda92b86d3a8c51665d1eaf146d87e3e25b94609c43e4c69e69",
+      "new_file": false,
+      "bytes": 41434
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/identity.rs",
+      "base_sha256": "93e3f3ee2fb97f43d68c3f2b5fd5469c3dc25a667f619690c9869c493fb69017",
+      "candidate_sha256": "d59aade67597494a4721ccc733d6840bd4fc975e3e91cadf8e92c0bbd5776312",
+      "new_file": false,
+      "bytes": 12860
+    },
+    {
+      "path": "hosts/gpu/tests/canonical_artifact_application.rs",
+      "base_sha256": "46c47d44f67100fedd1dd9b6b1ddfd1a88a3572ef01f3f894e5961ff0113bb47",
+      "candidate_sha256": "5c314677caf5f1618d36fbd510e26ae639fe101aec1fccb9c4b3cb5e5fd57c65",
+      "new_file": false,
+      "bytes": 57980
+    },
+    {
+      "path": "hosts/gpu/tests/canonical_artifact_cast.rs",
+      "base_sha256": null,
+      "candidate_sha256": "2abdd55c727366ce4377a905bb0ea317defbd1e5fb3cca6e8f11d53312c33dfc",
+      "new_file": true,
+      "bytes": 15239
+    },
+    {
+      "path": "hosts/gpu/tests/support/canonical_cast_cases.rs",
+      "base_sha256": null,
+      "candidate_sha256": "3704a7e9ded913e362e76541c5d66ab3a81de77d309677e766de26ea25d219fa",
+      "new_file": true,
+      "bytes": 4703
+    },
+    {
+      "path": "src/engine/src/native_artifact/ir.rs",
+      "base_sha256": "393772319f0b48d6afe1dcc1fc2c5554a9a989f2692893ad3faad723c1fb9e87",
+      "candidate_sha256": "1eec6f6fc70719c131f4f202c28da1a7583a4fa8a466d9e66879bdce3a2b6188",
+      "new_file": false,
+      "bytes": 4752
+    },
+    {
+      "path": "src/engine/src/resident/conversion.rs",
+      "base_sha256": "82052c251f73e205a30bd3abff1b038e7834ca1592f3dc9394e63b4cc7f68ba1",
+      "candidate_sha256": "d42a55d9c6224f7c8c64113806cb197e79419409806f8821c887d9c3db740a1b",
+      "new_file": false,
+      "bytes": 68530
+    },
+    {
+      "path": "src/engine/src/resident/general/native_lowering.rs",
+      "base_sha256": "c1a96cbc3a8d3b6b3833838a71f5a295fceb14274fc1b592c5f68368dedd3e2a",
+      "candidate_sha256": "b40cb9dbd120fd4140ae755e6de35a7d84b4f2509582f44253ea6fd0613b3e5a",
+      "new_file": false,
+      "bytes": 19775
+    },
+    {
+      "path": "src/engine/src/resident/native_semantics.rs",
+      "base_sha256": "2b5eeba02c45c541657b582747be99e26ad8466506aedda93d6b81d463a84838",
+      "candidate_sha256": "c1204fa96ce10a9976e349da7395be6696e5d2e218d1ba5b9959197d6408388b",
+      "new_file": false,
+      "bytes": 34358
+    },
+    {
+      "path": "src/stdlib/Cargo.toml",
+      "base_sha256": "74f4ecfae95520c7f2c1d5e821eb743ab44f65ada7be4d0d7381885430fa1735",
+      "candidate_sha256": "78fed5c063256c19bf40977911857f2a807337c5e5d9297e717ebcddd2b825ed",
+      "new_file": false,
+      "bytes": 23565
+    },
+    {
+      "path": "src/stdlib/tests/native_artifact_cast_lowering.rs",
+      "base_sha256": null,
+      "candidate_sha256": "50e62221cb2ef0f810e1877df4ffb6f43ee4f0c7bab73914bfedd2bdbd6c8402",
+      "new_file": true,
+      "bytes": 6007
+    }
+  ]
+}

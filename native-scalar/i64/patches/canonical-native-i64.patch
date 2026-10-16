@@ -1,0 +1,1457 @@
+diff --git a/hosts/gpu/Cargo.toml b/hosts/gpu/Cargo.toml
+--- a/hosts/gpu/Cargo.toml
++++ b/hosts/gpu/Cargo.toml
+@@ -140,3 +140,8 @@
+ name = "canonical_artifact_application"
+ path = "tests/canonical_artifact_application.rs"
+ required-features = ["canonical-native"]
++
++[[test]]
++name = "canonical_artifact_i64"
++path = "tests/canonical_artifact_i64.rs"
++required-features = ["canonical-native"]
+diff --git a/hosts/gpu/src/native_artifact/abi.rs b/hosts/gpu/src/native_artifact/abi.rs
+--- a/hosts/gpu/src/native_artifact/abi.rs
++++ b/hosts/gpu/src/native_artifact/abi.rs
+@@ -36,7 +36,19 @@
+         | NativeScalarOp::BoolXor
+         | NativeScalarOp::BoolNot
+         | NativeScalarOp::BoolEq
+-        | NativeScalarOp::BoolNe => 256,
++        | NativeScalarOp::BoolNe
++        | NativeScalarOp::I64Add
++        | NativeScalarOp::I64Sub
++        | NativeScalarOp::I64Mul
++        | NativeScalarOp::I64Div
++        | NativeScalarOp::I64Rem
++        | NativeScalarOp::I64Neg
++        | NativeScalarOp::I64Eq
++        | NativeScalarOp::I64Ne
++        | NativeScalarOp::I64Lt
++        | NativeScalarOp::I64Le
++        | NativeScalarOp::I64Gt
++        | NativeScalarOp::I64Ge => 256,
+     }
+ }
+ 
+@@ -97,6 +109,7 @@
+ /// transport regions and the callback context for the entire invocation.
+ /// Bool transport uses U64 words restricted to 0/1; semantic Bool storage in
+ /// the artifact/call plan remains a distinct one-byte scalar representation.
++/// Signed I64 values retain their two's-complement bits in one eight-byte lane.
+ #[repr(C)]
+ pub(super) struct NativeEntryFrame {
+     pub version: u64,
+diff --git a/hosts/gpu/src/native_artifact/application.rs b/hosts/gpu/src/native_artifact/application.rs
+--- a/hosts/gpu/src/native_artifact/application.rs
++++ b/hosts/gpu/src/native_artifact/application.rs
+@@ -120,7 +120,7 @@
+ mech-core = {{ path = {core}, default-features = false }}
+ mech-engine = {{ path = {engine}, default-features = false, features = ["native-artifact"] }}
+ mech-gpu = {{ path = {gpu}, default-features = false, features = ["canonical-native-runtime"] }}
+-mech-stdlib = {{ path = {stdlib}, default-features = false, features = ["std", "native-plan", "bool", "u64", "math_add", "math_sub", "math_mul", "math_div", "math_mod", "compare_default", "logic_default"] }}
++mech-stdlib = {{ path = {stdlib}, default-features = false, features = ["std", "native-plan", "bool", "u64", "i64", "math_neg", "math_add", "math_sub", "math_mul", "math_div", "math_mod", "compare_default", "logic_default"] }}
+ sha2 = {{ version = "0.11.0", default-features = false }}
+ [build-dependencies]
+ sha2 = {{ version = "0.11.0", default-features = false }}
+diff --git a/hosts/gpu/src/native_artifact/compiler.rs b/hosts/gpu/src/native_artifact/compiler.rs
+--- a/hosts/gpu/src/native_artifact/compiler.rs
++++ b/hosts/gpu/src/native_artifact/compiler.rs
+@@ -248,6 +248,7 @@
+             NativeValueRef::Constant(id) => self.constants.get(&id).map(|v| match v {
+                 NativeScalarValue::Bool(_) => NativeScalarKind::Bool,
+                 NativeScalarValue::U64(_) => NativeScalarKind::U64,
++                NativeScalarValue::I64(_) => NativeScalarKind::I64,
+             }),
+         }
+     }
+@@ -289,6 +290,7 @@
+                     })? {
+                     NativeScalarValue::Bool(value) => u64::from(*value),
+                     NativeScalarValue::U64(value) => *value,
++                    NativeScalarValue::I64(value) => *value as u64,
+                 };
+                 return Ok(b.ins().iconst(types::I64, word as i64));
+             }
+@@ -340,11 +342,14 @@
+     guard(b, valid, error, STATUS_ADMISSION);
+ }
+ fn signature(op: NativeScalarOp) -> (&'static [NativeScalarKind], NativeScalarKind) {
+-    use NativeScalarKind::{Bool, U64};
++    use NativeScalarKind::{Bool, I64, U64};
+     use NativeScalarOp::*;
+     match op {
+         U64Add | U64Sub | U64Mul | U64Div | U64Rem => (&[U64, U64], U64),
+         U64Eq | U64Ne | U64Lt | U64Le | U64Gt | U64Ge => (&[U64, U64], Bool),
++        I64Add | I64Sub | I64Mul | I64Div | I64Rem => (&[I64, I64], I64),
++        I64Eq | I64Ne | I64Lt | I64Le | I64Gt | I64Ge => (&[I64, I64], Bool),
++        I64Neg => (&[I64], I64),
+         BoolNot => (&[Bool], Bool),
+         BoolAnd | BoolOr | BoolXor | BoolEq | BoolNe => (&[Bool, Bool], Bool),
+     }
+@@ -359,6 +364,11 @@
+     let a = args[0];
+     if op == BoolNot {
+         return b.ins().bxor_imm(a, 1);
++    }
++    if op == I64Neg {
++        let valid = b.ins().icmp_imm(IntCC::NotEqual, a, i64::MIN);
++        guard(b, valid, error, STATUS_ARITHMETIC);
++        return b.ins().ineg(a);
+     }
+     let c = args[1];
+     match op {
+@@ -380,6 +390,44 @@
+             } else {
+                 b.ins().urem(a, c)
+             }
++        }
++        I64Add | I64Sub | I64Mul => {
++            let (value, overflow) = match op {
++                I64Add => b.ins().sadd_overflow(a, c),
++                I64Sub => b.ins().ssub_overflow(a, c),
++                _ => b.ins().smul_overflow(a, c),
++            };
++            let valid = b.ins().icmp_imm(IntCC::Equal, overflow, 0);
++            guard(b, valid, error, STATUS_ARITHMETIC);
++            value
++        }
++        I64Div | I64Rem => {
++            let nonzero = b.ins().icmp_imm(IntCC::NotEqual, c, 0);
++            guard(b, nonzero, error, STATUS_ARITHMETIC);
++            // Rust checked_div AND checked_rem reject MIN/-1. Guard before
++            // either machine operation so the native entry cannot trap.
++            let minimum = b.ins().icmp_imm(IntCC::Equal, a, i64::MIN);
++            let negative_one = b.ins().icmp_imm(IntCC::Equal, c, -1);
++            let overflow = b.ins().band(minimum, negative_one);
++            let valid = b.ins().icmp_imm(IntCC::Equal, overflow, 0);
++            guard(b, valid, error, STATUS_ARITHMETIC);
++            if op == I64Div {
++                b.ins().sdiv(a, c)
++            } else {
++                b.ins().srem(a, c)
++            }
++        }
++        I64Eq | I64Ne | I64Lt | I64Le | I64Gt | I64Ge => {
++            let cc = match op {
++                I64Eq => IntCC::Equal,
++                I64Ne => IntCC::NotEqual,
++                I64Lt => IntCC::SignedLessThan,
++                I64Le => IntCC::SignedLessThanOrEqual,
++                I64Gt => IntCC::SignedGreaterThan,
++                _ => IntCC::SignedGreaterThanOrEqual,
++            };
++            let value = b.ins().icmp(cc, a, c);
++            b.ins().uextend(types::I64, value)
+         }
+         BoolAnd => b.ins().band(a, c),
+         BoolOr => b.ins().bor(a, c),
+@@ -396,7 +444,7 @@
+             let value = b.ins().icmp(cc, a, c);
+             b.ins().uextend(types::I64, value)
+         }
+-        BoolNot => unreachable!(),
++        BoolNot | I64Neg => unreachable!(),
+     }
+ }
+ 
+diff --git a/hosts/gpu/src/native_artifact/identity.rs b/hosts/gpu/src/native_artifact/identity.rs
+--- a/hosts/gpu/src/native_artifact/identity.rs
++++ b/hosts/gpu/src/native_artifact/identity.rs
+@@ -8,7 +8,7 @@
+ 
+ /// Fixed exported data size for the build-owned entry pairing record.
+ pub const NATIVE_LINK_IDENTITY_BYTES: usize = 152;
+-pub const NATIVE_TYPED_IR_VERSION: u64 = 1;
++pub const NATIVE_TYPED_IR_VERSION: u64 = 2;
+ pub const NATIVE_WORK_POLICY_VERSION: u64 = 1;
+ const MAGIC: &[u8; 16] = b"MECHNATIVEOBJv1\0";
+ 
+@@ -145,6 +145,7 @@
+         hash.update([match value.kind() {
+             NativeScalarKind::Bool => 1,
+             NativeScalarKind::U64 => 2,
++            NativeScalarKind::I64 => 3,
+         }]);
+         word(hash, u64::from(value.schema().get()));
+         hash.update(value.schema_key().as_bytes());
+@@ -183,6 +184,10 @@
+             NativeScalarValue::U64(v) => {
+                 hash.update([2]);
+                 word(&mut hash, v);
++            }
++            NativeScalarValue::I64(v) => {
++                hash.update([3]);
++                word(&mut hash, v as u64);
+             }
+         }
+     }
+@@ -226,6 +231,18 @@
+         NativeScalarOp::BoolNot => 15,
+         NativeScalarOp::BoolEq => 16,
+         NativeScalarOp::BoolNe => 17,
++        NativeScalarOp::I64Add => 18,
++        NativeScalarOp::I64Sub => 19,
++        NativeScalarOp::I64Mul => 20,
++        NativeScalarOp::I64Div => 21,
++        NativeScalarOp::I64Rem => 22,
++        NativeScalarOp::I64Neg => 23,
++        NativeScalarOp::I64Eq => 24,
++        NativeScalarOp::I64Ne => 25,
++        NativeScalarOp::I64Lt => 26,
++        NativeScalarOp::I64Le => 27,
++        NativeScalarOp::I64Gt => 28,
++        NativeScalarOp::I64Ge => 29,
+     }
+ }
+ 
+diff --git a/hosts/gpu/src/native_artifact/runtime.rs b/hosts/gpu/src/native_artifact/runtime.rs
+--- a/hosts/gpu/src/native_artifact/runtime.rs
++++ b/hosts/gpu/src/native_artifact/runtime.rs
+@@ -282,6 +282,7 @@
+             (value, ty.kind()),
+             (NativeScalarValue::Bool(_), NativeScalarKind::Bool)
+                 | (NativeScalarValue::U64(_), NativeScalarKind::U64)
++                | (NativeScalarValue::I64(_), NativeScalarKind::I64)
+         ) {
+             return Err(NativeExecutionError::InputType {
+                 input: index,
+@@ -295,6 +296,7 @@
+         *word = match input {
+             NativeScalarValue::Bool(value) => u64::from(*value),
+             NativeScalarValue::U64(value) => *value,
++            NativeScalarValue::I64(value) => *value as u64,
+         };
+     }
+     let input_pointer = input_words.as_ptr();
+@@ -396,6 +398,7 @@
+         *output = match ty.kind() {
+             NativeScalarKind::Bool => NativeScalarValue::Bool(*word != 0),
+             NativeScalarKind::U64 => NativeScalarValue::U64(*word),
++            NativeScalarKind::I64 => NativeScalarValue::I64(*word as i64),
+         };
+     }
+     Ok(NativeExecutionReport {
+diff --git a/hosts/gpu/src/native_artifact/templates/linked_main.rs.in b/hosts/gpu/src/native_artifact/templates/linked_main.rs.in
+--- a/hosts/gpu/src/native_artifact/templates/linked_main.rs.in
++++ b/hosts/gpu/src/native_artifact/templates/linked_main.rs.in
+@@ -25,6 +25,13 @@
+         return Err("invalid U64 argument".into());
+     }
+     text.parse().map_err(|_| "invalid U64 argument".into())
++}
++fn signed(text: &str) -> Result<i64, String> {
++    let digits = text.strip_prefix('-').unwrap_or(text);
++    if digits.is_empty() || !digits.bytes().all(|byte| byte.is_ascii_digit()) {
++        return Err("invalid I64 argument".into());
++    }
++    text.parse().map_err(|_| "invalid I64 argument".into())
+ }
+ fn options(
+     arguments: Vec<OsString>,
+@@ -111,6 +118,7 @@
+         let text = argument.to_str().ok_or("argument is not Unicode")?;
+         inputs.push(match input.ty().kind() {
+             NativeScalarKind::U64 => NativeScalarValue::U64(unsigned(text)?),
++            NativeScalarKind::I64 => NativeScalarValue::I64(signed(text)?),
+             NativeScalarKind::Bool => NativeScalarValue::Bool(match text {
+                 "true" => true,
+                 "false" => false,
+@@ -130,6 +138,7 @@
+         match value {
+             NativeScalarValue::Bool(v) => writeln!(&mut result, "{v}"),
+             NativeScalarValue::U64(v) => writeln!(&mut result, "{v}"),
++            NativeScalarValue::I64(v) => writeln!(&mut result, "{v}"),
+         }
+         .unwrap();
+     }
+diff --git a/hosts/gpu/tests/canonical_artifact_application.rs b/hosts/gpu/tests/canonical_artifact_application.rs
+--- a/hosts/gpu/tests/canonical_artifact_application.rs
++++ b/hosts/gpu/tests/canonical_artifact_application.rs
+@@ -39,6 +39,7 @@
+ 
+ const MIXED: &str = "increment := left<u64> + step<u64>\nflag := !enabled<bool>\nincrement\n";
+ const ORDERED: &str = "quotient := left<u64> / divisor<u64>\nlast := left<u64> + 1u64\nlast\n";
++const SIGNED: &str = "sum := left<i64> + right<i64>\nnegative := -right<i64>\nsum\n";
+ const PROCESS_DEADLINE: Duration = Duration::from_secs(15);
+ const WORKER_DEADLINE: Duration = Duration::from_secs(20 * 60);
+ 
+@@ -177,6 +178,7 @@
+         .map(|value| match value {
+             NativeScalarValue::Bool(value) => value.to_string(),
+             NativeScalarValue::U64(value) => value.to_string(),
++            NativeScalarValue::I64(value) => value.to_string(),
+         })
+         .collect()
+ }
+@@ -209,6 +211,7 @@
+                 data: match value {
+                     NativeScalarValue::Bool(value) => ValueDataDraft::Bool(*value),
+                     NativeScalarValue::U64(value) => ValueDataDraft::U64(*value),
++                    NativeScalarValue::I64(value) => ValueDataDraft::I64(*value),
+                 },
+             }
+             .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+@@ -240,6 +243,7 @@
+             |index| match instance.copied_output(index).unwrap().data() {
+                 ValueData::Bool(value) => NativeScalarValue::Bool(*value),
+                 ValueData::U64(value) => NativeScalarValue::U64(*value),
++                ValueData::I64(value) => NativeScalarValue::I64(*value),
+                 value => panic!("unexpected scalar {value:?}"),
+             },
+         )
+@@ -308,6 +312,9 @@
+ }
+ 
+ fn reference_cases(name: &str, artifacts: &[ProgramArtifact; 2], result: usize) -> Vec<Value> {
++    if name == "canonical-linked-signed" {
++        return signed_reference_cases(artifacts, result);
++    }
+     let plans = artifacts.each_ref().map(|artifact| {
+         lower_pure_native_artifact(artifact, &mech_stdlib::source_catalog()).unwrap()
+     });
+@@ -573,6 +580,112 @@
+     cases
+ }
+ 
++fn signed_reference_cases(artifacts: &[ProgramArtifact; 2], result: usize) -> Vec<Value> {
++    let plans = artifacts.each_ref().map(|artifact| {
++        lower_pure_native_artifact(artifact, &mech_stdlib::source_catalog()).unwrap()
++    });
++    let jits = plans
++        .each_ref()
++        .map(|plan| JitArtifact::compile(plan).unwrap());
++    assert!(
++        plans[0]
++            .inputs()
++            .iter()
++            .all(|input| input.ty().kind() == NativeScalarKind::I64)
++    );
++    let mut cases = Vec::new();
++    for (label, left, right) in [
++        ("i64-minimum", i64::MIN, 0),
++        ("i64-maximum", i64::MAX, 0),
++        ("negative-sum", -7, 3),
++    ] {
++        let args = inputs(
++            &artifacts[0],
++            &[
++                ("left", NativeScalarValue::I64(left)),
++                ("right", NativeScalarValue::I64(right)),
++            ],
++        );
++        let expected = resident(&artifacts[0], &args).unwrap();
++        assert_eq!(expected[result], NativeScalarValue::I64(left + right));
++        let negative = plans[0]
++            .outputs()
++            .iter()
++            .position(|output| {
++                output
++                    .interactive_binding()
++                    .is_some_and(|binding| binding.lexical_name == "negative")
++            })
++            .unwrap();
++        assert_eq!(expected[negative], NativeScalarValue::I64(-right));
++        for index in 0..2 {
++            assert_eq!(resident(&artifacts[index], &args).unwrap(), expected);
++            assert_eq!(jit_success(&jits[index], &args).0, expected);
++        }
++        cases.push(success_case(label, arguments(&args), &expected));
++        if label == "negative-sum" {
++            for (label, invalid) in [
++                ("i64-input-overflow", "9223372036854775808"),
++                ("i64-input-underflow", "-9223372036854775809"),
++                ("i64-input-plus", "+1"),
++                ("i64-input-whitespace", " 1"),
++                ("i64-input-empty", ""),
++            ] {
++                let mut invalid_args = arguments(&args);
++                invalid_args[0] = invalid.into();
++                let mut case = failure_case(label, invalid_args, "invalid I64 argument");
++                case["stderr"] = json!("invalid I64 argument\n");
++                cases.push(case);
++            }
++        }
++    }
++    for (label, left, right) in [
++        ("signed-add-overflow", i64::MAX, 1),
++        ("signed-add-underflow", i64::MIN, -1),
++        ("signed-neg-minimum", 0, i64::MIN),
++    ] {
++        let args = inputs(
++            &artifacts[0],
++            &[
++                ("left", NativeScalarValue::I64(left)),
++                ("right", NativeScalarValue::I64(right)),
++            ],
++        );
++        let expected_node =
++            plans[0].lets()[if label == "signed-neg-minimum" { 1 } else { 0 }].node();
++        for index in 0..2 {
++            assert!(
++                resident(&artifacts[index], &args)
++                    .unwrap_err()
++                    .contains("Arithmetic")
++            );
++            assert!(
++                matches!(jit_error(&jits[index],&args,NativeExecutionLimits::default()),NativeExecutionError::Arithmetic{node} if node==expected_node)
++            );
++        }
++        cases.push(exact_failure_case(
++            label,
++            arguments(&args),
++            &jit_error(&jits[0], &args, NativeExecutionLimits::default()),
++        ));
++        if label == "signed-neg-minimum" {
++            let limit = NativeExecutionLimits {
++                max_work: 400,
++                ..NativeExecutionLimits::default()
++            };
++            assert!(
++                matches!(jit_error(&jits[0],&args,limit),NativeExecutionError::WorkLimit{phase:NativeExecutionPhase::Node(node),..} if node==expected_node)
++            );
++            cases.push(exact_failure_case(
++                "signed-node-denial-before-min-negation",
++                with_limit("--work=400", &args),
++                &jit_error(&jits[0], &args, limit),
++            ));
++        }
++    }
++    cases
++}
++
+ /// Only called in the contained worker. Subprocesses inherit its owned group;
+ /// they do not open another process group that could escape its deadline.
+ fn worker_command(mut command: Command, root: &Path, label: &str) -> Captured {
+@@ -671,7 +784,7 @@
+     let name = std::env::var("MECH_CANONICAL_NATIVE_WORKER_NAME").unwrap();
+     assert!(matches!(
+         name.as_str(),
+-        "canonical-linked-mixed" | "canonical-linked-ordered"
++        "canonical-linked-mixed" | "canonical-linked-ordered" | "canonical-linked-signed"
+     ));
+     let evidence = PathBuf::from(std::env::var_os("MECH_CANONICAL_NATIVE_EVIDENCE_DIR").unwrap());
+     let root = evidence.join(&name);
+@@ -958,6 +1071,7 @@
+     let applications = [
+         qualify(&evidence, "canonical-linked-mixed", MIXED),
+         qualify(&evidence, "canonical-linked-ordered", ORDERED),
++        qualify(&evidence, "canonical-linked-signed", SIGNED),
+     ];
+     assert_eq!(pin(&workspace.join("Cargo.lock")), lock);
+     clean(&workspace, &evidence, &commit, "after");
+diff --git a/hosts/gpu/tests/canonical_artifact_i64.rs b/hosts/gpu/tests/canonical_artifact_i64.rs
+new file mode 100644
+--- /dev/null
++++ b/hosts/gpu/tests/canonical_artifact_i64.rs
+@@ -0,0 +1,325 @@
++//! Signed scalar canonical artifact semantics through the shared native emitter.
++#![cfg(feature = "canonical-native")]
++use mech_core::{
++    ReactiveInstanceId, ValueData, ValueDataDraft,
++    snapshot::{SnapshotValidationContext, ValueDraft},
++};
++use mech_engine::native_artifact::{
++    NativeScalarKind, NativeScalarValue, lower_pure_native_artifact,
++};
++use mech_engine::resident::{ActivationFacts, CapturedValueInput, activate};
++use mech_engine::{CanonicalSourceFrontend, ProgramArtifact, SourceDocumentOutputKind};
++use mech_gpu::native_artifact::{
++    JitArtifact, NativeExecutionError, NativeExecutionLimits, NativeExecutionPhase, emit_object,
++};
++use mech_syntax::document::{
++    AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
++    parse_canonical_document,
++};
++fn compile(source: &str) -> (ProgramArtifact, usize) {
++    let parsed = parse_canonical_document(
++        TextSnapshot::new(DocumentId(0x434e4154), Revision(1), source).unwrap(),
++        ParseConfig::default(),
++    );
++    assert!(
++        parsed.is_strictly_clean(),
++        "{source}: {:?}",
++        parsed.diagnostics
++    );
++    let syntax = DocumentSyntax::cast(parsed.syntax()).unwrap();
++    let product = CanonicalSourceFrontend
++        .compile_document_with_catalog(&syntax, mech_stdlib::source_catalog())
++        .unwrap();
++    let output = product
++        .document_outputs()
++        .iter()
++        .rev()
++        .find(|v| v.kind == SourceDocumentOutputKind::Program)
++        .unwrap()
++        .output as usize;
++    (product.compile_artifact().unwrap(), output)
++}
++fn artifacts(source: &str) -> ([ProgramArtifact; 2], usize) {
++    let (original, output) = compile(source);
++    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap();
++    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
++    assert_eq!(original.revision(), decoded.revision());
++    ([original, decoded], output)
++}
++fn inputs(
++    artifact: &ProgramArtifact,
++    named: &[(&str, NativeScalarValue)],
++) -> Vec<NativeScalarValue> {
++    artifact
++        .inputs()
++        .iter()
++        .map(|input| {
++            let name = mech_engine::decode_source_input_name(&input.name).unwrap();
++            named
++                .iter()
++                .find(|(key, _)| *key == name)
++                .unwrap_or_else(|| panic!("missing input {name}"))
++                .1
++        })
++        .collect()
++}
++fn reference(
++    artifact: &ProgramArtifact,
++    args: &[NativeScalarValue],
++) -> Result<Vec<NativeScalarValue>, String> {
++    let mut instance = activate(
++        ReactiveInstanceId::new(0x434e4154, 0),
++        artifact,
++        &mech_stdlib::source_catalog(),
++        &ActivationFacts::default(),
++    )
++    .map_err(|e| format!("{e:?}"))?;
++    let values = artifact
++        .inputs()
++        .iter()
++        .zip(args)
++        .map(|(input, value)| {
++            ValueDraft {
++                schema: input.schema,
++                shape_values: Box::new([]),
++                data: match value {
++                    NativeScalarValue::Bool(v) => ValueDataDraft::Bool(*v),
++                    NativeScalarValue::U64(v) => ValueDataDraft::U64(*v),
++                    NativeScalarValue::I64(v) => ValueDataDraft::I64(*v),
++                },
++            }
++            .finalize(&SnapshotValidationContext::new(artifact.schemas()))
++            .unwrap()
++        })
++        .collect::<Vec<_>>();
++    let captured = instance
++        .plan
++        .inputs
++        .iter()
++        .map(|input| {
++            let ordinal = artifact
++                .inputs()
++                .iter()
++                .position(|v| v.slot.get() == input.slot.get())
++                .unwrap();
++            CapturedValueInput {
++                slot: input.slot,
++                value: &values[ordinal],
++            }
++        })
++        .collect::<Vec<_>>();
++    instance
++        .prepare_turn_values(&captured)
++        .and_then(|prepared| prepared.publish())
++        .map_err(|e| format!("{e:?}"))?;
++    Ok((0..artifact.outputs().len())
++        .map(
++            |index| match instance.copied_output(index).unwrap().data() {
++                ValueData::Bool(v) => NativeScalarValue::Bool(*v),
++                ValueData::U64(v) => NativeScalarValue::U64(*v),
++                ValueData::I64(v) => NativeScalarValue::I64(*v),
++                v => panic!("unexpected scalar {v:?}"),
++            },
++        )
++        .collect())
++}
++
++fn successful(source: &str, left: i64, right: i64, expected: NativeScalarValue) {
++    let (artifacts, last) = artifacts(source);
++    for artifact in artifacts {
++        let args = inputs(
++            &artifact,
++            &[
++                ("left", NativeScalarValue::I64(left)),
++                ("right", NativeScalarValue::I64(right)),
++            ],
++        );
++        let resident = reference(&artifact, &args).unwrap();
++        assert_eq!(resident[last], expected);
++        let plan = lower_pure_native_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
++        let jit = JitArtifact::compile(&plan).unwrap();
++        let mut output = vec![NativeScalarValue::U64(0xfeed); plan.outputs().len()];
++        jit.evaluate_into(&args, &mut output, NativeExecutionLimits::default(), None)
++            .unwrap();
++        assert_eq!(output, resident);
++    }
++}
++#[test]
++fn all_signed_scalar_operations_match_resident_original_and_decoded() {
++    use NativeScalarValue::{Bool, I64};
++    for (operator, left, right, expected) in [
++        ("+", i64::MIN, 0, i64::MIN),
++        ("+", i64::MAX, 0, i64::MAX),
++        ("+", -(1i64 << 53) - 1, 7, -(1i64 << 53) + 6),
++        ("-", i64::MIN, -1, i64::MIN + 1),
++        ("-", 7, 10, -3),
++        ("*", -(1i64 << 53) - 1, 2, -(1i64 << 54) - 2),
++        ("/", -7, 3, -2),
++        ("/", 7, -3, -2),
++        ("/", i64::MIN, 1, i64::MIN),
++        ("%", -7, 3, -1),
++        ("%", 7, -3, 1),
++        ("%", i64::MIN, 3, i64::MIN % 3),
++    ] {
++        successful(
++            &format!("left<i64> {operator} right<i64>\n"),
++            left,
++            right,
++            I64(expected),
++        );
++    }
++    for (left, right, expected) in [
++        (i64::MIN, i64::MAX, [false, true, true, true, false, false]),
++        (i64::MAX, i64::MIN, [false, true, false, false, true, true]),
++        (i64::MIN, i64::MIN, [true, false, false, true, false, true]),
++    ] {
++        for (operator, expected) in ["==", "!=", "<", "<=", ">", ">="].into_iter().zip(expected) {
++            successful(
++                &format!("left<i64> {operator} right<i64>\n"),
++                left,
++                right,
++                Bool(expected),
++            );
++        }
++    }
++    successful("-left<i64>\n", 7, 0, I64(-7));
++    successful("-left<i64>\n", i64::MIN + 1, 0, I64(i64::MAX));
++}
++#[test]
++fn signed_overflow_zero_division_and_minimum_remainder_fail_before_publication() {
++    for (operator, left, right) in [
++        ("+", i64::MAX, 1),
++        ("+", i64::MIN, -1),
++        ("-", i64::MIN, 1),
++        ("*", i64::MAX, 2),
++        ("*", i64::MIN, -1),
++        ("/", 1, 0),
++        ("/", i64::MIN, -1),
++        ("%", 1, 0),
++        ("%", i64::MIN, -1),
++        ("neg", i64::MIN, 0),
++    ] {
++        let source = if operator == "neg" {
++            "-left<i64>\n".into()
++        } else {
++            format!("left<i64> {operator} right<i64>\n")
++        };
++        let (artifacts, _) = artifacts(&source);
++        for artifact in artifacts {
++            let args = inputs(
++                &artifact,
++                &[
++                    ("left", NativeScalarValue::I64(left)),
++                    ("right", NativeScalarValue::I64(right)),
++                ],
++            );
++            assert!(
++                reference(&artifact, &args)
++                    .unwrap_err()
++                    .contains("Arithmetic")
++            );
++            let plan =
++                lower_pure_native_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
++            let jit = JitArtifact::compile(&plan).unwrap();
++            let mut output = vec![NativeScalarValue::I64(17); plan.outputs().len()];
++            let before = output.clone();
++            assert!(
++                matches!(jit.evaluate_into(&args,&mut output,NativeExecutionLimits::default(),None),Err(NativeExecutionError::Arithmetic{node}) if node==plan.lets()[0].node())
++            );
++            assert_eq!(output, before);
++            let recovery = inputs(
++                &artifact,
++                &[
++                    ("left", NativeScalarValue::I64(7)),
++                    ("right", NativeScalarValue::I64(2)),
++                ],
++            );
++            jit.evaluate_into(
++                &recovery,
++                &mut output,
++                NativeExecutionLimits::default(),
++                None,
++            )
++            .unwrap();
++            assert_eq!(output, reference(&artifact, &recovery).unwrap());
++        }
++    }
++}
++#[test]
++fn signed_denials_preserve_type_transport_and_first_error_order() {
++    let (artifact, _) = compile("unused := left<i64> / divisor<i64>\n-left<i64>\n");
++    let plan = lower_pure_native_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
++    assert_eq!(plan.lets().len(), 2);
++    let jit = JitArtifact::compile(&plan).unwrap();
++    let mut output = vec![NativeScalarValue::I64(55); plan.outputs().len()];
++    let before = output.clone();
++    let limits = NativeExecutionLimits {
++        max_work: 400,
++        ..NativeExecutionLimits::default()
++    };
++    let bad_first = inputs(
++        &artifact,
++        &[
++            ("left", NativeScalarValue::I64(i64::MIN)),
++            ("divisor", NativeScalarValue::I64(0)),
++        ],
++    );
++    assert!(
++        matches!(jit.evaluate_into(&bad_first,&mut output,limits,None),Err(NativeExecutionError::Arithmetic{node}) if node==plan.lets()[0].node())
++    );
++    assert_eq!(output, before);
++    let bad_later = inputs(
++        &artifact,
++        &[
++            ("left", NativeScalarValue::I64(i64::MIN)),
++            ("divisor", NativeScalarValue::I64(1)),
++        ],
++    );
++    assert!(
++        matches!(jit.evaluate_into(&bad_later,&mut output,limits,None),Err(NativeExecutionError::WorkLimit{phase:NativeExecutionPhase::Node(node),..}) if node==plan.lets()[1].node())
++    );
++    assert_eq!(output, before);
++    let mut wrong = bad_later.clone();
++    wrong[0] = NativeScalarValue::U64(0);
++    assert!(matches!(
++        jit.evaluate_into(&wrong, &mut output, NativeExecutionLimits::default(), None),
++        Err(NativeExecutionError::InputType {
++            expected: NativeScalarKind::I64,
++            ..
++        })
++    ));
++    assert_eq!(output, before);
++    assert!(matches!(
++        jit.evaluate_into(
++            &wrong,
++            &mut output,
++            NativeExecutionLimits {
++                max_work: 0,
++                ..NativeExecutionLimits::default()
++            },
++            None
++        ),
++        Err(NativeExecutionError::WorkLimit {
++            phase: NativeExecutionPhase::Setup,
++            ..
++        })
++    ));
++    assert_eq!(output, before);
++}
++#[test]
++fn signed_object_identity_is_typed_and_emission_is_not_execution() {
++    let (artifact, _) = compile("left<i64> + right<i64>\n");
++    let plan = lower_pure_native_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
++    let object = emit_object(&plan).unwrap();
++    assert!(!object.bytes().is_empty());
++    assert!(
++        object
++            .descriptor()
++            .inputs()
++            .iter()
++            .all(|value| value.kind() == NativeScalarKind::I64)
++    );
++    assert_eq!(object.metadata()["executed"], false);
++    assert_eq!(object.metadata()["linked"], false);
++    assert_eq!(object.metadata()["timing_samples"], 0);
++}
+diff --git a/hosts/gpu/tests/canonical_artifact_native.rs b/hosts/gpu/tests/canonical_artifact_native.rs
+--- a/hosts/gpu/tests/canonical_artifact_native.rs
++++ b/hosts/gpu/tests/canonical_artifact_native.rs
+@@ -85,6 +85,7 @@
+                 data: match value {
+                     NativeScalarValue::Bool(v) => ValueDataDraft::Bool(*v),
+                     NativeScalarValue::U64(v) => ValueDataDraft::U64(*v),
++                    NativeScalarValue::I64(v) => ValueDataDraft::I64(*v),
+                 },
+             }
+             .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+@@ -116,6 +117,7 @@
+             |index| match instance.copied_output(index).unwrap().data() {
+                 ValueData::Bool(v) => NativeScalarValue::Bool(*v),
+                 ValueData::U64(v) => NativeScalarValue::U64(*v),
++                ValueData::I64(v) => NativeScalarValue::I64(*v),
+                 v => panic!("unexpected scalar {v:?}"),
+             },
+         )
+diff --git a/src/engine/Cargo.toml b/src/engine/Cargo.toml
+--- a/src/engine/Cargo.toml
++++ b/src/engine/Cargo.toml
+@@ -30,7 +30,7 @@
+   "dep:libm",
+   "f64", "matrixd", "row_vectord",
+ ]
+-native-artifact = ["std", "resident-artifact", "bool", "u64"]
++native-artifact = ["std", "resident-artifact", "bool", "u64", "i64"]
+ native-plan = ["runtime", "mech-core/native-plan"]
+ native-link = ["runtime"]
+ source = ["runtime", "artifact-codec", "dep:mech-syntax", "mech-core/range"]
+diff --git a/src/engine/src/native_artifact/ir.rs b/src/engine/src/native_artifact/ir.rs
+--- a/src/engine/src/native_artifact/ir.rs
++++ b/src/engine/src/native_artifact/ir.rs
+@@ -3,11 +3,12 @@
+     SchemaId, SchemaKey,
+ };
+ 
+-/// Exact semantic kinds supported by the first canonical native adapter.
++/// Exact semantic kinds supported by the canonical scalar native adapter.
+ #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+ pub enum NativeScalarKind {
+     Bool,
+     U64,
++    I64,
+ }
+ 
+ /// Checked operations certified by the actual selected maintained binder.
+@@ -31,12 +32,25 @@
+     BoolNot,
+     BoolEq,
+     BoolNe,
++    I64Add,
++    I64Sub,
++    I64Mul,
++    I64Div,
++    I64Rem,
++    I64Neg,
++    I64Eq,
++    I64Ne,
++    I64Lt,
++    I64Le,
++    I64Gt,
++    I64Ge,
+ }
+ 
+ #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+ pub enum NativeScalarValue {
+     Bool(bool),
+     U64(u64),
++    I64(i64),
+ }
+ 
+ /// An artifact value identity. A local is evaluated by its one ordered Let;
+diff --git a/src/engine/src/resident/general/mod.rs b/src/engine/src/resident/general/mod.rs
+--- a/src/engine/src/resident/general/mod.rs
++++ b/src/engine/src/resident/general/mod.rs
+@@ -13818,8 +13818,8 @@
+ }
+ 
+ // Native scalar slots are planned as actual host scalar storage, not relabeled
+-// resident canonical handles. The first native artifact slice admits only these
+-// two exact scalar schemas; other backends/layouts need their own derivation.
++// resident canonical handles. Only the certified exact scalar schemas are
++// admitted; other backends/layouts need their own derivation.
+ fn operation_storage_descriptor(
+     descriptor: &mech_core::ResolvedValueDescriptor,
+     resident_kind: ResidentValueKind,
+@@ -13839,6 +13839,9 @@
+         SchemaBody::Bool => mech_core::FunctionValueRepresentation::Bool,
+         SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64) => {
+             mech_core::FunctionValueRepresentation::U64
++        }
++        SchemaBody::SignedInteger(mech_core::IntegerWidth::W64) => {
++            mech_core::FunctionValueRepresentation::I64
+         }
+         _ => return Err(MemoryPlanError::UnsupportedStorageLayout),
+     };
+diff --git a/src/engine/src/resident/general/native_lowering.rs b/src/engine/src/resident/general/native_lowering.rs
+--- a/src/engine/src/resident/general/native_lowering.rs
++++ b/src/engine/src/resident/general/native_lowering.rs
+@@ -77,7 +77,7 @@
+ /// metadata; it never activates a program, observes an input, runs a kernel,
+ /// folds a computation, or reconstructs a program from source names.
+ ///
+-/// The initial slice is stateless Turn-only Bool/U64. Computed Activation
++/// The scalar slice is stateless Turn-only Bool/U64/I64. Computed Activation
+ /// nodes are rejected even when their result could have been constant-folded.
+ pub fn lower_pure_native_artifact(
+     artifact: &ProgramArtifact,
+@@ -236,6 +236,9 @@
+             (NativeScalarKind::U64, mech_core::ValueData::U64(value)) => {
+                 NativeScalarValue::U64(*value)
+             }
++            (NativeScalarKind::I64, mech_core::ValueData::I64(value)) => {
++                NativeScalarValue::I64(*value)
++            }
+             _ => {
+                 return Err(NativeArtifactLoweringError::UnsupportedSchema {
+                     schema: value.schema(),
+@@ -368,6 +371,7 @@
+     let kind = match schema.body() {
+         SchemaBody::Bool => NativeScalarKind::Bool,
+         SchemaBody::UnsignedInteger(IntegerWidth::W64) => NativeScalarKind::U64,
++        SchemaBody::SignedInteger(IntegerWidth::W64) => NativeScalarKind::I64,
+         _ => return Err(NativeArtifactLoweringError::UnsupportedSchema { schema: id }),
+     };
+     let shape = schema
+@@ -389,7 +393,7 @@
+         schema_key: ty.schema_key,
+         kind: match ty.kind {
+             NativeScalarKind::Bool => ResidentValueKind::Bool,
+-            NativeScalarKind::U64 => ResidentValueKind::Snapshot,
++            NativeScalarKind::U64 | NativeScalarKind::I64 => ResidentValueKind::Snapshot,
+         },
+         shape: ResidentShape::SCALAR,
+         shape_instance: ty.descriptor.shape().clone(),
+@@ -415,6 +419,7 @@
+     match kind {
+         native_semantics::NativeScalarKind::Bool => NativeScalarKind::Bool,
+         native_semantics::NativeScalarKind::U64 => NativeScalarKind::U64,
++        native_semantics::NativeScalarKind::I64 => NativeScalarKind::I64,
+     }
+ }
+ fn public_op(op: native_semantics::NativeScalarOp) -> NativeScalarOp {
+@@ -437,5 +442,17 @@
+         Private::BoolNot => NativeScalarOp::BoolNot,
+         Private::BoolEq => NativeScalarOp::BoolEq,
+         Private::BoolNe => NativeScalarOp::BoolNe,
+-    }
+-}
++        Private::I64Add => NativeScalarOp::I64Add,
++        Private::I64Sub => NativeScalarOp::I64Sub,
++        Private::I64Mul => NativeScalarOp::I64Mul,
++        Private::I64Div => NativeScalarOp::I64Div,
++        Private::I64Rem => NativeScalarOp::I64Rem,
++        Private::I64Neg => NativeScalarOp::I64Neg,
++        Private::I64Eq => NativeScalarOp::I64Eq,
++        Private::I64Ne => NativeScalarOp::I64Ne,
++        Private::I64Lt => NativeScalarOp::I64Lt,
++        Private::I64Le => NativeScalarOp::I64Le,
++        Private::I64Gt => NativeScalarOp::I64Gt,
++        Private::I64Ge => NativeScalarOp::I64Ge,
++    }
++}
+diff --git a/src/engine/src/resident/native_semantics.rs b/src/engine/src/resident/native_semantics.rs
+--- a/src/engine/src/resident/native_semantics.rs
++++ b/src/engine/src/resident/native_semantics.rs
+@@ -17,6 +17,7 @@
+ pub(crate) enum NativeScalarKind {
+     Bool,
+     U64,
++    I64,
+ }
+ 
+ #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+@@ -38,6 +39,18 @@
+     BoolNot,
+     BoolEq,
+     BoolNe,
++    I64Add,
++    I64Sub,
++    I64Mul,
++    I64Div,
++    I64Rem,
++    I64Neg,
++    I64Eq,
++    I64Ne,
++    I64Lt,
++    I64Le,
++    I64Gt,
++    I64Ge,
+ }
+ 
+ #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+@@ -51,18 +64,23 @@
+         self.op
+     }
+     pub(crate) fn inputs(&self) -> &'static [NativeScalarKind] {
+-        use NativeScalarKind::{Bool, U64};
++        use NativeScalarKind::{Bool, I64, U64};
+         use NativeScalarOp::*;
+         match self.op {
+             BoolNot => &[Bool],
+             BoolAnd | BoolOr | BoolXor | BoolEq | BoolNe => &[Bool, Bool],
+-            _ => &[U64, U64],
++            U64Add | U64Sub | U64Mul | U64Div | U64Rem | U64Eq | U64Ne | U64Lt | U64Le | U64Gt
++            | U64Ge => &[U64, U64],
++            I64Neg => &[I64],
++            I64Add | I64Sub | I64Mul | I64Div | I64Rem | I64Eq | I64Ne | I64Lt | I64Le | I64Gt
++            | I64Ge => &[I64, I64],
+         }
+     }
+     pub(crate) fn output(self) -> NativeScalarKind {
+         use NativeScalarOp::*;
+         match self.op {
+             U64Add | U64Sub | U64Mul | U64Div | U64Rem => NativeScalarKind::U64,
++            I64Add | I64Sub | I64Mul | I64Div | I64Rem | I64Neg => NativeScalarKind::I64,
+             _ => NativeScalarKind::Bool,
+         }
+     }
+@@ -93,6 +111,7 @@
+     let expected = match kind {
+         NativeScalarKind::Bool => SchemaBody::Bool,
+         NativeScalarKind::U64 => SchemaBody::UnsignedInteger(IntegerWidth::W64),
++        NativeScalarKind::I64 => SchemaBody::SignedInteger(IntegerWidth::W64),
+     };
+     entry.key() == port.schema_key
+         && entry.schema().body() == &expected
+@@ -103,7 +122,7 @@
+         && port.kind
+             == match kind {
+                 NativeScalarKind::Bool => ResidentValueKind::Bool,
+-                NativeScalarKind::U64 => ResidentValueKind::Snapshot,
++                NativeScalarKind::U64 | NativeScalarKind::I64 => ResidentValueKind::Snapshot,
+             }
+ }
+ 
+@@ -116,6 +135,14 @@
+     };
+     let [output] = contract.outputs.as_ref() else {
+         return false;
++    };
++    // Unary negation has the maintained SameAsInput contract. Keep that
++    // authority specific to this checked signed operation; binary arithmetic,
++    // comparisons and BoolNot retain their exact Declared contract.
++    let shape = if semantics.op == NativeScalarOp::I64Neg {
++        ShapeRule::SameAsInput { input: 0 }
++    } else {
++        ShapeRule::Declared
+     };
+     request.inputs.len() == semantics.inputs().len()
+         && contract.inputs.len() == request.inputs.len()
+@@ -132,10 +159,7 @@
+         && output.schema == request.output.schema_id
+         && output.access == AccessMode::Write
+         && output.delivery == DeliveryMode::Signal
+-        && output.construction
+-            == (OutputConstruction::FullWrite {
+-                shape: ShapeRule::Declared,
+-            })
++        && output.construction == (OutputConstruction::FullWrite { shape })
+         && output.alias == AliasPolicy::NoAlias
+         && output.change_detection == ChangeDetectionPolicy::ExactScalar
+         && request
+@@ -269,6 +293,7 @@
+             let handles = [
+                 SchemaBody::Bool,
+                 SchemaBody::UnsignedInteger(IntegerWidth::W64),
++                SchemaBody::SignedInteger(IntegerWidth::W64),
+             ]
+             .into_iter()
+             .map(|body| {
+@@ -295,13 +320,16 @@
+                 let schema_id = match kind {
+                     NativeScalarKind::Bool => ids[0],
+                     NativeScalarKind::U64 => ids[1],
++                    NativeScalarKind::I64 => ids[2],
+                 };
+                 ResidentPortLayout {
+                     schema_id,
+                     schema_key: schemas.entry(schema_id).unwrap().key(),
+                     kind: match kind {
+                         NativeScalarKind::Bool => ResidentValueKind::Bool,
+-                        NativeScalarKind::U64 => ResidentValueKind::Snapshot,
++                        NativeScalarKind::U64 | NativeScalarKind::I64 => {
++                            ResidentValueKind::Snapshot
++                        }
+                     },
+                     shape: ResidentShape::SCALAR,
+                     shape_instance: schemas
+@@ -336,7 +364,11 @@
+                     access: AccessMode::Write,
+                     delivery: DeliveryMode::Signal,
+                     construction: OutputConstruction::FullWrite {
+-                        shape: ShapeRule::Declared,
++                        shape: if op == NativeScalarOp::I64Neg {
++                            ShapeRule::SameAsInput { input: 0 }
++                        } else {
++                            ShapeRule::Declared
++                        },
+                     },
+                     alias: AliasPolicy::NoAlias,
+                     change_detection: ChangeDetectionPolicy::ExactScalar,
+@@ -438,6 +470,78 @@
+     }
+ 
+     #[test]
++    #[cfg(feature = "i64")]
++    fn signed_scalar_branches_seal_only_their_exact_finished_contracts() {
++        use NativeScalarOp::*;
++        let catalog = catalog();
++        for (module, name, op) in [
++            ("math", "add", I64Add),
++            ("math", "sub", I64Sub),
++            ("math", "mul", I64Mul),
++            ("math", "div", I64Div),
++            ("math", "mod", I64Rem),
++            ("math", "neg", I64Neg),
++            ("compare", "eq", I64Eq),
++            ("compare", "neq", I64Ne),
++            ("compare", "lt", I64Lt),
++            ("compare", "lte", I64Le),
++            ("compare", "gt", I64Gt),
++            ("compare", "gte", I64Ge),
++        ] {
++            let binding = Binding::scalar(op);
++            let kernel = binding.bind(&catalog, module, name);
++            assert!(validated_scalar(&kernel).is_none());
++            let sealed = bind_call(
++                kernel.clone(),
++                &binding.request(),
++                binding.call(module, name),
++            );
++            assert_eq!(validated_scalar(&sealed).map(|value| value.op()), Some(op));
++            assert_eq!(
++                validated_scalar(&sealed.clone()).map(|value| value.op()),
++                Some(op)
++            );
++            assert!(validated_scalar(&sealed.with_retained_state(Arc::new(0u64))).is_none());
++            let changed = kernel
++                .clone()
++                .with_snapshot_schemas(binding.schemas.clone());
++            assert!(
++                validated_scalar(&bind_call(
++                    changed,
++                    &binding.request(),
++                    binding.call(module, name)
++                ))
++                .is_none()
++            );
++        }
++        let mut unary = Binding::scalar(I64Neg);
++        let semantics = NativeScalarSemantics { op: I64Neg };
++        assert!(scalar_request(&unary.request(), semantics));
++        let ResolvedOperationContract::Declared(contract) = &mut unary.contract else {
++            unreachable!()
++        };
++        contract.outputs[0].construction = OutputConstruction::FullWrite {
++            shape: ShapeRule::Declared,
++        };
++        assert!(!scalar_request(&unary.request(), semantics));
++        let mut binary = Binding::scalar(I64Add);
++        let ResolvedOperationContract::Declared(contract) = &mut binary.contract else {
++            unreachable!()
++        };
++        contract.outputs[0].construction = OutputConstruction::FullWrite {
++            shape: ShapeRule::SameAsInput { input: 0 },
++        };
++        assert!(!scalar_request(
++            &binary.request(),
++            NativeScalarSemantics { op: I64Add }
++        ));
++        assert!(!scalar_request(
++            &Binding::scalar(U64Add).request(),
++            NativeScalarSemantics { op: I64Add }
++        ));
++    }
++
++    #[test]
+     fn every_delegated_semantic_or_cost_change_loses_private_authority() {
+         let binding = Binding::scalar(NativeScalarOp::U64Add);
+         let kernel = binding.bind(&catalog(), "math", "add");
+diff --git a/src/engine/src/resident/numeric/mod.rs b/src/engine/src/resident/numeric/mod.rs
+--- a/src/engine/src/resident/numeric/mod.rs
++++ b/src/engine/src/resident/numeric/mod.rs
+@@ -2395,13 +2395,22 @@
+     } else {
+         kernel
+     };
+-    let op = match comparison {
+-        SemanticComparison::Equal => super::native_semantics::NativeScalarOp::U64Eq,
+-        SemanticComparison::NotEqual => super::native_semantics::NativeScalarOp::U64Ne,
+-        SemanticComparison::Less => super::native_semantics::NativeScalarOp::U64Lt,
+-        SemanticComparison::LessEqual => super::native_semantics::NativeScalarOp::U64Le,
+-        SemanticComparison::Greater => super::native_semantics::NativeScalarOp::U64Gt,
+-        SemanticComparison::GreaterEqual => super::native_semantics::NativeScalarOp::U64Ge,
++    let op = match (
++        left_element == &SchemaBody::SignedInteger(IntegerWidth::W64),
++        comparison,
++    ) {
++        (false, SemanticComparison::Equal) => super::native_semantics::NativeScalarOp::U64Eq,
++        (false, SemanticComparison::NotEqual) => super::native_semantics::NativeScalarOp::U64Ne,
++        (false, SemanticComparison::Less) => super::native_semantics::NativeScalarOp::U64Lt,
++        (false, SemanticComparison::LessEqual) => super::native_semantics::NativeScalarOp::U64Le,
++        (false, SemanticComparison::Greater) => super::native_semantics::NativeScalarOp::U64Gt,
++        (false, SemanticComparison::GreaterEqual) => super::native_semantics::NativeScalarOp::U64Ge,
++        (true, SemanticComparison::Equal) => super::native_semantics::NativeScalarOp::I64Eq,
++        (true, SemanticComparison::NotEqual) => super::native_semantics::NativeScalarOp::I64Ne,
++        (true, SemanticComparison::Less) => super::native_semantics::NativeScalarOp::I64Lt,
++        (true, SemanticComparison::LessEqual) => super::native_semantics::NativeScalarOp::I64Le,
++        (true, SemanticComparison::Greater) => super::native_semantics::NativeScalarOp::I64Gt,
++        (true, SemanticComparison::GreaterEqual) => super::native_semantics::NativeScalarOp::I64Ge,
+     };
+     Ok(super::native_semantics::certify(request, kernel, op))
+ }
+@@ -3277,13 +3286,21 @@
+     } else {
+         kernel
+     };
+-    let op = match arithmetic {
+-        SemanticArithmetic::Add => super::native_semantics::NativeScalarOp::U64Add,
+-        SemanticArithmetic::Subtract => super::native_semantics::NativeScalarOp::U64Sub,
+-        SemanticArithmetic::Multiply => super::native_semantics::NativeScalarOp::U64Mul,
+-        SemanticArithmetic::Divide => super::native_semantics::NativeScalarOp::U64Div,
+-        SemanticArithmetic::Remainder => super::native_semantics::NativeScalarOp::U64Rem,
+-        SemanticArithmetic::Power => return Ok(kernel),
++    let op = match (
++        output_element == &SchemaBody::SignedInteger(IntegerWidth::W64),
++        arithmetic,
++    ) {
++        (false, SemanticArithmetic::Add) => super::native_semantics::NativeScalarOp::U64Add,
++        (false, SemanticArithmetic::Subtract) => super::native_semantics::NativeScalarOp::U64Sub,
++        (false, SemanticArithmetic::Multiply) => super::native_semantics::NativeScalarOp::U64Mul,
++        (false, SemanticArithmetic::Divide) => super::native_semantics::NativeScalarOp::U64Div,
++        (false, SemanticArithmetic::Remainder) => super::native_semantics::NativeScalarOp::U64Rem,
++        (true, SemanticArithmetic::Add) => super::native_semantics::NativeScalarOp::I64Add,
++        (true, SemanticArithmetic::Subtract) => super::native_semantics::NativeScalarOp::I64Sub,
++        (true, SemanticArithmetic::Multiply) => super::native_semantics::NativeScalarOp::I64Mul,
++        (true, SemanticArithmetic::Divide) => super::native_semantics::NativeScalarOp::I64Div,
++        (true, SemanticArithmetic::Remainder) => super::native_semantics::NativeScalarOp::I64Rem,
++        (_, SemanticArithmetic::Power) => return Ok(kernel),
+     };
+     Ok(super::native_semantics::certify(request, kernel, op))
+ }
+@@ -3315,12 +3332,17 @@
+     {
+         return Err(ResidentKernelBindError::UnsupportedLayout);
+     }
+-    Ok(bound(
++    let kernel = bound(
+         snapshot_numeric_negate,
+         vec![output_shape.rows as u64, output_shape.columns as u64].into_boxed_slice(),
+     )?
+     .with_snapshot_output(snapshot_output_metadata(request))
+-    .with_snapshot_schemas(request.schemas.clone()))
++    .with_snapshot_schemas(request.schemas.clone());
++    Ok(super::native_semantics::certify(
++        request,
++        kernel,
++        super::native_semantics::NativeScalarOp::I64Neg,
++    ))
+ }
+ 
+ fn bind_snapshot_numeric_abs(
+diff --git a/src/stdlib/Cargo.toml b/src/stdlib/Cargo.toml
+--- a/src/stdlib/Cargo.toml
++++ b/src/stdlib/Cargo.toml
+@@ -379,3 +379,7 @@
+ [[test]]
+ name = "native_artifact_lowering"
+ required-features = ["full_compiler", "native-artifact"]
++
++[[test]]
++name = "native_artifact_i64_lowering"
++required-features = ["full_compiler", "native-artifact"]
+diff --git a/src/stdlib/tests/native_artifact_i64_lowering.rs b/src/stdlib/tests/native_artifact_i64_lowering.rs
+new file mode 100644
+--- /dev/null
++++ b/src/stdlib/tests/native_artifact_i64_lowering.rs
+@@ -0,0 +1,204 @@
++//! Metadata-only signed scalar lowering uses the selected private binder proof.
++#![cfg(all(feature = "full_compiler", feature = "native-artifact"))]
++use mech_core::{
++    BoundResidentKernel, ExecutionTarget, FunctionCatalogBuilder, ImplementationMemoryClass,
++    IntegerWidth, MemorySpace, MemoryTargetKind, PlannedSlotKind, ResidentKernelBindError,
++    ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs,
++    ResidentKernelWorkAccounting, ResidentValueMut, ScalarMemoryKind,
++};
++use mech_engine::native_artifact::{
++    NativeArtifactLoweringError, NativeScalarKind, NativeScalarOp, NativeScalarValue,
++    NativeValueRef, lower_pure_native_artifact,
++};
++use mech_engine::{CanonicalSourceFrontend, ProgramArtifact};
++use mech_syntax::document::{
++    AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
++    parse_canonical_document,
++};
++use std::sync::atomic::{AtomicUsize, Ordering};
++
++fn artifacts(source: &str) -> [ProgramArtifact; 2] {
++    let parsed = parse_canonical_document(
++        TextSnapshot::new(DocumentId(0x494e4154495645), Revision(1), source).unwrap(),
++        ParseConfig::default(),
++    );
++    assert!(
++        parsed.is_strictly_clean(),
++        "{source}: {:?}",
++        parsed.diagnostics
++    );
++    let original = CanonicalSourceFrontend
++        .compile_document_with_catalog(
++            &DocumentSyntax::cast(parsed.syntax()).unwrap(),
++            mech_stdlib::source_catalog(),
++        )
++        .unwrap_or_else(|error| panic!("{source}: {error:?}"))
++        .compile_artifact()
++        .unwrap();
++    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap();
++    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
++    assert_eq!(original.revision(), decoded.revision());
++    assert_eq!(
++        encoded,
++        mech_engine::encode_program_artifact_bytecode_v1(&decoded).unwrap()
++    );
++    [original, decoded]
++}
++
++#[test]
++fn all_signed_scalar_binders_have_exact_typed_native_host_plans() {
++    use NativeScalarOp::*;
++    for (source, expected, result) in [
++        ("left<i64> + right<i64>\n", I64Add, NativeScalarKind::I64),
++        ("left<i64> - right<i64>\n", I64Sub, NativeScalarKind::I64),
++        ("left<i64> * right<i64>\n", I64Mul, NativeScalarKind::I64),
++        ("left<i64> / right<i64>\n", I64Div, NativeScalarKind::I64),
++        ("left<i64> % right<i64>\n", I64Rem, NativeScalarKind::I64),
++        ("-left<i64>\n", I64Neg, NativeScalarKind::I64),
++        ("left<i64> == right<i64>\n", I64Eq, NativeScalarKind::Bool),
++        ("left<i64> != right<i64>\n", I64Ne, NativeScalarKind::Bool),
++        ("left<i64> < right<i64>\n", I64Lt, NativeScalarKind::Bool),
++        ("left<i64> <= right<i64>\n", I64Le, NativeScalarKind::Bool),
++        ("left<i64> > right<i64>\n", I64Gt, NativeScalarKind::Bool),
++        ("left<i64> >= right<i64>\n", I64Ge, NativeScalarKind::Bool),
++    ] {
++        for artifact in artifacts(source) {
++            let plan =
++                lower_pure_native_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
++            assert_eq!(plan.lets().len(), 1);
++            let node = &plan.lets()[0];
++            assert_eq!(node.op(), expected);
++            assert_eq!(node.ty().kind(), result);
++            assert!(
++                plan.inputs()
++                    .iter()
++                    .all(|input| input.ty().kind() == NativeScalarKind::I64)
++            );
++            assert_eq!(
++                node.operands().len(),
++                if expected == I64Neg { 1 } else { 2 }
++            );
++            let call = node.memory_plan();
++            assert_eq!(call.target.kind, MemoryTargetKind::NativeHost);
++            assert_eq!(call.bound_call.target(), ExecutionTarget::Native);
++            assert!(call.deferred_witnesses.is_empty());
++            for storage in call.input_storage.iter() {
++                assert_eq!(storage.space, MemorySpace::Host);
++                assert_eq!(
++                    storage.slot,
++                    PlannedSlotKind::FixedScalar(ScalarMemoryKind::Signed(IntegerWidth::W64))
++                );
++            }
++            let output = &call.output_storage[0];
++            assert_eq!(output.space, MemorySpace::Host);
++            assert_eq!(
++                output.slot,
++                PlannedSlotKind::FixedScalar(if result == NativeScalarKind::Bool {
++                    ScalarMemoryKind::Bool
++                } else {
++                    ScalarMemoryKind::Signed(IntegerWidth::W64)
++                })
++            );
++        }
++    }
++}
++
++#[test]
++fn signed_constants_aliases_and_dead_checked_nodes_keep_their_artifact_identity() {
++    for artifact in artifacts("value := 9223372036854775807i64\nvalue\nlive<i64>\n") {
++        let plan = lower_pure_native_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
++        assert!(plan.lets().is_empty());
++        assert!(
++            plan.constants()
++                .iter()
++                .any(|constant| constant.value() == NativeScalarValue::I64(i64::MAX))
++        );
++        assert!(
++            plan.inputs()
++                .iter()
++                .all(|input| input.ty().kind() == NativeScalarKind::I64)
++        );
++        assert_eq!(plan.outputs().len(), artifact.outputs().len());
++        for output in plan.outputs() {
++            assert_eq!(output.ty().kind(), NativeScalarKind::I64);
++            assert!(matches!(
++                output.value(),
++                NativeValueRef::Constant(_) | NativeValueRef::Input(_)
++            ));
++        }
++    }
++    for artifact in artifacts("unused := left<i64> / 0i64\n-right<i64>\n42i64\n") {
++        let plan = lower_pure_native_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
++        assert_eq!(plan.lets().len(), artifact.nodes().len());
++        assert_eq!(
++            plan.lets().iter().map(|node| node.op()).collect::<Vec<_>>(),
++            [NativeScalarOp::I64Div, NativeScalarOp::I64Neg]
++        );
++        assert_eq!(
++            plan.lets()
++                .iter()
++                .map(|node| node.node())
++                .collect::<Vec<_>>(),
++            artifact
++                .nodes()
++                .iter()
++                .map(|node| node.node)
++                .collect::<Vec<_>>()
++        );
++    }
++}
++
++static CUSTOM_BINDS: AtomicUsize = AtomicUsize::new(0);
++fn forbidden_executor(
++    _: &BoundResidentKernel,
++    _: &dyn ResidentKernelInputs,
++    _: ResidentValueMut<'_>,
++) -> Result<bool, ResidentKernelError> {
++    panic!("metadata lowering must never execute a selected kernel")
++}
++fn replacement_factory(
++    _: &ResidentKernelBindRequest<'_>,
++) -> Result<BoundResidentKernel, ResidentKernelBindError> {
++    CUSTOM_BINDS.fetch_add(1, Ordering::SeqCst);
++    Ok(BoundResidentKernel::new(forbidden_executor, Box::new([]))
++        .with_work_accounting(ResidentKernelWorkAccounting::RuntimeMetered))
++}
++
++#[test]
++fn signed_extension_preserves_scope_kind_and_selected_implementation_boundaries() {
++    for source in [
++        "1i64 / 0i64\n",
++        "~state := 0i64\nstate\n",
++        "left<i32> + right<i32>\n",
++        "left<f64> + right<f64>\n",
++        "values<[i64]:1,1>\n",
++        "flag<bool>? | true => left<i64> | false => right<i64>\n",
++    ] {
++        for artifact in artifacts(source) {
++            assert!(
++                lower_pure_native_artifact(&artifact, &mech_stdlib::source_catalog()).is_err(),
++                "{source}"
++            );
++        }
++    }
++    let mut builder = FunctionCatalogBuilder::new();
++    builder
++        .insert_resident_factory(
++            ["math"],
++            "add",
++            ImplementationMemoryClass::NoAdditionalScratch,
++            replacement_factory,
++        )
++        .unwrap();
++    let catalog = builder.build().unwrap();
++    CUSTOM_BINDS.store(0, Ordering::SeqCst);
++    for artifact in artifacts("left<i64> + right<i64>\n") {
++        assert_eq!(
++            lower_pure_native_artifact(&artifact, &catalog).unwrap_err(),
++            NativeArtifactLoweringError::MissingSemanticWitness {
++                node: artifact.nodes()[0].node
++            }
++        );
++    }
++    assert_eq!(CUSTOM_BINDS.load(Ordering::SeqCst), 2);
++}

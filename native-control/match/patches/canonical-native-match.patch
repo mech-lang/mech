@@ -1,0 +1,3225 @@
+diff --git a/hosts/gpu/src/native_artifact/compiler.rs b/hosts/gpu/src/native_artifact/compiler.rs
+--- a/hosts/gpu/src/native_artifact/compiler.rs
++++ b/hosts/gpu/src/native_artifact/compiler.rs
+@@ -60,10 +60,14 @@
+     }
+ }
+ impl std::error::Error for NativeCompileError {}
+-fn backend(error: impl std::fmt::Display) -> NativeCompileError {
++pub(super) fn backend(error: impl std::fmt::Display) -> NativeCompileError {
+     NativeCompileError::Backend(error.to_string())
+ }
+-fn limit(dimension: &'static str, required: u64, maximum: u64) -> Result<(), NativeCompileError> {
++pub(super) fn limit(
++    dimension: &'static str,
++    required: u64,
++    maximum: u64,
++) -> Result<(), NativeCompileError> {
+     if required > maximum {
+         Err(NativeCompileError::Limit {
+             dimension,
+@@ -74,7 +78,7 @@
+         Ok(())
+     }
+ }
+-fn host_supported() -> Result<(), NativeCompileError> {
++pub(super) fn host_supported() -> Result<(), NativeCompileError> {
+     if !cfg!(all(
+         target_pointer_width = "64",
+         any(target_arch = "x86_64", target_arch = "aarch64")
+@@ -297,7 +301,7 @@
+             .load(types::I64, MemFlags::new(), base, offset(index)?))
+     }
+ }
+-fn offset(index: usize) -> Result<i32, NativeCompileError> {
++pub(super) fn offset(index: usize) -> Result<i32, NativeCompileError> {
+     index
+         .checked_mul(8)
+         .and_then(|v| i32::try_from(v).ok())
+@@ -306,17 +310,17 @@
+             reason: "transport offset exceeds ABI",
+         })
+ }
+-fn guard(b: &mut FunctionBuilder<'_>, valid: Value, error: Block, status: u64) {
++pub(super) fn guard(b: &mut FunctionBuilder<'_>, valid: Value, error: Block, status: u64) {
+     let good = b.create_block();
+     let status = b.ins().iconst(types::I64, status as i64);
+     b.ins().brif(valid, good, &[], error, &[status.into()]);
+     b.switch_to_block(good);
+ }
+-fn frame_load(b: &mut FunctionBuilder<'_>, frame: Value, offset: usize) -> Value {
++pub(super) fn frame_load(b: &mut FunctionBuilder<'_>, frame: Value, offset: usize) -> Value {
+     b.ins()
+         .load(types::I64, MemFlags::new(), frame, offset as i32)
+ }
+-fn set_origin(b: &mut FunctionBuilder<'_>, frame: Value, node: u64) {
++pub(super) fn set_origin(b: &mut FunctionBuilder<'_>, frame: Value, node: u64) {
+     let word = b.ins().iconst(types::I64, node as i64);
+     b.ins().store(
+         MemFlags::new(),
+@@ -325,7 +329,7 @@
+         core::mem::offset_of!(NativeEntryFrame, error_node) as i32,
+     );
+ }
+-fn admit(
++pub(super) fn admit(
+     b: &mut FunctionBuilder<'_>,
+     sig: cranelift_codegen::ir::SigRef,
+     callback: Value,
+@@ -339,7 +343,7 @@
+     let valid = b.ins().icmp_imm(IntCC::Equal, status, STATUS_OK as i64);
+     guard(b, valid, error, STATUS_ADMISSION);
+ }
+-fn signature(op: NativeScalarOp) -> (&'static [NativeScalarKind], NativeScalarKind) {
++pub(super) fn signature(op: NativeScalarOp) -> (&'static [NativeScalarKind], NativeScalarKind) {
+     use NativeScalarKind::{Bool, U64};
+     use NativeScalarOp::*;
+     match op {
+@@ -349,7 +353,7 @@
+         BoolAnd | BoolOr | BoolXor | BoolEq | BoolNe => (&[Bool, Bool], Bool),
+     }
+ }
+-fn primitive(
++pub(super) fn primitive(
+     b: &mut FunctionBuilder<'_>,
+     op: NativeScalarOp,
+     args: &[Value],
+@@ -633,7 +637,7 @@
+     Ok((entry_id, descriptor))
+ }
+ 
+-fn compiled_stack_bytes(
++pub(super) fn compiled_stack_bytes(
+     buffer: &cranelift_codegen::MachBufferFinalized<cranelift_codegen::Final>,
+ ) -> Result<u64, NativeCompileError> {
+     let layout = buffer
+diff --git a/hosts/gpu/src/native_artifact/control_abi.rs b/hosts/gpu/src/native_artifact/control_abi.rs
+new file mode 100644
+--- /dev/null
++++ b/hosts/gpu/src/native_artifact/control_abi.rs
+@@ -0,0 +1,133 @@
++//! Versioned scalar CFG ABI, separate from the frozen straight-line protocol.
++use super::{NativeCompileError, abi::NativeEntryFrame, compiler::backend};
++use mech_engine::native_artifact::{
++    NativeMatchAction, NativeMatchArtifactPlan, NativeMatchOrigin, NativeMatchTerminator,
++    NativeScalarType,
++};
++
++pub(super) const VERSION: u64 = 2;
++pub(super) const ENTRY: &str = "mech_canonical_scalar_match_entry_v1";
++pub(super) const STATUS_REJECT: u64 = 4;
++pub(super) type Entry = unsafe extern "C" fn(*mut NativeEntryFrame) -> u64;
++
++#[derive(Clone, Debug)]
++pub struct NativeMatchVisit {
++    pub(super) origin: NativeMatchOrigin,
++    pub(super) successors: [Option<u32>; 2],
++    pub(super) complete: bool,
++    pub(super) arithmetic: bool,
++    pub(super) work: u64,
++}
++impl NativeMatchVisit {
++    pub const fn origin(&self) -> NativeMatchOrigin {
++        self.origin
++    }
++    pub const fn successors(&self) -> [Option<u32>; 2] {
++        self.successors
++    }
++    pub const fn is_completion(&self) -> bool {
++        self.complete
++    }
++    pub const fn work(&self) -> u64 {
++        self.work
++    }
++}
++
++/// Immutable same-plan call metadata. There is no public constructor or codec.
++#[derive(Clone, Debug)]
++pub struct NativeMatchDescriptor {
++    pub(super) entry: u32,
++    pub(super) inputs: Box<[NativeScalarType]>,
++    pub(super) outputs: Box<[NativeScalarType]>,
++    pub(super) value_count: usize,
++    pub(super) constant_count: usize,
++    pub(super) visits: Box<[NativeMatchVisit]>,
++    pub(super) stack_bytes: u64,
++    pub(super) code_bytes: u64,
++    pub(super) identity: [u8; 32],
++}
++impl NativeMatchDescriptor {
++    pub(super) fn from_compiled(
++        plan: &NativeMatchArtifactPlan,
++        stack_bytes: u64,
++        code_bytes: u64,
++    ) -> Result<Self, NativeCompileError> {
++        let completion = (plan.outputs().len() as u64)
++            .checked_mul(8)
++            .and_then(|n| n.checked_add(128))
++            .ok_or_else(|| backend("Match completion work overflow"))?;
++        let visits = plan
++            .blocks()
++            .iter()
++            .map(|block| {
++                let (successors, complete) = match block.terminator() {
++                    NativeMatchTerminator::Jump(next) => ([Some(next), None], false),
++                    NativeMatchTerminator::Branch { yes, no, .. }
++                    | NativeMatchTerminator::LiteralBranch { yes, no, .. } => {
++                        ([Some(yes), Some(no)], false)
++                    }
++                    NativeMatchTerminator::Complete => ([None, None], true),
++                    NativeMatchTerminator::Reject => ([None, None], false),
++                };
++                let work = if complete {
++                    completion
++                } else {
++                    match block.action() {
++                        NativeMatchAction::Primitive { op, .. } => super::abi::primitive_work(*op),
++                        _ => 128,
++                    }
++                };
++                NativeMatchVisit {
++                    origin: block.origin(),
++                    successors,
++                    complete,
++                    arithmetic: matches!(block.action(), NativeMatchAction::Primitive { .. }),
++                    work,
++                }
++            })
++            .collect();
++        Ok(Self {
++            entry: plan.entry(),
++            inputs: plan
++                .inputs()
++                .iter()
++                .map(|input| input.declaration().ty().clone())
++                .collect(),
++            outputs: plan
++                .outputs()
++                .iter()
++                .map(|output| output.ty().clone())
++                .collect(),
++            value_count: plan.values().len(),
++            constant_count: plan.constants().len(),
++            visits,
++            stack_bytes,
++            code_bytes,
++            identity: super::control_identity::typed_ir_sha256(plan),
++        })
++    }
++    pub const fn entry(&self) -> u32 {
++        self.entry
++    }
++    pub fn inputs(&self) -> &[NativeScalarType] {
++        &self.inputs
++    }
++    pub fn outputs(&self) -> &[NativeScalarType] {
++        &self.outputs
++    }
++    pub const fn value_count(&self) -> usize {
++        self.value_count
++    }
++    pub fn visits(&self) -> &[NativeMatchVisit] {
++        &self.visits
++    }
++    pub const fn stack_bytes(&self) -> u64 {
++        self.stack_bytes
++    }
++    pub const fn code_bytes(&self) -> u64 {
++        self.code_bytes
++    }
++    pub fn typed_ir_sha256(&self) -> &[u8; 32] {
++        &self.identity
++    }
++}
+diff --git a/hosts/gpu/src/native_artifact/control_compiler.rs b/hosts/gpu/src/native_artifact/control_compiler.rs
+new file mode 100644
+--- /dev/null
++++ b/hosts/gpu/src/native_artifact/control_compiler.rs
+@@ -0,0 +1,620 @@
++//! Canonical scalar CFG definition shared by JIT and Object emission.
++use super::abi::{NO_NODE, NativeEntryFrame as Frame, STATUS_ABI, STATUS_OK};
++use super::compiler::{
++    admit, backend, compiled_stack_bytes, frame_load, guard, host_supported, limit, offset,
++    primitive, set_origin, signature,
++};
++use super::control_abi::{ENTRY, Entry, NativeMatchDescriptor, STATUS_REJECT, VERSION};
++use super::control_runtime::{NativeMatchExecutionError, NativeMatchExecutionReport};
++use super::{NativeCompileError, NativeCompileLimits, NativeExecutionLimits};
++use cranelift_codegen::{
++    ir::{AbiParam, InstBuilder, MemFlags, Value, condcodes::IntCC, types},
++    settings::{self, Configurable},
++};
++use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
++use cranelift_module::{DataDescription, FuncId, Linkage, Module, default_libcall_names};
++use cranelift_object::{ObjectBuilder, ObjectModule};
++use mech_core::ManagedMemoryBudget;
++use mech_engine::native_artifact::{
++    NativeMatchAction, NativeMatchArtifactPlan, NativeMatchTerminator, NativeMatchValue,
++    NativeScalarKind, NativeScalarValue,
++};
++use std::collections::VecDeque;
++
++pub struct JitMatchArtifact {
++    _module: cranelift_jit::JITModule,
++    entry: Entry,
++    descriptor: NativeMatchDescriptor,
++}
++impl JitMatchArtifact {
++    pub fn compile(plan: &NativeMatchArtifactPlan) -> Result<Self, NativeCompileError> {
++        Self::compile_with_limits(plan, NativeCompileLimits::default())
++    }
++    pub fn compile_with_limits(
++        plan: &NativeMatchArtifactPlan,
++        limits: NativeCompileLimits,
++    ) -> Result<Self, NativeCompileError> {
++        host_supported()?;
++        let builder = cranelift_jit::JITBuilder::with_flags(
++            &[
++                ("opt_level", "none"),
++                ("is_pic", "true"),
++                ("preserve_frame_pointers", "true"),
++                ("unwind_info", "true"),
++            ],
++            default_libcall_names(),
++        )
++        .map_err(backend)?;
++        let mut module = cranelift_jit::JITModule::new(builder);
++        let (function, descriptor) = define(plan, &mut module, limits)?;
++        module.finalize_definitions().map_err(backend)?;
++        // SAFETY: the one checked definition emits the private repr(C) ABI;
++        // this owner retains its module for every synchronous invocation.
++        let entry = unsafe {
++            std::mem::transmute::<*const u8, Entry>(module.get_finalized_function(function))
++        };
++        Ok(Self {
++            _module: module,
++            entry,
++            descriptor,
++        })
++    }
++    pub fn descriptor(&self) -> &NativeMatchDescriptor {
++        &self.descriptor
++    }
++    pub fn evaluate_into(
++        &self,
++        inputs: &[NativeScalarValue],
++        outputs: &mut [NativeScalarValue],
++        limits: NativeExecutionLimits,
++        budget: Option<&ManagedMemoryBudget>,
++    ) -> Result<NativeMatchExecutionReport, NativeMatchExecutionError> {
++        super::control_runtime::execute(
++            &self.descriptor,
++            |frame| {
++                // SAFETY: this owner created and retains the exact checked entry.
++                unsafe { (self.entry)(frame) }
++            },
++            inputs,
++            outputs,
++            limits,
++            budget,
++        )
++    }
++}
++pub struct NativeMatchObject {
++    bytes: Vec<u8>,
++    descriptor: NativeMatchDescriptor,
++    identity: [u8; 168],
++    symbol: String,
++}
++impl NativeMatchObject {
++    pub fn bytes(&self) -> &[u8] {
++        &self.bytes
++    }
++    pub fn descriptor(&self) -> &NativeMatchDescriptor {
++        &self.descriptor
++    }
++    pub fn identity_bytes(&self) -> &[u8; 168] {
++        &self.identity
++    }
++    pub fn identity_symbol(&self) -> &str {
++        &self.symbol
++    }
++    pub fn metadata(&self) -> serde_json::Value {
++        serde_json::json!({
++            "schema":"mech.canonical-scalar-match-object.v1","control_abi_version":VERSION,
++            "typed_ir_sha256":super::identity::hex(self.descriptor.typed_ir_sha256()),
++            "identity_symbol":self.symbol,"stack_bytes":self.descriptor.stack_bytes(),"code_bytes":self.descriptor.code_bytes(),
++            "linked":false,"executed":false,"timing_samples":0,
++        })
++    }
++}
++pub fn emit_match_object(
++    plan: &NativeMatchArtifactPlan,
++) -> Result<NativeMatchObject, NativeCompileError> {
++    emit_match_object_with_limits(plan, NativeCompileLimits::default())
++}
++pub fn emit_match_object_with_limits(
++    plan: &NativeMatchArtifactPlan,
++    limits: NativeCompileLimits,
++) -> Result<NativeMatchObject, NativeCompileError> {
++    host_supported()?;
++    let mut flags = settings::builder();
++    for (key, value) in [
++        ("opt_level", "none"),
++        ("is_pic", "true"),
++        ("preserve_frame_pointers", "true"),
++        ("unwind_info", "true"),
++    ] {
++        flags.set(key, value).map_err(backend)?;
++    }
++    let isa = cranelift_native::builder()
++        .map_err(backend)?
++        .finish(settings::Flags::new(flags))
++        .map_err(backend)?;
++    let mut module = ObjectModule::new(
++        ObjectBuilder::new(isa, "mech_canonical_scalar_match", default_libcall_names())
++            .map_err(backend)?,
++    );
++    let (_, descriptor) = define(plan, &mut module, limits)?;
++    let identity = super::control_identity::object_record(plan, &descriptor)?;
++    let symbol = format!(
++        "mech_canonical_scalar_match_identity_v1_{}",
++        super::identity::hex(descriptor.typed_ir_sha256())
++    );
++    let id = module
++        .declare_data(&symbol, Linkage::Export, false, false)
++        .map_err(backend)?;
++    let mut data = DataDescription::new();
++    data.define(identity.to_vec().into_boxed_slice());
++    data.set_align(8);
++    module.define_data(id, &data).map_err(backend)?;
++    let bytes = module.finish().emit().map_err(backend)?;
++    Ok(NativeMatchObject {
++        bytes,
++        descriptor,
++        identity,
++        symbol,
++    })
++}
++
++fn successors(term: NativeMatchTerminator) -> [Option<u32>; 2] {
++    match term {
++        NativeMatchTerminator::Jump(next) => [Some(next), None],
++        NativeMatchTerminator::Branch { yes, no, .. }
++        | NativeMatchTerminator::LiteralBranch { yes, no, .. } => [Some(yes), Some(no)],
++        _ => [None, None],
++    }
++}
++fn action_reads(action: &NativeMatchAction) -> Vec<NativeMatchValue> {
++    let reads = match action {
++        NativeMatchAction::Primitive { operands, .. } => operands.to_vec(),
++        NativeMatchAction::Copy { source, .. } => vec![*source],
++        NativeMatchAction::None => Vec::new(),
++    };
++    reads
++}
++fn output(action: &NativeMatchAction) -> Option<NativeMatchValue> {
++    match action {
++        NativeMatchAction::Primitive { output, .. } | NativeMatchAction::Copy { output, .. } => {
++            Some(*output)
++        }
++        NativeMatchAction::None => None,
++    }
++}
++
++/// Check dominance and all exact types without constructing a callable plan.
++/// Metadata is private-constructor, but the emitter still refuses malformed CFG.
++fn validate(plan: &NativeMatchArtifactPlan) -> Result<(), NativeCompileError> {
++    let bad = || NativeCompileError::InvalidPlan {
++        node: None,
++        reason: "invalid Match CFG or scalar dominance",
++    };
++    let n = plan.blocks().len();
++    let count = plan.values().len();
++    if plan.entry() as usize >= n {
++        return Err(bad());
++    }
++    let ty = |value: NativeMatchValue| plan.values().get(value.get() as usize).ok_or_else(bad);
++    let mut predecessors = vec![Vec::new(); n];
++    let mut degrees = vec![0usize; n];
++    for (index, block) in plan.blocks().iter().enumerate() {
++        for next in successors(block.terminator()).into_iter().flatten() {
++            let next = next as usize;
++            if next >= n {
++                return Err(bad());
++            }
++            predecessors[next].push(index);
++            degrees[next] = degrees[next].checked_add(1).ok_or_else(bad)?;
++        }
++        match block.action() {
++            NativeMatchAction::Primitive {
++                op,
++                operands,
++                output,
++                ..
++            } => {
++                let (args, result) = signature(*op);
++                if operands.len() != args.len() || ty(*output)?.kind() != result {
++                    return Err(bad());
++                }
++                for (&value, &kind) in operands.iter().zip(args) {
++                    if ty(value)?.kind() != kind {
++                        return Err(bad());
++                    }
++                }
++            }
++            NativeMatchAction::Copy { source, output } => {
++                if ty(*source)? != ty(*output)? {
++                    return Err(bad());
++                }
++            }
++            NativeMatchAction::None => {}
++        }
++        match block.terminator() {
++            NativeMatchTerminator::Branch { condition, .. } => {
++                if ty(condition)?.kind() != NativeScalarKind::Bool {
++                    return Err(bad());
++                }
++            }
++            NativeMatchTerminator::LiteralBranch { left, right, .. } => {
++                if ty(left)? != ty(right)? {
++                    return Err(bad());
++                }
++            }
++            _ => {}
++        }
++    }
++    let mut initial = vec![false; count];
++    for input in plan.inputs() {
++        let id = input.value().get() as usize;
++        if id >= count || ty(input.value())? != input.declaration().ty() {
++            return Err(bad());
++        }
++        initial[id] = true;
++    }
++    for constant in plan.constants() {
++        let id = constant.value().get() as usize;
++        if id >= count {
++            return Err(bad());
++        }
++        let kind = match constant.scalar() {
++            NativeScalarValue::Bool(_) => NativeScalarKind::Bool,
++            NativeScalarValue::U64(_) => NativeScalarKind::U64,
++        };
++        if ty(constant.value())?.kind() != kind {
++            return Err(bad());
++        }
++        initial[id] = true;
++    }
++    let mut ends = vec![Vec::<bool>::new(); n];
++    let mut ready = (0..n)
++        .filter(|&id| degrees[id] == 0)
++        .collect::<VecDeque<_>>();
++    let mut seen = 0;
++    while let Some(id) = ready.pop_front() {
++        seen += 1;
++        let block = &plan.blocks()[id];
++        let mut known = if let Some(&first) = predecessors[id].first() {
++            ends[first].clone()
++        } else {
++            initial.clone()
++        };
++        for &parent in predecessors[id].iter().skip(1) {
++            for (bit, &other) in known.iter_mut().zip(&ends[parent]) {
++                *bit &= other;
++            }
++        }
++        for value in action_reads(block.action()) {
++            if !known.get(value.get() as usize).copied().unwrap_or(false) {
++                return Err(bad());
++            }
++        }
++        if let Some(value) = output(block.action()) {
++            known[value.get() as usize] = true;
++        }
++        let conditions = match block.terminator() {
++            NativeMatchTerminator::Branch { condition, .. } => vec![condition],
++            NativeMatchTerminator::LiteralBranch { left, right, .. } => vec![left, right],
++            _ => Vec::new(),
++        };
++        for value in conditions {
++            if !known.get(value.get() as usize).copied().unwrap_or(false) {
++                return Err(bad());
++            }
++        }
++        if block.terminator() == NativeMatchTerminator::Complete {
++            for output in plan.outputs() {
++                if !known
++                    .get(output.value().get() as usize)
++                    .copied()
++                    .unwrap_or(false)
++                    || ty(output.value())? != output.ty()
++                {
++                    return Err(bad());
++                }
++            }
++        }
++        ends[id] = known;
++        for next in successors(block.terminator()).into_iter().flatten() {
++            let next = next as usize;
++            degrees[next] -= 1;
++            if degrees[next] == 0 {
++                ready.push_back(next);
++            }
++        }
++    }
++    if seen != n {
++        return Err(bad());
++    }
++    Ok(())
++}
++
++fn load(
++    b: &mut FunctionBuilder<'_>,
++    locals: Value,
++    value: NativeMatchValue,
++) -> Result<Value, NativeCompileError> {
++    Ok(b.ins().load(
++        types::I64,
++        MemFlags::new(),
++        locals,
++        offset(value.get() as usize)?,
++    ))
++}
++fn define<M: Module>(
++    plan: &NativeMatchArtifactPlan,
++    module: &mut M,
++    limits: NativeCompileLimits,
++) -> Result<(FuncId, NativeMatchDescriptor), NativeCompileError> {
++    host_supported()?;
++    if module.target_config().pointer_type() != types::I64 {
++        return Err(NativeCompileError::UnsupportedHost);
++    }
++    limit("Match blocks", plan.blocks().len() as u64, limits.max_nodes)?;
++    limit(
++        "Match inputs",
++        plan.inputs().len() as u64,
++        limits.max_inputs,
++    )?;
++    limit(
++        "Match outputs",
++        plan.outputs().len() as u64,
++        limits.max_outputs,
++    )?;
++    limit(
++        "Match scalar values",
++        plan.values().len() as u64,
++        limits.max_nodes.saturating_mul(8),
++    )?;
++    offset(plan.values().len())?;
++    offset(plan.inputs().len())?;
++    offset(plan.outputs().len())?;
++    validate(plan)?;
++    let mut signature_entry = module.make_signature();
++    signature_entry.params.push(AbiParam::new(types::I64));
++    signature_entry.returns.push(AbiParam::new(types::I64));
++    let function = module
++        .declare_function(ENTRY, Linkage::Export, &signature_entry)
++        .map_err(backend)?;
++    let mut callback_signature = module.make_signature();
++    callback_signature.params = vec![AbiParam::new(types::I64); 2];
++    callback_signature.returns.push(AbiParam::new(types::I64));
++    let mut context = module.make_context();
++    context.func.signature = signature_entry;
++    let mut fb = FunctionBuilderContext::new();
++    {
++        let mut b = FunctionBuilder::new(&mut context.func, &mut fb);
++        let entry = b.create_block();
++        b.append_block_params_for_function_params(entry);
++        b.switch_to_block(entry);
++        let frame = b.block_params(entry)[0];
++        let error = b.create_block();
++        b.append_block_param(error, types::I64);
++        b.set_cold_block(error);
++        let nonnull = b.ins().icmp_imm(IntCC::NotEqual, frame, 0);
++        guard(&mut b, nonnull, error, STATUS_ABI);
++        set_origin(&mut b, frame, NO_NODE);
++        for (field, value) in [
++            (core::mem::offset_of!(Frame, version), VERSION),
++            (
++                core::mem::offset_of!(Frame, input_count),
++                plan.inputs().len() as u64,
++            ),
++            (
++                core::mem::offset_of!(Frame, local_count),
++                plan.values().len() as u64,
++            ),
++            (
++                core::mem::offset_of!(Frame, output_count),
++                plan.outputs().len() as u64,
++            ),
++        ] {
++            let actual = frame_load(&mut b, frame, field);
++            let valid = b.ins().icmp_imm(IntCC::Equal, actual, value as i64);
++            guard(&mut b, valid, error, STATUS_ABI);
++        }
++        let inputs = frame_load(&mut b, frame, core::mem::offset_of!(Frame, inputs));
++        let locals = frame_load(&mut b, frame, core::mem::offset_of!(Frame, locals));
++        let outputs = frame_load(&mut b, frame, core::mem::offset_of!(Frame, outputs));
++        let user_context = frame_load(&mut b, frame, core::mem::offset_of!(Frame, context));
++        let callback = frame_load(&mut b, frame, core::mem::offset_of!(Frame, admit_next));
++        for (pointer, count) in [
++            (inputs, plan.inputs().len()),
++            (locals, plan.values().len()),
++            (outputs, plan.outputs().len()),
++            (user_context, 1),
++            (callback, 1),
++        ] {
++            if count > 0 {
++                let valid = b.ins().icmp_imm(IntCC::NotEqual, pointer, 0);
++                guard(&mut b, valid, error, STATUS_ABI);
++            }
++        }
++        for (index, input) in plan.inputs().iter().enumerate() {
++            let word = b
++                .ins()
++                .load(types::I64, MemFlags::new(), inputs, offset(index)?);
++            if input.declaration().ty().kind() == NativeScalarKind::Bool {
++                let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, word, 1);
++                guard(&mut b, valid, error, STATUS_ABI);
++            }
++            b.ins().store(
++                MemFlags::new(),
++                word,
++                locals,
++                offset(input.value().get() as usize)?,
++            );
++        }
++        for constant in plan.constants() {
++            let word = match constant.scalar() {
++                NativeScalarValue::Bool(value) => u64::from(value),
++                NativeScalarValue::U64(value) => value,
++            };
++            let value = b.ins().iconst(types::I64, word as i64);
++            b.ins().store(
++                MemFlags::new(),
++                value,
++                locals,
++                offset(constant.value().get() as usize)?,
++            );
++        }
++        let callback_signature = b.import_signature(callback_signature);
++        let mut reachable = vec![false; plan.blocks().len()];
++        let mut pending = vec![plan.entry() as usize];
++        while let Some(id) = pending.pop() {
++            if reachable[id] {
++                continue;
++            }
++            reachable[id] = true;
++            pending.extend(
++                successors(plan.blocks()[id].terminator())
++                    .into_iter()
++                    .flatten()
++                    .map(|next| next as usize),
++            );
++        }
++        let blocks = reachable
++            .iter()
++            .map(|&used| used.then(|| b.create_block()))
++            .collect::<Vec<_>>();
++        b.ins()
++            .jump(blocks[plan.entry() as usize].expect("reachable entry"), &[]);
++        for (index, block) in plan.blocks().iter().enumerate() {
++            if !reachable[index] {
++                continue;
++            }
++            b.switch_to_block(blocks[index].expect("reachable block"));
++            let before = b.func.dfg.num_insts();
++            set_origin(&mut b, frame, index as u64);
++            admit(
++                &mut b,
++                callback_signature,
++                callback,
++                user_context,
++                index,
++                error,
++            );
++            match block.action() {
++                NativeMatchAction::Primitive {
++                    op,
++                    operands,
++                    output,
++                    ..
++                } => {
++                    let args = operands
++                        .iter()
++                        .map(|&value| load(&mut b, locals, value))
++                        .collect::<Result<Vec<_>, _>>()?;
++                    let value = primitive(&mut b, *op, &args, error);
++                    b.ins().store(
++                        MemFlags::new(),
++                        value,
++                        locals,
++                        offset(output.get() as usize)?,
++                    );
++                }
++                NativeMatchAction::Copy { source, output } => {
++                    let value = load(&mut b, locals, *source)?;
++                    b.ins().store(
++                        MemFlags::new(),
++                        value,
++                        locals,
++                        offset(output.get() as usize)?,
++                    );
++                }
++                NativeMatchAction::None => {}
++            }
++            match block.terminator() {
++                NativeMatchTerminator::Jump(next) => {
++                    b.ins()
++                        .jump(blocks[next as usize].expect("reachable successor"), &[]);
++                }
++                NativeMatchTerminator::Branch { condition, yes, no } => {
++                    let value = load(&mut b, locals, condition)?;
++                    let condition = b.ins().icmp_imm(IntCC::NotEqual, value, 0);
++                    b.ins().brif(
++                        condition,
++                        blocks[yes as usize].expect("reachable successor"),
++                        &[],
++                        blocks[no as usize].expect("reachable successor"),
++                        &[],
++                    );
++                }
++                NativeMatchTerminator::LiteralBranch {
++                    left,
++                    right,
++                    yes,
++                    no,
++                } => {
++                    let left = load(&mut b, locals, left)?;
++                    let right = load(&mut b, locals, right)?;
++                    let condition = b.ins().icmp(IntCC::Equal, left, right);
++                    b.ins().brif(
++                        condition,
++                        blocks[yes as usize].expect("reachable successor"),
++                        &[],
++                        blocks[no as usize].expect("reachable successor"),
++                        &[],
++                    );
++                }
++                NativeMatchTerminator::Reject => {
++                    let status = b.ins().iconst(types::I64, STATUS_REJECT as i64);
++                    b.ins().return_(&[status]);
++                }
++                NativeMatchTerminator::Complete => {
++                    set_origin(&mut b, frame, NO_NODE);
++                    for (index, output) in plan.outputs().iter().enumerate() {
++                        let value = load(&mut b, locals, output.value())?;
++                        b.ins()
++                            .store(MemFlags::new(), value, outputs, offset(index)?);
++                    }
++                    let status = b.ins().iconst(types::I64, STATUS_OK as i64);
++                    b.ins().return_(&[status]);
++                }
++            }
++            let emitted = (b.func.dfg.num_insts() - before) as u64;
++            let bound = match block.action() {
++                NativeMatchAction::Primitive { op, .. } => super::abi::primitive_work(*op),
++                _ => {
++                    if block.terminator() == NativeMatchTerminator::Complete {
++                        (plan.outputs().len() as u64)
++                            .checked_mul(8)
++                            .and_then(|v| v.checked_add(128))
++                            .ok_or_else(|| backend("Match completion overflow"))?
++                    } else {
++                        128
++                    }
++                }
++            };
++            if emitted.checked_add(64).is_none_or(|total| total > bound) {
++                return Err(NativeCompileError::InvalidPlan {
++                    node: Some(block.origin().node()),
++                    reason: "Match visit exceeds conservative work template",
++                });
++            }
++        }
++        b.switch_to_block(error);
++        let status = b.block_params(error)[0];
++        b.ins().return_(&[status]);
++        b.seal_all_blocks();
++        b.finalize();
++    }
++    module
++        .define_function(function, &mut context)
++        .map_err(backend)?;
++    let compiled = context
++        .compiled_code()
++        .ok_or(NativeCompileError::StackMetadata {
++            reason: "Match compiled code missing",
++        })?;
++    let stack = compiled_stack_bytes(&compiled.buffer)?;
++    let code = compiled.code_info().total_size as u64;
++    limit("Match stack", stack, limits.max_stack_bytes)?;
++    limit("Match code", code, limits.max_code_bytes)?;
++    Ok((
++        function,
++        NativeMatchDescriptor::from_compiled(plan, stack, code)?,
++    ))
++}
+diff --git a/hosts/gpu/src/native_artifact/control_identity.rs b/hosts/gpu/src/native_artifact/control_identity.rs
+new file mode 100644
+--- /dev/null
++++ b/hosts/gpu/src/native_artifact/control_identity.rs
+@@ -0,0 +1,147 @@
++//! Explicit versioned executable CFG identity; no Debug/serde encoding.
++use mech_engine::native_artifact::{
++    NativeMatchAction, NativeMatchArtifactPlan, NativeMatchTerminator, NativeScalarKind,
++    NativeScalarValue,
++};
++use sha2::{Digest, Sha256};
++fn word(hash: &mut Sha256, value: u64) {
++    hash.update(value.to_le_bytes());
++}
++fn bytes(hash: &mut Sha256, value: &[u8]) {
++    word(hash, value.len() as u64);
++    hash.update(value);
++}
++pub(super) fn object_record(
++    plan: &NativeMatchArtifactPlan,
++    descriptor: &super::control_abi::NativeMatchDescriptor,
++) -> Result<[u8; 168], super::NativeCompileError> {
++    let mut bytes = [0; 168];
++    bytes[..16].copy_from_slice(b"MECHNATIVEMATCH\0");
++    for (at, value) in [
++        (16, 1u64),
++        (24, super::control_abi::VERSION),
++        (32, 1),
++        (112, descriptor.stack_bytes()),
++        (120, descriptor.code_bytes()),
++        (128, plan.inputs().len() as u64),
++        (136, plan.values().len() as u64),
++        (144, plan.blocks().len() as u64),
++        (152, plan.outputs().len() as u64),
++        (160, plan.entry() as u64),
++    ] {
++        bytes[at..at + 8].copy_from_slice(&value.to_le_bytes());
++    }
++    bytes[40..72].copy_from_slice(plan.program_revision().as_bytes());
++    bytes[72..104].copy_from_slice(descriptor.typed_ir_sha256());
++    bytes[104..112].copy_from_slice(
++        &super::identity::host_target_tag().ok_or(super::NativeCompileError::UnsupportedHost)?,
++    );
++    Ok(bytes)
++}
++pub(super) fn typed_ir_sha256(plan: &NativeMatchArtifactPlan) -> [u8; 32] {
++    let mut hash = Sha256::new();
++    hash.update(b"mech.canonical-scalar-match-cfg\0");
++    word(&mut hash, 1); // Separate control IR version, not scalar v1/v2/v3.
++    word(&mut hash, super::control_abi::VERSION);
++    word(&mut hash, 1); // Control visit work policy.
++    hash.update(plan.program_revision().as_bytes());
++    word(&mut hash, plan.entry() as u64);
++    word(&mut hash, plan.values().len() as u64);
++    for ty in plan.values() {
++        hash.update([match ty.kind() {
++            NativeScalarKind::Bool => 1,
++            NativeScalarKind::U64 => 2,
++        }]);
++        word(&mut hash, ty.schema().get() as u64);
++        hash.update(ty.schema_key().as_bytes());
++    }
++    word(&mut hash, plan.inputs().len() as u64);
++    for input in plan.inputs() {
++        word(&mut hash, input.declaration().input().get() as u64);
++        word(&mut hash, input.declaration().slot().get() as u64);
++        bytes(&mut hash, input.declaration().name().as_bytes());
++        word(&mut hash, input.value().get() as u64);
++    }
++    word(&mut hash, plan.constants().len() as u64);
++    for constant in plan.constants() {
++        word(&mut hash, constant.value().get() as u64);
++        match constant.scalar() {
++            NativeScalarValue::Bool(value) => {
++                hash.update([1]);
++                word(&mut hash, value as u64);
++            }
++            NativeScalarValue::U64(value) => {
++                hash.update([2]);
++                word(&mut hash, value);
++            }
++        }
++    }
++    word(&mut hash, plan.blocks().len() as u64);
++    for block in plan.blocks() {
++        let at = block.origin();
++        word(&mut hash, at.node().get() as u64);
++        for id in [at.block(), at.local()] {
++            match id {
++                Some(id) => {
++                    hash.update([1]);
++                    word(&mut hash, id as u64);
++                }
++                None => hash.update([0]),
++            }
++        }
++        match block.action() {
++            NativeMatchAction::None => hash.update([0]),
++            NativeMatchAction::Primitive {
++                op,
++                operands,
++                output,
++                ..
++            } => {
++                hash.update([1, super::identity::op_tag(*op)]);
++                word(&mut hash, output.get() as u64);
++                word(&mut hash, operands.len() as u64);
++                for operand in operands {
++                    word(&mut hash, operand.get() as u64);
++                }
++            }
++            NativeMatchAction::Copy { source, output } => {
++                hash.update([2]);
++                word(&mut hash, source.get() as u64);
++                word(&mut hash, output.get() as u64);
++            }
++        }
++        match block.terminator() {
++            NativeMatchTerminator::Jump(next) => {
++                hash.update([1]);
++                word(&mut hash, next as u64);
++            }
++            NativeMatchTerminator::Branch { condition, yes, no } => {
++                hash.update([2]);
++                word(&mut hash, condition.get() as u64);
++                word(&mut hash, yes as u64);
++                word(&mut hash, no as u64);
++            }
++            NativeMatchTerminator::LiteralBranch {
++                left,
++                right,
++                yes,
++                no,
++            } => {
++                hash.update([3]);
++                for value in [left.get(), right.get(), yes, no] {
++                    word(&mut hash, value as u64);
++                }
++            }
++            NativeMatchTerminator::Complete => hash.update([4]),
++            NativeMatchTerminator::Reject => hash.update([5]),
++        }
++    }
++    word(&mut hash, plan.outputs().len() as u64);
++    for output in plan.outputs() {
++        word(&mut hash, output.output().get() as u64);
++        word(&mut hash, output.slot().get() as u64);
++        bytes(&mut hash, output.name().as_bytes());
++        word(&mut hash, output.value().get() as u64);
++    }
++    hash.finalize().into()
++}
+diff --git a/hosts/gpu/src/native_artifact/control_runtime.rs b/hosts/gpu/src/native_artifact/control_runtime.rs
+new file mode 100644
+--- /dev/null
++++ b/hosts/gpu/src/native_artifact/control_runtime.rs
+@@ -0,0 +1,459 @@
++//! Safe managed invocation for a compiled CFG. Callbacks admit visits only;
++//! they do not evaluate a condition, pattern, operation, or program bytecode.
++use super::abi::{
++    NO_NODE, NativeEntryFrame as Frame, STATUS_ABI, STATUS_ADMISSION, STATUS_ARITHMETIC, STATUS_OK,
++};
++use super::control_abi::{NativeMatchDescriptor, STATUS_REJECT, VERSION};
++use super::memory::{NativeWordStorage, transport_bytes};
++use super::{NativeExecutionError, NativeExecutionLimits};
++use mech_core::ManagedMemoryBudget;
++use mech_engine::native_artifact::{NativeMatchOrigin, NativeScalarKind, NativeScalarValue};
++use std::ffi::c_void;
++
++#[derive(Clone, Debug, Eq, PartialEq)]
++pub enum NativeMatchExecutionError {
++    Base(NativeExecutionError),
++    Work {
++        origin: Option<NativeMatchOrigin>,
++        required: u64,
++        limit: u64,
++    },
++    Visit {
++        previous: Option<u32>,
++        actual: u64,
++    },
++    Arithmetic {
++        origin: NativeMatchOrigin,
++    },
++    Unmatched {
++        origin: NativeMatchOrigin,
++    },
++}
++impl From<NativeExecutionError> for NativeMatchExecutionError {
++    fn from(value: NativeExecutionError) -> Self {
++        Self::Base(value)
++    }
++}
++impl std::fmt::Display for NativeMatchExecutionError {
++    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
++        write!(f, "canonical native Match execution: {self:?}")
++    }
++}
++impl std::error::Error for NativeMatchExecutionError {}
++#[derive(Clone, Copy, Debug, Eq, PartialEq)]
++pub struct NativeMatchExecutionReport {
++    pub work: u64,
++    pub transport_bytes: u64,
++    pub visits: u64,
++}
++fn invalid(reason: &'static str) -> NativeMatchExecutionError {
++    NativeExecutionError::Descriptor { reason }.into()
++}
++fn add(a: u64, b: u64) -> Result<u64, NativeMatchExecutionError> {
++    a.checked_add(b)
++        .ok_or_else(|| invalid("Match work overflow"))
++}
++fn mul(a: u64, b: u64) -> Result<u64, NativeMatchExecutionError> {
++    a.checked_mul(b)
++        .ok_or_else(|| invalid("Match work overflow"))
++}
++
++struct Context<'a> {
++    descriptor: &'a NativeMatchDescriptor,
++    previous: Option<u32>,
++    completed: bool,
++    work: u64,
++    limit: u64,
++    visits: u64,
++    error: Option<NativeMatchExecutionError>,
++}
++impl Context<'_> {
++    fn charge(
++        &mut self,
++        origin: Option<NativeMatchOrigin>,
++        work: u64,
++    ) -> Result<(), NativeMatchExecutionError> {
++        let required = self
++            .work
++            .checked_add(work)
++            .ok_or(NativeMatchExecutionError::Work {
++                origin,
++                required: u64::MAX,
++                limit: self.limit,
++            })?;
++        if required > self.limit {
++            return Err(NativeMatchExecutionError::Work {
++                origin,
++                required,
++                limit: self.limit,
++            });
++        }
++        self.work = required;
++        Ok(())
++    }
++    fn visit(&mut self, raw: u64) -> Result<(), NativeMatchExecutionError> {
++        let id = u32::try_from(raw).ok();
++        let allowed = !self.completed
++            && match self.previous {
++                None => id == Some(self.descriptor.entry),
++                Some(previous) => {
++                    id.is_some()
++                        && self.descriptor.visits[previous as usize]
++                            .successors
++                            .contains(&id)
++                }
++            };
++        if !allowed {
++            return Err(NativeMatchExecutionError::Visit {
++                previous: self.previous,
++                actual: raw,
++            });
++        }
++        let id = id.ok_or_else(|| invalid("Match visit id overflow"))?;
++        let site = self
++            .descriptor
++            .visits
++            .get(id as usize)
++            .ok_or_else(|| invalid("Match visit outside descriptor"))?;
++        let origin = site.origin;
++        let work = site.work;
++        let complete = site.complete;
++        self.charge(Some(origin), work)?;
++        self.previous = Some(id);
++        self.completed = complete;
++        self.visits = add(self.visits, 1)?;
++        Ok(())
++    }
++}
++unsafe extern "C" fn admit(context: *mut c_void, id: u64) -> u64 {
++    if context.is_null() {
++        return STATUS_ABI;
++    }
++    // SAFETY: only execute creates this callback context, for this synchronous
++    // invocation; generated code cannot retain or replace it.
++    let context = unsafe { &mut *context.cast::<Context<'_>>() };
++    if context.error.is_some() {
++        return STATUS_ADMISSION;
++    }
++    match context.visit(id) {
++        Ok(()) => STATUS_OK,
++        Err(error) => {
++            context.error = Some(error);
++            STATUS_ADMISSION
++        }
++    }
++}
++
++pub(super) fn execute<F: FnOnce(*mut Frame) -> u64>(
++    descriptor: &NativeMatchDescriptor,
++    entry: F,
++    inputs: &[NativeScalarValue],
++    outputs: &mut [NativeScalarValue],
++    limits: NativeExecutionLimits,
++    budget: Option<&ManagedMemoryBudget>,
++) -> Result<NativeMatchExecutionReport, NativeMatchExecutionError> {
++    if inputs.len() != descriptor.inputs.len() {
++        return Err(NativeExecutionError::InvalidInputs {
++            expected: descriptor.inputs.len(),
++            actual: inputs.len(),
++        }
++        .into());
++    }
++    if outputs.len() != descriptor.outputs.len() {
++        return Err(NativeExecutionError::InvalidOutputs {
++            expected: descriptor.outputs.len(),
++            actual: outputs.len(),
++        }
++        .into());
++    }
++    if descriptor.stack_bytes > limits.max_native_stack_bytes {
++        return Err(NativeExecutionError::StackLimit {
++            required: descriptor.stack_bytes,
++            limit: limits.max_native_stack_bytes,
++        }
++        .into());
++    }
++    let words = inputs
++        .len()
++        .checked_add(descriptor.value_count)
++        .and_then(|n| n.checked_add(outputs.len()))
++        .ok_or_else(|| invalid("Match transport count overflow"))?;
++    let bytes = transport_bytes(words)?;
++    if bytes > limits.max_transport_bytes {
++        return Err(NativeExecutionError::TransportLimit {
++            required: bytes,
++            limit: limits.max_transport_bytes,
++        }
++        .into());
++    }
++    let mut context = Context {
++        descriptor,
++        previous: None,
++        completed: false,
++        work: 0,
++        limit: limits.max_work,
++        visits: 0,
++        error: None,
++    };
++    // Setup funds managed zeroing, input type/encoding and generated input and
++    // constant copies, plus fixed header validation, before any such work.
++    let setup = add(
++        128,
++        add(
++            mul(words as u64, 4)?,
++            add(
++                mul(inputs.len() as u64, 16)?,
++                mul(descriptor.constant_count as u64, 8)?,
++            )?,
++        )?,
++    )?;
++    context.charge(None, setup)?;
++    let mut storage = NativeWordStorage::new(words, limits.max_transport_bytes, budget)?;
++    for (index, (value, ty)) in inputs.iter().zip(&descriptor.inputs).enumerate() {
++        if !matches!(
++            (value, ty.kind()),
++            (NativeScalarValue::Bool(_), NativeScalarKind::Bool)
++                | (NativeScalarValue::U64(_), NativeScalarKind::U64)
++        ) {
++            return Err(NativeExecutionError::InputType {
++                input: index,
++                expected: ty.kind(),
++            }
++            .into());
++        }
++    }
++    let (input_words, rest) = storage.values_mut().split_at_mut(inputs.len());
++    let (values, output_words) = rest.split_at_mut(descriptor.value_count);
++    for (word, value) in input_words.iter_mut().zip(inputs) {
++        *word = match value {
++            NativeScalarValue::Bool(value) => u64::from(*value),
++            NativeScalarValue::U64(value) => *value,
++        };
++    }
++    let input_pointer = input_words.as_ptr();
++    let local_pointer = values.as_mut_ptr();
++    let output_pointer = output_words.as_mut_ptr();
++    let context_pointer = (&mut context as *mut Context<'_>).cast::<c_void>();
++    let mut frame = Frame {
++        version: VERSION,
++        input_count: inputs.len() as u64,
++        local_count: descriptor.value_count as u64,
++        output_count: outputs.len() as u64,
++        inputs: input_pointer,
++        locals: local_pointer,
++        outputs: output_pointer,
++        context: context_pointer,
++        admit_next: admit,
++        error_node: NO_NODE,
++    };
++    let status = entry(&mut frame);
++    if let Some(error) = context.error.take() {
++        return Err(error);
++    }
++    if frame.version != VERSION
++        || frame.input_count != inputs.len() as u64
++        || frame.local_count != descriptor.value_count as u64
++        || frame.output_count != outputs.len() as u64
++        || frame.inputs != input_pointer
++        || frame.locals != local_pointer
++        || frame.outputs != output_pointer
++        || frame.context != context_pointer
++        || frame.admit_next as usize != admit as *const () as usize
++    {
++        return Err(invalid("Match entry changed immutable frame"));
++    }
++    match status {
++        STATUS_OK => {
++            if !context.completed || frame.error_node != NO_NODE {
++                return Err(invalid("Match entry omitted atomic completion"));
++            }
++        }
++        STATUS_ARITHMETIC | STATUS_REJECT => {
++            let id = context
++                .previous
++                .ok_or_else(|| invalid("Match failure before admitted visit"))?;
++            let site = &descriptor.visits[id as usize];
++            if frame.error_node != id as u64 {
++                return Err(invalid("Match failure origin mismatch"));
++            }
++            if status == STATUS_ARITHMETIC {
++                if !site.arithmetic {
++                    return Err(invalid("Match arithmetic outside primitive"));
++                }
++                return Err(NativeMatchExecutionError::Arithmetic {
++                    origin: site.origin,
++                });
++            }
++            return Err(NativeMatchExecutionError::Unmatched {
++                origin: site.origin,
++            });
++        }
++        _ => return Err(NativeExecutionError::InvalidStatus { status }.into()),
++    }
++    for (index, (&word, ty)) in output_words.iter().zip(&descriptor.outputs).enumerate() {
++        if ty.kind() == NativeScalarKind::Bool && word > 1 {
++            return Err(NativeExecutionError::InvalidOutputBool {
++                output: index,
++                value: word,
++            }
++            .into());
++        }
++    }
++    // All validation is complete. This final pass cannot fail or allocate.
++    for ((target, &word), ty) in outputs
++        .iter_mut()
++        .zip(output_words.iter())
++        .zip(&descriptor.outputs)
++    {
++        *target = match ty.kind() {
++            NativeScalarKind::Bool => NativeScalarValue::Bool(word != 0),
++            NativeScalarKind::U64 => NativeScalarValue::U64(word),
++        };
++    }
++    Ok(NativeMatchExecutionReport {
++        work: context.work,
++        transport_bytes: bytes,
++        visits: context.visits,
++    })
++}
++
++#[cfg(test)]
++mod tests {
++    use super::super::JitMatchArtifact;
++    use super::*;
++    use mech_engine::CanonicalSourceFrontend;
++    use mech_syntax::document::{
++        AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
++        parse_canonical_document,
++    };
++    fn descriptor() -> NativeMatchDescriptor {
++        let parsed = parse_canonical_document(
++            TextSnapshot::new(
++                DocumentId(0x4d564953),
++                Revision(1),
++                "(flag<bool>? | true => value<u64> + 1u64 | false => 0u64)\n",
++            )
++            .unwrap(),
++            ParseConfig::default(),
++        );
++        assert!(parsed.is_strictly_clean());
++        let catalog = mech_stdlib::source_catalog();
++        let artifact = CanonicalSourceFrontend
++            .compile_document_with_catalog(
++                &DocumentSyntax::cast(parsed.syntax()).unwrap(),
++                catalog.clone(),
++            )
++            .unwrap()
++            .compile_artifact()
++            .unwrap();
++        let plan =
++            mech_engine::native_artifact::lower_scalar_match_artifact(&artifact, &catalog).unwrap();
++        JitMatchArtifact::compile(&plan)
++            .unwrap()
++            .descriptor()
++            .clone()
++    }
++    #[test]
++    fn invalid_cfg_visit_is_rejected_without_publication() {
++        let descriptor = descriptor();
++        let inputs = descriptor
++            .inputs()
++            .iter()
++            .map(|ty| match ty.kind() {
++                NativeScalarKind::Bool => NativeScalarValue::Bool(true),
++                NativeScalarKind::U64 => NativeScalarValue::U64(8),
++            })
++            .collect::<Vec<_>>();
++        let mut outputs = vec![NativeScalarValue::U64(77); descriptor.outputs().len()];
++        let error = execute(
++            &descriptor,
++            |frame| {
++                // SAFETY: the injected entry uses only the live callback and
++                // context supplied by execute; it never accesses a word arena.
++                unsafe { ((*frame).admit_next)((*frame).context, u64::MAX) }
++            },
++            &inputs,
++            &mut outputs,
++            NativeExecutionLimits::default(),
++            None,
++        )
++        .unwrap_err();
++        assert!(matches!(
++            error,
++            NativeMatchExecutionError::Visit {
++                previous: None,
++                actual: u64::MAX
++            }
++        ));
++        assert!(
++            outputs
++                .iter()
++                .all(|value| *value == NativeScalarValue::U64(77))
++        );
++        let mut context = Context {
++            descriptor: &descriptor,
++            previous: None,
++            completed: false,
++            work: 0,
++            limit: u64::MAX,
++            visits: 0,
++            error: None,
++        };
++        context.visit(descriptor.entry as u64).unwrap();
++        let before = context.work;
++        assert!(matches!(
++            context.visit(descriptor.entry as u64),
++            Err(NativeMatchExecutionError::Visit { .. })
++        ));
++        assert_eq!(context.work, before);
++        assert_eq!(context.visits, 1);
++    }
++    #[test]
++    fn setup_and_memory_denial_precede_injected_entry_and_preserve_outputs() {
++        let descriptor = descriptor();
++        let inputs = descriptor
++            .inputs()
++            .iter()
++            .map(|ty| match ty.kind() {
++                NativeScalarKind::Bool => NativeScalarValue::Bool(true),
++                NativeScalarKind::U64 => NativeScalarValue::U64(8),
++            })
++            .collect::<Vec<_>>();
++        for (limits, budget) in [
++            (
++                NativeExecutionLimits {
++                    max_work: 0,
++                    ..NativeExecutionLimits::default()
++                },
++                None,
++            ),
++            (
++                NativeExecutionLimits::default(),
++                Some(ManagedMemoryBudget::new(0)),
++            ),
++        ] {
++            let entered = std::cell::Cell::new(false);
++            let mut outputs = vec![NativeScalarValue::U64(77); descriptor.outputs().len()];
++            assert!(
++                execute(
++                    &descriptor,
++                    |_| {
++                        entered.set(true);
++                        STATUS_OK
++                    },
++                    &inputs,
++                    &mut outputs,
++                    limits,
++                    budget.as_ref()
++                )
++                .is_err()
++            );
++            assert!(!entered.get());
++            assert!(
++                outputs
++                    .iter()
++                    .all(|value| *value == NativeScalarValue::U64(77))
++            );
++        }
++    }
++}
+diff --git a/hosts/gpu/src/native_artifact/identity.rs b/hosts/gpu/src/native_artifact/identity.rs
+--- a/hosts/gpu/src/native_artifact/identity.rs
++++ b/hosts/gpu/src/native_artifact/identity.rs
+@@ -210,7 +210,7 @@
+     }
+     hash.finalize().into()
+ }
+-fn op_tag(op: NativeScalarOp) -> u8 {
++pub(super) fn op_tag(op: NativeScalarOp) -> u8 {
+     match op {
+         NativeScalarOp::U64Add => 1,
+         NativeScalarOp::U64Sub => 2,
+diff --git a/hosts/gpu/src/native_artifact/mod.rs b/hosts/gpu/src/native_artifact/mod.rs
+--- a/hosts/gpu/src/native_artifact/mod.rs
++++ b/hosts/gpu/src/native_artifact/mod.rs
+@@ -30,3 +30,20 @@
+ pub use runtime::{
+     NativeExecutionError, NativeExecutionLimits, NativeExecutionPhase, NativeExecutionReport,
+ };
++
++#[cfg(feature = "canonical-native")]
++mod control_abi;
++#[cfg(feature = "canonical-native")]
++mod control_compiler;
++#[cfg(feature = "canonical-native")]
++mod control_identity;
++#[cfg(feature = "canonical-native")]
++mod control_runtime;
++#[cfg(feature = "canonical-native")]
++pub use control_abi::{NativeMatchDescriptor, NativeMatchVisit};
++#[cfg(feature = "canonical-native")]
++pub use control_compiler::{
++    JitMatchArtifact, NativeMatchObject, emit_match_object, emit_match_object_with_limits,
++};
++#[cfg(feature = "canonical-native")]
++pub use control_runtime::{NativeMatchExecutionError, NativeMatchExecutionReport};
+diff --git a/hosts/gpu/tests/canonical_artifact_match.rs b/hosts/gpu/tests/canonical_artifact_match.rs
+new file mode 100644
+--- /dev/null
++++ b/hosts/gpu/tests/canonical_artifact_match.rs
+@@ -0,0 +1,403 @@
++#![cfg(feature = "canonical-native")]
++//! Actual canonical scalar Match JIT and Object qualification; no source rewrite.
++use mech_core::{
++    ManagedMemoryBudget, ReactiveInstanceId, ValueData, ValueDataDraft,
++    snapshot::{SnapshotValidationContext, ValueDraft},
++};
++use mech_engine::native_artifact::{
++    NativeMatchAction, NativeScalarValue, lower_scalar_match_artifact,
++};
++use mech_engine::resident::{ActivationFacts, CapturedValueInput, activate};
++use mech_engine::{CanonicalSourceFrontend, ProgramArtifact, SourceDocumentOutputKind};
++use mech_gpu::native_artifact::{
++    JitMatchArtifact, NativeExecutionError, NativeExecutionLimits, NativeMatchExecutionError,
++    emit_match_object,
++};
++use mech_syntax::document::{
++    AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
++    parse_canonical_document,
++};
++fn compile_mode(source: &str, interactive: bool) -> (ProgramArtifact, usize) {
++    let parsed = parse_canonical_document(
++        TextSnapshot::new(DocumentId(0x4d415443), Revision(1), source).unwrap(),
++        ParseConfig::default(),
++    );
++    assert!(
++        parsed.is_strictly_clean(),
++        "{source}: {:?}",
++        parsed.diagnostics
++    );
++    let syntax = DocumentSyntax::cast(parsed.syntax()).unwrap();
++    let product = if interactive {
++        CanonicalSourceFrontend
++            .compile_interactive_document_with_catalog(&syntax, mech_stdlib::source_catalog())
++    } else {
++        CanonicalSourceFrontend
++            .compile_document_with_catalog(&syntax, mech_stdlib::source_catalog())
++    }
++    .unwrap();
++    let output = product
++        .document_outputs()
++        .iter()
++        .rev()
++        .find(|v| v.kind == SourceDocumentOutputKind::Program)
++        .unwrap()
++        .output as usize;
++    (product.compile_artifact().unwrap(), output)
++}
++fn artifacts(source: &str) -> ([ProgramArtifact; 2], usize) {
++    artifacts_mode(source, false)
++}
++
++fn artifacts_mode(source: &str, interactive: bool) -> ([ProgramArtifact; 2], usize) {
++    let (original, output) = compile_mode(source, interactive);
++    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap();
++    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
++    assert_eq!(original.revision(), decoded.revision());
++    ([original, decoded], output)
++}
++fn inputs(
++    artifact: &ProgramArtifact,
++    named: &[(&str, NativeScalarValue)],
++) -> Vec<NativeScalarValue> {
++    artifact
++        .inputs()
++        .iter()
++        .map(|input| {
++            let name = mech_engine::decode_source_input_name(&input.name).unwrap();
++            named
++                .iter()
++                .find(|(key, _)| *key == name)
++                .unwrap_or_else(|| panic!("missing input {name}"))
++                .1
++        })
++        .collect()
++}
++fn reference(
++    artifact: &ProgramArtifact,
++    args: &[NativeScalarValue],
++) -> Result<Vec<NativeScalarValue>, String> {
++    let mut instance = activate(
++        ReactiveInstanceId::new(0x4d415443, 0),
++        artifact,
++        &mech_stdlib::source_catalog(),
++        &ActivationFacts::default(),
++    )
++    .map_err(|e| format!("{e:?}"))?;
++    let values = artifact
++        .inputs()
++        .iter()
++        .zip(args)
++        .map(|(input, value)| {
++            ValueDraft {
++                schema: input.schema,
++                shape_values: Box::new([]),
++                data: match value {
++                    NativeScalarValue::Bool(v) => ValueDataDraft::Bool(*v),
++                    NativeScalarValue::U64(v) => ValueDataDraft::U64(*v),
++                },
++            }
++            .finalize(&SnapshotValidationContext::new(artifact.schemas()))
++            .unwrap()
++        })
++        .collect::<Vec<_>>();
++    let captured = instance
++        .plan
++        .inputs
++        .iter()
++        .map(|input| {
++            let ordinal = artifact
++                .inputs()
++                .iter()
++                .position(|v| v.slot.get() == input.slot.get())
++                .unwrap();
++            CapturedValueInput {
++                slot: input.slot,
++                value: &values[ordinal],
++            }
++        })
++        .collect::<Vec<_>>();
++    instance
++        .prepare_turn_values(&captured)
++        .and_then(|prepared| prepared.publish())
++        .map_err(|e| format!("{e:?}"))?;
++    Ok((0..artifact.outputs().len())
++        .map(
++            |index| match instance.copied_output(index).unwrap().data() {
++                ValueData::Bool(v) => NativeScalarValue::Bool(*v),
++                ValueData::U64(v) => NativeScalarValue::U64(*v),
++                v => panic!("unexpected scalar {v:?}"),
++            },
++        )
++        .collect())
++}
++
++fn check(source: &str, named: &[(&str, NativeScalarValue)], expected: NativeScalarValue) {
++    let (artifacts, last) = artifacts(source);
++    for artifact in artifacts {
++        let args = inputs(&artifact, named);
++        let ordinary = reference(&artifact, &args).unwrap();
++        assert_eq!(ordinary[last], expected);
++        let plan = lower_scalar_match_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
++        let jit = JitMatchArtifact::compile(&plan).unwrap();
++        let mut outputs = vec![NativeScalarValue::U64(0xdead); plan.outputs().len()];
++        let report = jit
++            .evaluate_into(&args, &mut outputs, NativeExecutionLimits::default(), None)
++            .unwrap();
++        assert_eq!(outputs, ordinary);
++        assert!(report.visits > 0);
++        let object = emit_match_object(&plan).unwrap();
++        assert_eq!(
++            object.descriptor().typed_ir_sha256(),
++            jit.descriptor().typed_ir_sha256()
++        );
++        assert!(!object.bytes().is_empty());
++        assert_eq!(object.metadata()["executed"], false);
++    }
++}
++#[test]
++fn scalar_matches_preserve_literals_bindings_and_raw_u64_values() {
++    use NativeScalarValue::{Bool, U64};
++    let source =
++        "(value<u64>? | 18446744073709551615u64 => value<u64> - 1u64 | found => found + 1u64)\n";
++    check(source, &[("value", U64(u64::MAX))], U64(u64::MAX - 1));
++    check(source, &[("value", U64((1 << 53) + 1))], U64((1 << 53) + 2));
++    let source = "(flag<bool>? | true => !other<bool> | false => other<bool>)\n";
++    check(
++        source,
++        &[("flag", Bool(true)), ("other", Bool(false))],
++        Bool(true),
++    );
++    check(
++        source,
++        &[("flag", Bool(false)), ("other", Bool(false))],
++        Bool(false),
++    );
++}
++#[test]
++fn nested_guards_and_bodies_execute_in_lazy_source_order() {
++    use NativeScalarValue::{Bool, U64};
++    let source = "(flag<bool>? | true, (gate<bool>? | true => value<u64> / divisor<u64> == 1u64 | false => false) => value<u64> + 2u64 | true => 11u64 | false => (value<u64>? | 0u64 => 12u64 | * => value<u64> + 1u64))\n";
++    check(
++        source,
++        &[
++            ("flag", Bool(true)),
++            ("gate", Bool(false)),
++            ("value", U64(8)),
++            ("divisor", U64(0)),
++        ],
++        U64(11),
++    );
++    check(
++        source,
++        &[
++            ("flag", Bool(false)),
++            ("gate", Bool(true)),
++            ("value", U64(0)),
++            ("divisor", U64(0)),
++        ],
++        U64(12),
++    );
++    check(
++        source,
++        &[
++            ("flag", Bool(true)),
++            ("gate", Bool(true)),
++            ("value", U64(8)),
++            ("divisor", U64(8)),
++        ],
++        U64(10),
++    );
++    let (artifacts, _) = artifacts(source);
++    for artifact in artifacts {
++        let args = inputs(
++            &artifact,
++            &[
++                ("flag", Bool(true)),
++                ("gate", Bool(true)),
++                ("value", U64(8)),
++                ("divisor", U64(0)),
++            ],
++        );
++        assert!(reference(&artifact, &args).is_err());
++        let plan = lower_scalar_match_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
++        let jit = JitMatchArtifact::compile(&plan).unwrap();
++        let mut outputs = vec![U64(77); plan.outputs().len()];
++        let error = jit
++            .evaluate_into(&args, &mut outputs, NativeExecutionLimits::default(), None)
++            .unwrap_err();
++        let NativeMatchExecutionError::Arithmetic { origin } = error else {
++            panic!("{error:?}")
++        };
++        assert!(origin.block().is_some());
++        assert!(origin.local().is_some());
++        assert!(outputs.iter().all(|value| *value == U64(77)));
++    }
++}
++#[test]
++fn unused_scheduled_checked_node_is_retained_before_match() {
++    use NativeScalarValue::{Bool, U64};
++    let source = "unused := value<u64> / divisor<u64>\n(flag<bool>? | true => value<u64> + 1u64 | false => 0u64)\n";
++    let (artifacts, _) = artifacts(source);
++    for artifact in artifacts {
++        let plan = lower_scalar_match_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
++        assert!(plan.blocks().iter().any(|block| matches!(
++            block.action(),
++            NativeMatchAction::Primitive {
++                op: mech_engine::native_artifact::NativeScalarOp::U64Div,
++                ..
++            }
++        )));
++        let jit = JitMatchArtifact::compile(&plan).unwrap();
++        let args = inputs(
++            &artifact,
++            &[
++                ("flag", Bool(false)),
++                ("value", U64(8)),
++                ("divisor", U64(0)),
++            ],
++        );
++        let mut outputs = vec![U64(77); plan.outputs().len()];
++        let NativeMatchExecutionError::Arithmetic { origin } = jit
++            .evaluate_into(&args, &mut outputs, NativeExecutionLimits::default(), None)
++            .unwrap_err()
++        else {
++            panic!("unused division did not fail")
++        };
++        assert_eq!(origin.node(), artifact.nodes()[0].node);
++        assert_eq!(origin.block(), None);
++        assert!(outputs.iter().all(|value| *value == U64(77)));
++    }
++}
++#[test]
++fn first_arithmetic_error_precedes_later_cfg_work_denial_and_recovers() {
++    use NativeScalarValue::{Bool, U64};
++    let source = "(flag<bool>? | true => value<u64> / divisor<u64> | false => value<u64> + 1u64)\n";
++    let (artifacts, _) = artifacts(source);
++    for artifact in artifacts {
++        let plan = lower_scalar_match_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
++        let jit = JitMatchArtifact::compile(&plan).unwrap();
++        let good = inputs(
++            &artifact,
++            &[("flag", Bool(true)), ("value", U64(8)), ("divisor", U64(1))],
++        );
++        let bad = inputs(
++            &artifact,
++            &[("flag", Bool(true)), ("value", U64(8)), ("divisor", U64(0))],
++        );
++        let mut outputs = vec![U64(77); plan.outputs().len()];
++        let report = jit
++            .evaluate_into(&good, &mut outputs, NativeExecutionLimits::default(), None)
++            .unwrap();
++        let mut low = 0;
++        let mut high = report.work;
++        while low < high {
++            let middle = low + (high - low) / 2;
++            let mut candidate = vec![U64(77); outputs.len()];
++            match jit
++                .evaluate_into(
++                    &bad,
++                    &mut candidate,
++                    NativeExecutionLimits {
++                        max_work: middle,
++                        ..NativeExecutionLimits::default()
++                    },
++                    None,
++                )
++                .unwrap_err()
++            {
++                NativeMatchExecutionError::Arithmetic { .. } => high = middle,
++                NativeMatchExecutionError::Work { .. } => low = middle + 1,
++                error => panic!("{error:?}"),
++            }
++            assert!(candidate.iter().all(|value| *value == U64(77)));
++        }
++        let limits = NativeExecutionLimits {
++            max_work: low,
++            ..NativeExecutionLimits::default()
++        };
++        outputs.fill(U64(77));
++        assert!(matches!(
++            jit.evaluate_into(&bad, &mut outputs, limits, None),
++            Err(NativeMatchExecutionError::Arithmetic { .. })
++        ));
++        assert!(matches!(
++            jit.evaluate_into(&good, &mut outputs, limits, None),
++            Err(NativeMatchExecutionError::Work { .. })
++        ));
++        assert!(outputs.iter().all(|value| *value == U64(77)));
++        jit.evaluate_into(&good, &mut outputs, NativeExecutionLimits::default(), None)
++            .unwrap();
++        assert_eq!(outputs, reference(&artifact, &good).unwrap());
++    }
++}
++#[test]
++fn full_call_denials_keep_all_outputs_atomic_and_object_pairing_is_exact() {
++    use NativeScalarValue::{Bool, U64};
++    let source = "selected := (flag<bool>? | true => value<u64> + 1u64 | false => value<u64> - 1u64)\nother := !flag<bool>\nselected\n";
++    let (artifacts, _) = artifacts_mode(source, true);
++    let plans = artifacts
++        .iter()
++        .map(|artifact| {
++            lower_scalar_match_artifact(artifact, &mech_stdlib::source_catalog()).unwrap()
++        })
++        .collect::<Vec<_>>();
++    let original = emit_match_object(&plans[0]).unwrap();
++    let decoded = emit_match_object(&plans[1]).unwrap();
++    assert_eq!(original.bytes(), decoded.bytes());
++    assert_eq!(original.identity_bytes(), decoded.identity_bytes());
++    assert_eq!(original.identity_symbol(), decoded.identity_symbol());
++    for (artifact, plan) in artifacts.iter().zip(&plans) {
++        let jit = JitMatchArtifact::compile(plan).unwrap();
++        let args = inputs(artifact, &[("flag", Bool(true)), ("value", U64(8))]);
++        for (limits, budget) in [
++            (
++                NativeExecutionLimits {
++                    max_work: 0,
++                    ..NativeExecutionLimits::default()
++                },
++                None,
++            ),
++            (
++                NativeExecutionLimits {
++                    max_transport_bytes: 0,
++                    ..NativeExecutionLimits::default()
++                },
++                None,
++            ),
++            (
++                NativeExecutionLimits {
++                    max_native_stack_bytes: 0,
++                    ..NativeExecutionLimits::default()
++                },
++                None,
++            ),
++            (
++                NativeExecutionLimits::default(),
++                Some(ManagedMemoryBudget::new(0)),
++            ),
++        ] {
++            let mut outputs = vec![U64(77); plan.outputs().len()];
++            let error = jit
++                .evaluate_into(&args, &mut outputs, limits, budget.as_ref())
++                .unwrap_err();
++            assert!(
++                matches!(
++                    error,
++                    NativeMatchExecutionError::Work { .. }
++                        | NativeMatchExecutionError::Base(
++                            NativeExecutionError::TransportLimit { .. }
++                                | NativeExecutionError::StackLimit { .. }
++                                | NativeExecutionError::Memory { .. }
++                        )
++                ),
++                "{error:?}"
++            );
++            assert!(outputs.iter().all(|value| *value == U64(77)));
++        }
++        let mut outputs = vec![U64(77); plan.outputs().len()];
++        jit.evaluate_into(&args, &mut outputs, NativeExecutionLimits::default(), None)
++            .unwrap();
++        assert_eq!(outputs, reference(artifact, &args).unwrap());
++    }
++}
+diff --git a/src/engine/src/native_artifact/control.rs b/src/engine/src/native_artifact/control.rs
+new file mode 100644
+--- /dev/null
++++ b/src/engine/src/native_artifact/control.rs
+@@ -0,0 +1,145 @@
++//! Read-only, witness-derived scalar control flow. A plan is constructor-private.
++use super::{NativeInput, NativeScalarOp, NativeScalarType, NativeScalarValue};
++use mech_core::{CallMemoryPlan, CellSlotId, NodeId, OutputId};
++
++/// Scalar word identity within one complete native invocation.
++#[derive(Clone, Copy, Debug, Eq, PartialEq)]
++pub struct NativeMatchValue(pub(crate) u32);
++impl NativeMatchValue {
++    pub const fn get(self) -> u32 {
++        self.0
++    }
++}
++
++/// Source identity for errors and admissions, including lexical block locals.
++#[derive(Clone, Copy, Debug, Eq, PartialEq)]
++pub struct NativeMatchOrigin {
++    pub(crate) node: NodeId,
++    pub(crate) block: Option<u32>,
++    pub(crate) local: Option<u32>,
++}
++impl NativeMatchOrigin {
++    pub const fn node(self) -> NodeId {
++        self.node
++    }
++    pub const fn block(self) -> Option<u32> {
++        self.block
++    }
++    pub const fn local(self) -> Option<u32> {
++        self.local
++    }
++}
++
++/// One admitted scalar operation. Each operation occupies its own CFG block,
++/// so an earlier arithmetic error precedes admission of a later operation.
++#[derive(Clone, Debug)]
++pub enum NativeMatchAction {
++    Primitive {
++        op: NativeScalarOp,
++        operands: Box<[NativeMatchValue]>,
++        output: NativeMatchValue,
++        memory_plan: CallMemoryPlan,
++    },
++    Copy {
++        source: NativeMatchValue,
++        output: NativeMatchValue,
++    },
++    None,
++}
++
++#[derive(Clone, Copy, Debug, Eq, PartialEq)]
++pub enum NativeMatchTerminator {
++    Jump(u32),
++    Branch {
++        condition: NativeMatchValue,
++        yes: u32,
++        no: u32,
++    },
++    /// Scalar literal equality belongs to the canonical pattern. It needs no
++    /// fabricated Bool schema/local or library-name semantic witness.
++    LiteralBranch {
++        left: NativeMatchValue,
++        right: NativeMatchValue,
++        yes: u32,
++        no: u32,
++    },
++    Complete,
++    /// An exhaustive validated Match cannot reach this block for valid inputs.
++    Reject,
++}
++
++#[derive(Clone, Debug)]
++pub struct NativeMatchBlock {
++    pub(crate) origin: NativeMatchOrigin,
++    pub(crate) action: NativeMatchAction,
++    pub(crate) terminator: NativeMatchTerminator,
++}
++impl NativeMatchBlock {
++    pub const fn origin(&self) -> NativeMatchOrigin {
++        self.origin
++    }
++    pub fn action(&self) -> &NativeMatchAction {
++        &self.action
++    }
++    pub const fn terminator(&self) -> NativeMatchTerminator {
++        self.terminator
++    }
++}
++
++#[derive(Clone, Debug)]
++pub struct NativeMatchInput {
++    pub(crate) declaration: NativeInput,
++    pub(crate) value: NativeMatchValue,
++}
++impl NativeMatchInput {
++    pub fn declaration(&self) -> &NativeInput {
++        &self.declaration
++    }
++    pub const fn value(&self) -> NativeMatchValue {
++        self.value
++    }
++}
++
++#[derive(Clone, Debug)]
++pub struct NativeMatchConstant {
++    pub(crate) value: NativeMatchValue,
++    pub(crate) scalar: NativeScalarValue,
++}
++impl NativeMatchConstant {
++    pub const fn value(&self) -> NativeMatchValue {
++        self.value
++    }
++    pub const fn scalar(&self) -> NativeScalarValue {
++        self.scalar
++    }
++}
++
++#[derive(Clone, Debug)]
++pub struct NativeMatchOutput {
++    pub(crate) output: OutputId,
++    pub(crate) slot: CellSlotId,
++    pub(crate) name: String,
++    pub(crate) interactive_binding: Option<crate::InteractiveSymbolBinding>,
++    pub(crate) value: NativeMatchValue,
++    pub(crate) ty: NativeScalarType,
++}
++impl NativeMatchOutput {
++    pub const fn output(&self) -> OutputId {
++        self.output
++    }
++    pub const fn slot(&self) -> CellSlotId {
++        self.slot
++    }
++    pub fn name(&self) -> &str {
++        &self.name
++    }
++    pub fn interactive_binding(&self) -> Option<&crate::InteractiveSymbolBinding> {
++        self.interactive_binding.as_ref()
++    }
++    pub const fn value(&self) -> NativeMatchValue {
++        self.value
++    }
++    pub fn ty(&self) -> &NativeScalarType {
++        &self.ty
++    }
++}
+diff --git a/src/engine/src/native_artifact/mod.rs b/src/engine/src/native_artifact/mod.rs
+--- a/src/engine/src/native_artifact/mod.rs
++++ b/src/engine/src/native_artifact/mod.rs
+@@ -7,3 +7,9 @@
+     NativeArtifactLoweringError, NativeArtifactPlan, lower_pure_native_artifact,
+ };
+ pub use ir::*;
++
++mod control;
++pub use crate::resident::general::native_match_lowering::{
++    NativeMatchArtifactPlan, lower_scalar_match_artifact,
++};
++pub use control::*;
+diff --git a/src/engine/src/resident/general/mod.rs b/src/engine/src/resident/general/mod.rs
+--- a/src/engine/src/resident/general/mod.rs
++++ b/src/engine/src/resident/general/mod.rs
+@@ -9,6 +9,8 @@
+ mod live;
+ #[cfg(feature = "native-artifact")]
+ pub(crate) mod native_lowering;
++#[cfg(feature = "native-artifact")]
++pub(crate) mod native_match_lowering;
+ 
+ pub use execution::*;
+ 
+diff --git a/src/engine/src/resident/general/native_lowering.rs b/src/engine/src/resident/general/native_lowering.rs
+--- a/src/engine/src/resident/general/native_lowering.rs
++++ b/src/engine/src/resident/general/native_lowering.rs
+@@ -98,6 +98,216 @@
+             feature: "compute regions",
+         });
+     }
++    validate_scalar_slot_initializers(artifact)?;
++    for node in artifact.nodes() {
++        let feature = match &node.body {
++            ExecutableNodeBody::Operation(operation) => {
++                if operation.requirement.is_some() {
++                    Some("resource operation")
++                } else {
++                    None
++                }
++            }
++            ExecutableNodeBody::Match(_) => Some("Match"),
++            ExecutableNodeBody::Activation(_) => Some("Activation scope"),
++            ExecutableNodeBody::Comprehension(_) => Some("comprehension"),
++            ExecutableNodeBody::Fsm(_) => Some("FSM"),
++        };
++        if let Some(feature) = feature {
++            return Err(NativeArtifactLoweringError::UnsupportedNode {
++                node: node.node,
++                feature,
++            });
++        }
++    }
++    let classes = classify_nodes(artifact, ResidentExternalAdmission::StructuralOnly)?;
++    for node in artifact.nodes() {
++        if classes[node.node.get() as usize] != NodeClass::Turn {
++            let feature = match classes[node.node.get() as usize] {
++                NodeClass::Activation => "Activation computation",
++                NodeClass::Observation => "observation",
++                NodeClass::External => "external effect",
++                NodeClass::Turn => unreachable!(),
++            };
++            return Err(NativeArtifactLoweringError::UnsupportedNode {
++                node: node.node,
++                feature,
++            });
++        }
++    }
++    // This is the same dependency order used by the ordinary executor. It
++    // includes every node rather than only nodes reachable from outputs.
++    let schedule = build_activation_schedule(artifact, &classes)?;
++    let mut values = BTreeMap::<ArtifactSource, (NativeValueRef, NativeScalarType)>::new();
++    let mut inputs = Vec::with_capacity(artifact.inputs().len());
++    for input in artifact.inputs() {
++        let slot = &artifact.slots()[input.slot.get() as usize];
++        if slot.role != SlotRole::Input
++            || slot.producer != ProducerReference::Input(input.input)
++            || slot.schema != input.schema
++        {
++            return Err(NativeArtifactLoweringError::InvalidBinding { node: None });
++        }
++        let ty = scalar_type(artifact, input.schema)?;
++        if values
++            .insert(
++                ArtifactSource::Slot(input.slot),
++                (NativeValueRef::Input(input.input), ty.clone()),
++            )
++            .is_some()
++        {
++            return Err(NativeArtifactLoweringError::InvalidBinding { node: None });
++        }
++        inputs.push(NativeInput {
++            input: input.input,
++            slot: input.slot,
++            name: input.name.clone(),
++            ty,
++        });
++    }
++    let mut constants = Vec::with_capacity(artifact.constants().len());
++    for index in 0..artifact.constants().len() {
++        let id = ConstantId::new(
++            u32::try_from(index)
++                .map_err(|_| NativeArtifactLoweringError::InvalidBinding { node: None })?,
++        );
++        let value = artifact
++            .constants()
++            .get(id)
++            .expect("validated constant store ordinal");
++        let ty = scalar_type(artifact, value.schema())?;
++        if value.schema_key() != ty.schema_key || !value.shape().parameter_values().is_empty() {
++            return Err(NativeArtifactLoweringError::UnsupportedSchema {
++                schema: value.schema(),
++            });
++        }
++        let scalar = match (ty.kind, value.data()) {
++            (NativeScalarKind::Bool, mech_core::ValueData::Bool(value)) => {
++                NativeScalarValue::Bool(*value)
++            }
++            (NativeScalarKind::U64, mech_core::ValueData::U64(value)) => {
++                NativeScalarValue::U64(*value)
++            }
++            _ => {
++                return Err(NativeArtifactLoweringError::UnsupportedSchema {
++                    schema: value.schema(),
++                });
++            }
++        };
++        values.insert(
++            ArtifactSource::Constant(id),
++            (NativeValueRef::Constant(id), ty.clone()),
++        );
++        constants.push(NativeConstant {
++            constant: id,
++            ty,
++            value: scalar,
++        });
++    }
++    let mut lets = Vec::with_capacity(schedule.nodes.len());
++    for node_id in schedule.nodes.iter().copied() {
++        let node = artifact.nodes()[node_id.get() as usize]
++            .as_operation()
++            .expect("checked ordinary node");
++        let target = node_output_slot(artifact, node_id)?;
++        let slot = &artifact.slots()[target.get() as usize];
++        if slot.role != SlotRole::Derived
++            || slot.producer
++                != (ProducerReference::NodeOutput {
++                    node: node_id,
++                    output_ordinal: 0,
++                })
++        {
++            return Err(NativeArtifactLoweringError::InvalidBinding {
++                node: Some(node_id),
++            });
++        }
++        let result_type = scalar_type(artifact, slot.schema)?;
++        let sources = node_inputs(artifact, node_id)?;
++        let args = sources
++            .iter()
++            .map(|source| resolved_value(artifact, &values, *source, Some(node_id)))
++            .collect::<Result<Vec<_>, _>>()?;
++        let layouts = args
++            .iter()
++            .map(|(_, ty)| port_layout(ty))
++            .collect::<Vec<_>>();
++        let (kernel, memory_plan) = bind_operation_for_target(
++            artifact,
++            catalog,
++            node_id,
++            node.operation,
++            node.contract,
++            &layouts,
++            port_layout(&result_type),
++            ExecutionTarget::Native,
++        )?;
++        let semantics = native_semantics::validated_scalar(&kernel)
++            .ok_or(NativeArtifactLoweringError::MissingSemanticWitness { node: node_id })?;
++        if semantics.inputs().len() != args.len()
++            || semantics
++                .inputs()
++                .iter()
++                .copied()
++                .zip(&args)
++                .any(|(kind, (_, ty))| public_kind(kind) != ty.kind)
++            || public_kind(semantics.output()) != result_type.kind
++        {
++            return Err(NativeArtifactLoweringError::WitnessTypeMismatch { node: node_id });
++        }
++        let local = NativeValueRef::Local(node_id);
++        if values
++            .insert(ArtifactSource::Slot(target), (local, result_type.clone()))
++            .is_some()
++        {
++            return Err(NativeArtifactLoweringError::InvalidBinding {
++                node: Some(node_id),
++            });
++        }
++        lets.push(NativeLet {
++            node: node_id,
++            target,
++            op: public_op(semantics.op()),
++            operands: args
++                .into_iter()
++                .map(|(value, _)| value)
++                .collect::<Vec<_>>()
++                .into_boxed_slice(),
++            ty: result_type,
++            memory_plan,
++        });
++        // The bound resident implementation is dropped, never retained as a
++        // fallback or evaluated. Only its sealed semantic identity survives.
++    }
++    let mut outputs = Vec::with_capacity(artifact.outputs().len());
++    for output in artifact.outputs() {
++        let ty = scalar_type(artifact, output.schema)?;
++        let (value, source_type) =
++            resolved_value(artifact, &values, ArtifactSource::Slot(output.source), None)?;
++        if source_type != ty {
++            return Err(NativeArtifactLoweringError::InvalidBinding { node: None });
++        }
++        outputs.push(NativeOutput {
++            output: output.output,
++            slot: output.source,
++            name: output.name.clone(),
++            interactive_binding: output.interactive_binding.clone(),
++            value,
++            ty,
++        });
++    }
++    Ok(NativeArtifactPlan {
++        revision: artifact.revision(),
++        inputs: inputs.into_boxed_slice(),
++        constants: constants.into_boxed_slice(),
++        lets: lets.into_boxed_slice(),
++        outputs: outputs.into_boxed_slice(),
++    })
++}
++
++pub(super) fn validate_scalar_slot_initializers(
++    artifact: &ProgramArtifact,
++) -> Result<(), NativeArtifactLoweringError> {
+     for slot in artifact.slots() {
+         if slot.role == SlotRole::State {
+             return Err(NativeArtifactLoweringError::UnsupportedProgram {
+@@ -147,213 +357,10 @@
+             }
+         }
+     }
+-    for node in artifact.nodes() {
+-        let feature = match &node.body {
+-            ExecutableNodeBody::Operation(operation) => {
+-                if operation.requirement.is_some() {
+-                    Some("resource operation")
+-                } else {
+-                    None
+-                }
+-            }
+-            ExecutableNodeBody::Match(_) => Some("Match"),
+-            ExecutableNodeBody::Activation(_) => Some("Activation scope"),
+-            ExecutableNodeBody::Comprehension(_) => Some("comprehension"),
+-            ExecutableNodeBody::Fsm(_) => Some("FSM"),
+-        };
+-        if let Some(feature) = feature {
+-            return Err(NativeArtifactLoweringError::UnsupportedNode {
+-                node: node.node,
+-                feature,
+-            });
+-        }
+-    }
+-    let classes = classify_nodes(artifact, ResidentExternalAdmission::StructuralOnly)?;
+-    for node in artifact.nodes() {
+-        if classes[node.node.get() as usize] != NodeClass::Turn {
+-            let feature = match classes[node.node.get() as usize] {
+-                NodeClass::Activation => "Activation computation",
+-                NodeClass::Observation => "observation",
+-                NodeClass::External => "external effect",
+-                NodeClass::Turn => unreachable!(),
+-            };
+-            return Err(NativeArtifactLoweringError::UnsupportedNode {
+-                node: node.node,
+-                feature,
+-            });
+-        }
+-    }
+-    // This is the same dependency order used by the ordinary executor. It
+-    // includes every node rather than only nodes reachable from outputs.
+-    let schedule = build_activation_schedule(artifact, &classes)?;
+-    let mut values = BTreeMap::<ArtifactSource, (NativeValueRef, NativeScalarType)>::new();
+-    let mut inputs = Vec::with_capacity(artifact.inputs().len());
+-    for input in artifact.inputs() {
+-        let slot = &artifact.slots()[input.slot.get() as usize];
+-        if slot.role != SlotRole::Input
+-            || slot.producer != ProducerReference::Input(input.input)
+-            || slot.schema != input.schema
+-        {
+-            return Err(NativeArtifactLoweringError::InvalidBinding { node: None });
+-        }
+-        let ty = scalar_type(artifact, input.schema)?;
+-        if values
+-            .insert(
+-                ArtifactSource::Slot(input.slot),
+-                (NativeValueRef::Input(input.input), ty.clone()),
+-            )
+-            .is_some()
+-        {
+-            return Err(NativeArtifactLoweringError::InvalidBinding { node: None });
+-        }
+-        inputs.push(NativeInput {
+-            input: input.input,
+-            slot: input.slot,
+-            name: input.name.clone(),
+-            ty,
+-        });
+-    }
+-    let mut constants = Vec::with_capacity(artifact.constants().len());
+-    for index in 0..artifact.constants().len() {
+-        let id = ConstantId::new(
+-            u32::try_from(index)
+-                .map_err(|_| NativeArtifactLoweringError::InvalidBinding { node: None })?,
+-        );
+-        let value = artifact
+-            .constants()
+-            .get(id)
+-            .expect("validated constant store ordinal");
+-        let ty = scalar_type(artifact, value.schema())?;
+-        if value.schema_key() != ty.schema_key || !value.shape().parameter_values().is_empty() {
+-            return Err(NativeArtifactLoweringError::UnsupportedSchema {
+-                schema: value.schema(),
+-            });
+-        }
+-        let scalar = match (ty.kind, value.data()) {
+-            (NativeScalarKind::Bool, mech_core::ValueData::Bool(value)) => {
+-                NativeScalarValue::Bool(*value)
+-            }
+-            (NativeScalarKind::U64, mech_core::ValueData::U64(value)) => {
+-                NativeScalarValue::U64(*value)
+-            }
+-            _ => {
+-                return Err(NativeArtifactLoweringError::UnsupportedSchema {
+-                    schema: value.schema(),
+-                });
+-            }
+-        };
+-        values.insert(
+-            ArtifactSource::Constant(id),
+-            (NativeValueRef::Constant(id), ty.clone()),
+-        );
+-        constants.push(NativeConstant {
+-            constant: id,
+-            ty,
+-            value: scalar,
+-        });
+-    }
+-    let mut lets = Vec::with_capacity(schedule.nodes.len());
+-    for node_id in schedule.nodes.iter().copied() {
+-        let node = artifact.nodes()[node_id.get() as usize]
+-            .as_operation()
+-            .expect("checked ordinary node");
+-        let target = node_output_slot(artifact, node_id)?;
+-        let slot = &artifact.slots()[target.get() as usize];
+-        if slot.role != SlotRole::Derived
+-            || slot.producer
+-                != (ProducerReference::NodeOutput {
+-                    node: node_id,
+-                    output_ordinal: 0,
+-                })
+-        {
+-            return Err(NativeArtifactLoweringError::InvalidBinding {
+-                node: Some(node_id),
+-            });
+-        }
+-        let result_type = scalar_type(artifact, slot.schema)?;
+-        let sources = node_inputs(artifact, node_id)?;
+-        let args = sources
+-            .iter()
+-            .map(|source| resolved_value(artifact, &values, *source, Some(node_id)))
+-            .collect::<Result<Vec<_>, _>>()?;
+-        let layouts = args
+-            .iter()
+-            .map(|(_, ty)| port_layout(ty))
+-            .collect::<Vec<_>>();
+-        let (kernel, memory_plan) = bind_operation_for_target(
+-            artifact,
+-            catalog,
+-            node_id,
+-            node.operation,
+-            node.contract,
+-            &layouts,
+-            port_layout(&result_type),
+-            ExecutionTarget::Native,
+-        )?;
+-        let semantics = native_semantics::validated_scalar(&kernel)
+-            .ok_or(NativeArtifactLoweringError::MissingSemanticWitness { node: node_id })?;
+-        if semantics.inputs().len() != args.len()
+-            || semantics
+-                .inputs()
+-                .iter()
+-                .copied()
+-                .zip(&args)
+-                .any(|(kind, (_, ty))| public_kind(kind) != ty.kind)
+-            || public_kind(semantics.output()) != result_type.kind
+-        {
+-            return Err(NativeArtifactLoweringError::WitnessTypeMismatch { node: node_id });
+-        }
+-        let local = NativeValueRef::Local(node_id);
+-        if values
+-            .insert(ArtifactSource::Slot(target), (local, result_type.clone()))
+-            .is_some()
+-        {
+-            return Err(NativeArtifactLoweringError::InvalidBinding {
+-                node: Some(node_id),
+-            });
+-        }
+-        lets.push(NativeLet {
+-            node: node_id,
+-            target,
+-            op: public_op(semantics.op()),
+-            operands: args
+-                .into_iter()
+-                .map(|(value, _)| value)
+-                .collect::<Vec<_>>()
+-                .into_boxed_slice(),
+-            ty: result_type,
+-            memory_plan,
+-        });
+-        // The bound resident implementation is dropped, never retained as a
+-        // fallback or evaluated. Only its sealed semantic identity survives.
+-    }
+-    let mut outputs = Vec::with_capacity(artifact.outputs().len());
+-    for output in artifact.outputs() {
+-        let ty = scalar_type(artifact, output.schema)?;
+-        let (value, source_type) =
+-            resolved_value(artifact, &values, ArtifactSource::Slot(output.source), None)?;
+-        if source_type != ty {
+-            return Err(NativeArtifactLoweringError::InvalidBinding { node: None });
+-        }
+-        outputs.push(NativeOutput {
+-            output: output.output,
+-            slot: output.source,
+-            name: output.name.clone(),
+-            interactive_binding: output.interactive_binding.clone(),
+-            value,
+-            ty,
+-        });
+-    }
+-    Ok(NativeArtifactPlan {
+-        revision: artifact.revision(),
+-        inputs: inputs.into_boxed_slice(),
+-        constants: constants.into_boxed_slice(),
+-        lets: lets.into_boxed_slice(),
+-        outputs: outputs.into_boxed_slice(),
+-    })
+-}
+-
+-fn scalar_type(
++    Ok(())
++}
++
++pub(super) fn scalar_type(
+     artifact: &ProgramArtifact,
+     id: SchemaId,
+ ) -> Result<NativeScalarType, NativeArtifactLoweringError> {
+@@ -383,7 +390,7 @@
+     })
+ }
+ 
+-fn port_layout(ty: &NativeScalarType) -> ResidentPortLayout {
++pub(super) fn port_layout(ty: &NativeScalarType) -> ResidentPortLayout {
+     ResidentPortLayout {
+         schema_id: ty.schema,
+         schema_key: ty.schema_key,
+@@ -411,13 +418,13 @@
+         .ok_or(NativeArtifactLoweringError::InvalidBinding { node })
+ }
+ 
+-fn public_kind(kind: native_semantics::NativeScalarKind) -> NativeScalarKind {
++pub(super) fn public_kind(kind: native_semantics::NativeScalarKind) -> NativeScalarKind {
+     match kind {
+         native_semantics::NativeScalarKind::Bool => NativeScalarKind::Bool,
+         native_semantics::NativeScalarKind::U64 => NativeScalarKind::U64,
+     }
+ }
+-fn public_op(op: native_semantics::NativeScalarOp) -> NativeScalarOp {
++pub(super) fn public_op(op: native_semantics::NativeScalarOp) -> NativeScalarOp {
+     use native_semantics::NativeScalarOp as Private;
+     match op {
+         Private::U64Add => NativeScalarOp::U64Add,
+diff --git a/src/engine/src/resident/general/native_match_lowering.rs b/src/engine/src/resident/general/native_match_lowering.rs
+new file mode 100644
+--- /dev/null
++++ b/src/engine/src/resident/general/native_match_lowering.rs
+@@ -0,0 +1,504 @@
++//! Canonical scalar Match -> immutable native CFG; metadata binding only.
++use super::native_lowering::{
++    port_layout, public_kind, public_op, scalar_type, validate_scalar_slot_initializers,
++};
++use super::{
++    NodeClass, ResidentExternalAdmission, bind_operation_for_target, build_activation_schedule,
++    classify_nodes, forwarded_output_source, node_inputs, node_output_slot,
++};
++use crate::native_artifact::{
++    NativeArtifactLoweringError, NativeInput, NativeMatchAction, NativeMatchBlock,
++    NativeMatchConstant, NativeMatchInput, NativeMatchOrigin, NativeMatchOutput,
++    NativeMatchTerminator, NativeMatchValue, NativeScalarKind, NativeScalarType, NativeScalarValue,
++};
++use crate::resident::native_semantics;
++use crate::{
++    ArtifactSource, ControlBlock, ControlOperationBody, ControlParameterSource, ControlValue,
++    ExecutableNodeBody, MatchDeclaration, MatchPattern, ProgramArtifact,
++};
++use mech_core::{ConstantId, ExecutionTarget, FunctionCatalog, NodeId, ProgramRevision};
++use std::collections::BTreeMap;
++
++#[derive(Clone, Debug)]
++pub struct NativeMatchArtifactPlan {
++    revision: ProgramRevision,
++    inputs: Box<[NativeMatchInput]>,
++    constants: Box<[NativeMatchConstant]>,
++    values: Box<[NativeScalarType]>,
++    blocks: Box<[NativeMatchBlock]>,
++    outputs: Box<[NativeMatchOutput]>,
++    entry: u32,
++}
++impl NativeMatchArtifactPlan {
++    pub const fn program_revision(&self) -> ProgramRevision {
++        self.revision
++    }
++    pub fn inputs(&self) -> &[NativeMatchInput] {
++        &self.inputs
++    }
++    pub fn constants(&self) -> &[NativeMatchConstant] {
++        &self.constants
++    }
++    pub fn values(&self) -> &[NativeScalarType] {
++        &self.values
++    }
++    pub fn blocks(&self) -> &[NativeMatchBlock] {
++        &self.blocks
++    }
++    pub fn outputs(&self) -> &[NativeMatchOutput] {
++        &self.outputs
++    }
++    pub const fn entry(&self) -> u32 {
++        self.entry
++    }
++}
++
++type Error = NativeArtifactLoweringError;
++fn unsupported(node: NodeId, feature: &'static str) -> Error {
++    Error::UnsupportedNode { node, feature }
++}
++fn origin(node: NodeId, block: Option<u32>, local: Option<u32>) -> NativeMatchOrigin {
++    NativeMatchOrigin { node, block, local }
++}
++
++struct Builder<'a> {
++    artifact: &'a ProgramArtifact,
++    catalog: &'a FunctionCatalog,
++    values: Vec<NativeScalarType>,
++    constants: BTreeMap<ConstantId, NativeMatchValue>,
++    blocks: Vec<NativeMatchBlock>,
++}
++impl Builder<'_> {
++    fn value(&mut self, ty: NativeScalarType) -> Result<NativeMatchValue, Error> {
++        // Numeric extension candidates are independent. A future broader
++        // scalar_type must not silently admit new pattern/transport semantics.
++        if !matches!(ty.kind(), NativeScalarKind::Bool | NativeScalarKind::U64) {
++            return Err(Error::UnsupportedSchema {
++                schema: ty.schema(),
++            });
++        }
++        let id =
++            u32::try_from(self.values.len()).map_err(|_| Error::InvalidBinding { node: None })?;
++        self.values.push(ty);
++        Ok(NativeMatchValue(id))
++    }
++    fn block(&mut self, at: NativeMatchOrigin, action: NativeMatchAction) -> Result<u32, Error> {
++        let id = u32::try_from(self.blocks.len()).map_err(|_| Error::InvalidBinding {
++            node: Some(at.node()),
++        })?;
++        self.blocks.push(NativeMatchBlock {
++            origin: at,
++            action,
++            terminator: NativeMatchTerminator::Reject,
++        });
++        Ok(id)
++    }
++    fn link(&mut self, from: u32, to: u32) {
++        self.blocks[from as usize].terminator = NativeMatchTerminator::Jump(to);
++    }
++    fn ty(&self, value: NativeMatchValue) -> &NativeScalarType {
++        &self.values[value.get() as usize]
++    }
++    fn primitive(
++        &mut self,
++        at: NativeMatchOrigin,
++        reference: &crate::OperationReference,
++        contract: mech_core::OperationContractId,
++        arguments: &[NativeMatchValue],
++        output: NativeMatchValue,
++    ) -> Result<u32, Error> {
++        let layouts = arguments
++            .iter()
++            .map(|&value| port_layout(self.ty(value)))
++            .collect::<Vec<_>>();
++        let (kernel, memory_plan) = bind_operation_for_target(
++            self.artifact,
++            self.catalog,
++            at.node(),
++            reference,
++            contract,
++            &layouts,
++            port_layout(self.ty(output)),
++            ExecutionTarget::Native,
++        )?;
++        let semantics = native_semantics::validated_scalar(&kernel)
++            .ok_or(Error::MissingSemanticWitness { node: at.node() })?;
++        if semantics.inputs().len() != arguments.len()
++            || semantics
++                .inputs()
++                .iter()
++                .zip(arguments)
++                .any(|(&kind, &arg)| public_kind(kind) != self.ty(arg).kind())
++            || public_kind(semantics.output()) != self.ty(output).kind()
++        {
++            return Err(Error::WitnessTypeMismatch { node: at.node() });
++        }
++        self.block(
++            at,
++            NativeMatchAction::Primitive {
++                op: public_op(semantics.op()),
++                operands: arguments.into(),
++                output,
++                memory_plan,
++            },
++        )
++    }
++    fn read(
++        &self,
++        value: ControlValue,
++        block: &ControlBlock,
++        parameters: &[NativeMatchValue],
++        locals: &[NativeMatchValue],
++        owner: NodeId,
++    ) -> Result<NativeMatchValue, Error> {
++        match value {
++            ControlValue::Constant(id) => self.constants.get(&id).copied(),
++            ControlValue::Parameter { block: id, ordinal } if id == block.id => {
++                parameters.get(ordinal as usize).copied()
++            }
++            ControlValue::Local { block: id, node } if id == block.id => {
++                locals.get(node as usize).copied()
++            }
++            _ => None,
++        }
++        .ok_or(Error::InvalidBinding { node: Some(owner) })
++    }
++    fn control_block(
++        &mut self,
++        owner: NodeId,
++        declaration: &MatchDeclaration,
++        block: &ControlBlock,
++        arguments: &[NativeMatchValue],
++        binding: Option<(u32, NativeMatchValue)>,
++    ) -> Result<(u32, u32, NativeMatchValue), Error> {
++        let scrutinee = *arguments
++            .get(declaration.scrutinee as usize)
++            .ok_or(Error::InvalidBinding { node: Some(owner) })?;
++        let parameters = block
++            .parameters
++            .iter()
++            .map(|parameter| {
++                let value = match parameter.source {
++                    ControlParameterSource::Scrutinee => Some(scrutinee),
++                    ControlParameterSource::Capture(index) => declaration
++                        .captures
++                        .get(index as usize)
++                        .and_then(|capture| arguments.get(capture.input as usize))
++                        .copied(),
++                    ControlParameterSource::PatternBinding(local) => binding
++                        .filter(|(id, _)| *id == local)
++                        .map(|(_, value)| value),
++                }
++                .ok_or(Error::InvalidBinding { node: Some(owner) })?;
++                if self.ty(value).schema() != parameter.schema {
++                    return Err(Error::InvalidBinding { node: Some(owner) });
++                }
++                Ok(value)
++            })
++            .collect::<Result<Vec<_>, Error>>()?;
++        let at = origin(owner, Some(block.id.0), None);
++        let entry = self.block(at, NativeMatchAction::None)?;
++        let mut tail = entry;
++        let mut locals = Vec::new();
++        for operation in &block.operations {
++            let at = origin(owner, Some(block.id.0), Some(operation.node));
++            if operation.node as usize != locals.len() {
++                return Err(Error::InvalidBinding { node: Some(owner) });
++            }
++            let args = operation
++                .inputs
++                .iter()
++                .map(|&value| self.read(value, block, &parameters, &locals, owner))
++                .collect::<Result<Vec<_>, _>>()?;
++            let result = self.value(scalar_type(self.artifact, operation.schema)?)?;
++            let (start, end) = match &operation.body {
++                ControlOperationBody::Operation {
++                    operation,
++                    contract,
++                } => {
++                    let id = self.primitive(at, operation, *contract, &args, result)?;
++                    (id, id)
++                }
++                ControlOperationBody::Match(nested) => self.matched(at, nested, &args, result)?,
++                _ => return Err(unsupported(owner, "non-Match scalar control operation")),
++            };
++            self.link(tail, start);
++            tail = end;
++            locals.push(result);
++        }
++        let yielded = self.read(block.yield_value, block, &parameters, &locals, owner)?;
++        Ok((entry, tail, yielded))
++    }
++    fn matched(
++        &mut self,
++        at: NativeMatchOrigin,
++        declaration: &MatchDeclaration,
++        arguments: &[NativeMatchValue],
++        output: NativeMatchValue,
++    ) -> Result<(u32, u32), Error> {
++        let owner = at.node();
++        if declaration.partial {
++            return Err(unsupported(owner, "partial or sticky Match"));
++        }
++        let scrutinee = *arguments
++            .get(declaration.scrutinee as usize)
++            .ok_or(Error::InvalidBinding { node: Some(owner) })?;
++        for capture in &declaration.captures {
++            let value = arguments
++                .get(capture.input as usize)
++                .ok_or(Error::InvalidBinding { node: Some(owner) })?;
++            if self.ty(*value).schema() != capture.schema {
++                return Err(Error::InvalidBinding { node: Some(owner) });
++            }
++        }
++        let entry = self.block(at, NativeMatchAction::None)?;
++        let join = self.block(at, NativeMatchAction::None)?;
++        let mut test = entry;
++        for arm in &declaration.arms {
++            let next = self.block(at, NativeMatchAction::None)?;
++            let mut binding = None;
++            let literal = match &arm.pattern {
++                MatchPattern::Wildcard | MatchPattern::Bind => None,
++                MatchPattern::Literal(id) => Some(
++                    *self
++                        .constants
++                        .get(id)
++                        .ok_or(Error::InvalidBinding { node: Some(owner) })?,
++                ),
++                MatchPattern::Structural(crate::CollectionPattern::Wildcard) => None,
++                MatchPattern::Structural(crate::CollectionPattern::Bind { local, schema }) => {
++                    if *schema != self.ty(scrutinee).schema() {
++                        return Err(Error::InvalidBinding { node: Some(owner) });
++                    }
++                    binding = Some((*local, scrutinee));
++                    None
++                }
++                MatchPattern::Structural(crate::CollectionPattern::Equal(
++                    crate::MatchPatternValue::Literal(id),
++                )) => Some(
++                    *self
++                        .constants
++                        .get(id)
++                        .ok_or(Error::InvalidBinding { node: Some(owner) })?,
++                ),
++                _ => return Err(unsupported(owner, "aggregate or computed scalar pattern")),
++            };
++            let (body, body_tail, yielded) =
++                self.control_block(owner, declaration, &arm.body, arguments, binding)?;
++            if self.ty(yielded) != self.ty(output) {
++                return Err(Error::InvalidBinding { node: Some(owner) });
++            }
++            let copy = self.block(
++                origin(owner, Some(arm.body.id.0), None),
++                NativeMatchAction::Copy {
++                    source: yielded,
++                    output,
++                },
++            )?;
++            self.link(body_tail, copy);
++            self.link(copy, join);
++            let selected = if let Some(guard) = &arm.guard {
++                let (start, tail, condition) =
++                    self.control_block(owner, declaration, guard, arguments, binding)?;
++                if self.ty(condition).kind() != NativeScalarKind::Bool {
++                    return Err(Error::InvalidBinding { node: Some(owner) });
++                }
++                self.blocks[tail as usize].terminator = NativeMatchTerminator::Branch {
++                    condition,
++                    yes: body,
++                    no: next,
++                };
++                start
++            } else {
++                body
++            };
++            self.blocks[test as usize].terminator = if let Some(peer) = literal {
++                if self.ty(peer) != self.ty(scrutinee) {
++                    return Err(Error::InvalidBinding { node: Some(owner) });
++                }
++                NativeMatchTerminator::LiteralBranch {
++                    left: scrutinee,
++                    right: peer,
++                    yes: selected,
++                    no: next,
++                }
++            } else {
++                NativeMatchTerminator::Jump(selected)
++            };
++            test = next;
++        }
++        // Keep a typed fail-closed terminal even though validated exhaustive
++        // patterns make this path unreachable for admitted scalar inputs.
++        self.blocks[test as usize].terminator = NativeMatchTerminator::Reject;
++        Ok((entry, join))
++    }
++}
++
++/// A separate bounded native control route. No source parser, value executor,
++/// resident activation or experimental AST/nativeSequence lowering is called.
++pub fn lower_scalar_match_artifact(
++    artifact: &ProgramArtifact,
++    catalog: &FunctionCatalog,
++) -> Result<NativeMatchArtifactPlan, Error> {
++    if !artifact.requirements().is_empty()
++        || !artifact.constraints().is_empty()
++        || !artifact.compute_regions().is_empty()
++    {
++        return Err(Error::UnsupportedProgram {
++            feature: "requirements, constraints or compute regions",
++        });
++    }
++    validate_scalar_slot_initializers(artifact)?;
++    for node in artifact.nodes() {
++        if !matches!(
++            &node.body,
++            ExecutableNodeBody::Operation(_) | ExecutableNodeBody::Match(_)
++        ) {
++            return Err(unsupported(node.node, "non-Match control or lifecycle"));
++        }
++    }
++    let classes = classify_nodes(artifact, ResidentExternalAdmission::StructuralOnly)?;
++    for node in artifact.nodes() {
++        if classes[node.node.get() as usize] != NodeClass::Turn {
++            return Err(unsupported(
++                node.node,
++                "Activation computation or external node",
++            ));
++        }
++    }
++    let schedule = build_activation_schedule(artifact, &classes)?;
++    let mut builder = Builder {
++        artifact,
++        catalog,
++        values: Vec::new(),
++        constants: BTreeMap::new(),
++        blocks: Vec::new(),
++    };
++    let mut sources = BTreeMap::new();
++    let mut inputs = Vec::new();
++    for input in artifact.inputs() {
++        let ty = scalar_type(artifact, input.schema)?;
++        let value = builder.value(ty.clone())?;
++        sources.insert(ArtifactSource::Slot(input.slot), value);
++        inputs.push(NativeMatchInput {
++            declaration: NativeInput {
++                input: input.input,
++                slot: input.slot,
++                name: input.name.clone(),
++                ty,
++            },
++            value,
++        });
++    }
++    let mut constants = Vec::new();
++    for ordinal in 0..artifact.constants().len() {
++        let id = ConstantId::new(
++            u32::try_from(ordinal).map_err(|_| Error::InvalidBinding { node: None })?,
++        );
++        let constant = artifact
++            .constants()
++            .get(id)
++            .ok_or(Error::InvalidBinding { node: None })?;
++        let ty = scalar_type(artifact, constant.schema())?;
++        let scalar = match (ty.kind(), constant.data()) {
++            (NativeScalarKind::Bool, mech_core::ValueData::Bool(value)) => {
++                NativeScalarValue::Bool(*value)
++            }
++            (NativeScalarKind::U64, mech_core::ValueData::U64(value)) => {
++                NativeScalarValue::U64(*value)
++            }
++            _ => {
++                return Err(Error::UnsupportedSchema {
++                    schema: constant.schema(),
++                });
++            }
++        };
++        if constant.schema_key() != ty.schema_key()
++            || !constant.shape().parameter_values().is_empty()
++        {
++            return Err(Error::UnsupportedSchema {
++                schema: constant.schema(),
++            });
++        }
++        let value = builder.value(ty)?;
++        builder.constants.insert(id, value);
++        sources.insert(ArtifactSource::Constant(id), value);
++        constants.push(NativeMatchConstant { value, scalar });
++    }
++    let root_origin = origin(NodeId::new(0), None, None);
++    let entry = builder.block(root_origin, NativeMatchAction::None)?;
++    let mut tail = entry;
++    for node_id in schedule.nodes.iter().copied() {
++        let node = &artifact.nodes()[node_id.get() as usize];
++        let args = node_inputs(artifact, node_id)?
++            .iter()
++            .map(|&source| {
++                let source = forwarded_output_source(artifact, source)?;
++                sources.get(&source).copied().ok_or(Error::InvalidBinding {
++                    node: Some(node_id),
++                })
++            })
++            .collect::<Result<Vec<_>, Error>>()?;
++        let slot = node_output_slot(artifact, node_id)?;
++        let output = builder.value(scalar_type(
++            artifact,
++            artifact.slots()[slot.get() as usize].schema,
++        )?)?;
++        let at = origin(node_id, None, None);
++        let (start, end) = match &node.body {
++            ExecutableNodeBody::Operation(operation) => {
++                let id = builder.primitive(
++                    at,
++                    &operation.operation,
++                    operation.contract,
++                    &args,
++                    output,
++                )?;
++                (id, id)
++            }
++            ExecutableNodeBody::Match(control) => builder.matched(at, control, &args, output)?,
++            _ => unreachable!("node class checked before construction"),
++        };
++        builder.link(tail, start);
++        tail = end;
++        if sources.insert(ArtifactSource::Slot(slot), output).is_some() {
++            return Err(Error::InvalidBinding {
++                node: Some(node_id),
++            });
++        }
++    }
++    let completion = builder.block(root_origin, NativeMatchAction::None)?;
++    builder.link(tail, completion);
++    builder.blocks[completion as usize].terminator = NativeMatchTerminator::Complete;
++    let outputs = artifact
++        .outputs()
++        .iter()
++        .map(|output| {
++            let source = forwarded_output_source(artifact, ArtifactSource::Slot(output.source))?;
++            let value = *sources
++                .get(&source)
++                .ok_or(Error::InvalidBinding { node: None })?;
++            let ty = scalar_type(artifact, output.schema)?;
++            if builder.ty(value) != &ty {
++                return Err(Error::InvalidBinding { node: None });
++            }
++            Ok(NativeMatchOutput {
++                output: output.output,
++                slot: output.source,
++                name: output.name.clone(),
++                interactive_binding: output.interactive_binding.clone(),
++                value,
++                ty,
++            })
++        })
++        .collect::<Result<Vec<_>, Error>>()?;
++    Ok(NativeMatchArtifactPlan {
++        revision: artifact.revision(),
++        inputs: inputs.into(),
++        constants: constants.into(),
++        values: builder.values.into(),
++        blocks: builder.blocks.into(),
++        outputs: outputs.into(),
++        entry,
++    })
++}
+diff --git a/src/stdlib/tests/native_artifact_match_lowering.rs b/src/stdlib/tests/native_artifact_match_lowering.rs
+new file mode 100644
+--- /dev/null
++++ b/src/stdlib/tests/native_artifact_match_lowering.rs
+@@ -0,0 +1,155 @@
++#![cfg(all(feature = "full_compiler", feature = "native-artifact"))]
++//! Metadata-only canonical Match lowering and selected implementation authority.
++use mech_core::{
++    BoundResidentKernel, FunctionCatalogBuilder, ImplementationMemoryClass,
++    ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs,
++    ResidentKernelWorkAccounting, ResidentValueMut,
++};
++use mech_engine::native_artifact::{
++    NativeArtifactLoweringError, NativeMatchAction, NativeMatchTerminator, NativeScalarKind,
++    NativeScalarOp, lower_scalar_match_artifact,
++};
++use mech_engine::{CanonicalSourceFrontend, ProgramArtifact};
++use mech_syntax::document::{
++    AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
++    parse_canonical_document,
++};
++use std::sync::atomic::{AtomicUsize, Ordering};
++fn artifacts(source: &str) -> [ProgramArtifact; 2] {
++    let parsed = parse_canonical_document(
++        TextSnapshot::new(DocumentId(0x4d41544d), Revision(1), source).unwrap(),
++        ParseConfig::default(),
++    );
++    assert!(
++        parsed.is_strictly_clean(),
++        "{source}: {:?}",
++        parsed.diagnostics
++    );
++    let original = CanonicalSourceFrontend
++        .compile_document_with_catalog(
++            &DocumentSyntax::cast(parsed.syntax()).unwrap(),
++            mech_stdlib::source_catalog(),
++        )
++        .unwrap_or_else(|error| panic!("{source}: {error:?}"))
++        .compile_artifact()
++        .unwrap();
++    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap();
++    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
++    assert_eq!(original.revision(), decoded.revision());
++    [original, decoded]
++}
++#[test]
++fn lexical_captures_alias_exact_scalar_values_and_keep_all_certified_operations() {
++    let source = "captured := offset<u64> + 1u64\n(flag<bool>? | true => captured + value<u64> | false => (value<u64>? | 0u64 => captured | * => captured + 2u64))\n";
++    for artifact in artifacts(source) {
++        let plan = lower_scalar_match_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
++        assert_eq!(plan.program_revision(), artifact.revision());
++        assert_eq!(plan.outputs().len(), artifact.outputs().len());
++        let ops = plan
++            .blocks()
++            .iter()
++            .filter_map(|block| match block.action() {
++                NativeMatchAction::Primitive {
++                    op,
++                    operands,
++                    output,
++                    memory_plan,
++                } => Some((block.origin(), *op, operands, *output, memory_plan)),
++                _ => None,
++            })
++            .collect::<Vec<_>>();
++        assert_eq!(ops.len(), 3);
++        assert!(
++            ops.iter()
++                .all(|(_, op, _, _, _)| *op == NativeScalarOp::U64Add)
++        );
++        let captured = ops
++            .iter()
++            .find(|(at, _, _, _, _)| at.block().is_none())
++            .unwrap()
++            .3;
++        assert_eq!(
++            ops.iter()
++                .filter(|(at, _, args, _, _)| at.block().is_some() && args.contains(&captured))
++                .count(),
++            2
++        );
++        for (_, _, _, _, memory) in ops {
++            assert_eq!(memory.target.kind, mech_core::MemoryTargetKind::NativeHost);
++            assert_eq!(
++                memory.bound_call.target(),
++                mech_core::ExecutionTarget::Native
++            );
++        }
++        for (actual, expected) in plan.outputs().iter().zip(artifact.outputs()) {
++            assert_eq!(actual.output(), expected.output);
++            assert_eq!(actual.slot(), expected.source);
++            assert_eq!(actual.name(), expected.name);
++            assert_eq!(actual.ty().schema(), expected.schema);
++            assert_eq!(
++                actual.interactive_binding(),
++                expected.interactive_binding.as_ref()
++            );
++        }
++        assert!(
++            plan.values()
++                .iter()
++                .all(|ty| matches!(ty.kind(), NativeScalarKind::Bool | NativeScalarKind::U64))
++        );
++        assert!(plan.blocks().iter().any(|block| matches!(
++            block.terminator(),
++            NativeMatchTerminator::LiteralBranch { .. }
++        )));
++    }
++}
++static BINDS: AtomicUsize = AtomicUsize::new(0);
++fn never(
++    _: &BoundResidentKernel,
++    _: &dyn ResidentKernelInputs,
++    _: ResidentValueMut<'_>,
++) -> Result<bool, ResidentKernelError> {
++    panic!("metadata must not execute a kernel")
++}
++fn fake(_: &ResidentKernelBindRequest<'_>) -> Result<BoundResidentKernel, ResidentKernelBindError> {
++    BINDS.fetch_add(1, Ordering::SeqCst);
++    Ok(BoundResidentKernel::new(never, Box::new([]))
++        .with_work_accounting(ResidentKernelWorkAccounting::RuntimeMetered))
++}
++#[test]
++fn public_work_tags_and_same_operation_names_do_not_authorize_a_match_primitive() {
++    BINDS.store(0, Ordering::SeqCst);
++    let mut builder = FunctionCatalogBuilder::new();
++    builder
++        .insert_resident_factory(
++            ["math"],
++            "add",
++            ImplementationMemoryClass::NoAdditionalScratch,
++            fake,
++        )
++        .unwrap();
++    let catalog = builder.build().unwrap();
++    for artifact in artifacts("(flag<bool>? | true => value<u64> + 1u64 | false => 0u64)\n") {
++        assert!(matches!(
++            lower_scalar_match_artifact(&artifact, &catalog),
++            Err(NativeArtifactLoweringError::MissingSemanticWitness { .. })
++        ));
++    }
++    assert_eq!(BINDS.load(Ordering::SeqCst), 2);
++}
++#[test]
++fn partial_match_and_lifecycle_or_aggregate_programs_are_rejected_whole() {
++    for source in [
++        "only(n<u64>) => <u64>\n  | 0u64 => 42u64.\nonly(signal<u64>)\n",
++        "~value := 1u64\nvalue\n",
++        "signal<[f64]:1,2>\n",
++        "[value + 1u64 | value <- signal<[u64]:1,2>]\n",
++        "#Deferred(value<u64>) => <u64>\n  | :Start\n  | :Later.\n#Deferred(value) -> :Start\n  :Start ~> :Later\n  :Later => value.\n#Deferred(signal<u64>)\n",
++    ] {
++        for artifact in artifacts(source) {
++            assert!(
++                lower_scalar_match_artifact(&artifact, &mech_stdlib::source_catalog()).is_err(),
++                "{source}"
++            );
++        }
++    }
++}

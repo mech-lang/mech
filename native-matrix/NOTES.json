@@ -1,0 +1,18 @@
+{
+  "status": "UNAPPLIED / UNRUN",
+  "qualification_credit": 0,
+  "scope": [
+    "Constructor-private pure stateless matrix-only straight-line ordinary Turn plan from actual private factory certificates; no binder/executor/preflight invoked by lowering.",
+    "Exact rank2 F64 with Constant/Parameter axes, at most two Turn parameters, Constant lower/upper bounds. Compound/Activation dimension metadata explicitly unsupported in executable plan; unchanged broader symbolic metadata collector remains independent.",
+    "Actual current descriptors rebuilt from sealed schemas and real validated shape metadata. True BoundCall target Native, current NativeHost core CallMemoryPlan, Known actual element counts, no ResidentLayout/fake shape.",
+    "Setup and per-call metadata-only finite demand precede descriptor/core-plan construction; bounded schema metadata language removes recursive dependency expansion. Payload bytes do not enter metadata estimates.",
+    "Readonly inputs include exact artifact input/slot/name. Outputs preserve exact IDs, slots, names, optional interactive bindings and shared producer aliases. All actual scheduled calls including unused checked operations retained.",
+    "Referenced immutable canonical matrix constants only; computed Activation matrix constructors, state, control, resources, constraints and compute regions rejected.",
+    "Exact allocation-free maintained dense F64 transpose/matmul leaves factored once and reused by resident wrappers and hidden native leaf API. No resident program executor or interpreted bytecode bridge."
+  ],
+  "composition": "Final engine aggregate includes the earlier symbolic template candidate; do not apply that predecessor separately. Apply engine patch, constant-output overlay, then GPU patch. Preserve current String/retention/constructor source.",
+  "limits": [
+    "Stateless straight-line rank2 F64 only; Constant/Turn Parameter axes with fixed bounds.",
+    "Native matrix Iteration/Match/FSM carriers and captures, lifecycle, compound geometry, collections and resource IO remain absent."
+  ]
+}
