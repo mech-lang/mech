@@ -1483,6 +1483,7 @@ fn fold_block(
         .iter()
         .map(|parameter| {
             let selected = match parameter.source {
+                crate::ControlParameterSource::IterationCarrier => None,
                 crate::ControlParameterSource::Scrutinee => {
                     captures.get(control.scrutinee as usize)
                 }
@@ -1560,7 +1561,8 @@ fn fold_block(
                 analysis,
                 depth + 1,
             )?,
-            crate::ControlOperationBody::Recur(_)
+            crate::ControlOperationBody::Iteration(_)
+            | crate::ControlOperationBody::Recur(_)
             | crate::ControlOperationBody::Suspend
             | crate::ControlOperationBody::Publish => None,
         };

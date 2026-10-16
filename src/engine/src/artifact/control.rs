@@ -37,7 +37,8 @@ pub struct ControlCapture {
     pub input: u16,
     pub schema: SchemaId,
     /// Retain lexical arguments and derived captures across suspension.
-    /// Direct external inputs remain live when the FSM resumes.
+    /// Direct external inputs remain live when the FSM resumes. Counted
+    /// application requires this flag for its once-per-invocation snapshots.
     pub freeze_on_suspend: bool,
 }
 
@@ -46,6 +47,8 @@ pub enum ControlParameterSource {
     Scrutinee,
     PatternBinding(u32),
     Capture(u16),
+    /// Actual privately owned value at the current counted-application visit.
+    IterationCarrier,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -92,6 +95,7 @@ pub enum ControlOperationBody<C = OperationContractId> {
     /// Stage an FSM output while control continues to a later transition in
     /// the same arm. Publication commits atomically with any suspension.
     Publish,
+    Iteration(super::IterationDeclaration<C>),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -818,6 +822,9 @@ pub(super) fn validate_match_inner(
                             .ok_or_else(|| invalid("unknown capture parameter"))?
                             .schema
                     }
+                    ControlParameterSource::IterationCarrier => {
+                        return Err(invalid("iteration carrier is not a match parameter"));
+                    }
                 };
                 if parameter.schema != expected {
                     return Err(invalid("parameter schema mismatch"));
@@ -904,6 +911,17 @@ pub(super) fn validate_match_inner(
                                 next_block,
                                 guarded,
                             )?
+                        }
+                        ControlOperationBody::Iteration(nested) => {
+                            super::iteration::validate_iteration_inner(
+                                draft,
+                                node,
+                                nested,
+                                &inputs,
+                                operation.schema,
+                                next_block,
+                                guarded,
+                            )?;
                         }
                         ControlOperationBody::Recur(ancestor) => {
                             let target = match_schemas
@@ -1107,6 +1125,7 @@ pub const MAX_CONTROL_DEPTH: usize = 8;
 enum ControlRef<'a, C> {
     Match(&'a MatchDeclaration<C>),
     Comprehension(&'a super::ComprehensionDeclaration<C>),
+    Iteration(&'a super::IterationDeclaration<C>),
 }
 
 fn control_counts<C>(root: ControlRef<'_, C>) -> Option<[usize; 5]> {
@@ -1152,6 +1171,8 @@ fn control_counts<C>(root: ControlRef<'_, C>) -> Option<[usize; 5]> {
                                     ControlRef::Comprehension(nested),
                                     depth.checked_add(1)?,
                                 )),
+                                ControlOperationBody::Iteration(nested) => pending
+                                    .push((ControlRef::Iteration(nested), depth.checked_add(1)?)),
                                 ControlOperationBody::Operation { .. }
                                 | ControlOperationBody::Recur(_)
                                 | ControlOperationBody::Suspend
@@ -1183,12 +1204,41 @@ fn control_counts<C>(root: ControlRef<'_, C>) -> Option<[usize; 5]> {
                                     ControlRef::Comprehension(nested),
                                     depth.checked_add(1)?,
                                 )),
+                                ControlOperationBody::Iteration(nested) => pending
+                                    .push((ControlRef::Iteration(nested), depth.checked_add(1)?)),
                                 ControlOperationBody::Operation { .. }
                                 | ControlOperationBody::Recur(_)
                                 | ControlOperationBody::Suspend
                                 | ControlOperationBody::Publish => {}
                             }
                         }
+                    }
+                }
+            }
+            ControlRef::Iteration(control) => {
+                add(1, 1)?;
+                add(2, control.body.operations.len())?;
+                add(3, control.captures.len())?;
+                add(3, control.body.parameters.len())?;
+                // One real scratch carrier shares the u16 local namespace.
+                add(4, 1)?;
+                add(4, control.body.operations.len())?;
+                for operation in &control.body.operations {
+                    add(3, operation.inputs.len())?;
+                    match &operation.body {
+                        ControlOperationBody::Match(nested) => {
+                            pending.push((ControlRef::Match(nested), depth.checked_add(1)?))
+                        }
+                        ControlOperationBody::Comprehension(nested) => {
+                            pending.push((ControlRef::Comprehension(nested), depth.checked_add(1)?))
+                        }
+                        ControlOperationBody::Iteration(nested) => {
+                            pending.push((ControlRef::Iteration(nested), depth.checked_add(1)?))
+                        }
+                        ControlOperationBody::Operation { .. }
+                        | ControlOperationBody::Recur(_)
+                        | ControlOperationBody::Suspend
+                        | ControlOperationBody::Publish => {}
                     }
                 }
             }
@@ -1230,6 +1280,9 @@ fn validate_control_depth<C>(
                         ControlOperationBody::Comprehension(nested) => {
                             pending.push((ControlRef::Comprehension(nested), nested_depth));
                         }
+                        ControlOperationBody::Iteration(nested) => {
+                            pending.push((ControlRef::Iteration(nested), nested_depth));
+                        }
                         ControlOperationBody::Operation { .. }
                         | ControlOperationBody::Recur(_)
                         | ControlOperationBody::Suspend
@@ -1250,6 +1303,28 @@ fn validate_control_depth<C>(
                         ControlOperationBody::Comprehension(nested) => {
                             pending.push((ControlRef::Comprehension(nested), nested_depth));
                         }
+                        ControlOperationBody::Iteration(nested) => {
+                            pending.push((ControlRef::Iteration(nested), nested_depth));
+                        }
+                        ControlOperationBody::Operation { .. }
+                        | ControlOperationBody::Recur(_)
+                        | ControlOperationBody::Suspend
+                        | ControlOperationBody::Publish => {}
+                    }
+                }
+            }
+            ControlRef::Iteration(control) => {
+                for operation in &control.body.operations {
+                    match &operation.body {
+                        ControlOperationBody::Match(nested) => {
+                            pending.push((ControlRef::Match(nested), nested_depth))
+                        }
+                        ControlOperationBody::Comprehension(nested) => {
+                            pending.push((ControlRef::Comprehension(nested), nested_depth))
+                        }
+                        ControlOperationBody::Iteration(nested) => {
+                            pending.push((ControlRef::Iteration(nested), nested_depth))
+                        }
                         ControlOperationBody::Operation { .. }
                         | ControlOperationBody::Recur(_)
                         | ControlOperationBody::Suspend
@@ -1260,6 +1335,13 @@ fn validate_control_depth<C>(
         }
     }
     Ok(())
+}
+
+pub(super) fn validate_iteration_depth<C>(
+    control: &super::IterationDeclaration<C>,
+    node: mech_core::NodeId,
+) -> Result<(), super::ArtifactBuildError> {
+    validate_control_depth(ControlRef::Iteration(control), node)
 }
 
 pub(super) fn validate_control_counts(
@@ -1289,6 +1371,13 @@ pub(super) fn validate_control_counts(
             let control_counts =
                 control_counts(ControlRef::Comprehension(control)).ok_or_else(invalid)?;
             for (index, count) in control_counts[..4].iter().copied().enumerate() {
+                add(index, count)?;
+            }
+            continue;
+        }
+        if let super::ExecutableNodeBody::Iteration(control) = &node.body {
+            let nested = control_counts(ControlRef::Iteration(control)).ok_or_else(invalid)?;
+            for (index, count) in nested[..4].iter().copied().enumerate() {
                 add(index, count)?;
             }
             continue;
@@ -1332,6 +1421,7 @@ impl<C> MatchDeclaration<C> {
                     ControlOperationBody::Suspend => true,
                     ControlOperationBody::Match(nested) => nested.contains_suspend(),
                     ControlOperationBody::Comprehension(nested) => nested.contains_suspend(),
+                    ControlOperationBody::Iteration(nested) => nested.contains_suspend(),
                     ControlOperationBody::Operation { .. }
                     | ControlOperationBody::Recur(_)
                     | ControlOperationBody::Publish => false,
@@ -1395,6 +1485,11 @@ impl<C> MatchDeclaration<C> {
                                         )?,
                                     )
                                 }
+                                ControlOperationBody::Iteration(nested) => {
+                                    ControlOperationBody::Iteration(
+                                        nested.map_contracts_inner(map)?,
+                                    )
+                                }
                                 ControlOperationBody::Recur(ancestor) => {
                                     ControlOperationBody::Recur(*ancestor)
                                 }
@@ -1439,6 +1534,7 @@ impl<C> super::ComprehensionDeclaration<C> {
                 ControlOperationBody::Suspend => true,
                 ControlOperationBody::Match(nested) => nested.contains_suspend(),
                 ControlOperationBody::Comprehension(nested) => nested.contains_suspend(),
+                ControlOperationBody::Iteration(nested) => nested.contains_suspend(),
                 ControlOperationBody::Operation { .. }
                 | ControlOperationBody::Recur(_)
                 | ControlOperationBody::Publish => false,

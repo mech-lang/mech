@@ -194,6 +194,17 @@ enum WireNodeBody {
         arguments: Box<[(Option<String>, u16)]>,
         stages: Box<[WireFsmStage]>,
     },
+    Iteration(WireIterationDeclaration),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct WireIterationDeclaration {
+    count: u64,
+    seed: u16,
+    captures: Box<[(u16, u32, bool)]>,
+    carrier: u32,
+    body: WireControlBlock,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -339,6 +350,7 @@ enum WireControlParameterSource {
     Scrutinee,
     PatternBinding(u32),
     Capture(u16),
+    IterationCarrier,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -369,6 +381,7 @@ enum WireControlOperationBody {
 
     Suspend,
     Publish,
+    Iteration(WireIterationDeclaration),
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
@@ -1694,6 +1707,9 @@ fn wire_control_block(
                         super::ControlParameterSource::Capture(index) => {
                             WireControlParameterSource::Capture(index)
                         }
+                        super::ControlParameterSource::IterationCarrier => {
+                            WireControlParameterSource::IterationCarrier
+                        }
                     },
                     parameter.schema.get(),
                 )
@@ -1740,6 +1756,32 @@ fn wire_control_operation_body(
 
         super::ControlOperationBody::Suspend => WireControlOperationBody::Suspend,
         super::ControlOperationBody::Publish => WireControlOperationBody::Publish,
+        super::ControlOperationBody::Iteration(control) => {
+            WireControlOperationBody::Iteration(wire_iteration(control, operations))
+        }
+    }
+}
+
+fn wire_iteration(
+    control: &super::IterationDeclaration,
+    operations: &BTreeMap<OperationReference, u32>,
+) -> WireIterationDeclaration {
+    WireIterationDeclaration {
+        count: control.count,
+        seed: control.seed,
+        captures: control
+            .captures
+            .iter()
+            .map(|capture| {
+                (
+                    capture.input,
+                    capture.schema.get(),
+                    capture.freeze_on_suspend,
+                )
+            })
+            .collect(),
+        carrier: control.carrier.get(),
+        body: wire_control_block(&control.body, operations),
     }
 }
 
@@ -1994,6 +2036,9 @@ fn wire_node_body(
         super::ExecutableNodeBody::Activation(control) => {
             WireNodeBody::Activation(wire_match(control, operations))
         }
+        super::ExecutableNodeBody::Iteration(control) => {
+            WireNodeBody::Iteration(wire_iteration(control, operations))
+        }
         super::ExecutableNodeBody::Fsm(control) => WireNodeBody::Fsm {
             machine: control.machine.clone(),
             arguments: control
@@ -2117,6 +2162,9 @@ fn control_block_from_wire(
                     WireControlParameterSource::Capture(index) => {
                         super::ControlParameterSource::Capture(index)
                     }
+                    WireControlParameterSource::IterationCarrier => {
+                        super::ControlParameterSource::IterationCarrier
+                    }
                 },
                 schema: SchemaId::new(schema),
             })
@@ -2163,6 +2211,30 @@ fn control_operation_body_from_wire(
 
         WireControlOperationBody::Suspend => super::ControlOperationBody::Suspend,
         WireControlOperationBody::Publish => super::ControlOperationBody::Publish,
+        WireControlOperationBody::Iteration(control) => {
+            super::ControlOperationBody::Iteration(iteration_from_wire(control, operation)?)
+        }
+    })
+}
+
+fn iteration_from_wire(
+    control: WireIterationDeclaration,
+    operation: &impl Fn(u32) -> Result<OperationReference, ArtifactBytecodeError>,
+) -> Result<super::IterationDeclaration, ArtifactBytecodeError> {
+    Ok(super::IterationDeclaration {
+        count: control.count,
+        seed: control.seed,
+        captures: control
+            .captures
+            .into_iter()
+            .map(|(input, schema, freeze_on_suspend)| super::ControlCapture {
+                input,
+                schema: SchemaId::new(schema),
+                freeze_on_suspend,
+            })
+            .collect(),
+        carrier: SchemaId::new(control.carrier),
+        body: control_block_from_wire(control.body, operation)?,
     })
 }
 
@@ -2250,6 +2322,9 @@ fn node_body_from_wire(
         WireNodeBody::Activation(control) => {
             super::ExecutableNodeBody::Activation(match_from_wire(control, operation)?)
         }
+        WireNodeBody::Iteration(control) => {
+            super::ExecutableNodeBody::Iteration(iteration_from_wire(control, operation)?)
+        }
         WireNodeBody::Fsm {
             machine,
             arguments,
@@ -2336,6 +2411,7 @@ fn wire_operation_ids(body: &WireNodeBody) -> Vec<u32> {
         WireNodeBody::Match(control) => wire_match_operation_ids(control),
         WireNodeBody::Activation(control) => wire_match_operation_ids(control),
         WireNodeBody::Fsm { .. } => Vec::new(),
+        WireNodeBody::Iteration(control) => wire_iteration_operation_ids(control),
     }
 }
 
@@ -2346,10 +2422,20 @@ fn wire_control_body_operation_ids(body: &WireControlOperationBody) -> Vec<u32> 
         WireControlOperationBody::Comprehension(control) => {
             wire_comprehension_operation_ids(control)
         }
+        WireControlOperationBody::Iteration(control) => wire_iteration_operation_ids(control),
         WireControlOperationBody::Recur(_)
         | WireControlOperationBody::Suspend
         | WireControlOperationBody::Publish => Vec::new(),
     }
+}
+
+fn wire_iteration_operation_ids(control: &WireIterationDeclaration) -> Vec<u32> {
+    control
+        .body
+        .operations
+        .iter()
+        .flat_map(|operation| wire_control_body_operation_ids(&operation.body))
+        .collect()
 }
 
 fn wire_comprehension_operation_ids(control: &WireComprehensionDeclaration) -> Vec<u32> {
@@ -2558,7 +2644,10 @@ fn preflight_control_graph(
                     field,
                     depth: self.depth + 1,
                     control_depth: self.control_depth
-                        + usize::from(matches!(key.as_str(), "Match" | "Comprehension")),
+                        + usize::from(matches!(
+                            key.as_str(),
+                            "Match" | "Comprehension" | "Iteration"
+                        )),
                 })?;
             }
             Ok(())
@@ -2959,5 +3048,74 @@ mod matrix_block_wire_tests {
             }))
             .is_err()
         );
+    }
+}
+
+#[cfg(test)]
+mod iteration_wire_tests {
+    use super::*;
+
+    fn declaration(count: u64) -> serde_json::Value {
+        serde_json::json!({
+            "count": count,
+            "seed": 0,
+            "captures": [],
+            "carrier": 0,
+            "body": {
+                "id": 0,
+                "parameters": [["IterationCarrier", 0]],
+                "operations": [],
+                "yield_value": {"Parameter": {"block": 0, "ordinal": 0}}
+            }
+        })
+    }
+
+    #[test]
+    fn iteration_wire_is_strict_and_count_is_one_scalar_field() {
+        for count in [0, 19, u64::MAX] {
+            let json = declaration(count);
+            let wire: WireIterationDeclaration = serde_json::from_value(json.clone()).unwrap();
+            assert_eq!(wire.count, count);
+            assert!(wire.body.operations.is_empty());
+            assert_eq!(serde_json::to_value(&wire).unwrap(), json);
+            let mut unknown = json;
+            unknown["ignored_body"] = serde_json::json!(true);
+            assert!(serde_json::from_value::<WireIterationDeclaration>(unknown).is_err());
+        }
+        for count in [
+            serde_json::json!(-1),
+            serde_json::json!("18446744073709551616"),
+            serde_json::json!(1.5),
+        ] {
+            let mut json = declaration(0);
+            json["count"] = count;
+            assert!(serde_json::from_value::<WireIterationDeclaration>(json).is_err());
+        }
+    }
+
+    #[test]
+    fn iteration_wire_preflight_counts_bodies_and_nested_depth_before_allocation() {
+        let graph = serde_json::json!({"nodes": [{"body": {"Iteration": declaration(u64::MAX)}}]});
+        let bytes = serde_json::to_vec(&graph).unwrap();
+        let mut limits = ArtifactDecodeLimits::default();
+        limits.max_control_blocks = 0;
+        assert!(preflight_control_graph(&bytes, &limits).is_err());
+        assert!(preflight_control_graph(&bytes, &ArtifactDecodeLimits::default()).is_ok());
+        let mut nested = declaration(0);
+        for depth in 1..=super::super::MAX_CONTROL_DEPTH {
+            let mut parent = declaration(0);
+            parent["body"]["operations"] = serde_json::json!([{
+                "node": 0, "body": {"Iteration": nested}, "inputs": [], "schema": 0
+            }]);
+            nested = parent;
+            if depth == super::super::MAX_CONTROL_DEPTH {
+                let bytes = serde_json::to_vec(
+                    &serde_json::json!({"nodes": [{"body": {"Iteration": nested}}]}),
+                )
+                .unwrap();
+                assert!(preflight_control_graph(&bytes, &ArtifactDecodeLimits::default()).is_err());
+                break;
+            }
+        }
     }
 }

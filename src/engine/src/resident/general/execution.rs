@@ -2,6 +2,8 @@
 
 #[path = "comprehension_execution.rs"]
 pub(super) mod comprehension_execution;
+#[path = "iteration_execution.rs"]
+mod iteration_execution;
 
 pub(super) use comprehension_execution::StructuralProjectionTable;
 
@@ -1234,7 +1236,8 @@ impl ReactiveInstance {
                 | ActivatedTurnStep::Recur(_)
                 | ActivatedTurnStep::Suspend(_)
                 | ActivatedTurnStep::Publish(_)
-                | ActivatedTurnStep::Comprehension(_) => None,
+                | ActivatedTurnStep::Comprehension(_)
+                | ActivatedTurnStep::Iteration(_) => None,
             })
             .filter(|(_, node)| {
                 node.write.storage == ResidentStorageClass::State
@@ -1300,6 +1303,7 @@ impl ReactiveInstance {
                     (region, None)
                 }
                 ActivatedTurnStep::Comprehension(node) => (Some(node.write.region), None),
+                ActivatedTurnStep::Iteration(node) => (Some(node.write.region), None),
             };
             if let Some(region) = scratch {
                 self.workspace.scratch.discard_payload_write(region);
@@ -2335,6 +2339,19 @@ impl ReactiveInstance {
             ActivatedTurnStep::Kernel(_)
         ) {
             budget::charge_planning_step()?;
+        }
+        if matches!(
+            self.plan.steps[node_index.get() as usize],
+            ActivatedTurnStep::Iteration(_)
+        ) {
+            return self.execute_iteration_with_live_demand(
+                node_index,
+                before_epoch,
+                working_epoch,
+                probe,
+                live_bytes,
+                live_nodes,
+            );
         }
         if matches!(
             self.plan.steps[node_index.get() as usize],
@@ -3543,7 +3560,7 @@ impl ReactiveInstance {
             .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
         let nested_match = matches!(
             self.plan.steps[step.node.get() as usize],
-            ActivatedTurnStep::Match(_)
+            ActivatedTurnStep::Match(_) | ActivatedTurnStep::Iteration(_)
         );
         // Nested matches count their prior output while executing, but may
         // replace it. Keep that slot out of the persistent prefix and measure

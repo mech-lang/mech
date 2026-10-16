@@ -55,6 +55,9 @@ impl PendingComprehension {
                         PendingControlOperationBody::Comprehension(nested) => {
                             nested.visit_schemas(visit);
                         }
+                        PendingControlOperationBody::Iteration(nested) => {
+                            nested.visit_schemas(visit)
+                        }
                     }
                 }
             }
@@ -805,6 +808,24 @@ impl SemanticBuilder {
                         },
                     ));
                 }
+                PendingNodeBody::Iteration(control) if node.state.is_none() => {
+                    let inputs = require_preceding_collection_inputs(
+                        node.inputs
+                            .into_iter()
+                            .map(&mut capture)
+                            .collect::<Result<Box<[_]>, _>>()?,
+                        scheduled_local,
+                        syntax,
+                    )?;
+                    steps.push(PendingComprehensionStep::Operation(
+                        PendingComprehensionOperation {
+                            local: scheduled_local,
+                            body: PendingControlOperationBody::Iteration(control),
+                            schema: node.schema,
+                            inputs,
+                        },
+                    ));
+                }
                 _ => {
                     return Err(unsupported(
                         syntax,
@@ -1362,6 +1383,11 @@ pub(super) fn resolve_comprehension(
                             }
                             PendingControlOperationBody::Comprehension(nested) => {
                                 crate::ControlOperationBody::Comprehension(resolve_comprehension(
+                                    nested, schemas, constants,
+                                ))
+                            }
+                            PendingControlOperationBody::Iteration(nested) => {
+                                crate::ControlOperationBody::Iteration(resolve_iteration(
                                     nested, schemas, constants,
                                 ))
                             }

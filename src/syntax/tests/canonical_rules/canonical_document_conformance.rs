@@ -47,7 +47,7 @@ fn every_document_rule_has_a_clean_specification_derived_source() {
         Some("grammar-name\taccepted-source-json\tnode-policy\tsemantic-status\tspec-location")
     );
     let rows = lines.collect::<Vec<_>>();
-    assert_eq!(rows.len(), 112);
+    assert_eq!(rows.len(), 113);
 
     for line in rows {
         let fields = line.split('\t').collect::<Vec<_>>();

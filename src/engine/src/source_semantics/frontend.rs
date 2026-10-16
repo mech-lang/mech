@@ -1,3 +1,7 @@
+#[path = "application.rs"]
+mod application;
+use application::{PendingIteration, resolve_iteration};
+
 #[path = "constant_binding.rs"]
 mod constant_binding;
 
@@ -325,7 +329,8 @@ impl CanonicalSourceProgram {
                     }),
                 crate::SourceNodeBody::Match(_)
                 | crate::SourceNodeBody::Activation(_)
-                | crate::SourceNodeBody::Comprehension(_) => Ok(None),
+                | crate::SourceNodeBody::Comprehension(_)
+                | crate::SourceNodeBody::Iteration(_) => Ok(None),
                 crate::SourceNodeBody::Fsm(_) => Ok(None),
             })
             .collect::<Result<Vec<_>, _>>()?;
@@ -389,6 +394,7 @@ impl CanonicalSourceProgram {
                 crate::SourceNodeBody::Match(_)
                 | crate::SourceNodeBody::Activation(_)
                 | crate::SourceNodeBody::Comprehension(_)
+                | crate::SourceNodeBody::Iteration(_)
                 | crate::SourceNodeBody::Fsm(_) => Ok(None),
             })
             .collect::<mech_core::MResult<Vec<_>>>()?;
@@ -1367,6 +1373,19 @@ impl SourceSchemas {
             .map(|value| insert(&value.schema))
             .collect::<Result<Vec<_>, _>>()?;
         for node in nodes {
+            if let PendingNodeBody::Iteration(control) = &node.body {
+                let mut failure = None;
+                control.visit_schemas(&mut |schema| {
+                    if failure.is_none()
+                        && let Err(error) = insert(schema)
+                    {
+                        failure = Some(error);
+                    }
+                });
+                if let Some(error) = failure {
+                    return Err(error);
+                }
+            }
             if let PendingNodeBody::Comprehension(control) = &node.body {
                 let mut failure = None;
                 control.visit_schemas(&mut |schema| {
@@ -2528,6 +2547,7 @@ enum PendingNodeBody {
     Match(PendingMatch),
     Activation(PendingMatch),
     Comprehension(PendingComprehension),
+    Iteration(PendingIteration),
     Fsm(crate::FsmDeclaration),
     CollectionBinding,
     RecursiveCall(u8),
@@ -2557,6 +2577,9 @@ impl PendingMatch {
                     match &operation.body {
                         PendingControlOperationBody::Match(nested) => nested.visit_schemas(visit),
                         PendingControlOperationBody::Comprehension(nested) => {
+                            nested.visit_schemas(visit)
+                        }
+                        PendingControlOperationBody::Iteration(nested) => {
                             nested.visit_schemas(visit)
                         }
                         PendingControlOperationBody::Operation { .. }
@@ -2968,6 +2991,7 @@ enum PendingControlOperationBody {
     },
     Match(PendingMatch),
     Comprehension(PendingComprehension),
+    Iteration(PendingIteration),
     Recur(u8),
 
     Suspend,
@@ -3072,6 +3096,7 @@ struct SemanticBuilder {
     outputs: Vec<PendingOutput>,
     constraints: Vec<PendingConstraint>,
     bindings: BTreeMap<String, PendingBinding>,
+    document_bindings: BTreeMap<String, PendingBinding>,
     scope_definitions: BTreeSet<String>,
     external_definitions: BTreeSet<String>,
     local_functions: BTreeMap<String, SyntaxNode>,
@@ -3265,6 +3290,7 @@ impl SemanticBuilder {
             outputs: Vec::new(),
             constraints: Vec::new(),
             bindings: BTreeMap::new(),
+            document_bindings: BTreeMap::new(),
             scope_definitions: BTreeSet::new(),
             external_definitions: BTreeSet::new(),
             local_functions: BTreeMap::new(),
@@ -3758,6 +3784,7 @@ impl SemanticBuilder {
         expected: Option<ExpectedSchema<'_>>,
     ) -> Result<PendingValue, SourceSemanticError> {
         match body {
+            ExpressionBodySyntax::Application(value) => self.application(value),
             ExpressionBodySyntax::FsmPipe(pipe) => self.fsm_pipe(pipe),
             ExpressionBodySyntax::SetComprehension(value) => self.set_comprehension(value),
             ExpressionBodySyntax::MatrixComprehension(value) => {
@@ -4075,12 +4102,16 @@ impl SemanticBuilder {
     ) -> Result<PendingValue, SourceSemanticError> {
         Ok(match value {
             FactorValueSyntax::Parenthetical(value) => {
-                let expression = self.required(
-                    value.expression(),
-                    value.syntax(),
-                    "a parenthesized expression",
-                )?;
-                self.expression_body_with_expected(&expression, expected)?
+                if let Some(expression) = value.complete_expression() {
+                    self.expression_with_expected(&expression, expected)?.0
+                } else {
+                    let expression = self.required(
+                        value.expression(),
+                        value.syntax(),
+                        "a parenthesized expression",
+                    )?;
+                    self.expression_body_with_expected(&expression, expected)?
+                }
             }
             FactorValueSyntax::Negate(value) => {
                 if let Some(literal) = self.negated_number_literal(&value, expected)? {
@@ -7855,6 +7886,14 @@ impl SemanticBuilder {
                             }),
                         }
                     }
+                    PendingNodeBody::Iteration(control) => {
+                        contracts.push(None);
+                        crate::SourceNodeBody::Iteration(resolve_iteration(
+                            control,
+                            &schemas.table,
+                            &constant_ids,
+                        ))
+                    }
                     PendingNodeBody::Comprehension(control) => {
                         contracts.push(None);
                         crate::SourceNodeBody::Comprehension(resolve_comprehension(
@@ -10364,6 +10403,9 @@ impl SemanticBuilder {
                 PendingNodeBody::Comprehension(control) => {
                     PendingControlOperationBody::Comprehension(control)
                 }
+                PendingNodeBody::Iteration(control) => {
+                    PendingControlOperationBody::Iteration(control)
+                }
                 PendingNodeBody::RecursiveCall(ancestor) => {
                     PendingControlOperationBody::Recur(ancestor)
                 }
@@ -10395,6 +10437,87 @@ impl SemanticBuilder {
     }
 }
 
+fn resolve_pending_control_block(
+    block: &PendingControlBlock,
+    schemas: &SchemaTable,
+    constants: &[mech_core::ConstantId],
+) -> crate::ControlBlock<OperationContractDeclaration> {
+    let schema = |draft: &SchemaDraft| {
+        schemas
+            .find_by_key(
+                draft
+                    .clone()
+                    .finalize()
+                    .expect("validated control schema")
+                    .key(),
+            )
+            .expect("retained control schema")
+    };
+
+    let value = |value| match value {
+        PendingControlValue::Constant(index) => crate::ControlValue::Constant(constants[index]),
+        PendingControlValue::Parameter(ordinal) => crate::ControlValue::Parameter {
+            block: block.id,
+            ordinal,
+        },
+        PendingControlValue::Local(node) => crate::ControlValue::Local {
+            block: block.id,
+            node,
+        },
+    };
+    crate::ControlBlock {
+        id: block.id,
+        parameters: block
+            .parameters
+            .iter()
+            .map(|(source, draft)| crate::ControlParameter {
+                source: *source,
+                schema: schema(draft),
+            })
+            .collect(),
+        operations: block
+            .operations
+            .iter()
+            .enumerate()
+            .map(|(index, operation)| crate::ControlOperation {
+                node: index as u32,
+                body: match &operation.body {
+                    PendingControlOperationBody::Operation {
+                        operation,
+                        contract,
+                    } => crate::ControlOperationBody::Operation {
+                        operation: operation.clone(),
+                        contract: contract.clone(),
+                    },
+                    PendingControlOperationBody::Match(nested) => {
+                        crate::ControlOperationBody::Match(resolve_pending_match(
+                            nested, schemas, constants,
+                        ))
+                    }
+                    PendingControlOperationBody::Comprehension(nested) => {
+                        crate::ControlOperationBody::Comprehension(resolve_comprehension(
+                            nested, schemas, constants,
+                        ))
+                    }
+                    PendingControlOperationBody::Iteration(nested) => {
+                        crate::ControlOperationBody::Iteration(resolve_iteration(
+                            nested, schemas, constants,
+                        ))
+                    }
+                    PendingControlOperationBody::Recur(ancestor) => {
+                        crate::ControlOperationBody::Recur(*ancestor)
+                    }
+                    PendingControlOperationBody::Suspend => crate::ControlOperationBody::Suspend,
+                    PendingControlOperationBody::Publish => crate::ControlOperationBody::Publish,
+                },
+                inputs: operation.inputs.iter().copied().map(value).collect(),
+                schema: schema(&operation.schema),
+            })
+            .collect(),
+        yield_value: value(block.yield_value),
+    }
+}
+
 fn resolve_pending_match(
     control: &PendingMatch,
     schemas: &SchemaTable,
@@ -10411,69 +10534,8 @@ fn resolve_pending_match(
             )
             .expect("retained control schema")
     };
-    let block = |block: &PendingControlBlock| {
-        let value = |value| match value {
-            PendingControlValue::Constant(index) => crate::ControlValue::Constant(constants[index]),
-            PendingControlValue::Parameter(ordinal) => crate::ControlValue::Parameter {
-                block: block.id,
-                ordinal,
-            },
-            PendingControlValue::Local(node) => crate::ControlValue::Local {
-                block: block.id,
-                node,
-            },
-        };
-        crate::ControlBlock {
-            id: block.id,
-            parameters: block
-                .parameters
-                .iter()
-                .map(|(source, draft)| crate::ControlParameter {
-                    source: *source,
-                    schema: schema(draft),
-                })
-                .collect(),
-            operations: block
-                .operations
-                .iter()
-                .enumerate()
-                .map(|(index, operation)| crate::ControlOperation {
-                    node: index as u32,
-                    body: match &operation.body {
-                        PendingControlOperationBody::Operation {
-                            operation,
-                            contract,
-                        } => crate::ControlOperationBody::Operation {
-                            operation: operation.clone(),
-                            contract: contract.clone(),
-                        },
-                        PendingControlOperationBody::Match(nested) => {
-                            crate::ControlOperationBody::Match(resolve_pending_match(
-                                nested, schemas, constants,
-                            ))
-                        }
-                        PendingControlOperationBody::Comprehension(nested) => {
-                            crate::ControlOperationBody::Comprehension(resolve_comprehension(
-                                nested, schemas, constants,
-                            ))
-                        }
-                        PendingControlOperationBody::Recur(ancestor) => {
-                            crate::ControlOperationBody::Recur(*ancestor)
-                        }
-                        PendingControlOperationBody::Suspend => {
-                            crate::ControlOperationBody::Suspend
-                        }
-                        PendingControlOperationBody::Publish => {
-                            crate::ControlOperationBody::Publish
-                        }
-                    },
-                    inputs: operation.inputs.iter().copied().map(value).collect(),
-                    schema: schema(&operation.schema),
-                })
-                .collect(),
-            yield_value: value(block.yield_value),
-        }
-    };
+    let block =
+        |block: &PendingControlBlock| resolve_pending_control_block(block, schemas, constants);
     crate::MatchDeclaration {
         scrutinee: 0,
         partial: control.partial,

@@ -107,6 +107,10 @@ impl FactorSyntax {
 }
 
 impl ParentheticalExpressionSyntax {
+    /// Complete grouped expressions retain application and Match ownership.
+    pub fn complete_expression(&self) -> Option<crate::document::ExpressionSyntax> {
+        child(&self.0)
+    }
     pub fn opening_parenthesis(&self) -> Option<SyntaxToken> {
         direct_token(&self.0, SyntaxKind::LeftParen, 0)
     }

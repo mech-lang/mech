@@ -220,6 +220,11 @@ pub fn artifact_has_closed_resource_payloads(artifact: &ProgramArtifact) -> bool
             ComprehensionStep::Operation(operation) => pure_control(artifact, &operation.body),
             _ => true,
         }),
+        ExecutableNodeBody::Iteration(control) => control
+            .body
+            .operations
+            .iter()
+            .all(|operation| pure_control(artifact, &operation.body)),
         ExecutableNodeBody::Activation(_) | ExecutableNodeBody::Fsm(_) => false,
     })
 }
@@ -252,6 +257,11 @@ fn pure_control(artifact: &ProgramArtifact, body: &ControlOperationBody) -> bool
                 _ => true,
             })
         }
+        ControlOperationBody::Iteration(control) => control
+            .body
+            .operations
+            .iter()
+            .all(|operation| pure_control(artifact, &operation.body)),
         ControlOperationBody::Recur(_) => true,
         ControlOperationBody::Suspend | ControlOperationBody::Publish => false,
     }

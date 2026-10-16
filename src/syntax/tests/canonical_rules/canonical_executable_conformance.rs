@@ -3,14 +3,14 @@ use std::fs;
 use std::path::PathBuf;
 
 use crate::document::parser::canonical::{
-    CanonicalRuleOutcome, parse_canonical_executable_rule_for_test,
+    parse_canonical_executable_rule_for_test, CanonicalRuleOutcome,
 };
 use crate::document::parser::{canonical_rule_id, canonical_rule_name, rules};
 use crate::document::{
+    executable_node_kind, normalize_diagnostics, reconstruct_source_range, validate_lossless_range,
     ArrayPatternSyntax, AstNode, DocumentId, ExpectedSyntax, FormulaSyntax, KindSyntax,
     KindValueSyntax, NodeFlags, ParseConfig, PatternArrayItemSyntax, RecursiveCoreSyntax, Revision,
     SyntaxElement, SyntaxKind, SyntaxNode, SyntaxToken, TextRange, TextSize, TextSnapshot,
-    executable_node_kind, normalize_diagnostics, reconstruct_source_range, validate_lossless_range,
 };
 
 #[derive(Debug)]
@@ -190,6 +190,7 @@ fn typed_access_hash(rule_name: &str, node: &SyntaxNode) -> u64 {
     let syntax = find_kind(node, kind).expect("certified typed node");
     let view = RecursiveCoreSyntax::cast(syntax).expect("closed recursive typed view");
     hash.field(match &view {
+        RecursiveCoreSyntax::ApplicationExpression(_) => "ApplicationExpression",
         RecursiveCoreSyntax::ArgumentList(_) => "ArgumentList",
         RecursiveCoreSyntax::RecordBinding(_) => "RecordBinding",
         RecursiveCoreSyntax::BraceSubscript(_) => "BraceSubscript",
@@ -285,6 +286,10 @@ fn typed_access_hash(rule_name: &str, node: &SyntaxNode) -> u64 {
         };
     }
     match view {
+        RecursiveCoreSyntax::ApplicationExpression(view) => {
+            node!("seed", view.seed());
+            nodes!("stages", view.stages());
+        }
         RecursiveCoreSyntax::ArgumentList(view) => {
             token!("opening-parenthesis", view.opening_parenthesis());
             nodes!("arguments", view.arguments());

@@ -3,7 +3,13 @@ use super::super::super::{ExpressionForm, FactAttempt};
 use super::*;
 pub(super) enum Phase {
     Enter,
-    Finish(Marker),
+    EnterGrouped,
+    Finish(Marker, bool),
+    ApplicationEnter,
+    ApplicationFirst(Marker),
+    ApplicationLoop(Marker, FactAttempt<ExpressionForm>, bool, bool),
+    ApplicationNext(Marker, FactAttempt<ExpressionForm>, bool, bool, TextSize),
+    AfterApplication,
     Body,
     Fsm,
     Delimited(Marker, FormulaSeed),
@@ -14,7 +20,7 @@ pub(super) enum Phase {
     Seeded(Marker),
     RangeOperator(Marker, bool),
     RangeDone,
-    AfterMatch(bool),
+    AfterMatch(bool, TextSize, FactAttempt<ExpressionForm>),
     Match,
     MatchSpace(ParserCheckpoint),
     MatchQuestion(ParserCheckpoint),
@@ -48,18 +54,86 @@ impl Continuation {
     ) -> Option<Progress> {
         let phase = *phase;
         match phase {
-            Phase::Enter => {
+            Phase::Enter | Phase::EnterGrouped => {
+                let grouped = matches!(phase, Phase::EnterGrouped);
                 self.transaction(parser, rules::EXPRESSION);
                 let node = parser.start();
-                self.expression(Phase::Finish(node));
-                self.expression(Phase::Body);
+                self.expression(Phase::Finish(node, grouped));
+                self.expression(Phase::AfterApplication);
+                self.expression(Phase::ApplicationEnter);
             }
-            Phase::Finish(node) => {
+            Phase::Finish(node, grouped) => {
                 self.result = self.facts.attempt();
-                if self.result == Attempt::NoMatch {
+                if self.result == Attempt::NoMatch
+                    || grouped
+                        && matches!(self.facts, FactAttempt::Matched(ExpressionForm::Formula))
+                {
                     node.abandon(parser);
                 } else {
                     node.complete(parser, SyntaxKind::Expression);
+                }
+            }
+            Phase::ApplicationEnter => {
+                self.transaction(parser, rules::APPLICATION_EXPRESSION);
+                let node = parser.start();
+                self.expression(Phase::ApplicationFirst(node));
+                self.expression(Phase::Body);
+            }
+            Phase::ApplicationFirst(node) => {
+                if self.result == Attempt::NoMatch {
+                    node.abandon(parser);
+                } else {
+                    self.expression(Phase::ApplicationLoop(
+                        node,
+                        self.facts,
+                        false,
+                        self.result == Attempt::Committed,
+                    ));
+                }
+            }
+            Phase::ApplicationLoop(node, seed, stages, committed) => {
+                self.expression(Phase::ApplicationNext(
+                    node,
+                    seed,
+                    stages,
+                    committed,
+                    parser.offset(),
+                ));
+                self.push(Frame::Application(Box::new(application::Phase::Enter(
+                    rules::APPLICATION_STAGE,
+                ))));
+            }
+            Phase::ApplicationNext(node, seed, stages, committed, before) => {
+                if self.result != Attempt::NoMatch && parser.offset() > before {
+                    self.expression(Phase::ApplicationLoop(
+                        node,
+                        seed,
+                        true,
+                        committed || self.result == Attempt::Committed,
+                    ));
+                } else {
+                    if stages {
+                        node.complete(parser, SyntaxKind::ApplicationExpression);
+                    } else {
+                        node.abandon(parser);
+                    }
+                    self.expression_result(if committed {
+                        FactAttempt::Committed
+                    } else if stages {
+                        FactAttempt::Matched(ExpressionForm::Application)
+                    } else {
+                        seed
+                    });
+                }
+            }
+            Phase::AfterApplication => {
+                if self.result != Attempt::NoMatch {
+                    self.expression(Phase::AfterMatch(
+                        self.result == Attempt::Committed,
+                        parser.offset(),
+                        self.facts,
+                    ));
+                    self.expression(Phase::Match);
                 }
             }
             Phase::Body => {
@@ -198,8 +272,11 @@ impl Continuation {
             Phase::RangeOperator(range, committed) => match self.result {
                 Attempt::NoMatch => {
                     range.abandon(parser);
-                    self.expression(Phase::AfterMatch(committed));
-                    self.expression(Phase::Match);
+                    self.expression_result(if committed {
+                        FactAttempt::Committed
+                    } else {
+                        FactAttempt::Matched(ExpressionForm::Formula)
+                    });
                 }
                 Attempt::Committed => {
                     expressions::finish_provisional_formula_marker(parser, range);
@@ -216,9 +293,11 @@ impl Continuation {
             } else {
                 FactAttempt::Committed
             }),
-            Phase::AfterMatch(committed) => {
+            Phase::AfterMatch(committed, before, seed) => {
                 if committed {
                     self.expression_result(FactAttempt::Committed);
+                } else if parser.offset() == before {
+                    self.expression_result(seed);
                 }
             }
             Phase::Match => {

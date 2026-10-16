@@ -299,6 +299,9 @@ impl CanonicalSourceProgram {
                 crate::SourceNodeBody::Comprehension(declaration) => {
                     relocation.comprehension(declaration)
                 }
+                crate::SourceNodeBody::Iteration(declaration) => {
+                    relocation.iteration(declaration)
+                }
                 crate::SourceNodeBody::Operation { .. } | crate::SourceNodeBody::Fsm(_) => {}
             }
             for input in &mut node.inputs {
@@ -376,6 +379,9 @@ impl BindingRelocation<'_> {
                 crate::ControlOperationBody::Comprehension(declaration) => {
                     self.comprehension(declaration)
                 }
+                crate::ControlOperationBody::Iteration(declaration) => {
+                    self.iteration(declaration)
+                }
                 crate::ControlOperationBody::Operation { .. }
                 | crate::ControlOperationBody::Recur(_)
                 | crate::ControlOperationBody::Suspend
@@ -383,6 +389,17 @@ impl BindingRelocation<'_> {
             }
         }
         self.control_value(&mut block.yield_value);
+    }
+
+    fn iteration(
+        &self,
+        declaration: &mut crate::IterationDeclaration<OperationContractDeclaration>,
+    ) {
+        self.schema(&mut declaration.carrier);
+        for capture in &mut declaration.captures {
+            self.schema(&mut capture.schema);
+        }
+        self.block(&mut declaration.body);
     }
 
     fn match_declaration(
@@ -504,6 +521,9 @@ impl BindingRelocation<'_> {
                         }
                         crate::ControlOperationBody::Comprehension(declaration) => {
                             self.comprehension(declaration)
+                        }
+                        crate::ControlOperationBody::Iteration(declaration) => {
+                            self.iteration(declaration)
                         }
                     }
                 }

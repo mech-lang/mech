@@ -111,6 +111,9 @@ pub(super) fn all_local_definitions(
                         | crate::ControlOperationBody::Suspend
                         | crate::ControlOperationBody::Publish => {}
                         crate::ControlOperationBody::Match(nested) => append_match(nested, output),
+                        crate::ControlOperationBody::Iteration(nested) => {
+                            output.extend(super::iteration::all_local_definitions(nested))
+                        }
                         crate::ControlOperationBody::Comprehension(nested) => {
                             append_comprehension(nested, output)
                         }
@@ -149,6 +152,9 @@ pub(super) fn all_local_definitions(
                     next_local += 1;
                     match &operation.body {
                         crate::ControlOperationBody::Match(nested) => append_match(nested, output),
+                        crate::ControlOperationBody::Iteration(nested) => {
+                            output.extend(super::iteration::all_local_definitions(nested))
+                        }
                         crate::ControlOperationBody::Comprehension(nested) => {
                             append_comprehension(nested, output)
                         }
@@ -190,6 +196,9 @@ pub(super) fn all_match_local_definitions(
                         | crate::ControlOperationBody::Suspend
                         | crate::ControlOperationBody::Publish => {}
                         crate::ControlOperationBody::Match(nested) => append(nested, output),
+                        crate::ControlOperationBody::Iteration(nested) => {
+                            output.extend(super::iteration::all_local_definitions(nested))
+                        }
                         crate::ControlOperationBody::Comprehension(nested) => {
                             output.extend(all_local_definitions(nested));
                         }
@@ -213,6 +222,7 @@ pub(super) fn owns_output(artifact: &ProgramArtifact, mut slot: CellSlotId) -> b
                 return matches!(
                     artifact.nodes()[node.get() as usize].body,
                     crate::ExecutableNodeBody::Comprehension(_)
+                        | crate::ExecutableNodeBody::Iteration(_)
                 );
             }
             ProducerReference::Output {
@@ -236,7 +246,10 @@ fn primitive(body: &SchemaBody) -> bool {
 fn operation_retained_local_scope(
     operation: &crate::ComprehensionOperation,
 ) -> Option<(u32, Box<[u32]>)> {
-    let nested_match = matches!(operation.body, crate::ControlOperationBody::Match(_));
+    let nested_match = matches!(
+        operation.body,
+        crate::ControlOperationBody::Match(_) | crate::ControlOperationBody::Iteration(_)
+    );
     let retained_local_count = operation.local.checked_add(u32::from(nested_match))?;
     let excluded_locals = if nested_match {
         Box::new([])
@@ -601,7 +614,9 @@ fn runtime_metered_descendants(steps: &[ActivatedTurnStep]) -> bool {
         ActivatedTurnStep::Kernel(node) => {
             node.kernel.work_accounting() == mech_core::ResidentKernelWorkAccounting::RuntimeMetered
         }
-        ActivatedTurnStep::Match(_) | ActivatedTurnStep::Comprehension(_) => true,
+        ActivatedTurnStep::Match(_)
+        | ActivatedTurnStep::Comprehension(_)
+        | ActivatedTurnStep::Iteration(_) => true,
         _ => false,
     })
 }
@@ -825,6 +840,54 @@ pub(super) fn bind_inner(
                             unreachable!()
                         };
                         prepared.arms = arms;
+                        instructions.push(ActivatedCollectionStep::Operation {
+                            node: index,
+                            work: 0,
+                            retained_local_count,
+                            excluded_locals,
+                        });
+                        continue;
+                    }
+                    crate::ControlOperationBody::Iteration(nested) => {
+                        let index = ActivatedNodeIndex(steps.len() as u32);
+                        let prepared = super::iteration::prepare(
+                            artifact,
+                            owner,
+                            memory_node,
+                            nested,
+                            &input_sources,
+                            &input_reads,
+                            output_slot,
+                            layout,
+                        )?;
+                        steps.push(ActivatedTurnStep::Iteration(std::sync::Arc::new(prepared)));
+                        let body = super::iteration::bind_body(
+                            artifact,
+                            catalog,
+                            owner,
+                            nested,
+                            &input_sources,
+                            &input_reads,
+                            output_slot,
+                            layout,
+                            steps,
+                            reads,
+                            calls,
+                            &[],
+                        )?;
+                        if string_set
+                            && !runtime_metered_descendants(&steps[index.get() as usize + 1..])
+                        {
+                            return Err(unsupported());
+                        }
+                        let ActivatedTurnStep::Iteration(prepared) =
+                            &mut steps[index.get() as usize]
+                        else {
+                            unreachable!()
+                        };
+                        std::sync::Arc::get_mut(prepared)
+                            .expect("unpublished collection iteration plan")
+                            .body = Some(body);
                         instructions.push(ActivatedCollectionStep::Operation {
                             node: index,
                             work: 0,

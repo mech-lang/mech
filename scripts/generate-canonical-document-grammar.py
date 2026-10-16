@@ -25,7 +25,7 @@ CERTIFICATION_OUTPUT = (
     ROOT / "docs/design/grammar-audit/document-certification.tsv"
 )
 DISPOSITIONS_OUTPUT = ROOT / "docs/design/grammar-audit/document-rule-dispositions.tsv"
-EXPECTED_DOCUMENT_RULES = 112
+EXPECTED_DOCUMENT_RULES = 113
 
 
 def rust_constant(name: str) -> str:
@@ -386,6 +386,7 @@ SAMPLE_OVERRIDES = {
     "fsm-implementation": "#machine(x) -> :start\n:start |42 ->+> x\n.",
     "fsm-state-definition-variables": "(x<u8>)",
     "fsm-transition": "42 ->{}",
+    "function-define-expression": "=><u8>:=1",
     "function-define-statements": "=out<u8>:=value:=1.",
     "inline-mech-code": "{{1}}",
     "micro-mika": "╭◉╮",

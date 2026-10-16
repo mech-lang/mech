@@ -3,7 +3,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::PathBuf;
 
-const EXPECTED_SCHEMA_ROWS: usize = 80;
+const EXPECTED_SCHEMA_ROWS: usize = 81;
 const SCHEMA_HEADER: &str =
     "grammar-name\tparser-module\temission-policy\tsyntax-kind\tkind-origin\tnotes";
 const COMPONENT_HEADER: &str = "grammar-name\tfamily\tcomponent-id\tcomponent-size\t\
@@ -13,6 +13,7 @@ const PORTS_HEADER: &str = "grammar-name\tfamily\tsyntax-status\tsemantic-status
                             grammar-scope\tnode-policy\tcomponent\tnotes";
 
 const EXECUTABLE_NEW_KINDS: &[SyntaxKind] = &[
+    SyntaxKind::ApplicationExpression,
     SyntaxKind::Literal,
     SyntaxKind::Kind,
     SyntaxKind::KindWithOption,

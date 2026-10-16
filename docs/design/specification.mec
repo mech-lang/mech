@@ -2746,12 +2746,15 @@ kind-tuple := left-parenthesis, [list-separator, kind],
               right-parenthesis ;
 kind-scalar := identifier, ?(colon, range-expression) ;
 
-expression := fsm-pipe
-            | set-comprehension
-            | matrix-comprehension
-            | range-expression
-            | formula,
+expression := application-expression,
               ?(whitespace0, question, whitespace0, +match-arm, ?period) ;
+application-expression := (fsm-pipe
+                        | set-comprehension
+                        | matrix-comprehension
+                        | range-expression
+                        | formula), *application-stage ;
+application-stage := whitespace0, application-operator, whitespace0, identifier ;
+application-operator := bar, *digit-token, right-angle ;
 formula := l1 ;
 l1 := l2, *(logic-operator, l2) ;
 l2 := l3, *(comparison-operator, l3) ;
@@ -2770,7 +2773,7 @@ factor := (parenthetical-term
          | slice
          | var),
          ?transpose ;
-parenthetical-term := left-parenthesis, space-tab0, formula,
+parenthetical-term := left-parenthesis, space-tab0, expression,
                       space-tab0, right-parenthesis ;
 negate-factor := dash, factor ;
 not-factor := not, factor ;
@@ -3209,8 +3212,12 @@ module-import := whitespace0, import-sigil, space-tab0,
 function-define := identifier, left-parenthesis,
                    ?[list-separator, function-arg],
                    right-parenthesis, whitespace0,
-                   (function-define-match-arms
+                   (function-define-expression
+                  | function-define-match-arms
                   | function-define-statements) ;
+function-define-expression :=
+  output-operator, whitespace0, kind-annotation,
+  define-operator, expression, ?period ;
 function-define-statements :=
   (output-operator | equal), whitespace0,
   (function-out-args | function-out-arg),

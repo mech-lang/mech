@@ -6,6 +6,7 @@ mod control;
 mod encoding;
 mod fsm;
 mod ir;
+mod iteration;
 mod model;
 mod requirements;
 mod snapshot;
@@ -19,6 +20,7 @@ pub use self::comprehension::*;
 pub use self::control::*;
 pub use self::fsm::*;
 pub use self::ir::*;
+pub use self::iteration::*;
 pub use self::model::*;
 pub use self::requirements::*;
 

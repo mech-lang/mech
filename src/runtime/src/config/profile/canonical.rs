@@ -174,6 +174,9 @@ fn expression(expr: &ExpressionSyntax) -> MResult<ConfigExpr> {
 fn body(value: &ExpressionBodySyntax) -> MResult<ConfigExpr> {
     match value {
         ExpressionBodySyntax::Formula(value) => formula(value),
+        ExpressionBodySyntax::Application(_) => Err(ConfigProfileViolation::error(
+            "function application is not supported in Mech config v1",
+        )),
         ExpressionBodySyntax::Range(_) => Err(ConfigProfileViolation::error(
             "range expressions are not supported in Mech config v1",
         )),

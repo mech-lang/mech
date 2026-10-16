@@ -109,6 +109,9 @@ pub(crate) fn activation_failure_for_artifact(
                         mech_engine::ExecutableNodeBody::Fsm(control) => {
                             format!("FSM {}", control.machine)
                         }
+                        mech_engine::ExecutableNodeBody::Iteration(control) => {
+                            format!("Counted application ({})", control.count)
+                        }
                     },
                 ),
             );

@@ -69,6 +69,7 @@ document_ast_node!(FsmStatementTransitionSyntax, FsmStatementTransition);
 document_ast_node!(FsmTransitionSyntax, FsmTransition);
 document_ast_node!(FunctionArgSyntax, FunctionArg);
 document_ast_node!(FunctionDefineSyntax, FunctionDefine);
+document_ast_node!(FunctionDefineExpressionSyntax, FunctionDefineExpression);
 document_ast_node!(FunctionDefineMatchArmsSyntax, FunctionDefineMatchArms);
 document_ast_node!(FunctionDefineStatementsSyntax, FunctionDefineStatements);
 document_ast_node!(FunctionMatchArmSyntax, FunctionMatchArm);
@@ -179,6 +180,7 @@ pub enum CanonicalDocumentNode {
     FsmTransition(FsmTransitionSyntax),
     FunctionArg(FunctionArgSyntax),
     FunctionDefine(FunctionDefineSyntax),
+    FunctionDefineExpression(FunctionDefineExpressionSyntax),
     FunctionDefineMatchArms(FunctionDefineMatchArmsSyntax),
     FunctionDefineStatements(FunctionDefineStatementsSyntax),
     FunctionMatchArm(FunctionMatchArmSyntax),
@@ -318,6 +320,9 @@ impl CanonicalDocumentNode {
             SyntaxKind::FunctionArg => FunctionArgSyntax::cast(node).map(Self::FunctionArg),
             SyntaxKind::FunctionDefine => {
                 FunctionDefineSyntax::cast(node).map(Self::FunctionDefine)
+            }
+            SyntaxKind::FunctionDefineExpression => {
+                FunctionDefineExpressionSyntax::cast(node).map(Self::FunctionDefineExpression)
             }
             SyntaxKind::FunctionDefineMatchArms => {
                 FunctionDefineMatchArmsSyntax::cast(node).map(Self::FunctionDefineMatchArms)
@@ -476,6 +481,7 @@ impl CanonicalDocumentNode {
             Self::FsmTransition(node) => node.syntax(),
             Self::FunctionArg(node) => node.syntax(),
             Self::FunctionDefine(node) => node.syntax(),
+            Self::FunctionDefineExpression(node) => node.syntax(),
             Self::FunctionDefineMatchArms(node) => node.syntax(),
             Self::FunctionDefineStatements(node) => node.syntax(),
             Self::FunctionMatchArm(node) => node.syntax(),

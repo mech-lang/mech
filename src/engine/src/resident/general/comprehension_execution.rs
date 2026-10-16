@@ -7067,7 +7067,7 @@ impl ReactiveInstance {
                     meter.charge_compute_work(*work).map_err(fail)?;
                     let nested_match = matches!(
                         self.plan.steps[node.get() as usize],
-                        ActivatedTurnStep::Match(_)
+                        ActivatedTurnStep::Match(_) | ActivatedTurnStep::Iteration(_)
                     );
                     let output_end = usize::try_from(*retained_local_count)
                         .ok()

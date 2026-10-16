@@ -201,3 +201,31 @@ fn scientific_components_preserve_value_and_retained_spelling() {
         assert_eq!(source.source().to_contiguous_string(), text);
     }
 }
+
+#[test]
+fn applications_remain_explicitly_outside_the_config_profile() {
+    for expression in ["1 |> identity", "1 |19> identity", "0 + (1 |0> identity)"] {
+        let text = format!("value := {expression}\nconfig := {{:}}\n");
+        let source = mech_runtime::resolver::SourceDocument::parse(
+            TextSnapshot::new(DocumentId(839), Revision(1), text.as_str()).unwrap(),
+            ParseConfig::default(),
+        );
+        assert!(
+            source.is_strictly_clean(),
+            "{expression}: {:?}",
+            source.snapshot().diagnostics
+        );
+        let error = mech_runtime::compile_config_document(
+            "application.mcfg",
+            &source,
+            ConfigProfileOptions::default(),
+        )
+        .unwrap_err();
+        assert_eq!(error.kind_name(), "ConfigProfileViolation");
+        assert!(
+            error
+                .kind_message()
+                .contains("function application is not supported")
+        );
+    }
+}

@@ -2,8 +2,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::PathBuf;
 
-const EXPECTED_RULES: usize = 539;
-const EXPECTED_EXECUTABLE_RULES: usize = 80;
+const EXPECTED_RULES: usize = 543;
+const EXPECTED_EXECUTABLE_RULES: usize = 81;
 const EXPECTED_EXECUTABLE_COMPONENTS: usize = 1;
 const DEPENDENCY_HEADER: &str = "grammar-name\tdirect-children\tdirect-parents";
 const SCC_HEADER: &str = "component-id\tcomponent-size\trecursive\tmembers\t\
@@ -478,7 +478,7 @@ fn expression_root_certification_is_exact_and_dependency_closed() {
         .flat_map(|row| row.supporting_external.iter().cloned())
         .collect::<BTreeSet<_>>();
     assert_eq!(external, reported_external);
-    assert_eq!(external.len(), 74);
+    assert_eq!(external.len(), 75);
 }
 
 #[test]

@@ -1417,6 +1417,11 @@ fn compile_document_units_inner(
                 .bindings
                 .insert("ans".to_owned(), PendingBinding::Value(value.value));
         }
+        if builder.active_functions.is_empty() {
+            // Advance only the document's completed lexical environment.
+            // Expanded function bodies cannot replace document globals.
+            builder.document_bindings.clone_from(&builder.bindings);
+        }
     }
     Ok(last)
 }
@@ -2364,6 +2369,7 @@ pub(super) fn compile_ordered_documents(
             OrderedDocumentScope::default().activate(&mut builder);
         }
         builder.active_functions.clear();
+        builder.document_bindings.clone_from(&builder.bindings);
         builder.active_recursive_outputs.clear();
         builder.retained_result_boundary = None;
         builder.retained_result = None;

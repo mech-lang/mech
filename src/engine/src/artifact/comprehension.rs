@@ -148,6 +148,15 @@ impl<C> ComprehensionDeclaration<C> {
                                             nested.map_contracts_inner(map)?,
                                         )
                                     }
+                                    super::ControlOperationBody::Iteration(nested) => {
+                                        super::ControlOperationBody::Iteration(
+                                            nested.map_contracts_inner(
+                                                &mut |_, _, reference, contract| {
+                                                    map(reference, contract)
+                                                },
+                                            )?,
+                                        )
+                                    }
                                     super::ControlOperationBody::Recur(ancestor) => {
                                         super::ControlOperationBody::Recur(*ancestor)
                                     }
@@ -503,6 +512,17 @@ pub(super) fn validate_comprehension_inner(
                     }
                     super::ControlOperationBody::Comprehension(nested) => {
                         validate_comprehension_inner(
+                            draft,
+                            node,
+                            nested,
+                            &operation_inputs,
+                            operation.schema,
+                            next_block,
+                            enclosing_guard,
+                        )?;
+                    }
+                    super::ControlOperationBody::Iteration(nested) => {
+                        super::iteration::validate_iteration_inner(
                             draft,
                             node,
                             nested,

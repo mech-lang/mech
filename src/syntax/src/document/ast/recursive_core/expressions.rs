@@ -1,6 +1,6 @@
 use alloc::vec::Vec;
 
-use crate::document::{AstNode, ExpressionSyntax, SyntaxKind, SyntaxNode};
+use crate::document::{AstNode, ExpressionSyntax, IdentifierSyntax, SyntaxKind, SyntaxNode};
 
 use super::{
     AdditiveExpressionSyntax, ComparisonExpressionSyntax, FactorSyntax, FsmPipeSyntax,
@@ -73,6 +73,7 @@ impl AstNode for FormulaSyntax {
 
 #[derive(Clone, Debug)]
 pub enum ExpressionBodySyntax {
+    Application(ApplicationExpressionSyntax),
     FsmPipe(FsmPipeSyntax),
     SetComprehension(SetComprehensionSyntax),
     MatrixComprehension(MatrixComprehensionSyntax),
@@ -84,7 +85,8 @@ impl AstNode for ExpressionBodySyntax {
     fn can_cast(kind: SyntaxKind) -> bool {
         matches!(
             kind,
-            SyntaxKind::FsmPipe
+            SyntaxKind::ApplicationExpression
+                | SyntaxKind::FsmPipe
                 | SyntaxKind::SetComprehension
                 | SyntaxKind::MatrixComprehension
                 | SyntaxKind::RangeExpression
@@ -93,6 +95,9 @@ impl AstNode for ExpressionBodySyntax {
 
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         match syntax.kind() {
+            SyntaxKind::ApplicationExpression => {
+                ApplicationExpressionSyntax::cast(syntax).map(Self::Application)
+            }
             SyntaxKind::FsmPipe => FsmPipeSyntax::cast(syntax).map(Self::FsmPipe),
             SyntaxKind::SetComprehension => {
                 SetComprehensionSyntax::cast(syntax).map(Self::SetComprehension)
@@ -107,12 +112,71 @@ impl AstNode for ExpressionBodySyntax {
 
     fn syntax(&self) -> &SyntaxNode {
         match self {
+            Self::Application(value) => value.syntax(),
             Self::FsmPipe(value) => value.syntax(),
             Self::SetComprehension(value) => value.syntax(),
             Self::MatrixComprehension(value) => value.syntax(),
             Self::Range(value) => value.syntax(),
             Self::Formula(value) => value.syntax(),
         }
+    }
+}
+
+recursive_ast_node!(ApplicationExpressionSyntax, ApplicationExpression);
+recursive_ast_node!(ApplicationStageSyntax, ApplicationStage);
+recursive_ast_node!(ApplicationOperatorSyntax, ApplicationOperator);
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ApplicationCountError {
+    Invalid,
+    Overflow,
+}
+
+impl ApplicationExpressionSyntax {
+    pub fn seed(&self) -> Option<ExpressionBodySyntax> {
+        child(self.syntax())
+    }
+
+    pub fn stages(&self) -> Vec<ApplicationStageSyntax> {
+        children(self.syntax())
+    }
+}
+
+impl ApplicationStageSyntax {
+    pub fn function(&self) -> Option<IdentifierSyntax> {
+        child(self.syntax())
+    }
+
+    pub fn operator(&self) -> Option<ApplicationOperatorSyntax> {
+        child(self.syntax())
+    }
+
+    /// None is ordinary `|>`. A counted stage carries the exact checked u64;
+    /// no source normalization or function-name interpretation is involved.
+    pub fn count(&self) -> Result<Option<u64>, ApplicationCountError> {
+        let operator = self.operator().ok_or(ApplicationCountError::Invalid)?;
+        let text = operator
+            .syntax()
+            .text()
+            .map_err(|_| ApplicationCountError::Invalid)?;
+        let digits = text
+            .strip_prefix('|')
+            .and_then(|text| text.strip_suffix('>'))
+            .ok_or(ApplicationCountError::Invalid)?;
+        if digits.is_empty() {
+            return Ok(None);
+        }
+        let mut value = 0u64;
+        for digit in digits.bytes() {
+            if !digit.is_ascii_digit() {
+                return Err(ApplicationCountError::Invalid);
+            }
+            value = value
+                .checked_mul(10)
+                .and_then(|value| value.checked_add(u64::from(digit - b'0')))
+                .ok_or(ApplicationCountError::Overflow)?;
+        }
+        Ok(Some(value))
     }
 }
 

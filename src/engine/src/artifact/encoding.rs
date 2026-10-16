@@ -86,6 +86,7 @@ impl CanonicalArtifactWriter {
                     self.u8(1);
                     self.u16(index);
                 }
+                super::ControlParameterSource::IterationCarrier => self.u8(3),
             }
         }
         self.u64(block.operations.len() as u64);
@@ -126,7 +127,24 @@ impl CanonicalArtifactWriter {
 
             super::ControlOperationBody::Suspend => self.u8(4),
             super::ControlOperationBody::Publish => self.u8(5),
+            super::ControlOperationBody::Iteration(control) => {
+                self.u8(6);
+                self.iteration(control);
+            }
         }
+    }
+
+    fn iteration(&mut self, control: &super::IterationDeclaration) {
+        self.u64(control.count);
+        self.u16(control.seed);
+        self.u64(control.captures.len() as u64);
+        for capture in &control.captures {
+            self.u16(capture.input);
+            self.u32(capture.schema.get());
+            self.u8(u8::from(capture.freeze_on_suspend));
+        }
+        self.u32(control.carrier.get());
+        self.control_block(&control.body);
     }
 
     fn match_declaration(&mut self, control: &super::MatchDeclaration) {
@@ -577,6 +595,10 @@ fn revision(draft: RevisionData<'_>) -> Result<ProgramRevision, ArtifactBuildErr
             super::ExecutableNodeBody::Activation(control) => {
                 writer.u8(4);
                 writer.match_declaration(control);
+            }
+            super::ExecutableNodeBody::Iteration(control) => {
+                writer.u8(5);
+                writer.iteration(control);
             }
             super::ExecutableNodeBody::Fsm(control) => {
                 writer.u8(3);

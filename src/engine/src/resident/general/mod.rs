@@ -3,6 +3,7 @@
 mod closed_comprehension;
 mod comprehension;
 mod execution;
+mod iteration;
 pub use comprehension::{
     ActivatedCollectionStep, ActivatedComprehensionNode, ActivatedPatternBinding,
 };
@@ -238,6 +239,19 @@ pub struct ActivatedMatchNode {
     pub capture_sources: Box<[ResidentReadLocation]>,
 }
 
+#[derive(Clone, Debug)]
+pub struct ActivatedIterationNode {
+    pub artifact_node: NodeId,
+    pub budget_node: NodeId,
+    pub count: u64,
+    pub seed: ResidentReadLocation,
+    pub seed_layout: ResidentPortLayout,
+    pub write: ResidentWriteLocation,
+    pub carrier: ResidentWriteLocation,
+    pub body: Option<ActivatedControlBlock>,
+    pub locals: Box<[ResidentRegion]>,
+}
+
 #[derive(Clone, Copy, Debug)]
 pub struct ActivatedRecursiveCall {
     pub artifact_node: NodeId,
@@ -262,6 +276,7 @@ pub struct ActivatedPublication {
 
 #[derive(Clone, Debug)]
 pub enum ActivatedTurnStep {
+    Iteration(std::sync::Arc<ActivatedIterationNode>),
     Match(ActivatedMatchNode),
     Recur(ActivatedRecursiveCall),
     Suspend(ActivatedSuspension),
@@ -307,6 +322,7 @@ impl ActivatedTurnStep {
         match self {
             Self::Kernel(node) => node.artifact_node,
             Self::Match(node) => node.artifact_node,
+            Self::Iteration(node) => node.artifact_node,
             Self::Recur(node) => node.artifact_node,
             Self::Suspend(node) => node.artifact_node,
             Self::Publish(node) => node.artifact_node,
@@ -421,6 +437,7 @@ fn read_location_depends_on_match(
             ActivatedTurnStep::Match(node) => Some(node.write),
             ActivatedTurnStep::Recur(node) => Some(node.write),
             ActivatedTurnStep::Comprehension(node) => Some(node.write),
+            ActivatedTurnStep::Iteration(node) => Some(node.write),
             ActivatedTurnStep::External(_)
             | ActivatedTurnStep::Suspend(_)
             | ActivatedTurnStep::Publish(_) => None,
@@ -2186,6 +2203,21 @@ fn resident_concrete_execution_cases(
         })
         .collect::<Result<Vec<_>, _>>()?;
     for node in artifact.nodes() {
+        if let crate::ExecutableNodeBody::Iteration(control) = &node.body {
+            let sources = node_inputs(artifact, node.node)?
+                .into_iter()
+                .map(Some)
+                .collect::<Vec<_>>();
+            append_iteration_execution_cases(
+                artifact,
+                node.node,
+                control,
+                &sources,
+                static_selectors,
+                &mut cases,
+            )?;
+            continue;
+        }
         if let crate::ExecutableNodeBody::Comprehension(control) = &node.body {
             let sources = node_inputs(artifact, node.node)?
                 .into_iter()
@@ -2279,6 +2311,16 @@ fn append_comprehension_execution_cases(
                 static_selectors,
                 cases,
             )?,
+            crate::ControlOperationBody::Iteration(nested) => {
+                append_iteration_execution_cases(
+                    artifact,
+                    owner,
+                    nested,
+                    &inputs,
+                    static_selectors,
+                    cases,
+                )?;
+            }
             crate::ControlOperationBody::Comprehension(nested) => {
                 append_comprehension_execution_cases(
                     artifact,
@@ -2292,6 +2334,97 @@ fn append_comprehension_execution_cases(
             crate::ControlOperationBody::Recur(_)
             | crate::ControlOperationBody::Suspend
             | crate::ControlOperationBody::Publish => {}
+        }
+    }
+    Ok(())
+}
+
+fn append_iteration_execution_cases(
+    artifact: &ProgramArtifact,
+    owner: NodeId,
+    control: &crate::IterationDeclaration,
+    sources: &[Option<ArtifactSource>],
+    static_selectors: &mut ArtifactStaticSelectorResolver,
+    cases: &mut Vec<ConcreteExecutionCase>,
+) -> Result<(), ResidentActivationError> {
+    for operation in &control.body.operations {
+        let inputs = operation
+            .inputs
+            .iter()
+            .map(|value| match *value {
+                crate::ControlValue::Constant(id) => Some(ArtifactSource::Constant(id)),
+                crate::ControlValue::Parameter { ordinal, .. } => {
+                    match control.body.parameters[ordinal as usize].source {
+                        crate::ControlParameterSource::IterationCarrier => None,
+                        crate::ControlParameterSource::Capture(index) => {
+                            sources[control.captures[index as usize].input as usize]
+                        }
+                        crate::ControlParameterSource::Scrutinee
+                        | crate::ControlParameterSource::PatternBinding(_) => None,
+                    }
+                }
+                crate::ControlValue::Local { .. } => None,
+            })
+            .collect::<Vec<_>>();
+        match &operation.body {
+            crate::ControlOperationBody::Iteration(nested) => append_iteration_execution_cases(
+                artifact,
+                owner,
+                nested,
+                &inputs,
+                static_selectors,
+                cases,
+            )?,
+            crate::ControlOperationBody::Match(nested) => append_match_execution_cases(
+                artifact,
+                owner,
+                nested,
+                &inputs,
+                static_selectors,
+                cases,
+            )?,
+            crate::ControlOperationBody::Comprehension(nested) => {
+                append_comprehension_execution_cases(
+                    artifact,
+                    owner,
+                    nested,
+                    &inputs,
+                    static_selectors,
+                    cases,
+                )?
+            }
+            crate::ControlOperationBody::Operation {
+                operation: reference,
+                contract,
+            } => {
+                let Some(mech_core::ResolvedOperationContract::Declared(contract)) =
+                    artifact.contracts().get(*contract)
+                else {
+                    return Err(ResidentActivationError::LegacyOpaque { node: owner });
+                };
+                let selectors = inputs
+                    .into_iter()
+                    .map(|source| {
+                        source
+                            .map(|source| static_selectors.resolve(artifact, source))
+                            .transpose()
+                            .map(Option::flatten)
+                    })
+                    .collect::<Result<Box<[_]>, _>>()?;
+                cases.push(ConcreteExecutionCase {
+                    node: owner,
+                    operation: reference.clone(),
+                    input_schemas: contract.inputs.iter().map(|port| port.schema).collect(),
+                    input_resolved_selectors: selectors,
+                    output_schema: operation.schema,
+                    targets: ExecutionTargetSet::RESIDENT_CPU,
+                });
+            }
+            crate::ControlOperationBody::Recur(_)
+            | crate::ControlOperationBody::Suspend
+            | crate::ControlOperationBody::Publish => {
+                return Err(ResidentActivationError::UnsupportedControlLayout { node: owner });
+            }
         }
     }
     Ok(())
@@ -2320,6 +2453,7 @@ fn append_match_execution_cases(
                     crate::ControlValue::Parameter { ordinal, .. } => {
                         let input = match block.parameters[ordinal as usize].source {
                             crate::ControlParameterSource::Scrutinee => control.scrutinee,
+                            crate::ControlParameterSource::IterationCarrier => return None,
                             crate::ControlParameterSource::PatternBinding(local) => {
                                 // A root binding uses call-local storage at runtime but
                                 // still has the scrutinee's static capability provenance.
@@ -2355,6 +2489,16 @@ fn append_match_execution_cases(
                     static_selectors,
                     cases,
                 )?,
+                crate::ControlOperationBody::Iteration(nested) => {
+                    append_iteration_execution_cases(
+                        artifact,
+                        owner,
+                        nested,
+                        &inputs,
+                        static_selectors,
+                        cases,
+                    )?;
+                }
                 crate::ControlOperationBody::Comprehension(nested) => {
                     append_comprehension_execution_cases(
                         artifact,
@@ -11939,6 +12083,7 @@ fn complete_activation_shape_facts_with_analysis(
 }
 
 struct LayoutBuild {
+    control_carriers: BTreeMap<(NodeId, u32), (CellSlotId, NodeId)>,
     control_locals: BTreeMap<(NodeId, u32, u32), (CellSlotId, NodeId)>,
     match_bindings: BTreeMap<(NodeId, u32, u32), (CellSlotId, NodeId)>,
     slots: Box<[ResolvedSlot]>,
@@ -12088,6 +12233,7 @@ fn build_layout(
             len,
         ));
     }
+    let mut control_carriers = BTreeMap::new();
     let mut control_locals = BTreeMap::new();
     let mut match_bindings = BTreeMap::new();
     let mut next_local = 0u32;
@@ -12101,6 +12247,9 @@ fn build_layout(
             }
             crate::ExecutableNodeBody::Comprehension(control) => {
                 comprehension::all_local_definitions(control)
+            }
+            crate::ExecutableNodeBody::Iteration(control) => {
+                iteration::all_local_definitions(control)
             }
             _ => continue,
         };
@@ -12178,7 +12327,9 @@ fn build_layout(
                 lifetime: mech_core::MemoryLifetime::Turn { first, last },
                 producer: Some(node.node),
             });
-            if pattern_binding {
+            if local == iteration::CARRIER_LOCAL {
+                control_carriers.insert((node.node, block), (slot, physical_node));
+            } else if pattern_binding {
                 match_bindings.insert((node.node, block, local), (slot, physical_node));
             } else {
                 control_locals.insert((node.node, block, local), (slot, physical_node));
@@ -12265,6 +12416,7 @@ fn build_layout(
         )
         .collect::<Result<Vec<_>, ResidentActivationError>>()?;
     Ok(LayoutBuild {
+        control_carriers,
         control_locals,
         match_bindings,
         slots: slots.into_boxed_slice(),
@@ -12871,6 +13023,28 @@ fn build_plan(
                 });
             }
         }
+        if let crate::ExecutableNodeBody::Iteration(control) = &node.body {
+            let sources = node_inputs(artifact, node.node)?;
+            let input_reads = sources
+                .iter()
+                .copied()
+                .map(|source| resolve_read(&layout, source))
+                .collect::<Result<Vec<_>, _>>()?;
+            let output_slot = node_output_slot(artifact, node.node)?;
+            steps.push(ActivatedTurnStep::Iteration(std::sync::Arc::new(
+                iteration::prepare(
+                    artifact,
+                    node.node,
+                    node.node,
+                    control,
+                    &sources,
+                    &input_reads,
+                    output_slot,
+                    &layout,
+                )?,
+            )));
+            continue;
+        }
         if let crate::ExecutableNodeBody::Comprehension(control) = &node.body {
             let output_slot = node_output_slot(artifact, node.node)?;
             let output = &layout.slots[output_slot.get() as usize];
@@ -13096,6 +13270,39 @@ fn build_plan(
     }
     let mut control_calls = Vec::new();
     for node in artifact.nodes() {
+        if let crate::ExecutableNodeBody::Iteration(control) = &node.body {
+            let sources = node_inputs(artifact, node.node)?;
+            let input_reads = sources
+                .iter()
+                .copied()
+                .map(|source| resolve_read(&layout, source))
+                .collect::<Result<Vec<_>, _>>()?;
+            let output_slot = node_output_slot(artifact, node.node)?;
+            let body = iteration::bind_body(
+                artifact,
+                catalog,
+                node.node,
+                control,
+                &sources,
+                &input_reads,
+                output_slot,
+                &layout,
+                &mut steps,
+                &mut reads,
+                &mut control_calls,
+                &[],
+            )?;
+            let index = artifact_to_activated[node.node.get() as usize]
+                .unwrap()
+                .get() as usize;
+            let ActivatedTurnStep::Iteration(prepared) = &mut steps[index] else {
+                unreachable!()
+            };
+            std::sync::Arc::get_mut(prepared)
+                .expect("unpublished iteration plan")
+                .body = Some(body);
+            continue;
+        }
         if let crate::ExecutableNodeBody::Comprehension(control) = &node.body {
             let index = artifact_to_activated[node.node.get() as usize]
                 .unwrap()
@@ -13328,7 +13535,9 @@ fn build_plan(
             Some(mech_core::ResolvedOperationContract::Declared(contract))
                 if contract.interaction == ExternalInteraction::Pure
         ),
-        crate::ExecutableNodeBody::Match(_) | crate::ExecutableNodeBody::Comprehension(_) => true,
+        crate::ExecutableNodeBody::Match(_)
+        | crate::ExecutableNodeBody::Comprehension(_)
+        | crate::ExecutableNodeBody::Iteration(_) => true,
         crate::ExecutableNodeBody::Activation(_) | crate::ExecutableNodeBody::Fsm(_) => false,
     };
     // Pure nodes used only to compute an activation capture belong to that
@@ -13683,7 +13892,8 @@ fn build_plan(
                     | ActivatedTurnStep::Recur(_)
                     | ActivatedTurnStep::Suspend(_)
                     | ActivatedTurnStep::Publish(_)
-                    | ActivatedTurnStep::Comprehension(_) => {
+                    | ActivatedTurnStep::Comprehension(_)
+                    | ActivatedTurnStep::Iteration(_) => {
                         unreachable!("pure resident plan contains a non-kernel step")
                     }
                 })
@@ -13745,6 +13955,7 @@ fn build_plan(
             Some(control.artifact_node)
         }
         ActivatedTurnStep::Comprehension(_)
+        | ActivatedTurnStep::Iteration(_)
         | ActivatedTurnStep::Kernel(_)
         | ActivatedTurnStep::Recur(_)
         | ActivatedTurnStep::Suspend(_)
@@ -23817,7 +24028,7 @@ fn bind_match_arms(
                     catalog,
                     owner,
                     owner_block,
-                    control,
+                    &ControlBlockInputScope::Match(control),
                     block,
                     captures,
                     capture_reads,
@@ -23857,12 +24068,40 @@ fn bind_match_arms(
         .collect()
 }
 
+enum ControlBlockInputScope<'a> {
+    Match(&'a crate::MatchDeclaration),
+    Iteration {
+        captures: &'a [crate::ControlCapture],
+        carrier_slot: CellSlotId,
+    },
+}
+impl ControlBlockInputScope<'_> {
+    fn captures(&self) -> &[crate::ControlCapture] {
+        match self {
+            Self::Match(control) => &control.captures,
+            Self::Iteration { captures, .. } => captures,
+        }
+    }
+    fn scrutinee(&self) -> Option<u16> {
+        match self {
+            Self::Match(control) => Some(control.scrutinee),
+            Self::Iteration { .. } => None,
+        }
+    }
+    fn carrier_slot(&self) -> Option<CellSlotId> {
+        match self {
+            Self::Iteration { carrier_slot, .. } => Some(*carrier_slot),
+            Self::Match(_) => None,
+        }
+    }
+}
+
 fn bind_control_block(
     artifact: &ProgramArtifact,
     catalog: &FunctionCatalog,
     owner: NodeId,
     pattern_owner: u32,
-    control: &crate::MatchDeclaration,
+    control: &ControlBlockInputScope<'_>,
     block: &crate::ControlBlock,
     captures: &[ArtifactSource],
     capture_reads: &[ResidentReadLocation],
@@ -23883,14 +24122,23 @@ fn bind_control_block(
             crate::ControlValue::Constant(id) => ArtifactSource::Constant(id),
             crate::ControlValue::Parameter { ordinal, .. } => {
                 let input = match block.parameters[ordinal as usize].source {
-                    crate::ControlParameterSource::Scrutinee => control.scrutinee,
+                    crate::ControlParameterSource::Scrutinee => {
+                        control.scrutinee().expect("validated Match parameter")
+                    }
+                    crate::ControlParameterSource::IterationCarrier => {
+                        return ArtifactSource::Slot(
+                            control
+                                .carrier_slot()
+                                .expect("validated Iteration parameter"),
+                        );
+                    }
                     crate::ControlParameterSource::PatternBinding(local) => {
                         return ArtifactSource::Slot(
                             layout.match_bindings[&(owner, pattern_owner, local)].0,
                         );
                     }
                     crate::ControlParameterSource::Capture(index) => {
-                        control.captures[index as usize].input
+                        control.captures()[index as usize].input
                     }
                 };
                 captures[input as usize]
@@ -23907,10 +24155,10 @@ fn bind_control_block(
             };
             let selected = match block.parameters[ordinal as usize].source {
                 crate::ControlParameterSource::Scrutinee => {
-                    capture_reads[control.scrutinee as usize]
+                    capture_reads[control.scrutinee().expect("validated Match parameter") as usize]
                 }
                 crate::ControlParameterSource::Capture(index) => {
-                    let capture = &control.captures[index as usize];
+                    let capture = &control.captures()[index as usize];
                     let selected = capture_reads[capture.input as usize];
                     match (capture.freeze_on_suspend, selected) {
                         (true, ResidentReadLocation::Input(region)) => {
@@ -23919,6 +24167,12 @@ fn bind_control_block(
                         _ => selected,
                     }
                 }
+                crate::ControlParameterSource::IterationCarrier => resolve_read(
+                    layout,
+                    ArtifactSource::Slot(control.carrier_slot().ok_or(
+                        ResidentActivationError::UnsupportedControlLayout { node: owner },
+                    )?),
+                )?,
                 crate::ControlParameterSource::PatternBinding(_) => {
                     resolve_read(layout, source(value))?
                 }
@@ -23966,7 +24220,10 @@ fn bind_control_block(
             .collect::<Result<Vec<_>, _>>()?;
         let index =
             u32::try_from(steps.len()).map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
-        let nested_match = matches!(operation.body, crate::ControlOperationBody::Match(_));
+        let nested_match = matches!(
+            operation.body,
+            crate::ControlOperationBody::Match(_) | crate::ControlOperationBody::Iteration(_)
+        );
         let prior_local_count = u32::try_from(local_regions.len())
             .map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
         let current_local = prior_local_count;
@@ -23984,11 +24241,13 @@ fn bind_control_block(
                 .filter_map(|value| match value {
                     crate::ControlValue::Parameter { ordinal, .. } => {
                         let parameter = &block.parameters[*ordinal as usize];
-                        let crate::ControlParameterSource::PatternBinding(local) = parameter.source
-                        else {
-                            return None;
-                        };
-                        binding_local_indices.get(&local).copied()
+                        match parameter.source {
+                            crate::ControlParameterSource::PatternBinding(local) => {
+                                binding_local_indices.get(&local).copied()
+                            }
+                            crate::ControlParameterSource::IterationCarrier => Some(0),
+                            _ => None,
+                        }
                     }
                     crate::ControlValue::Local { node, .. } => operation_locals.get(node).copied(),
                     crate::ControlValue::Constant(_) => None,
@@ -24042,6 +24301,39 @@ fn bind_control_block(
                         unreachable!()
                     };
                     prepared.arms = arms;
+                }
+                crate::ControlOperationBody::Iteration(nested) => {
+                    let prepared = iteration::prepare(
+                        artifact,
+                        owner,
+                        physical_node,
+                        nested,
+                        &inputs,
+                        &input_reads,
+                        output_slot,
+                        layout,
+                    )?;
+                    steps.push(ActivatedTurnStep::Iteration(std::sync::Arc::new(prepared)));
+                    let body = iteration::bind_body(
+                        artifact,
+                        catalog,
+                        owner,
+                        nested,
+                        &inputs,
+                        &input_reads,
+                        output_slot,
+                        layout,
+                        steps,
+                        reads,
+                        calls,
+                        recursive_roots,
+                    )?;
+                    let ActivatedTurnStep::Iteration(prepared) = &mut steps[index as usize] else {
+                        unreachable!()
+                    };
+                    std::sync::Arc::get_mut(prepared)
+                        .expect("unpublished iteration plan")
+                        .body = Some(body);
                 }
                 crate::ControlOperationBody::Comprehension(nested) => {
                     let start = reads.len() as u32;

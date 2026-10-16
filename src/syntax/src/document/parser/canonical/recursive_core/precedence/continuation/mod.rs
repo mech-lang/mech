@@ -1,6 +1,7 @@
 //! Resumable precedence and atom parsing, including recursive structures,
 //! pattern matching, and state-machine values.
 use super::super::super::{literals as leaf_literals, paths, primitives, strings};
+mod application;
 mod brace;
 mod bracket;
 mod collection;
@@ -83,6 +84,7 @@ pub(crate) fn supports(rule: RuleId) -> bool {
     matches!(
         rule,
         rules::EXPRESSION
+            | rules::APPLICATION_EXPRESSION
             | rules::VARIABLE_DEFINE
             | rules::MATCH_ARM
             | rules::BINDING
@@ -93,7 +95,8 @@ pub(crate) fn supports(rule: RuleId) -> bool {
             | rules::MATRIX_ROW
             | rules::MATRIX
             | rules::MATRIX_COMPREHENSION
-    ) || fsm::supports(rule)
+    ) || application::supports(rule)
+        || fsm::supports(rule)
         || pattern::supports(rule)
         || comprehension::supports(rule)
         || collection::supports(rule)
@@ -123,6 +126,7 @@ struct Level {
     committed: bool,
 }
 enum Frame {
+    Application(Box<application::Phase>),
     Brace(Box<brace::Phase>),
     Bracket(Box<bracket::Phase>),
     Inline(Box<inline::Phase>),
@@ -474,7 +478,7 @@ impl Continuation {
             Frame::ParenSpace => {
                 if self.result == Attempt::Matched {
                     self.push(Frame::ParenFormula);
-                    self.push(Frame::Call(rules::FORMULA));
+                    self.push(Frame::Expression(Box::new(expression::Phase::EnterGrouped)));
                 }
             }
             Frame::ParenFormula => {
@@ -696,6 +700,14 @@ impl Continuation {
                         self.push(Frame::MatchArm(Box::new(match_arm::Phase::Enter)));
                     } else if rule == rules::VARIABLE_DEFINE {
                         self.push(Frame::Definition(Box::new(definition::Phase::Start)));
+                    } else if application::supports(rule) {
+                        self.push(Frame::Application(Box::new(application::Phase::Enter(
+                            rule,
+                        ))));
+                    } else if rule == rules::APPLICATION_EXPRESSION {
+                        self.push(Frame::Expression(Box::new(
+                            expression::Phase::ApplicationEnter,
+                        )));
                     } else if fsm::supports(rule) {
                         self.push(Frame::Fsm(Box::new(fsm::Phase::Enter(rule))));
                     } else if rule == rules::EXPRESSION {
@@ -1373,6 +1385,11 @@ impl Continuation {
                 Frame::MatchArm(phase) => self.arm_frame(parser, phase),
                 Frame::Pattern(phase) => self.pattern_frame(parser, phase),
                 Frame::Fsm(phase) => self.fsm_frame(parser, phase),
+                Frame::Application(phase) => {
+                    if let Some(progress) = self.application_frame(parser, phase, final_input) {
+                        return progress;
+                    }
+                }
                 Frame::Expression(phase) => {
                     if let Some(progress) = self.expression_frame(parser, phase, final_input) {
                         return progress;

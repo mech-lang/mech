@@ -159,6 +159,7 @@ pub fn lower_pure_native_artifact(
             ExecutableNodeBody::Match(_) => Some("Match"),
             ExecutableNodeBody::Activation(_) => Some("Activation scope"),
             ExecutableNodeBody::Comprehension(_) => Some("comprehension"),
+            ExecutableNodeBody::Iteration(_) => Some("counted application"),
             ExecutableNodeBody::Fsm(_) => Some("FSM"),
         };
         if let Some(feature) = feature {

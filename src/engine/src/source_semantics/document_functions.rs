@@ -10,6 +10,7 @@ use mech_syntax::document::{
 };
 
 enum DocumentFunctionBody {
+    Expression(SyntaxNode),
     Statements(SyntaxNode),
     Patterns(SyntaxNode),
 }
@@ -283,6 +284,18 @@ impl SemanticBuilder {
             return Ok(());
         }
         if let Some(function) = self.active_functions.last() {
+            if matches!(
+                self.document_bindings.get(name),
+                Some(PendingBinding::MutableState(_))
+            ) {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/mutable-function-capture",
+                    message: format!(
+                        "function {function} cannot capture mutable document state {name}"
+                    ),
+                    anchor: SourceSemanticAnchor::for_node(syntax),
+                });
+            }
             return Err(SourceSemanticError {
                 code: "source-semantics/unbound-function-input",
                 message: format!("function {function} references undeclared local {name}"),
@@ -290,6 +303,30 @@ impl SemanticBuilder {
             });
         }
         Ok(())
+    }
+
+    pub(in super::super) fn unary_document_parameter_schema(
+        &self,
+        name: &str,
+        syntax: &SyntaxNode,
+    ) -> Result<SchemaDraft, SourceSemanticError> {
+        let function = &self.local_functions[name];
+        let parameters = function
+            .children()
+            .filter(|child| child.kind() == SyntaxKind::FunctionArg)
+            .map(|node| function_parameter(self, &node))
+            .collect::<Result<Vec<_>, _>>()?;
+        let [(_, schema)] = parameters.as_slice() else {
+            return Err(SourceSemanticError {
+                code: "source-semantics/incompatible-call-arity",
+                message: format!(
+                    "application requires a unary function; {name} has {} parameters",
+                    parameters.len()
+                ),
+                anchor: SourceSemanticAnchor::for_node(syntax),
+            });
+        };
+        Ok(schema.clone())
     }
 
     pub(in super::super) fn inline_document_function(
@@ -342,6 +379,9 @@ impl SemanticBuilder {
         let body = function
             .children()
             .find_map(|child| match child.kind() {
+                SyntaxKind::FunctionDefineExpression => {
+                    Some(DocumentFunctionBody::Expression(child))
+                }
                 SyntaxKind::FunctionDefineStatements => {
                     Some(DocumentFunctionBody::Statements(child))
                 }
@@ -462,7 +502,17 @@ impl SemanticBuilder {
                 format!("function {name} exceeds the lexical expansion depth"),
             ));
         }
-        let mut local_bindings = BTreeMap::new();
+        // Resolve immutable names from the defining document's already-produced
+        // bindings. Caller-local bindings never participate in this environment.
+        // Parameter insertion below deliberately shadows these document globals.
+        let mut local_bindings = self
+            .document_bindings
+            .iter()
+            .filter_map(|(name, binding)| match binding {
+                PendingBinding::Value(value) => Some((name.clone(), PendingBinding::Value(*value))),
+                PendingBinding::MutableState(_) => None,
+            })
+            .collect::<BTreeMap<_, _>>();
         let mut parameter_names = BTreeSet::new();
         let mut arguments = Vec::new();
         let mut lifted_collection = None;
@@ -574,6 +624,9 @@ impl SemanticBuilder {
             self.comprehension_depth += 1;
         }
         let result = (|| match body {
+            DocumentFunctionBody::Expression(body) => {
+                self.inline_expression_function_body(name, &body)
+            }
             DocumentFunctionBody::Statements(body) => {
                 self.inline_statement_function_body(name, &body, call, &error)
             }
@@ -593,6 +646,40 @@ impl SemanticBuilder {
         self.scope_definitions = caller_definitions;
         self.external_definitions = caller_external;
         result
+    }
+
+    fn inline_expression_function_body(
+        &mut self,
+        name: &str,
+        body: &SyntaxNode,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        let annotation = body
+            .children()
+            .find_map(KindAnnotationSyntax::cast)
+            .ok_or_else(|| SourceSemanticError {
+                code: "source-semantics/missing-function-output",
+                message: format!("function {name} has no output kind"),
+                anchor: SourceSemanticAnchor::for_node(body),
+            })?;
+        let expected = self.annotation_schema_draft(&annotation)?;
+        let expression = body
+            .children()
+            .find_map(ExpressionSyntax::cast)
+            .ok_or_else(|| SourceSemanticError {
+                code: "source-semantics/missing-function-output",
+                message: format!("function {name} has no result expression"),
+                anchor: SourceSemanticAnchor::for_node(body),
+            })?;
+        let value = self
+            .expression_with_expected(&expression, Some(ExpectedSchema::Value(&expected)))?
+            .0;
+        self.conform_schema_draft(
+            value,
+            &expected,
+            expression.syntax(),
+            "source-semantics/incompatible-function-output",
+            "function result does not satisfy its declared kind",
+        )
     }
 
     fn begin_pattern_lift(
@@ -745,6 +832,9 @@ impl SemanticBuilder {
                 }
                 PendingNodeBody::Comprehension(control) if node.state.is_none() => {
                     PendingControlOperationBody::Comprehension(control)
+                }
+                PendingNodeBody::Iteration(control) if node.state.is_none() => {
+                    PendingControlOperationBody::Iteration(control)
                 }
                 _ => {
                     return Err(SourceSemanticError {
