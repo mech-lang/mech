@@ -1,0 +1,166 @@
+//! Canonical artifact linked-entry shell. Kernel evaluation is not interpreted.
+use mech_engine::native_artifact::{
+    NativeScalarKind, NativeScalarValue, lower_pure_native_artifact,
+};
+use mech_gpu::native_artifact::{
+    LinkedArtifact, NATIVE_LINK_IDENTITY_BYTES, NativeExecutionLimits,
+};
+use sha2::{Digest, Sha256};
+use std::{
+    ffi::{OsString, c_void},
+    io::Write,
+};
+
+unsafe extern "C" {
+    #[link_name = "mech_canonical_scalar_entry_v1"]
+    fn linked_entry(frame: *mut c_void) -> u64;
+    #[link_name = "@IDENTITY_SYMBOL@"]
+    static LINKED_IDENTITY: [u8; NATIVE_LINK_IDENTITY_BYTES];
+}
+fn hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
+}
+fn unsigned(text: &str) -> Result<u64, String> {
+    if text.is_empty() || !text.bytes().all(|c| c.is_ascii_digit()) {
+        return Err("invalid U64 argument".into());
+    }
+    text.parse().map_err(|_| "invalid U64 argument".into())
+}
+fn signed(text: &str) -> Result<i64, String> {
+    let digits = text.strip_prefix('-').unwrap_or(text);
+    if digits.is_empty() || !digits.bytes().all(|byte| byte.is_ascii_digit()) {
+        return Err("invalid I64 argument".into());
+    }
+    text.parse().map_err(|_| "invalid I64 argument".into())
+}
+fn floating_bits(text: &str) -> Result<mech_core::snapshot::F64Bits, String> {
+    let digits = text.strip_prefix("f64:").ok_or("invalid F64 bit argument")?;
+    if digits.len() != 16 || !digits.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+        return Err("invalid F64 bit argument".into());
+    }
+    u64::from_str_radix(digits, 16)
+        .map(mech_core::snapshot::F64Bits::from_bits)
+        .map_err(|_| "invalid F64 bit argument".into())
+}
+fn options(
+    arguments: Vec<OsString>,
+) -> Result<(NativeExecutionLimits, Option<u64>, Vec<OsString>), String> {
+    let mut limits = NativeExecutionLimits::default();
+    let mut budget = None;
+    let mut payload = Vec::new();
+    let mut controls = true;
+    for argument in arguments {
+        if controls {
+            let text = argument.to_str().ok_or("argument is not Unicode")?;
+            if text == "--" {
+                controls = false;
+                continue;
+            }
+            let mut selected = None;
+            for (prefix, slot) in [
+                ("--work=", 0),
+                ("--memory=", 1),
+                ("--stack=", 2),
+                ("--budget=", 3),
+            ] {
+                if let Some(value) = text.strip_prefix(prefix) {
+                    selected = Some((slot, unsigned(value).map_err(|_| "invalid limit argument")?));
+                    break;
+                }
+            }
+            if let Some((slot, value)) = selected {
+                match slot {
+                    0 => limits.max_work = value,
+                    1 => limits.max_transport_bytes = value,
+                    2 => limits.max_native_stack_bytes = value,
+                    _ => budget = Some(value),
+                }
+                continue;
+            }
+            if text.starts_with("--") {
+                return Err("unknown option".into());
+            }
+            controls = false;
+        }
+        payload.push(argument);
+    }
+    Ok((limits, budget, payload))
+}
+fn run() -> Result<(), String> {
+    let bytecode = include_bytes!("../program.mecb");
+    if hex(&Sha256::digest(bytecode)) != "@BYTECODE_SHA256@" {
+        return Err("embedded canonical bytecode identity mismatch".into());
+    }
+    let artifact = mech_engine::decode_program_artifact_bytecode_v1(bytecode)
+        .map_err(|error| format!("canonical artifact decode: {error:?}"))?;
+    // Metadata selection only: no activation, value folding, resident kernel
+    // execution, source compilation, JIT, or machine-code generation here.
+    let catalog = std::thread::Builder::new()
+        .name("canonical-native-catalog".into())
+        .stack_size(64 * 1024 * 1024)
+        .spawn(|| -> Result<_, String> {
+            let mut builder = mech_core::FunctionCatalogBuilder::new();
+            mech_stdlib::install_native_plan(&mut builder).map_err(|error| format!("{error:?}"))?;
+            mech_engine::install_intrinsic_resident(&mut builder)
+                .map_err(|error| format!("{error:?}"))?;
+            builder.build().map_err(|error| format!("{error:?}"))
+        })
+        .map_err(|error| error.to_string())?
+        .join()
+        .map_err(|_| "canonical metadata catalog construction panicked")??;
+    let plan =
+        lower_pure_native_artifact(&artifact, &catalog).map_err(|error| error.to_string())?;
+    // SAFETY: build.rs verifies all generated inputs and exact Object pin.
+    // Both symbols are linked from that one unchanged checked emitter object;
+    // the digest-qualified identity symbol makes a different-IR substitution
+    // fail at link time. Both symbols live for the process. The constructor
+    // checks its revision/IR/ABI/target/frame/counts against the actual plan.
+    let linked =
+        unsafe { LinkedArtifact::from_build_owned_entry(&plan, &LINKED_IDENTITY, linked_entry) }
+            .map_err(|error| error.to_string())?;
+    let (limits, budget, arguments) = options(std::env::args_os().skip(1).collect())?;
+    if arguments.len() != plan.inputs().len() {
+        return Err(format!("expected {} typed inputs", plan.inputs().len()));
+    }
+    let mut inputs = Vec::with_capacity(arguments.len());
+    for (argument, input) in arguments.iter().zip(plan.inputs()) {
+        let text = argument.to_str().ok_or("argument is not Unicode")?;
+        inputs.push(match input.ty().kind() {
+            NativeScalarKind::U64 => NativeScalarValue::U64(unsigned(text)?),
+            NativeScalarKind::I64 => NativeScalarValue::I64(signed(text)?),
+            NativeScalarKind::F64 => NativeScalarValue::F64(floating_bits(text)?),
+            NativeScalarKind::Bool => NativeScalarValue::Bool(match text {
+                "true" => true,
+                "false" => false,
+                _ => return Err("invalid Bool argument".into()),
+            }),
+        });
+    }
+    let mut outputs = vec![NativeScalarValue::U64(0); plan.outputs().len()];
+    let budget = budget.map(mech_core::ManagedMemoryBudget::new);
+    linked
+        .evaluate_into(&inputs, &mut outputs, limits, budget.as_ref())
+        .map_err(|error| error.to_string())?;
+    // Formatting belongs to this explicit shell, after atomic typed compute.
+    let mut result = String::new();
+    for value in outputs {
+        use std::fmt::Write;
+        match value {
+            NativeScalarValue::Bool(v) => writeln!(&mut result, "{v}"),
+            NativeScalarValue::U64(v) => writeln!(&mut result, "{v}"),
+            NativeScalarValue::I64(v) => writeln!(&mut result, "{v}"),
+            NativeScalarValue::F64(v) => writeln!(&mut result, "f64:{:016x}", v.bits()),
+        }
+        .unwrap();
+    }
+    std::io::stdout()
+        .lock()
+        .write_all(result.as_bytes())
+        .map_err(|error| error.to_string())
+}
+fn main() {
+    if let Err(error) = run() {
+        eprintln!("{error}");
+        std::process::exit(1);
+    }
+}

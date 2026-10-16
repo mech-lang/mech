@@ -1,0 +1,27 @@
+{
+  "schema": "mech.native-composed-candidate-index.v1",
+  "qualified_source": "099e17b7b76e27c1426d4fa546eec66d03203f02",
+  "qualified_scope": "Stateless Turn-only Bool/U64/I64, including actual Cranelift Object-linked execution.",
+  "packages": [
+    {
+      "feature": "f64",
+      "manifest": "native-scalar/f64/composed-i64-v1/manifest.json",
+      "source_files": 21,
+      "status": "SOURCE_ONLY_UNRUN_NOT_APPLIED"
+    },
+    {
+      "feature": "casts",
+      "manifest": "native-scalar/casts/composed-i64-v1/manifest.json",
+      "source_files": 14,
+      "status": "SOURCE_ONLY_UNRUN_NOT_APPLIED"
+    }
+  ],
+  "order": [
+    "f64",
+    "casts"
+  ],
+  "limitations": [
+    "F64 and casts are uncompiled source candidates, with zero execution or benchmark qualification.",
+    "Original native Match/Iteration/matrix patches require additive composition with wider scalar kinds; old whole files must not replace the current implementation."
+  ]
+}

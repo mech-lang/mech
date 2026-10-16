@@ -1,0 +1,1405 @@
+diff --git a/hosts/gpu/Cargo.toml b/hosts/gpu/Cargo.toml
+--- a/hosts/gpu/Cargo.toml
++++ b/hosts/gpu/Cargo.toml
+@@ -151,3 +151,8 @@
+ name = "canonical_artifact_f64"
+ path = "tests/canonical_artifact_f64.rs"
+ required-features = ["canonical-native"]
++
++[[test]]
++name = "canonical_artifact_cast"
++path = "tests/canonical_artifact_cast.rs"
++required-features = ["canonical-native"]
+diff --git a/hosts/gpu/src/native_artifact/abi.rs b/hosts/gpu/src/native_artifact/abi.rs
+--- a/hosts/gpu/src/native_artifact/abi.rs
++++ b/hosts/gpu/src/native_artifact/abi.rs
+@@ -60,7 +60,13 @@
+         | NativeScalarOp::F64Lt
+         | NativeScalarOp::F64Le
+         | NativeScalarOp::F64Gt
+-        | NativeScalarOp::F64Ge => 256,
++        | NativeScalarOp::F64Ge
++        | NativeScalarOp::U64ToI64
++        | NativeScalarOp::I64ToU64
++        | NativeScalarOp::U64ToF64
++        | NativeScalarOp::I64ToF64
++        | NativeScalarOp::F64ToU64
++        | NativeScalarOp::F64ToI64 => 256,
+     }
+ }
+ 
+diff --git a/hosts/gpu/src/native_artifact/application.rs b/hosts/gpu/src/native_artifact/application.rs
+--- a/hosts/gpu/src/native_artifact/application.rs
++++ b/hosts/gpu/src/native_artifact/application.rs
+@@ -174,7 +174,7 @@
+ mech-core = {{ path = {core}, default-features = false }}
+ mech-engine = {{ path = {engine}, default-features = false, features = ["native-artifact"] }}
+ mech-gpu = {{ path = {gpu}, default-features = false, features = ["canonical-native-runtime"] }}
+-mech-stdlib = {{ path = {stdlib}, default-features = false, features = ["std", "native-plan", "bool", "u64", "i64", "f64", "math_sqrt", "math_neg", "math_add", "math_sub", "math_mul", "math_div", "math_mod", "compare_default", "logic_default"] }}
++mech-stdlib = {{ path = {stdlib}, default-features = false, features = ["std", "native-plan", "bool", "u64", "i64", "f64", "convert", "math_sqrt", "math_neg", "math_add", "math_sub", "math_mul", "math_div", "math_mod", "compare_default", "logic_default"] }}
+ sha2 = {{ version = "0.11.0", default-features = false }}
+ [build-dependencies]
+ sha2 = {{ version = "0.11.0", default-features = false }}
+diff --git a/hosts/gpu/src/native_artifact/compiler.rs b/hosts/gpu/src/native_artifact/compiler.rs
+--- a/hosts/gpu/src/native_artifact/compiler.rs
++++ b/hosts/gpu/src/native_artifact/compiler.rs
+@@ -359,6 +359,12 @@
+         I64Eq | I64Ne | I64Lt | I64Le | I64Gt | I64Ge => (&[I64, I64], Bool),
+         I64Neg => (&[I64], I64),
+         F64Add | F64Sub | F64Mul | F64Div => (&[F64, F64], F64),
++        U64ToI64 => (&[U64], I64),
++        I64ToU64 => (&[I64], U64),
++        U64ToF64 => (&[U64], F64),
++        I64ToF64 => (&[I64], F64),
++        F64ToU64 => (&[F64], U64),
++        F64ToI64 => (&[F64], I64),
+         F64Neg | F64Sqrt => (&[F64], F64),
+         F64Eq | F64Ne | F64Lt | F64Le | F64Gt | F64Ge => (&[F64, F64], Bool),
+         BoolNot => (&[Bool], Bool),
+@@ -372,6 +378,71 @@
+     error: Block,
+ ) -> Value {
+     use NativeScalarOp::*;
++    // Only genuine selected conversion witnesses reach these typed arms.
++    // Guards precede machine conversions and result stores, and the caller
++    // admits this complete checked template before loading its operand.
++    match op {
++        U64ToI64 => {
++            let valid = b
++                .ins()
++                .icmp_imm(IntCC::UnsignedLessThanOrEqual, args[0], i64::MAX);
++            guard(b, valid, error, STATUS_ARITHMETIC);
++            return args[0];
++        }
++        I64ToU64 => {
++            let valid = b
++                .ins()
++                .icmp_imm(IntCC::SignedGreaterThanOrEqual, args[0], 0);
++            guard(b, valid, error, STATUS_ARITHMETIC);
++            return args[0];
++        }
++        U64ToF64 | I64ToF64 => {
++            let value = if op == U64ToF64 {
++                b.ins().fcvt_from_uint(types::F64, args[0])
++            } else {
++                b.ins().fcvt_from_sint(types::F64, args[0])
++            };
++            return b.ins().bitcast(types::I64, MemFlags::new(), value);
++        }
++        F64ToU64 | F64ToI64 => {
++            // The actual core executor rejects nonfinite before truncation.
++            // Inspect raw exponent bits first, so even signaling NaN reaches
++            // the checked error without executing a floating instruction.
++            let exponent = b.ins().band_imm(args[0], 0x7ff0_0000_0000_0000_i64);
++            let finite = b
++                .ins()
++                .icmp_imm(IntCC::NotEqual, exponent, 0x7ff0_0000_0000_0000_i64);
++            guard(b, finite, error, STATUS_ARITHMETIC);
++            let value = b.ins().bitcast(types::F64, MemFlags::new(), args[0]);
++            let truncated = b.ins().trunc(value);
++            let signed = op == F64ToI64;
++            let lower = b
++                .ins()
++                .f64const(cranelift_codegen::ir::immediates::Ieee64::with_bits(
++                    if signed { 0xc3e0_0000_0000_0000 } else { 0 },
++                ));
++            let upper = b
++                .ins()
++                .f64const(cranelift_codegen::ir::immediates::Ieee64::with_bits(
++                    if signed {
++                        0x43e0_0000_0000_0000
++                    } else {
++                        0x43f0_0000_0000_0000
++                    },
++                ));
++            // Range checks follow truncation: (-1,0) is valid unsigned zero.
++            let above = b.ins().fcmp(FloatCC::GreaterThanOrEqual, truncated, lower);
++            let below = b.ins().fcmp(FloatCC::LessThan, truncated, upper);
++            let valid = b.ins().band(above, below);
++            guard(b, valid, error, STATUS_ARITHMETIC);
++            return if signed {
++                b.ins().fcvt_to_sint(types::I64, truncated)
++            } else {
++                b.ins().fcvt_to_uint(types::I64, truncated)
++            };
++        }
++        _ => {}
++    }
+     let a = args[0];
+     if matches!(
+         op,
+@@ -502,8 +573,9 @@
+             let value = b.ins().icmp(cc, a, c);
+             b.ins().uextend(types::I64, value)
+         }
+-        BoolNot | I64Neg | F64Add | F64Sub | F64Mul | F64Div | F64Neg | F64Sqrt | F64Eq | F64Ne
+-        | F64Lt | F64Le | F64Gt | F64Ge => unreachable!(),
++        U64ToI64 | I64ToU64 | U64ToF64 | I64ToF64 | F64ToU64 | F64ToI64 | BoolNot | I64Neg
++        | F64Add | F64Sub | F64Mul | F64Div | F64Neg | F64Sqrt | F64Eq | F64Ne | F64Lt | F64Le
++        | F64Gt | F64Ge => unreachable!(),
+     }
+ }
+ 
+diff --git a/hosts/gpu/src/native_artifact/identity.rs b/hosts/gpu/src/native_artifact/identity.rs
+--- a/hosts/gpu/src/native_artifact/identity.rs
++++ b/hosts/gpu/src/native_artifact/identity.rs
+@@ -8,7 +8,7 @@
+ 
+ /// Fixed exported data size for the build-owned entry pairing record.
+ pub const NATIVE_LINK_IDENTITY_BYTES: usize = 152;
+-pub const NATIVE_TYPED_IR_VERSION: u64 = 3;
++pub const NATIVE_TYPED_IR_VERSION: u64 = 4;
+ pub const NATIVE_WORK_POLICY_VERSION: u64 = 1;
+ const MAGIC: &[u8; 16] = b"MECHNATIVEOBJv1\0";
+ 
+@@ -263,6 +263,12 @@
+         NativeScalarOp::F64Le => 39,
+         NativeScalarOp::F64Gt => 40,
+         NativeScalarOp::F64Ge => 41,
++        NativeScalarOp::U64ToI64 => 42,
++        NativeScalarOp::I64ToU64 => 43,
++        NativeScalarOp::U64ToF64 => 44,
++        NativeScalarOp::I64ToF64 => 45,
++        NativeScalarOp::F64ToU64 => 46,
++        NativeScalarOp::F64ToI64 => 47,
+     }
+ }
+ 
+diff --git a/hosts/gpu/tests/canonical_artifact_application.rs b/hosts/gpu/tests/canonical_artifact_application.rs
+--- a/hosts/gpu/tests/canonical_artifact_application.rs
++++ b/hosts/gpu/tests/canonical_artifact_application.rs
+@@ -41,6 +41,8 @@
+ const ORDERED: &str = "quotient := left<u64> / divisor<u64>\nlast := left<u64> + 1u64\nlast\n";
+ const SIGNED: &str = "sum := left<i64> + right<i64>\nnegative := -right<i64>\nsum\n";
+ 
++#[path = "support/canonical_cast_cases.rs"]
++mod cast_cases;
+ #[path = "support/canonical_f64_cases.rs"]
+ mod f64_cases;
+ const FLOATS: &str = "+> math\nidentity := left<f64>\nsum := left<f64> + right<f64>\ndifference := left<f64> - right<f64>\nproduct := left<f64> * right<f64>\nquotient := left<f64> / right<f64>\nnegative := -left<f64>\nroot := math/sqrt(left<f64>)\nsame := left<f64> == right<f64>\ndiffers := left<f64> != right<f64>\nless := left<f64> < right<f64>\nat-most := left<f64> <= right<f64>\ngreater := left<f64> > right<f64>\nat-least := left<f64> >= right<f64>\nsum\n";
+@@ -319,6 +321,9 @@
+ }
+ 
+ fn reference_cases(name: &str, artifacts: &[ProgramArtifact; 2], result: usize) -> Vec<Value> {
++    if let Some(cast) = cast_cases::CASTS.iter().find(|cast| cast.name == name) {
++        return cast_reference_cases(*cast, artifacts);
++    }
+     if name == "canonical-linked-floats" {
+         return floating_reference_cases(artifacts);
+     }
+@@ -836,6 +841,166 @@
+     cases
+ }
+ 
++fn cast_reference_cases(cast: cast_cases::Cast, artifacts: &[ProgramArtifact; 2]) -> Vec<Value> {
++    let plans = artifacts.each_ref().map(|artifact| {
++        lower_pure_native_artifact(artifact, &mech_stdlib::source_catalog()).unwrap()
++    });
++    let jits = plans
++        .each_ref()
++        .map(|plan| JitArtifact::compile(plan).unwrap());
++    assert_eq!(plans[0].inputs().len(), 1);
++    assert_eq!(plans[0].inputs()[0].ty().kind(), cast.input);
++    assert_eq!(plans[0].lets().len(), 1);
++    assert_eq!(plans[0].lets()[0].op(), cast.op);
++    assert!(
++        plans[0]
++            .outputs()
++            .iter()
++            .all(|output| output.ty().kind() == cast.output)
++    );
++    let mut cases = Vec::new();
++    for (ordinal, input) in cast_cases::samples(cast).into_iter().enumerate() {
++        let args = inputs(&artifacts[0], &[("value", input)]);
++        let label = format!("cast-boundary-{ordinal}");
++        let expected = resident(&artifacts[0], &args);
++        match expected {
++            Ok(expected) => {
++                for index in 0..2 {
++                    assert_eq!(resident(&artifacts[index], &args).unwrap(), expected);
++                    assert_eq!(jit_success(&jits[index], &args).0, expected);
++                }
++                cases.push(success_case(&label, arguments(&args), &expected));
++            }
++            Err(_) => {
++                for index in 0..2 {
++                    assert!(resident(&artifacts[index], &args).is_err());
++                    assert!(
++                        matches!(jit_error(&jits[index],&args,NativeExecutionLimits::default()),NativeExecutionError::Arithmetic {node} if node==plans[index].lets()[0].node())
++                    );
++                }
++                cases.push(exact_failure_case(
++                    &label,
++                    arguments(&args),
++                    &jit_error(&jits[0], &args, NativeExecutionLimits::default()),
++                ));
++            }
++        }
++    }
++    let zero = match cast.input {
++        NativeScalarKind::U64 => NativeScalarValue::U64(0),
++        NativeScalarKind::I64 => NativeScalarValue::I64(0),
++        NativeScalarKind::F64 => NativeScalarValue::F64(mech_core::snapshot::F64Bits::from_bits(0)),
++        _ => unreachable!(),
++    };
++    let args = inputs(&artifacts[0], &[("value", zero)]);
++    let (expected, work) = jit_success(&jits[0], &args);
++    let setup = 2
++        * (plans[0].inputs().len() + plans[0].lets().len() + plans[0].outputs().len()) as u64
++        + 8 * plans[0].inputs().len() as u64
++        + 64;
++    for (label, option, limits) in [
++        (
++            "cast-setup-denial",
++            "--work=0".to_owned(),
++            NativeExecutionLimits {
++                max_work: 0,
++                ..NativeExecutionLimits::default()
++            },
++        ),
++        (
++            "cast-node-denial",
++            format!("--work={setup}"),
++            NativeExecutionLimits {
++                max_work: setup,
++                ..NativeExecutionLimits::default()
++            },
++        ),
++        (
++            "cast-completion-denial",
++            format!("--work={}", work - 1),
++            NativeExecutionLimits {
++                max_work: work - 1,
++                ..NativeExecutionLimits::default()
++            },
++        ),
++        (
++            "cast-memory-denial",
++            "--memory=0".to_owned(),
++            NativeExecutionLimits {
++                max_transport_bytes: 0,
++                ..NativeExecutionLimits::default()
++            },
++        ),
++    ] {
++        cases.push(exact_failure_case(
++            label,
++            with_limit(&option, &args),
++            &jit_error(&jits[0], &args, limits),
++        ));
++    }
++    let budget = mech_core::ManagedMemoryBudget::new(0);
++    let mut output = vec![NativeScalarValue::U64(0xfeed); plans[0].outputs().len()];
++    let before = output.clone();
++    let error = jits[0]
++        .evaluate_into(
++            &args,
++            &mut output,
++            NativeExecutionLimits::default(),
++            Some(&budget),
++        )
++        .unwrap_err();
++    assert_eq!(output, before);
++    assert_eq!(budget.used_bytes(), 0);
++    cases.push(exact_failure_case(
++        "cast-shared-budget-denial",
++        with_limit("--budget=0", &args),
++        &error,
++    ));
++    let (invalid, diagnostic) = match cast.input {
++        NativeScalarKind::U64 => (["-1", "1.0", " 1"], "invalid U64 argument"),
++        NativeScalarKind::I64 => (["+1", "1.0", " 1"], "invalid I64 argument"),
++        NativeScalarKind::F64 => (
++            ["NaN", "f64:0", "f64:000000000000000g"],
++            "invalid F64 bit argument",
++        ),
++        _ => unreachable!(),
++    };
++    for (ordinal, bad) in invalid.into_iter().enumerate() {
++        let mut case = failure_case(
++            &format!("cast-malformed-input-{ordinal}"),
++            vec![bad.into()],
++            diagnostic,
++        );
++        case["stderr"] = json!(format!("{diagnostic}\n"));
++        cases.push(case);
++    }
++    for (label, arguments) in [
++        ("cast-missing-input", vec![]),
++        ("cast-extra-input", vec!["0".into(), "0".into()]),
++    ] {
++        let mut case = failure_case(label, arguments, "expected 1 typed inputs");
++        case["stderr"] = json!("expected 1 typed inputs\n");
++        cases.push(case);
++    }
++    if invalid_unicode_argument().is_some() {
++        let mut case = failure_case(
++            "cast-nonunicode-input",
++            arguments(&args),
++            "argument is not Unicode",
++        );
++        case["stderr"] = json!("argument is not Unicode\n");
++        case["invalid_os_argument"] = json!(0);
++        cases.push(case);
++    }
++    assert_eq!(jit_success(&jits[0], &args).0, expected);
++    cases.push(success_case(
++        "cast-recovery-after-denials",
++        arguments(&args),
++        &expected,
++    ));
++    cases
++}
++
+ /// Only called in the contained worker. Subprocesses inherit its owned group;
+ /// they do not open another process group that could escape its deadline.
+ fn worker_command(mut command: Command, root: &Path, label: &str) -> Captured {
+@@ -954,13 +1119,15 @@
+ #[ignore = "internal worker; the outer qualification owns this complete process tree"]
+ fn canonical_native_link_build_worker() {
+     let name = std::env::var("MECH_CANONICAL_NATIVE_WORKER_NAME").unwrap();
+-    assert!(matches!(
+-        name.as_str(),
+-        "canonical-linked-mixed"
+-            | "canonical-linked-ordered"
+-            | "canonical-linked-signed"
+-            | "canonical-linked-floats"
+-    ));
++    assert!(
++        matches!(
++            name.as_str(),
++            "canonical-linked-mixed"
++                | "canonical-linked-ordered"
++                | "canonical-linked-signed"
++                | "canonical-linked-floats"
++        ) || cast_cases::CASTS.iter().any(|cast| cast.name == name)
++    );
+     let evidence = PathBuf::from(std::env::var_os("MECH_CANONICAL_NATIVE_EVIDENCE_DIR").unwrap());
+     let root = evidence.join(&name);
+     let source = fs::read_to_string(root.join("application.mec")).unwrap();
+@@ -1253,3 +1420,30 @@
+     clean(&workspace, &evidence, &commit, "after");
+     fs::write(evidence.join("qualification.json"),serde_json::to_vec_pretty(&json!({"schema":"mech.canonical-artifact-linked-qualification.v1","source_commit":commit,"source_checkout_clean_before_and_after":true,"route":"canonical-artifact-cranelift-object","linked":true,"executed":true,"benchmark_measurements":0,"applications":applications})).unwrap()).unwrap();
+ }
++
++#[test]
++#[ignore = "explicit six directed scalar cast Object applications; clean pinned checkout and fresh external evidence required"]
++fn linked_canonical_artifact_cast_applications_preserve_checked_boundaries() {
++    let workspace = workspace().canonicalize().unwrap();
++    let commit = std::env::var("MECH_CANONICAL_NATIVE_SOURCE_COMMIT").expect("pin immutable HEAD");
++    assert_eq!(commit.len(), 40);
++    assert!(commit.bytes().all(|byte| byte.is_ascii_hexdigit()));
++    let evidence = PathBuf::from(
++        std::env::var_os("MECH_CANONICAL_NATIVE_EVIDENCE_DIR")
++            .expect("new external evidence directory"),
++    );
++    assert!(evidence.is_absolute());
++    fs::create_dir(&evidence).unwrap();
++    let evidence = evidence.canonicalize().unwrap();
++    assert!(!evidence.starts_with(&workspace));
++    clean(&workspace, &evidence, &commit, "before");
++    let lock = pin(&workspace.join("Cargo.lock"));
++    let applications = cast_cases::CASTS
++        .iter()
++        .map(|cast| qualify(&evidence, cast.name, cast.source))
++        .collect::<Vec<_>>();
++    assert_eq!(applications.len(), 6);
++    assert_eq!(pin(&workspace.join("Cargo.lock")), lock);
++    clean(&workspace, &evidence, &commit, "after");
++    fs::write(evidence.join("qualification.json"),serde_json::to_vec_pretty(&json!({"schema":"mech.canonical-artifact-linked-cast-qualification.v1","source_commit":commit,"source_checkout_clean_before_and_after":true,"route":"canonical-artifact-cranelift-object","linked":true,"executed":true,"benchmark_measurements":0,"applications":applications})).unwrap()).unwrap();
++}
+diff --git a/hosts/gpu/tests/canonical_artifact_cast.rs b/hosts/gpu/tests/canonical_artifact_cast.rs
+new file mode 100644
+--- /dev/null
++++ b/hosts/gpu/tests/canonical_artifact_cast.rs
+@@ -0,0 +1,405 @@
++//! Checked scalar cast qualification against actual maintained resident execution.
++#![cfg(feature = "canonical-native")]
++use mech_core::{
++    ReactiveInstanceId, ValueData, ValueDataDraft,
++    snapshot::{F64Bits, SnapshotValidationContext, ValueDraft},
++};
++use mech_engine::native_artifact::{
++    NativeScalarKind, NativeScalarValue, lower_pure_native_artifact,
++};
++use mech_engine::resident::{ActivationFacts, CapturedValueInput, activate};
++use mech_engine::{CanonicalSourceFrontend, ProgramArtifact, SourceDocumentOutputKind};
++use mech_gpu::native_artifact::{
++    JitArtifact, NativeExecutionError, NativeExecutionLimits, NativeExecutionPhase, emit_object,
++};
++use mech_syntax::document::{
++    AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
++    parse_canonical_document,
++};
++fn compile(source: &str) -> (ProgramArtifact, usize) {
++    let parsed = parse_canonical_document(
++        TextSnapshot::new(DocumentId(0x434e4154), Revision(1), source).unwrap(),
++        ParseConfig::default(),
++    );
++    assert!(
++        parsed.is_strictly_clean(),
++        "{source}: {:?}",
++        parsed.diagnostics
++    );
++    let syntax = DocumentSyntax::cast(parsed.syntax()).unwrap();
++    let product = CanonicalSourceFrontend
++        .compile_document_with_catalog(&syntax, mech_stdlib::source_catalog())
++        .unwrap();
++    let output = product
++        .document_outputs()
++        .iter()
++        .rev()
++        .find(|v| v.kind == SourceDocumentOutputKind::Program)
++        .unwrap()
++        .output as usize;
++    (product.compile_artifact().unwrap(), output)
++}
++fn artifacts(source: &str) -> ([ProgramArtifact; 2], usize) {
++    let (original, output) = compile(source);
++    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap();
++    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
++    assert_eq!(original.revision(), decoded.revision());
++    ([original, decoded], output)
++}
++fn inputs(
++    artifact: &ProgramArtifact,
++    named: &[(&str, NativeScalarValue)],
++) -> Vec<NativeScalarValue> {
++    artifact
++        .inputs()
++        .iter()
++        .map(|input| {
++            let name = mech_engine::decode_source_input_name(&input.name).unwrap();
++            named
++                .iter()
++                .find(|(key, _)| *key == name)
++                .unwrap_or_else(|| panic!("missing input {name}"))
++                .1
++        })
++        .collect()
++}
++fn reference(
++    artifact: &ProgramArtifact,
++    args: &[NativeScalarValue],
++) -> Result<Vec<NativeScalarValue>, String> {
++    let mut instance = activate(
++        ReactiveInstanceId::new(0x434e4154, 0),
++        artifact,
++        &mech_stdlib::source_catalog(),
++        &ActivationFacts::default(),
++    )
++    .map_err(|e| format!("{e:?}"))?;
++    let values = artifact
++        .inputs()
++        .iter()
++        .zip(args)
++        .map(|(input, value)| {
++            ValueDraft {
++                schema: input.schema,
++                shape_values: Box::new([]),
++                data: match value {
++                    NativeScalarValue::Bool(v) => ValueDataDraft::Bool(*v),
++                    NativeScalarValue::U64(v) => ValueDataDraft::U64(*v),
++                    NativeScalarValue::I64(v) => ValueDataDraft::I64(*v),
++                    NativeScalarValue::F64(v) => ValueDataDraft::F64(*v),
++                },
++            }
++            .finalize(&SnapshotValidationContext::new(artifact.schemas()))
++            .unwrap()
++        })
++        .collect::<Vec<_>>();
++    let captured = instance
++        .plan
++        .inputs
++        .iter()
++        .map(|input| {
++            let ordinal = artifact
++                .inputs()
++                .iter()
++                .position(|v| v.slot == input.artifact_slot)
++                .unwrap();
++            CapturedValueInput {
++                slot: input.slot,
++                value: &values[ordinal],
++            }
++        })
++        .collect::<Vec<_>>();
++    instance
++        .prepare_turn_values(&captured)
++        .and_then(|prepared| prepared.publish())
++        .map_err(|e| format!("{e:?}"))?;
++    Ok((0..artifact.outputs().len())
++        .map(
++            |index| match instance.copied_output(index).unwrap().data() {
++                ValueData::Bool(v) => NativeScalarValue::Bool(*v),
++                ValueData::U64(v) => NativeScalarValue::U64(*v),
++                ValueData::I64(v) => NativeScalarValue::I64(*v),
++                ValueData::F64(v) => NativeScalarValue::F64(*v),
++                v => panic!("unexpected scalar {v:?}"),
++            },
++        )
++        .collect())
++}
++
++#[path = "support/canonical_cast_cases.rs"]
++mod cases;
++fn core_reference(
++    cast: cases::Cast,
++    input: NativeScalarValue,
++) -> Result<NativeScalarValue, mech_core::ConversionExecutionError> {
++    use mech_core::{BuiltinScalarKind as K, execute_scalar_conversion};
++    let data = match input {
++        NativeScalarValue::U64(v) => ValueDataDraft::U64(v),
++        NativeScalarValue::I64(v) => ValueDataDraft::I64(v),
++        NativeScalarValue::F64(v) => ValueDataDraft::F64(v),
++        _ => panic!(),
++    };
++    let kind = |kind| match kind {
++        NativeScalarKind::U64 => K::U64,
++        NativeScalarKind::I64 => K::I64,
++        NativeScalarKind::F64 => K::F64,
++        _ => panic!(),
++    };
++    execute_scalar_conversion(data, kind(cast.input), kind(cast.output)).map(|value| match value {
++        ValueDataDraft::U64(v) => NativeScalarValue::U64(v),
++        ValueDataDraft::I64(v) => NativeScalarValue::I64(v),
++        ValueDataDraft::F64(v) => NativeScalarValue::F64(v),
++        _ => panic!(),
++    })
++}
++#[test]
++fn all_six_scalar_casts_match_actual_core_resident_and_jit_original_and_decoded() {
++    for cast in cases::CASTS {
++        let (artifacts, _) = artifacts(cast.source);
++        for artifact in &artifacts {
++            let plan =
++                lower_pure_native_artifact(artifact, &mech_stdlib::source_catalog()).unwrap();
++            assert_eq!(plan.lets().len(), 1);
++            assert_eq!(plan.lets()[0].op(), cast.op);
++            assert!(
++                plan.outputs()
++                    .iter()
++                    .all(|output| output.ty().kind() == cast.output)
++            );
++            let jit = JitArtifact::compile(&plan).unwrap();
++            for input in cases::samples(cast) {
++                let args = inputs(artifact, &[("value", input)]);
++                let core = core_reference(cast, input);
++                let resident = reference(artifact, &args);
++                let mut outputs = vec![NativeScalarValue::U64(0xfeed); plan.outputs().len()];
++                let native =
++                    jit.evaluate_into(&args, &mut outputs, NativeExecutionLimits::default(), None);
++                match core {
++                    Ok(expected) => {
++                        let resident = resident.unwrap();
++                        assert!(resident.iter().all(|value| *value == expected));
++                        native.unwrap();
++                        assert_eq!(outputs, resident, "{} {input:?}", cast.name);
++                    }
++                    Err(error) => {
++                        assert!(resident.is_err(), "{} {input:?} {error:?}", cast.name);
++                        assert!(
++                            matches!(native,Err(NativeExecutionError::Arithmetic {node}) if node==plan.lets()[0].node()),
++                            "{} {input:?} {native:?}",
++                            cast.name
++                        );
++                        assert!(
++                            outputs
++                                .iter()
++                                .all(|value| *value == NativeScalarValue::U64(0xfeed))
++                        );
++                    }
++                }
++            }
++            // Same compiled instance must still succeed after all failures.
++            let zero = match cast.input {
++                NativeScalarKind::U64 => NativeScalarValue::U64(0),
++                NativeScalarKind::I64 => NativeScalarValue::I64(0),
++                NativeScalarKind::F64 => NativeScalarValue::F64(F64Bits::from_bits(0)),
++                _ => panic!(),
++            };
++            let args = inputs(artifact, &[("value", zero)]);
++            let mut output = vec![NativeScalarValue::U64(99); plan.outputs().len()];
++            jit.evaluate_into(&args, &mut output, NativeExecutionLimits::default(), None)
++                .unwrap();
++            assert_eq!(output, reference(artifact, &args).unwrap());
++        }
++    }
++}
++#[test]
++fn cast_boundaries_truncate_before_range_and_never_saturate() {
++    use NativeScalarValue::{F64, I64, U64};
++    let casts = cases::CASTS;
++    for (index, input, expected) in [
++        (
++            2,
++            U64(u64::MAX),
++            F64(F64Bits::from_bits(0x43f0_0000_0000_0000)),
++        ),
++        (
++            3,
++            I64(i64::MAX),
++            F64(F64Bits::from_bits(0x43e0_0000_0000_0000)),
++        ),
++        (
++            3,
++            I64(i64::MIN),
++            F64(F64Bits::from_bits(0xc3e0_0000_0000_0000)),
++        ),
++        (4, F64(F64Bits::from_f64(-0.5)), U64(0)),
++        (4, F64(F64Bits::from_bits(0x8000_0000_0000_0000)), U64(0)),
++        (
++            5,
++            F64(F64Bits::from_bits(0xc3e0_0000_0000_0000)),
++            I64(i64::MIN),
++        ),
++    ] {
++        assert_eq!(core_reference(casts[index], input).unwrap(), expected);
++    }
++    for (index, input, error) in [
++        (
++            0,
++            U64(i64::MAX as u64 + 1),
++            mech_core::ConversionExecutionError::ConversionOutOfRange,
++        ),
++        (
++            1,
++            I64(-1),
++            mech_core::ConversionExecutionError::ConversionOutOfRange,
++        ),
++        (
++            4,
++            F64(F64Bits::from_f64(-1.0)),
++            mech_core::ConversionExecutionError::ConversionOutOfRange,
++        ),
++        (
++            4,
++            F64(F64Bits::from_bits(0x43f0_0000_0000_0000)),
++            mech_core::ConversionExecutionError::ConversionOutOfRange,
++        ),
++        (
++            5,
++            F64(F64Bits::from_bits(0x43e0_0000_0000_0000)),
++            mech_core::ConversionExecutionError::ConversionOutOfRange,
++        ),
++        (
++            4,
++            F64(F64Bits::from_bits(0x7ff0_0000_0000_0001)),
++            mech_core::ConversionExecutionError::ConversionNonFinite,
++        ),
++        (
++            5,
++            F64(F64Bits::from_bits(0xfff0_0000_0000_0000)),
++            mech_core::ConversionExecutionError::ConversionNonFinite,
++        ),
++    ] {
++        assert_eq!(core_reference(casts[index], input), Err(error));
++    }
++}
++#[test]
++fn cast_error_order_denials_atomic_outputs_and_recovery_are_preserved() {
++    let source = "unused<u64> := value<f64>\nother<i64> := integer<u64>\nother\n";
++    let (artifacts, _) = artifacts(source);
++    for artifact in &artifacts {
++        let plan = lower_pure_native_artifact(artifact, &mech_stdlib::source_catalog()).unwrap();
++        assert_eq!(plan.lets().len(), 2);
++        let jit = JitArtifact::compile(&plan).unwrap();
++        let setup = 2
++            * (jit.descriptor().inputs().len()
++                + jit.descriptor().lets().len()
++                + jit.descriptor().outputs().len()) as u64
++            + 8 * jit.descriptor().inputs().len() as u64
++            + 64;
++        let limits = NativeExecutionLimits {
++            max_work: setup + 256,
++            ..NativeExecutionLimits::default()
++        };
++        for (float, integer, first_arithmetic) in
++            [(f64::NAN, u64::MAX, true), (0.5, u64::MAX, false)]
++        {
++            let args = inputs(
++                artifact,
++                &[
++                    ("value", NativeScalarValue::F64(F64Bits::from_f64(float))),
++                    ("integer", NativeScalarValue::U64(integer)),
++                ],
++            );
++            let mut output = vec![NativeScalarValue::I64(71); plan.outputs().len()];
++            let error = jit
++                .evaluate_into(&args, &mut output, limits, None)
++                .unwrap_err();
++            if first_arithmetic {
++                assert!(
++                    matches!(error,NativeExecutionError::Arithmetic{node} if node==plan.lets()[0].node())
++                );
++            } else {
++                assert!(
++                    matches!(error,NativeExecutionError::WorkLimit{phase:NativeExecutionPhase::Node(node),..} if node==plan.lets()[1].node())
++                );
++            }
++            assert!(
++                output
++                    .iter()
++                    .all(|value| *value == NativeScalarValue::I64(71))
++            );
++        }
++        let good = inputs(
++            artifact,
++            &[
++                ("value", NativeScalarValue::F64(F64Bits::from_f64(-0.5))),
++                ("integer", NativeScalarValue::U64(7)),
++            ],
++        );
++        for (limits, budget) in [
++            (
++                NativeExecutionLimits {
++                    max_work: 0,
++                    ..NativeExecutionLimits::default()
++                },
++                None,
++            ),
++            (
++                NativeExecutionLimits {
++                    max_work: setup + 512,
++                    ..NativeExecutionLimits::default()
++                },
++                None,
++            ),
++            (
++                NativeExecutionLimits {
++                    max_transport_bytes: 0,
++                    ..NativeExecutionLimits::default()
++                },
++                None,
++            ),
++            (
++                NativeExecutionLimits::default(),
++                Some(mech_core::ManagedMemoryBudget::new(0)),
++            ),
++        ] {
++            let mut output = vec![NativeScalarValue::I64(71); plan.outputs().len()];
++            assert!(
++                jit.evaluate_into(&good, &mut output, limits, budget.as_ref())
++                    .is_err()
++            );
++            assert!(
++                output
++                    .iter()
++                    .all(|value| *value == NativeScalarValue::I64(71))
++            );
++        }
++        let mut wrong = good.clone();
++        wrong[0] = NativeScalarValue::Bool(false);
++        let mut output = vec![NativeScalarValue::I64(71); plan.outputs().len()];
++        assert!(matches!(
++            jit.evaluate_into(&wrong, &mut output, NativeExecutionLimits::default(), None),
++            Err(NativeExecutionError::InputType { .. })
++        ));
++        assert!(
++            output
++                .iter()
++                .all(|value| *value == NativeScalarValue::I64(71))
++        );
++        jit.evaluate_into(&good, &mut output, NativeExecutionLimits::default(), None)
++            .unwrap();
++        assert_eq!(output, reference(artifact, &good).unwrap());
++    }
++}
++#[test]
++fn cast_object_metadata_has_new_typed_identity_but_is_not_execution() {
++    for cast in cases::CASTS {
++        let (artifact, _) = compile(cast.source);
++        let plan = lower_pure_native_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
++        let object = emit_object(&plan).unwrap();
++        assert!(!object.bytes().is_empty());
++        assert_eq!(object.metadata()["linked"], false);
++        assert_eq!(object.metadata()["executed"], false);
++        assert_eq!(object.metadata()["timing_samples"], 0);
++        assert_eq!(mech_gpu::native_artifact::NATIVE_TYPED_IR_VERSION, 4);
++    }
++}
+diff --git a/hosts/gpu/tests/support/canonical_cast_cases.rs b/hosts/gpu/tests/support/canonical_cast_cases.rs
+new file mode 100644
+--- /dev/null
++++ b/hosts/gpu/tests/support/canonical_cast_cases.rs
+@@ -0,0 +1,149 @@
++//! Inputs only: actual maintained core/resident execution supplies result oracles.
++use mech_core::snapshot::F64Bits;
++use mech_engine::native_artifact::{NativeScalarKind, NativeScalarOp, NativeScalarValue};
++#[derive(Clone, Copy)]
++pub struct Cast {
++    pub name: &'static str,
++    pub source: &'static str,
++    pub op: NativeScalarOp,
++    pub input: NativeScalarKind,
++    pub output: NativeScalarKind,
++}
++pub const CASTS: [Cast; 6] = [
++    Cast {
++        name: "canonical-linked-cast-u64-i64",
++        source: "result<i64> := value<u64>\nresult\n",
++        op: NativeScalarOp::U64ToI64,
++        input: NativeScalarKind::U64,
++        output: NativeScalarKind::I64,
++    },
++    Cast {
++        name: "canonical-linked-cast-i64-u64",
++        source: "result<u64> := value<i64>\nresult\n",
++        op: NativeScalarOp::I64ToU64,
++        input: NativeScalarKind::I64,
++        output: NativeScalarKind::U64,
++    },
++    Cast {
++        name: "canonical-linked-cast-u64-f64",
++        source: "result<f64> := value<u64>\nresult\n",
++        op: NativeScalarOp::U64ToF64,
++        input: NativeScalarKind::U64,
++        output: NativeScalarKind::F64,
++    },
++    Cast {
++        name: "canonical-linked-cast-i64-f64",
++        source: "result<f64> := value<i64>\nresult\n",
++        op: NativeScalarOp::I64ToF64,
++        input: NativeScalarKind::I64,
++        output: NativeScalarKind::F64,
++    },
++    Cast {
++        name: "canonical-linked-cast-f64-u64",
++        source: "result<u64> := value<f64>\nresult\n",
++        op: NativeScalarOp::F64ToU64,
++        input: NativeScalarKind::F64,
++        output: NativeScalarKind::U64,
++    },
++    Cast {
++        name: "canonical-linked-cast-f64-i64",
++        source: "result<i64> := value<f64>\nresult\n",
++        op: NativeScalarOp::F64ToI64,
++        input: NativeScalarKind::F64,
++        output: NativeScalarKind::I64,
++    },
++];
++pub fn samples(cast: Cast) -> Vec<NativeScalarValue> {
++    match cast.input {
++        NativeScalarKind::U64 => [
++            0,
++            1,
++            2,
++            (1u64 << 53) - 1,
++            1u64 << 53,
++            (1u64 << 53) + 1,
++            (1u64 << 53) + 2,
++            (1u64 << 53) + 3,
++            (1u64 << 54) - 1,
++            (1u64 << 54) + 1,
++            (1u64 << 54) + 2,
++            (1u64 << 54) + 3,
++            i64::MAX as u64 - 1024,
++            i64::MAX as u64,
++            i64::MAX as u64 + 1,
++            (1u64 << 63) + 1025,
++            u64::MAX - 1024,
++            u64::MAX,
++        ]
++        .into_iter()
++        .map(NativeScalarValue::U64)
++        .collect(),
++        NativeScalarKind::I64 => [
++            i64::MIN,
++            i64::MIN + 1,
++            i64::MIN + 1025,
++            -((1i64 << 54) + 3),
++            -((1i64 << 53) + 3),
++            -((1i64 << 53) + 2),
++            -((1i64 << 53) + 1),
++            -(1i64 << 53),
++            -1,
++            0,
++            1,
++            (1i64 << 53) - 1,
++            1i64 << 53,
++            (1i64 << 53) + 1,
++            (1i64 << 53) + 2,
++            (1i64 << 53) + 3,
++            (1i64 << 54) + 3,
++            i64::MAX - 1024,
++            i64::MAX,
++        ]
++        .into_iter()
++        .map(NativeScalarValue::I64)
++        .collect(),
++        NativeScalarKind::F64 => [
++            0x0000_0000_0000_0000,
++            0x8000_0000_0000_0000,
++            0x0000_0000_0000_0001,
++            0x8000_0000_0000_0001,
++            0x000f_ffff_ffff_ffff,
++            0x800f_ffff_ffff_ffff,
++            0x0010_0000_0000_0000,
++            0x8010_0000_0000_0000,
++            0x3fe0_0000_0000_0000,
++            0xbfe0_0000_0000_0000,
++            0xbfee_ffff_ffff_ffff,
++            0xbfef_ffff_ffff_ffff,
++            0xbff0_0000_0000_0000,
++            0xbff0_0000_0000_0001,
++            0x3ff0_0000_0000_0000,
++            0x3ffe_6666_6666_6666,
++            0xbffe_6666_6666_6666,
++            0x433f_ffff_ffff_ffff,
++            0x4340_0000_0000_0000,
++            0x4340_0000_0000_0001,
++            0x43df_ffff_ffff_ffff,
++            0x43e0_0000_0000_0000,
++            0x43e0_0000_0000_0001,
++            0xc3df_ffff_ffff_ffff,
++            0xc3e0_0000_0000_0000,
++            0xc3e0_0000_0000_0001,
++            0x43ef_ffff_ffff_ffff,
++            0x43f0_0000_0000_0000,
++            0x43f0_0000_0000_0001,
++            0x7fef_ffff_ffff_ffff,
++            0xffef_ffff_ffff_ffff,
++            0x7ff0_0000_0000_0000,
++            0xfff0_0000_0000_0000,
++            0x7ff8_0000_0000_0001,
++            0xfff8_0000_0000_1234,
++            0x7ff0_0000_0000_0001,
++            0xfff0_0000_0000_4321,
++        ]
++        .into_iter()
++        .map(|bits| NativeScalarValue::F64(F64Bits::from_bits(bits)))
++        .collect(),
++        NativeScalarKind::Bool => unreachable!("cast inputs are numeric"),
++    }
++}
+diff --git a/src/engine/src/native_artifact/ir.rs b/src/engine/src/native_artifact/ir.rs
+--- a/src/engine/src/native_artifact/ir.rs
++++ b/src/engine/src/native_artifact/ir.rs
+@@ -57,6 +57,12 @@
+     F64Le,
+     F64Gt,
+     F64Ge,
++    U64ToI64,
++    I64ToU64,
++    U64ToF64,
++    I64ToF64,
++    F64ToU64,
++    F64ToI64,
+ }
+ 
+ #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+diff --git a/src/engine/src/resident/conversion.rs b/src/engine/src/resident/conversion.rs
+--- a/src/engine/src/resident/conversion.rs
++++ b/src/engine/src/resident/conversion.rs
+@@ -476,6 +476,36 @@
+     resolve_live_matrix_shape: bool,
+ }
+ 
++// This decision inspects the actual selected immutable conversion plan, after
++// its core planner has succeeded. Names, public tags and caller-supplied
++// parameters cannot request this private semantic certificate.
++fn native_scalar_cast(
++    plan: &ResidentConversionPlan,
++) -> Option<super::native_semantics::NativeScalarOp> {
++    use super::native_semantics::NativeScalarOp as Op;
++    use mech_core::{BuiltinScalarKind as K, ConversionMode, ConversionStep, ScalarConversion};
++    if plan.wrap_present || plan.dynamic_payload.is_some() || plan.resolve_live_matrix_shape {
++        return None;
++    }
++    let ConversionStep::Scalar(ScalarConversion::Builtin {
++        source,
++        target,
++        mode: ConversionMode::Explicit,
++    }) = &plan.conversion.step
++    else {
++        return None;
++    };
++    Some(match (source, target) {
++        (K::U64, K::I64) => Op::U64ToI64,
++        (K::I64, K::U64) => Op::I64ToU64,
++        (K::U64, K::F64) => Op::U64ToF64,
++        (K::I64, K::F64) => Op::I64ToF64,
++        (K::F64, K::U64) => Op::F64ToU64,
++        (K::F64, K::I64) => Op::F64ToI64,
++        _ => return None,
++    })
++}
++
+ fn bind_kind_conversion(
+     request: &ResidentKernelBindRequest<'_>,
+ ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+@@ -587,18 +617,22 @@
+         dynamic_payload,
+         resolve_live_matrix_shape,
+     };
+-    Ok(
+-        BoundResidentKernel::new(execute_kind_conversion, Box::new([]))
+-            .with_retained_state(Arc::new(plan))
+-            .with_snapshot_output(ResidentSnapshotOutput {
+-                schema: request.output.schema_id,
+-                schema_key: request.output.schema_key,
+-                shape: request.output.shape_instance.clone(),
+-                exact_cardinality: None,
+-                maximum_cardinality: None,
+-            })
+-            .with_snapshot_schemas(request.schemas.clone()),
+-    )
++    let native_cast = native_scalar_cast(&plan);
++    let kernel = BoundResidentKernel::new(execute_kind_conversion, Box::new([]))
++        .with_retained_state(Arc::new(plan))
++        .with_snapshot_output(ResidentSnapshotOutput {
++            schema: request.output.schema_id,
++            schema_key: request.output.schema_key,
++            shape: request.output.shape_instance.clone(),
++            exact_cardinality: None,
++            maximum_cardinality: None,
++        })
++        .with_snapshot_schemas(request.schemas.clone());
++    // Attach last: subsequent semantic builder mutations must clear the proof.
++    Ok(match native_cast {
++        Some(op) => super::native_semantics::certify(request, kernel, op),
++        None => kernel,
++    })
+ }
+ 
+ fn layout_matches_schema(kind: ResidentValueKind, schema: &SchemaBody) -> bool {
+diff --git a/src/engine/src/resident/general/native_lowering.rs b/src/engine/src/resident/general/native_lowering.rs
+--- a/src/engine/src/resident/general/native_lowering.rs
++++ b/src/engine/src/resident/general/native_lowering.rs
+@@ -473,5 +473,11 @@
+         Private::F64Le => NativeScalarOp::F64Le,
+         Private::F64Gt => NativeScalarOp::F64Gt,
+         Private::F64Ge => NativeScalarOp::F64Ge,
+-    }
+-}
++        Private::U64ToI64 => NativeScalarOp::U64ToI64,
++        Private::I64ToU64 => NativeScalarOp::I64ToU64,
++        Private::U64ToF64 => NativeScalarOp::U64ToF64,
++        Private::I64ToF64 => NativeScalarOp::I64ToF64,
++        Private::F64ToU64 => NativeScalarOp::F64ToU64,
++        Private::F64ToI64 => NativeScalarOp::F64ToI64,
++    }
++}
+diff --git a/src/engine/src/resident/native_semantics.rs b/src/engine/src/resident/native_semantics.rs
+--- a/src/engine/src/resident/native_semantics.rs
++++ b/src/engine/src/resident/native_semantics.rs
+@@ -64,6 +64,12 @@
+     F64Le,
+     F64Gt,
+     F64Ge,
++    U64ToI64,
++    I64ToU64,
++    U64ToF64,
++    I64ToF64,
++    F64ToU64,
++    F64ToI64,
+ }
+ 
+ #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+@@ -80,6 +86,9 @@
+         use NativeScalarKind::{Bool, F64, I64, U64};
+         use NativeScalarOp::*;
+         match self.op {
++            U64ToI64 | U64ToF64 => &[U64],
++            I64ToU64 | I64ToF64 => &[I64],
++            F64ToU64 | F64ToI64 => &[F64],
+             BoolNot => &[Bool],
+             BoolAnd | BoolOr | BoolXor | BoolEq | BoolNe => &[Bool, Bool],
+             U64Add | U64Sub | U64Mul | U64Div | U64Rem | U64Eq | U64Ne | U64Lt | U64Le | U64Gt
+@@ -96,9 +105,15 @@
+     pub(crate) fn output(self) -> NativeScalarKind {
+         use NativeScalarOp::*;
+         match self.op {
+-            U64Add | U64Sub | U64Mul | U64Div | U64Rem => NativeScalarKind::U64,
+-            I64Add | I64Sub | I64Mul | I64Div | I64Rem | I64Neg => NativeScalarKind::I64,
+-            F64Add | F64Sub | F64Mul | F64Div | F64Neg | F64Sqrt => NativeScalarKind::F64,
++            U64Add | U64Sub | U64Mul | U64Div | U64Rem | I64ToU64 | F64ToU64 => {
++                NativeScalarKind::U64
++            }
++            I64Add | I64Sub | I64Mul | I64Div | I64Rem | I64Neg | U64ToI64 | F64ToI64 => {
++                NativeScalarKind::I64
++            }
++            F64Add | F64Sub | F64Mul | F64Div | F64Neg | F64Sqrt | U64ToF64 | I64ToF64 => {
++                NativeScalarKind::F64
++            }
+             _ => NativeScalarKind::Bool,
+         }
+     }
+@@ -156,12 +171,29 @@
+     let [output] = contract.outputs.as_ref() else {
+         return false;
+     };
++    // Casts retain their actual maintained KernelReported contract. This
++    // operation-specific exception does not relax arithmetic certification.
++    let cast = matches!(
++        semantics.op,
++        NativeScalarOp::U64ToI64
++            | NativeScalarOp::I64ToU64
++            | NativeScalarOp::U64ToF64
++            | NativeScalarOp::I64ToF64
++            | NativeScalarOp::F64ToU64
++            | NativeScalarOp::F64ToI64
++    );
++    let change = if cast {
++        ChangeDetectionPolicy::KernelReported
++    } else {
++        ChangeDetectionPolicy::ExactScalar
++    };
+     // These exact unary implementations have the maintained SameAsInput
+     // contract. Binary arithmetic, comparisons and BoolNot retain Declared.
+-    let shape = if matches!(
+-        semantics.op,
+-        NativeScalarOp::I64Neg | NativeScalarOp::F64Neg | NativeScalarOp::F64Sqrt
+-    ) {
++    let shape = if cast
++        || matches!(
++            semantics.op,
++            NativeScalarOp::I64Neg | NativeScalarOp::F64Neg | NativeScalarOp::F64Sqrt
++        ) {
+         ShapeRule::SameAsInput { input: 0 }
+     } else {
+         ShapeRule::Declared
+@@ -183,7 +215,7 @@
+         && output.delivery == DeliveryMode::Signal
+         && output.construction == (OutputConstruction::FullWrite { shape })
+         && output.alias == AliasPolicy::NoAlias
+-        && output.change_detection == ChangeDetectionPolicy::ExactScalar
++        && output.change_detection == change
+         && request
+             .inputs
+             .iter()
+@@ -810,4 +842,68 @@
+             }
+         ));
+     }
+-}
++
++    #[cfg(feature = "convert")]
++    #[test]
++    fn completed_scalar_converters_require_their_own_exact_contract_and_final_seal() {
++        use NativeScalarOp::*;
++        let mut builder = FunctionCatalogBuilder::new();
++        super::super::conversion::install(&mut builder).unwrap();
++        let catalog = builder.build().unwrap();
++        for op in [U64ToI64, I64ToU64, U64ToF64, I64ToF64, F64ToU64, F64ToI64] {
++            let mut binding = Binding::scalar(op);
++            let policy =
++                mech_core::maintained_operation_contract("convert/kind", 1, false).unwrap();
++            let ResolvedOperationContract::Declared(contract) = &mut binding.contract else {
++                panic!()
++            };
++            contract.outputs[0].construction = policy.outputs[0].construction.clone();
++            contract.outputs[0].change_detection = policy.outputs[0].change_detection;
++            assert_eq!(
++                contract.outputs[0].change_detection,
++                ChangeDetectionPolicy::KernelReported
++            );
++            let kernel = binding.bind(&catalog, "convert", "kind");
++            // A completed actual binder candidate is not a final-call seal.
++            assert!(validated_scalar(&kernel).is_none());
++            let sealed = bind_call(kernel, &binding.request(), binding.call("convert", "kind"));
++            assert_eq!(validated_scalar(&sealed).unwrap().op(), op);
++            assert_eq!(validated_scalar(&sealed.clone()).unwrap().op(), op);
++            assert!(
++                validated_scalar(
++                    &sealed
++                        .clone()
++                        .with_snapshot_schemas(binding.schemas.clone())
++                )
++                .is_none()
++            );
++            assert!(
++                validated_scalar(&sealed.clone().with_retained_state(Arc::new(0u64))).is_none()
++            );
++            let semantics = NativeScalarSemantics { op };
++            let ResolvedOperationContract::Declared(contract) = &mut binding.contract else {
++                panic!()
++            };
++            contract.outputs[0].change_detection = ChangeDetectionPolicy::ExactScalar;
++            assert!(!scalar_request(&binding.request(), semantics));
++            let ResolvedOperationContract::Declared(contract) = &mut binding.contract else {
++                panic!()
++            };
++            contract.outputs[0].change_detection = ChangeDetectionPolicy::KernelReported;
++            contract.outputs[0].construction = OutputConstruction::FullWrite {
++                shape: ShapeRule::Declared,
++            };
++            assert!(!scalar_request(&binding.request(), semantics));
++        }
++        // The cast policy must never become a global arithmetic relaxation.
++        let mut arithmetic = Binding::scalar(U64Add);
++        let ResolvedOperationContract::Declared(contract) = &mut arithmetic.contract else {
++            panic!()
++        };
++        contract.outputs[0].change_detection = ChangeDetectionPolicy::KernelReported;
++        assert!(!scalar_request(
++            &arithmetic.request(),
++            NativeScalarSemantics { op: U64Add }
++        ));
++    }
++}
+diff --git a/src/stdlib/Cargo.toml b/src/stdlib/Cargo.toml
+--- a/src/stdlib/Cargo.toml
++++ b/src/stdlib/Cargo.toml
+@@ -387,3 +387,8 @@
+ [[test]]
+ name = "native_artifact_f64_lowering"
+ required-features = ["full_compiler", "native-artifact"]
++
++[[test]]
++name = "native_artifact_cast_lowering"
++path = "tests/native_artifact_cast_lowering.rs"
++required-features = ["full_compiler", "native-artifact"]
+diff --git a/src/stdlib/tests/native_artifact_cast_lowering.rs b/src/stdlib/tests/native_artifact_cast_lowering.rs
+new file mode 100644
+--- /dev/null
++++ b/src/stdlib/tests/native_artifact_cast_lowering.rs
+@@ -0,0 +1,148 @@
++//! Genuine scalar conversion adapter metadata, without executing a kernel.
++#![cfg(all(feature = "full_compiler", feature = "native-artifact"))]
++use mech_core::{
++    BoundResidentKernel, ChangeDetectionPolicy, ExecutionTarget, FunctionCatalogBuilder,
++    OutputConstruction, ResidentKernelBindError, ResidentKernelBindRequest,
++    ResolvedOperationContract, ShapeRule,
++};
++use mech_engine::native_artifact::{
++    NativeArtifactLoweringError, NativeScalarKind, NativeScalarOp, lower_pure_native_artifact,
++};
++use mech_engine::{CanonicalSourceFrontend, ProgramArtifact};
++use mech_syntax::document::{
++    AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
++    parse_canonical_document,
++};
++fn compile(source: &str) -> [ProgramArtifact; 2] {
++    let parsed = parse_canonical_document(
++        TextSnapshot::new(DocumentId(0x43415354), Revision(1), source).unwrap(),
++        ParseConfig::default(),
++    );
++    assert!(
++        parsed.is_strictly_clean(),
++        "{source}: {:?}",
++        parsed.diagnostics
++    );
++    let original = CanonicalSourceFrontend
++        .compile_document_with_catalog(
++            &DocumentSyntax::cast(parsed.syntax()).unwrap(),
++            mech_stdlib::source_catalog(),
++        )
++        .unwrap()
++        .compile_artifact()
++        .unwrap();
++    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap();
++    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
++    assert_eq!(original.revision(), decoded.revision());
++    [original, decoded]
++}
++#[test]
++fn six_actual_scalar_casts_keep_exact_contract_and_native_host_storage() {
++    use NativeScalarKind::{F64, I64, U64};
++    use NativeScalarOp::*;
++    for (source, input, output, op) in [
++        ("answer<i64> := value<u64>\nanswer\n", U64, I64, U64ToI64),
++        ("answer<u64> := value<i64>\nanswer\n", I64, U64, I64ToU64),
++        ("answer<f64> := value<u64>\nanswer\n", U64, F64, U64ToF64),
++        ("answer<f64> := value<i64>\nanswer\n", I64, F64, I64ToF64),
++        ("answer<u64> := value<f64>\nanswer\n", F64, U64, F64ToU64),
++        ("answer<i64> := value<f64>\nanswer\n", F64, I64, F64ToI64),
++    ] {
++        for artifact in compile(source) {
++            let plan =
++                lower_pure_native_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
++            assert_eq!(plan.inputs().len(), 1);
++            assert_eq!(plan.inputs()[0].ty().kind(), input);
++            assert_eq!(plan.lets().len(), 1);
++            assert_eq!(plan.lets()[0].op(), op);
++            assert_eq!(plan.lets()[0].ty().kind(), output);
++            let memory = plan.lets()[0].memory_plan();
++            assert_eq!(memory.target.kind, mech_core::MemoryTargetKind::NativeHost);
++            assert_eq!(memory.bound_call.target(), ExecutionTarget::Native);
++            let storage = |kind| {
++                mech_core::PlannedSlotKind::FixedScalar(match kind {
++                    NativeScalarKind::U64 => {
++                        mech_core::ScalarMemoryKind::Unsigned(mech_core::IntegerWidth::W64)
++                    }
++                    NativeScalarKind::I64 => {
++                        mech_core::ScalarMemoryKind::Signed(mech_core::IntegerWidth::W64)
++                    }
++                    NativeScalarKind::F64 => {
++                        mech_core::ScalarMemoryKind::Floating(mech_core::FloatWidth::W64)
++                    }
++                    _ => panic!(),
++                })
++            };
++            assert_eq!(memory.input_storage[0].slot, storage(input));
++            assert_eq!(memory.output_storage[0].slot, storage(output));
++            assert!(memory.deferred_witnesses.is_empty());
++            let ResolvedOperationContract::Declared(contract) = artifact
++                .contracts()
++                .get(artifact.nodes()[0].as_operation().unwrap().contract)
++                .unwrap()
++            else {
++                panic!()
++            };
++            assert_eq!(
++                contract.outputs[0].construction,
++                OutputConstruction::FullWrite {
++                    shape: ShapeRule::SameAsInput { input: 0 }
++                }
++            );
++            assert_eq!(
++                contract.outputs[0].change_detection,
++                ChangeDetectionPolicy::KernelReported
++            );
++            assert!(
++                plan.outputs()
++                    .iter()
++                    .all(|value| value.ty().kind() == output)
++            );
++        }
++    }
++}
++fn unreviewed(
++    _: &ResidentKernelBindRequest<'_>,
++) -> Result<BoundResidentKernel, ResidentKernelBindError> {
++    Ok(BoundResidentKernel::new(
++        |_, _, _| panic!("no executor may run during metadata binding"),
++        Box::new([]),
++    )
++    .with_work_accounting(mech_core::ResidentKernelWorkAccounting::RuntimeMetered))
++}
++#[test]
++fn same_name_or_public_cost_policy_never_certifies_a_cast() {
++    let mut builder = FunctionCatalogBuilder::new();
++    builder
++        .insert_resident_factory(
++            ["convert"],
++            "kind",
++            mech_core::ImplementationMemoryClass::CanonicalFinalize,
++            unreviewed,
++        )
++        .unwrap();
++    let catalog = builder.build().unwrap();
++    for artifact in compile("answer<f64> := value<u64>\nanswer\n") {
++        assert!(matches!(
++            lower_pure_native_artifact(&artifact, &catalog),
++            Err(NativeArtifactLoweringError::MissingSemanticWitness { .. })
++        ));
++    }
++}
++#[test]
++fn other_cast_domains_and_computed_activation_stay_unsupported() {
++    for source in [
++        "answer<u64> := value<f32>\nanswer\n",
++        "answer<[f64]> := value<[u64]:1,1>\nanswer\n",
++        "answer<string> := value<u64>\nanswer\n",
++        "~answer<u64> := 0u64\nanswer\n",
++        "unused := 1u64/0u64\nanswer<f64> := value<u64>\nanswer\n",
++    ] {
++        for artifact in compile(source) {
++            assert!(
++                lower_pure_native_artifact(&artifact, &mech_stdlib::source_catalog()).is_err(),
++                "{source}"
++            );
++        }
++    }
++}

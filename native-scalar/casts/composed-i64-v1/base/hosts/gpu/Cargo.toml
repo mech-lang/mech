@@ -1,0 +1,153 @@
+[package]
+name = "mech-gpu"
+version = "0.3.5"
+authors = ["Corey Montella <corey@mech-lang.org>"]
+description = "Resident CPU and wgpu compute backends for Mech."
+documentation = "https://docs.mech-lang.org"
+homepage = "https://mech-lang.org"
+repository = "https://github.com/mech-lang/mech"
+license = "Apache-2.0"
+edition = "2024"
+rust-version = "1.92"
+
+[features]
+default = []
+canonical-native-runtime = ["mech-engine/native-artifact"]
+canonical-native = ["canonical-native-runtime", "aot", "dep:toml_edit"]
+native-build = ["sequence-cli", "fused-cli"]
+system-gmp = ["dep:gmp-mpfr-sys", "gmp-mpfr-sys/use-system-libs"]
+sequence-cli = ["aot", "dep:hashbrown", "dep:fxhash", "dep:rayon", "dep:memchr", "dep:regex", "dep:rug", "dep:mech-stdlib", "mech-stdlib/native-sequence"]
+runtime-host = ["dep:mech-runtime"]
+native-io = ["sequence-cli", "runtime-host", "dep:mech-terminal"]
+native = ["runtime-host", "dep:bytemuck", "dep:pollster", "dep:wgpu"]
+jit = [
+  "mech-engine/runtime",
+  "dep:cranelift-codegen",
+  "dep:cranelift-frontend",
+  "dep:cranelift-jit",
+  "dep:cranelift-module",
+]
+aot = [
+  "jit",
+  "dep:cranelift-native",
+  "dep:cranelift-object",
+  "dep:libloading",
+]
+fused-cli = [
+  "aot",
+  "runtime-host",
+  "mech-runtime/compiler",
+  "mech-runtime/resident-routing-source",
+  "mech-runtime/matrixd",
+  "mech-runtime/vectord",
+  "mech-runtime/row_vectord",
+  "mech-runtime/bool",
+  "mech-runtime/matrix1",
+  "dep:mech-stdlib",
+  "mech-stdlib/standard_compiler",
+  "mech-stdlib/matrix1",
+  "mech-stdlib/native-sequence",
+]
+
+[dependencies]
+mech-syntax = { path = "../../src/syntax", default-features = false, features = ["std", "variable_define", "functions", "formulas", "string", "u64"], optional = true }
+hashbrown = { version = "=0.15.5", optional = true }
+fxhash = { version = "=0.2.1", optional = true }
+memchr = { version = "=2.8.3", optional = true }
+rayon = { version = "=1.12.0", optional = true }
+regex = { version = "=1.13.1", optional = true }
+rug = { version = "=1.28.1", default-features = false, features = ["integer"], optional = true }
+gmp-mpfr-sys = { version = "=1.6.8", default-features = false, optional = true }
+mech-compute = { version = "0.3.5", path = "../../src/compute" }
+mech-core = { version = "0.3.5", path = "../../src/core", default-features = false, features = ["range"] }
+mech-engine = { version = "0.3.5", path = "../../src/engine", default-features = false, features = ["resident-artifact"] }
+mech-runtime = { version = "0.3.5", path = "../../src/runtime", default-features = false, features = ["runtime", "string", "f64"], optional = true }
+mech-terminal = { version = "0.3.5", path = "../terminal", default-features = false, features = ["provider"], optional = true }
+mech-stdlib = { version = "0.3.5", path = "../../src/stdlib", default-features = false, features = [], optional = true }
+bytemuck = { version = "1.24.0", optional = true }
+pollster = { version = "0.3.0", optional = true }
+web-time = "1.1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = { version = "0.11.0", default-features = false }
+toml_edit = { version = "0.23", optional = true }
+wgpu = { version = "0.20.1", optional = true }
+wide = "0.7.33"
+cranelift-codegen = { version = "=0.131.3", optional = true }
+cranelift-frontend = { version = "=0.131.3", optional = true }
+cranelift-jit = { version = "=0.131.3", optional = true }
+cranelift-module = { version = "=0.131.3", optional = true }
+cranelift-native = { version = "=0.131.3", optional = true }
+cranelift-object = { version = "=0.131.3", optional = true }
+libloading = { version = "0.8.9", optional = true }
+
+[[example]]
+name = "particle_benchmark"
+path = "examples/particle_benchmark.rs"
+required-features = ["native"]
+
+[[bin]]
+name = "mech-native-source"
+path = "src/bin/mech-native-source.rs"
+required-features = ["native-build"]
+
+[[bin]]
+name = "mech-native-f64"
+path = "src/bin/mech-native-f64.rs"
+required-features = ["fused-cli"]
+
+[[example]]
+name = "compute_backend_benchmark"
+path = "examples/compute_backend_benchmark.rs"
+required-features = ["native"]
+
+[[example]]
+name = "parallel_ekf_benchmark"
+path = "examples/parallel_ekf_benchmark.rs"
+required-features = ["native", "jit"]
+
+[[example]]
+name = "parallel_ekf_rust_scalar"
+path = "examples/parallel_ekf_rust_scalar.rs"
+
+[[test]]
+name = "parallel_ekf"
+path = "tests/parallel_ekf.rs"
+required-features = ["native"]
+
+[[test]]
+name = "particle_source"
+path = "tests/particle_source.rs"
+required-features = ["native"]
+
+[dev-dependencies]
+mech-build = { path = "../../src/build", default-features = false, features = ["process-supervision"] }
+mech-core = { version = "0.3.5", path = "../../src/core", default-features = false, features = ["f32", "matrixd"] }
+mech-engine = { version = "0.3.5", path = "../../src/engine", default-features = false, features = ["full_compiler"] }
+mech-stdlib = { version = "0.3.5", path = "../../src/stdlib", default-features = false, features = ["full_compiler", "native-plan"] }
+mech-syntax = { version = "0.3.5", path = "../../src/syntax", default-features = false, features = ["full"] }
+mech-runtime = { version = "0.3.5", path = "../../src/runtime", default-features = false, features = ["full_compiler", "resident-routing-source", "compute"] }
+
+[[bin]]
+name = "mech-native-map"
+path = "src/bin/mech-native-map.rs"
+required-features = ["fused-cli"]
+
+[[test]]
+name = "canonical_artifact_native"
+required-features = ["canonical-native"]
+
+[[test]]
+name = "canonical_artifact_application"
+path = "tests/canonical_artifact_application.rs"
+required-features = ["canonical-native"]
+
+[[test]]
+name = "canonical_artifact_i64"
+path = "tests/canonical_artifact_i64.rs"
+required-features = ["canonical-native"]
+
+[[test]]
+name = "canonical_artifact_f64"
+path = "tests/canonical_artifact_f64.rs"
+required-features = ["canonical-native"]
