@@ -337,7 +337,7 @@ pub fn cli_host_capability_args() -> Vec<Arg> {
             .help("Enable one named CLI host capability profile for this run, e.g. :cli/stdout")
             .global(true)
             .num_args(1)
-            .value_parser([":cli/env", ":cli/stdout", ":cli/stderr"])
+            .value_parser([":cli/env", ":cli/args", ":cli/stdout", ":cli/stderr"])
             .action(ArgAction::Append),
     ]
 }
@@ -368,6 +368,22 @@ pub fn cli_host_capability_selection(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn args_profile_is_accepted_as_an_explicit_cli_capability() {
+        let matches = clap::Command::new("mech")
+            .args(cli_host_capability_args())
+            .try_get_matches_from([
+                "mech",
+                "--deny-default-capabilities",
+                "--capabilities",
+                ":cli/args",
+            ])
+            .unwrap();
+        let selection = cli_host_capability_selection(&matches, None);
+        assert!(!selection.include_defaults);
+        assert_eq!(selection.profiles, [":cli/args"]);
+    }
     use mech_runtime::{ConfigProfileOptions, parse_config_document};
 
     #[test]

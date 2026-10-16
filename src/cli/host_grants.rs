@@ -5,6 +5,7 @@ use crate::LoadedMechConfig;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct EffectiveCliHostGrants {
     pub env_read_paths: Vec<String>,
+    pub args_read_paths: Vec<String>,
     pub stdout_write_paths: Vec<String>,
     pub stderr_write_paths: Vec<String>,
 }
@@ -13,6 +14,7 @@ impl EffectiveCliHostGrants {
     pub fn empty() -> Self {
         Self {
             env_read_paths: Vec::new(),
+            args_read_paths: Vec::new(),
             stdout_write_paths: Vec::new(),
             stderr_write_paths: Vec::new(),
         }
@@ -25,6 +27,13 @@ impl EffectiveCliHostGrants {
                 target: "cli/env".to_string(),
                 operations: vec!["read".to_string()],
                 paths: self.env_read_paths.clone(),
+            });
+        }
+        if !self.args_read_paths.is_empty() {
+            out.push(mech_runtime::RunResourceGrantConfig {
+                target: "cli/args".to_string(),
+                operations: vec!["read".to_string()],
+                paths: self.args_read_paths.clone(),
             });
         }
         if !self.stdout_write_paths.is_empty() {
@@ -67,6 +76,7 @@ impl Default for CliHostCapabilitySelection {
 }
 
 const CLI_PROFILE_ENV: &str = ":cli/env";
+const CLI_PROFILE_ARGS: &str = ":cli/args";
 const CLI_PROFILE_STDOUT: &str = ":cli/stdout";
 const CLI_PROFILE_STDERR: &str = ":cli/stderr";
 
@@ -118,7 +128,9 @@ pub fn has_explicit_cli_run_grants(config: &LoadedMechConfig) -> MResult<bool> {
 
     for grant in &run.grants {
         let (instance, context) = mech_runtime::parse_host_context_target(&grant.target)?;
-        if cli_instances.contains(instance) && matches!(context, "env" | "stdout" | "stderr") {
+        if cli_instances.contains(instance)
+            && matches!(context, "env" | "args" | "stdout" | "stderr")
+        {
             return Ok(true);
         }
     }
@@ -133,6 +145,10 @@ fn grant_cli_profile(grants: &mut EffectiveCliHostGrants, profile: &str) -> MRes
                 grants.env_read_paths.clear();
                 grants.env_read_paths.push("*".to_string());
             }
+            Ok(())
+        }
+        CLI_PROFILE_ARGS => {
+            union_string(&mut grants.args_read_paths, "*");
             Ok(())
         }
         CLI_PROFILE_STDOUT => {
@@ -158,5 +174,63 @@ fn grant_cli_profile(grants: &mut EffectiveCliHostGrants, profile: &str) -> MRes
 fn union_string(paths: &mut Vec<String>, value: &str) {
     if !paths.iter().any(|path| path == value) {
         paths.push(value.to_string());
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn args_require_an_explicit_profile_and_profile_is_read_only() {
+        let defaults =
+            effective_cli_host_grants(None, CliHostCapabilitySelection::default()).unwrap();
+        assert!(defaults.args_read_paths.is_empty());
+        let grants = effective_cli_host_grants(
+            None,
+            CliHostCapabilitySelection {
+                include_defaults: false,
+                profiles: vec![":cli/args".to_string(), ":cli/args".to_string()],
+            },
+        )
+        .unwrap();
+        assert_eq!(grants.args_read_paths, ["*"]);
+        assert!(grants.env_read_paths.is_empty());
+        assert!(grants.stdout_write_paths.is_empty());
+        assert!(grants.stderr_write_paths.is_empty());
+        let run = grants.to_run_resource_grants();
+        assert_eq!(run.len(), 1);
+        assert_eq!(run[0].target, "cli/args");
+        assert_eq!(run[0].operations, ["read"]);
+        assert_eq!(run[0].paths, ["*"]);
+    }
+
+    #[test]
+    fn configured_args_grants_are_authoritative_for_cli_and_alias_instances() {
+        for instance in ["cli", "term"] {
+            let document = mech_runtime::parse_config_document(
+                "args.mcfg",
+                &format!(
+                    r#"config := {{
+                hosts: [{{name: "term" provider: "cli" settings: {{}}}}]
+                run: {{grants: [{{target: "{instance}/args" operations: ["read"] paths: ["1"]}}]}}
+            }}"#
+                ),
+                mech_runtime::ConfigProfileOptions::default(),
+            )
+            .unwrap();
+            let loaded = LoadedMechConfig {
+                path: "args.mcfg".into(),
+                base_dir: Default::default(),
+                document,
+                discovered_project_dir: None,
+            };
+            assert!(has_explicit_cli_run_grants(&loaded).unwrap());
+            assert_eq!(
+                effective_cli_host_grants(Some(&loaded), CliHostCapabilitySelection::default())
+                    .unwrap(),
+                EffectiveCliHostGrants::empty()
+            );
+        }
     }
 }

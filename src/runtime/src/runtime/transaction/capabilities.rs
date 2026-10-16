@@ -535,7 +535,7 @@ impl MechRuntime {
             .check_scoped(request, &context.authority)
     }
 
-    #[cfg(feature = "resident-routing")]
+    #[cfg(any(feature = "resident-routing", feature = "string"))]
     pub(in crate::runtime) fn preview_capability_for_execution(
         &self,
         context: &RuntimeContext,

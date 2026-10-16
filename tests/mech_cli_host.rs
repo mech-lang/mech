@@ -186,6 +186,25 @@ value := @env/HOME
 
 #[cfg(all(feature = "run", feature = "cli_host"))]
 #[test]
+fn default_capabilities_do_not_grant_args_from_a_source_binding() {
+    let root = temp_root("resident-deny-args");
+    let source_path = root.join("deny-args.mec");
+    std::fs::write(&source_path, "+> @out := cli/stdout\n+> @args := cli/args\n@out/line <- \"must-not-write-args\"\nvalue := @args/1\nvalue\n").unwrap();
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+        .arg("run")
+        .arg(&source_path)
+        .current_dir(&root)
+        .output()
+        .unwrap();
+    let combined = assert_failure_contains(output, "CapabilityDenied");
+    assert!(
+        !combined.lines().any(|line| line == "must-not-write-args"),
+        "rejected args read delivered output:\n{combined}"
+    );
+}
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
 fn denied_stdout_blocks_resident_output() {
     let root = temp_root("resident-deny-stdout");
     let source_path = root.join("deny-stdout.mec");
