@@ -4030,7 +4030,48 @@ impl SemanticBuilder {
             None
         };
         let value = self.required(factor.value(), factor.syntax(), "a factor value")?;
-        let mut result = match value {
+        let mut result = self.factor_value_with_expected(value, expected)?;
+        if factor.transpose().is_some() {
+            result = if self.is_genuinely_dynamic(result)? {
+                self.emit(
+                    "matrix/transpose",
+                    vec![result],
+                    BuiltinSchema::Dynamic,
+                    factor.syntax(),
+                    "postfix",
+                    None,
+                )
+            } else {
+                let Some((inputs, schema)) = self.resolve_maintained_call(
+                    "matrix/transpose",
+                    vec![result],
+                    factor.syntax(),
+                )?
+                else {
+                    return Err(internal(
+                        SourceSemanticAnchor::for_node(factor.syntax()),
+                        "matrix transpose has no maintained type declaration".to_owned(),
+                    ));
+                };
+                self.emit_with_schema_draft(
+                    "matrix/transpose",
+                    inputs,
+                    schema,
+                    factor.syntax(),
+                    "postfix",
+                    None,
+                )
+            };
+        }
+        Ok(result)
+    }
+
+    fn factor_value_with_expected(
+        &mut self,
+        value: FactorValueSyntax,
+        expected: Option<ExpectedSchema<'_>>,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        Ok(match value {
             FactorValueSyntax::Parenthetical(value) => {
                 let expression = self.required(
                     value.expression(),
@@ -4285,40 +4326,7 @@ impl SemanticBuilder {
             FactorValueSyntax::MatrixComprehension(value) => self.matrix_comprehension(&value)?,
             FactorValueSyntax::Slice(value) => self.slice(&value)?,
             FactorValueSyntax::Variable(value) => self.variable(&value)?,
-        };
-        if factor.transpose().is_some() {
-            result = if self.is_genuinely_dynamic(result)? {
-                self.emit(
-                    "matrix/transpose",
-                    vec![result],
-                    BuiltinSchema::Dynamic,
-                    factor.syntax(),
-                    "postfix",
-                    None,
-                )
-            } else {
-                let Some((inputs, schema)) = self.resolve_maintained_call(
-                    "matrix/transpose",
-                    vec![result],
-                    factor.syntax(),
-                )?
-                else {
-                    return Err(internal(
-                        SourceSemanticAnchor::for_node(factor.syntax()),
-                        "matrix transpose has no maintained type declaration".to_owned(),
-                    ));
-                };
-                self.emit_with_schema_draft(
-                    "matrix/transpose",
-                    inputs,
-                    schema,
-                    factor.syntax(),
-                    "postfix",
-                    None,
-                )
-            };
-        }
-        Ok(result)
+        })
     }
 
     fn resolve_maintained_call(
@@ -6402,6 +6410,9 @@ impl SemanticBuilder {
         let stem = match stem {
             SliceStemSyntax::Identifier(value) => self.value_for_name_node(value.syntax())?,
             SliceStemSyntax::Context(value) => self.input_for_node(value.syntax())?,
+            // The selected result's expectation does not describe its base.
+            // Lower the base once through the ordinary factor/catalog path.
+            SliceStemSyntax::Value(value) => self.factor_value_with_expected(value, None)?,
         };
         let subscripts = self.required(slice.subscripts(), slice.syntax(), "subscripts")?;
         let mut value = stem;

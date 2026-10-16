@@ -3016,8 +3016,8 @@ subscript := +(swizzle-subscript
              | dot-subscript-int
              | bracket-subscript
              | brace-subscript) ;
-slice := prefixed-context-path, subscript
-       | identifier, subscript ;
+slice := (prefixed-context-path | identifier | function-call | parenthetical-term),
+         subscript ;
 slice-ref := prefixed-context-path, ?subscript
            | identifier, ?subscript ;
 swizzle-subscript := period, identifier, comma,

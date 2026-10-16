@@ -174,6 +174,8 @@ enum Frame {
     FactorStem(ParserCheckpoint),
     FactorSelection(ParserCheckpoint, bool),
     FactorValue(Marker),
+    PostfixBase(Marker),
+    PostfixSelection(Marker, bool),
     FactorSuffix(Marker, bool),
     Unary(bool),
     UnaryOperator(Marker, bool),
@@ -992,6 +994,8 @@ impl Continuation {
                         return Progress::NeedInput;
                     }
                     if parser.cursor().starts_with("(") {
+                        let base = parser.start();
+                        self.push(Frame::PostfixBase(base));
                         self.push(Frame::Parenthesis(Box::new(parenthesis::Phase::Enter)));
                     } else {
                         self.push(Frame::FactorNegated);
@@ -1069,6 +1073,8 @@ impl Continuation {
                             || parser.cursor().starts_with("{");
                         parser.rewind(stem);
                         if call {
+                            let base = parser.start();
+                            self.push(Frame::PostfixBase(base));
                             self.push(Frame::Call(rules::FUNCTION_CALL));
                         } else if slice {
                             self.push(Frame::Call(rules::SLICE));
@@ -1079,6 +1085,59 @@ impl Continuation {
                         parser.rewind(stem);
                         self.result = Attempt::NoMatch;
                     }
+                }
+                Frame::PostfixBase(base) => {
+                    if self.result == Attempt::NoMatch || parser.is_halted() {
+                        super::super::finish_provisional_marker(parser, base, SyntaxKind::Slice);
+                        if parser.is_halted() {
+                            self.result = Attempt::Committed;
+                        }
+                    } else {
+                        if !final_input
+                            && (parser.is_eof()
+                                || (parser.cursor().byte() == Some(b'.')
+                                    && parser.cursor().byte_at(1).is_none()))
+                        {
+                            self.push(Frame::PostfixBase(base));
+                            return Progress::NeedInput;
+                        }
+                        // As for an identifier base, a function terminator or
+                        // range operator belongs to its enclosing owner. Probe
+                        // subscripts only after an adjacent selector prefix.
+                        let slice = (parser.cursor().starts_with(".")
+                            && !parser.cursor().starts_with("..")
+                            && parser
+                                .cursor()
+                                .byte_at(1)
+                                .is_some_and(|next| !next.is_ascii_whitespace()))
+                            || parser.cursor().starts_with("[")
+                            || parser.cursor().starts_with("{");
+                        if slice {
+                            self.push(Frame::PostfixSelection(
+                                base,
+                                self.result == Attempt::Committed,
+                            ));
+                            self.push(Frame::Call(rules::SUBSCRIPT));
+                        } else {
+                            super::super::finish_provisional_marker(
+                                parser,
+                                base,
+                                SyntaxKind::Slice,
+                            );
+                        }
+                    }
+                }
+                Frame::PostfixSelection(base, committed) => {
+                    if self.result == Attempt::NoMatch {
+                        super::super::finish_provisional_marker(parser, base, SyntaxKind::Slice);
+                    } else {
+                        base.complete(parser, SyntaxKind::Slice);
+                    }
+                    self.result = if committed || self.result == Attempt::Committed {
+                        Attempt::Committed
+                    } else {
+                        Attempt::Matched
+                    };
                 }
                 Frame::FactorValue(node) => {
                     if self.result == Attempt::NoMatch {
@@ -1396,6 +1455,70 @@ impl Continuation {
 mod tests {
     use super::super::super::super::continuation_test_support::assert_partitions;
     use super::*;
+
+    #[test]
+    fn evaluated_selection_bases_do_not_extend_assignment_targets() {
+        for text in [
+            "f()[1u64] = 9u64",
+            "([1u64 2u64])[1u64] = 9u64",
+            "({field: 1u64}).field = 9u64",
+        ] {
+            let source = crate::document::TextSnapshot::new(
+                crate::document::DocumentId(0x504f5354),
+                crate::document::Revision(0),
+                text,
+            )
+            .unwrap();
+            let assignment =
+                crate::document::parser::canonical::parse_canonical_document_rule_for_test(
+                    source.clone(),
+                    rules::VARIABLE_ASSIGN,
+                    crate::document::ParseConfig::default(),
+                )
+                .unwrap();
+            assert!(!assignment.matched, "{text:?}: {assignment:?}");
+            assert_eq!(assignment.consumed.len().0, 0, "{text:?}");
+            let target =
+                crate::document::parser::canonical::parse_canonical_document_rule_for_test(
+                    source,
+                    rules::SLICE_REF,
+                    crate::document::ParseConfig::default(),
+                )
+                .unwrap();
+            assert!(target.consumed.end.0 <= 1, "{text:?}: {target:?}");
+        }
+    }
+
+    #[test]
+    fn direct_slice_rule_owns_evaluated_bases_at_all_input_cuts() {
+        let cases = [
+            (rules::SLICE, "f()[1u64]"),
+            (rules::SLICE, "f(x)[1u64].field[2u64]"),
+            (rules::SLICE, "(f(x))[1u64]"),
+            (rules::SLICE, "([1u64 2u64])[2u64]"),
+        ];
+        for (rule, text) in cases {
+            let parsed =
+                crate::document::parser::canonical::parse_canonical_executable_rule_for_test(
+                    crate::document::TextSnapshot::new(
+                        crate::document::DocumentId(0x504f5354),
+                        crate::document::Revision(0),
+                        text,
+                    )
+                    .unwrap(),
+                    rule,
+                    crate::document::ParseConfig::default(),
+                )
+                .unwrap();
+            assert!(
+                parsed.is_strictly_clean(),
+                "{text:?}: {:?}",
+                parsed.diagnostics
+            );
+            assert_eq!(parsed.consumed.end.0 as usize, text.len());
+        }
+        assert_partitions::<Continuation>(&cases);
+    }
 
     #[test]
     fn every_frozen_recursive_rule_has_a_canonical_continuation() {
