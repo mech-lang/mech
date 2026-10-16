@@ -1206,11 +1206,13 @@ mod tests {
         for operator in ["×", "÷", "·", "•", "⨯"] {
             let source = format!("F(x<f64>, y<f64>) => <f64> :=\n  x {operator}\n  y\n");
             let normalized = normalize(&source).unwrap();
+            let compact = normalized.split_whitespace().collect::<Vec<_>>().join(" ");
             assert!(
-                normalized.contains(&format!("application-temp-result := x {operator} y.")),
+                compact.contains(&format!("application-temp-result := x {operator} y.")),
                 "{normalized}"
             );
             assert!(!normalized.contains("effect-"));
+            super::super::ParsedSource::parse(&source).unwrap();
         }
     }
     #[test]
