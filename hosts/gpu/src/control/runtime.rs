@@ -1,5 +1,7 @@
 //! Storage, CLI formatting and general range scheduling; all callbacks are native.
+use mech_engine::native_sequence::control::{ControlKind, scalar_lanes};
 use rayon::prelude::*;
+use std::fmt::Write as _;
 use std::{
     cell::RefCell,
     io::{BufWriter, Stdout, Write},
@@ -9,6 +11,98 @@ type Range = unsafe extern "C" fn(u64, u64, *const u64, *mut u64) -> u64;
 type Scan = unsafe extern "C" fn(u64, *const u64, *mut u8, *mut u64) -> u64;
 type ScanProducer = unsafe extern "C" fn(u64, *const u64, *mut u32, *mut u64) -> u64;
 type ScanMapper = unsafe extern "C" fn(u64, *const u32, *mut u8, *mut u64) -> u64;
+
+pub(super) fn signed_fields(kind: &ControlKind) -> Vec<bool> {
+    scalar_lanes(kind)
+        .into_iter()
+        .map(|kind| kind == ControlKind::SignedInteger)
+        .collect()
+}
+
+pub(super) fn reducer_codes(kind: &ControlKind, reducers: &[String]) -> Result<Vec<u8>, String> {
+    let kinds = scalar_lanes(kind);
+    if kinds.len() != reducers.len() {
+        return Err("reducer field count mismatch".into());
+    }
+    kinds
+        .iter()
+        .zip(reducers)
+        .map(|(kind, reducer)| match (kind, reducer.as_str()) {
+            (ControlKind::Integer, "sum") => Ok(0),
+            (ControlKind::Integer, "max") => Ok(1),
+            (ControlKind::SignedInteger, "sum") => Ok(2),
+            (ControlKind::SignedInteger, "max") => Ok(3),
+            _ => Err("unsupported typed reducer".into()),
+        })
+        .collect()
+}
+
+pub(super) fn reduction_identity(codes: &[u8]) -> Vec<u64> {
+    codes
+        .iter()
+        .map(|&code| if code == 3 { i64::MIN as u64 } else { 0 })
+        .collect()
+}
+
+pub(super) fn reduction_window() -> usize {
+    rayon::current_num_threads().saturating_mul(4).max(1)
+}
+
+pub(super) fn reduce_values(left: &mut [u64], right: &[u64], codes: &[u8]) -> Result<(), String> {
+    if left.len() != right.len() || left.len() != codes.len() {
+        return Err("reducer field count mismatch".into());
+    }
+    for ((left, &right), &code) in left.iter_mut().zip(right).zip(codes) {
+        *left = match code {
+            0 => left
+                .checked_add(right)
+                .ok_or("unsigned reduction overflow")?,
+            1 => (*left).max(right),
+            2 => {
+                ((*left as i64)
+                    .checked_add(right as i64)
+                    .ok_or("signed reduction overflow")?) as u64
+            }
+            3 => (*left as i64).max(right as i64) as u64,
+            _ => return Err("unsupported typed reducer".into()),
+        };
+    }
+    Ok(())
+}
+
+pub(super) fn format_fields(
+    format: &str,
+    fields: &[u64],
+    signed: &[bool],
+) -> Result<String, String> {
+    if !signed.is_empty() && fields.len() != signed.len() {
+        return Err("format signedness count mismatch".into());
+    }
+    let mut text = String::new();
+    let mut rest = format;
+    for (field, &value) in fields.iter().enumerate() {
+        let at = rest.find('{').ok_or("format field count mismatch")?;
+        text.push_str(&rest[..at]);
+        let (is_signed, width) = if rest[at..].starts_with("{:i64}") {
+            (true, 6)
+        } else if rest[at..].starts_with("{}") {
+            (signed.get(field).copied().unwrap_or(false), 2)
+        } else {
+            return Err("unsupported format field".into());
+        };
+        if is_signed {
+            write!(&mut text, "{}", value as i64).map_err(|error| error.to_string())?;
+        } else {
+            write!(&mut text, "{value}").map_err(|error| error.to_string())?;
+        }
+        rest = &rest[at + width..];
+    }
+    if rest.contains(['{', '}']) {
+        return Err("format field count mismatch".into());
+    }
+    text.push_str(rest);
+    Ok(text)
+}
 struct OutputSession {
     writer: BufWriter<Stdout>,
     error: Option<String>,
@@ -190,6 +284,41 @@ pub unsafe extern "C" fn mech_control_print(
     write_bytes(text.as_bytes())
 }
 
+/// Format scalar fields using signedness emitted from their source IR kinds.
+/// # Safety
+/// All pointers and exact lengths belong to one admitted native object.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn mech_control_print_typed(
+    format: *const u8,
+    length: u64,
+    fields: *const u64,
+    count: u64,
+    signed: *const u8,
+) -> u64 {
+    if length > 4096 || count > 32 {
+        return 6;
+    }
+    // SAFETY: the compiler supplies initialized tables for the exact lengths.
+    let (bytes, fields, codes) = unsafe {
+        (
+            std::slice::from_raw_parts(format, length as usize),
+            std::slice::from_raw_parts(fields, count as usize),
+            std::slice::from_raw_parts(signed, count as usize),
+        )
+    };
+    let Ok(format) = std::str::from_utf8(bytes) else {
+        return 6;
+    };
+    if codes.iter().any(|&code| code > 1) {
+        return 6;
+    }
+    let signed = codes.iter().map(|&code| code == 1).collect::<Vec<_>>();
+    match format_fields(format, fields, &signed) {
+        Ok(text) => write_bytes(text.as_bytes()),
+        Err(_) => 6,
+    }
+}
+
 /// Run the object and its source-derived IO descriptor emitted together.
 /// # Safety
 /// `entry` must obey the admitted native ABI and match this compiler descriptor.
@@ -228,8 +357,17 @@ pub(super) fn execute(
     let required = spec["arguments"].as_u64().ok_or("argument descriptor")? as usize;
     let count = spec["outputs"].as_u64().ok_or("output descriptor")? as usize;
     let format = spec["format"].as_str().ok_or("format descriptor")?;
+    // Absent metadata preserves decoding of retained unsigned descriptors.
+    let signed: Vec<bool> = spec
+        .get("output_signed")
+        .map(|value| serde_json::from_value(value.clone()).map_err(|error| error.to_string()))
+        .transpose()?
+        .unwrap_or_default();
     if args.len() < required || required > 32 || count > 64 {
         return Err("missing arguments or malformed descriptor".into());
+    }
+    if !signed.is_empty() && signed.len() != count {
+        return Err("format signedness count mismatch".into());
     }
     let mut output = vec![0; count];
     let streaming = spec["stream_output"].as_bool().unwrap_or(false);
@@ -263,24 +401,9 @@ pub(super) fn execute(
     result?;
     let stdout = std::io::stdout();
     let mut writer = stdout.lock();
-    let mut rest = format;
-    for value in output {
-        let index = rest.find('{').ok_or("format descriptor mismatch")?;
-        writer
-            .write_all(rest[..index].as_bytes())
-            .map_err(|e| e.to_string())?;
-        if rest[index..].starts_with("{:i64}") {
-            write!(writer, "{}", value as i64).map_err(|e| e.to_string())?;
-            rest = &rest[index + 6..];
-        } else if rest[index..].starts_with("{}") {
-            write!(writer, "{value}").map_err(|e| e.to_string())?;
-            rest = &rest[index + 2..];
-        } else {
-            return Err("unsupported format descriptor".into());
-        }
-    }
+    let formatted = format_fields(format, &output, &signed)?;
     writer
-        .write_all(rest.as_bytes())
+        .write_all(formatted.as_bytes())
         .map_err(|e| e.to_string())?;
     Ok(())
 }
@@ -853,36 +976,39 @@ pub unsafe extern "C" fn mech_control_reduce(
             std::mem::transmute::<usize, Range>(function as usize),
         )
     };
-    if codes.iter().any(|&r| r > 1) {
+    if codes.iter().any(|&r| r > 3) {
         return 5;
     }
     let tasks = (end - start).div_ceil(grain);
-    let reduce = |mut left: Vec<u64>, right: Vec<u64>| {
-        for ((l, r), code) in left.iter_mut().zip(right).zip(&codes) {
-            *l = if *code == 0 {
-                l.wrapping_add(r)
-            } else {
-                (*l).max(r)
-            };
+    // Indexed collection retains range order. Checked addition cannot be
+    // reassociated into a Rayon reduction tree: intermediate overflow matters.
+    let result = (|| {
+        let mut result = reduction_identity(&codes);
+        let mut first = 0;
+        let window = reduction_window();
+        while first < tasks {
+            let last = first.saturating_add(window as u64).min(tasks);
+            let results = (0..(last - first) as usize)
+                .into_par_iter()
+                .map(|offset| {
+                    let task = first + offset as u64;
+                    let begin = start + task * grain;
+                    let last = begin.saturating_add(grain).min(end);
+                    let mut result = vec![0; fields as usize];
+                    // SAFETY: private task output and immutable captures stay live
+                    // until every callback in this bounded indexed window joins.
+                    let status =
+                        unsafe { callback(begin, last, args.as_ptr(), result.as_mut_ptr()) };
+                    if status == 0 { Ok(result) } else { Err(status) }
+                })
+                .collect::<Vec<_>>();
+            for item in results {
+                reduce_values(&mut result, &item?, &codes).map_err(|_| 2u64)?;
+            }
+            first = last;
         }
-        left
-    };
-    let result = (0..tasks)
-        .into_par_iter()
-        .map(|task| {
-            let begin = start + task * grain;
-            let last = begin.saturating_add(grain).min(end);
-            let mut result = vec![0; fields as usize];
-            // SAFETY: every task has private result storage. Captured args are immutable
-            // and remain live; callbacks do not capture IO or host state. Rayon joins
-            // before any storage is released or the combined result is published.
-            let status = unsafe { callback(begin, last, args.as_ptr(), result.as_mut_ptr()) };
-            if status == 0 { Ok(result) } else { Err(status) }
-        })
-        .try_reduce(
-            || vec![0; fields as usize],
-            |left, right| Ok(reduce(left, right)),
-        );
+        Ok::<_, u64>(result)
+    })();
     match result {
         Ok(values) => {
             // SAFETY: exclusive compiler-owned result buffer is exactly fields u64s;
@@ -897,6 +1023,10 @@ pub unsafe extern "C" fn mech_control_reduce(
 pub(super) fn register_symbols(builder: &mut cranelift_jit::JITBuilder) {
     for (name, address) in [
         ("mech_control_reduce", mech_control_reduce as *const u8),
+        (
+            "mech_control_print_typed",
+            mech_control_print_typed as *const u8,
+        ),
         ("mech_control_scan", mech_control_scan as *const u8),
         (
             "mech_control_scan_periodic",
@@ -918,6 +1048,55 @@ pub(super) fn register_symbols(builder: &mut cranelift_jit::JITBuilder) {
         ),
     ] {
         builder.symbol(name, address);
+    }
+}
+
+#[cfg(test)]
+mod signed_tests {
+    use super::*;
+
+    #[test]
+    fn typed_formatting_displays_signed_values_and_preserves_retained_descriptors() {
+        assert_eq!(
+            format_fields(
+                "{} {} {}",
+                &[i64::MIN as u64, (-1i64) as u64, u64::MAX],
+                &[true, true, false]
+            )
+            .unwrap(),
+            "-9223372036854775808 -1 18446744073709551615"
+        );
+        assert_eq!(
+            format_fields("{}", &[u64::MAX], &[]).unwrap(),
+            "18446744073709551615"
+        );
+        assert_eq!(format_fields("{:i64}", &[u64::MAX], &[]).unwrap(), "-1");
+        assert!(format_fields("{} {}", &[1], &[true]).is_err());
+        assert!(format_fields("{}", &[1], &[true, false]).is_err());
+    }
+
+    #[test]
+    fn typed_reductions_preserve_checked_prefixes_and_negative_maxima() {
+        let kinds = ControlKind::Tuple(vec![
+            ControlKind::SignedInteger,
+            ControlKind::SignedInteger,
+            ControlKind::Integer,
+        ]);
+        let codes = reducer_codes(&kinds, &["sum".into(), "max".into(), "sum".into()]).unwrap();
+        assert_eq!(codes, [2, 3, 0]);
+        let mut total = reduction_identity(&codes);
+        for result in [
+            [i64::MIN as u64, (-5i64) as u64, 1],
+            [i64::MAX as u64, (-3i64) as u64, 1],
+            [1, (-7i64) as u64, 1],
+        ] {
+            reduce_values(&mut total, &result, &codes).unwrap();
+        }
+        assert_eq!(total, [0, (-3i64) as u64, 3]);
+        let mut total = [i64::MAX as u64];
+        assert!(reduce_values(&mut total, &[1], &[2]).is_err());
+        let mut total = [u64::MAX];
+        assert!(reduce_values(&mut total, &[1], &[0]).is_err());
     }
 }
 

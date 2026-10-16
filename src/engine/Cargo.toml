@@ -14,7 +14,7 @@ edition = "2024"
 rust-version = "1.92"
 
 [features]
-native-sequence = ["std", "dep:mech-syntax", "mech-syntax/std", "mech-syntax/variable_define", "mech-syntax/functions", "mech-syntax/formulas", "mech-syntax/string", "mech-syntax/u8", "mech-syntax/u64", "mech-syntax/f64", "mech-syntax/map", "mech-syntax/matrix"]
+native-sequence = ["std", "dep:mech-syntax", "mech-syntax/std", "mech-syntax/variable_define", "mech-syntax/functions", "mech-syntax/formulas", "mech-syntax/string", "mech-syntax/u8", "mech-syntax/u64", "mech-syntax/i64", "mech-syntax/f64", "mech-syntax/map", "mech-syntax/matrix"]
 std = ["mech-core/std"]
 no_std = ["mech-core/no_std", "mech-syntax?/no_std"]
 
