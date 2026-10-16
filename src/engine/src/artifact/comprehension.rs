@@ -54,11 +54,27 @@ pub enum ComprehensionStep<C = OperationContractId, S = SchemaId, V = Comprehens
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum MatrixBlockRows {
+    /// The first yielded block supplies the row count; no yields produce 0x0.
+    InferOrZero,
+    /// Exact declared geometry, including the empty Hx0 result.
+    Fixed(u64),
+    /// Actual rows*columns of an already-bound rank-two matrix input. This is
+    /// a semantic shape witness, never a schema lower-bound seed.
+    InputMatrixElements { input: u16 },
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ComprehensionKind {
     Matrix,
     /// Elementwise construction that retains the sole generator matrix shape.
     MatrixPreserveShape,
     Set,
+    /// Concatenate yielded rank-two matrices horizontally, flattening exactly
+    /// one matrix layer and validating a common row count at execution.
+    MatrixHorizontalBlocks {
+        rows: MatrixBlockRows,
+    },
 }
 
 /// Steps execute in source order for every binding of preceding generators.
@@ -515,6 +531,61 @@ pub(super) fn validate_comprehension_inner(
         .schemas
         .get(output)
         .ok_or_else(|| invalid("unknown collection output"))?;
+    if let ComprehensionKind::MatrixHorizontalBlocks { rows } = declaration.kind {
+        let SchemaBody::Matrix {
+            element,
+            dimensions,
+        } = yielded.body()
+        else {
+            return Err(invalid("horizontal block collection yield is not a matrix"));
+        };
+        if dimensions.len() != 2 {
+            return Err(invalid(
+                "horizontal block collection yield must have rank two",
+            ));
+        }
+        match rows {
+            MatrixBlockRows::InferOrZero => {}
+            MatrixBlockRows::Fixed(_) => {}
+            MatrixBlockRows::InputMatrixElements { input } => {
+                let source = inputs
+                    .get(usize::from(input))
+                    .and_then(|schema| draft.schemas.get(*schema))
+                    .ok_or_else(|| invalid("unknown horizontal block row witness input"))?;
+                let SchemaBody::Matrix {
+                    dimensions: source_dimensions,
+                    ..
+                } = source.body()
+                else {
+                    return Err(invalid(
+                        "horizontal block row witness input is not a matrix",
+                    ));
+                };
+                if source_dimensions.len() != 2 {
+                    return Err(invalid(
+                        "horizontal block row witness input must have rank two",
+                    ));
+                }
+            }
+        }
+        let leaf = component_schema(yielded, element)
+            .ok_or_else(|| invalid("invalid horizontal block element schema"))?;
+        let declared_columns = match output.body() {
+            SchemaBody::Matrix { dimensions, .. } if dimensions.len() == 2 => match dimensions[1] {
+                mech_core::DimensionExpr::Constant(columns) => Some(columns),
+                _ => None,
+            },
+            _ => None,
+        };
+        let expected = horizontal_block_output_schema(&leaf, rows, declared_columns)
+            .ok_or_else(|| invalid("invalid horizontal block output schema"))?;
+        if &expected != output {
+            return Err(invalid(
+                "horizontal block collection output does not match its leaf and row policy",
+            ));
+        }
+        return Ok(());
+    }
     if let Some(source) = preserved_matrix_source {
         let (
             SchemaBody::Matrix {
@@ -552,32 +623,40 @@ pub(super) fn validate_comprehension_inner(
         }
         return Ok(());
     }
-    let element = match output.body() {
+    let element_parameter_count = yielded.dimension_parameters().len();
+    let (element, cardinality_parameters) = match output.body() {
         SchemaBody::Matrix {
             element,
             dimensions,
         } if dimensions.len() == 2
             && dimensions[0] == mech_core::DimensionExpr::Constant(1)
-            && dimensions[1]
-                == mech_core::DimensionExpr::Parameter(mech_core::DimensionParameterId::new(
-                    u32::try_from(yielded.dimension_parameters().len())
-                        .map_err(|_| invalid("collection element dimension overflow"))?,
-                ))
             && declaration.kind == ComprehensionKind::Matrix =>
         {
-            element
+            let cardinality_parameters = match dimensions[1] {
+                mech_core::DimensionExpr::Constant(_) => 0,
+                mech_core::DimensionExpr::Parameter(id)
+                    if id
+                        == mech_core::DimensionParameterId::new(
+                            u32::try_from(element_parameter_count)
+                                .map_err(|_| invalid("collection element dimension overflow"))?,
+                        ) =>
+                {
+                    1
+                }
+                _ => return Err(invalid("invalid collection cardinality dimension")),
+            };
+            (element, cardinality_parameters)
         }
-        SchemaBody::Set { element, .. } if declaration.kind == ComprehensionKind::Set => element,
+        SchemaBody::Set { element, .. } if declaration.kind == ComprehensionKind::Set => {
+            (element, 0)
+        }
         SchemaBody::Dynamic if matches!(yielded.body(), SchemaBody::Dynamic) => return Ok(()),
         _ => return Err(invalid("collection result requires a matrix or set schema")),
     };
-    let element_parameter_count = yielded.dimension_parameters().len();
     if declaration.kind == ComprehensionKind::Set && element_parameter_count != 0 {
         return Err(invalid("set collection elements require a closed shape"));
     }
-    if output.dimension_parameters().len()
-        != element_parameter_count + usize::from(declaration.kind == ComprehensionKind::Matrix)
-    {
+    if output.dimension_parameters().len() != element_parameter_count + cardinality_parameters {
         return Err(invalid(
             "collection yield does not match its element schema",
         ));
@@ -624,6 +703,59 @@ fn component_schema(
                 upper_bound: parameter.upper_bound().cloned(),
             })
             .collect(),
+    }
+    .finalize()
+    .ok()
+}
+
+fn horizontal_block_output_schema(
+    leaf: &mech_core::Schema,
+    rows: MatrixBlockRows,
+    declared_columns: Option<u64>,
+) -> Option<mech_core::Schema> {
+    use mech_core::{
+        DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+        DimensionParameterOrigin, SchemaBody, SchemaDraft,
+    };
+    let mut parameters = leaf
+        .dimension_parameters()
+        .iter()
+        .enumerate()
+        .map(|(id, parameter)| {
+            Some(DimensionParameterDeclaration {
+                id: DimensionParameterId::new(u32::try_from(id).ok()?),
+                origin: DimensionParameterOrigin::Explicit,
+                lifetime: parameter.lifetime(),
+                lower_bound: parameter.lower_bound().clone(),
+                upper_bound: parameter.upper_bound().cloned(),
+            })
+        })
+        .collect::<Option<Vec<_>>>()?;
+    let mut axis = || {
+        let id = DimensionParameterId::new(u32::try_from(parameters.len()).ok()?);
+        parameters.push(DimensionParameterDeclaration {
+            id,
+            origin: DimensionParameterOrigin::Inferred,
+            lifetime: DimensionLifetime::Turn,
+            lower_bound: DimensionExpr::Constant(0),
+            upper_bound: None,
+        });
+        Some(DimensionExpr::Parameter(id))
+    };
+    let rows = match rows {
+        MatrixBlockRows::Fixed(rows) => DimensionExpr::Constant(rows),
+        MatrixBlockRows::InferOrZero | MatrixBlockRows::InputMatrixElements { .. } => axis()?,
+    };
+    let columns = match declared_columns {
+        Some(columns) => DimensionExpr::Constant(columns),
+        None => axis()?,
+    };
+    SchemaDraft {
+        dimension_parameters: parameters.into_boxed_slice(),
+        body: SchemaBody::Matrix {
+            element: Box::new(leaf.body().clone()),
+            dimensions: Box::new([rows, columns]),
+        },
     }
     .finalize()
     .ok()

@@ -310,7 +310,21 @@ impl CanonicalArtifactWriter {
             super::ComprehensionKind::Matrix => 0,
             super::ComprehensionKind::Set => 1,
             super::ComprehensionKind::MatrixPreserveShape => 2,
+            super::ComprehensionKind::MatrixHorizontalBlocks { .. } => 3,
         });
+        if let super::ComprehensionKind::MatrixHorizontalBlocks { rows } = control.kind {
+            match rows {
+                super::MatrixBlockRows::InferOrZero => self.u8(0),
+                super::MatrixBlockRows::Fixed(rows) => {
+                    self.u8(1);
+                    self.u64(rows);
+                }
+                super::MatrixBlockRows::InputMatrixElements { input } => {
+                    self.u8(2);
+                    self.u16(input);
+                }
+            }
+        }
         self.u64(control.steps.len() as u64);
         for step in &control.steps {
             match step {

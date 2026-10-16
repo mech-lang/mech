@@ -1,0 +1,265 @@
+{
+  "schema": "mech.canonical-matrix-control-results.v1",
+  "source_parent_commit": "2d2a12254a948dd57d92d6ded14fa9165d22e6cd",
+  "status": "partial-qualification-with-open-long-loop-acceptance-cases",
+  "scope": "Canonical matrix-block comprehensions, current host Value geometry, live-shaped control results, named-output kind context and verified resident tail transitions.",
+  "changes": [
+    "Unannotated Matrix-valued bracket yields concatenate one horizontal block level; explicit nested element schemas retain nested values.",
+    "Actual admitted block geometry governs row authority, summed widths, zero axes and final cardinality constraints; skipped yields do not determine shape.",
+    "Canonical host inputs retain current Turn dimensions while fixed and Activation dimensions remain authoritative. Batch validation precedes writes.",
+    "Selected Matrix results and typed Tuple, Record, Option and Enum wrappers retain current immutable snapshot geometry through direct and resumed control publication.",
+    "Declared named function outputs provide lexical expected kinds for their direct body definitions; body annotations and final output conformance retain their authority.",
+    "Only structurally proven terminal calls to the same control target use a bounded-frame loop; exact logical yield identity distinguishes empty dense locals. Genuine non-tail recursion retains its frame limit.",
+    "Nine maintained pure operations without a closed evaluator are explicitly classified as deferred; no compile-time folding support is claimed for them."
+  ],
+  "source_files": [
+    {
+      "path": "docs/reference/comprehension.mec",
+      "sha256": "dbb5a56ca7661e75b444019636e7f1a312ef35a43f3e5571d4be6dc2defe9e1d"
+    },
+    {
+      "path": "docs/reference/matrix.mec",
+      "sha256": "c31b8972e49f3af29d2f8a1942b18c827998f16646c58dcc07c2d8a369f67e8d"
+    },
+    {
+      "path": "src/engine/src/artifact/bytecode.rs",
+      "sha256": "5be9850c40cc4afefcb2530ddcaaf2a19b92c24db024c1b8df3b69421faa5210"
+    },
+    {
+      "path": "src/engine/src/artifact/comprehension.rs",
+      "sha256": "cb3faa7f0d58af45c7d3d8ed31afad79a42d2525fba1280438a24d932ed599a3"
+    },
+    {
+      "path": "src/engine/src/artifact/control.rs",
+      "sha256": "b68960cb57682bddb7c558ad1626e690628117390635efdcb33243953d9b42e4"
+    },
+    {
+      "path": "src/engine/src/artifact/encoding.rs",
+      "sha256": "35301562acbb8d7ac311330e38d300d675712898777a4722436dc2bd1ef4dedf"
+    },
+    {
+      "path": "src/engine/src/resident/general/closed_comprehension.rs",
+      "sha256": "7b1da3bce8c88c1c58be13586130f3841461869af9218375e447cba5a03ba071"
+    },
+    {
+      "path": "src/engine/src/resident/general/comprehension.rs",
+      "sha256": "e8835aaa3e26a739c5ba338c2c6573fae06ad47edde351eb249246daaab5354a"
+    },
+    {
+      "path": "src/engine/src/resident/general/comprehension_execution.rs",
+      "sha256": "e849795438f0ffb196c3ab4f17d1bd723147a97686098c01d954681921da184a"
+    },
+    {
+      "path": "src/engine/src/resident/general/execution.rs",
+      "sha256": "8d32ad4abb49acb3704d51ce8cd7d9d8b1c0e42d7a536ad2b0028309b5fd469c"
+    },
+    {
+      "path": "src/engine/src/resident/general/mod.rs",
+      "sha256": "6f31aa3df77a166723e48dcd0acd20dd2d1edb4fb0f7371b60cfec38cc94b626"
+    },
+    {
+      "path": "src/engine/src/source_semantics/comprehension.rs",
+      "sha256": "13b49d25544dd7588daa54405dd02c92b589cef033d97e94a260d7cc26c51359"
+    },
+    {
+      "path": "src/engine/src/source_semantics/document_functions.rs",
+      "sha256": "0e61c2954fc4f3e67db0c52913b411e820836dc1f10ecbb163b54feb0f7d42fa"
+    },
+    {
+      "path": "src/engine/src/source_semantics/document_lowering.rs",
+      "sha256": "deca64e21f9a6dce9de7bc60f33d6f05dadf0630caa59077e7832494a415e594"
+    },
+    {
+      "path": "src/engine/src/source_semantics/frontend.rs",
+      "sha256": "9bd611a4019bd56b9e978bd6af492fe290cff62026c750a23f66d9848bae2fbc"
+    },
+    {
+      "path": "src/engine/tests/canonical_source_completion.rs",
+      "sha256": "47b9368760530c5d389e40d5e2c483f3b386e15facbb5aa8b36f96214441197c"
+    },
+    {
+      "path": "src/runtime/src/runtime/program/diagnostics.rs",
+      "sha256": "1811ebea0505666a7fe85a81c4e9090ea518195437fa8a186cafc8468817a784"
+    },
+    {
+      "path": "src/engine/tests/matrix_block_artifact.rs",
+      "sha256": "1e7bbb3bd55c9c1f1074708e48f65e5f25ee75089bd475295702c67ef9fb4766"
+    },
+    {
+      "path": "src/engine/tests/value_input_shapes.rs",
+      "sha256": "8b46d5da9792f19acdbac8ff8ba5356c0a2c32b384ba122ed7c046b6c24788b9"
+    },
+    {
+      "path": "src/stdlib/tests/control_result_shapes.rs",
+      "sha256": "35d2e32c3065f6412191e85790cb7509dc6749a0878b871377816ff591a693cf"
+    },
+    {
+      "path": "src/stdlib/tests/function_output_contexts.rs",
+      "sha256": "a1b727d762ac9e08946ee157db76183ac36ff603cb8c9ba35ff77a2f4914b2fd"
+    },
+    {
+      "path": "src/stdlib/tests/matrix_block_comprehensions.rs",
+      "sha256": "a19fb30b27f1c8b92ee58b74606b9e1bff74e196b24886b065483bd953e05dcc"
+    },
+    {
+      "path": "src/stdlib/tests/tail_control.rs",
+      "sha256": "14c1b6e8968a11ed81e5f622ac7b9be2ac819fe42d001ee654d623f39aa1d902"
+    }
+  ],
+  "actual_test_runs": [
+    {
+      "package": "mech-engine",
+      "targets": {
+        "lib": 771,
+        "canonical_source_completion": 36,
+        "canonical_source_semantics": 147
+      },
+      "failed": 0,
+      "log": "matrix-control-output-retained-v1.log",
+      "log_sha256": "e506d275446d1999165214105a9840c3d232e24b62496207cc28b57260154491"
+    },
+    {
+      "package": "mech-stdlib",
+      "target": "matrix_block_comprehensions",
+      "passed": 12,
+      "failed": 0,
+      "log": "control-result-matrix-source-v2.log",
+      "log_sha256": "a3630efe8893dc1e9748a99b78a0ce0a1b7cf0c979b8280e1150f41edd01cfb2",
+      "note": "Other targets in this earlier batch failed; only this target is credited here."
+    },
+    {
+      "package": "mech-stdlib",
+      "target": "control_result_shapes",
+      "passed": 10,
+      "failed": 0,
+      "log": "control-result-complete-source-v1.log",
+      "log_sha256": "b889b0e02755822b54ced09eb0ffad8de8c7a2c352688cbd397c56c30004186f"
+    },
+    {
+      "package": "mech-stdlib",
+      "target": "function_output_contexts",
+      "passed": 5,
+      "failed": 0,
+      "log": "function-output-context-source-v2.log",
+      "log_sha256": "175ed048b23e7f284c0699ff1927032b43ad673824f6bc925792304467d75705"
+    },
+    {
+      "package": "mech-engine",
+      "target": "value_input_shapes",
+      "passed": 5,
+      "failed": 0,
+      "log": "value-input-shapes-v2.log",
+      "log_sha256": "06d995a12a609329f1c62de235b97048f447347e64a40afc99726c35443be831",
+      "preservation": "Current host-value installation methods are byte-identical to this qualified implementation."
+    },
+    {
+      "package": "mech-stdlib",
+      "target": "match_result_schemas",
+      "passed": 3,
+      "failed": 0,
+      "log": "control-result-retained-match-v1.log",
+      "log_sha256": "3e27fc9af463c3291956f60951ccfbfb4e64e07c3197dcd5270603aa668afd14"
+    }
+  ],
+  "tail_source_acceptance": {
+    "target": "tail_control",
+    "execution": "Ten cases each ran in a separate serial process against the same current test executable, preserving evidence after a failed test aborts.",
+    "passed": 6,
+    "failed": 4,
+    "cases": [
+      {
+        "test": "a_late_checked_error_after_many_backedges_preserves_publication_and_recovers",
+        "exit_code": 0,
+        "log": "tail-current-source-v1-a_late_checked_error_after_many_backedges_preserves_publication_and_recovers.log",
+        "log_sha256": "bc45978bef64a5b7a3e3c6c1dda2e99652a54b0e5f393bd8d6af1e55e2377ab4"
+      },
+      {
+        "test": "actual_full_ordinary_knucleotide_output_survives_long_fasta_prefixes",
+        "exit_code": -6,
+        "log": "tail-current-source-v1-actual_full_ordinary_knucleotide_output_survives_long_fasta_prefixes.log",
+        "log_sha256": "2a1ff79d84f4e09ba548d992bfa8dab591b7220970335889170d45f3fa2fc7d8"
+      },
+      {
+        "test": "actual_record_bounds_machine_scans_long_fasta_prefix_and_body_in_source_order",
+        "exit_code": -6,
+        "log": "tail-current-source-v1-actual_record_bounds_machine_scans_long_fasta_prefix_and_body_in_source_order.log",
+        "log_sha256": "9fa814d432e3f4709987d749b9fc83fe01569ee55e29a68417baad551bb01555"
+      },
+      {
+        "test": "configured_managed_budget_denial_preserves_a_long_walk_publication_and_recovers",
+        "exit_code": 0,
+        "log": "tail-current-source-v1-configured_managed_budget_denial_preserves_a_long_walk_publication_and_recovers.log",
+        "log_sha256": "e6130eb9a3f6d0f7ff9356a50f3f3b393b64fa4fb9091eb45198316bd7defda9"
+      },
+      {
+        "test": "fixed_empty_matrix_carriers_and_zero_lane_results_keep_logical_tail_identity",
+        "exit_code": -6,
+        "log": "tail-current-source-v1-fixed_empty_matrix_carriers_and_zero_lane_results_keep_logical_tail_identity.log",
+        "log_sha256": "40ba74d717e7b0109ecbc5b3315b92733f9f4285fe7b42af32593e2dc90cecb4"
+      },
+      {
+        "test": "non_tail_recursive_postprocessing_keeps_the_existing_depth_limit_and_recovers",
+        "exit_code": 0,
+        "log": "tail-current-source-v1-non_tail_recursive_postprocessing_keeps_the_existing_depth_limit_and_recovers.log",
+        "log_sha256": "d147394644de63d5ddbfb33d4ac986a521cad1efd77ca2adf02ed6eb94f5b065"
+      },
+      {
+        "test": "nonempty_matrix_state_is_carried_before_locals_are_reused_on_each_tail_transition",
+        "exit_code": 0,
+        "log": "tail-current-source-v1-nonempty_matrix_state_is_carried_before_locals_are_reused_on_each_tail_transition.log",
+        "log_sha256": "1b98f3bf469a1a37a91d9dc224a7c6a02accf352a7401d32f209f5deb630e957"
+      },
+      {
+        "test": "suspension_stays_a_turn_boundary_and_retains_frozen_arguments_beside_live_values",
+        "exit_code": 0,
+        "log": "tail-current-source-v1-suspension_stays_a_turn_boundary_and_retains_frozen_arguments_beside_live_values.log",
+        "log_sha256": "41cfab29c2ad0005344225fad369c5567b4e3d782f8a25a8dde8d924b4a313f9"
+      },
+      {
+        "test": "synchronous_state_transitions_exceed_the_non_tail_frame_ceiling_and_refresh",
+        "exit_code": -6,
+        "log": "tail-current-source-v1-synchronous_state_transitions_exceed_the_non_tail_frame_ceiling_and_refresh.log",
+        "log_sha256": "3b98fef8efc02e7cffb783a5c3e98ee4a7611341364afa757474cafae7f6c525"
+      },
+      {
+        "test": "terminal_nested_matches_forward_to_the_exact_outer_recursive_target",
+        "exit_code": 0,
+        "log": "tail-current-source-v1-terminal_nested_matches_forward_to_the_exact_outer_recursive_target.log",
+        "log_sha256": "2741e51f6927d12e503975424f3fa4ff7c59e3c416daab6b9a9af7c5f8df2daf"
+      }
+    ],
+    "failure_diagnosis": "Bounded temporary diagnostics identify cumulative comparison/compute-work denial in all four long cases. The diagnostic source was removed byte-exactly before this acceptance run.",
+    "required_followup": "Reuse the program-certified structural projection arena and charge borrowed retention inspection according to actual inspected metadata while preserving full size bounds and genuine comparison/materialization charges. Original acceptance cases and limits remain in place."
+  },
+  "runtime_only_check": {
+    "package": "mech-engine",
+    "default_features": false,
+    "features": [
+      "std",
+      "resident-artifact",
+      "bool",
+      "u64",
+      "string",
+      "map_ops",
+      "set"
+    ],
+    "passed": true,
+    "log": "matrix-control-output-runtime-v1.log",
+    "log_sha256": "205967c5bf4b2fd65dfec45a93c53c8e47166b7342c8f31ea82e0f1532eca30c"
+  },
+  "qualification_limits": [
+    "Long-loop source acceptance remains incomplete; full k-nucleotide input is not qualified.",
+    "Ordinary nominal declarations still require closed Enum payload kinds; Turn-shaped Enum result coverage uses the public typed source graph boundary.",
+    "Canonical native execution, activated benchmark I/O and full-workload secure/trusted startup timing remain pending."
+  ],
+  "benchmark_measurements": 0,
+  "build_environment": {
+    "cargo_incremental": 0,
+    "dev_debug": 0,
+    "build_jobs": 1,
+    "rust_min_stack": 67108864,
+    "offline": true,
+    "locked": true,
+    "test_threads": 1
+  }
+}

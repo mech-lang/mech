@@ -1119,6 +1119,9 @@ fn materialization_memory(
     let name = match kind {
         crate::ComprehensionKind::Matrix => "matrix-comprehension",
         crate::ComprehensionKind::MatrixPreserveShape => "shape-preserving-matrix-comprehension",
+        crate::ComprehensionKind::MatrixHorizontalBlocks { .. } => {
+            "horizontal-block-matrix-comprehension"
+        }
         crate::ComprehensionKind::Set => "set-comprehension",
     };
     let declaration = mech_core::OperationContractDeclaration {

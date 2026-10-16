@@ -102,6 +102,8 @@ pub(crate) fn activation_failure_for_artifact(
                                 "Matrix comprehension".to_owned(),
                             mech_engine::ComprehensionKind::MatrixPreserveShape =>
                                 "Shape-preserving matrix comprehension".to_owned(),
+                            mech_engine::ComprehensionKind::MatrixHorizontalBlocks { .. } =>
+                                "Horizontal block matrix comprehension".to_owned(),
                             mech_engine::ComprehensionKind::Set => "Set comprehension".to_owned(),
                         },
                         mech_engine::ExecutableNodeBody::Fsm(control) => {

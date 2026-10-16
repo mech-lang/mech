@@ -856,7 +856,24 @@ impl SemanticBuilder {
         }
         let mut bindings = self.bindings.keys().cloned().collect();
         declare_document_inputs(self, &units, &mut bindings)?;
-        compile_document_units(self, units, &bindings, &mut Vec::new(), false)?;
+        // Header output kinds are lexical expectations for their direct
+        // definitions, so empty/compound literals can lower before final
+        // return conformance. Nested calls supply their own headers instead
+        // of inheriting this map from an ambient builder field.
+        let mut expected_bindings = BTreeMap::new();
+        for (output, schema) in &outputs {
+            expected_bindings
+                .entry(output.clone())
+                .or_insert_with(|| schema.clone());
+        }
+        compile_document_units_with_definition_context(
+            self,
+            units,
+            &bindings,
+            &mut Vec::new(),
+            false,
+            &expected_bindings,
+        )?;
         let mut values = Vec::new();
         let mut output_names = BTreeSet::new();
         for (output, schema) in outputs {

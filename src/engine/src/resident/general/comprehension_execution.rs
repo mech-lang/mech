@@ -16,6 +16,160 @@ use mech_core::{
 };
 use std::{collections::HashMap, sync::Arc};
 
+/// One-level horizontal construction. Widths retain the geometry of empty
+/// blocks too; data alone cannot distinguish 0xW matrices.
+#[derive(Default)]
+pub(in crate::resident::general) struct HorizontalBlockGeometry {
+    pub(in crate::resident::general) rows: Option<u64>,
+    pub(in crate::resident::general) columns: u64,
+    pub(in crate::resident::general) widths: Vec<u64>,
+}
+impl HorizontalBlockGeometry {
+    pub(in crate::resident::general) fn new(rows: Option<u64>) -> Self {
+        Self {
+            rows,
+            columns: 0,
+            widths: Vec::new(),
+        }
+    }
+
+    pub(in crate::resident::general) fn preview<'a>(
+        &self,
+        body: &'a SchemaBody,
+    ) -> Result<(u64, u64, &'a SchemaBody), ResidentKernelError> {
+        let SchemaBody::Matrix {
+            element,
+            dimensions,
+        } = body
+        else {
+            return Err(ResidentKernelError::InvalidInput);
+        };
+        let [
+            DimensionExpr::Constant(rows),
+            DimensionExpr::Constant(columns),
+        ] = dimensions.as_ref()
+        else {
+            return Err(ResidentKernelError::InvalidShape);
+        };
+        if self.rows.is_some_and(|expected| expected != *rows) {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        let width = self
+            .columns
+            .checked_add(*columns)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        rows.checked_mul(width)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        Ok((*rows, *columns, element))
+    }
+
+    /// Caller admits storage before this mutation. No yield is evaluated here.
+    pub(in crate::resident::general) fn push(
+        &mut self,
+        rows: u64,
+        columns: u64,
+    ) -> Result<(), ResidentKernelError> {
+        if self.rows.is_some_and(|expected| expected != rows) {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        if self.widths.len() == self.widths.capacity() {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        let width = self
+            .columns
+            .checked_add(columns)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        rows.checked_mul(width)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        self.columns = width;
+        self.rows.get_or_insert(rows);
+        self.widths.push(columns);
+        Ok(())
+    }
+
+    pub(in crate::resident::general) fn count(&self) -> Result<usize, ResidentKernelError> {
+        usize::try_from(
+            self.rows
+                .unwrap_or(0)
+                .checked_mul(self.columns)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+        )
+        .map_err(|_| ResidentKernelError::InvalidShape)
+    }
+
+    pub(in crate::resident::general) fn assembly_demand(
+        &self,
+    ) -> Result<(u64, u64), ResidentKernelError> {
+        let count = budget::checked_u64(self.count()?)?;
+        let blocks = budget::checked_u64(self.widths.len())?;
+        let work = count
+            .checked_mul(8)
+            .and_then(|n| n.checked_add(blocks.checked_mul(8)?))
+            .and_then(|n| n.checked_add(32))
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        // Final row-major draft plus iterators coexist with every staged block.
+        let bytes =
+            count
+                .checked_mul(core::mem::size_of::<ValueDataDraft>() as u64)
+                .and_then(|n| {
+                    n.checked_add(blocks.checked_mul(core::mem::size_of::<(
+                        usize,
+                        std::vec::IntoIter<ValueDataDraft>,
+                    )>() as u64)?)
+                })
+                .ok_or(ResidentKernelError::InvalidShape)?;
+        Ok((work, bytes))
+    }
+}
+
+/// Caller admits assembly_demand, including staging coexistence, beforehand.
+/// Move every coefficient once; never repeatedly concatenate accumulated data.
+pub(in crate::resident::general) fn assemble_horizontal_blocks(
+    values: Vec<ValueDataDraft>,
+    geometry: HorizontalBlockGeometry,
+) -> Result<Vec<ValueDataDraft>, ResidentKernelError> {
+    if values.len() != geometry.widths.len() {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let count = geometry.count()?;
+    let mut output = Vec::new();
+    output
+        .try_reserve_exact(count)
+        .map_err(|_| ResidentKernelError::InvalidShape)?;
+    let mut blocks = Vec::new();
+    blocks
+        .try_reserve_exact(values.len())
+        .map_err(|_| ResidentKernelError::InvalidShape)?;
+    let rows = geometry.rows.unwrap_or(0);
+    for (value, width) in values.into_iter().zip(geometry.widths) {
+        let ValueDataDraft::Matrix(items) = value else {
+            return Err(ResidentKernelError::InvalidInput);
+        };
+        if u64::try_from(items.len()).ok() != rows.checked_mul(width) {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        if width != 0 && rows != 0 {
+            blocks.push((
+                usize::try_from(width).map_err(|_| ResidentKernelError::InvalidShape)?,
+                items.into_vec().into_iter(),
+            ));
+        }
+    }
+    if count != 0 {
+        for _ in 0..usize::try_from(rows).map_err(|_| ResidentKernelError::InvalidShape)? {
+            for (width, items) in &mut blocks {
+                for _ in 0..*width {
+                    output.push(items.next().ok_or(ResidentKernelError::InvalidShape)?);
+                }
+            }
+        }
+    }
+    if output.len() != count || blocks.iter_mut().any(|(_, items)| items.next().is_some()) {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    Ok(output)
+}
+
 #[derive(Clone, Copy, Default)]
 struct ComprehensionLiveLocalFootprint {
     retained_prefix: usize,
@@ -3585,6 +3739,39 @@ fn unowned_comprehension_capture_footprint(
     })
 }
 
+fn admit_horizontal_assembly(
+    geometry: &HorizontalBlockGeometry,
+    draft_capacity: usize,
+    footprint: ValueFootprint,
+    shape_parameters: usize,
+    live_context_bytes: u64,
+    live_locals: ValueFootprint,
+    meter: &mut ResidentBudgetMeter,
+) -> Result<u64, ResidentKernelError> {
+    let (work, bytes) = geometry.assembly_demand()?;
+    let bytes = bytes
+        .checked_add(
+            budget::checked_u64(draft_capacity)?
+                .checked_mul(core::mem::size_of::<ValueDataDraft>() as u64)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+        )
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    meter.charge_compute_work(work)?;
+    meter.charge_temporary_bytes(bytes)?;
+    meter.charge_retained_nodes(2)?;
+    let count = geometry.count()?;
+    admit_output(
+        count,
+        count,
+        footprint,
+        shape_parameters,
+        live_context_bytes,
+        live_locals,
+        *meter,
+    )?;
+    Ok(work)
+}
+
 fn admit_output(
     count: usize,
     current_capacity: usize,
@@ -3717,6 +3904,104 @@ pub(in crate::resident::general) fn scalar_footprint(
         retained_bytes: budget::checked_u64(bytes)?,
         node_count: 1,
     })
+}
+
+fn charge_matrix_yield_copy(
+    footprint: ValueFootprint,
+    meter: &mut ResidentBudgetMeter,
+) -> Result<(), ResidentKernelError> {
+    meter.charge_compute_work(
+        footprint
+            .encoded_bytes
+            .checked_add(footprint.node_count)
+            .and_then(|n| n.checked_mul(3))
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    )?;
+    meter.charge_cloned_bytes(
+        footprint
+            .retained_bytes
+            .checked_mul(3)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    )
+}
+
+fn retained_matrix_yield_footprint(
+    value: ResidentValueRef<'_>,
+    region: ResidentRegion,
+    schema: SchemaId,
+    schemas: &SchemaTable,
+    meter: &mut ResidentBudgetMeter,
+) -> Result<(ValueFootprint, u64), ResidentKernelError> {
+    if matches!(value, ResidentValueRef::Snapshot(_)) {
+        return retained_value_footprint(value, schema, schemas, meter);
+    }
+    let definition = schemas
+        .get(schema)
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let SchemaBody::Matrix {
+        element,
+        dimensions,
+    } = definition.body()
+    else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    if dimensions.len() != 2 {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let count = usize::try_from(
+        u64::from(region.shape.rows)
+            .checked_mul(u64::from(region.shape.columns))
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    )
+    .map_err(|_| ResidentKernelError::InvalidShape)?;
+    if collection_len(value) != Some(count) {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    meter.charge_compute_work(
+        budget::checked_u64(count)?
+            .checked_add(1)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    )?;
+    let mut footprint = ValueFootprint {
+        encoded_bytes: 8,
+        retained_bytes: (core::mem::size_of::<ValueData>() as u64)
+            .checked_add(
+                budget::checked_u64(count)?
+                    .checked_mul(core::mem::size_of::<ValueDataDraft>() as u64)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+            )
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        node_count: 1,
+    };
+    for ordinal in 0..count {
+        footprint = footprint
+            .checked_add(collection_item_footprint(
+                value, region, element, ordinal, meter,
+            )?)
+            .map_err(|_| ResidentKernelError::InvalidShape)?;
+    }
+    Ok((
+        footprint,
+        budget::checked_u64(count)?
+            .checked_mul(8)
+            .and_then(|n| n.checked_add(8))
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    ))
+}
+
+fn retained_matrix_yield_in(
+    value: ResidentValueRef<'_>,
+    region: ResidentRegion,
+    expected_schema: SchemaId,
+    context: &SnapshotValidationContext<'_>,
+) -> Option<ValueDataDraft> {
+    if matches!(value, ResidentValueRef::Snapshot(_)) {
+        return retained_item_in(value, expected_schema, context);
+    }
+    let PatternItem::Plain(data) = resident_array_pattern_item(value, region)? else {
+        return None;
+    };
+    Some(data)
 }
 
 fn retained_value_footprint(
@@ -4910,6 +5195,55 @@ impl ReactiveInstance {
         result
     }
 
+    fn horizontal_row_authority(
+        &self,
+        control: &ActivatedComprehensionNode,
+        rows: crate::MatrixBlockRows,
+        working: InstanceEpoch,
+    ) -> Result<Option<u64>, ResidentKernelError> {
+        match rows {
+            crate::MatrixBlockRows::InferOrZero => Ok(None),
+            crate::MatrixBlockRows::Fixed(rows) => Ok(Some(rows)),
+            crate::MatrixBlockRows::InputMatrixElements { input } => {
+                let ordinal = (control.reads.start as usize)
+                    .checked_add(input as usize)
+                    .ok_or(ResidentKernelError::InvalidInput)?;
+                if ordinal >= control.reads.end as usize {
+                    return Err(ResidentKernelError::InvalidInput);
+                }
+                let location = *self
+                    .plan
+                    .reads
+                    .get(ordinal)
+                    .ok_or(ResidentKernelError::InvalidInput)?;
+                let value = self
+                    .read_location(location, working)
+                    .ok_or(ResidentKernelError::InvalidInput)?;
+                let count = match value {
+                    ResidentValueRef::Snapshot([Some(value)]) => {
+                        let ValueData::Matrix(matrix) = value.data() else {
+                            return Err(ResidentKernelError::InvalidInput);
+                        };
+                        budget::checked_u64(matrix.elements().len())?
+                    }
+                    ResidentValueRef::Snapshot(_) => return Err(ResidentKernelError::InvalidInput),
+                    value => {
+                        let region = region(location);
+                        let count = u64::from(region.shape.rows)
+                            .checked_mul(u64::from(region.shape.columns))
+                            .ok_or(ResidentKernelError::InvalidShape)?;
+                        if collection_len(value).and_then(|n| u64::try_from(n).ok()) != Some(count)
+                        {
+                            return Err(ResidentKernelError::InvalidShape);
+                        }
+                        count
+                    }
+                };
+                Ok(Some(count))
+            }
+        }
+    }
+
     fn execute_collection_planned(
         &mut self,
         index: ActivatedNodeIndex,
@@ -4998,6 +5332,16 @@ impl ReactiveInstance {
         let mut footprint = ValueFootprint::zero();
         let mut nested_finalization_work = 0_u64;
         let mut element_body = None;
+        let mut block_geometry =
+            if let crate::ComprehensionKind::MatrixHorizontalBlocks { rows } = control.kind {
+                meter.charge_compute_work(4).map_err(fail)?;
+                Some(HorizontalBlockGeometry::new(
+                    self.horizontal_row_authority(control, rows, working)
+                        .map_err(fail)?,
+                ))
+            } else {
+                None
+            };
         let mut touched_local_end = 0;
         self.collection_from(
             control,
@@ -5008,6 +5352,7 @@ impl ReactiveInstance {
             &mut footprint,
             &mut nested_finalization_work,
             &mut element_body,
+            &mut block_geometry,
             &mut meter,
             &schemas,
             &projections,
@@ -5149,6 +5494,64 @@ impl ReactiveInstance {
                         .map_err(fail)?;
                         ValueDataDraft::Matrix(values.into_boxed_slice())
                     },
+                )
+            }
+            crate::ComprehensionKind::MatrixHorizontalBlocks { .. } => {
+                let geometry = block_geometry
+                    .take()
+                    .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+                let rows = geometry.rows.unwrap_or(0);
+                let columns = geometry.columns;
+                let count = geometry.count().map_err(fail)?;
+                let element = match element_body {
+                    Some(element) => element,
+                    None => {
+                        let body =
+                            lower_bound_yield_body(control.yield_schema, &schemas).map_err(fail)?;
+                        let SchemaBody::Matrix { element, .. } = body else {
+                            return Err(fail(ResidentKernelError::InvalidInput));
+                        };
+                        *element
+                    }
+                };
+                let shape = completed_matrix_shape(
+                    schema,
+                    element,
+                    Box::new([
+                        DimensionExpr::Constant(rows),
+                        DimensionExpr::Constant(columns),
+                    ]),
+                )
+                .map_err(fail)?;
+                let work = admit_horizontal_assembly(
+                    &geometry,
+                    draft_capacity,
+                    footprint,
+                    schema.dimension_parameters().len(),
+                    schema_arena_bytes,
+                    live_locals,
+                    &mut meter,
+                )
+                .map_err(fail)?;
+                nested_finalization_work = nested_finalization_work
+                    .checked_add(work)
+                    .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+                let assembled = assemble_horizontal_blocks(values, geometry).map_err(fail)?;
+                admit_draft_shrink(
+                    count,
+                    assembled.capacity(),
+                    footprint,
+                    schema.dimension_parameters().len(),
+                    schema_arena_bytes,
+                    live_locals,
+                    meter,
+                )
+                .map_err(fail)?;
+                (
+                    count,
+                    footprint,
+                    shape.parameter_values().to_vec().into_boxed_slice(),
+                    ValueDataDraft::Matrix(assembled.into_boxed_slice()),
                 )
             }
             crate::ComprehensionKind::Set => {
@@ -6177,6 +6580,7 @@ impl ReactiveInstance {
         footprint: &mut ValueFootprint,
         nested_finalization_work: &mut u64,
         element_body: &mut Option<SchemaBody>,
+        block_geometry: &mut Option<HorizontalBlockGeometry>,
         meter: &mut ResidentBudgetMeter,
         schemas: &Arc<mech_core::SchemaTable>,
         projections: &StructuralProjectionTable,
@@ -6476,6 +6880,7 @@ impl ReactiveInstance {
                                 footprint,
                                 nested_finalization_work,
                                 element_body,
+                                block_geometry,
                                 meter,
                                 schemas,
                                 projections,
@@ -6520,6 +6925,27 @@ impl ReactiveInstance {
         let value = self
             .read_location(control.yield_value, working)
             .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
+        // Whole rank-two Matrix values can be retained as explicitly nested
+        // elements or assembled as blocks. Both require the same admitted
+        // matrix copy; only block assembly removes the outer matrix layer.
+        let matrix_yield = matches!(
+            schemas.get(control.yield_schema).map(|schema| schema.body()),
+            Some(SchemaBody::Matrix { dimensions, .. }) if dimensions.len() == 2
+        );
+        if matrix_yield {
+            let metadata = schemas
+                .get(control.yield_schema)
+                .and_then(|schema| schema.clone_allocation_bound_bytes())
+                .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
+            meter.charge_compute_work(metadata).map_err(fail)?;
+            meter
+                .charge_temporary_bytes(
+                    metadata
+                        .checked_mul(2)
+                        .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?,
+                )
+                .map_err(fail)?;
+        }
         let closed_body = closed_yield_body(
             value,
             control.yield_value.region(),
@@ -6527,14 +6953,38 @@ impl ReactiveInstance {
             schemas,
         )
         .map_err(fail)?;
+        let mut next_block = None;
+        let closed_body = if let Some(geometry) = block_geometry.as_ref() {
+            let (rows, columns, _) = geometry.preview(&closed_body).map_err(fail)?;
+            next_block = Some((rows, columns));
+            let SchemaBody::Matrix { element, .. } = closed_body else {
+                return Err(fail(ResidentKernelError::InvalidInput));
+            };
+            *element
+        } else {
+            closed_body
+        };
         if element_body
             .as_ref()
             .is_some_and(|expected| expected != &closed_body)
         {
             return Err(fail(ResidentKernelError::InvalidShape));
         }
-        let (item_footprint, item_finalization_work) =
-            retained_value_footprint(value, control.yield_schema, schemas, meter).map_err(fail)?;
+        let (item_footprint, item_finalization_work) = if matrix_yield {
+            retained_matrix_yield_footprint(
+                value,
+                control.yield_value.region(),
+                control.yield_schema,
+                schemas,
+                meter,
+            )
+        } else {
+            retained_value_footprint(value, control.yield_schema, schemas, meter)
+        }
+        .map_err(fail)?;
+        if matrix_yield {
+            charge_matrix_yield_copy(item_footprint, meter).map_err(fail)?;
+        }
         let next_footprint = footprint
             .checked_add(item_footprint)
             .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
@@ -6559,18 +7009,62 @@ impl ReactiveInstance {
                 .charge_compute_work(budget::checked_u64(values.len()).map_err(fail)?)
                 .map_err(fail)?;
         }
-        match control.kind {
-            crate::ComprehensionKind::Matrix | crate::ComprehensionKind::MatrixPreserveShape => {
-                admit_output(
-                    next,
-                    current_capacity,
-                    next_footprint,
-                    retained_shape_parameter_count,
-                    live_context_bytes,
-                    live_locals,
-                    *meter,
-                )
+        let mut reserve_capacity = next;
+        if let Some(geometry) = block_geometry.as_ref() {
+            if next > current_capacity {
+                reserve_capacity = current_capacity
+                    .checked_mul(2)
+                    .unwrap_or(usize::MAX)
+                    .max(4)
+                    .max(next);
+                meter
+                    .charge_temporary_bytes(
+                        budget::checked_u64(current_capacity)
+                            .map_err(fail)?
+                            .checked_mul(core::mem::size_of::<ValueDataDraft>() as u64)
+                            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?,
+                    )
+                    .map_err(fail)?;
             }
+            if geometry.widths.len() == geometry.widths.capacity() {
+                let capacity = geometry
+                    .widths
+                    .capacity()
+                    .checked_mul(2)
+                    .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?
+                    .max(4);
+                meter
+                    .charge_compute_work(budget::checked_u64(geometry.widths.len()).map_err(fail)?)
+                    .map_err(fail)?;
+                meter
+                    .charge_temporary_bytes(
+                        budget::checked_u64(capacity)
+                            .map_err(fail)?
+                            .checked_mul(16)
+                            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?,
+                    )
+                    .map_err(fail)?;
+                meter
+                    .charge_retained_nodes(u64::from(geometry.widths.is_empty()))
+                    .map_err(fail)?;
+            }
+        }
+        match control.kind {
+            crate::ComprehensionKind::Matrix
+            | crate::ComprehensionKind::MatrixPreserveShape
+            | crate::ComprehensionKind::MatrixHorizontalBlocks { .. } => admit_output(
+                next,
+                if block_geometry.is_some() {
+                    reserve_capacity.max(current_capacity)
+                } else {
+                    current_capacity
+                },
+                next_footprint,
+                retained_shape_parameter_count,
+                live_context_bytes,
+                live_locals,
+                *meter,
+            ),
             crate::ComprehensionKind::Set => admit_set_draft(
                 next,
                 current_capacity,
@@ -6589,28 +7083,69 @@ impl ReactiveInstance {
         let canonical_budget = SnapshotCanonicalizationBudget::new(remaining);
         let context = SnapshotValidationContext::with_shared_schemas(schemas)
             .with_canonicalization_budget(&canonical_budget);
-        let item = retained_item_in(value, control.yield_schema, &context)
-            .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
+        let item = if matrix_yield {
+            retained_matrix_yield_in(
+                value,
+                control.yield_value.region(),
+                control.yield_schema,
+                &context,
+            )
+        } else {
+            retained_item_in(value, control.yield_schema, &context)
+        }
+        .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
         meter
             .charge_comparison_work(canonical_budget.consumed())
             .map_err(fail)?;
+        if let Some(geometry) = block_geometry.as_mut() {
+            if geometry.widths.len() == geometry.widths.capacity() {
+                let capacity = geometry
+                    .widths
+                    .capacity()
+                    .checked_mul(2)
+                    .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?
+                    .max(4);
+                geometry
+                    .widths
+                    .try_reserve_exact(
+                        capacity
+                            .checked_sub(geometry.widths.len())
+                            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?,
+                    )
+                    .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
+                if geometry.widths.capacity() > capacity {
+                    meter
+                        .charge_temporary_bytes(
+                            budget::checked_u64(geometry.widths.capacity() - capacity)
+                                .map_err(fail)?
+                                .checked_mul(8)
+                                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?,
+                        )
+                        .map_err(fail)?;
+                }
+            }
+        }
         values
-            .try_reserve_exact(1)
+            .try_reserve_exact(
+                reserve_capacity
+                    .checked_sub(values.len())
+                    .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?,
+            )
             .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
         // The allocator may grant more than the requested slot. Re-admit its
         // actual live capacity before retaining the new result item.
         match control.kind {
-            crate::ComprehensionKind::Matrix | crate::ComprehensionKind::MatrixPreserveShape => {
-                admit_output(
-                    next,
-                    values.capacity(),
-                    next_footprint,
-                    retained_shape_parameter_count,
-                    live_context_bytes,
-                    live_locals,
-                    *meter,
-                )
-            }
+            crate::ComprehensionKind::Matrix
+            | crate::ComprehensionKind::MatrixPreserveShape
+            | crate::ComprehensionKind::MatrixHorizontalBlocks { .. } => admit_output(
+                next,
+                values.capacity(),
+                next_footprint,
+                retained_shape_parameter_count,
+                live_context_bytes,
+                live_locals,
+                *meter,
+            ),
             crate::ComprehensionKind::Set => admit_set_draft(
                 next,
                 values.capacity(),
@@ -6622,6 +7157,9 @@ impl ReactiveInstance {
             ),
         }
         .map_err(fail)?;
+        if let (Some(geometry), Some((rows, columns))) = (block_geometry.as_mut(), next_block) {
+            geometry.push(rows, columns).map_err(fail)?;
+        }
         values.push(item);
         element_body.get_or_insert(closed_body);
         *footprint = next_footprint;
@@ -6638,6 +7176,156 @@ mod tests {
         DimensionParameterDeclaration, DimensionParameterId, DimensionParameterOrigin, FloatWidth,
         IntegerWidth, NominalKey, NominalKind, ResidentShape, SchemaDraft, SchemaTableBuilder,
     };
+
+    #[test]
+    fn horizontal_block_assembly_is_row_major_and_one_level_only() {
+        let geometry = HorizontalBlockGeometry {
+            rows: Some(2),
+            columns: 3,
+            widths: vec![1, 2],
+        };
+        let v = |n| ValueDataDraft::U64(n);
+        let values = vec![
+            ValueDataDraft::Matrix(vec![v(1), v(4)].into_boxed_slice()),
+            ValueDataDraft::Matrix(vec![v(2), v(3), v(5), v(6)].into_boxed_slice()),
+        ];
+        assert_eq!(
+            assemble_horizontal_blocks(values, geometry).unwrap(),
+            (1..=6).map(v).collect::<Vec<_>>()
+        );
+        let nested = |n| ValueDataDraft::Matrix(vec![v(n)].into_boxed_slice());
+        let geometry = HorizontalBlockGeometry {
+            rows: Some(1),
+            columns: 2,
+            widths: vec![1, 1],
+        };
+        let values = vec![
+            ValueDataDraft::Matrix(vec![nested(7)].into_boxed_slice()),
+            ValueDataDraft::Matrix(vec![nested(9)].into_boxed_slice()),
+        ];
+        assert_eq!(
+            assemble_horizontal_blocks(values, geometry).unwrap(),
+            vec![nested(7), nested(9)]
+        );
+    }
+
+    #[test]
+    fn horizontal_block_geometry_preserves_zero_axes_and_checks_rows_and_overflow() {
+        let leaf = SchemaBody::UnsignedInteger(IntegerWidth::W64);
+        let body = |rows, columns| SchemaBody::Matrix {
+            element: Box::new(leaf.clone()),
+            dimensions: Box::new([
+                DimensionExpr::Constant(rows),
+                DimensionExpr::Constant(columns),
+            ]),
+        };
+        let inferred = HorizontalBlockGeometry::new(None);
+        assert_eq!(inferred.rows.unwrap_or(0), 0);
+        assert_eq!(inferred.count().unwrap(), 0);
+        let fixed = HorizontalBlockGeometry::new(Some(3));
+        assert_eq!(fixed.rows, Some(3));
+        assert_eq!(fixed.count().unwrap(), 0);
+        assert!(
+            fixed.preview(&body(2, 0)).is_err(),
+            "zero width does not waive the common row rule"
+        );
+        let geometry = HorizontalBlockGeometry {
+            rows: Some(0),
+            columns: 5,
+            widths: vec![2, 3],
+        };
+        assert_eq!(geometry.count().unwrap(), 0);
+        assert!(
+            assemble_horizontal_blocks(
+                vec![
+                    ValueDataDraft::Matrix(Box::new([])),
+                    ValueDataDraft::Matrix(Box::new([]))
+                ],
+                geometry
+            )
+            .unwrap()
+            .is_empty()
+        );
+        let geometry = HorizontalBlockGeometry {
+            rows: Some(0),
+            columns: u64::MAX,
+            widths: vec![u64::MAX],
+        };
+        assert!(geometry.preview(&body(0, 1)).is_err());
+    }
+
+    #[test]
+    fn horizontal_final_assembly_admission_checks_work_memory_and_nodes_before_moves() {
+        let geometry = HorizontalBlockGeometry {
+            rows: Some(2),
+            columns: 3,
+            widths: vec![1, 2],
+        };
+        let footprint = ValueFootprint {
+            encoded_bytes: 128,
+            retained_bytes: 256,
+            node_count: 8,
+        };
+        for denied in 0..3 {
+            let mut plan = budget::detached_turn_plan(Default::default()).unwrap();
+            match denied {
+                0 => plan.budget_limits.max_compute_work = Some(0),
+                1 => plan.budget_limits.max_temporary_bytes = Some(0),
+                _ => plan.budget_limits.max_retained_nodes = Some(0),
+            }
+            budget::with_resident_turn_plan(plan, || {
+                let mut meter = ResidentBudgetMeter::default();
+                assert!(
+                    admit_horizontal_assembly(
+                        &geometry,
+                        2,
+                        footprint,
+                        1,
+                        0,
+                        ValueFootprint::zero(),
+                        &mut meter
+                    )
+                    .is_err()
+                );
+            });
+        }
+        let mut meter = ResidentBudgetMeter::default();
+        assert!(
+            admit_horizontal_assembly(
+                &geometry,
+                2,
+                footprint,
+                1,
+                0,
+                ValueFootprint::zero(),
+                &mut meter
+            )
+            .unwrap()
+                > 0
+        );
+        assert!(
+            meter.estimate().temporary_bytes()
+                >= (6 * core::mem::size_of::<ValueDataDraft>()) as u64
+        );
+    }
+
+    #[test]
+    fn horizontal_staged_block_copies_share_the_finite_clone_allowance() {
+        let mut plan = budget::detached_turn_plan(Default::default()).unwrap();
+        plan.budget_limits.max_cloned_bytes = Some(10);
+        budget::with_resident_turn_plan(plan, || {
+            let footprint = ValueFootprint {
+                retained_bytes: 2,
+                encoded_bytes: 2,
+                node_count: 1,
+            };
+            let mut meter = ResidentBudgetMeter::default();
+            charge_matrix_yield_copy(footprint, &mut meter).unwrap();
+            assert_eq!(meter.estimate().cloned_bytes(), 6);
+            assert!(charge_matrix_yield_copy(footprint, &mut meter).is_err());
+            assert_eq!(meter.estimate().cloned_bytes(), 6);
+        });
+    }
 
     #[test]
     fn string_generator_source_copies_accumulate_clone_demand_and_release_live_nodes() {

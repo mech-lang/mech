@@ -685,6 +685,12 @@ pub(super) fn validate_match_inner(
             .get(schema)
             .is_some_and(is_control_value_schema)
     };
+    let result_value = |schema| {
+        draft
+            .schemas
+            .get(schema)
+            .is_some_and(is_control_result_schema)
+    };
     let boolean = |schema| {
         draft
             .schemas
@@ -708,7 +714,7 @@ pub(super) fn validate_match_inner(
             .any(|capture| capture.input == declaration.scrutinee),
         recursive_target_eligible,
     ));
-    if !closed_value(output)
+    if !result_value(output)
         || (!scalar(scrutinee)
             && declaration
                 .arms
@@ -716,7 +722,7 @@ pub(super) fn validate_match_inner(
                 .any(|arm| matches!(&arm.pattern, MatchPattern::Literal(_))))
     {
         return Err(invalid(
-            "match requires a closed result and scalar literal-pattern scrutinee",
+            "match requires a supported result and scalar literal-pattern scrutinee",
         ));
     }
     if !closed_value(scrutinee)
@@ -1499,6 +1505,52 @@ pub(crate) fn is_control_value_schema(schema: &mech_core::Schema) -> bool {
         && !matches!(schema.body(), mech_core::SchemaBody::Dynamic)
 }
 
+/// Selected control results may retain per-turn Matrix geometry in an
+/// immutable canonical snapshot. This is a result-only authority: patterns,
+/// scrutinees, lexical captures and state carriers keep their own gates.
+pub(crate) fn is_control_result_schema(schema: &mech_core::Schema) -> bool {
+    use mech_core::{DimensionLifetime, SchemaBody};
+    fn matrix_result(body: &SchemaBody) -> Option<bool> {
+        fn children<'a>(mut bodies: impl Iterator<Item = &'a SchemaBody>) -> Option<bool> {
+            bodies.try_fold(false, |matrix, body| {
+                matrix_result(body).map(|child| matrix || child)
+            })
+        }
+        match body {
+            SchemaBody::Matrix {
+                element,
+                dimensions,
+            } if dimensions.len() == 2 => matrix_result(element).map(|_| true),
+            SchemaBody::Tuple(fields) => children(fields.iter()),
+            SchemaBody::Record(fields) => children(fields.iter().map(|field| &field.schema)),
+            SchemaBody::Option(body) => matrix_result(body),
+            SchemaBody::Enum { variants, .. } => children(
+                variants
+                    .iter()
+                    .filter_map(|variant| variant.payload.as_ref()),
+            ),
+            SchemaBody::Bool
+            | SchemaBody::UnsignedInteger(_)
+            | SchemaBody::SignedInteger(_)
+            | SchemaBody::IntegerInterval(_)
+            | SchemaBody::FloatingPoint(_)
+            | SchemaBody::Complex(_)
+            | SchemaBody::Rational64
+            | SchemaBody::String
+            | SchemaBody::Id
+            | SchemaBody::Index
+            | SchemaBody::Atom(_) => Some(false),
+            _ => None,
+        }
+    }
+    is_control_value_schema(schema)
+        || (schema
+            .dimension_parameters()
+            .iter()
+            .all(|parameter| parameter.lifetime() == DimensionLifetime::Turn)
+            && matrix_result(schema.body()) == Some(true))
+}
+
 /// A lexical matrix capture may retain its turn-local shape in a canonical
 /// snapshot. This does not make variable-shaped scrutinees, structural pattern
 /// bindings, or block results closed control values.
@@ -1583,6 +1635,135 @@ mod tests {
             2,
             DimensionLifetime::Turn,
         )));
+    }
+
+    #[test]
+    fn turn_matrix_result_eligibility_is_separate_from_patterns_and_captures() {
+        use mech_core::{
+            DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+            DimensionParameterOrigin, SchemaField,
+        };
+        let matrix = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)),
+            dimensions: vec![
+                DimensionExpr::Constant(1),
+                DimensionExpr::Parameter(DimensionParameterId::new(0)),
+            ]
+            .into_boxed_slice(),
+        };
+        let schema = |body, lifetime| {
+            SchemaDraft {
+                body,
+                dimension_parameters: vec![DimensionParameterDeclaration {
+                    id: DimensionParameterId::new(0),
+                    origin: DimensionParameterOrigin::Explicit,
+                    lifetime,
+                    lower_bound: DimensionExpr::Constant(0),
+                    upper_bound: Some(DimensionExpr::Constant(8)),
+                }]
+                .into_boxed_slice(),
+            }
+            .finalize()
+            .unwrap()
+        };
+        for body in [
+            matrix.clone(),
+            SchemaBody::Tuple(vec![matrix.clone(), SchemaBody::Bool].into_boxed_slice()),
+            SchemaBody::Record(
+                vec![SchemaField {
+                    name: "items".into(),
+                    schema: matrix.clone(),
+                }]
+                .into_boxed_slice(),
+            ),
+            SchemaBody::Option(Box::new(matrix.clone())),
+            SchemaBody::Enum {
+                key: mech_core::NominalKey::from_bytes([0x43; 32]),
+                variants: vec![
+                    mech_core::EnumVariantSchema {
+                        name: "Empty".into(),
+                        payload: None,
+                    },
+                    mech_core::EnumVariantSchema {
+                        name: "Items".into(),
+                        payload: Some(matrix.clone()),
+                    },
+                ]
+                .into_boxed_slice(),
+            },
+        ] {
+            let turn = schema(body.clone(), DimensionLifetime::Turn);
+            assert!(is_control_result_schema(&turn));
+            assert!(!is_control_value_schema(&turn));
+            assert!(!is_control_literal_schema(&turn));
+            if !matches!(body, SchemaBody::Matrix { .. }) {
+                assert!(!is_control_capture_schema(&turn));
+            }
+            assert!(!is_control_result_schema(&schema(
+                body,
+                DimensionLifetime::Activation
+            )));
+        }
+        let bounded = schema(matrix.clone(), DimensionLifetime::Turn);
+        assert!(mech_core::shape_for_resolved_extents(&bounded, &[1, 8]).is_ok());
+        assert!(mech_core::shape_for_resolved_extents(&bounded, &[1, 9]).is_err());
+        let mixed = SchemaDraft {
+            body: SchemaBody::Matrix {
+                element: Box::new(SchemaBody::Bool),
+                dimensions: vec![
+                    DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                    DimensionExpr::Parameter(DimensionParameterId::new(1)),
+                ]
+                .into_boxed_slice(),
+            },
+            dimension_parameters: [DimensionLifetime::Activation, DimensionLifetime::Turn]
+                .into_iter()
+                .enumerate()
+                .map(|(index, lifetime)| DimensionParameterDeclaration {
+                    id: DimensionParameterId::new(index as u32),
+                    origin: DimensionParameterOrigin::Explicit,
+                    lifetime,
+                    lower_bound: DimensionExpr::Constant(0),
+                    upper_bound: None,
+                })
+                .collect(),
+        }
+        .finalize()
+        .unwrap();
+        assert!(!is_control_result_schema(&mixed));
+        let map = SchemaBody::Map {
+            key: Box::new(SchemaBody::String),
+            value: Box::new(matrix.clone()),
+            cardinality: mech_core::ExtentSpec::Exact(DimensionExpr::Constant(0)),
+        };
+        assert!(!is_control_result_schema(&schema(
+            map,
+            DimensionLifetime::Turn
+        )));
+        let dynamic =
+            SchemaBody::Tuple(vec![matrix.clone(), SchemaBody::Dynamic].into_boxed_slice());
+        assert!(!is_control_result_schema(&schema(
+            dynamic,
+            DimensionLifetime::Turn
+        )));
+        let non_rank_two = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Bool),
+            dimensions: vec![DimensionExpr::Parameter(DimensionParameterId::new(0))]
+                .into_boxed_slice(),
+        };
+        assert!(!is_control_result_schema(&schema(
+            non_rank_two,
+            DimensionLifetime::Turn
+        )));
+        // This result policy does not retroactively restrict legacy closed values.
+        let closed = SchemaDraft {
+            body: SchemaBody::Bool,
+            dimension_parameters: Box::new([]),
+        }
+        .finalize()
+        .unwrap();
+        assert!(is_control_value_schema(&closed));
+        assert!(is_control_result_schema(&closed));
     }
 
     #[test]

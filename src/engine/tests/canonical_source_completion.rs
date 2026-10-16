@@ -454,8 +454,8 @@ fn recursive_identity_result_updates_downstream_on_the_next_turn() {
 }
 
 #[test]
-fn recursive_frame_limit_rolls_back_and_allows_retry() {
-    let source = "countdown(n<f64>) => <f64>\n  | 0 => 0\n  | n => countdown(n - 1).\ncountdown(signal<f64>)\n";
+fn non_tail_recursive_frame_limit_rolls_back_and_allows_retry() {
+    let source = "countdown(n<f64>) => <f64>\n  | 0 => 0\n  | n => 1 + countdown(n - 1).\ncountdown(signal<f64>)\n";
     let compiled = compile_document(source);
     let artifact = compiled.compile_artifact().unwrap();
     let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
@@ -490,7 +490,7 @@ fn recursive_frame_limit_rolls_back_and_allows_retry() {
             .unwrap()
             .canonical_data_draft()
             .unwrap(),
-        f(0.0)
+        f(5.0)
     );
 }
 
@@ -825,14 +825,14 @@ fn comprehensions_execute_nested_canonical_control() {
         [(vec![], matrix(&[10.0, 20.0]))],
     );
     execute(
-        "x := [[item + z | z <- [1 2]] | item <- [1 2]]",
+        "x<[[f64]]> := [[item + z | z <- [1 2]] | item <- [1 2]]",
         [(
             vec![],
             Data::Matrix(vec![matrix(&[2.0, 3.0]), matrix(&[3.0, 4.0])].into_boxed_slice()),
         )],
     );
     execute(
-        "x := [[item + z | z <- [2 3]] | item <- [2 3]]",
+        "x<[[f64]]> := [[item + z | z <- [2 3]] | item <- [2 3]]",
         [(
             vec![],
             Data::Matrix(vec![matrix(&[4.0, 5.0]), matrix(&[5.0, 6.0])].into_boxed_slice()),
@@ -954,7 +954,7 @@ fn comprehension_rejects_computed_pattern_with_incompatible_schema() {
 
 #[test]
 fn nested_comprehension_rejects_inconsistent_element_shapes_before_publish() {
-    let source = "x := [[z | z <- [1 2], z <= item] | item <- [1 2]]";
+    let source = "x<[[f64]]> := [[z | z <- [1 2], z <= item] | item <- [1 2]]";
     let artifact = compile(source).compile_artifact().unwrap();
     let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
     let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();

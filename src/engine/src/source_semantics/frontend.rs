@@ -3760,7 +3760,9 @@ impl SemanticBuilder {
         match body {
             ExpressionBodySyntax::FsmPipe(pipe) => self.fsm_pipe(pipe),
             ExpressionBodySyntax::SetComprehension(value) => self.set_comprehension(value),
-            ExpressionBodySyntax::MatrixComprehension(value) => self.matrix_comprehension(value),
+            ExpressionBodySyntax::MatrixComprehension(value) => {
+                self.matrix_comprehension(value, expected)
+            }
             ExpressionBodySyntax::Range(range) => self.range(range),
             ExpressionBodySyntax::Formula(formula) => self.formula_with_expected(formula, expected),
         }
@@ -4323,7 +4325,9 @@ impl SemanticBuilder {
                     self.inline_document_function(&function_name, inputs, &names, value.syntax())?
                 }
             }
-            FactorValueSyntax::MatrixComprehension(value) => self.matrix_comprehension(&value)?,
+            FactorValueSyntax::MatrixComprehension(value) => {
+                self.matrix_comprehension(&value, expected)?
+            }
             FactorValueSyntax::SetComprehension(value) => self.set_comprehension(&value)?,
             FactorValueSyntax::Slice(value) => self.slice(&value)?,
             FactorValueSyntax::Variable(value) => self.variable(&value)?,
@@ -4795,6 +4799,17 @@ impl SemanticBuilder {
         &mut self,
         definition: &VariableDefineSyntax,
     ) -> Result<(PendingValue, SyntaxNode), SourceSemanticError> {
+        self.definition_with_expected_bindings(definition, &BTreeMap::new())
+    }
+
+    /// A caller may contribute an expected kind for an exact binding in its
+    /// lexical statement scope. A body annotation remains the closest source
+    /// authority; the caller still performs its final result conformance.
+    fn definition_with_expected_bindings(
+        &mut self,
+        definition: &VariableDefineSyntax,
+        expected_bindings: &BTreeMap<String, SchemaDraft>,
+    ) -> Result<(PendingValue, SyntaxNode), SourceSemanticError> {
         let variable = self.required(
             definition.variable(),
             definition.syntax(),
@@ -4827,7 +4842,8 @@ impl SemanticBuilder {
         let expected = variable
             .annotation()
             .map(|annotation| self.annotation_schema_draft(&annotation))
-            .transpose()?;
+            .transpose()?
+            .or_else(|| expected_bindings.get(&name).cloned());
         let initializer_nodes = self.nodes.len();
         let initializer_states = self.states.len();
         let initializer_constraints = self.constraints.len();
@@ -5364,6 +5380,7 @@ impl SemanticBuilder {
                     .map(|value| value.0);
             }
         }
+        let comprehension_expected = expected;
         let matrix_element = expected.and_then(|context| match context {
             ExpectedSchema::MatrixElement(element) => Some(element.clone()),
             ExpectedSchema::Value(schema) | ExpectedSchema::CallArgument(schema) => {
@@ -5390,7 +5407,9 @@ impl SemanticBuilder {
         let expected = context.as_ref();
         match value {
             StructureValueSyntax::Matrix(value) => self.matrix(&value, matrix_element.as_ref()),
-            StructureValueSyntax::MatrixComprehension(value) => self.matrix_comprehension(&value),
+            StructureValueSyntax::MatrixComprehension(value) => {
+                self.matrix_comprehension(&value, comprehension_expected)
+            }
             StructureValueSyntax::Table(value) => self.table(&value, expected),
             StructureValueSyntax::Map(value) => self.map(&value, expected),
             StructureValueSyntax::Record(value) => self.record(&value, expected),
@@ -6838,18 +6857,21 @@ impl SemanticBuilder {
             value.value(),
             value.qualifiers(),
             "set/comprehension",
+            None,
         )
     }
 
     fn matrix_comprehension(
         &mut self,
         value: &MatrixComprehensionSyntax,
+        expected: Option<ExpectedSchema<'_>>,
     ) -> Result<PendingValue, SourceSemanticError> {
         self.comprehension(
             value.syntax(),
             value.value(),
             value.qualifiers(),
             "matrix/comprehension",
+            expected,
         )
     }
 
@@ -10210,7 +10232,7 @@ impl SemanticBuilder {
         let unsupported = || SourceSemanticError {
             code: "source-semantics/unsupported-match-block",
             message:
-                "match blocks require pure maintained operations and closed final value schemas"
+                "match blocks require pure maintained operations and supported final value schemas"
                     .to_owned(),
             anchor: SourceSemanticAnchor::for_node(syntax),
         };
@@ -10226,11 +10248,11 @@ impl SemanticBuilder {
         self.control_depth -= 1;
         let nodes = self.nodes.split_off(start);
         let (value, schema) = result?;
-        let closed_value = |schema: &SchemaDraft| {
+        let result_value = |schema: &SchemaDraft| {
             schema
                 .clone()
                 .finalize()
-                .is_ok_and(|schema| crate::is_control_value_schema(&schema))
+                .is_ok_and(|schema| crate::is_control_result_schema(&schema))
         };
         let intermediate_value = |schema: &SchemaDraft| {
             schema
@@ -10238,7 +10260,7 @@ impl SemanticBuilder {
                 .finalize()
                 .is_ok_and(|schema| !matches!(schema.body(), SchemaBody::Dynamic))
         };
-        if !closed_value(&schema) {
+        if !result_value(&schema) {
             return Err(unsupported());
         }
         let mut parameters = Vec::<(crate::ControlParameterSource, SchemaDraft)>::new();
@@ -10320,7 +10342,7 @@ impl SemanticBuilder {
         for node in nodes {
             // Intermediate results may carry per-turn dimensions through
             // pure operations. Only the selected block's final yield must be
-            // a closed match value.
+            // an admitted control result with its actual snapshot shape.
             if node.state.is_some()
                 || (!intermediate_value(&node.schema)
                     && !matches!(&node.body, PendingNodeBody::Comprehension(_)))

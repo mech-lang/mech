@@ -170,6 +170,15 @@ pub struct ActivatedControlStep {
     pub excluded_locals: Box<[u32]>,
 }
 
+// This identity comes from the validated artifact's yielded local, before
+// arena placement erases logical slots. In particular, distinct empty dense
+// values may have identical zero-length physical regions.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct ControlYieldIdentity {
+    slot: CellSlotId,
+    storage: ResidentStorageClass,
+}
+
 #[derive(Clone, Debug)]
 pub struct ActivatedControlBlock {
     pub steps: std::sync::Arc<[ActivatedControlStep]>,
@@ -178,6 +187,7 @@ pub struct ActivatedControlBlock {
     pub locals: std::sync::Arc<[ResidentRegion]>,
     pub yield_value: ResidentReadLocation,
     pub yield_layout: ResidentPortLayout,
+    yield_identity: Option<ControlYieldIdentity>,
 }
 
 #[derive(Clone, Debug)]
@@ -5174,6 +5184,7 @@ fn constant_comparison_operand_at_depth<'a>(
 enum ClosedProducerDisposition {
     Value,
     ExactMask,
+    DeferredPureValue,
     DeferredStatefulMutation,
 }
 
@@ -5223,6 +5234,23 @@ fn closed_producer_disposition(
             ))
     {
         return Some(ClosedProducerDisposition::ExactMask);
+    }
+    // These maintained pure operations have resident implementations, but no
+    // bounded closed-value analysis owner yet. Record that limit explicitly;
+    // recognizing a public spelling does not authorize an unimplemented fold.
+    if operation.module_path.as_ref() == ["map"]
+        && matches!(
+            operation.operation_name.as_str(),
+            "histogram" | "keys" | "values"
+        )
+        || operation.module_path.as_ref() == ["number"]
+            && matches!(operation.operation_name.as_str(), "format" | "parse-u64")
+        || operation.module_path.as_ref() == ["sequence"]
+            && matches!(operation.operation_name.as_str(), "length" | "sort-indices")
+        || operation.module_path.as_ref() == ["text"]
+            && matches!(operation.operation_name.as_str(), "join" | "lines")
+    {
+        return Some(ClosedProducerDisposition::DeferredPureValue);
     }
     if operation.module_path.as_ref() == ["set"] {
         return match operation.operation_name.as_str() {
@@ -21777,6 +21805,51 @@ mod shape_fact_tests {
         ];
         const DEFERRED_PRODUCERS: &[(&[&str], &str, ClosedProducerDisposition)] = &[
             (
+                &["map"],
+                "histogram",
+                ClosedProducerDisposition::DeferredPureValue,
+            ),
+            (
+                &["map"],
+                "keys",
+                ClosedProducerDisposition::DeferredPureValue,
+            ),
+            (
+                &["map"],
+                "values",
+                ClosedProducerDisposition::DeferredPureValue,
+            ),
+            (
+                &["number"],
+                "format",
+                ClosedProducerDisposition::DeferredPureValue,
+            ),
+            (
+                &["number"],
+                "parse-u64",
+                ClosedProducerDisposition::DeferredPureValue,
+            ),
+            (
+                &["sequence"],
+                "length",
+                ClosedProducerDisposition::DeferredPureValue,
+            ),
+            (
+                &["sequence"],
+                "sort-indices",
+                ClosedProducerDisposition::DeferredPureValue,
+            ),
+            (
+                &["text"],
+                "join",
+                ClosedProducerDisposition::DeferredPureValue,
+            ),
+            (
+                &["text"],
+                "lines",
+                ClosedProducerDisposition::DeferredPureValue,
+            ),
+            (
                 &["set"],
                 "insert",
                 ClosedProducerDisposition::DeferredStatefulMutation,
@@ -23290,6 +23363,18 @@ fn prepare_match_node(
         }
     }
     let output = &layout.slots[output_slot.get() as usize];
+    let output_schema = artifact
+        .schemas()
+        .get(output.schema)
+        .ok_or(ResidentActivationError::UnsupportedControlLayout { node: owner })?;
+    if !crate::is_control_value_schema(output_schema)
+        && (!crate::is_control_result_schema(output_schema)
+            || output.region.kind != ResidentValueKind::Snapshot
+            || output.region.shape != ResidentShape::SCALAR
+            || output.region.len != 1)
+    {
+        return Err(ResidentActivationError::UnsupportedControlLayout { node: owner });
+    }
     Ok(ActivatedMatchNode {
         artifact_node: owner,
         budget_node,
@@ -24002,10 +24087,36 @@ fn bind_control_block(
         }));
     }
     let yielded = source(block.yield_value);
+    let yield_value = read(block.yield_value)?;
+    let yield_layout = port(yielded)?;
+    let yield_schema = artifact
+        .schemas()
+        .get(yield_layout.schema_id)
+        .ok_or(ResidentActivationError::UnsupportedControlLayout { node: owner })?;
+    if !crate::is_control_value_schema(yield_schema)
+        && (!crate::is_control_result_schema(yield_schema)
+            || yield_value.region().kind != ResidentValueKind::Snapshot
+            || yield_value.region().shape != ResidentShape::SCALAR
+            || yield_value.region().len != 1)
+    {
+        return Err(ResidentActivationError::UnsupportedControlLayout { node: owner });
+    }
+    let yield_identity = match block.yield_value {
+        crate::ControlValue::Local { node, .. } => {
+            let (slot, _) = layout.control_locals[&(owner, block.id.0, node)];
+            let resolved = &layout.slots[slot.get() as usize];
+            Some(ControlYieldIdentity {
+                slot,
+                storage: resolved.storage,
+            })
+        }
+        crate::ControlValue::Constant(_) | crate::ControlValue::Parameter { .. } => None,
+    };
     Ok(ActivatedControlBlock {
         steps: direct_steps.into(),
         locals: local_regions.into(),
-        yield_value: read(block.yield_value)?,
-        yield_layout: port(yielded)?,
+        yield_value,
+        yield_layout,
+        yield_identity,
     })
 }

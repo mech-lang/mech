@@ -85,3 +85,55 @@ Here's a more complex example that finds all Pythagorean triples, which are sets
 n := 13
 {(a,b,c) | a <- 1..=n, b <- a..=n, c <- b..=n, (a * a + b * b) == (c * c)}
 ```
+
+5. Matrix-Valued Yields
+-------------------------------------------------------------------------------
+
+A scalar yield produces a row vector. A matrix-valued yield places each yielded
+block beside the preceding blocks, preserving qualifier order. This removes
+one matrix layer, as bracket matrix literals do; it does not recursively
+flatten nested element values.
+
+```mech:ex 5.1
+[[x; x + 10.0] | x <- [1.0 2.0]]
+-- Result: [1.0 2.0; 11.0 12.0]
+```
+
+Every successful block must have the same number of rows. Widths may differ.
+A zero-width block still participates in the row check; a zero-height block
+still contributes its width. The final result stores rows in the same order
+as an ordinary matrix literal. A mismatch or checked width overflow fails the
+construction before publishing a replacement result.
+
+To retain whole matrices as elements, declare that nested result kind:
+
+```mech:ex 5.2
+blocks<[[f64]:2,1]:1,2> := [[x; x + 10.0] | x <- [1.0 2.0]]
+```
+
+Here `blocks` is a 1-by-2 matrix of 2-by-1 matrices. An element/block context
+inside another literal is distinct from a complete annotated result kind.
+Parentheses retain the complete context; a postfix transpose infers its own
+operand axes before transposing them.
+
+A complete result kind can also require a constant final width. That is a
+checked result constraint: every successful yield still executes in source
+order, and the completed width must match before publication. A zero required
+width does not skip a yield or suppress its checked arithmetic errors. This
+applies to scalar/nested element construction and horizontal block construction.
+
+6. Empty Block Construction
+-------------------------------------------------------------------------------
+
+With no yielded blocks, a construction with no established row authority is
+0-by-0. A fixed declared block height H gives H-by-0. When the compiler proves
+that each transposed inner scalar comprehension has one row per element of
+an already bound matrix source, that source's actual element count supplies H,
+including when no outer iteration succeeds. The source is read through the
+same bound capture as the body. A storage-planning lower bound is never a row
+witness.
+
+Filters and refutable patterns skip the yield completely. A body is not run to
+discover empty geometry. Operations preceding the constructor still execute in
+source order and preserve their checked errors even when the constructor later
+has zero iterations.

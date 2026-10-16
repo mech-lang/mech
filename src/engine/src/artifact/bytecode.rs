@@ -277,8 +277,18 @@ enum WireComprehensionStep {
 struct WireComprehensionDeclaration {
     id: u32,
     kind: u8,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    rows: Option<WireMatrixBlockRows>,
     steps: Box<[WireComprehensionStep]>,
     yield_value: WireComprehensionValue,
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+enum WireMatrixBlockRows {
+    InferOrZero,
+    Fixed(u64),
+    InputMatrixElements { input: u16 },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -1743,6 +1753,17 @@ fn wire_comprehension(
             super::ComprehensionKind::Matrix => 0,
             super::ComprehensionKind::Set => 1,
             super::ComprehensionKind::MatrixPreserveShape => 2,
+            super::ComprehensionKind::MatrixHorizontalBlocks { .. } => 3,
+        },
+        rows: match control.kind {
+            super::ComprehensionKind::MatrixHorizontalBlocks { rows } => Some(match rows {
+                super::MatrixBlockRows::InferOrZero => WireMatrixBlockRows::InferOrZero,
+                super::MatrixBlockRows::Fixed(rows) => WireMatrixBlockRows::Fixed(rows),
+                super::MatrixBlockRows::InputMatrixElements { input } => {
+                    WireMatrixBlockRows::InputMatrixElements { input }
+                }
+            }),
+            _ => None,
         },
         steps: control
             .steps
@@ -2151,11 +2172,20 @@ fn comprehension_from_wire(
 ) -> Result<super::ComprehensionDeclaration, ArtifactBytecodeError> {
     Ok(super::ComprehensionDeclaration {
         id: super::ControlBlockId(control.id),
-        kind: match control.kind {
-            0 => super::ComprehensionKind::Matrix,
-            1 => super::ComprehensionKind::Set,
-            2 => super::ComprehensionKind::MatrixPreserveShape,
-            tag => {
+        kind: match (control.kind, control.rows) {
+            (0, None) => super::ComprehensionKind::Matrix,
+            (1, None) => super::ComprehensionKind::Set,
+            (2, None) => super::ComprehensionKind::MatrixPreserveShape,
+            (3, Some(rows)) => super::ComprehensionKind::MatrixHorizontalBlocks {
+                rows: match rows {
+                    WireMatrixBlockRows::InferOrZero => super::MatrixBlockRows::InferOrZero,
+                    WireMatrixBlockRows::Fixed(rows) => super::MatrixBlockRows::Fixed(rows),
+                    WireMatrixBlockRows::InputMatrixElements { input } => {
+                        super::MatrixBlockRows::InputMatrixElements { input }
+                    }
+                },
+            },
+            (tag, _) => {
                 return Err(ArtifactBytecodeError::InvalidWireTag {
                     section: "comprehension kind",
                     tag,
@@ -2843,6 +2873,90 @@ mod control_preflight_tests {
                 nested(super::super::MAX_CONTROL_DEPTH + 1).as_bytes(),
                 &ArtifactDecodeLimits::default(),
             )
+            .is_err()
+        );
+    }
+}
+
+#[cfg(test)]
+mod matrix_block_wire_tests {
+    use super::*;
+
+    fn declaration(kind: u8, rows: Option<WireMatrixBlockRows>) -> WireComprehensionDeclaration {
+        WireComprehensionDeclaration {
+            id: 0,
+            kind,
+            rows,
+            steps: Box::new([]),
+            yield_value: WireComprehensionValue::Input(0),
+        }
+    }
+
+    #[test]
+    fn legacy_comprehension_wire_omits_the_additive_rows_field() {
+        for kind in 0..=2 {
+            let encoded = serde_json::to_value(declaration(kind, None)).unwrap();
+            assert!(encoded.get("rows").is_none());
+            let decoded: WireComprehensionDeclaration = serde_json::from_value(encoded).unwrap();
+            let control = comprehension_from_wire(decoded, &|_| unreachable!()).unwrap();
+            assert_eq!(
+                match control.kind {
+                    super::super::ComprehensionKind::Matrix => 0,
+                    super::super::ComprehensionKind::Set => 1,
+                    super::super::ComprehensionKind::MatrixPreserveShape => 2,
+                    super::super::ComprehensionKind::MatrixHorizontalBlocks { .. } =>
+                        unreachable!(),
+                },
+                kind
+            );
+        }
+    }
+
+    #[test]
+    fn block_rows_wire_round_trips_and_rejects_ignored_policy_combinations() {
+        use super::super::{ComprehensionKind, MatrixBlockRows};
+        for (wire, rows) in [
+            (
+                WireMatrixBlockRows::InferOrZero,
+                MatrixBlockRows::InferOrZero,
+            ),
+            (
+                WireMatrixBlockRows::Fixed(u64::MAX),
+                MatrixBlockRows::Fixed(u64::MAX),
+            ),
+            (
+                WireMatrixBlockRows::InputMatrixElements { input: u16::MAX },
+                MatrixBlockRows::InputMatrixElements { input: u16::MAX },
+            ),
+        ] {
+            let encoded = serde_json::to_value(declaration(3, Some(wire))).unwrap();
+            let decoded = serde_json::from_value(encoded).unwrap();
+            assert_eq!(
+                comprehension_from_wire(decoded, &|_| unreachable!())
+                    .unwrap()
+                    .kind,
+                ComprehensionKind::MatrixHorizontalBlocks { rows }
+            );
+            for kind in 0..=2 {
+                assert!(
+                    comprehension_from_wire(declaration(kind, Some(wire)), &|_| unreachable!())
+                        .is_err()
+                );
+            }
+        }
+        assert!(comprehension_from_wire(declaration(3, None), &|_| unreachable!()).is_err());
+        assert!(comprehension_from_wire(declaration(4, None), &|_| unreachable!()).is_err());
+        assert!(
+            serde_json::from_value::<WireComprehensionDeclaration>(serde_json::json!({
+                "id":0,"kind":3,"rows":{"InputMatrixElements":{"input":0,"ignored":1}},
+                "steps":[],"yield_value":{"Input":0}
+            }))
+            .is_err()
+        );
+        assert!(
+            serde_json::from_value::<WireComprehensionDeclaration>(serde_json::json!({
+                "id":0,"kind":3,"rows":{"Fixed":-1},"steps":[],"yield_value":{"Input":0}
+            }))
             .is_err()
         );
     }

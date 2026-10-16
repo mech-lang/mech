@@ -9,7 +9,7 @@ use crate::{
     CollectionPattern as Pattern, ComprehensionDeclaration, ComprehensionKind,
     ComprehensionStep as Step, ComprehensionValue as LexicalValue,
 };
-use mech_core::snapshot::ValueFootprint;
+use mech_core::{ValueData, snapshot::ValueFootprint};
 use std::sync::Arc;
 
 type Result<T> = core::result::Result<T, ResidentActivationError>;
@@ -252,6 +252,33 @@ fn fold_declaration(
     let mut locals = Vec::with_capacity(local_count);
     let mut values = Vec::new();
     let mut element_body = None;
+    let mut block_geometry =
+        if let ComprehensionKind::MatrixHorizontalBlocks { rows } = control.kind {
+            if charge(analysis, 0, 4).is_none() {
+                return Ok(None);
+            }
+            let rows = match rows {
+                crate::MatrixBlockRows::InferOrZero => None,
+                crate::MatrixBlockRows::Fixed(rows) => Some(rows),
+                crate::MatrixBlockRows::InputMatrixElements { input } => {
+                    let Some(source) =
+                        value(artifact, LexicalValue::Input(input), inputs, &[], analysis)
+                    else {
+                        return Ok(None);
+                    };
+                    let ValueData::Matrix(matrix) = source.data() else {
+                        return Ok(None);
+                    };
+                    let Ok(count) = u64::try_from(matrix.elements().len()) else {
+                        return Ok(None);
+                    };
+                    Some(count)
+                }
+            };
+            Some(collection::HorizontalBlockGeometry::new(rows))
+        } else {
+            None
+        };
     let mut footprint = ValueFootprint::zero();
     let mut finalization_work = 1u64;
     if !enumerate(
@@ -262,6 +289,7 @@ fn fold_declaration(
         &mut locals,
         &mut values,
         &mut element_body,
+        &mut block_geometry,
         &mut footprint,
         &mut finalization_work,
         schemas,
@@ -303,7 +331,7 @@ fn fold_declaration(
     }) else {
         return Ok(None);
     };
-    let Some(work) = sort.checked_add(finalization_work) else {
+    let Some(mut work) = sort.checked_add(finalization_work) else {
         return Ok(None);
     };
     let Some(bytes) = footprint
@@ -382,6 +410,78 @@ fn fold_declaration(
             };
             (shape, ValueDataDraft::Matrix(values.into_boxed_slice()))
         }
+        ComprehensionKind::MatrixHorizontalBlocks { .. } => {
+            let Some(geometry) = block_geometry.take() else {
+                return Ok(None);
+            };
+            let Ok(count) = geometry.count() else {
+                return Ok(None);
+            };
+            if count > MAX_STATIC_SELECTOR_SOURCE_STEPS {
+                return Ok(None);
+            }
+            let rows = geometry.rows.unwrap_or(0);
+            let columns = geometry.columns;
+            let element = match element_body {
+                Some(element) => element,
+                None => {
+                    let yielded = match control.yield_value {
+                        LexicalValue::Constant(id) => {
+                            artifact.constants().get(id).map(Value::schema)
+                        }
+                        LexicalValue::Input(index) => {
+                            inputs.get(index as usize).map(|value| value.schema())
+                        }
+                        LexicalValue::Local(index) => {
+                            comprehension::locals(control).get(index as usize).copied()
+                        }
+                    };
+                    let Some(yielded) = yielded else {
+                        return Ok(None);
+                    };
+                    let Ok(SchemaBody::Matrix { element, .. }) =
+                        collection::lower_bound_yield_body(yielded, schemas)
+                    else {
+                        return Ok(None);
+                    };
+                    *element
+                }
+            };
+            let Ok((assembly_work, assembly_bytes)) = geometry.assembly_demand() else {
+                return Ok(None);
+            };
+            let Some(assembly_bytes) = (values.capacity() as u64)
+                .checked_mul(core::mem::size_of::<ValueDataDraft>() as u64)
+                .and_then(|n| n.checked_add(assembly_bytes))
+            else {
+                return Ok(None);
+            };
+            if !analysis.construction.charge_compute_with_comparison(
+                assembly_bytes,
+                assembly_work,
+                assembly_work,
+            ) {
+                return Ok(None);
+            }
+            let Some(next_work) = work.checked_add(assembly_work) else {
+                return Ok(None);
+            };
+            work = next_work;
+            let Ok(shape) = collection::completed_matrix_shape(
+                schema,
+                element,
+                Box::new([
+                    DimensionExpr::Constant(rows),
+                    DimensionExpr::Constant(columns),
+                ]),
+            ) else {
+                return Ok(None);
+            };
+            let Ok(assembled) = collection::assemble_horizontal_blocks(values, geometry) else {
+                return Ok(None);
+            };
+            (shape, ValueDataDraft::Matrix(assembled.into_boxed_slice()))
+        }
         ComprehensionKind::Set => {
             let SchemaBody::Set { element, .. } = schema.body() else {
                 return Ok(None);
@@ -417,6 +517,7 @@ fn enumerate(
     locals: &mut Vec<ClosedLexicalValue>,
     values: &mut Vec<ValueDataDraft>,
     element_body: &mut Option<SchemaBody>,
+    block_geometry: &mut Option<collection::HorizontalBlockGeometry>,
     footprint: &mut ValueFootprint,
     finalization_work: &mut u64,
     schemas: &Arc<mech_core::SchemaTable>,
@@ -628,6 +729,7 @@ fn enumerate(
                         locals,
                         values,
                         element_body,
+                        block_geometry,
                         footprint,
                         finalization_work,
                         schemas,
@@ -734,6 +836,19 @@ fn enumerate(
     let Ok(body) = schema.closed_body(yielded.shape()) else {
         return Ok(false);
     };
+    let mut next_block = None;
+    let body = if let Some(geometry) = block_geometry.as_ref() {
+        let Ok((rows, columns, _)) = geometry.preview(&body) else {
+            return Ok(false);
+        };
+        next_block = Some((rows, columns));
+        let SchemaBody::Matrix { element, .. } = body else {
+            return Ok(false);
+        };
+        *element
+    } else {
+        body
+    };
     if element_body
         .as_ref()
         .is_some_and(|expected| expected != &body)
@@ -777,12 +892,60 @@ fn enumerate(
     {
         return Ok(false);
     }
+    let mut reservation = 1;
+    if let Some(geometry) = block_geometry.as_mut() {
+        if geometry.widths.len() == geometry.widths.capacity() {
+            let Some(capacity) = geometry.widths.capacity().checked_mul(2).map(|n| n.max(4)) else {
+                return Ok(false);
+            };
+            let Some(bytes) = (capacity as u64).checked_mul(16) else {
+                return Ok(false);
+            };
+            if charge(analysis, bytes, geometry.widths.len() as u64).is_none() {
+                return Ok(false);
+            }
+            geometry
+                .widths
+                .try_reserve_exact(capacity - geometry.widths.len())
+                .map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
+            if geometry.widths.capacity() > capacity
+                && charge(
+                    analysis,
+                    ((geometry.widths.capacity() - capacity) as u64).saturating_mul(8),
+                    0,
+                )
+                .is_none()
+            {
+                return Ok(false);
+            }
+        }
+        if values.len() == values.capacity() {
+            let Some(capacity) = values.capacity().checked_mul(2).map(|n| n.max(4)) else {
+                return Ok(false);
+            };
+            let Some(bytes) = (capacity as u64)
+                .checked_mul(core::mem::size_of::<ValueDataDraft>() as u64)
+                .and_then(|n| n.checked_mul(2))
+            else {
+                return Ok(false);
+            };
+            if charge(analysis, bytes, values.len() as u64).is_none() {
+                return Ok(false);
+            }
+            reservation = capacity - values.len();
+        }
+    }
     let Ok(data) = yielded.canonical_data_draft() else {
         return Ok(false);
     };
     values
-        .try_reserve_exact(1)
+        .try_reserve_exact(reservation)
         .map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
+    if let (Some(geometry), Some((rows, columns))) = (block_geometry.as_mut(), next_block) {
+        if geometry.push(rows, columns).is_err() {
+            return Ok(false);
+        }
+    }
     values.push(data);
     *footprint = footprint
         .checked_add(item_footprint)

@@ -1213,6 +1213,24 @@ fn compile_document_units(
     presentation: &mut Vec<(SourceDocumentOutputKind, PendingValue, SyntaxNode)>,
     interactive: bool,
 ) -> Result<Option<CompiledDocumentValue>, SourceSemanticError> {
+    compile_document_units_with_definition_context(
+        builder,
+        units,
+        local_bindings,
+        presentation,
+        interactive,
+        &BTreeMap::new(),
+    )
+}
+
+fn compile_document_units_with_definition_context(
+    builder: &mut SemanticBuilder,
+    units: Vec<DocumentUnit>,
+    local_bindings: &BTreeSet<String>,
+    presentation: &mut Vec<(SourceDocumentOutputKind, PendingValue, SyntaxNode)>,
+    interactive: bool,
+    expected_bindings: &BTreeMap<String, SchemaDraft>,
+) -> Result<Option<CompiledDocumentValue>, SourceSemanticError> {
     let mut deferred_inline = Vec::new();
     let mut last = compile_document_units_inner(
         builder,
@@ -1221,6 +1239,7 @@ fn compile_document_units(
         presentation,
         &mut deferred_inline,
         interactive,
+        expected_bindings,
     )?;
     refresh_deferred_inline(builder, &mut deferred_inline, presentation, &mut last)?;
     retain_document_boundary_result(builder, last.as_ref());
@@ -1240,6 +1259,7 @@ fn compile_document_units_inner(
     presentation: &mut Vec<(SourceDocumentOutputKind, PendingValue, SyntaxNode)>,
     deferred_inline: &mut Vec<DeferredInline>,
     interactive: bool,
+    expected_bindings: &BTreeMap<String, SchemaDraft>,
 ) -> Result<Option<CompiledDocumentValue>, SourceSemanticError> {
     let mut last = None;
     for unit in units {
@@ -1265,9 +1285,10 @@ fn compile_document_units_inner(
             }
             DocumentUnit::Statement(unit) => {
                 let result = match unit.kind() {
-                    SyntaxKind::VariableDefine => {
-                        builder.definition(&VariableDefineSyntax::cast(unit).unwrap())?
-                    }
+                    SyntaxKind::VariableDefine => builder.definition_with_expected_bindings(
+                        &VariableDefineSyntax::cast(unit).unwrap(),
+                        expected_bindings,
+                    )?,
                     SyntaxKind::Expression => {
                         builder.expression(&ExpressionSyntax::cast(unit).unwrap())?
                     }
@@ -1362,6 +1383,7 @@ fn compile_document_units_inner(
                     presentation,
                     deferred_inline,
                     interactive,
+                    expected_bindings,
                 )? {
                     let value = builder.read_document_binding(
                         PendingBinding::Value(compiled.value),
