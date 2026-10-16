@@ -1,0 +1,104 @@
+{
+  "schema": "mech.canonical-map-string-membership.v1",
+  "source_parent_commit": "4399f7e3ef36650652a124f7aacfb9fdd0ca2e27",
+  "scope": "Canonical resident map-key extraction and scalar String membership in ordinary comprehensions.",
+  "changes": [
+    "Canonical map/keys results share the immutable schema owner retained by the bound kernel.",
+    "Only the maintained snapshot-producing Keys implementation declares its audited runtime work accounting after all binding attachments.",
+    "The maintained exact scalar String plus canonical Set<String> element-of path searches borrowed raw UTF-8 keys after complete incremental admission.",
+    "String membership constructs no candidate Value, candidate payload copy, or per-call schema-table copy; Bool publication follows successful search."
+  ],
+  "source_files": [
+    {
+      "path": "src/engine/src/resident/map_ops.rs",
+      "sha256": "f72f2bc6ee0c2cd8fc3cbc83c02f03348fa44d667e4147e93160c24fe119a799"
+    },
+    {
+      "path": "src/engine/src/resident/set.rs",
+      "sha256": "d6a08305025e436c89953636ba8dee5738339c7f1ce02321a554d82f754f72f9"
+    },
+    {
+      "path": "src/stdlib/tests/map_keys_comprehensions.rs",
+      "sha256": "e8b787c7be9ada06e84ccf303eeba0f33122033d458276f4de74ff78abb65685"
+    },
+    {
+      "path": "src/stdlib/tests/string_membership_comprehensions.rs",
+      "sha256": "3bf015b8aa49f8ebb12046783895de4a77367f8484425cc61f5bc86f730af6f1"
+    }
+  ],
+  "actual_test_runs": [
+    {
+      "target": "resident::map_ops::tests",
+      "passed": 1,
+      "log": "map-keys-private-v2.log",
+      "coverage": "Actual bound call, current and published footprint witnesses, shared large schema owner, finite key-payload denial, exact prior publication retention and recovery."
+    },
+    {
+      "target": "resident::set::tests",
+      "passed": 19,
+      "log": "borrowed-membership-private-retained-v1.log",
+      "coverage": "Core-equivalent String membership, empty/Unicode/NUL keys, zero candidate-clone allowance, immutable accounting lifecycle, denial/recovery and existing recursive set budgets."
+    },
+    {
+      "target": "map_keys_comprehensions",
+      "passed": 3,
+      "log": "membership-keys-knucleotide-v1.log",
+      "coverage": "Original/decoded direct and nested lookup composition, live cardinality and exact Unicode keys, unclassified same-name replacement rejection before execution."
+    },
+    {
+      "target": "string_membership_comprehensions",
+      "passed": 3,
+      "log": "membership-keys-knucleotide-v1.log",
+      "coverage": "Original/decoded direct and nested calls, live replacement, empty cases, denied comparison, atomic publication and recovery, same-name replacement rejection."
+    },
+    {
+      "target": "comprehension_work_source",
+      "passed": 8,
+      "log": "keys-membership-retained-source-v2.log"
+    },
+    {
+      "target": "map_source",
+      "passed": 8,
+      "log": "keys-membership-retained-source-v2.log"
+    }
+  ],
+  "minimal_runtime_check": {
+    "package": "mech-engine",
+    "default_features": false,
+    "features": [
+      "std",
+      "resident-artifact",
+      "bool",
+      "u64",
+      "string",
+      "map_ops",
+      "set"
+    ],
+    "target": "lib",
+    "passed": true,
+    "log": "keys-membership-runtime-check-v1.log"
+  },
+  "build_environment": {
+    "cargo_incremental": 0,
+    "dev_debug": 0,
+    "build_jobs": 2,
+    "rust_min_stack": 67108864,
+    "offline": true,
+    "locked": true,
+    "test_threads": 1
+  },
+  "compiler_test_features": [
+    "mech-stdlib/full_compiler",
+    "mech-stdlib/pure_text",
+    "mech-stdlib/sequence_sort",
+    "mech-stdlib/map_ops",
+    "mech-stdlib/native-sequence",
+    "mech-stdlib/native-artifact"
+  ],
+  "scope_limits": {
+    "native_execution_qualified": false,
+    "host_io_qualified": false,
+    "benchmark_measurements": 0,
+    "full_knucleotide": "Nested lookup activation is admitted. Full ordinary execution currently fails in substring-window construction with NodeId(8) InvalidShape; its source and host delivery remain separately unqualified."
+  }
+}
