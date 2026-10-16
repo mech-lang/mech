@@ -556,3 +556,222 @@ fn ordinary_sort_rejects_wrong_types_and_mismatched_cardinalities() {
         );
     }
 }
+
+#[cfg(feature = "map_ops")]
+fn count_map_value(artifact: &ProgramArtifact, input: usize, entries: &[(&str, u64)]) -> Value {
+    use mech_core::snapshot::{MapEntryDraft, SnapshotValidationContext, ValueDraft};
+    ValueDraft {
+        schema: artifact.inputs()[input].schema,
+        shape_values: Box::new([]),
+        data: ValueDataDraft::Map(
+            entries
+                .iter()
+                .map(|(key, count)| MapEntryDraft {
+                    items: Box::new([
+                        ValueDataDraft::String((*key).into()),
+                        ValueDataDraft::U64(*count),
+                    ]),
+                })
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+        ),
+    }
+    .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+    .unwrap()
+}
+
+#[cfg(feature = "map_ops")]
+#[test]
+fn shared_map_projections_sort_in_top_level_and_named_function_original_and_decoded() {
+    use mech_core::ResidentValueRef;
+    use mech_engine::resident::CapturedSignalInput;
+    for source in [
+        "+> map\n+> sequence\nkeys := map/keys(h<{string:u64}>)\ncounts := map/values(h)\nsequence/sort-indices(counts, \"desc\", keys, \"asc\")\n",
+        "+> map\n+> sequence\nranking(h<{string:u64}>) => (output<[index]>) :=\n  keys := map/keys(h)\n  counts := map/values(h)\n  output := sequence/sort-indices(counts, \"desc\", keys, \"asc\").\nranking(source<{string:u64}>)\n",
+    ] {
+        let (original, output) = compile(source);
+        let bytes = mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap();
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+        for artifact in [&original, &decoded] {
+            assert_eq!(artifact.inputs().len(), 1);
+            let mut instance = activate(
+                ReactiveInstanceId::new(0x5354, 0),
+                artifact,
+                &mech_stdlib::source_catalog(),
+                &ActivationFacts::default(),
+            )
+            .unwrap();
+            // Canonical map key order is a,e-combining,z,e-acute,emoji. The
+            // two MAX counts tie by key, and >2^53 remains exact.
+            for (entries, expected) in [
+                (
+                    vec![
+                        ("é", u64::MAX),
+                        ("é", u64::MAX),
+                        ("z", 9_007_199_254_740_993),
+                        ("a", 9_007_199_254_740_992),
+                        ("🧑‍🚀", 0),
+                    ],
+                    vec![2, 4, 3, 1, 5],
+                ),
+                (vec![], vec![]),
+                (vec![("x", 1)], vec![1]),
+            ] {
+                let input = [Some(count_map_value(artifact, 0, &entries))];
+                instance
+                    .turn(&[CapturedSignalInput {
+                        slot: instance.plan.inputs[0].slot,
+                        value: ResidentValueRef::Snapshot(&input),
+                    }])
+                    .unwrap();
+                assert_indices(&instance.copied_output(output).unwrap(), &expected);
+            }
+        }
+    }
+}
+
+#[cfg(feature = "map_ops")]
+#[test]
+fn independent_live_counts_reject_mismatch_atomically_and_recover_original_and_decoded() {
+    use mech_core::ResidentValueRef;
+    use mech_engine::resident::CapturedSignalInput;
+    let source = "+> map\n+> sequence\ncounts := map/values(primary<{string:u64}>)\nkeys := map/keys(secondary<{string:u64}>)\nsequence/sort-indices(counts, \"desc\", keys, \"asc\")\n";
+    let (original, output) = compile(source);
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+    for artifact in [&original, &decoded] {
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x5355, 0),
+            artifact,
+            &mech_stdlib::source_catalog(),
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        let mut previous = Vec::new();
+        let primary = vec![
+            ("a", 2),
+            ("b", u64::MAX),
+            ("c", u64::MAX),
+            ("d", 9_007_199_254_740_993),
+        ];
+        for (counts, keys, expected) in [
+            (
+                primary.clone(),
+                vec![("é", 0), ("x", 0), ("A", 0), ("", 0)],
+                Some(vec![2, 3, 4, 1]),
+            ),
+            (primary.clone(), vec![("a", 0), ("b", 0)], None),
+            (
+                primary,
+                vec![("é", 0), ("x", 0), ("A", 0), ("", 0)],
+                Some(vec![2, 3, 4, 1]),
+            ),
+            (vec![], vec![("x", 0)], None),
+            (vec![], vec![], Some(vec![])),
+            (
+                vec![("a", 1), ("b", 3)],
+                vec![("x", 0), ("y", 0)],
+                Some(vec![2, 1]),
+            ),
+        ] {
+            let values = artifact
+                .inputs()
+                .iter()
+                .enumerate()
+                .map(|(index, input)| {
+                    let entries =
+                        match mech_engine::decode_source_input_name(&input.name).as_deref() {
+                            Some("primary") => &counts,
+                            Some("secondary") => &keys,
+                            _ => panic!("unexpected input"),
+                        };
+                    [Some(count_map_value(artifact, index, entries))]
+                })
+                .collect::<Vec<_>>();
+            let captured = artifact
+                .inputs()
+                .iter()
+                .zip(&values)
+                .map(|(input, value)| CapturedSignalInput {
+                    slot: instance
+                        .plan
+                        .inputs
+                        .iter()
+                        .find(|binding| binding.artifact_slot == input.slot)
+                        .unwrap()
+                        .slot,
+                    value: ResidentValueRef::Snapshot(value),
+                })
+                .collect::<Vec<_>>();
+            let before_epoch = instance.published_epoch();
+            let result = instance.turn(&captured);
+            if let Some(expected) = expected {
+                result.unwrap();
+                previous = expected;
+            } else {
+                assert!(
+                    result.is_err(),
+                    "unequal current cardinalities must not execute sorting"
+                );
+                assert_eq!(instance.published_epoch(), before_epoch);
+            }
+            assert_indices(&instance.copied_output(output).unwrap(), &previous);
+        }
+    }
+}
+
+#[test]
+fn managed_live_mismatch_precedes_payload_work_and_preserves_output_version() {
+    let counts = turn_row(
+        SchemaBody::UnsignedInteger(IntegerWidth::W64),
+        vec![ValueDataDraft::U64(1), ValueDataDraft::U64(2)],
+    );
+    let strings = |values: &[&str]| {
+        turn_row(
+            SchemaBody::String,
+            values
+                .iter()
+                .map(|s| ValueDataDraft::String((*s).into()))
+                .collect(),
+        )
+    };
+    let keys = strings(&["a", "b"]);
+    let inputs = [counts, order("desc"), keys, order("asc")];
+    let result = turn_row(
+        SchemaBody::Index,
+        vec![ValueDataDraft::Index(1), ValueDataDraft::Index(1)],
+    );
+    let function = managed(&result, &inputs);
+    function.instance().solve_result().unwrap();
+    assert_indices(&result.snapshot().unwrap(), &[2, 1]);
+    let version = result.published_version();
+    // A metadata mismatch must win before scanning/copying these payloads or
+    // charging their sorting demand. The actual runtime reports its length
+    // error, rather than an allocation/compute denial.
+    let long = "x".repeat(65_536);
+    inputs[2]
+        .replace(&strings(&[&long, &long, &long]).snapshot().unwrap())
+        .unwrap();
+    let error = function.instance().solve_result().unwrap_err();
+    assert!(
+        format!("{error:?}").contains("sort key sequences must have equal lengths"),
+        "{error:?}"
+    );
+    assert_eq!(result.published_version(), version);
+    assert_indices(&result.snapshot().unwrap(), &[2, 1]);
+    inputs[0]
+        .replace(
+            &turn_row(
+                SchemaBody::UnsignedInteger(IntegerWidth::W64),
+                vec![ValueDataDraft::U64(2), ValueDataDraft::U64(1)],
+            )
+            .snapshot()
+            .unwrap(),
+        )
+        .unwrap();
+    inputs[2]
+        .replace(&strings(&["b", "a"]).snapshot().unwrap())
+        .unwrap();
+    function.instance().solve_result().unwrap();
+    assert_indices(&result.snapshot().unwrap(), &[1, 2]);
+}

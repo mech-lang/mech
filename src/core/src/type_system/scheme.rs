@@ -1149,7 +1149,7 @@ fn sequence_sort_indices() -> Result<KindScheme, SemanticModelError> {
             DimensionExpr::Constant(1),
             primary_length.clone(),
         )],
-        vec![KindConstraint::DimensionEqual(
+        vec![KindConstraint::DimensionCompatible(
             primary_length,
             secondary_length,
         )],
