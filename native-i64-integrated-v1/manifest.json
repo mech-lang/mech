@@ -1,0 +1,107 @@
+{
+  "schema": "mech.native-i64-integration-preservation.v1",
+  "status": "SOURCE_ONLY_NATIVE_EXECUTION_UNQUALIFIED",
+  "base_commit": "4b4a450935438e8ececa0603d42391badcf358b0",
+  "patch_sha256": "ed10151c0f22fee044584a82ac9d126dcbb8e406972247308e66384cc4c450bc",
+  "files": {
+    "docs/design/grammar-audit/canonical-dependencies.tsv": {
+      "before_sha256": "539be1d6f8d11add18497b018b51eadfd8dfef41bd4e402dc1eefa6868db09ed",
+      "after_sha256": "e0595bfe699f75d322655a2494b30bcec4453a4728498598b56bb226e83e4e00"
+    },
+    "docs/design/specification.mec": {
+      "before_sha256": "809ea2e91fdcea6332c7ebe9b6c170bd534b2f8007685119c4b2377915880dd1",
+      "after_sha256": "7054aa149f7091848487ac4b6f8340e4ae64a43dbe919a45b9c121960f3903a5"
+    },
+    "hosts/gpu/Cargo.toml": {
+      "before_sha256": "20df82c6bfd81310e856a189395c29f28e0a6ea355d48d72199fbdb536ca2250",
+      "after_sha256": "9faa45b59de0e61faa8e6349b28487731519cc98391899dfb6d88bdd20b7f747"
+    },
+    "hosts/gpu/src/native_artifact/abi.rs": {
+      "before_sha256": "16fc25aeda0c77ac0bc6828766a420d98f32395e4adc31c236dda8471bade08b",
+      "after_sha256": "e38f013848713dc78dd73893eb6cd6970fed32b07d49417125e3531ef6880744"
+    },
+    "hosts/gpu/src/native_artifact/application.rs": {
+      "before_sha256": "7efc28b87211337e12d66fff4a4d7bc47c8630fae5f0b4d5955b04855c8bac7b",
+      "after_sha256": "fb263879eb4a4c5c1e133357deb7a918215a6ed7f9ca1294a05ae2d36806430e"
+    },
+    "hosts/gpu/src/native_artifact/compiler.rs": {
+      "before_sha256": "5b6d4f4d9e9a4ebebb14a45992501ffc1997d3191021b3480d73c626749dd046",
+      "after_sha256": "849bef87826a4886ced74bb5abb5157d0717e27792960e617411e78aacbd4c2a"
+    },
+    "hosts/gpu/src/native_artifact/identity.rs": {
+      "before_sha256": "a75938f5ddd1579e2ae27ad379a5931d87fb1b2a002c017db75e16b0dfff5426",
+      "after_sha256": "5a92fe23fd754d38abfed5e38e63e6cd6f8b90654b294464ffe67233ecca5b1d"
+    },
+    "hosts/gpu/src/native_artifact/runtime.rs": {
+      "before_sha256": "06102cd6ff3c72c7565776b251af2c821dde8f80edf7e2b7051f2dcb3a8fb85e",
+      "after_sha256": "454aa83b9ca816abd1905f942138752bb6c87aca5fa2f881661c10d6b6c2cd29"
+    },
+    "hosts/gpu/src/native_artifact/templates/linked_main.rs.in": {
+      "before_sha256": "375fb0b13a2acb97bab2a569321ea46829aa7fa4b555d071486bba115584d2b3",
+      "after_sha256": "0b93f2e3793990c79d2eab4ccd267c4b4ccde0feb7384c5a3603bd2cc27912c4"
+    },
+    "hosts/gpu/tests/canonical_artifact_application.rs": {
+      "before_sha256": "61e82cb47d89626256fc13dc3abb93c0d7d521d578f4331030923bb17051a3d9",
+      "after_sha256": "02b64d8b0b83a0f506d6ff0b3ae8f704f8e49a107822b01d87db73f66566efa7"
+    },
+    "hosts/gpu/tests/canonical_artifact_native.rs": {
+      "before_sha256": "a1b037c562effb2e7daeba5160c68bf62a47476e9b3c65b0703fb5220503f3b0",
+      "after_sha256": "54bb7f4d80a30d12db0a59c8677dba498d56e08a71c8a85a981ec9ec3555c205"
+    },
+    "src/engine/Cargo.toml": {
+      "before_sha256": "6c5e1c5a8b73c23564ceb67be7e686e1d5d17f1960eda2bc5afc8ad3e582cc76",
+      "after_sha256": "dca80aa8ffdef465c114680179c04f574bac42b22a5aa2eb393a1d7aee9fbe26"
+    },
+    "src/engine/src/native_artifact/ir.rs": {
+      "before_sha256": "2abfca857a044c6e9dd8073609bec1a99932f47d865eabf6d9b0204a58272ffd",
+      "after_sha256": "7c036fda158ddc7e23325061cc8d875efdc9ba82a7426d9553a1b32d79e0d6e0"
+    },
+    "src/engine/src/resident/general/mod.rs": {
+      "before_sha256": "efd21c079347cd16a53cf0ca757ff111cebfeac2e8152de32f7810f738e3de02",
+      "after_sha256": "0aa2e7206a470e5ce095800793fbc8b4d6979dcbb102dfac6596371a5f334049"
+    },
+    "src/engine/src/resident/general/native_lowering.rs": {
+      "before_sha256": "d38a4c3cb81bb95d012481dcb21f4a860e40af90db9a36df6314990d2ac74286",
+      "after_sha256": "7e536c3ca16a4617959da3da3bfbf50736eaf0328cdd5c54fc3c9c2f6dfe5866"
+    },
+    "src/engine/src/resident/native_semantics.rs": {
+      "before_sha256": "8683db8ae4c34b2dad825257e03a9622c99e798d8d3aa7c4dcdfa7eec9d416b4",
+      "after_sha256": "d1665deb944407e8ff6abb5f545bb311b648f5723a8d5cacdf2f510fe6e58c43"
+    },
+    "src/engine/src/resident/numeric/mod.rs": {
+      "before_sha256": "4e87573542e297eee423d29c7fdb54e8efbc9781edd0f892b84efadc28e12649",
+      "after_sha256": "c012355d814aa9c066d1b504c81432ce78ad4a175fd28d07f4cf9813298bcd49"
+    },
+    "src/stdlib/Cargo.toml": {
+      "before_sha256": "dfeb0486ee0bd5511d24d21473cdd0996376cd2eee8dfbeb390c5b6b07b81feb",
+      "after_sha256": "27bb4475cae7c1529a156b99f7f9dfa686982bb1863bdb6d0e459a97be2073ae"
+    },
+    "src/syntax/src/document/parser/canonical/literals/continuation.rs": {
+      "before_sha256": "b2b4c9761527c68208d882450ec6a70abd03f75a60d4bcbccb92a211386e99c1",
+      "after_sha256": "be0dc6f8616fb18f720966196747f24f95b04caaaeabc8004a9731779fd40c68"
+    },
+    "src/syntax/tests/canonical_rules/canonical_application.rs": {
+      "before_sha256": "b07120e594d3e2119b6e8c06dfc3b553abbc067ec0b6e3920193e0d2e61ca9f5",
+      "after_sha256": "0ee0fe2799237f28b4f31bcc672a9c6024cc157bf2c8439f11f839b22c5ec076"
+    },
+    "hosts/gpu/tests/canonical_artifact_i64.rs": {
+      "before_sha256": null,
+      "after_sha256": "7a56bdb5674d971cbe5e87bac1a94ef35ac359b580e52afe025bc1d0b3e2071d"
+    },
+    "src/stdlib/tests/native_artifact_i64_lowering.rs": {
+      "before_sha256": null,
+      "after_sha256": "e8490e205c971f6a969fd4ee86c132d0e3a117146990a8fc8956ad0453066f33"
+    }
+  },
+  "positive_targeted_checks": [
+    "native private semantics:6pass",
+    "typed integer/imaginary-unit parser boundary, streaming cuts/resource limits and canonical certification:5pass"
+  ],
+  "required_checks_pending": [
+    "combined native scalar metadata and real Cranelift JIT execution currently running",
+    "full syntax library after numeric boundary correction",
+    "native private ABI/identity/runtime-only production",
+    "clean committed linked Object execution"
+  ],
+  "benchmark_measurements": 0
+}
