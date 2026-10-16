@@ -40,6 +40,8 @@ use sha2::{Digest, Sha256};
 const MIXED: &str = "increment := left<u64> + step<u64>\nflag := !enabled<bool>\nincrement\n";
 const ORDERED: &str = "quotient := left<u64> / divisor<u64>\nlast := left<u64> + 1u64\nlast\n";
 const SIGNED: &str = "sum := left<i64> + right<i64>\nnegative := -right<i64>\nsum\n";
+const SIGNED_DIVREM: &str =
+    "quotient := left<i64> / divisor<i64>\nremainder := left<i64> % modulus<i64>\nquotient\n";
 const PROCESS_DEADLINE: Duration = Duration::from_secs(15);
 const WORKER_DEADLINE: Duration = Duration::from_secs(20 * 60);
 
@@ -312,6 +314,9 @@ fn with_limit(limit: &str, arguments: &[NativeScalarValue]) -> Vec<String> {
 }
 
 fn reference_cases(name: &str, artifacts: &[ProgramArtifact; 2], result: usize) -> Vec<Value> {
+    if name == "canonical-linked-signed-divrem" {
+        return signed_divrem_reference_cases(artifacts, result);
+    }
     if name == "canonical-linked-signed" {
         return signed_reference_cases(artifacts, result);
     }
@@ -686,6 +691,84 @@ fn signed_reference_cases(artifacts: &[ProgramArtifact; 2], result: usize) -> Ve
     cases
 }
 
+fn signed_divrem_reference_cases(artifacts: &[ProgramArtifact; 2], result: usize) -> Vec<Value> {
+    let plans = artifacts.each_ref().map(|artifact| {
+        lower_pure_native_artifact(artifact, &mech_stdlib::source_catalog()).unwrap()
+    });
+    let jits = plans
+        .each_ref()
+        .map(|plan| JitArtifact::compile(plan).unwrap());
+    let args = |left, divisor, modulus| {
+        inputs(
+            &artifacts[0],
+            &[
+                ("left", NativeScalarValue::I64(left)),
+                ("divisor", NativeScalarValue::I64(divisor)),
+                ("modulus", NativeScalarValue::I64(modulus)),
+            ],
+        )
+    };
+    let remainder = plans[0]
+        .outputs()
+        .iter()
+        .position(|output| {
+            output
+                .interactive_binding()
+                .is_some_and(|binding| binding.lexical_name == "remainder")
+        })
+        .unwrap();
+    let mut cases = Vec::new();
+    for (label, left, divisor, modulus) in [
+        ("negative-dividend", -7, 3, 3),
+        ("negative-divisor", 7, -3, -3),
+        ("both-negative", -7, -3, -3),
+        ("minimum-valid", i64::MIN, 1, 1),
+        ("maximum-valid", i64::MAX, -1, -1),
+    ] {
+        let args = args(left, divisor, modulus);
+        let expected = resident(&artifacts[0], &args).unwrap();
+        assert_eq!(expected[result], NativeScalarValue::I64(left / divisor));
+        assert_eq!(expected[remainder], NativeScalarValue::I64(left % modulus));
+        for index in 0..2 {
+            assert_eq!(resident(&artifacts[index], &args).unwrap(), expected);
+            assert_eq!(jit_success(&jits[index], &args).0, expected);
+        }
+        cases.push(success_case(label, arguments(&args), &expected));
+    }
+    for (label, left, divisor, modulus, ordinal) in [
+        ("division-zero-first", 7, 0, 0, 0),
+        ("minimum-division-overflow", i64::MIN, -1, 1, 0),
+        ("remainder-zero-after-division", 7, 1, 0, 1),
+        ("minimum-remainder-overflow", i64::MIN, 1, -1, 1),
+    ] {
+        let args = args(left, divisor, modulus);
+        let expected_node = plans[0].lets()[ordinal].node();
+        for index in 0..2 {
+            assert!(
+                resident(&artifacts[index], &args)
+                    .unwrap_err()
+                    .contains("Arithmetic")
+            );
+            assert!(matches!(
+                jit_error(&jits[index], &args, NativeExecutionLimits::default()),
+                NativeExecutionError::Arithmetic { node } if node == expected_node
+            ));
+        }
+        cases.push(exact_failure_case(
+            label,
+            arguments(&args),
+            &jit_error(&jits[0], &args, NativeExecutionLimits::default()),
+        ));
+    }
+    let args = args(-7, 3, 3);
+    let expected = resident(&artifacts[0], &args).unwrap();
+    for jit in &jits {
+        assert_eq!(jit_success(jit, &args).0, expected);
+    }
+    cases.push(success_case("recovery", arguments(&args), &expected));
+    cases
+}
+
 /// Only called in the contained worker. Subprocesses inherit its owned group;
 /// they do not open another process group that could escape its deadline.
 fn worker_command(mut command: Command, root: &Path, label: &str) -> Captured {
@@ -806,7 +889,10 @@ fn canonical_native_link_build_worker() {
     let name = std::env::var("MECH_CANONICAL_NATIVE_WORKER_NAME").unwrap();
     assert!(matches!(
         name.as_str(),
-        "canonical-linked-mixed" | "canonical-linked-ordered" | "canonical-linked-signed"
+        "canonical-linked-mixed"
+            | "canonical-linked-ordered"
+            | "canonical-linked-signed"
+            | "canonical-linked-signed-divrem"
     ));
     let evidence = PathBuf::from(std::env::var_os("MECH_CANONICAL_NATIVE_EVIDENCE_DIR").unwrap());
     let root = evidence.join(&name);
@@ -1094,6 +1180,7 @@ fn linked_canonical_artifact_scalar_applications_are_typed_bounded_and_atomic() 
         qualify(&evidence, "canonical-linked-mixed", MIXED),
         qualify(&evidence, "canonical-linked-ordered", ORDERED),
         qualify(&evidence, "canonical-linked-signed", SIGNED),
+        qualify(&evidence, "canonical-linked-signed-divrem", SIGNED_DIVREM),
     ];
     assert_eq!(pin(&workspace.join("Cargo.lock")), lock);
     clean(&workspace, &evidence, &commit, "after");
