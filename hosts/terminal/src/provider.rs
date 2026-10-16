@@ -57,6 +57,49 @@ pub trait CliBackend: std::fmt::Debug {
     fn write_stderr(&mut self, text: &str) -> MResult<()>;
 }
 
+/// Supplies immutable application arguments while delegating all other CLI I/O.
+/// The snapshot contains payload arguments only: element zero is `@args/1` and
+/// no executable name or launcher controls are inserted or removed here.
+#[derive(Clone, Debug)]
+pub struct ArgumentSnapshotCliBackend<B> {
+    backend: B,
+    arguments: Arc<[OsString]>,
+}
+
+impl<B> ArgumentSnapshotCliBackend<B> {
+    pub fn new(backend: B, arguments: Vec<OsString>) -> Self {
+        Self {
+            backend,
+            arguments: arguments.into(),
+        }
+    }
+}
+
+impl<B: CliBackend> CliBackend for ArgumentSnapshotCliBackend<B> {
+    fn argument(&self, index: usize) -> MResult<Option<OsString>> {
+        Ok(index
+            .checked_sub(1)
+            .and_then(|index| self.arguments.get(index))
+            .cloned())
+    }
+
+    fn env_var(&self, name: &str) -> MResult<Option<String>> {
+        self.backend.env_var(name)
+    }
+
+    fn stdin_text(&self) -> MResult<String> {
+        self.backend.stdin_text()
+    }
+
+    fn write_stdout(&mut self, text: &str) -> MResult<()> {
+        self.backend.write_stdout(text)
+    }
+
+    fn write_stderr(&mut self, text: &str) -> MResult<()> {
+        self.backend.write_stderr(text)
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default)]
 pub struct StdCliBackend;
 
@@ -526,6 +569,14 @@ pub struct CliHostFactory<B = StdCliBackend> {
 impl CliHostFactory<StdCliBackend> {
     pub fn new() -> MResult<Self> {
         Self::with_backend(StdCliBackend)
+    }
+
+    /// Use exact payload arguments supplied by the launcher, excluding its
+    /// executable and controls. Unicode validation occurs at resource reads.
+    pub fn with_arguments(
+        arguments: Vec<OsString>,
+    ) -> MResult<CliHostFactory<ArgumentSnapshotCliBackend<StdCliBackend>>> {
+        CliHostFactory::with_backend(ArgumentSnapshotCliBackend::new(StdCliBackend, arguments))
     }
 }
 

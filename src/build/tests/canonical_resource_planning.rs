@@ -184,6 +184,19 @@ fn assert_native_plan(product: &ProgramCompilationProduct, read_context: &str) {
     })
     .plan(&request)
     .expect("native planning must not compute a payload from fabricated observation text");
+    assert!(
+        plan.live,
+        "driverless observations retain their live delivery contract"
+    );
+    assert_eq!(plan.hosts.len(), 1);
+    assert_eq!(
+        plan.hosts[0].factory_path,
+        "mech_terminal::CliHostFactory::with_arguments"
+    );
+    assert_eq!(
+        plan.hosts[0].factory_input,
+        mech_build::NativeHostFactoryInput::ProgramArguments
+    );
     assert!(plan.runtime_functions.is_empty());
     assert_eq!(plan.application_requirements.len(), 2);
     assert!(plan.application_requirements.iter().any(|requirement| {

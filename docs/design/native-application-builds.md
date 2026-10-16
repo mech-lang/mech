@@ -57,7 +57,7 @@ records as source-planning factories. Its exact provider surface is:
 
 | Provider | Package | Feature | Generated factory |
 | --- | --- | --- | --- |
-| `cli` | `mech-terminal` | `provider` | `mech_terminal::CliHostFactory::new` |
+| `cli` | `mech-terminal` | `provider` | `mech_terminal::CliHostFactory::with_arguments` |
 | `console` | `mech-console` | `native` | `mech_console::NativeConsoleHostFactory::new` |
 | `time` | `mech-time` | `native` | `mech_time::NativeTimeHostFactory::new` |
 | `timer` | `mech-timer` | `native` | `mech_timer::NativeTimerHostFactory::new` |
@@ -162,22 +162,49 @@ Every bytecode register is also one stable outer value cell: symbols, external
 outputs, downstream factories, transaction rollback, and the final return
 observe the same identity.
 
-Every generated executable accepts no argument or exactly `--once`; any other
-argument prints usage and exits with status 2. Non-live programs execute once
-in either form. A live hosted program:
+Engine applications accept no argument or exactly `--once`; other arguments
+print usage and exit with status 2. Hosted applications accept launcher controls
+`--once`, `--print-result`, `--runtime-info` and `--max-live-turns N` before
+their program arguments.
+The first other argument, or an explicit `--`, ends launcher option parsing.
+All remaining arguments belong to the program, including flag-looking values.
+Use `--` to pass a reserved launcher option as the first program argument.
 
-1. constructs its exact catalog and runtime, installs embedded bytecode, and
-   performs the initial turn;
-2. prints a nonempty returned value and exits cleanly when `--once` is used;
-3. otherwise installs a Ctrl-C handler using `Arc<AtomicBool>` with
-   `Ordering::SeqCst`, starts selected drivers, and drains at most 64 inputs
-   per iteration;
-4. sleeps for 10 milliseconds after an empty drain, then on interruption
-   stops drivers and shuts down the runtime.
+The standard CLI host receives an immutable payload-only `Vec<OsString>` through
+its explicitly registered factory constructor. Element zero is `@args/1`; the
+snapshot excludes the executable and consumed launcher controls. Empty strings
+and non-Unicode OS arguments remain intact until the provider validates the
+particular resource read. No process-global arguments are changed. Custom host
+registrations keep their selected factory and constructor input contract.
+Existing registrations default to no constructor input; the omitted default
+preserves v1 serialized plans and their digest. An explicit argument-input mode
+is serialized and changes the plan digest. Argument values are launch inputs,
+not build-plan data.
 
-Only live projects depend on exact `ctrlc = "=3.5.2"`. Cleanup also runs after
-a primary failure; the primary error is reported before any driver-stop or
-shutdown failures.
+A hosted program installs its canonical resident artifact and completes the
+initial publication and any driverless observation turn before selecting its
+lifecycle. With no actual driven live-input bindings, it shuts down after this
+initial work, including under `--once`. CLI argument, environment and stdin
+observations use this lifecycle even when their retained resource delivery is
+live. The plan's live flag continues to describe resource delivery.
+
+Hosted launchers display no implicit result by default. Program output is
+delivered through its admitted host effects. `--print-result` explicitly enables
+launcher presentation of a nonempty initial result, or the final root result
+under driven `--once`. This presentation is separate from program I/O and does
+not change resource grants. `--runtime-info` independently opts into launcher
+execution metadata. Both controls end at the same program-argument boundary.
+
+When the loaded program has driven bindings, the launcher installs a Ctrl-C
+handler using `Arc<AtomicBool>` with `Ordering::SeqCst`, starts the selected
+drivers, and drains at most 64 inputs per iteration. `--once` stops after one
+accepted driven turn; `--max-live-turns N` bounds accepted driven turns. An empty
+drain sleeps for 10 milliseconds. Normal exit and primary errors stop started
+drivers and shut down the runtime; primary errors are reported before cleanup
+failures. Only live projects depend on exact `ctrlc = "=3.5.2"`.
+
+These generated applications execute through the resident runtime. Native
+machine-code lowering of canonical artifacts is a separate compiler boundary.
 
 ## Registry and workspace modes
 

@@ -21,14 +21,19 @@ lossy Unicode conversion is performed.
 The standard backend reads process argv, excluding the executable at index zero.
 It does not remove launcher flags or source filenames. A launcher that parses its
 own options must inject only its user-argument snapshot through CliBackend::argument.
-The Mech interpreter CLI and generated hosted launchers do not yet provide this
-forwarding boundary; their options are not an application argument interface.
+Generated hosted launchers provide this boundary: controls before the first
+payload are consumed, and either the first payload or -- ends option parsing.
+For example, generated-app --once 19 --runtime-info supplies 19 as @args/1 and
+--runtime-info as @args/2. Use generated-app -- --once to supply --once as
+@args/1. The --print-result launcher control also applies only before the payload
+boundary; after it, the spelling is ordinary argument text. Hosted results are
+displayed only when that control is explicitly requested. The Mech interpreter
+CLI does not yet provide this forwarding boundary.
 
 2. Planning and capabilities
 -------------------------------------------------------------------------------
 
-Planning validates the index and supplies a string placeholder without reading
-argv. The runtime captures the actual read through the same observation and
+Planning validates the index and String schema without reading argv. The runtime captures the actual read through the same observation and
 capability system as cli/env. Args do not require an input driver. Writes and
 sends are rejected.
 
@@ -53,3 +58,14 @@ Custom CLI backends implement argument(index) using a user-argument snapshot;
 the snapshot excludes the executable and launcher policy flags. Existing backends
 can omit this optional method, in which case reads report arguments unavailable.
 No argument contents need to be read during compilation or planning.
+
+CliHostFactory::with_arguments(Vec<OsString>) installs an immutable payload-only
+snapshot over the standard environment, stdin and output backend. Vector element
+zero is @args/1. The factory neither removes launcher flags nor inserts an
+executable name; its caller supplies the exact application arguments after
+parsing its own controls. Empty and non-Unicode arguments are retained exactly;
+the provider validates Unicode only when the corresponding resource is read.
+
+Embedders can wrap another backend with ArgumentSnapshotCliBackend::new(backend,
+arguments). Cloned wrappers share the same immutable argument snapshot and
+delegate all other CLI I/O to their backend.

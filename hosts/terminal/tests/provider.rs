@@ -11,7 +11,7 @@ use mech_runtime::{
     RuntimeResourceWriteCommand, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
     RuntimeResourceWriteRequest, TransactionId, value_empty, value_string,
 };
-use mech_terminal::{CliBackend, CliHostFactory, CliResourceProvider};
+use mech_terminal::{ArgumentSnapshotCliBackend, CliBackend, CliHostFactory, CliResourceProvider};
 
 #[derive(Clone, Debug, Default)]
 struct FakeCliBackend {
@@ -298,6 +298,159 @@ fn args_reads_are_one_based_raw_unicode_and_preserve_empty_arguments() {
                 .contains("argument 5 is not present")
         );
     }
+}
+
+#[test]
+fn argument_snapshot_factory_preserves_exact_payload_and_excludes_ambient_argv() {
+    let arguments = ["5500", "", "héllo e\u{301} 👩🏽‍💻", "--once", "--"]
+        .map(OsString::from)
+        .to_vec();
+    let factory = CliHostFactory::with_arguments(arguments.clone()).unwrap();
+    for instance in ["cli", "term"] {
+        let installation = factory
+            .instantiate(instance, &ConfigValue::Map(Default::default()))
+            .unwrap();
+        let provider = &installation.resource_providers[0];
+        let base = format!("cli://{instance}/args");
+        for (index, expected) in arguments.iter().enumerate() {
+            let path = (index + 1).to_string();
+            assert_string(
+                &provider.read(args_read(&base, &path)).unwrap(),
+                expected.to_str().unwrap(),
+            );
+        }
+        assert!(provider.read(args_read(&base, "6")).is_err());
+        assert!(provider.read(args_read(&base, "0")).is_err());
+    }
+
+    let empty = CliHostFactory::with_arguments(Vec::new()).unwrap();
+    let installation = empty
+        .instantiate("cli", &ConfigValue::Map(Default::default()))
+        .unwrap();
+    let error = installation.resource_providers[0]
+        .read(args_read("cli://cli/args", "1"))
+        .unwrap_err();
+    assert!(
+        error
+            .display_message()
+            .contains("argument 1 is not present")
+    );
+}
+
+#[test]
+fn argument_snapshot_delegates_other_io_and_never_queries_backend_arguments() {
+    use std::{cell::RefCell, rc::Rc};
+
+    #[derive(Clone, Debug)]
+    struct SharedBackend(Rc<RefCell<FakeCliBackend>>);
+
+    impl CliBackend for SharedBackend {
+        fn env_var(&self, name: &str) -> MResult<Option<String>> {
+            self.0.borrow().env_var(name)
+        }
+        fn argument(&self, index: usize) -> MResult<Option<OsString>> {
+            self.0.borrow().argument(index)
+        }
+        fn stdin_text(&self) -> MResult<String> {
+            self.0.borrow().stdin_text()
+        }
+        fn write_stdout(&mut self, text: &str) -> MResult<()> {
+            self.0.borrow_mut().write_stdout(text)
+        }
+        fn write_stderr(&mut self, text: &str) -> MResult<()> {
+            self.0.borrow_mut().write_stderr(text)
+        }
+    }
+
+    let backend = Rc::new(RefCell::new(FakeCliBackend {
+        env: HashMap::from([("HOME".to_string(), "/snapshot-home".to_string())]),
+        argument_error: Some("ambient argv must not be queried".to_string()),
+        stdin: "exact e\u{301}\r\n".to_string(),
+        ..Default::default()
+    }));
+    let snapshot = ArgumentSnapshotCliBackend::new(
+        SharedBackend(Rc::clone(&backend)),
+        vec![OsString::from("payload")],
+    );
+    assert_eq!(snapshot.argument(0).unwrap(), None);
+    assert_eq!(snapshot.argument(usize::MAX).unwrap(), None);
+    let provider = CliResourceProvider::new(snapshot.clone());
+    assert_string(
+        &provider.read(args_read("cli://args", "1")).unwrap(),
+        "payload",
+    );
+    assert_string(
+        &provider
+            .read(RuntimeResourceReadRequest {
+                base_uri: "cli://env".to_string(),
+                path: "HOME".to_string(),
+                context_name: "env".to_string(),
+            })
+            .unwrap(),
+        "/snapshot-home",
+    );
+    for _ in 0..2 {
+        assert_string(
+            &provider.read(stdin_read("cli://stdin", "text")).unwrap(),
+            "exact e\u{301}\r\n",
+        );
+    }
+    for (base, text) in [("cli://stdout", "out"), ("cli://stderr", "err")] {
+        let mut effect = provider
+            .prepare_output(RuntimeResourceWriteCommand {
+                base_uri: base.to_string(),
+                path: "line".to_string(),
+                context_name: if base == "cli://stdout" {
+                    "stdout"
+                } else {
+                    "stderr"
+                }
+                .to_string(),
+                operation: RuntimeCapabilityOperation::Write,
+                value: str_value(text),
+                intent: RuntimeResourceWriteIntent::Send,
+            })
+            .unwrap();
+        effect.deliver().unwrap();
+    }
+    let backend = backend.borrow();
+    assert_eq!(backend.argument_reads.get(), 0);
+    assert_eq!(backend.stdin_reads.get(), 1);
+    assert_eq!(backend.stdout, ["out\n"]);
+    assert_eq!(backend.stderr, ["err\n"]);
+}
+
+#[cfg(any(unix, windows))]
+#[test]
+fn argument_snapshot_preserves_non_unicode_until_the_actual_resource_read() {
+    #[cfg(unix)]
+    let invalid = {
+        use std::os::unix::ffi::OsStringExt;
+        OsString::from_vec(vec![b'a', 0xff])
+    };
+    #[cfg(windows)]
+    let invalid = {
+        use std::os::windows::ffi::OsStringExt;
+        OsString::from_wide(&[b'a' as u16, 0xd800])
+    };
+    let snapshot = ArgumentSnapshotCliBackend::new(
+        FakeCliBackend::default(),
+        vec![invalid.clone(), OsString::from("")],
+    );
+    assert_eq!(snapshot.argument(1).unwrap(), Some(invalid));
+    assert_eq!(snapshot.argument(2).unwrap(), Some(OsString::from("")));
+    let provider = CliResourceProvider::new(snapshot);
+    assert_string(
+        &provider.plan_read(args_read("cli://args", "1")).unwrap(),
+        "",
+    );
+    let error = provider.read(args_read("cli://args", "1")).unwrap_err();
+    assert!(
+        error
+            .display_message()
+            .contains("argument 1 is not valid Unicode")
+    );
+    assert_string(&provider.read(args_read("cli://args", "2")).unwrap(), "");
 }
 
 #[test]

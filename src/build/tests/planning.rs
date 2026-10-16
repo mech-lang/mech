@@ -1115,7 +1115,11 @@ fn cli_stdout_yields_a_hosted_plan() {
     assert_eq!(plan.hosts[0].package, "mech-terminal");
     assert_eq!(
         plan.hosts[0].factory_path,
-        "mech_terminal::CliHostFactory::new"
+        "mech_terminal::CliHostFactory::with_arguments"
+    );
+    assert_eq!(
+        plan.hosts[0].factory_input,
+        mech_build::NativeHostFactoryInput::ProgramArguments
     );
     assert_eq!(plan.run_grants.len(), 1);
     assert_eq!(plan.runtime_config.name, "native-generated-runtime");

@@ -306,6 +306,10 @@ impl RuntimeResourceProvider for TestResourceProvider {
         self.groups.clone()
     }
 
+    fn semantic_read_contract(&self) -> Option<&'static mech_core::OperationContractDeclaration> {
+        Some(mech_runtime::resource_observation_contract())
+    }
+
     fn plan_read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
         ValueCell::from_exact("planned".to_owned())?.snapshot()
     }
@@ -939,11 +943,11 @@ fn read_only_artifact_native_planning_validates_the_observation_value_type() {
             assert!(result.is_ok(), "{result:?}");
         } else {
             let error = result.unwrap_err();
-            assert_eq!(error.kind_name(), "NativeProgramArtifactInvalid");
+            assert_eq!(error.kind_name(), "ResidentProviderContractMismatch");
             assert!(
                 error
                     .display_message()
-                    .contains("does not match artifact input"),
+                    .contains("read representation differs from artifact schema or shape"),
                 "{error:?}"
             );
         }

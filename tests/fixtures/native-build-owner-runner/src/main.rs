@@ -10,8 +10,8 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use mech_build::{
-    NativeActorBootstrap, NativeApplicationBuilder, NativeBuildEnvironment, NativeBuildPlan,
-    NativeBuildProfile, NativeBuildRequest, NativeDependencySource, NativeEmit,
+    NativeActorBootstrap, NativeApplicationBuilder, NativeApplicationKind, NativeBuildEnvironment,
+    NativeBuildPlan, NativeBuildProfile, NativeBuildRequest, NativeDependencySource, NativeEmit,
     NativeRuntimeConfig,
 };
 #[cfg(feature = "fixed")]
@@ -121,6 +121,11 @@ fn main() -> AppResult<()> {
         }
         eprintln!("MECH_NATIVE_RUNNER_PROGRESS case={case} action={action} progress=execute");
         let mut command = Command::new(artifact.executable());
+        // This fixture runner compares the program's displayed result as well
+        // as host effects. Production hosted launchers keep display opt-in.
+        if result.plan.application_kind == NativeApplicationKind::Hosted {
+            command.arg("--print-result");
+        }
         if case.ends_with("-once") {
             command.arg("--once");
         }
