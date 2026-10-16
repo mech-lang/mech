@@ -1,0 +1,8 @@
+--- a/src/runtime/src/runtime/program/tests.rs
++++ b/src/runtime/src/runtime/program/tests.rs
+@@ -9514,3 +9514,5 @@
+         );
+     }
+ }
++
++mod resource_input_schema;

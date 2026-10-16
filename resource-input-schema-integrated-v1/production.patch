@@ -1,0 +1,988 @@
+--- a/src/engine/src/resident/general/mod.rs
++++ b/src/engine/src/resident/general/mod.rs
+@@ -1414,6 +1414,9 @@
+ #[derive(Clone, Debug, Default)]
+ pub struct ActivationFacts {
+     pub slot_shapes: BTreeMap<CellSlotId, ShapeInstance>,
++    /// Initial validated geometry for turn-varying inputs. These seeds do not
++    /// prove an invariant resident layout; declared lifetimes govern updates.
++    pub slot_shape_seeds: BTreeMap<CellSlotId, ShapeInstance>,
+     // Derived preparation facts, not caller-supplied geometry or wire data.
+     // A known shape does not change the resident implementation's layout.
+     resident_snapshot_slots: BTreeSet<CellSlotId>,
+@@ -3038,6 +3041,13 @@
+ 
+ fn activation_facts_fingerprint(facts: &ActivationFacts) -> [u8; 32] {
+     let mut hash = Sha256::new();
++    hash.update(b"resident-slot-shape-seeds-v1");
++    hash.update((facts.slot_shape_seeds.len() as u64).to_le_bytes());
++    for (slot, shape) in &facts.slot_shape_seeds {
++        hash.update(slot.get().to_le_bytes());
++        hash.update(shape.canonical_bytes());
++    }
++    hash.update(b"resident-fixed-slot-shapes-v1");
+     hash.update((facts.slot_shapes.len() as u64).to_le_bytes());
+     for (slot, shape) in &facts.slot_shapes {
+         hash.update(slot.get().to_le_bytes());
+@@ -12485,7 +12495,11 @@
+             ArtifactSource::Slot(source) => slot_shape(artifact, source, facts),
+         };
+     }
+-    if let Some(shape) = facts.slot_shapes.get(&slot) {
++    if let Some(shape) = facts
++        .slot_shapes
++        .get(&slot)
++        .or_else(|| facts.slot_shape_seeds.get(&slot))
++    {
+         let schema = artifact
+             .schemas()
+             .entry(declaration.schema)
+@@ -12710,7 +12724,9 @@
+     // shape. Looking only at the alias's schema can turn a snapshot value into
+     // a dense read after its inferred geometry becomes known.
+     for _ in 0..artifact.slots().len() {
+-        if facts.resident_snapshot_slots.contains(&slot) {
++        if facts.resident_snapshot_slots.contains(&slot)
++            || facts.slot_shape_seeds.contains_key(&slot)
++        {
+             return true;
+         }
+         match artifact.slots()[slot.get() as usize].producer {
+--- a/src/engine/src/source_semantics/document_lowering.rs
++++ b/src/engine/src/source_semantics/document_lowering.rs
+@@ -173,7 +173,7 @@
+     document: &DocumentSyntax,
+     nominal_origin: Option<&CanonicalNominalPath>,
+     catalog: Arc<mech_core::FunctionCatalog>,
+-    input_schemas: BTreeMap<String, SchemaBody>,
++    input_schemas: BTreeMap<String, SchemaDraft>,
+ ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+     compile_document_with_options(
+         document,
+@@ -193,7 +193,7 @@
+     document: &DocumentSyntax,
+     nominal_origin: Option<&CanonicalNominalPath>,
+     catalog: Arc<mech_core::FunctionCatalog>,
+-    input_schemas: BTreeMap<String, SchemaBody>,
++    input_schemas: BTreeMap<String, SchemaDraft>,
+     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+     interactive: bool,
+ ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+@@ -223,7 +223,7 @@
+     nominal_declarations: Vec<PendingNominalDeclaration>,
+     exports: Vec<ExportDeclarationSyntax>,
+     catalog: Arc<mech_core::FunctionCatalog>,
+-    input_schemas: BTreeMap<String, SchemaBody>,
++    input_schemas: BTreeMap<String, SchemaDraft>,
+     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+     resolved_source_modules: BTreeSet<String>,
+ }
+@@ -231,8 +231,16 @@
+ impl CanonicalCoordinatorPlan {
+     /// Complete coordinator lowering after the caller plans interface-dependent reads.
+     pub fn compile(
++        self,
++        additional_input_schemas: BTreeMap<String, SchemaBody>,
++    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
++        self.compile_schema_drafts(closed_input_schema_drafts(additional_input_schemas))
++    }
++
++    /// Completes coordinator lowering without closing supplied dimensions.
++    pub fn compile_schema_drafts(
+         mut self,
+-        additional_input_schemas: BTreeMap<String, SchemaBody>,
++        additional_input_schemas: BTreeMap<String, SchemaDraft>,
+     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+         self.input_schemas.extend(additional_input_schemas);
+         compile_collected_document(
+@@ -260,7 +268,7 @@
+     nominal_origin: Option<&CanonicalNominalPath>,
+     imported_enum_qualifiers: &BTreeMap<NominalKey, String>,
+     catalog: Arc<mech_core::FunctionCatalog>,
+-    input_schemas: BTreeMap<String, SchemaBody>,
++    input_schemas: BTreeMap<String, SchemaDraft>,
+     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+     external_inputs: &BTreeSet<String>,
+     retained_outputs: &BTreeSet<String>,
+@@ -401,7 +409,7 @@
+     nominal_origin: Option<&CanonicalNominalPath>,
+     imported_enum_qualifiers: &BTreeMap<NominalKey, String>,
+     catalog: Option<Arc<mech_core::FunctionCatalog>>,
+-    input_schemas: BTreeMap<String, SchemaBody>,
++    input_schemas: BTreeMap<String, SchemaDraft>,
+     interactive: bool,
+     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+     external_definitions: &BTreeSet<String>,
+@@ -428,7 +436,7 @@
+     nominal_origin: Option<&CanonicalNominalPath>,
+     imported_enum_qualifiers: &BTreeMap<NominalKey, String>,
+     catalog: Option<Arc<mech_core::FunctionCatalog>>,
+-    input_schemas: BTreeMap<String, SchemaBody>,
++    input_schemas: BTreeMap<String, SchemaDraft>,
+     interactive: bool,
+     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+     external_definitions: &BTreeSet<String>,
+@@ -580,7 +588,7 @@
+     units: Vec<DocumentUnit>,
+     exports: Vec<ExportDeclarationSyntax>,
+     catalog: Option<Arc<mech_core::FunctionCatalog>>,
+-    input_schemas: BTreeMap<String, SchemaBody>,
++    input_schemas: BTreeMap<String, SchemaDraft>,
+     interactive: bool,
+     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+     external_definitions: &BTreeSet<String>,
+@@ -2324,7 +2332,7 @@
+ }
+ 
+ pub(super) fn compile_ordered_documents(
+-    documents: &[CanonicalOrderedDocument],
++    documents: &[CanonicalOrderedDocument<SchemaDraft>],
+     catalog: Arc<mech_core::FunctionCatalog>,
+     imported_enum_qualifiers: &BTreeMap<NominalKey, String>,
+ ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+@@ -2391,19 +2399,12 @@
+         builder.declared_variants.clear();
+         builder.resource_writes = root.resource_writes.clone();
+         builder.resolved_source_modules = root.resolved_modules.clone();
+-        builder.input_schema_overrides = root
+-            .input_schemas
+-            .iter()
+-            .map(|(name, body)| {
+-                (
+-                    name.clone(),
+-                    SchemaDraft {
+-                        body: body.clone(),
+-                        dimension_parameters: Box::new([]),
+-                    },
+-                )
+-            })
+-            .collect();
++        for schema in root.input_schemas.values() {
++            schema.clone().finalize().map_err(|error| {
++                internal(anchor, format!("invalid declared input schema: {error:?}"))
++            })?;
++        }
++        builder.input_schema_overrides = root.input_schemas.clone();
+         for (name, imported) in &root.imports {
+             let binding = match imported {
+                 CanonicalOrderedImport::RootExport { root, name: export } => *exports_by_root
+--- a/src/engine/src/source_semantics/frontend.rs
++++ b/src/engine/src/source_semantics/frontend.rs
+@@ -110,9 +110,27 @@
+     source_nominal_declarations: Box<[crate::SourceNominalDeclaration]>,
+ }
+ 
++fn closed_input_schema_drafts(
++    schemas: BTreeMap<String, SchemaBody>,
++) -> BTreeMap<String, SchemaDraft> {
++    schemas
++        .into_iter()
++        .map(|(name, body)| {
++            (
++                name,
++                SchemaDraft {
++                    body,
++                    dimension_parameters: Box::new([]),
++                },
++            )
++        })
++        .collect()
++}
++
+ /// One retained root in an explicitly ordered compilation. Imported roots refer
+ /// to exported graph bindings, so their live dependencies remain in the artifact.
+-pub struct CanonicalOrderedDocument {
++#[derive(Clone)]
++pub struct CanonicalOrderedDocument<S = SchemaBody> {
+     pub document: DocumentSyntax,
+     pub nominal_origin: Option<CanonicalNominalPath>,
+     pub nominal_package_id: Option<String>,
+@@ -121,7 +139,7 @@
+     /// published root result. Linked dependencies retain their live graph and
+     /// exports without becoming additional program outputs.
+     pub publish_result: bool,
+-    pub input_schemas: BTreeMap<String, SchemaBody>,
++    pub input_schemas: BTreeMap<String, S>,
+     pub resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+     pub imports: BTreeMap<String, CanonicalOrderedImport>,
+     pub resolved_modules: BTreeSet<String>,
+@@ -145,6 +163,29 @@
+     pub fn compile_ordered_documents_with_catalog(
+         &self,
+         documents: &[CanonicalOrderedDocument],
++        catalog: Arc<mech_core::FunctionCatalog>,
++    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
++        let documents = documents
++            .iter()
++            .map(|root| CanonicalOrderedDocument {
++                document: root.document.clone(),
++                nominal_origin: root.nominal_origin.clone(),
++                nominal_package_id: root.nominal_package_id.clone(),
++                identity: root.identity,
++                publish_result: root.publish_result,
++                input_schemas: closed_input_schema_drafts(root.input_schemas.clone()),
++                resource_writes: root.resource_writes.clone(),
++                imports: root.imports.clone(),
++                resolved_modules: root.resolved_modules.clone(),
++            })
++            .collect::<Vec<_>>();
++        self.compile_ordered_documents_with_catalog_schema_drafts(&documents, catalog)
++    }
++
++    /// Lower ordered roots without closing declared input dimensions.
++    pub fn compile_ordered_documents_with_catalog_schema_drafts(
++        &self,
++        documents: &[CanonicalOrderedDocument<SchemaDraft>],
+         catalog: Arc<mech_core::FunctionCatalog>,
+     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+         for root in documents {
+@@ -828,6 +869,20 @@
+         catalog: Arc<mech_core::FunctionCatalog>,
+         input_schemas: BTreeMap<String, SchemaBody>,
+     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
++        self.compile_document_with_catalog_and_input_schemas_schema_drafts(
++            document,
++            catalog,
++            closed_input_schema_drafts(input_schemas),
++        )
++    }
++
++    /// Preserves the supplied schema parameter identities, bounds and lifetimes.
++    pub fn compile_document_with_catalog_and_input_schemas_schema_drafts(
++        &self,
++        document: &DocumentSyntax,
++        catalog: Arc<mech_core::FunctionCatalog>,
++        input_schemas: BTreeMap<String, SchemaDraft>,
++    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+         reject_recovered_syntax(document)?;
+         document_lowering::compile_document_with_catalog_and_input_schemas(
+             document,
+@@ -844,6 +899,24 @@
+         document: &DocumentSyntax,
+         catalog: Arc<mech_core::FunctionCatalog>,
+         input_schemas: BTreeMap<String, SchemaBody>,
++        resource_reads: BTreeMap<String, mech_core::ExecutionResourceRequest>,
++        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
++    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
++        self.compile_document_with_catalog_and_resources_schema_drafts(
++            document,
++            catalog,
++            closed_input_schema_drafts(input_schemas),
++            resource_reads,
++            resource_writes,
++        )
++    }
++
++    /// Preserves the supplied schema parameter identities, bounds and lifetimes.
++    pub fn compile_document_with_catalog_and_resources_schema_drafts(
++        &self,
++        document: &DocumentSyntax,
++        catalog: Arc<mech_core::FunctionCatalog>,
++        input_schemas: BTreeMap<String, SchemaDraft>,
+         resource_reads: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+         resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+@@ -865,6 +938,24 @@
+         resource_reads: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+         resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
++        self.compile_interactive_document_with_catalog_and_resources_schema_drafts(
++            document,
++            catalog,
++            closed_input_schema_drafts(input_schemas),
++            resource_reads,
++            resource_writes,
++        )
++    }
++
++    /// Preserves the supplied schema parameter identities, bounds and lifetimes.
++    pub fn compile_interactive_document_with_catalog_and_resources_schema_drafts(
++        &self,
++        document: &DocumentSyntax,
++        catalog: Arc<mech_core::FunctionCatalog>,
++        input_schemas: BTreeMap<String, SchemaDraft>,
++        resource_reads: BTreeMap<String, mech_core::ExecutionResourceRequest>,
++        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
++    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+         self.compile_document_resource_projection(
+             document,
+             catalog,
+@@ -879,7 +970,7 @@
+         &self,
+         document: &DocumentSyntax,
+         catalog: Arc<mech_core::FunctionCatalog>,
+-        input_schemas: BTreeMap<String, SchemaBody>,
++        input_schemas: BTreeMap<String, SchemaDraft>,
+         resource_reads: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+         resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+         interactive: bool,
+@@ -920,6 +1011,28 @@
+         published_bindings: &BTreeSet<String>,
+         resolved_source_modules: &BTreeSet<String>,
+     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
++        self.compile_document_with_planning_contract_schema_drafts(
++            document,
++            catalog,
++            closed_input_schema_drafts(input_schemas),
++            resource_writes,
++            external_definitions,
++            published_bindings,
++            resolved_source_modules,
++        )
++    }
++
++    /// Preserves the supplied schema parameter identities, bounds and lifetimes.
++    pub fn compile_document_with_planning_contract_schema_drafts(
++        &self,
++        document: &DocumentSyntax,
++        catalog: Arc<mech_core::FunctionCatalog>,
++        input_schemas: BTreeMap<String, SchemaDraft>,
++        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
++        external_definitions: &BTreeSet<String>,
++        published_bindings: &BTreeSet<String>,
++        resolved_source_modules: &BTreeSet<String>,
++    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+         self.compile_document_with_planning_projection(
+             document,
+             catalog,
+@@ -938,6 +1051,28 @@
+         document: &DocumentSyntax,
+         catalog: Arc<mech_core::FunctionCatalog>,
+         input_schemas: BTreeMap<String, SchemaBody>,
++        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
++        external_definitions: &BTreeSet<String>,
++        published_bindings: &BTreeSet<String>,
++        resolved_source_modules: &BTreeSet<String>,
++    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
++        self.compile_interactive_document_with_planning_contract_schema_drafts(
++            document,
++            catalog,
++            closed_input_schema_drafts(input_schemas),
++            resource_writes,
++            external_definitions,
++            published_bindings,
++            resolved_source_modules,
++        )
++    }
++
++    /// Preserves the supplied schema parameter identities, bounds and lifetimes.
++    pub fn compile_interactive_document_with_planning_contract_schema_drafts(
++        &self,
++        document: &DocumentSyntax,
++        catalog: Arc<mech_core::FunctionCatalog>,
++        input_schemas: BTreeMap<String, SchemaDraft>,
+         resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+         external_definitions: &BTreeSet<String>,
+         published_bindings: &BTreeSet<String>,
+@@ -963,6 +1098,26 @@
+         document: &DocumentSyntax,
+         catalog: Arc<mech_core::FunctionCatalog>,
+         input_schemas: BTreeMap<String, SchemaBody>,
++        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
++        resolved_source_modules: &BTreeSet<String>,
++        boundary: mech_syntax::document::TextSize,
++    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
++        self.compile_interactive_document_with_retained_result_schema_drafts(
++            document,
++            catalog,
++            closed_input_schema_drafts(input_schemas),
++            resource_writes,
++            resolved_source_modules,
++            boundary,
++        )
++    }
++
++    /// Preserves the supplied schema parameter identities, bounds and lifetimes.
++    pub fn compile_interactive_document_with_retained_result_schema_drafts(
++        &self,
++        document: &DocumentSyntax,
++        catalog: Arc<mech_core::FunctionCatalog>,
++        input_schemas: BTreeMap<String, SchemaDraft>,
+         resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+         resolved_source_modules: &BTreeSet<String>,
+         boundary: mech_syntax::document::TextSize,
+@@ -987,7 +1142,7 @@
+         &self,
+         document: &DocumentSyntax,
+         catalog: Arc<mech_core::FunctionCatalog>,
+-        input_schemas: BTreeMap<String, SchemaBody>,
++        input_schemas: BTreeMap<String, SchemaDraft>,
+         resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+         external_definitions: &BTreeSet<String>,
+         published_bindings: &BTreeSet<String>,
+@@ -1050,7 +1205,27 @@
+         external_inputs: &BTreeSet<String>,
+         retained_outputs: &BTreeSet<String>,
+     ) -> Result<CanonicalMixedSourcePrograms, SourceSemanticError> {
+-        self.compile_mixed_document_with_planning_contract(
++        self.compile_mixed_document_with_catalog_and_resources_schema_drafts(
++            document,
++            catalog,
++            closed_input_schema_drafts(input_schemas),
++            resource_writes,
++            external_inputs,
++            retained_outputs,
++        )
++    }
++
++    /// Preserves the supplied schema parameter identities, bounds and lifetimes.
++    pub fn compile_mixed_document_with_catalog_and_resources_schema_drafts(
++        &self,
++        document: &DocumentSyntax,
++        catalog: Arc<mech_core::FunctionCatalog>,
++        input_schemas: BTreeMap<String, SchemaDraft>,
++        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
++        external_inputs: &BTreeSet<String>,
++        retained_outputs: &BTreeSet<String>,
++    ) -> Result<CanonicalMixedSourcePrograms, SourceSemanticError> {
++        self.compile_mixed_document_with_planning_contract_schema_drafts(
+             document,
+             catalog,
+             input_schemas,
+@@ -1072,7 +1247,29 @@
+         retained_outputs: &BTreeSet<String>,
+         resolved_source_modules: &BTreeSet<String>,
+     ) -> Result<CanonicalMixedSourcePrograms, SourceSemanticError> {
+-        let prepared = self.prepare_mixed_document_with_planning_contract(
++        self.compile_mixed_document_with_planning_contract_schema_drafts(
++            document,
++            catalog,
++            closed_input_schema_drafts(input_schemas),
++            resource_writes,
++            external_inputs,
++            retained_outputs,
++            resolved_source_modules,
++        )
++    }
++
++    /// Preserves the supplied schema parameter identities, bounds and lifetimes.
++    pub fn compile_mixed_document_with_planning_contract_schema_drafts(
++        &self,
++        document: &DocumentSyntax,
++        catalog: Arc<mech_core::FunctionCatalog>,
++        input_schemas: BTreeMap<String, SchemaDraft>,
++        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
++        external_inputs: &BTreeSet<String>,
++        retained_outputs: &BTreeSet<String>,
++        resolved_source_modules: &BTreeSet<String>,
++    ) -> Result<CanonicalMixedSourcePrograms, SourceSemanticError> {
++        let prepared = self.prepare_mixed_document_with_planning_contract_schema_drafts(
+             document,
+             catalog,
+             input_schemas,
+@@ -1097,6 +1294,28 @@
+         document: &DocumentSyntax,
+         catalog: Arc<mech_core::FunctionCatalog>,
+         input_schemas: BTreeMap<String, SchemaBody>,
++        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
++        external_inputs: &BTreeSet<String>,
++        retained_outputs: &BTreeSet<String>,
++        resolved_source_modules: &BTreeSet<String>,
++    ) -> Result<CanonicalMixedSourcePreparation, SourceSemanticError> {
++        self.prepare_mixed_document_with_planning_contract_schema_drafts(
++            document,
++            catalog,
++            closed_input_schema_drafts(input_schemas),
++            resource_writes,
++            external_inputs,
++            retained_outputs,
++            resolved_source_modules,
++        )
++    }
++
++    /// Preserves the supplied schema parameter identities, bounds and lifetimes.
++    pub fn prepare_mixed_document_with_planning_contract_schema_drafts(
++        &self,
++        document: &DocumentSyntax,
++        catalog: Arc<mech_core::FunctionCatalog>,
++        input_schemas: BTreeMap<String, SchemaDraft>,
+         resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+         external_inputs: &BTreeSet<String>,
+         retained_outputs: &BTreeSet<String>,
+@@ -3326,21 +3545,15 @@
+     fn with_function_catalog_and_input_schemas(
+         anchor: SourceSemanticAnchor,
+         function_catalog: Arc<mech_core::FunctionCatalog>,
+-        input_schemas: BTreeMap<String, SchemaBody>,
++        input_schemas: BTreeMap<String, SchemaDraft>,
+     ) -> Result<Self, SourceSemanticError> {
+         let mut builder = Self::with_function_catalog(anchor, function_catalog)?;
+-        builder.input_schema_overrides = input_schemas
+-            .into_iter()
+-            .map(|(name, body)| {
+-                (
+-                    name,
+-                    SchemaDraft {
+-                        body,
+-                        dimension_parameters: Box::new([]),
+-                    },
+-                )
+-            })
+-            .collect();
++        for schema in input_schemas.values() {
++            schema.clone().finalize().map_err(|error| {
++                internal(anchor, format!("invalid declared input schema: {error:?}"))
++            })?;
++        }
++        builder.input_schema_overrides = input_schemas;
+         Ok(builder)
+     }
+ 
+--- a/src/runtime/src/runtime/program/compiler.rs
++++ b/src/runtime/src/runtime/program/compiler.rs
+@@ -647,7 +647,7 @@
+ }
+ 
+ struct CanonicalDocumentPlanning {
+-    schemas: BTreeMap<String, mech_core::SchemaBody>,
++    schemas: BTreeMap<String, mech_core::SchemaDraft>,
+     reads: BTreeMap<String, ExecutionResourceRequest>,
+     writes: BTreeMap<String, ExecutionResourceRequest>,
+     values: BTreeMap<String, Value>,
+@@ -745,7 +745,7 @@
+         let (input_schemas, resource_reads, resource_writes, planned_reads) =
+             self.canonical_document_resources(&index.root, &document.document())?;
+         let mut program = canonical_frontend(document)
+-            .compile_interactive_document_with_planning_contract(
++            .compile_interactive_document_with_planning_contract_schema_drafts(
+                 &document.document(),
+                 Arc::clone(&self.function_catalog),
+                 input_schemas,
+@@ -800,7 +800,9 @@
+             let value = input.clone().into_value()?;
+             schemas.insert(
+                 name.clone(),
+-                ValueCell::from_snapshot(value.clone())?.closed_schema_body()?,
++                canonical_closed_input_schema(
++                    ValueCell::from_snapshot(value.clone())?.closed_schema_body()?,
++                ),
+             );
+             values.insert(name.clone(), value);
+         }
+@@ -821,7 +823,7 @@
+         initialization: bool,
+     ) -> MResult<CanonicalSourceProgram> {
+         let mut program = canonical_frontend(document)
+-            .compile_document_with_planning_contract(
++            .compile_document_with_planning_contract_schema_drafts(
+                 &document.document(),
+                 Arc::clone(&self.function_catalog),
+                 context.schemas.clone(),
+@@ -1085,9 +1087,9 @@
+         let (input_schemas, resource_reads, resource_writes, planned_reads) =
+             self.canonical_document_resources(&index.root, &document.document())?;
+         let compile = if interactive {
+-            CanonicalSourceFrontend::compile_interactive_document_with_catalog_and_resources
++            CanonicalSourceFrontend::compile_interactive_document_with_catalog_and_resources_schema_drafts
+         } else {
+-            CanonicalSourceFrontend::compile_document_with_catalog_and_resources
++            CanonicalSourceFrontend::compile_document_with_catalog_and_resources_schema_drafts
+         };
+         let frontend = canonical_frontend(document);
+         let mut program = compile(
+@@ -1387,7 +1389,10 @@
+         }
+         let mut program = CanonicalSourceFrontend
+             .with_imported_enum_qualifiers(context.enum_qualifiers()?)
+-            .compile_ordered_documents_with_catalog(&documents, Arc::clone(&self.function_catalog))
++            .compile_ordered_documents_with_catalog_schema_drafts(
++                &documents,
++                Arc::clone(&self.function_catalog),
++            )
+             .map_err(|error| canonical_compilation_error(error.to_string()))?;
+         for (ordinal, imports) in import_uses {
+             use mech_syntax::document::AstNode;
+@@ -1476,7 +1481,9 @@
+         for (name, value) in &imported {
+             input_schemas.insert(
+                 name.clone(),
+-                ValueCell::from_snapshot(value.to_value())?.closed_schema_body()?,
++                canonical_closed_input_schema(
++                    ValueCell::from_snapshot(value.to_value())?.closed_schema_body()?,
++                ),
+             );
+         }
+         let modules = imports
+@@ -1491,7 +1498,7 @@
+             .collect();
+         let prepared = canonical_frontend(document)
+             .with_imported_enum_qualifiers(context.enum_qualifiers()?)
+-            .prepare_mixed_document_with_planning_contract(
++            .prepare_mixed_document_with_planning_contract_schema_drafts(
+                 &document.document(),
+                 Arc::clone(&self.function_catalog),
+                 input_schemas,
+@@ -1601,13 +1608,15 @@
+         for (name, value) in imported {
+             schemas.insert(
+                 name,
+-                ValueCell::from_snapshot(value.to_value())?.closed_schema_body()?,
++                canonical_closed_input_schema(
++                    ValueCell::from_snapshot(value.to_value())?.closed_schema_body()?,
++                ),
+             );
+         }
+         let compile = if interactive {
+-            CanonicalSourceFrontend::compile_interactive_document_with_planning_contract
++            CanonicalSourceFrontend::compile_interactive_document_with_planning_contract_schema_drafts
+         } else {
+-            CanonicalSourceFrontend::compile_document_with_planning_contract
++            CanonicalSourceFrontend::compile_document_with_planning_contract_schema_drafts
+         };
+         let program = compile(
+             &frontend,
+@@ -1884,7 +1893,7 @@
+         index: &SourceIndex,
+         document: &mech_syntax::document::DocumentSyntax,
+     ) -> MResult<(
+-        BTreeMap<String, mech_core::SchemaBody>,
++        BTreeMap<String, mech_core::SchemaDraft>,
+         BTreeMap<String, ExecutionResourceRequest>,
+         BTreeMap<String, ExecutionResourceRequest>,
+         BTreeMap<String, Value>,
+@@ -1900,7 +1909,7 @@
+         document: &mech_syntax::document::DocumentSyntax,
+         mut plan_read: impl FnMut(RuntimeResourceReadRequest) -> MResult<Option<Value>>,
+     ) -> MResult<(
+-        BTreeMap<String, mech_core::SchemaBody>,
++        BTreeMap<String, mech_core::SchemaDraft>,
+         BTreeMap<String, ExecutionResourceRequest>,
+         BTreeMap<String, ExecutionResourceRequest>,
+         BTreeMap<String, Value>,
+@@ -2133,7 +2142,9 @@
+         for (name, value) in &imported {
+             input_schemas.insert(
+                 name.clone(),
+-                ValueCell::from_snapshot(value.to_value())?.closed_schema_body()?,
++                canonical_closed_input_schema(
++                    ValueCell::from_snapshot(value.to_value())?.closed_schema_body()?,
++                ),
+             );
+         }
+         let modules = imports
+@@ -2148,7 +2159,7 @@
+             .collect();
+         let mut programs = canonical_frontend(document)
+             .with_imported_enum_qualifiers(imported_enum_qualifiers)
+-            .prepare_mixed_document_with_planning_contract(
++            .prepare_mixed_document_with_planning_contract_schema_drafts(
+                 &document.document(),
+                 Arc::clone(&self.function_catalog),
+                 input_schemas,
+@@ -2253,7 +2264,7 @@
+         let coordinator = bind_imports(
+             programs
+                 .coordinator
+-                .compile(compute_read_schemas)
++                .compile_schema_drafts(compute_read_schemas)
+                 .map_err(|error| canonical_compilation_error(error.to_string()))?,
+         )?;
+ 
+@@ -2974,15 +2985,53 @@
+     }
+ }
+ 
+-fn canonical_planned_read_schema(value: &Value) -> MResult<mech_core::SchemaBody> {
++fn canonical_closed_input_schema(body: mech_core::SchemaBody) -> mech_core::SchemaDraft {
++    mech_core::SchemaDraft {
++        body,
++        dimension_parameters: Box::new([]),
++    }
++}
++
++fn canonical_planned_read_schema(value: &Value) -> MResult<mech_core::SchemaDraft> {
+     let schemas = value
+         .schemas()
+         .ok_or_else(|| canonical_compilation_error("planned resource read has no schema owner"))?;
++    value.validate_against(&schemas)?;
+     let schema = schemas.get(value.schema()).ok_or_else(|| {
+         canonical_compilation_error("planned resource read schema is unavailable")
+     })?;
+-    // Resolve provider/interface shape parameters before crossing schema arenas.
+-    schema.closed_body(value.shape())
++    schema.instantiate_shape(value.shape().parameter_values().to_vec().into_boxed_slice())?;
++    // The finalized schema already owns canonical parameter ordinals. Rebuild
++    // those declarations without specializing its provider-declared lifetimes
++    // or bounds to the representative planning value's current geometry.
++    let draft = mech_core::SchemaDraft {
++        body: schema.body().clone(),
++        dimension_parameters: schema
++            .dimension_parameters()
++            .iter()
++            .enumerate()
++            .map(|(ordinal, parameter)| {
++                let ordinal = u32::try_from(ordinal).map_err(|_| {
++                    canonical_compilation_error("planned resource read has too many dimensions")
++                })?;
++                Ok(mech_core::DimensionParameterDeclaration {
++                    id: mech_core::DimensionParameterId::new(ordinal),
++                    origin: mech_core::DimensionParameterOrigin::Explicit,
++                    lifetime: parameter.lifetime(),
++                    lower_bound: parameter.lower_bound().clone(),
++                    upper_bound: parameter.upper_bound().cloned(),
++                })
++            })
++            .collect::<MResult<Vec<_>>>()?
++            .into_boxed_slice(),
++    };
++    let rebuilt = draft.clone().finalize()?;
++    if rebuilt != *schema || rebuilt.key() != value.schema_key() {
++        return Err(canonical_compilation_error(
++            "planned resource read lost its schema identity",
++        ));
++    }
++    Ok(draft)
+ }
+ 
+ fn is_compute_kernel_base(base_uri: &str) -> bool {
+--- a/src/runtime/src/runtime/program/external/coordinator.rs
++++ b/src/runtime/src/runtime/program/external/coordinator.rs
+@@ -477,22 +477,15 @@
+             ) else {
+                 continue;
+             };
+-            let migrated = value
+-                .rebind(
+-                    target.input.schema,
+-                    &target.input.shape,
+-                    self.artifact.schemas(),
+-                )
++            let migrated = self
++                .rebind_observation_value(target, value)
+                 .map_err(|error| {
+                     invalid_value(format!(
+                         "{snapshot_name} is incompatible with the replacement: {error:?}"
+                     ))
+                 })?;
+-            let retained_bytes = retained_input_value_bytes(
+-                &migrated,
+-                &target.input.shape,
+-                self.artifact.schemas(),
+-            )?;
++            let retained_bytes =
++                retained_input_value_bytes(&migrated, migrated.shape(), self.artifact.schemas())?;
+             replacements.push((target_ordinal, migrated, retained_bytes));
+         }
+         Ok(replacements)
+@@ -630,25 +623,16 @@
+             }) else {
+                 continue;
+             };
+-            let value = update
+-                .value
+-                .clone()
+-                .into_value()?
+-                .rebind(
+-                    observation.input.schema,
+-                    &observation.input.shape,
+-                    self.artifact.schemas(),
+-                )
++            let source_value = update.value.clone().into_value()?;
++            let value = self
++                .rebind_observation_value(observation, &source_value)
+                 .map_err(|error| {
+                     invalid_value(format!(
+                         "host input does not match the observed schema: {error:?}"
+                     ))
+                 })?;
+-            let retained_bytes = retained_input_value_bytes(
+-                &value,
+-                &observation.input.shape,
+-                self.artifact.schemas(),
+-            )?;
++            let retained_bytes =
++                retained_input_value_bytes(&value, value.shape(), self.artifact.schemas())?;
+             replacements.push((ordinal, value, retained_bytes));
+         }
+         self.install_pending_live_input_replacements(replacements)
+@@ -897,6 +881,60 @@
+         self.reserve_live_turn()
+     }
+ 
++    /// Resolve geometry in the target schema's own dimension environment.
++    /// The planning value seeds activation geometry; only Turn declarations
++    /// permit later observations to differ from that seed.
++    fn rebind_observation_value(
++        &self,
++        observation: &super::BoundResidentObservation,
++        value: &Value,
++    ) -> MResult<Value> {
++        let target = self
++            .instance()
++            .plan
++            .slots
++            .iter()
++            .find(|slot| slot.artifact_id == observation.input.artifact_slot)
++            .ok_or_else(|| invalid_value("observation slot is unavailable".to_owned()))?;
++        let schema = self
++            .artifact
++            .schemas()
++            .get(observation.input.schema)
++            .ok_or_else(|| invalid_value("observation schema is unavailable".to_owned()))?;
++        if target.schema != observation.input.schema
++            || target.schema_key != observation.input.schema_key
++            || target.shape != observation.input.shape
++            || schema.key() != observation.input.schema_key
++        {
++            return Err(invalid_value(
++                "observation differs from its activated slot".to_owned(),
++            ));
++        }
++        let source_schemas = value
++            .schemas()
++            .ok_or_else(|| invalid_value("observation value has no schema owner".to_owned()))?;
++        value.validate_against(&source_schemas)?;
++        let source_schema = source_schemas
++            .get(value.schema())
++            .ok_or_else(|| invalid_value("observation value schema is unavailable".to_owned()))?;
++        let actual_body = source_schema.closed_body(value.shape())?;
++        let shape =
++            mech_core::shape_for_schema_components(schema, &[(schema.body(), actual_body)], None)
++                .map_err(|error| {
++                invalid_value(format!(
++                    "observation geometry does not satisfy its declared schema: {error:?}"
++                ))
++            })?;
++        if (target.activation_fixed_shape && shape != target.shape)
++            || !mech_core::shape_change_allowed(schema, &target.shape, &shape)
++        {
++            return Err(invalid_value(
++                "observation changes fixed activation geometry".to_owned(),
++            ));
++        }
++        value.rebind(observation.input.schema, &shape, self.artifact.schemas())
++    }
++
+     fn validate_host_updates(&self, updates: &[crate::RuntimeHostInputUpdate]) -> MResult<()> {
+         let mut sources = std::collections::BTreeSet::new();
+         for update in updates {
+@@ -917,12 +955,7 @@
+             }
+             let value = update.value.clone().into_value()?;
+             for observation in matching {
+-                value
+-                    .rebind(
+-                        observation.input.schema,
+-                        &observation.input.shape,
+-                        self.artifact.schemas(),
+-                    )
++                self.rebind_observation_value(observation, &value)
+                     .map_err(|error| {
+                         invalid_value(format!(
+                             "host input does not match its activated schema: {error:?}"
+@@ -1949,15 +1982,8 @@
+                     })
+                 });
+                 let value = if let Some(update) = packet_value {
+-                    update
+-                        .value
+-                        .clone()
+-                        .into_value()?
+-                        .rebind(
+-                            observation.input.schema,
+-                            &observation.input.shape,
+-                            self.artifact.schemas(),
+-                        )
++                    let source_value = update.value.clone().into_value()?;
++                    self.rebind_observation_value(observation, &source_value)
+                         .map_err(|error| {
+                             invalid_value(format!(
+                                 "host input does not match the observed schema: {error:?}"
+@@ -2012,17 +2038,12 @@
+                         observation.provider_binding.as_ref().ok_or_else(|| {
+                             invalid_value("live observation has no provider binding".to_owned())
+                         })?;
+-                    provider_binding
+-                        .read(RuntimeResourceReadRequest {
+-                            base_uri: observation.request.base_uri.clone(),
+-                            path: observation.request.path.clone(),
+-                            context_name: observation.request.context_name.clone(),
+-                        })?
+-                        .rebind(
+-                            observation.input.schema,
+-                            &observation.input.shape,
+-                            self.artifact.schemas(),
+-                        )
++                    let source_value = provider_binding.read(RuntimeResourceReadRequest {
++                        base_uri: observation.request.base_uri.clone(),
++                        path: observation.request.path.clone(),
++                        context_name: observation.request.context_name.clone(),
++                    })?;
++                    self.rebind_observation_value(observation, &source_value)
+                         .map_err(|error| {
+                             invalid_value(format!(
+                                 "provider input does not match the observed schema: {error:?}"
+@@ -2059,7 +2080,7 @@
+                     observation.node,
+                     observation.input.artifact_slot,
+                     observation.input.schema_key,
+-                    observation.input.shape.clone(),
++                    value.shape().clone(),
+                     value,
+                     trigger,
+                     self.artifact.schemas(),
+@@ -2078,7 +2099,7 @@
+             .facts
+             .iter()
+             .map(|fact| {
+-                CapturedInputFact::new_with_trigger(
++                let canonical = CapturedInputFact::new_with_trigger(
+                     fact.sequence,
+                     fact.requirement,
+                     fact.node,
+@@ -2088,7 +2109,11 @@
+                     fact.value.clone(),
+                     fact.trigger,
+                     self.artifact.schemas(),
+-                )
++                )?;
++                if canonical.payload_hash != fact.payload_hash {
++                    return invalid_coordinator("replay fact payload hash is invalid");
++                }
++                Ok(canonical)
+             })
+             .collect::<MResult<Vec<_>>>()?;
+         let canonical = CapturedInputBatch::new(facts)?;
+@@ -2111,14 +2136,19 @@
+                 || fact.node != observation.node
+                 || fact.slot != observation.input.artifact_slot
+                 || fact.schema_key != observation.input.schema_key
+-                || fact.shape != observation.input.shape
+                 || fact.value.schema() != observation.input.schema
+                 || fact.value.schema_key() != observation.input.schema_key
+-                || fact.value.shape() != &observation.input.shape
++                || fact.value.shape() != &fact.shape
+                 || fact.value.value_hash(self.artifact.schemas()).ok() != Some(fact.payload_hash)
+             {
+                 return invalid_coordinator(
+                     "replay batch differs from the activated observation plan",
++                );
++            }
++            let rebound = self.rebind_observation_value(observation, &fact.value)?;
++            if rebound.shape() != &fact.shape {
++                return invalid_coordinator(
++                    "replay fact differs from its validated observation geometry",
+                 );
+             }
+             for (previous_fact, previous_observation) in canonical.facts[..ordinal]
+--- a/src/runtime/src/runtime/program/loading.rs
++++ b/src/runtime/src/runtime/program/loading.rs
+@@ -953,7 +953,17 @@
+                         ),
+                     )
+                 })?;
+-            if let Some(existing) = facts.slot_shapes.insert(target, planned.shape().clone())
++            let shapes = if schema
++                .schema()
++                .dimension_parameters()
++                .iter()
++                .any(|parameter| parameter.lifetime() == mech_core::DimensionLifetime::Turn)
++            {
++                &mut facts.slot_shape_seeds
++            } else {
++                &mut facts.slot_shapes
++            };
++            if let Some(existing) = shapes.insert(target, planned.shape().clone())
+                 && existing != *planned.shape()
+             {
+                 return Err(route_failure(
