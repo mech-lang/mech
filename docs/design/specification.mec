@@ -2871,13 +2871,13 @@ not-element-of := ws0e, "∉", ws0e ;
 symmetric-difference := ws1e, "Δ", ws1e ;
 
 set-comprehension := left-brace, space-tab0, expression, space-tab0,
-                     bar, space-tab0,
+                     bar, whitespace0,
                      [list-separator, comprehension-qualifier],
-                     space-tab0, right-brace ;
-matrix-comprehension := left-bracket, space-tab0, expression, space-tab0,
-                        bar, space-tab0,
+                     whitespace0, right-brace ;
+matrix-comprehension := left-bracket, whitespace0, expression, whitespace0,
+                        bar, whitespace0,
                         [list-separator, comprehension-qualifier],
-                        space-tab0, right-bracket ;
+                        whitespace0, right-bracket ;
 comprehension-qualifier := generator
                          | variable-define
                          | expression ;
