@@ -497,7 +497,9 @@ fn linked_canonical_cli_arguments_and_stdin_finish_without_drivers() {
         "invalid-number",
         &args(&["not-a-number"]),
         &[],
-        Err("number/parse-u64"),
+        // Resident kernels expose their fixed error category rather than a
+        // source function name. The launcher must still reject atomically.
+        Err("error: InvalidInput"),
         false,
     );
 
