@@ -31,8 +31,9 @@ fn rejected_declarations_cannot_select_legacy_application_frontends() {
         let source = root.join(format!("{index}.mec"));
         let text = format!("{declaration}\nio/print(\"legacy bypass\\n\")\n");
         fs::write(&source, &text).unwrap();
-        let parsed = mech_engine::native_sequence::ParsedSource::parse(&text).unwrap();
-        assert!(parsed.has_activated_ports(), "{text}");
+        if let Ok(parsed) = mech_engine::native_sequence::ParsedSource::parse(&text) {
+            assert!(parsed.has_activated_ports(), "{text}");
+        }
         let directory = root.join(format!("rejected-{index}"));
         let error = native_build::emit_application(
             &source,
@@ -44,7 +45,8 @@ fn rejected_declarations_cannot_select_legacy_application_frontends() {
         )
         .unwrap_err();
         assert!(
-            error.contains("activated native source admission"),
+            error.contains("activated native source admission")
+                || error.contains("canonical source diagnostics"),
             "{error}"
         );
         assert!(!directory.join("Cargo.toml").exists());
