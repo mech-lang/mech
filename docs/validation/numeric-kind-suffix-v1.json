@@ -1,6 +1,6 @@
 {
   "schema": "mech.validation.numeric-kind-suffix.v1",
-  "status": "TARGETED_CHECKS_PASSED_COMPLETE_SYNTAX_LIBRARY_PENDING",
+  "status": "TARGETED_AND_COMPLETE_SYNTAX_LIBRARY_PASSED",
   "source_parent": "4b4a450935438e8ececa0603d42391badcf358b0",
   "source_files": {
     "docs/design/specification.mec": "7054aa149f7091848487ac4b6f8340e4ae64a43dbe919a45b9c121960f3903a5",
@@ -54,5 +54,35 @@
   ],
   "failed_diagnostic": "First signed native metadata qualification stopped before execution of the failing constant/alias fixture; diagnostic source and log retained separately.",
   "product_resource_limits_changed": false,
-  "benchmark_measurements": 0
+  "benchmark_measurements": 0,
+  "complete_syntax_library": {
+    "command": [
+      "cargo",
+      "test",
+      "-p",
+      "mech-syntax",
+      "--no-default-features",
+      "--features",
+      "full",
+      "--lib",
+      "--offline",
+      "--locked",
+      "--target-dir",
+      "/private/tmp/mech-build-cache",
+      "--",
+      "--test-threads=1",
+      "--nocapture"
+    ],
+    "source_commit": "099e17b7b76e27c1426d4fa546eec66d03203f02",
+    "started_utc": "2026-10-16T19:50:40.009326+00:00",
+    "finished_utc": "2026-10-16T20:00:31.065441+00:00",
+    "exit_code": 0,
+    "test_results": [
+      "test result: ok. 507 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 590.76s"
+    ],
+    "sources_unchanged_during_run": true,
+    "serial_preflight": true,
+    "benchmark_measurements": 0,
+    "log_sha256": "70c5f0b426f2f887aefe2ce06bb44bfc885a3c75c743580373ee1f3919e47008"
+  }
 }

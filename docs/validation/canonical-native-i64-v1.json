@@ -1,6 +1,6 @@
 {
   "schema": "mech.validation.canonical-native-i64.v1",
-  "status": "JIT_EXECUTION_AND_OBJECT_EMISSION_PASSED_LINKED_EXECUTION_PENDING",
+  "status": "JIT_OBJECT_AND_LINKED_EXECUTION_PASSED",
   "source_parent": "4b4a450935438e8ececa0603d42391badcf358b0",
   "source_files": {
     "hosts/gpu/Cargo.toml": "9faa45b59de0e61faa8e6349b28487731519cc98391899dfb6d88bdd20b7f747",
@@ -168,11 +168,75 @@
       "serial_preflight": true,
       "benchmark_measurements": 0,
       "log_sha256": "2e2b362d2a62108212ae1366f0333635896b592dea79800ea0cbf8d9d58bc178"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "mech-syntax",
+        "--no-default-features",
+        "--features",
+        "full",
+        "--lib",
+        "--offline",
+        "--locked",
+        "--target-dir",
+        "/private/tmp/mech-build-cache",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "source_commit": "099e17b7b76e27c1426d4fa546eec66d03203f02",
+      "started_utc": "2026-10-16T19:50:40.009326+00:00",
+      "finished_utc": "2026-10-16T20:00:31.065441+00:00",
+      "exit_code": 0,
+      "test_results": [
+        "test result: ok. 507 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 590.76s"
+      ],
+      "sources_unchanged_during_run": true,
+      "serial_preflight": true,
+      "benchmark_measurements": 0,
+      "log_sha256": "70c5f0b426f2f887aefe2ce06bb44bfc885a3c75c743580373ee1f3919e47008"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native",
+        "--test",
+        "canonical_artifact_application",
+        "--offline",
+        "--locked",
+        "--target-dir",
+        "/private/tmp/mech-build-cache",
+        "--",
+        "--exact",
+        "--ignored",
+        "--test-threads=1",
+        "--nocapture",
+        "linked_canonical_artifact_scalar_applications_are_typed_bounded_and_atomic"
+      ],
+      "source_commit": "099e17b7b76e27c1426d4fa546eec66d03203f02",
+      "started_utc": "2026-10-16T20:01:20.068358+00:00",
+      "finished_utc": "2026-10-16T20:02:40.866936+00:00",
+      "exit_code": 0,
+      "test_results": [
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 65.59s"
+      ],
+      "sources_unchanged_during_run": true,
+      "serial_preflight": true,
+      "benchmark_measurements": 0,
+      "log_sha256": "b46868be92d1941cf22c258f02dfb38f5b182150602d9076ca2609e9a483845d"
     }
   ],
   "evidence_limits": [
     "Combined run has27 test methods across five exact integration targets. Private engine semantics6 methods and native private ABI/identity4 methods are separate checks.",
-    "Object emission metadata is explicitly unlinked and unexecuted. Linked execution will be qualified separately from a clean committed checkout.",
+    "Object-emission metadata remains explicitly unlinked and unexecuted for that phase. Separate clean-source linked qualification builds and executes three actual binaries in35 fresh processes, with complete stream/error comparison and runtime-only compiled-unit reconciliation.",
     "The original and decoded resident reference helpers map ActivatedInput.artifact_slot to artifact inputs; the actual resident SlotIndex is still passed to input installation.",
     "Only stateless Turn-only Bool/U64/I64 scalar graphs are supported. Computed Activation, state, Match, Iteration, F64, collections and resources remain outside this native subset.",
     "No full benchmark admission or secured/trusted same-binary timing equivalence is established."
@@ -180,8 +244,15 @@
   "failed_predecessor": "native-i64-metadata-v1 exposed the typed-i64 literal parser gap; original native fixture inputs retained.",
   "benchmark_measurements": 0,
   "remaining": [
-    "Complete syntax-library507-test rerun after literal correction.",
-    "Clean-source linked Object execution with original/decoded JIT/resident references and actual compiled-unit runtime-only closure.",
     "Full canonical native scalar/control/matrix/collection/resource support, ten idiomatic workloads, secured/trusted same-binary lifecycle and serial Mech-only measurements remain pending."
-  ]
+  ],
+  "qualified_source_commit": "099e17b7b76e27c1426d4fa546eec66d03203f02",
+  "linked_execution": {
+    "receipt": "canonical-native-i64-linked-v1.json",
+    "sha256": "ab3b3a64b27e6c2889e34666fcca1dbbddd52f27822254adb2a9a6f98539e9be",
+    "executables": 3,
+    "fresh_process_launches": 35,
+    "independently_reconciled_saved_pins": 79,
+    "actual_compiled_units_exclude_parser_and_codegen": true
+  }
 }
