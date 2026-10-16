@@ -117,6 +117,10 @@ pub mod __mech_native {
     pub use crate::intrinsics::horzcat::__mech_native::*;
     #[cfg(all(feature = "convert", feature = "semantic-compiler"))]
     pub use crate::intrinsics::kind_conversion::install_runtime_kind_conversion;
+    #[cfg(feature = "map_ops")]
+    pub use crate::intrinsics::map_ops::{
+        install_map_histogram, install_map_keys, install_map_values,
+    };
     #[cfg(feature = "pure_text")]
     pub use crate::intrinsics::pure_text::{
         install_number_format_matrix, install_number_format_scalar, install_parse_u64,

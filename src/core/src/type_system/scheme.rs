@@ -1132,6 +1132,47 @@ fn sequence_length() -> Result<Vec<KindScheme>, SemanticModelError> {
     ])
 }
 
+fn string_count_map(cardinality: DimensionExpr) -> KindExpr {
+    KindExpr::Map {
+        key: Box::new(BuiltinScalarKind::String.kind_expr()),
+        value: Box::new(BuiltinScalarKind::U64.kind_expr()),
+        cardinality,
+    }
+}
+
+fn string_histogram() -> Result<KindScheme, SemanticModelError> {
+    make_with_dimensions(
+        0,
+        dimensions(3),
+        vec![matrix(
+            BuiltinScalarKind::String.kind_expr(),
+            dim(0),
+            dim(1),
+        )],
+        vec![string_count_map(dim(2))],
+        Vec::new(),
+    )
+}
+
+fn string_count_projection(keys: bool) -> Result<KindScheme, SemanticModelError> {
+    make(
+        0,
+        1,
+        vec![string_count_map(dim(0))],
+        vec![matrix(
+            if keys {
+                BuiltinScalarKind::String
+            } else {
+                BuiltinScalarKind::U64
+            }
+            .kind_expr(),
+            DimensionExpr::Constant(1),
+            dim(0),
+        )],
+        Vec::new(),
+    )
+}
+
 fn absolute_value() -> Result<Vec<KindScheme>, SemanticModelError> {
     let mut schemes = predicate_unary_same(BuiltinKindPredicate::Real)?;
     for complex in [BuiltinScalarKind::C32, BuiltinScalarKind::C64] {
@@ -1620,6 +1661,9 @@ pub fn maintained_source_schemes(
         )?],
         "number/format" => number_format()?,
         "sequence/length" => sequence_length()?,
+        "map/histogram" => vec![string_histogram()?],
+        "map/keys" => vec![string_count_projection(true)?],
+        "map/values" => vec![string_count_projection(false)?],
         "stats/sum/column" => vec![reduction_axis(true)?],
         "stats/sum/row" => vec![reduction_axis(false)?],
         "combinatorics/n-choose-k" => n_choose_k_schemes()?,

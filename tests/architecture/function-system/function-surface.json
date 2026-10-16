@@ -63,6 +63,18 @@
       "id_hex": "003d2b2d383079a3"
     },
     {
+      "name": "map/histogram",
+      "id_hex": "0089e5df42d13de4"
+    },
+    {
+      "name": "map/keys",
+      "id_hex": "00545bda103af406"
+    },
+    {
+      "name": "map/values",
+      "id_hex": "009afda241ea5663"
+    },
+    {
       "name": "math/abs",
       "id_hex": "0044150643e997b7"
     },
@@ -711,6 +723,24 @@
       "item": "n-choose-k",
       "canonical_name": "combinatorics/n-choose-k",
       "id_hex": "00956dd291431449"
+    },
+    {
+      "module": "map",
+      "item": "histogram",
+      "canonical_name": "map/histogram",
+      "id_hex": "0089e5df42d13de4"
+    },
+    {
+      "module": "map",
+      "item": "keys",
+      "canonical_name": "map/keys",
+      "id_hex": "00545bda103af406"
+    },
+    {
+      "module": "map",
+      "item": "values",
+      "canonical_name": "map/values",
+      "id_hex": "009afda241ea5663"
     },
     {
       "module": "math",

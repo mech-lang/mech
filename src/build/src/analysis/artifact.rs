@@ -100,6 +100,7 @@ fn required_resident_feature(module_path: &[String], operation_name: &str) -> Op
     match (module_path, operation_name) {
         ([module], "parse-u64" | "format") if module == "number" => Some("pure_text"),
         ([module], "length") if module == "sequence" => Some("pure_text"),
+        ([module], "histogram" | "keys" | "values") if module == "map" => Some("map_ops"),
         ([module], _) if module == "convert" => Some("convert"),
         ([module], _) if module == "table" => Some("table"),
         _ => None,

@@ -50,6 +50,7 @@ compiler = [
 runtime_default = [
   "runtime",
   "pure_text",
+  "map_ops",
   "bool",
   "string",
   "u8", "u16", "u32", "u64", "u128",
@@ -212,6 +213,7 @@ access = ["functions"]
 assign = ["functions"]
 convert = ["functions"]
 pure_text = ["functions", "string"]
+map_ops = ["functions", "map", "string"]
 
 # Values and shapes. Syntax forwarding is weak so runtime-only builds do not
 # activate the parser dependency.

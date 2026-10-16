@@ -102,6 +102,8 @@ pub mod convert;
 pub mod define;
 #[cfg(feature = "matrix_horzcat")]
 pub mod horzcat;
+#[cfg(feature = "map_ops")]
+pub(crate) mod map_ops;
 #[cfg(feature = "pure_text")]
 pub(crate) mod pure_text;
 #[cfg(feature = "table")]

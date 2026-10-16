@@ -48602,6 +48602,21 @@
       "name": "sequence/length",
       "id_hex": "005230d27927cb75",
       "owner": "mech-engine::stdlib"
+    },
+    {
+      "name": "map/histogram",
+      "id_hex": "0089e5df42d13de4",
+      "owner": "mech-engine::stdlib"
+    },
+    {
+      "name": "map/keys",
+      "id_hex": "00545bda103af406",
+      "owner": "mech-engine::stdlib"
+    },
+    {
+      "name": "map/values",
+      "id_hex": "009afda241ea5663",
+      "owner": "mech-engine::stdlib"
     }
   ]
 }

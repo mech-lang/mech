@@ -73,6 +73,9 @@ fn managed_runtime_family(entry: &mech_core::RuntimeFunctionEntry) -> Option<&'s
             name,
             "set/define"
                 | "set/comprehension"
+                | "map/histogram"
+                | "map/keys"
+                | "map/values"
                 | "matrix/comprehension"
                 | "matrix/horzcat"
                 | "matrix/vertcat"
@@ -153,7 +156,12 @@ fn managed_source_family(name: &str, intrinsic: bool) -> Option<&'static str> {
         || name.starts_with("set/")
         || matches!(
             name,
-            "matrix/comprehension" | "matrix/horzcat" | "matrix/vertcat"
+            "matrix/comprehension"
+                | "matrix/horzcat"
+                | "matrix/vertcat"
+                | "map/histogram"
+                | "map/keys"
+                | "map/values"
         )
     {
         Some("F06")
@@ -239,6 +247,10 @@ fn scratch_owning_families_never_fall_back_to_an_open_memory_class() {
         ("matrix/solve", ImplementationMemoryClass::MatrixSolve),
         ("set/union", ImplementationMemoryClass::CanonicalSortUnique),
         (
+            "map/histogram",
+            ImplementationMemoryClass::CanonicalSortUnique,
+        ),
+        (
             "set/intersection",
             ImplementationMemoryClass::CanonicalSortUnique,
         ),
@@ -261,6 +273,53 @@ fn scratch_owning_families_never_fall_back_to_an_open_memory_class() {
             "{operation} has a non-managed scratch declaration"
         );
     }
+}
+
+#[cfg(any(feature = "standard_compiler", feature = "full_compiler"))]
+#[test]
+fn ordinary_map_additions_have_exact_aggregate_families_and_memory_classes() {
+    let catalog = mech_stdlib::source_catalog();
+    let expected = [
+        (
+            "map/histogram",
+            0x0089_e5df_42d1_3de4,
+            ImplementationMemoryClass::CanonicalSortUnique,
+        ),
+        (
+            "map/keys",
+            0x0054_5bda_103a_f406,
+            ImplementationMemoryClass::CanonicalFinalize,
+        ),
+        (
+            "map/values",
+            0x009a_fda2_41ea_5663,
+            ImplementationMemoryClass::CanonicalFinalize,
+        ),
+    ];
+    for (name, id, memory) in expected {
+        let operation = OperationId::from_name(name);
+        assert_eq!(operation.raw(), id);
+        let entries = catalog
+            .runtime_entries_for_binding(
+                RuntimeBindingSelector::Operation(operation),
+                ExecutionTarget::DirectRuntime,
+            )
+            .collect::<Vec<_>>();
+        let [entry] = entries.as_slice() else {
+            panic!("expected exactly one map factory for {name}")
+        };
+        assert_eq!(entry.name, name);
+        assert_eq!(entry.id.raw(), id);
+        assert_eq!(managed_runtime_family(entry), Some("F06"));
+        assert_eq!(managed_source_family(name, false), Some("F06"));
+        assert_eq!(entry.implementation_memory_class(), memory);
+        let export = catalog
+            .module_export("map", name.split_once('/').unwrap().1)
+            .unwrap();
+        assert_eq!(export.exposure, mech_core::FunctionExposure::ModuleOnly);
+        assert_eq!(catalog.exports_for_operation(operation).len(), 1);
+    }
+    assert_eq!(catalog.module_exports("map").len(), 3);
 }
 
 #[cfg(any(feature = "standard_compiler", feature = "full_compiler"))]

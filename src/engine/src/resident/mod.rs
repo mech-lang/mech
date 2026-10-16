@@ -13,6 +13,8 @@ mod full_write;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod general;
 mod kernel;
+#[cfg(all(feature = "resident-artifact", feature = "map_ops"))]
+pub(crate) mod map_ops;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod matrix_literal;
 #[cfg(feature = "resident-artifact")]

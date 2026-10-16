@@ -1,8 +1,8 @@
-+> map/*
-+> number/*
-+> sequence/*
-+> stats/*
-+> text/*
++> map
++> number
++> sequence
++> stats
++> text
 +> @in := cli/stdin
 +> @out := cli/stdout
 

@@ -197,6 +197,8 @@ fn validate_integrity_constraint_marker_canonical(
 pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "pure_text")]
     super::pure_text::install_source(builder)?;
+    #[cfg(feature = "map_ops")]
+    super::map_ops::install_source(builder)?;
     #[cfg(feature = "matrix_horzcat")]
     crate::intrinsics::horzcat::install_source_runtime(builder)?;
     #[cfg(feature = "matrix_comprehensions")]
@@ -428,6 +430,7 @@ pub fn install_runtime(
         feature = "matrix_horzcat",
         feature = "matrix_vertcat",
         feature = "pure_text",
+        feature = "map_ops",
         feature = "table"
     ))]
     builder: &mut FunctionCatalogBuilder,
@@ -443,12 +446,15 @@ pub fn install_runtime(
         feature = "matrix_horzcat",
         feature = "matrix_vertcat",
         feature = "pure_text",
+        feature = "map_ops",
         feature = "table"
     )))]
     _: &mut FunctionCatalogBuilder,
 ) -> MResult<()> {
     #[cfg(feature = "pure_text")]
     super::pure_text::install_runtime(builder)?;
+    #[cfg(feature = "map_ops")]
+    super::map_ops::install_runtime(builder)?;
     #[cfg(feature = "access")]
     super::access::install_runtime(builder)?;
     #[cfg(feature = "assign")]

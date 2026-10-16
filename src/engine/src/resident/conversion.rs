@@ -469,6 +469,7 @@ struct ResidentConversionPlan {
     source: SchemaBody,
     source_layout: mech_core::ResidentShape,
     target: SchemaBody,
+    target_layout: mech_core::ResidentShape,
     conversion: mech_core::ConversionPlan,
     wrap_present: bool,
     dynamic_payload: Option<(mech_core::SchemaId, Box<[u64]>)>,
@@ -580,6 +581,7 @@ fn bind_conversion(
         source: source_schema.body().clone(),
         source_layout: input.shape,
         target: target_schema.body().clone(),
+        target_layout: request.output.shape,
         conversion,
         wrap_present,
         dynamic_payload,
@@ -880,12 +882,11 @@ fn execute_kind_conversion(
     if plan.wrap_present || conversion_presence_depth(&plan.conversion.step) != 0 {
         preflight_present_option(kernel, input, &output)?;
     }
-    let source = if matches!(output, ResidentValueMut::Snapshot(_))
-        && matches!(plan.source, SchemaBody::Matrix { .. })
+    let source = if matches!(plan.source, SchemaBody::Matrix { .. })
         && !matches!(input, ResidentValueRef::Snapshot(_))
     {
-        // Reuse the composite boundary's column-major resident to canonical
-        // row-major conversion before embedding the immutable typed payload.
+        // Conversion drafts always use canonical row-major order, regardless
+        // of whether the result will use dense or snapshot storage.
         let matrix = match input {
             ResidentValueRef::F64(values) => {
                 super::composite::canonical_matrix_elements(values, plan.source_layout, |value| {
@@ -933,6 +934,8 @@ fn execute_kind_conversion(
     } else {
         converted
     };
+    let target_matrix =
+        matches!(plan.target, SchemaBody::Matrix { .. }).then_some(plan.target_layout);
     match output {
         ResidentValueMut::Bool(target) => {
             let next = converted_elements(converted, &plan.target)?
@@ -942,7 +945,7 @@ fn execute_kind_conversion(
                     _ => Err(ResidentKernelError::InvalidOutput),
                 })
                 .collect::<Result<Vec<_>, _>>()?;
-            publish_slice(target, next)
+            publish_slice(target, next, target_matrix, PartialEq::eq)
         }
         ResidentValueMut::Index(target) => {
             let next = converted_elements(converted, &plan.target)?
@@ -952,7 +955,7 @@ fn execute_kind_conversion(
                     _ => Err(ResidentKernelError::InvalidOutput),
                 })
                 .collect::<Result<Vec<_>, _>>()?;
-            publish_slice(target, next)
+            publish_slice(target, next, target_matrix, PartialEq::eq)
         }
         ResidentValueMut::F64(target) => {
             let next = converted_elements(converted, &plan.target)?
@@ -962,15 +965,9 @@ fn execute_kind_conversion(
                     _ => Err(ResidentKernelError::InvalidOutput),
                 })
                 .collect::<Result<Vec<_>, _>>()?;
-            if target.len() != next.len() {
-                return Err(ResidentKernelError::InvalidShape);
-            }
-            let changed = target
-                .iter()
-                .zip(&next)
-                .any(|(current, next)| current.to_bits() != next.to_bits());
-            target.copy_from_slice(&next);
-            Ok(changed)
+            publish_slice(target, next, target_matrix, |current, next| {
+                current.to_bits() == next.to_bits()
+            })
         }
         ResidentValueMut::String(target) => {
             let next = converted_elements(converted, &plan.target)?
@@ -980,7 +977,7 @@ fn execute_kind_conversion(
                     _ => Err(ResidentKernelError::InvalidOutput),
                 })
                 .collect::<Result<Vec<_>, _>>()?;
-            publish_slice(target, next)
+            publish_slice(target, next, target_matrix, PartialEq::eq)
         }
         ResidentValueMut::Snapshot([target]) => {
             let metadata = kernel
@@ -1017,16 +1014,38 @@ fn execute_kind_conversion(
     }
 }
 
-fn publish_slice<T: PartialEq>(
+fn publish_slice<T>(
     target: &mut [T],
     next: Vec<T>,
+    matrix: Option<mech_core::ResidentShape>,
+    equal: impl Fn(&T, &T) -> bool,
 ) -> Result<bool, ResidentKernelError> {
     if target.len() != next.len() {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let changed = target != next;
-    for (target, next) in target.iter_mut().zip(next) {
-        *target = next;
+    let (rows, columns) = match matrix {
+        Some(shape) => {
+            let rows =
+                usize::try_from(shape.rows).map_err(|_| ResidentKernelError::InvalidShape)?;
+            let columns =
+                usize::try_from(shape.columns).map_err(|_| ResidentKernelError::InvalidShape)?;
+            if rows.checked_mul(columns) != Some(next.len()) {
+                return Err(ResidentKernelError::InvalidShape);
+            }
+            (rows, columns)
+        }
+        None => (1, next.len()),
+    };
+    // Validate the complete conversion and layout before changing any output.
+    // Move the already converted values directly to their column-major dense
+    // positions, without allocating a second transpose buffer.
+    let dense_index = |canonical: usize| (canonical % columns) * rows + canonical / columns;
+    let changed = next
+        .iter()
+        .enumerate()
+        .any(|(canonical, next)| !equal(&target[dense_index(canonical)], next));
+    for (canonical, next) in next.into_iter().enumerate() {
+        target[dense_index(canonical)] = next;
     }
     Ok(changed)
 }
@@ -1035,6 +1054,246 @@ fn publish_slice<T: PartialEq>(
 mod tests {
     use super::*;
     use mech_core::{DimensionExpr, IntegerWidth, SchemaDraft, SchemaTableBuilder};
+
+    struct Inputs<'a>(&'a [ResidentValueRef<'a>]);
+
+    impl ResidentKernelInputs for Inputs<'_> {
+        fn len(&self) -> usize {
+            self.0.len()
+        }
+
+        fn get(&self, index: usize) -> Option<ResidentValueRef<'_>> {
+            self.0.get(index).copied()
+        }
+    }
+
+    fn matrix_kernel(
+        source: SchemaBody,
+        target: SchemaBody,
+        source_kind: ResidentValueKind,
+        target_kind: ResidentValueKind,
+        rows: u32,
+        columns: u32,
+    ) -> (
+        BoundResidentKernel,
+        mech_core::SchemaTable,
+        mech_core::SchemaId,
+    ) {
+        let mut builder = SchemaTableBuilder::new();
+        let mut insert = |element| {
+            builder
+                .insert(
+                    SchemaDraft {
+                        dimension_parameters: Box::new([]),
+                        body: SchemaBody::Matrix {
+                            element: Box::new(element),
+                            dimensions: Box::new([
+                                DimensionExpr::Constant(u64::from(rows)),
+                                DimensionExpr::Constant(u64::from(columns)),
+                            ]),
+                        },
+                    }
+                    .finalize()
+                    .unwrap(),
+                )
+                .unwrap()
+        };
+        let source = insert(source);
+        let target = insert(target);
+        let built = builder.finish().unwrap();
+        let source = built.resolve(source).unwrap();
+        let target = built.resolve(target).unwrap();
+        let schemas = built.into_parts().0;
+        let contract = ResolvedOperationContract::Declared(mech_core::DeclaredOperationContract {
+            inputs: Box::new([mech_core::ResolvedInputPort {
+                schema: source,
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            }]),
+            outputs: Box::new([mech_core::ResolvedOutputPort {
+                schema: target,
+                access: AccessMode::Write,
+                delivery: DeliveryMode::Signal,
+                construction: OutputConstruction::FullWrite {
+                    shape: ShapeRule::SameAsInput { input: 0 },
+                },
+                alias: AliasPolicy::NoAlias,
+                change_detection: ChangeDetectionPolicy::KernelReported,
+            }]),
+            interaction: ExternalInteraction::Pure,
+        });
+        let layout = |schema_id, kind| mech_core::ResidentPortLayout {
+            schema_id,
+            schema_key: schemas.entry(schema_id).unwrap().key(),
+            kind,
+            shape: if kind == ResidentValueKind::Snapshot {
+                mech_core::ResidentShape::SCALAR
+            } else {
+                mech_core::ResidentShape { rows, columns }
+            },
+            shape_instance: schemas
+                .get(schema_id)
+                .unwrap()
+                .instantiate_shape(Box::new([]))
+                .unwrap(),
+            activation_fixed_shape: true,
+            resolved_selector: None,
+        };
+        let kernel = bind_kind_conversion(&ResidentKernelBindRequest {
+            contract: &contract,
+            schemas: &schemas,
+            inputs: &[layout(source, source_kind)],
+            output: layout(target, target_kind),
+        })
+        .unwrap();
+        (kernel, schemas, source)
+    }
+
+    #[test]
+    fn snapshot_matrix_conversion_publishes_each_dense_coordinate_and_vector_shape() {
+        for (rows, columns) in [(2, 3), (1, 6), (6, 1), (0, 3)] {
+            let canonical = [0, 1, 9_007_199_254_740_993, u64::MAX, 17, 42];
+            let count = (rows * columns) as usize;
+            let dense_values = (0..columns)
+                .flat_map(|column| {
+                    (0..rows).map(move |row| canonical[(row * columns + column) as usize])
+                })
+                .collect::<Vec<_>>();
+            for target_kind in [ResidentValueKind::F64, ResidentValueKind::String] {
+                let target = if target_kind == ResidentValueKind::F64 {
+                    SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+                } else {
+                    SchemaBody::String
+                };
+                let (kernel, schemas, source) = matrix_kernel(
+                    SchemaBody::UnsignedInteger(IntegerWidth::W64),
+                    target,
+                    ResidentValueKind::Snapshot,
+                    target_kind,
+                    rows,
+                    columns,
+                );
+                let value = ValueDraft {
+                    schema: source,
+                    shape_values: Box::new([]),
+                    data: ValueDataDraft::Matrix(
+                        canonical[..count]
+                            .iter()
+                            .copied()
+                            .map(ValueDataDraft::U64)
+                            .collect(),
+                    ),
+                }
+                .finalize(&SnapshotValidationContext::new(&schemas))
+                .unwrap();
+                let snapshots = [Some(value)];
+                let inputs = [ResidentValueRef::Snapshot(&snapshots)];
+                if target_kind == ResidentValueKind::F64 {
+                    let mut output = vec![0.0; count];
+                    kernel
+                        .execute(&Inputs(&inputs), ResidentValueMut::F64(&mut output))
+                        .unwrap();
+                    assert_eq!(
+                        output,
+                        dense_values
+                            .iter()
+                            .map(|value| *value as f64)
+                            .collect::<Vec<_>>()
+                    );
+                    assert!(
+                        !kernel
+                            .execute(&Inputs(&inputs), ResidentValueMut::F64(&mut output))
+                            .unwrap()
+                    );
+                } else {
+                    let mut output = vec![String::new(); count];
+                    kernel
+                        .execute(&Inputs(&inputs), ResidentValueMut::String(&mut output))
+                        .unwrap();
+                    assert_eq!(
+                        output,
+                        dense_values.iter().map(u64::to_string).collect::<Vec<_>>()
+                    );
+                    assert!(
+                        !kernel
+                            .execute(&Inputs(&inputs), ResidentValueMut::String(&mut output))
+                            .unwrap()
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn dense_matrix_conversion_keeps_dense_coordinates_and_canonical_snapshot_order() {
+        let dense = [0.0, 3.0, 1.0, 4.0, 2.0, 5.0];
+        let inputs = [ResidentValueRef::F64(&dense)];
+        let (kernel, _, _) = matrix_kernel(
+            SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+            SchemaBody::String,
+            ResidentValueKind::F64,
+            ResidentValueKind::String,
+            2,
+            3,
+        );
+        let mut strings = vec![String::new(); 6];
+        kernel
+            .execute(&Inputs(&inputs), ResidentValueMut::String(&mut strings))
+            .unwrap();
+        assert_eq!(strings, ["0", "3", "1", "4", "2", "5"]);
+
+        let (kernel, _, _) = matrix_kernel(
+            SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+            SchemaBody::UnsignedInteger(IntegerWidth::W64),
+            ResidentValueKind::F64,
+            ResidentValueKind::Snapshot,
+            2,
+            3,
+        );
+        let mut snapshots = [None];
+        kernel
+            .execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut snapshots))
+            .unwrap();
+        let mech_core::ValueData::Matrix(matrix) = snapshots[0].as_ref().unwrap().data() else {
+            panic!("expected matrix")
+        };
+        let SequenceView::U64(values) = matrix.elements() else {
+            panic!("expected u64")
+        };
+        assert_eq!(values, &[0, 1, 2, 3, 4, 5]);
+    }
+
+    #[test]
+    fn dense_conversion_layout_errors_preserve_output_and_f64_change_bits() {
+        let mut output = [7, 8, 9];
+        assert_eq!(
+            publish_slice(
+                &mut output,
+                vec![0, 1, 2],
+                Some(mech_core::ResidentShape {
+                    rows: 2,
+                    columns: 3
+                }),
+                PartialEq::eq
+            ),
+            Err(ResidentKernelError::InvalidShape)
+        );
+        assert_eq!(output, [7, 8, 9]);
+        let nan = f64::from_bits(0x7ff8_0000_0000_0001);
+        let mut output = [nan, -0.0];
+        assert!(
+            !publish_slice(&mut output, vec![nan, -0.0], None, |left, right| left
+                .to_bits()
+                == right.to_bits())
+            .unwrap()
+        );
+        assert!(
+            publish_slice(&mut output, vec![nan, 0.0], None, |left, right| left
+                .to_bits()
+                == right.to_bits())
+            .unwrap()
+        );
+    }
 
     #[test]
     fn optional_matrix_preflight_counts_each_element_and_wrapper() {
@@ -1087,6 +1346,10 @@ mod tests {
             let plan = ResidentConversionPlan {
                 source: source.body().clone(),
                 target: target.body().clone(),
+                target_layout: mech_core::ResidentShape {
+                    rows: 1,
+                    columns: length as u32,
+                },
                 source_layout: mech_core::ResidentShape {
                     rows: 1,
                     columns: length as u32,
