@@ -101,11 +101,17 @@ pub(super) fn infer_kind(
     globals: &BTreeMap<String, SyntaxNode>,
     functions: &BTreeMap<String, SourceFunction>,
     catalog: Catalog,
+    bindings: &ports::SourceBindings,
     active: &mut BTreeSet<String>,
 ) -> Result<SequenceKind, String> {
     match node.kind() {
         SyntaxKind::Number | SyntaxKind::StringLiteral => return Ok(literal(node)?.kind()),
         SyntaxKind::Variable => {
+            let variable = mech_syntax::document::VariableSyntax::cast(node.clone())
+                .ok_or("invalid captured variable")?;
+            if bindings.read(&variable)?.is_some() {
+                return Ok(SequenceKind::Text);
+            }
             let name = text(&node)?.trim().to_string();
             let definition = globals
                 .get(&name)
@@ -113,13 +119,21 @@ pub(super) fn infer_kind(
             if !active.insert(name.clone()) {
                 return Err("cyclic captured global".into());
             }
-            let result = infer_kind(definition.clone(), globals, functions, catalog, active);
+            let result = infer_kind(
+                definition.clone(),
+                globals,
+                functions,
+                catalog,
+                bindings,
+                active,
+            );
             active.remove(&name);
             return result;
         }
         SyntaxKind::FunctionCall => {
             let call = FunctionCallSyntax::cast(node).ok_or("capture call")?;
             let name = text(call.function().ok_or("capture callee")?.syntax())?;
+            let name = bindings.resolve_name(&name).to_string();
             if let Some(function) = functions.get(&name) {
                 return Ok(function.output.1);
             }
@@ -139,6 +153,7 @@ pub(super) fn infer_kind(
                     globals,
                     functions,
                     catalog,
+                    bindings,
                     active,
                 )
             };
@@ -165,11 +180,29 @@ pub(super) fn infer_kind(
         SyntaxKind::MultiplicativeExpression | SyntaxKind::AdditiveExpression => {
             let children: Vec<_> = node.children().collect();
             if children.len() >= 3 {
-                let mut kind =
-                    infer_kind(children[0].clone(), globals, functions, catalog, active)?;
+                let mut kind = infer_kind(
+                    children[0].clone(),
+                    globals,
+                    functions,
+                    catalog,
+                    bindings,
+                    active,
+                )?;
                 for pair in children[1..].chunks(2) {
-                    let other = infer_kind(pair[1].clone(), globals, functions, catalog, active)?;
-                    kind = if kind == SequenceKind::Integer && other == SequenceKind::Integer {
+                    let other = infer_kind(
+                        pair[1].clone(),
+                        globals,
+                        functions,
+                        catalog,
+                        bindings,
+                        active,
+                    )?;
+                    kind = if kind == SequenceKind::Text
+                        && other == SequenceKind::Text
+                        && text(&pair[0])?.trim() == "+"
+                    {
+                        SequenceKind::Text
+                    } else if kind == SequenceKind::Integer && other == SequenceKind::Integer {
                         SequenceKind::Integer
                     } else if kind == SequenceKind::Float && other == SequenceKind::Float {
                         SequenceKind::Float
@@ -190,5 +223,12 @@ pub(super) fn infer_kind(
     if children.len() != 1 {
         return Err(format!("unsupported capture syntax {:?}", node.kind()));
     }
-    infer_kind(children[0].clone(), globals, functions, catalog, active)
+    infer_kind(
+        children[0].clone(),
+        globals,
+        functions,
+        catalog,
+        bindings,
+        active,
+    )
 }

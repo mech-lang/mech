@@ -1,5 +1,6 @@
 use super::compiler::Constant;
 use super::counts::Counts;
+use super::host_io::{NativeHostIo, parse_u64};
 use mech_engine::native_sequence::Callable;
 use rayon::prelude::*;
 use std::{
@@ -335,7 +336,9 @@ pub struct Context {
     pool: Option<Arc<rayon::ThreadPool>>,
     profile: bool,
     scratch: Arc<Mutex<Vec<Vec<f64>>>>,
-    arguments: Vec<String>,
+    arguments: Vec<std::ffi::OsString>,
+    legacy_io: bool,
+    host_io: Option<Box<dyn NativeHostIo>>,
     array_grain: usize,
     regexes: std::collections::HashMap<Vec<u8>, regex::bytes::Regex>,
     independent_tasks: bool,
@@ -344,6 +347,29 @@ pub struct Context {
 }
 impl Context {
     pub fn new(constants: &[Constant], input: Option<Vec<u8>>, write_stdout: bool) -> Self {
+        let mut context = Self::pure(constants);
+        context.input = input;
+        context.write_stdout = write_stdout;
+        context.arguments = std::env::args_os().collect();
+        context.legacy_io = true;
+        context
+    }
+
+    /// Construct a context whose only external resources are the host's bound
+    /// ports. No process arguments or streams are read during construction.
+    pub fn activated(
+        constants: &[Constant],
+        host_io: Box<dyn NativeHostIo>,
+    ) -> Result<Self, String> {
+        for request in host_io.requirements() {
+            request.validate()?;
+        }
+        let mut context = Self::pure(constants);
+        context.host_io = Some(host_io);
+        Ok(context)
+    }
+
+    fn pure(constants: &[Constant]) -> Self {
         Self {
             constants: constants.to_vec(),
             values: constants
@@ -358,17 +384,19 @@ impl Context {
                     Constant::Parameter(_, _) | Constant::Capture(_, _) => Value::Unit,
                 })
                 .collect(),
-            input,
+            input: None,
             output: Vec::new(),
             error: None,
-            write_stdout,
+            write_stdout: false,
             partitions: 1,
             compact_counts: false,
             standard_map: false,
             pool: None,
             profile: false,
             scratch: Arc::new(Mutex::new(Vec::new())),
-            arguments: std::env::args().collect(),
+            arguments: Vec::new(),
+            legacy_io: false,
+            host_io: None,
             array_grain: 16,
             regexes: std::collections::HashMap::new(),
             independent_tasks: false,
@@ -445,23 +473,38 @@ impl Context {
         self.finish_execution()
     }
     fn finish_execution(&mut self) -> Result<(), String> {
+        let mut errors = Vec::new();
+        if let Some(error) = self.error.take() {
+            errors.push(error);
+        }
         // Join unused computations as well so process completion includes all
         // requested histogram work, even if the source doesn't read a result.
         for value in &self.values {
             if let Value::Histogram(p) = value {
-                p.resolve()?;
+                if let Err(error) = p.resolve() {
+                    errors.push(error);
+                }
             }
             if let Value::DeferredInteger(p) = value {
-                p.resolve()?;
+                if let Err(error) = p.resolve() {
+                    errors.push(error);
+                }
             }
         }
         if self.write_stdout {
-            std::io::stdout().flush().map_err(|e| e.to_string())?;
+            if let Err(error) = std::io::stdout().flush() {
+                errors.push(error.to_string());
+            }
         }
-        if let Some(error) = self.error.take() {
-            Err(error)
-        } else {
+        if let Some(host) = &mut self.host_io {
+            if let Err(error) = host.finish(errors.is_empty()) {
+                errors.push(error);
+            }
+        }
+        if errors.is_empty() {
             Ok(())
+        } else {
+            Err(errors.join("; "))
         }
     }
     fn text(&self, id: usize) -> Result<Arc<Vec<u8>>, String> {
@@ -510,7 +553,7 @@ impl Context {
         Ok(self)
     }
     pub fn with_arguments(mut self, arguments: Vec<String>) -> Self {
-        self.arguments = arguments;
+        self.arguments = arguments.into_iter().map(Into::into).collect();
         self
     }
     /// Enable independent, immutable library tasks in the existing bounded
@@ -590,6 +633,9 @@ impl Context {
         }
         let consume = op & (1u64 << 32) != 0;
         let op = op & 0xffff_ffff;
+        if !self.legacy_io && matches!(op, 1 | 8 | 9 | 10 | 12 | 32 | 41 | 45 | 52) {
+            return Err("legacy process IO is unavailable in an activated or pure context; use a bound host port".into());
+        }
         if kernel == 0 && matches!(op, 5 | 20..=23 | 35..=39 | 73 | 42..=46) {
             return self.resident_op(op, a, consume);
         }
@@ -886,7 +932,9 @@ impl Context {
                     .get(index)
                     .ok_or("missing command-line argument")?;
                 Value::Integer(
-                    text.parse()
+                    text.to_str()
+                        .ok_or("command-line argument is not valid Unicode")?
+                        .parse()
                         .map_err(|_| "expected unsigned command-line argument")?,
                 )
             }
@@ -1443,8 +1491,55 @@ impl Context {
                 }
                 Value::Unit
             }
+            81 => {
+                let request = self.resource_request(&a[..3], false)?;
+                let host = self
+                    .host_io
+                    .as_mut()
+                    .ok_or("native resource is not activated")?;
+                let value = host.read(&request)?;
+                std::str::from_utf8(&value).map_err(|_| "native text input is not UTF-8")?;
+                Value::Text(Arc::new(value))
+            }
+            82 => Value::Integer(parse_u64(&self.text(a[0])?)?),
+            83 => {
+                let request = self.resource_request(&a[..4], true)?;
+                let value = self.text(a[3])?;
+                self.host_io
+                    .as_mut()
+                    .ok_or("native resource is not activated")?
+                    .send(&request, &value)?;
+                Value::Unit
+            }
             _ => return Err("unknown native collection operation".into()),
         })
+    }
+
+    fn resource_request(
+        &self,
+        arguments: &[usize],
+        send: bool,
+    ) -> Result<mech_engine::native_sequence::NativeResourceRequirement, String> {
+        use mech_engine::native_sequence::{NativeResourceIntent, NativeResourceRequirement};
+        if arguments.len() != if send { 4 } else { 3 } {
+            return Err("invalid native resource operation arity".into());
+        }
+        let field = |id| match self.constants.get(id) {
+            Some(Constant::Text(text)) => Ok(text.clone()),
+            _ => Err("native resource identity must be a source constant".to_string()),
+        };
+        let request = NativeResourceRequirement {
+            base_uri: field(arguments[0])?,
+            context_name: field(arguments[1])?,
+            path: field(arguments[2])?,
+            intent: if send {
+                NativeResourceIntent::Send
+            } else {
+                NativeResourceIntent::Read
+            },
+        };
+        request.validate()?;
+        Ok(request)
     }
 }
 fn encoding_table(alphabet: &[u8], mode: &[u8]) -> Result<[u16; 256], String> {
@@ -1808,7 +1903,7 @@ unsafe extern "C" fn mech_sequence_invoke(state: *mut IterationState, entry: usi
     // same-object native entry compiled for this exact callable constant table.
     let state = unsafe { &mut *state };
     let function = &state.function;
-    let mut scope = Context::new(&function.program.constants, None, false);
+    let mut scope = Context::pure(&function.program.constants);
     scope.pool = state.pool.clone();
     scope.scratch = state.scratch.clone();
     scope.partitions = state.partitions;
@@ -1852,7 +1947,7 @@ unsafe extern "C" fn mech_sequence_record_step(state: *mut RecordState<'_>) -> u
         let read = start.elapsed();
         let bytes = record.body.len();
         let start = std::time::Instant::now();
-        let mut scope = Context::new(&state.function.program.constants, None, false);
+        let mut scope = Context::pure(&state.function.program.constants);
         scope.pool = state.pool.clone();
         scope.partitions = state.partitions;
         for ((_, slot), value) in state.function.captures.iter().zip(state.captures) {

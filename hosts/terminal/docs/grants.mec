@@ -41,3 +41,8 @@ config := {
 -------------------------------------------------------------------------------
 
 The CLI can install default local capabilities for common environment/stdout/stderr use. An explicit run grants list in config should be treated as the configured authority for the project.
+
+Argument reads are excluded from these defaults. Grant cli/args with read and
+specific index paths in config, or select the explicit :cli/args profile for all
+indices. Binding +> @args := cli/args does not grant access. Configured aliases
+use their instance target, for example term/args.

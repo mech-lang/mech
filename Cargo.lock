@@ -2782,6 +2782,7 @@ dependencies = [
  "mech-runtime",
  "mech-stdlib",
  "mech-syntax",
+ "mech-terminal",
  "memchr",
  "pollster",
  "rayon",

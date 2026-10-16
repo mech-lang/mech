@@ -1,5 +1,6 @@
 use std::{
     env::VarError,
+    ffi::OsString,
     io::Write,
     sync::{Arc, Mutex, MutexGuard},
 };
@@ -36,6 +37,14 @@ static CLI_OUTPUT_EFFECT_CONTRACT: std::sync::LazyLock<OperationContractDeclarat
 
 pub trait CliBackend: std::fmt::Debug {
     fn env_var(&self, name: &str) -> MResult<Option<String>>;
+    /// Return the one-based user argument, excluding the executable at index 0.
+    /// Embedders can supply a user-argument snapshot instead of process argv.
+    fn argument(&self, _index: usize) -> MResult<Option<OsString>> {
+        Err(cli_error(
+            "cli://args".to_string(),
+            "command-line arguments are unavailable from this CLI backend",
+        ))
+    }
     fn write_stdout(&mut self, text: &str) -> MResult<()>;
     fn write_stderr(&mut self, text: &str) -> MResult<()>;
 }
@@ -44,6 +53,10 @@ pub trait CliBackend: std::fmt::Debug {
 pub struct StdCliBackend;
 
 impl CliBackend for StdCliBackend {
+    fn argument(&self, index: usize) -> MResult<Option<OsString>> {
+        Ok(std::env::args_os().nth(index))
+    }
+
     fn env_var(&self, name: &str) -> MResult<Option<String>> {
         match std::env::var(name) {
             Ok(value) => Ok(Some(value)),
@@ -101,6 +114,50 @@ impl<B: CliBackend> CliResourceProvider<B> {
     pub fn backend_mut(&mut self) -> MutexGuard<'_, B> {
         self.backend.lock().expect("CLI backend lock poisoned")
     }
+
+    /// Validate and buffer terminal output without delivering it.
+    ///
+    /// The Rust host owns authorization and delivery policy when using this
+    /// helper directly. Mech resource writes use the runtime capability checks
+    /// and deliver the same effect only after their transaction commits.
+    pub fn prepare_output(
+        &self,
+        request: RuntimeResourceWriteCommand,
+    ) -> MResult<Box<dyn RuntimeAfterCommitEffect>>
+    where
+        B: 'static,
+    {
+        self.preflight_write(RuntimeResourceWritePreflightRequest {
+            base_uri: request.base_uri.clone(),
+            path: request.path.clone(),
+            context_name: request.context_name.clone(),
+            operation: request.operation.clone(),
+            intent: request.intent,
+        })?;
+        let suffix = match request.path.as_str() {
+            "text" => "",
+            "line" => "\n",
+            _ => unreachable!("cli stdout/stderr path validated by preflight_write"),
+        };
+        let ValueData::String(value) = request.value.data() else {
+            return Err(cli_error(
+                request.base_uri,
+                "stdout/stderr sends require a scalar string payload",
+            ));
+        };
+        let text = value.to_string() + suffix;
+        let stream = if self.matches_base(&request.base_uri, "stdout") {
+            CliOutputStream::Stdout
+        } else {
+            CliOutputStream::Stderr
+        };
+        Ok(Box::new(CliOutputEffect {
+            backend: self.backend.clone(),
+            stream,
+            text,
+            resource: request.base_uri,
+        }))
+    }
 }
 
 impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B> {
@@ -109,10 +166,16 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
     }
 
     fn base_uris(&self) -> Vec<String> {
-        let mut bases = vec![self.base("env"), self.base("stdout"), self.base("stderr")];
+        let mut bases = vec![
+            self.base("env"),
+            self.base("args"),
+            self.base("stdout"),
+            self.base("stderr"),
+        ];
         if self.instance == "cli" {
             bases.extend([
                 "cli://env".to_string(),
+                "cli://args".to_string(),
                 "cli://stdout".to_string(),
                 "cli://stderr".to_string(),
             ]);
@@ -126,6 +189,7 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
 
     fn observation_requires_input_driver(&self, request: &RuntimeResourceReadRequest) -> bool {
         !self.matches_base(&request.base_uri, "env")
+            && !self.matches_base(&request.base_uri, "args")
     }
 
     fn semantic_write_contract(
@@ -142,6 +206,7 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
 
         vec![
             vec![self.base("env"), "cli://env".to_string()],
+            vec![self.base("args"), "cli://args".to_string()],
             vec![self.base("stdout"), "cli://stdout".to_string()],
             vec![self.base("stderr"), "cli://stderr".to_string()],
         ]
@@ -165,6 +230,26 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
                     )
                 })?;
             RuntimeHostInputValue::String(value).into_value()
+        } else if self.matches_base(&request.base_uri, "args") {
+            let index = argument_index(&request.path)?;
+            let argument = self
+                .backend
+                .lock()
+                .map_err(|_| cli_error(request.base_uri.clone(), "CLI backend lock poisoned"))?
+                .argument(index)?
+                .ok_or_else(|| {
+                    cli_error(
+                        request.base_uri.clone(),
+                        format!("argument {index} is not present"),
+                    )
+                })?;
+            let value = argument.into_string().map_err(|_| {
+                cli_error(
+                    request.base_uri,
+                    format!("argument {index} is not valid Unicode"),
+                )
+            })?;
+            RuntimeHostInputValue::String(value).into_value()
         } else if self.matches_base(&request.base_uri, "stdout")
             || self.matches_base(&request.base_uri, "stderr")
         {
@@ -182,6 +267,10 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
             validate_env_key(&request.path)?;
             return RuntimeHostInputValue::String(String::new()).into_value();
         }
+        if self.matches_base(&request.base_uri, "args") {
+            argument_index(&request.path)?;
+            return RuntimeHostInputValue::String(String::new()).into_value();
+        }
         Err(MechError::new(
             RuntimeResourceReadNotPlannable {
                 scheme: self.scheme().to_string(),
@@ -193,10 +282,12 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
     }
 
     fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
-        if self.matches_base(&request.base_uri, "env") {
+        if self.matches_base(&request.base_uri, "env")
+            || self.matches_base(&request.base_uri, "args")
+        {
             Err(cli_error(
                 request.base_uri,
-                "cli env is read-only and does not support writes or sends",
+                "cli env/args are read-only and do not support writes or sends",
             ))
         } else if self.matches_base(&request.base_uri, "stdout")
             || self.matches_base(&request.base_uri, "stderr")
@@ -223,39 +314,15 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
         &self,
         request: RuntimeResourceWriteRequest,
     ) -> MResult<PreparedRuntimeEffect> {
-        self.preflight_write(RuntimeResourceWritePreflightRequest {
-            base_uri: request.base_uri.clone(),
-            path: request.path.clone(),
-            context_name: request.context_name.clone(),
-            operation: request.operation.clone(),
+        self.prepare_output(RuntimeResourceWriteCommand {
+            base_uri: request.base_uri,
+            path: request.path,
+            context_name: request.context_name,
+            operation: request.operation,
+            value: request.value,
             intent: request.intent,
-        })?;
-
-        let suffix = match request.path.as_str() {
-            "text" => "",
-            "line" => "\n",
-            _ => unreachable!("cli stdout/stderr path validated by preflight_write"),
-        };
-        let ValueData::String(value) = request.value.data() else {
-            return Err(cli_error(
-                request.base_uri,
-                "stdout/stderr sends require a scalar string payload",
-            ));
-        };
-        let text = value.to_string() + suffix;
-        let stream = if self.matches_base(&request.base_uri, "stdout") {
-            CliOutputStream::Stdout
-        } else {
-            CliOutputStream::Stderr
-        };
-        Ok(PreparedRuntimeEffect::AfterCommit(Box::new(
-            CliOutputEffect {
-                backend: self.backend.clone(),
-                stream,
-                text,
-                resource: request.base_uri,
-            },
-        )))
+        })
+        .map(PreparedRuntimeEffect::AfterCommit)
     }
 
     fn plan_write(&self, request: RuntimeResourceWriteCommand) -> MResult<()> {
@@ -318,6 +385,21 @@ impl<B: CliBackend> RuntimeAfterCommitEffect for CliOutputEffect<B> {
             CliOutputStream::Stderr => backend.write_stderr(&self.text),
         }
     }
+}
+
+fn argument_index(path: &str) -> MResult<usize> {
+    if path.is_empty() || path.starts_with('0') || !path.bytes().all(|b| b.is_ascii_digit()) {
+        return Err(cli_error(
+            "cli://args".to_string(),
+            "args path must be a positive canonical decimal argument index (1, 2, ...)",
+        ));
+    }
+    path.parse().map_err(|_| {
+        cli_error(
+            "cli://args".to_string(),
+            "argument index exceeds the platform index range",
+        )
+    })
 }
 
 fn validate_env_key(key: &str) -> MResult<()> {

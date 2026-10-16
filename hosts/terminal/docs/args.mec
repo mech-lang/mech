@@ -1,0 +1,55 @@
+CLI Arguments
+===============================================================================
+
+The CLI argument context exposes raw Unicode argument text as read-only resources.
+
+```mech
++> @args := cli/args
+first := @args/1
+```
+
+1. Paths and values
+-------------------------------------------------------------------------------
+
+Paths are one-based positive canonical decimal indices: 1, 2, 3, and so on.
+Index 1 selects the first argument after the executable. Zero, leading zeroes,
+signs, spaces, fractions, extra path segments and overflowing indices are rejected.
+Missing arguments and arguments that are not valid Unicode produce errors.
+An empty argument is valid and returns an empty string. No numeric conversion or
+lossy Unicode conversion is performed.
+
+The standard backend reads process argv, excluding the executable at index zero.
+It does not remove launcher flags or source filenames. A launcher that parses its
+own options must inject only its user-argument snapshot through CliBackend::argument.
+The Mech interpreter CLI and generated hosted launchers do not yet provide this
+forwarding boundary; their options are not an application argument interface.
+
+2. Planning and capabilities
+-------------------------------------------------------------------------------
+
+Planning validates the index and supplies a string placeholder without reading
+argv. The runtime captures the actual read through the same observation and
+capability system as cli/env. Args do not require an input driver. Writes and
+sends are rejected.
+
+Importing the context grants no authority, and the legacy default CLI profiles
+do not grant args reads. Grant specific indices in configuration:
+
+```mech
+config := {
+  run: {
+    grants: [{ target: "cli/args" operations: ["read"] paths: ["1"] }]
+  }
+}
+```
+
+The explicit :cli/args capability profile grants read access to all argument
+indices. Configured CLI aliases use their instance name, such as term/args.
+
+3. Embedding
+-------------------------------------------------------------------------------
+
+Custom CLI backends implement argument(index) using a user-argument snapshot;
+the snapshot excludes the executable and launcher policy flags. Existing backends
+can omit this optional method, in which case reads report arguments unavailable.
+No argument contents need to be read during compilation or planning.
