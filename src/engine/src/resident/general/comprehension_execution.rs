@@ -62,6 +62,124 @@ fn collection_len(value: ResidentValueRef<'_>) -> Option<usize> {
     }
 }
 
+/// Exact scalar String generator sources have the same grapheme semantics as
+/// String selection. A String matrix remains a collection of whole Strings.
+fn string_generator_text<'a>(
+    value: ResidentValueRef<'a>,
+    source_schema: SchemaId,
+    schemas: &SchemaTable,
+) -> Result<&'a str, ResidentKernelError> {
+    let expected = schemas
+        .entry(source_schema)
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    if expected.schema().body() != &SchemaBody::String {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    match value {
+        ResidentValueRef::String([text]) => Ok(text),
+        ResidentValueRef::Snapshot([Some(value)]) if value.schema_key() == expected.key() => {
+            match value.data() {
+                ValueData::String(text) => Ok(text),
+                _ => Err(ResidentKernelError::InvalidInput),
+            }
+        }
+        _ => Err(ResidentKernelError::InvalidInput),
+    }
+}
+
+pub(in crate::resident::general) fn string_grapheme_item(
+    text: &str,
+) -> Result<PatternItem, ResidentKernelError> {
+    let mut owned = String::new();
+    owned
+        .try_reserve_exact(text.len())
+        .map_err(|_| ResidentKernelError::InvalidShape)?;
+    owned.push_str(text);
+    Ok(PatternItem::new(ValueDataDraft::String(owned)))
+}
+
+fn prepare_owned_string_generator(
+    text: &str,
+    live_bytes: u64,
+    live_nodes: u64,
+    meter: &mut ResidentBudgetMeter,
+) -> Result<(String, u64), ResidentKernelError> {
+    // One forward cursor is retained for this lexical invocation. Admit its
+    // full source copy and scan before allocation or segmentation. The source
+    // cannot be borrowed from ResidentInstance across recursive body execution.
+    let overhead = budget::checked_u64(core::mem::size_of::<String>())?
+        .checked_add(budget::checked_u64(core::mem::size_of::<
+            grapheme::graphemes::Iter<'static>,
+        >())?)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let payload = budget::checked_u64(text.len())?;
+    meter.charge_compute_work(
+        payload
+            .checked_mul(4)
+            .and_then(|work| work.checked_add(1))
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    )?;
+    meter.charge_cloned_bytes(payload)?;
+    let admit = |bytes: u64, meter: ResidentBudgetMeter| -> Result<(), ResidentKernelError> {
+        PreparedKernel::new((), budget::resident_cost! {
+            temporary_bytes: live_bytes.checked_add(bytes).ok_or(ResidentKernelError::InvalidShape)?,
+            retained_nodes: live_nodes.checked_add(1).ok_or(ResidentKernelError::InvalidShape)?,
+            cloned_bytes: meter.estimate().cloned_bytes(),
+            ..meter.estimate()
+        }).admit()?.into_plan();
+        Ok(())
+    };
+    let prospective = payload
+        .checked_add(overhead)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    admit(prospective, *meter)?;
+    let mut owned = String::new();
+    owned
+        .try_reserve_exact(text.len())
+        .map_err(|_| ResidentKernelError::InvalidShape)?;
+    let actual = budget::checked_u64(owned.capacity())?
+        .checked_add(overhead)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    if actual > prospective {
+        admit(actual, *meter)?;
+    }
+    owned.push_str(text);
+    meter.charge_retained_nodes(1)?;
+    Ok((owned, actual))
+}
+
+fn prepare_string_generator_item(
+    text: &str,
+    retained_count: usize,
+    retained: ValueFootprint,
+    shape_parameter_count: usize,
+    live_context_bytes: u64,
+    meter: &mut ResidentBudgetMeter,
+) -> Result<(PatternItem, ValueFootprint), ResidentKernelError> {
+    let footprint = scalar_footprint(text.len())?;
+    let metadata = budget::checked_u64(core::mem::size_of::<SchemaBody>())?;
+    let copies = footprint
+        .retained_bytes
+        .checked_add(metadata)
+        .and_then(|bytes| bytes.checked_mul(4))
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    // Source and previously prepared items remain in cumulative clone traffic.
+    // Check this before the local helper's independent prospective estimate.
+    meter.charge_compute_work(copies)?;
+    meter.charge_cloned_bytes(copies)?;
+    admit_item_clones(
+        footprint,
+        metadata,
+        4,
+        retained_count,
+        retained,
+        shape_parameter_count,
+        live_context_bytes,
+        *meter,
+    )?;
+    Ok((string_grapheme_item(text)?, footprint))
+}
+
 fn allocation_capacity_bytes<T>(capacity: usize) -> Result<u64, ResidentKernelError> {
     budget::checked_u64(capacity)?
         .checked_mul(core::mem::size_of::<T>() as u64)
@@ -2728,6 +2846,7 @@ pub(in crate::resident::general) fn generator_element(
         .map_err(|_| ResidentKernelError::InvalidShape)?;
     let actual = match closed {
         SchemaBody::Matrix { element, .. } | SchemaBody::Set { element, .. } => *element,
+        SchemaBody::String => SchemaBody::String,
         _ => return Err(ResidentKernelError::InvalidInput),
     };
     let (_, shape_values) =
@@ -3590,7 +3709,9 @@ fn admit_set_draft(
     Ok(())
 }
 
-fn scalar_footprint(bytes: usize) -> Result<ValueFootprint, ResidentKernelError> {
+pub(in crate::resident::general) fn scalar_footprint(
+    bytes: usize,
+) -> Result<ValueFootprint, ResidentKernelError> {
     Ok(ValueFootprint {
         encoded_bytes: budget::checked_u64(bytes)?.saturating_add(16),
         retained_bytes: budget::checked_u64(bytes)?,
@@ -6059,7 +6180,9 @@ impl ReactiveInstance {
         meter: &mut ResidentBudgetMeter,
         schemas: &Arc<mech_core::SchemaTable>,
         projections: &StructuralProjectionTable,
-        schema_arena_bytes: u64,
+        // Shared schema arena plus owned String cursor payloads retained by
+        // all enclosing lexical generators. Child kernels inherit this demand.
+        live_context_bytes: u64,
         captured_inputs: &HashMap<ResidentReadLocation, (usize, ValueFootprint)>,
         captured_total: ValueFootprint,
         seen_captures: &mut [u64],
@@ -6120,7 +6243,7 @@ impl ReactiveInstance {
                         values.capacity(),
                         *footprint,
                         shape_parameter_count,
-                        schema_arena_bytes,
+                        live_context_bytes,
                         live_locals,
                         *meter,
                     )
@@ -6193,15 +6316,62 @@ impl ReactiveInstance {
                     let source_value = self
                         .read_location(*source, working)
                         .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
-                    let count = collection_len(source_value)
-                        .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
-                    let live_shape_values = generator_shape_values(
-                        source_value,
-                        *source_schema,
-                        activation_shape_values,
-                        schemas,
-                    )
-                    .map_err(fail)?;
+                    let is_string = schemas
+                        .get(*source_schema)
+                        .is_some_and(|schema| schema.body() == &SchemaBody::String);
+                    let owned_text = if is_string {
+                        let text = string_generator_text(source_value, *source_schema, schemas)
+                            .map_err(fail)?;
+                        let live_locals = self
+                            .comprehension_live_local_footprint(
+                                &control.locals,
+                                None,
+                                schemas,
+                                meter,
+                            )
+                            .map_err(fail)?;
+                        let parameters = schemas
+                            .get(control.output_schema)
+                            .ok_or_else(|| fail(ResidentKernelError::InvalidOutput))?
+                            .dimension_parameters()
+                            .len();
+                        let (live_bytes, live_nodes) = comprehension_nested_live_demand(
+                            values.len(),
+                            values.capacity(),
+                            *footprint,
+                            parameters,
+                            live_context_bytes,
+                            live_locals,
+                            *meter,
+                        )
+                        .map_err(fail)?;
+                        Some(
+                            prepare_owned_string_generator(text, live_bytes, live_nodes, meter)
+                                .map_err(fail)?,
+                        )
+                    } else {
+                        None
+                    };
+                    let live_context_bytes = live_context_bytes
+                        .checked_add(owned_text.as_ref().map_or(0, |(_, bytes)| *bytes))
+                        .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+                    let count = if is_string {
+                        0
+                    } else {
+                        collection_len(source_value)
+                            .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?
+                    };
+                    let live_shape_values = if is_string {
+                        Box::new([])
+                    } else {
+                        generator_shape_values(
+                            source_value,
+                            *source_schema,
+                            activation_shape_values,
+                            schemas,
+                        )
+                        .map_err(fail)?
+                    };
                     let element = if let Some(element_schema) = element_schema {
                         let (body, shape_values) = generator_element(
                             *source_schema,
@@ -6220,12 +6390,56 @@ impl ReactiveInstance {
                         .ok_or_else(|| fail(ResidentKernelError::InvalidOutput))?
                         .dimension_parameters()
                         .len();
-                    for ordinal in 0..count {
+                    let mut graphemes = owned_text
+                        .as_ref()
+                        .map(|(text, _)| grapheme::Graphemes::from_usvs(text).iter());
+                    let mut ordinal = 0usize;
+                    loop {
+                        let grapheme = if let Some(cursor) = &mut graphemes {
+                            let Some(item) = cursor.next() else { break };
+                            Some(item.as_str())
+                        } else {
+                            if ordinal >= count {
+                                break;
+                            }
+                            None
+                        };
                         budget::charge_planning_step()?;
                         meter.charge_compute_work(1).map_err(fail)?;
                         let mut iteration_end = usize::try_from(*binding_end)
                             .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
-                        let matched = if let Some((element_schema, element, element_shape_values)) =
+                        let matched = if let Some(text) = grapheme {
+                            if matches!(pattern, crate::CollectionPattern::Wildcard) {
+                                true
+                            } else {
+                                let (item, item_footprint) = prepare_string_generator_item(
+                                    text,
+                                    values.len(),
+                                    *footprint,
+                                    retained_shape_parameter_count,
+                                    live_context_bytes,
+                                    meter,
+                                )
+                                .map_err(fail)?;
+                                self.match_collection_pattern_item(
+                                    control.artifact_node,
+                                    &control.locals,
+                                    pattern,
+                                    &item,
+                                    &[],
+                                    item_footprint,
+                                    0,
+                                    values.len(),
+                                    *footprint,
+                                    retained_shape_parameter_count,
+                                    schemas,
+                                    projections,
+                                    live_context_bytes,
+                                    working,
+                                    meter,
+                                )?
+                            }
+                        } else if let Some((element_schema, element, element_shape_values)) =
                             &element
                         {
                             self.match_collection_pattern(
@@ -6245,7 +6459,7 @@ impl ReactiveInstance {
                                 retained_shape_parameter_count,
                                 schemas,
                                 projections,
-                                schema_arena_bytes,
+                                live_context_bytes,
                                 working,
                                 meter,
                             )?
@@ -6265,7 +6479,7 @@ impl ReactiveInstance {
                                 meter,
                                 schemas,
                                 projections,
-                                schema_arena_bytes,
+                                live_context_bytes,
                                 captured_inputs,
                                 captured_total,
                                 seen_captures,
@@ -6290,6 +6504,14 @@ impl ReactiveInstance {
                         for region in suffix {
                             self.workspace.scratch.discard_payload_write(*region);
                         }
+                        ordinal = ordinal
+                            .checked_add(1)
+                            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+                    }
+                    drop(graphemes);
+                    drop(owned_text);
+                    if is_string {
+                        meter.release_retained_nodes(1).map_err(fail)?;
                     }
                     return Ok(());
                 }
@@ -6344,7 +6566,7 @@ impl ReactiveInstance {
                     current_capacity,
                     next_footprint,
                     retained_shape_parameter_count,
-                    schema_arena_bytes,
+                    live_context_bytes,
                     live_locals,
                     *meter,
                 )
@@ -6354,7 +6576,7 @@ impl ReactiveInstance {
                 current_capacity,
                 next_footprint,
                 retained_shape_parameter_count,
-                schema_arena_bytes,
+                live_context_bytes,
                 live_locals,
                 *meter,
             ),
@@ -6384,7 +6606,7 @@ impl ReactiveInstance {
                     values.capacity(),
                     next_footprint,
                     retained_shape_parameter_count,
-                    schema_arena_bytes,
+                    live_context_bytes,
                     live_locals,
                     *meter,
                 )
@@ -6394,7 +6616,7 @@ impl ReactiveInstance {
                 values.capacity(),
                 next_footprint,
                 retained_shape_parameter_count,
-                schema_arena_bytes,
+                live_context_bytes,
                 live_locals,
                 *meter,
             ),
@@ -6416,6 +6638,53 @@ mod tests {
         DimensionParameterDeclaration, DimensionParameterId, DimensionParameterOrigin, FloatWidth,
         IntegerWidth, NominalKey, NominalKind, ResidentShape, SchemaDraft, SchemaTableBuilder,
     };
+
+    #[test]
+    fn string_generator_source_copies_accumulate_clone_demand_and_release_live_nodes() {
+        let mut plan = budget::detached_turn_plan(Default::default()).unwrap();
+        plan.budget_limits.max_cloned_bytes = Some(5);
+        budget::with_resident_turn_plan(plan, || {
+            let mut meter = ResidentBudgetMeter::default();
+            for expected in [2, 4] {
+                let (source, _) = prepare_owned_string_generator("ab", 0, 0, &mut meter).unwrap();
+                assert_eq!(source, "ab");
+                assert_eq!(meter.estimate().cloned_bytes(), expected);
+                assert_eq!(meter.estimate().retained_nodes(), 1);
+                drop(source);
+                meter.release_retained_nodes(1).unwrap();
+                assert_eq!(meter.estimate().retained_nodes(), 0);
+                assert_eq!(meter.estimate().cloned_bytes(), expected);
+            }
+            assert!(prepare_owned_string_generator("ab", 0, 0, &mut meter).is_err());
+            assert_eq!(meter.estimate().retained_nodes(), 0);
+        });
+    }
+
+    #[test]
+    fn string_generator_item_checks_combined_source_and_item_clone_budget_before_copy() {
+        let item_copy_bytes = 4 * (1 + core::mem::size_of::<SchemaBody>() as u64);
+        let mut plan = budget::detached_turn_plan(Default::default()).unwrap();
+        // Either copy fits by itself. Their combined traffic does not.
+        plan.budget_limits.max_cloned_bytes = Some(item_copy_bytes + 1);
+        budget::with_resident_turn_plan(plan, || {
+            let mut meter = ResidentBudgetMeter::default();
+            let (source, context) = prepare_owned_string_generator("ab", 0, 0, &mut meter).unwrap();
+            let mut cursor = grapheme::Graphemes::from_usvs(&source).iter();
+            let first = cursor.next().unwrap().as_str();
+            assert!(
+                prepare_string_generator_item(
+                    first,
+                    0,
+                    ValueFootprint::zero(),
+                    0,
+                    context,
+                    &mut meter
+                )
+                .is_err()
+            );
+            assert_eq!(source, "ab");
+        });
+    }
 
     fn atom(name: &str) -> SchemaBody {
         SchemaBody::Atom(NominalKey::from_path(

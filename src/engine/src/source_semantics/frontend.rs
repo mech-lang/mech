@@ -4324,6 +4324,7 @@ impl SemanticBuilder {
                 }
             }
             FactorValueSyntax::MatrixComprehension(value) => self.matrix_comprehension(&value)?,
+            FactorValueSyntax::SetComprehension(value) => self.set_comprehension(&value)?,
             FactorValueSyntax::Slice(value) => self.slice(&value)?,
             FactorValueSyntax::Variable(value) => self.variable(&value)?,
         })

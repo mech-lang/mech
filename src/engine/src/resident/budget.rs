@@ -761,7 +761,9 @@ impl KernelCostEstimate {
 }
 
 #[cfg(test)]
-fn detached_turn_plan(demand: ResourceDemand) -> Result<TurnMemoryPlan, ResidentKernelError> {
+pub(crate) fn detached_turn_plan(
+    demand: ResourceDemand,
+) -> Result<TurnMemoryPlan, ResidentKernelError> {
     let target = mech_core::TargetMemoryProfile::current_resident_cpu()
         .map_err(|_| ResidentKernelError::InvalidShape)?;
     let node = mech_core::NodeId::new(0);
@@ -1274,6 +1276,21 @@ impl ResidentBudgetMeter {
             );
             Ok(())
         })
+    }
+
+    /// Releases a lexical live payload after its owner is dropped. Work and
+    /// clone traffic remain cumulative; only simultaneous retained nodes fall.
+    pub(crate) fn release_retained_nodes(
+        &mut self,
+        amount: u64,
+    ) -> Result<(), ResidentKernelError> {
+        self.accumulated.demand.retained_nodes = self
+            .accumulated
+            .demand
+            .retained_nodes
+            .checked_sub(amount)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        Ok(())
     }
 
     pub(crate) fn charge_selector_bytes(&mut self, amount: u64) -> Result<(), ResidentKernelError> {

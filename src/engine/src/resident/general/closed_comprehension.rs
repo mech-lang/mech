@@ -433,9 +433,25 @@ fn enumerate(
                 let Some(source) = value(artifact, *source, inputs, locals, analysis) else {
                     return Ok(false);
                 };
+                let text = match source.data() {
+                    mech_core::ValueData::String(text) => Some(text.as_ref()),
+                    _ => None,
+                };
+                if let Some(text) = text {
+                    let Some(work) = (text.len() as u64)
+                        .checked_mul(4)
+                        .and_then(|n| n.checked_add(1))
+                    else {
+                        return Ok(false);
+                    };
+                    if charge(analysis, 0, work).is_none() {
+                        return Ok(false);
+                    }
+                }
                 let count = match source.data() {
                     mech_core::ValueData::Matrix(v) => v.elements().len(),
                     mech_core::ValueData::Set(v) => v.elements().len(),
+                    mech_core::ValueData::String(_) => 0,
                     _ => return Ok(false),
                 };
                 let Some(metrics) = crate::pattern_metrics(pattern) else {
@@ -444,8 +460,13 @@ fn enumerate(
                 if metrics.depth >= 64 {
                     return Ok(false);
                 }
-                let Some(element_schema) = projections.matrix_element(source.schema()) else {
-                    return Ok(false);
+                let element_schema = if text.is_some() {
+                    source.schema()
+                } else {
+                    let Some(schema) = projections.matrix_element(source.schema()) else {
+                        return Ok(false);
+                    };
+                    schema
                 };
                 let Ok((element, shape_values)) = collection::generator_element(
                     source.schema(),
@@ -456,33 +477,54 @@ fn enumerate(
                     return Ok(false);
                 };
                 let retained_locals = locals.len();
-                for ordinal in 0..count {
+                let mut graphemes = text.map(|text| grapheme::Graphemes::from_usvs(text).iter());
+                let mut next_ordinal = 0usize;
+                loop {
+                    let grapheme = if let Some(cursor) = &mut graphemes {
+                        let Some(item) = cursor.next() else { break };
+                        Some(item.as_str())
+                    } else {
+                        if next_ordinal >= count {
+                            break;
+                        }
+                        None
+                    };
+                    let ordinal = next_ordinal;
+                    let Some(next) = next_ordinal.checked_add(1) else {
+                        return Ok(false);
+                    };
+                    next_ordinal = next;
                     if charge(analysis, 0, metrics.nodes as u64 + 1).is_none() {
                         return Ok(false);
                     }
                     if !matches!(pattern, Pattern::Wildcard) {
                         // Every possible projection/binding clone is covered
                         // before the shared materializer copies the selected item.
-                        let selected = match source.data() {
-                            mech_core::ValueData::Matrix(matrix) => {
-                                canonical_sequence_element_retained_footprint(
-                                    &element,
-                                    matrix.elements(),
-                                    ordinal,
-                                )
+                        let selected = if let Some(text) = grapheme {
+                            collection::scalar_footprint(text.len()).ok()
+                        } else {
+                            match source.data() {
+                                mech_core::ValueData::Matrix(matrix) => {
+                                    canonical_sequence_element_retained_footprint(
+                                        &element,
+                                        matrix.elements(),
+                                        ordinal,
+                                    )
+                                }
+                                mech_core::ValueData::Set(set) => {
+                                    let Some(item) = set.elements().get(ordinal) else {
+                                        return Ok(false);
+                                    };
+                                    mech_core::snapshot::canonical_data_retained_footprint(
+                                        &element,
+                                        item.data(),
+                                    )
+                                }
+                                _ => unreachable!(),
                             }
-                            mech_core::ValueData::Set(set) => {
-                                let Some(item) = set.elements().get(ordinal) else {
-                                    return Ok(false);
-                                };
-                                mech_core::snapshot::canonical_data_retained_footprint(
-                                    &element,
-                                    item.data(),
-                                )
-                            }
-                            _ => unreachable!(),
+                            .ok()
                         };
-                        let Ok(selected) = selected else {
+                        let Some(selected) = selected else {
                             return Ok(false);
                         };
                         let copies = metrics.nodes as u64 * 4 + 4;
@@ -494,9 +536,20 @@ fn enumerate(
                         else {
                             return Ok(false);
                         };
+                        let Some(copy_work) =
+                            selected.node_count.checked_mul(copies).and_then(|work| {
+                                if grapheme.is_some() {
+                                    work.checked_add(selected.retained_bytes.checked_mul(copies)?)
+                                } else {
+                                    Some(work)
+                                }
+                            })
+                        else {
+                            return Ok(false);
+                        };
                         if !analysis.construction.charge_compute_with_comparison(
                             bytes,
-                            selected.node_count.saturating_mul(copies),
+                            copy_work,
                             selected.node_count.saturating_mul(copies),
                         ) {
                             return Ok(false);
@@ -505,7 +558,6 @@ fn enumerate(
                             mech_core::RESIDENT_MAX_COMPARISON_WORK
                                 .saturating_sub(analysis.construction.comparison_work.get()),
                         );
-                        let refs = [Some(source.as_ref().clone())];
                         analysis.collections.pattern_materializations.set(
                             analysis
                                 .collections
@@ -513,25 +565,34 @@ fn enumerate(
                                 .get()
                                 .saturating_add(1),
                         );
-                        let Some(item) = collection::collection_item(
-                            ResidentValueRef::Snapshot(&refs),
-                            ResidentRegion {
-                                kind: ResidentValueKind::Snapshot,
-                                offset: 0,
-                                len: 1,
-                                shape: ResidentShape {
-                                    rows: 1,
-                                    columns: 1,
+                        let item = if let Some(text) = grapheme {
+                            let Ok(item) = collection::string_grapheme_item(text) else {
+                                return Ok(false);
+                            };
+                            item
+                        } else {
+                            let refs = [Some(source.as_ref().clone())];
+                            let Some(item) = collection::collection_item(
+                                ResidentValueRef::Snapshot(&refs),
+                                ResidentRegion {
+                                    kind: ResidentValueKind::Snapshot,
+                                    offset: 0,
+                                    len: 1,
+                                    shape: ResidentShape {
+                                        rows: 1,
+                                        columns: 1,
+                                    },
                                 },
-                            },
-                            element_schema,
-                            &element,
-                            &shape_values,
-                            ordinal,
-                            &SnapshotValidationContext::with_shared_schemas(schemas)
-                                .with_canonicalization_budget(&budget),
-                        ) else {
-                            return Ok(false);
+                                element_schema,
+                                &element,
+                                &shape_values,
+                                ordinal,
+                                &SnapshotValidationContext::with_shared_schemas(schemas)
+                                    .with_canonicalization_budget(&budget),
+                            ) else {
+                                return Ok(false);
+                            };
+                            item
                         };
                         let Some(matched) = match_pattern(
                             artifact,

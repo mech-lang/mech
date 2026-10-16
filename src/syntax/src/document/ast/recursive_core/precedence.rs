@@ -9,8 +9,8 @@ use crate::document::{
 
 use super::{
     ExpressionBodySyntax, FormulaSyntax, FunctionCallSyntax, LiteralSyntax,
-    MatrixComprehensionSyntax, PatternSyntax, SliceSyntax, StructureSyntax, VariableSyntax, child,
-    children, direct_token, selected_child,
+    MatrixComprehensionSyntax, PatternSyntax, SetComprehensionSyntax, SliceSyntax, StructureSyntax,
+    VariableSyntax, child, children, direct_token, selected_child,
 };
 
 recursive_ast_node!(FactorSyntax, Factor);
@@ -36,6 +36,7 @@ pub enum FactorValueSyntax {
     Literal(LiteralSyntax),
     Call(FunctionCallSyntax),
     MatrixComprehension(MatrixComprehensionSyntax),
+    SetComprehension(SetComprehensionSyntax),
     Slice(SliceSyntax),
     Variable(VariableSyntax),
 }
@@ -51,6 +52,7 @@ impl AstNode for FactorValueSyntax {
                 | SyntaxKind::Literal
                 | SyntaxKind::FunctionCall
                 | SyntaxKind::MatrixComprehension
+                | SyntaxKind::SetComprehension
                 | SyntaxKind::Slice
                 | SyntaxKind::Variable
         )
@@ -69,6 +71,9 @@ impl AstNode for FactorValueSyntax {
             SyntaxKind::MatrixComprehension => {
                 MatrixComprehensionSyntax::cast(syntax).map(Self::MatrixComprehension)
             }
+            SyntaxKind::SetComprehension => {
+                SetComprehensionSyntax::cast(syntax).map(Self::SetComprehension)
+            }
             SyntaxKind::Slice => SliceSyntax::cast(syntax).map(Self::Slice),
             SyntaxKind::Variable => VariableSyntax::cast(syntax).map(Self::Variable),
             _ => None,
@@ -84,6 +89,7 @@ impl AstNode for FactorValueSyntax {
             Self::Literal(value) => value.syntax(),
             Self::Call(value) => value.syntax(),
             Self::MatrixComprehension(value) => value.syntax(),
+            Self::SetComprehension(value) => value.syntax(),
             Self::Slice(value) => value.syntax(),
             Self::Variable(value) => value.syntax(),
         }

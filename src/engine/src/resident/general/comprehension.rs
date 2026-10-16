@@ -386,6 +386,7 @@ fn generator_element_schema(
 ) -> Option<Option<SchemaId>> {
     let element = match source.body() {
         SchemaBody::Matrix { element, .. } | SchemaBody::Set { element, .. } => element.as_ref(),
+        SchemaBody::String => source.body(),
         _ => return None,
     };
     if matches!(pattern, crate::CollectionPattern::Wildcard) {
@@ -566,6 +567,11 @@ pub(super) fn bind(
     ResidentActivationError,
 > {
     let captures = node_inputs(artifact, owner)?;
+    let capture_reads = captures
+        .iter()
+        .copied()
+        .map(|source| resolve_read(layout, source))
+        .collect::<Result<Vec<_>, _>>()?;
     let output_slot = node_output_slot(artifact, owner)?;
     bind_inner(
         artifact,
@@ -573,6 +579,7 @@ pub(super) fn bind(
         owner,
         control,
         &captures,
+        &capture_reads,
         output_slot,
         layout,
         steps,
@@ -602,6 +609,7 @@ pub(super) fn bind_inner(
     owner: NodeId,
     control: &crate::ComprehensionDeclaration,
     captures: &[ArtifactSource],
+    capture_reads: &[ResidentReadLocation],
     output_slot: CellSlotId,
     layout: &LayoutBuild,
     steps: &mut Vec<ActivatedTurnStep>,
@@ -619,6 +627,9 @@ pub(super) fn bind_inner(
     ResidentActivationError,
 > {
     let unsupported = || ResidentActivationError::UnsupportedControlLayout { node: owner };
+    if captures.len() != capture_reads.len() {
+        return Err(unsupported());
+    }
     let output = slot_port_layout(&layout.slots[output_slot.get() as usize]);
     if output.kind != ResidentValueKind::Snapshot
         || !artifact
@@ -647,6 +658,16 @@ pub(super) fn bind_inner(
         crate::ComprehensionValue::Local(local) => {
             ArtifactSource::Slot(layout.control_locals[&(owner, control.id.0, local)].0)
         }
+    };
+    // Semantic ArtifactSources retain schema and memory-plan authority, but
+    // execution reads may be lexical snapshots of those same source slots.
+    // Preserve that distinction through every nested collection boundary.
+    let read = |value: crate::ComprehensionValue| match value {
+        crate::ComprehensionValue::Input(ordinal) => capture_reads
+            .get(ordinal as usize)
+            .copied()
+            .ok_or_else(unsupported),
+        _ => resolve_read(layout, source(value)),
     };
     let port = |source: ArtifactSource| -> Result<ResidentPortLayout, ResidentActivationError> {
         match source {
@@ -713,13 +734,13 @@ pub(super) fn bind_inner(
                         let source = source_for_value(value, captures, owner, control.id.0, layout);
                         let peer = port(source)?;
                         Ok(ActivatedPatternValue {
-                            location: resolve_read(layout, source)?,
+                            location: read(value)?,
                             schema: peer.schema_id,
                         })
                     },
                 )?;
                 instructions.push(ActivatedCollectionStep::Generator {
-                    source: resolve_read(layout, source)?,
+                    source: read(*value)?,
                     source_schema: input.schema_id,
                     discard_from,
                     binding_end,
@@ -732,9 +753,9 @@ pub(super) fn bind_inner(
                     pattern,
                 });
             }
-            crate::ComprehensionStep::Filter(value) => instructions.push(
-                ActivatedCollectionStep::Filter(resolve_read(layout, source(*value))?),
-            ),
+            crate::ComprehensionStep::Filter(value) => {
+                instructions.push(ActivatedCollectionStep::Filter(read(*value)?))
+            }
             crate::ComprehensionStep::Operation(operation) => {
                 debug_assert_eq!(operation.local as usize, next_local);
                 next_local += 1;
@@ -752,10 +773,11 @@ pub(super) fn bind_inner(
                     .copied()
                     .map(port)
                     .collect::<Result<Vec<_>, _>>()?;
-                let input_reads = input_sources
+                let input_reads = operation
+                    .inputs
                     .iter()
                     .copied()
-                    .map(|source| resolve_read(layout, source))
+                    .map(read)
                     .collect::<Result<Vec<_>, _>>()?;
                 let (retained_local_count, excluded_locals) =
                     operation_retained_local_scope(operation).ok_or_else(unsupported)?;
@@ -844,6 +866,7 @@ pub(super) fn bind_inner(
                             owner,
                             nested,
                             &input_sources,
+                            &input_reads,
                             output_slot,
                             layout,
                             steps,
@@ -1062,7 +1085,7 @@ pub(super) fn bind_inner(
         instructions.into_boxed_slice(),
         locals,
         schema_reads.into_boxed_slice(),
-        resolve_read(layout, source(control.yield_value))?,
+        read(control.yield_value)?,
         yielded.schema_id,
         memory,
     ))

@@ -23729,6 +23729,7 @@ fn bind_control_block(
                         owner,
                         nested,
                         &inputs,
+                        &input_reads,
                         output_slot,
                         layout,
                         steps,

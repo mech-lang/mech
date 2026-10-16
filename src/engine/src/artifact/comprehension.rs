@@ -394,7 +394,7 @@ pub(super) fn validate_comprehension_inner(
                     SchemaBody::Matrix { element, .. } | SchemaBody::Set { element, .. } => {
                         element.as_ref()
                     }
-                    SchemaBody::Dynamic => source.body(),
+                    SchemaBody::String | SchemaBody::Dynamic => source.body(),
                     _ => return Err(invalid("generator source is not a collection")),
                 };
                 pattern_counts(pattern)

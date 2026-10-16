@@ -1,7 +1,7 @@
 comprehensions
 ================================================================================
 
-%% A `comprehension` builds a set from generators and predicates. It is useful for concise construction, filtering, and relational joins over data. Mech several comprehension forms including matrix, set, and table comprehensions.
+%% A `comprehension` builds a collection from generators and predicates. It supports concise construction, filtering, and relational joins over data. Mech includes matrix and set comprehensions.
 
 1. Syntax
 -------------------------------------------------------------------------------
@@ -18,6 +18,10 @@ Matrix comprehensions have a similar form but use square brackets and yield a ma
 [yield-expression | clause-1, clause-2, ..., clause-n]
 ```
 
+Both forms are values within formulas and function arguments. For example,
+`"é" ∈ {part | part <- text}` tests membership directly; the braces own the
+comprehension independently of the surrounding set operator.
+
 Common clause forms:
 
 - Generator: `pattern <- source`
@@ -27,10 +31,11 @@ Common clause forms:
 -------------------------------------------------------------------------------
 
 - Generators introduce variables and iterate values from a source collection.
+- A scalar `<string>` source yields one `<string>` per grapheme. For example, `[part | part <- "Aé🧑‍🚀"]` yields `"A"`, `"é"`, and `"🧑‍🚀"`. A matrix of Strings yields whole matrix elements.
 - Predicates filter candidate bindings.
 - Later clauses can use variables introduced by earlier clauses.
 - Reused variables across generators naturally express join-like relationships.
-- The result is a set, so duplicates are removed.
+- Set comprehensions remove duplicate values. Matrix comprehensions preserve generator order and duplicates.
 
 3. Basic Examples
 -------------------------------------------------------------------------------

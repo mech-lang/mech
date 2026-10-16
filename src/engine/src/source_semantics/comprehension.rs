@@ -317,11 +317,11 @@ impl SemanticBuilder {
                         SchemaBody::Matrix { element, .. } | SchemaBody::Set { element, .. } => {
                             canonical_component_schema_draft(&schema, element, generator.syntax())?
                         }
-                        SchemaBody::Dynamic => schema,
+                        SchemaBody::String | SchemaBody::Dynamic => schema,
                         _ => {
                             return Err(unsupported(
                                 generator.syntax(),
-                                "a generator requires a matrix or set",
+                                "a generator requires a String, matrix, or set",
                             ));
                         }
                     };

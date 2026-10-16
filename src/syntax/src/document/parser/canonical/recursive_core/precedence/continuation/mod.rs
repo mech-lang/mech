@@ -1017,7 +1017,9 @@ impl Continuation {
                         if parser.cursor().starts_with("[") {
                             self.push(Frame::Bracket(Box::new(bracket::Phase::Project)));
                         } else if parser.cursor().starts_with("{") {
-                            self.push(Frame::Brace(Box::new(brace::Phase::Enter(false))));
+                            // A delimited comprehension is a value at any formula operand,
+                            // including a membership RHS and a function argument.
+                            self.push(Frame::Brace(Box::new(brace::Phase::Enter(true))));
                         } else if parser.cursor().starts_with(":") {
                             self.push(Frame::Collection(Box::new(collection::Phase::Colon)));
                         } else {
