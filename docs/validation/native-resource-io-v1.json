@@ -16,7 +16,7 @@
     {
       "exit_code": 1,
       "mode": "default-denied",
-      "stderr_sha256": "307864d8022f8b36dd9f70b1d9e1b2177644a61bd068d4f4a2024f2d052c4db0",
+      "stderr_sha256": "68dfdf978f9f6a2bb2c746eb27729c8b77c3b6aff63dda429a4b16520a288233",
       "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     {
@@ -27,7 +27,7 @@
     }
   ],
   "benchmark_measurements": 0,
-  "binary_sha256": "e2e14d09335518d37afee4b02e96642d9555f08052ee593b71abb4644729f59d",
+  "binary_sha256": "01696d7cba4b07e023f1744b8d5b92b6ac7774d90ff16e164f4a3a56c0f777b9",
   "build_count": 1,
   "constants_sha256": "bbd8ccb744a7cfd7bdac538acaf07179a37f3cb753ebfe90fec15f23c2a84a6c",
   "object_sha256": "753ed7c7b654b0ed27067ab6362b4d873e72e416d6d8ef2df83f44d91ee8ae66",
@@ -35,8 +35,9 @@
   "same_executable_for_all_attempts": true,
   "schema": "native-host-application-qualification-v1",
   "source_sha256": "253771653444a77ce577f45ba1cc0f73547fa6655ea28ee5537672d294754660",
-  "compiler_source_commit": "c486413e6ee820cfcdc81f4797395b2efe13c7b0",
-  "parent_application_commit": "34f35b49f078d682e348b609e029575a553fccc1",
+  "compiler_source_commit": "2356c455961005255f533f0b91fca578bb8c17a0",
+  "parent_application_commit": "765d403c8e63729c7b5ad19199e7a09ac23f7dfe",
+  "application_policy_implementation_origin": "34f35b49f078d682e348b609e029575a553fccc1",
   "host": "aarch64-apple-darwin",
   "rustc": "1.96.0-nightly (ec818fda3 2026-03-02)",
   "application_profile": "dev (Cargo defaults; unoptimized + debuginfo); target-cpu=native",
@@ -45,27 +46,50 @@
   "source_files": {
     "hosts/gpu/src/sequence/activation.rs": "b9a2122338dd4eae9365a7edc1f676baad55b1e2286a086315ab016af1b8a021",
     "hosts/gpu/tests/native_host_io.rs": "e39920a4378721d79478f77ec2c763e6eb75ebd748e13c7b28044dc93039e82e",
-    "hosts/gpu/tests/native_host_application.rs": "9ae8b62fbbbd0bed9b1bc7173766e91751d283a68d2c6f8e4577bdc7a354a12a"
+    "hosts/gpu/tests/native_host_application.rs": "08671108d59713d1cdf79615de87146aed2d07eb4e310c1ded074e53fb315aaa"
   },
   "validation": {
-    "started_utc": "2026-10-16T22:47:58Z",
-    "finished_utc": "2026-10-16T22:54:38Z",
+    "started_utc": "2026-10-17T00:54:01Z",
+    "finished_utc": "2026-10-17T01:02:53Z",
     "command": [
-      "cargo", "+nightly-2026-03-03", "test", "--locked", "--offline",
+      "cargo", "+nightly-2026-03-03", "test", "--locked", "--offline", "-j", "1",
       "-p", "mech-gpu", "--no-default-features", "--features", "native-build,native-io",
-      "--test", "native_host_io", "--test", "native_host_application",
+      "--test", "native_host_io", "--test", "repeated_application", "--test", "native_host_application",
       "--", "--include-ignored", "--test-threads=1"
     ],
     "exit_code": 0,
     "clean_source_before_and_after": true,
     "serial_validation": true,
+    "environment": {"CARGO_BUILD_JOBS": "1", "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"},
     "host_io_tests_passed": 6,
+    "repeated_application_tests_passed": 8,
+    "rejected_declaration_application_tests_passed": 1,
     "linked_application_tests_passed": 1,
-    "log_sha256": "df68d8fcb06c31b6bcccaa7ea5fc52006ee375537baeb3d2b7b42d69a1bbe367",
-    "evidence_directory": "tmp/pr-stack-evidence/pr900-native-host",
-    "log": "tmp/pr-stack-evidence/pr900-final-native-host.log",
+    "port_admission_tests_passed": 9,
+    "ci_contract_tests_passed": 92,
+    "port_admission_log": "tmp/pr-stack-evidence/pr900-final-port-admission-v4.log",
+    "port_admission_log_sha256": "9cb433bbb76806531c8a4a2e6d17dc331dc6fe90448776db5f85607b30e17397",
+    "ci_contract_log": "tmp/pr-stack-evidence/pr900-ci-contracts-final-v4.log",
+    "ci_contract_log_sha256": "b2244bff8af939880ad776187656fac3e208182e5f33c8a625d9eb322164ee2a",
+    "log_sha256": "121459d854928ac938f690237a8cf40ff65f074dda5d86f9f3497e9a9d10185a",
+    "evidence_directory": "tmp/pr-stack-evidence/pr900-native-host-v4",
+    "log": "tmp/pr-stack-evidence/pr900-final-native-host-v4.log",
     "generated_dependency_resolution": "Fresh offline application lock retained and hashed; generated application build uses --offline, while the outer test uses --locked --offline."
   },
+  "prior_qualifications": [
+    {
+      "compiler_source_commit": "c486413e6ee820cfcdc81f4797395b2efe13c7b0",
+      "binary_sha256": "e2e14d09335518d37afee4b02e96642d9555f08052ee593b71abb4644729f59d",
+      "receipt_commit": "53dade8ea7d0434ca11387ae9d1e4adaa41baea9",
+      "status": "Historical passing qualification before the rejected-declaration fix and final parent normalizer corrections."
+    },
+    {
+      "compiler_source_commit": "0e56c39d8cb950a0c672392791a19a826c81481b",
+      "binary_sha256": "9d147142e426b4ae02e46d8f1b326707bbfc1b2698c84de9f8688e9a3baebe4e",
+      "log": "tmp/pr-stack-evidence/pr900-final-native-host-v2.log",
+      "status": "Historical passing 16-test host/application/execution qualification before the final regular-table and Unicode-arm parent corrections."
+    }
+  ],
   "superseded_qualification": {
     "compiler_source_commit": "c10602eec8e67a9a31f22df4de56eda7f810e018",
     "binary_sha256": "745fdf9e8a06dc6e0f6c4f4c0044328df300dcfbcb4e27d16fd67fbaa99b9467",
