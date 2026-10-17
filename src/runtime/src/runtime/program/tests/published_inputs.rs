@@ -264,6 +264,12 @@ fn interactive_symbol_queries_keep_new_observations_absent_until_publication() {
         session
             .clear_variables(&["clock-second".to_owned()])
             .unwrap();
+        // Removing the last observation activates a new pure program. Inspect
+        // that program's epoch; comparing it to the retired external program
+        // would confuse source activation with an inspection-induced turn.
+        let cleared_epoch = resident_parts(session.runtime().unwrap())
+            .1
+            .published_epoch();
         assert!(session.symbol("clock-second").unwrap().is_none());
         let rows = session.symbols(&[]).unwrap();
         assert!(rows.iter().any(|(name, _)| name == "answer"));
@@ -272,7 +278,7 @@ fn interactive_symbol_queries_keep_new_observations_absent_until_publication() {
             resident_parts(session.runtime().unwrap())
                 .1
                 .published_epoch(),
-            epoch
+            cleared_epoch
         );
         session
             .submit("clock-second := @fast/delta-seconds;")
