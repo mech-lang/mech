@@ -10,7 +10,8 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts"))
 from ci_test_inventory import (
     cargo_test_command, cfg_predicate, crate_cfgs, feature_closure,
-    integration_targets, inventory_gaps, target_covered, workflow_commands,
+    integration_targets, inventory_gaps, invoked_generator_commands,
+    registered_cases, target_covered, workflow_commands, workflow_truth,
 )
 
 
@@ -58,12 +59,81 @@ class IntegrationInventoryTests(unittest.TestCase):
         self.assertEqual([command["targets"] for command in workflow_commands(source)], [["actual"]])
 
     def test_disabled_or_allowed_failure_steps_and_jobs_cannot_own_targets(self):
-        for clause in ("if: false", "if: ${{ false }}", "continue-on-error: true"):
+        for clause in (
+            "if: false", "if: ${{ false }}", "if: ${{ 0 }}", "if: ${{ -0 }}",
+            "if: ${{ 0.0 }}", "if: ${{ 0e3 }}", "if: ${{ 0x0 }}",
+            "if: ${{ null }}", "if: ${{ '' }}", 'if: "${{ 0 }}"',
+            "if: ${{ !true }}", "if: ${{ false || 0 }}",
+            "if: ${{ github.event_name && false }}",
+            "if: ${{ 1 == 2 }}", "if: ${{ 1 > 2 }}", "if: ${{ null != 0 }}",
+            "if: ${{ 'zero' > 0 }}", "if: ${{ 'a' != 'A' }}",
+            "if: ${{ false && success() }}", "if: ${{ false && contains(github.ref, 'x') }}",
+            "if: ${{ contains('needs.decoy', 'absent') }}",
+            "if: ${{ fromJSON('false') }}",
+            "continue-on-error: true", "continue-on-error: ${{ true }}",
+            "continue-on-error: ${{ '#' }} # a real YAML comment",
+            "continue-on-error: ${{ matrix.optional }}",
+        ):
             for metadata in (f"    {clause}\n", ""):
                 step_clause = "" if metadata else f"        {clause}\n"
                 source = f"jobs:\n  sample:\n{metadata}    steps:\n      - name: disabled\n{step_clause}        run: cargo test -p sample --test absent\n"
                 with self.subTest(clause=clause, job=bool(metadata)):
                     self.assertEqual(list(workflow_commands(source)), [])
+
+    def test_workflow_truthiness_preserves_strings_and_dynamic_conditions(self):
+        for value in ("true", "${{ -2 }}", "${{ 0x1 }}", "${{ 'false' }}", "${{ '0' }}", "${{ ' ' }}", "${{ !false }}", "${{ true || github.event_name }}", "${{ 2 >= 1 }}", "${{ 'a' == 'A' }}", "${{ 0 == false }}", "${{ always() }}"):
+            self.assertIs(workflow_truth(value), True, value)
+        for value in ("${{ github.event_name }}", "${{ success() }}", "${{ matrix.optional }}", "${{ (github.event_name || 'fallback') == 'fallback' }}"):
+            self.assertIsNone(workflow_truth(value), value)
+        source = "jobs:\n  sample:\n    if: ${{ 'false' }}\n    steps:\n      - run: cargo test -p sample --test actual\n"
+        self.assertEqual([command["targets"] for command in workflow_commands(source)], [["actual"]])
+        for source in (
+            "jobs:\n  sample:\n    if: >-\n      ${{ 0 }}\n    steps:\n      - run: cargo test -p sample --test absent\n",
+            "steps:\n  - if: ${{ 0 }}\n    run: cargo test -p sample --test absent\n",
+            "steps:\n  - name: disabled\n    if: |\n      ${{ false ||\n          0 }}\n    run: cargo test -p sample --test absent\n",
+        ):
+            self.assertEqual(list(workflow_commands(source)), [], source)
+        source = "steps:\n  - run: |\n      if: false\n      cargo test -p sample --test actual\n"
+        self.assertEqual([command["targets"] for command in workflow_commands(source)], [["actual"]], "run content is not step metadata")
+
+    def test_generator_commands_require_a_reachable_entry_point_call(self):
+        literal = repr(["cargo", "test", "-p", "sample", "--test", "fresh"])
+        runner = f"run_streamed({literal})"
+        sources = (
+            (f"def unused():\n    {runner}\ndef main():\n    return 0\n", False),
+            (f"def main():\n    if False:\n        {runner}\n", False),
+            (f"def helper():\n    {runner}\ndef main():\n    if False:\n        helper()\n", False),
+            (f"def main():\n    return 0\n    {runner}\n", False),
+            (f"def main():\n    if True:\n        return 0\n    {runner}\n", False),
+            (f"def main():\n    False and {runner}\n", False),
+            (f"def main():\n    True or {runner}\n", False),
+            (f"def main():\n    deferred = lambda: {runner}\n", False),
+            (f"def main():\n    for value in []:\n        {runner}\n", False),
+            (f"def main():\n    while True:\n        pass\n    {runner}\n", False),
+            (f"def main():\n    assert False\n    {runner}\n", False),
+            (f"def main():\n    match False:\n        case True:\n            {runner}\n", False),
+            (f"def main():\n    try:\n        pass\n    except ValueError:\n        {runner}\n", False),
+            (f"def main():\n    command = {literal}\n    command.append('--no-run')\n    run_streamed(command)\n", False),
+            (f"def main():\n    command = {literal}\n    if dynamic():\n        command = ['echo', 'decoy']\n    run_streamed(command)\n", False),
+            (f"def helper():\n    {runner}\ndef main():\n    helper()\n", True),
+            (f"def helper():\n    command = {literal}\n    return run_streamed(command)\ndef main():\n    with context():\n        helper()\n", True),
+            (f"def main():\n    if True:\n        {runner}\n", True),
+            (f"def main():\n    if False:\n        return 0\n    else:\n        {runner}\n", True),
+        )
+        for relative in ("scripts/check-generated-project-determinism.py", "scripts/check-native-application-graphs.py"):
+            with tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                path = root / relative
+                path.parent.mkdir()
+                workflow = f"steps:\n  - run: python3 {relative}\n"
+                for source, expected in sources:
+                    path.write_text(source + "\nif __name__ == '__main__':\n    raise SystemExit(main())\n")
+                    with self.subTest(script=relative, source=source):
+                        commands = list(invoked_generator_commands(root, [workflow]))
+                        self.assertEqual([command["targets"] for command in commands], [["fresh"]] if expected else [])
+                        self.assertEqual(list(invoked_generator_commands(root, [])), [])
+                path.write_text(f"def main():\n    {runner}\n")
+                self.assertEqual(list(invoked_generator_commands(root, [workflow])), [], "an uncalled main is not an entry point")
 
     def test_recorded_executables_require_real_execution_of_the_same_receipt(self):
         compile_step = '''steps:
@@ -84,6 +154,17 @@ class IntegrationInventoryTests(unittest.TestCase):
     def test_cfg_comments_and_source_literal_decoys_are_ignored(self):
         source = '// #![cfg(feature = "decoy")]\n#![cfg(feature = "full")]\nconst TEXT: &str = r##"#![cfg(feature = "literal-decoy")]"##;'
         self.assertEqual(list(crate_cfgs(source)), ['feature = "full"'])
+
+    def test_raw_string_cfg_values_use_rust_delimiters(self):
+        for literal in ('r"full"', 'r#"full"#', 'r###"full"###'):
+            for predicate in (f'feature = {literal}', f'all(test, feature = {literal})'):
+                self.assertTrue(cfg_predicate(predicate, {"full"}))
+                self.assertFalse(cfg_predicate(predicate, set()))
+        self.assertTrue(cfg_predicate('feature = r##"quoted"name"##', {'quoted"name'}))
+        source = '#![cfg_attr(feature = r#"full"#, cfg(feature = r##"native"##))]\n'
+        predicates = list(crate_cfgs(source))
+        self.assertTrue(any(cfg_predicate(predicate, {"full"}) is False for predicate in predicates))
+        self.assertTrue(all(cfg_predicate(predicate, {"full", "native"}) is True for predicate in predicates))
 
     def test_conditional_crate_attributes_cannot_disable_the_selected_profile(self):
         for attribute in (
@@ -134,6 +215,43 @@ class IntegrationInventoryTests(unittest.TestCase):
             self.assertEqual(set(targets), {"named"})
             self.assertFalse(target_covered("sample", "named", targets["named"], manifest, [self.command(["--test", "named"])]))
             self.assertTrue(target_covered("sample", "named", targets["named"], manifest, [self.command(["--test", "named", "--features=native"])]))
+
+    def test_skip_filters_accept_both_harness_spellings_and_full_names(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "fresh.rs"
+            path.write_text("mod cases { #[test] fn only_case() {} }\n")
+            target = {"path": path, "required-features": []}
+            for skips in (["--skip", "only_case"], ["--skip=only_case"], ["--skip=cases::"], ["--skip="]):
+                with self.subTest(skips=skips):
+                    self.assertFalse(target_covered("sample", "fresh", target, {}, [self.command(["--test", "fresh", "--", *skips])]))
+            self.assertTrue(target_covered("sample", "fresh", target, {}, [self.command(["--test", "fresh", "--", "--exact", "cases::only_case"])]))
+            self.assertFalse(target_covered("sample", "fresh", target, {}, [self.command(["--test", "fresh", "--", "--exact", "only_case"])]))
+
+    def test_enclosing_module_gates_follow_each_case(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "fresh.rs"
+            target = {"path": path, "required-features": []}
+            manifest = {"features": {"native": [], "full": []}}
+            modules = (
+                '#[cfg(feature = "native")] mod cases { #[test] fn actual() {} }',
+                'pub(crate) mod cases { #![cfg(feature = "native")] #[test] fn actual() {} }',
+                '#[cfg_attr(not(feature = "native"), cfg(any()))] mod cases { #[test] fn actual() {} }',
+                '#[cfg(feature = "native")] mod parent { mod child { #[test] fn actual() {} } }',
+                'mod parent { #![cfg(feature = "native")] mod child { #[test] fn actual() {} } }',
+                '#[cfg(feature = r#"native"#)] mod r#cases { #[r#test] fn r#actual() {} }',
+            )
+            for source in modules:
+                path.write_text(source)
+                with self.subTest(source=source):
+                    self.assertFalse(target_covered("sample", "fresh", target, manifest, [self.command(["--test", "fresh"])]))
+                    self.assertTrue(target_covered("sample", "fresh", target, manifest, [self.command(["--test", "fresh", "--features=native"])]))
+            path.write_text('#[cfg(feature = "native")] mod gated { #[test] fn actual() {} }\nmod ordinary { #[test] fn actual() {} }\n')
+            self.assertEqual([case["name"] for case in registered_cases(path.read_text())], ["gated::actual", "ordinary::actual"])
+            self.assertTrue(target_covered("sample", "fresh", target, manifest, [self.command(["--test", "fresh"])]))
+            self.assertFalse(target_covered("sample", "fresh", target, manifest, [self.command(["--test", "fresh", "gated::"])]))
+            path.write_text('#[cfg(feature = "full")] mod parent { #[cfg(feature = "native")] mod child { #[test] fn actual() {} } }')
+            self.assertFalse(target_covered("sample", "fresh", target, manifest, [self.command(["--test", "fresh", "--features=full"]), self.command(["--test", "fresh", "--features=native"])]))
+            self.assertTrue(target_covered("sample", "fresh", target, manifest, [self.command(["--test", "fresh", "--features=full,native"])]))
 
     def test_ignored_only_selection_cannot_own_an_ordinary_target(self):
         with tempfile.TemporaryDirectory() as temporary:

@@ -11,6 +11,7 @@ import fnmatch
 import ast
 from bisect import bisect_right
 import json
+import operator
 import re
 import shlex
 import tomllib
@@ -27,15 +28,164 @@ CANONICAL_PACKAGES = (
 )
 
 
+def workflow_expression(value: str) -> str:
+    value = value.strip()
+    # Remove the YAML scalar's quoting before parsing the expression. Quotes
+    # inside ${{ ... }} instead belong to GitHub string literals ("false" is
+    # a nonempty, truthy string there, not the Boolean false).
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+        value = json.loads(value) if value[0] == '"' else value[1:-1].replace("''", "'")
+    if value.startswith("${{") and value.endswith("}}"):
+        value = value[3:-2].strip()
+    return value
+
+
+def workflow_truth(value: str) -> bool | None:
+    """Constant GitHub condition truthiness; dynamic expressions stay unknown."""
+    value = workflow_expression(value)
+    pattern = re.compile(r"'(?:''|[^'])*'|(?:-?0[xX][0-9a-fA-F]+|-?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)|[A-Za-z_][A-Za-z_0-9.]*|&&|\|\||==|!=|<=|>=|[!()<>,]")
+    tokens, end = [], 0
+    for token in pattern.finditer(value):
+        if value[end:token.start()].strip():
+            return None
+        tokens.append(token[0])
+        end = token.end()
+    if value[end:].strip():
+        return None
+    position = 0
+
+    class Unknown:
+        # Boolean operators can prove truthiness without proving the value.
+        # Keep that distinction for comparisons of parenthesized expressions.
+        def __init__(self, truth=None):
+            self.truth = truth
+
+    def truth(result):
+        return result.truth if isinstance(result, Unknown) else bool(result)
+
+    def atom():
+        nonlocal position
+        if position == len(tokens):
+            raise ValueError("missing condition value")
+        token = tokens[position]
+        position += 1
+        if token == "!":
+            result = truth(atom())
+            return Unknown() if result is None else not result
+        if token == "(":
+            result = expression("||")
+            if position == len(tokens) or tokens[position] != ")":
+                raise ValueError("unclosed condition")
+            position += 1
+            return result
+        if token in {"true", "false", "null"}:
+            return None if token == "null" else token == "true"
+        if token.startswith("'"):
+            return token[1:-1].replace("''", "'")
+        if re.match(r"-?(?:\d|\.)", token):
+            return int(token, 16) if "x" in token.lower() else float(token)
+        if token == ")":
+            raise ValueError("unexpected condition close")
+        if position < len(tokens) and tokens[position] == "(":
+            # Status/context calls are dynamic. Consume the whole invocation
+            # so a surrounding `false && ...` remains provably disabled.
+            start, depth = position, 0
+            while position < len(tokens):
+                current = tokens[position]
+                position += 1
+                depth += (current == "(") - (current == ")")
+                if depth == 0:
+                    return True if token == "always" and position == start + 2 else Unknown()
+            raise ValueError("unclosed condition call")
+        return Unknown()
+
+    def number(result):
+        if result is None or isinstance(result, bool):
+            return float(result or 0)
+        if isinstance(result, (int, float)):
+            return result
+        if not result:
+            return 0.0
+        try:
+            parsed = json.loads(result)
+            return parsed if type(parsed) in (int, float) else float("nan")
+        except ValueError:
+            return float("nan")
+
+    def comparison():
+        nonlocal position
+        result = atom()
+        operations = {"==": operator.eq, "!=": operator.ne, "<": operator.lt,
+                      "<=": operator.le, ">": operator.gt, ">=": operator.ge}
+        while position < len(tokens) and tokens[position] in operations:
+            operation = operations[tokens[position]]
+            position += 1
+            right = atom()
+            if isinstance(result, Unknown) or isinstance(right, Unknown):
+                result = Unknown()
+            else:
+                if isinstance(result, str) and isinstance(right, str):
+                    result, right = result.casefold(), right.casefold()
+                elif type(result) != type(right) or result is None or isinstance(result, bool):
+                    result, right = number(result), number(right)
+                result = operation(result, right)
+        return result
+
+    def expression(operator):
+        nonlocal position
+        operand = comparison if operator == "&&" else lambda: expression("&&")
+        result = operand()
+        while position < len(tokens) and tokens[position] == operator:
+            position += 1
+            right = operand()
+            left_truth, right_truth = truth(result), truth(right)
+            if left_truth is None:
+                decisive = False if operator == "&&" else True
+                result = Unknown(decisive if right_truth is decisive else None)
+            elif operator == "&&":
+                result = right if left_truth else result
+            else:
+                result = result if left_truth else right
+        return result
+
+    try:
+        result = expression("||")
+        return truth(result) if position == len(tokens) else None
+    except (ValueError, OverflowError):
+        return None
+
+
 def disabled_run(lines: list[str], index: int, indent: int) -> bool:
-    def disabled(metadata):
-        for line in metadata:
-            match = re.fullmatch(r"\s*(if|continue-on-error):\s*([^#]+?)(?:\s*#.*)?", line)
+    def disabled(metadata, expected_indent):
+        for offset, line in enumerate(metadata):
+            prefix = len(line) - len(line.lstrip())
+            text = line.strip()
+            if text.startswith("- "):
+                prefix, text = prefix + 2, text[2:]
+            if prefix != expected_indent:
+                continue
+            match = re.fullmatch(r"(if|continue-on-error):\s*(.*)", text)
             if match:
-                value = re.sub(r"\s+", "", match[2]).strip("\"'")
-                if match[1] == "if" and value in {"false", "${{false}}"}:
+                # A '#' inside a YAML/expression string is data, not a comment.
+                scalar = re.match(r'''(?:'(?:''|[^'])*'|"(?:\\.|[^"\\])*"|[^'"#])*''', match[2])[0]
+                if scalar.strip().startswith(("|", ">")):
+                    body = []
+                    for following in metadata[offset + 1:]:
+                        if following.strip() and len(following) - len(following.lstrip()) <= expected_indent:
+                            break
+                        body.append(following.strip())
+                    scalar = " ".join(body)
+                value = workflow_truth(scalar)
+                if match[1] == "if" and value is False:
                     return True
-                if match[1] == "continue-on-error" and value in {"true", "${{true}}"}:
+                if match[1] == "if" and value is None:
+                    # Unsupported constant-only expressions cannot establish
+                    # execution. Dynamic impact/status gates remain ownership
+                    # candidates, not claims of every platform/trigger running.
+                    expression = re.sub(r"'(?:''|[^'])*'", "''", workflow_expression(scalar))
+                    if not re.search(r"\b(?:github|inputs|needs|matrix|runner|steps|env|vars|secrets|strategy|job)\.|\b(?:success|failure|cancelled)\s*\(", expression):
+                        return True
+                if match[1] == "continue-on-error" and value is not False:
                     return True
         return False
 
@@ -46,7 +196,7 @@ def disabled_run(lines: list[str], index: int, indent: int) -> bool:
             if re.fullmatch(r"    steps:\s*", line):
                 break
             header.append(line)
-        if disabled(header):
+        if disabled(header, 4):
             return True
     steps = [(offset, len(match[1])) for offset, line in enumerate(lines[:index + 1])
              if (match := re.match(r"(\s*)-\s+", line)) and len(match[1]) <= indent]
@@ -58,9 +208,8 @@ def disabled_run(lines: list[str], index: int, indent: int) -> bool:
         line = lines[offset]
         if offset > start and (match := re.match(r"(\s*)-\s+", line)) and len(match[1]) <= step_indent:
             break
-        if len(line) - len(line.lstrip()) == step_indent + 2:
-            metadata.append(line)
-    return disabled(metadata)
+        metadata.append(line)
+    return disabled(metadata, step_indent + 2)
 
 
 def run_blocks(source: str):
@@ -134,6 +283,8 @@ def cargo_test_command(arguments: list[str]):
                 return None
             if token == "--skip":
                 skips.append(harness[index])
+        elif token.startswith("--skip="):
+            skips.append(token.split("=", 1)[1])
         elif not token.startswith("-"):
             filters.append(token)
         index += 1
@@ -191,25 +342,137 @@ def invoked_generator_commands(root: Path, sources: list[str]):
         if not any(invocation.search(block) for source in sources for block in run_blocks(source)):
             continue
         module = ast.parse((root / relative).read_text(encoding="utf-8"))
-        for function in (node for node in ast.walk(module) if isinstance(node, ast.FunctionDef)):
-            assignments = {}
-            for statement in function.body:
-                if isinstance(statement, ast.Assign) and len(statement.targets) == 1 and isinstance(statement.targets[0], ast.Name):
-                    assignments[statement.targets[0].id] = statement.value
-            for call in (node for node in ast.walk(function) if isinstance(node, ast.Call)):
-                if not isinstance(call.func, ast.Name) or call.func.id not in {"run_streamed", "execute_streamed"} or not call.args:
-                    continue
-                argument = call.args[0]
-                if isinstance(argument, ast.Name):
-                    argument = assignments.get(argument.id)
-                try:
-                    arguments = ast.literal_eval(argument)
-                except (ValueError, TypeError, SyntaxError):
-                    continue
-                if isinstance(arguments, (list, tuple)) and all(isinstance(value, str) for value in arguments):
-                    command = cargo_test_command(list(arguments))
-                    if command is not None:
-                        yield command
+        yield from reachable_generator_commands(module)
+
+
+def reachable_generator_commands(module: ast.Module):
+    """Follow the script entry point, not every function or syntactic call.
+
+    Credit only straight-line calls and statically selected branches. Unknown
+    branches, deferred expressions, exception handlers and loop bodies are not
+    evidence of execution; maintained generator invocations need none of them.
+    """
+    functions = {node.name: node for node in module.body if isinstance(node, ast.FunctionDef)}
+    visited = set()
+
+    def constant(node):
+        if isinstance(node, ast.Name) and node.id == "__name__":
+            return "__main__"
+        if isinstance(node, ast.Compare) and len(node.ops) == len(node.comparators) == 1:
+            left, right = constant(node.left), constant(node.comparators[0])
+            if left is not unknown and right is not unknown:
+                if isinstance(node.ops[0], ast.Eq):
+                    return left == right
+                if isinstance(node.ops[0], ast.NotEq):
+                    return left != right
+        if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.Not):
+            value = constant(node.operand)
+            return unknown if value is unknown else not value
+        try:
+            return ast.literal_eval(node)
+        except (ValueError, TypeError, SyntaxError):
+            return unknown
+
+    unknown = object()
+
+    def expression(node, assignments):
+        if isinstance(node, (ast.Lambda, ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)):
+            return
+        if isinstance(node, ast.BoolOp):
+            for value in node.values:
+                yield from expression(value, assignments)
+                result = constant(value)
+                if result is unknown or (not result if isinstance(node.op, ast.And) else bool(result)):
+                    break
+            return
+        if isinstance(node, ast.IfExp):
+            yield from expression(node.test, assignments)
+            condition = constant(node.test)
+            if condition is not unknown:
+                yield from expression(node.body if condition else node.orelse, assignments)
+            return
+        for child in ast.iter_child_nodes(node):
+            yield from expression(child, assignments)
+        if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Name):
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
+                assignments.pop(node.func.value.id, None)
+            return
+        if node.func.id in {"run_streamed", "execute_streamed"} and node.args:
+            argument = node.args[0]
+            if isinstance(argument, ast.Name):
+                argument = assignments.get(argument.id)
+            try:
+                arguments = ast.literal_eval(argument)
+            except (ValueError, TypeError, SyntaxError):
+                return
+            if isinstance(arguments, (list, tuple)) and all(isinstance(value, str) for value in arguments):
+                command = cargo_test_command(list(arguments))
+                if command is not None:
+                    yield command
+        elif node.func.id in functions and node.func.id not in visited:
+            visited.add(node.func.id)
+            yield from statements(functions[node.func.id].body, {})
+
+    def statements(body, assignments):
+        for statement in body:
+            if isinstance(statement, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                continue
+            if isinstance(statement, ast.If):
+                yield from expression(statement.test, assignments)
+                condition = constant(statement.test)
+                if condition is not unknown:
+                    if (yield from statements(statement.body if condition else statement.orelse, assignments)):
+                        return True
+                else:
+                    for child in ast.walk(statement):
+                        if isinstance(child, ast.Name) and isinstance(child.ctx, (ast.Store, ast.Del)):
+                            assignments.pop(child.id, None)
+            elif isinstance(statement, (ast.With, ast.AsyncWith)):
+                for item in statement.items:
+                    yield from expression(item.context_expr, assignments)
+                if (yield from statements(statement.body, assignments)):
+                    return True
+            elif isinstance(statement, (ast.For, ast.AsyncFor)):
+                yield from expression(statement.iter, assignments)
+                # The iterable itself is evaluated before the loop, but neither
+                # a body invocation nor reaching the next statement is assured.
+                return True
+            elif isinstance(statement, ast.While):
+                yield from expression(statement.test, assignments)
+                condition = constant(statement.test)
+                if condition is unknown or condition:
+                    return True
+            elif isinstance(statement, (ast.Try, ast.TryStar)):
+                terminated = yield from statements(statement.body, assignments)
+                if (yield from statements(statement.finalbody, assignments)) or terminated:
+                    return True
+                if (yield from statements(statement.orelse, assignments)):
+                    return True
+            elif isinstance(statement, ast.Match):
+                yield from expression(statement.subject, assignments)
+                return True
+            elif isinstance(statement, (ast.Assign, ast.AnnAssign, ast.AugAssign, ast.Expr, ast.Return, ast.Raise, ast.Assert, ast.Delete, ast.Break, ast.Continue)):
+                for child in ast.iter_child_nodes(statement):
+                    yield from expression(child, assignments)
+                if isinstance(statement, ast.Assign):
+                    for target in statement.targets:
+                        if isinstance(target, ast.Name):
+                            assignments[target.id] = statement.value
+                elif isinstance(statement, (ast.AugAssign, ast.AnnAssign)) and isinstance(statement.target, ast.Name):
+                    assignments.pop(statement.target.id, None)
+                elif isinstance(statement, ast.Delete):
+                    for target in statement.targets:
+                        if isinstance(target, ast.Name):
+                            assignments.pop(target.id, None)
+                if isinstance(statement, ast.Assert):
+                    condition = constant(statement.test)
+                    if condition is not unknown and not condition:
+                        return True
+                if isinstance(statement, (ast.Return, ast.Raise, ast.Break, ast.Continue)):
+                    return True
+        return False
+
+    yield from statements(module.body, {})
 
 
 def feature_closure(manifest: dict, command: dict) -> set[str]:
@@ -231,7 +494,15 @@ def feature_closure(manifest: dict, command: dict) -> set[str]:
 
 def cfg_predicate(expression: str, enabled: set[str]) -> bool | None:
     """Evaluate feature conditions; other target predicates remain unknown."""
-    tokens = re.findall(r'"(?:\\.|[^"\\])*"|(?:r#)?[A-Za-z_][A-Za-z_0-9]*|[=(),]', expression)
+    token_pattern = re.compile(r'r(?P<hashes>#{0,255})"[\s\S]*?"(?P=hashes)|"(?:\\.|[^"\\])*"|(?:r#)?[A-Za-z_][A-Za-z_0-9]*|[=(),]')
+    tokens, end = [], 0
+    for token in token_pattern.finditer(expression):
+        if expression[end:token.start()].strip():
+            raise ValueError("invalid cfg token")
+        tokens.append(token[0])
+        end = token.end()
+    if expression[end:].strip():
+        raise ValueError("invalid trailing cfg token")
     position = 0
 
     def parse():
@@ -244,7 +515,9 @@ def cfg_predicate(expression: str, enabled: set[str]) -> bool | None:
             position += 1
             if position == len(tokens):
                 raise ValueError("missing cfg value")
-            value = json.loads(tokens[position])
+            literal = tokens[position]
+            raw = re.match(r'r(#{0,255})"', literal)
+            value = literal[raw.end():-len(raw[1]) - 1] if raw else json.loads(literal)
             position += 1
             return value in enabled if name == "feature" else None
         if position < len(tokens) and tokens[position] == "(":
@@ -360,18 +633,43 @@ def registered_cases(source: str):
             raise ValueError("unclosed test attribute")
         spans.append((match.start(), position, match.end(), position - 1))
     ends = [span[1] for span in spans]
-    pattern = r"(?:pub(?:\([^)]*\))?\s+)?fn\s+([A-Za-z_][A-Za-z_0-9]*)\s*\("
-    for match in re.finditer(pattern, masked):
-        index, before, attributes = bisect_right(ends, match.start()) - 1, match.start(), []
+
+    def preceding_attributes(position):
+        index, before, attributes = bisect_right(ends, position) - 1, position, []
         while index >= 0 and not masked[spans[index][1]:before].strip():
             start, _, content_start, content_end = spans[index]
             attributes.append(preserved[content_start:content_end])
             before, index = start, index - 1
+        return attributes
+
+    # Harness names include their module path. Both outer module attributes
+    # and leading inner module attributes gate every descendant test case.
+    closes, stack = {}, []
+    for position, character in enumerate(masked):
+        if character == "{":
+            stack.append(position)
+        elif character == "}" and stack:
+            closes[stack.pop()] = position
+    modules = []
+    pattern = r"(?:pub(?:\([^)]*\))?\s+)?mod\s+((?:r#)?[A-Za-z_][A-Za-z_0-9]*)\s*\{"
+    for match in re.finditer(pattern, masked):
+        opening = match.end() - 1
+        if opening not in closes:
+            raise ValueError("unclosed test module")
+        cfgs = [predicate for attribute in preceding_attributes(match.start()) for predicate in attribute_cfgs(attribute)]
+        cfgs.extend(crate_cfgs(preserved[opening + 1:closes[opening]]))
+        modules.append((opening, closes[opening], match[1].removeprefix("r#"), cfgs))
+
+    pattern = r"(?:pub(?:\([^)]*\))?\s+)?fn\s+((?:r#)?[A-Za-z_][A-Za-z_0-9]*)\s*\("
+    for match in re.finditer(pattern, masked):
+        attributes = preceding_attributes(match.start())
         if not any(re.fullmatch(r"\s*(?:r#)?test\s*", attribute) for attribute in attributes):
             continue
+        parents = [module for module in modules if module[0] < match.start() < module[1]]
         yield {
-            "name": match[1],
-            "cfgs": [predicate for attribute in attributes for predicate in attribute_cfgs(attribute)],
+            "name": "::".join([module[2] for module in parents] + [match[1].removeprefix("r#")]),
+            "cfgs": [predicate for module in parents for predicate in module[3]]
+                    + [predicate for attribute in attributes for predicate in attribute_cfgs(attribute)],
             "ignores": [predicate for attribute in attributes for predicate in attribute_ignores(attribute)],
         }
 
