@@ -479,7 +479,8 @@ jobs:
         run: >-
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu
           --no-default-features --features native-build,native-io
-          --test native_host_io --test repeated_application -- --test-threads=1
+          --test native_host_io --test repeated_application
+          --test native_host_application -- --test-threads=1
       - name: Qualify the same native host executable under both launch policies
         env:
           MECH_NATIVE_QUALIFICATION_DIRECTORY: ${{ runner.temp }}/native-host-evidence

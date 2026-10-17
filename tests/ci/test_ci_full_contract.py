@@ -145,6 +145,10 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("--lib resident::native_semantics::tests", block)
         self.assertIn("--features canonical-native --lib native_artifact::", block)
         self.assertIn("--features canonical-native-runtime --lib", block)
+        admission_step = next(step for step in job_steps(FULL, "canonical-applications")
+                              if "Execute activated native host I/O and application syntax" in step)
+        self.assertIn("--test native_host_application -- --test-threads=1", admission_step)
+        self.assertNotIn("--ignored", admission_step)
         for target, case, evidence in (
             ("native_host_application",
              "one_linked_executable_runs_secure_and_trusted_without_rebuilding",
@@ -157,7 +161,7 @@ class FullWorkflowContractTests(unittest.TestCase):
              "MECH_CANONICAL_CLI_EVIDENCE_DIR"),
         ):
             step = next(step for step in job_steps(FULL, "canonical-applications")
-                        if f"--test {target} " in step)
+                        if f"--test {target} " in step and case in step)
             self.assertIn("cargo +nightly-2026-03-03 test --locked --offline", step)
             self.assertIn("-- --ignored --exact", step)
             self.assertIn(case, step)
