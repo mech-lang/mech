@@ -9,8 +9,8 @@ mod matrix;
 
 use mech_syntax::document::{
     AnyCallArgumentSyntax, AstNode, CanonicalOperator, DocumentId, FunctionCallSyntax,
-    OperatorSyntax, ParseConfig, Revision, StringLiteralSyntax, SyntaxKind, SyntaxNode,
-    TextSnapshot, VariableDefineSyntax, parse_canonical_document,
+    IntegerLiteralSyntax, NumberSyntax, OperatorSyntax, ParseConfig, Revision, StringLiteralSyntax,
+    SyntaxKind, SyntaxNode, TextSnapshot, VariableDefineSyntax, parse_canonical_document,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
@@ -103,12 +103,31 @@ pub type Catalog = &'static [OperationSignature];
 pub struct ParsedSource {
     source: String,
     syntax: SyntaxNode,
+    counted_application: bool,
 }
 impl ParsedSource {
     pub fn parse(source: &str) -> Result<Self, String> {
-        let source = application::normalize(source)?;
+        let normalized = application::normalize_with_metadata(source)?;
+        let source = normalized.source;
         let syntax = Self::parse_syntax(&source)?;
-        Ok(Self { source, syntax })
+        let parsed = Self {
+            source,
+            syntax,
+            counted_application: normalized.counted,
+        };
+        if parsed.counted_application {
+            let mut functions = Vec::new();
+            visit(&parsed.syntax, SyntaxKind::FunctionDefine, &mut functions);
+            if functions.iter().any(|function| {
+                function.children().any(|child| {
+                    child.kind() == SyntaxKind::Identifier
+                        && child.text().is_ok_and(|name| name == "sequence/iterate")
+                })
+            }) {
+                return Err("counted applications cannot coexist with a source function named sequence/iterate; rename that function to avoid shadowing the iteration intrinsic".into());
+            }
+        }
+        Ok(parsed)
     }
     fn parse_syntax(source: &str) -> Result<SyntaxNode, String> {
         let parsed = parse_canonical_document(
@@ -154,6 +173,46 @@ fn literal(node: SyntaxNode) -> Result<Constant, String> {
                 .ok_or("invalid string escape")?,
         )),
         SyntaxKind::Number => {
+            if let Some(real) = NumberSyntax::cast(node.clone()).and_then(|number| number.real()) {
+                if let Some(typed) = real
+                    .value()
+                    .and_then(IntegerLiteralSyntax::cast)
+                    .and_then(|integer| integer.typed())
+                {
+                    let digits = text(
+                        typed
+                            .digits()
+                            .ok_or("missing typed integer digits")?
+                            .syntax(),
+                    )?
+                    .replace('_', "");
+                    let suffix = text(
+                        typed
+                            .suffix()
+                            .ok_or("missing numeric kind suffix")?
+                            .syntax(),
+                    )?;
+                    return match suffix.as_str() {
+                        "u64" if !real.is_negated() => digits
+                            .parse::<u64>()
+                            .map(Constant::Integer)
+                            .map_err(|_| "invalid u64 literal".into()),
+                        "f64" => {
+                            let mut value =
+                                digits.parse::<f64>().map_err(|_| "invalid f64 literal")?;
+                            if real.is_negated() {
+                                value = -value;
+                            }
+                            if !value.is_finite() {
+                                return Err("non-finite literal".into());
+                            }
+                            Ok(Constant::Float(value.to_bits()))
+                        }
+                        "u64" => Err("negative u64 literal".into()),
+                        _ => Err("native sequence numeric suffix must be u64 or f64".into()),
+                    };
+                }
+            }
             let source = text(&node)?;
             let source = source.trim();
             if source.contains('.') || source.contains('e') || source.contains('E') {
