@@ -1119,6 +1119,16 @@ harness = r'''<script>
       root.dataset.mechObservedComputePhysicalOutputBuffers =
         root.dataset.mechComputePhysicalOutputBuffers || "missing";
       root.dataset.mechObservedContinuityEditRequested = String(continuityEditRequested);
+      root.dataset.mechObservedContinuitySourceAccepted = String(
+        continuityEditRequested && acceptedSource().includes("continuity-probe"),
+      );
+      root.dataset.mechObservedReplDiagnostics = JSON.stringify(
+        [...document.querySelectorAll(".mech-repl-diagnostic, .mech-repl-response")]
+          .map(element => ({
+            code: element.dataset.mechDiagnosticCode || "",
+            text: (element.textContent || "").slice(0, 1000),
+          })),
+      );
       root.dataset.mechObservedContinuityGenerationChanged =
         String(continuityGenerationChanged);
       root.dataset.mechObservedContinuityResourcePreserved =
