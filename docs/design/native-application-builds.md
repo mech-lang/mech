@@ -316,17 +316,28 @@ equality of artifact-local node offsets. Within one exact immutable revision,
 the declaration's own cell identity is retained unless state was explicitly
 mutated.
 
-Explicitly mutated state keeps the candidate's ordered initial publication,
-including projections evaluated before a later assignment. Refreshing those
-projections from the final state would apply a transition twice. Independent
-new projections still refresh from compatible retained state, and hidden
-invariants remain checked without inventing another turn.
+Explicitly mutated or newly declared state keeps the candidate's ordered
+initial publication. Mixed projections must still incorporate independently
+migrated state: preserving the whole candidate projection would retain a stale
+initializer, while replaying a prefix from the final state would apply a
+transition twice. Refresh therefore reads candidate-owned state initializers
+through the existing inactive state buffers, while final writer results and
+state outputs reuse their actual publication. Retained state uses its migrated
+publication. Hidden invariants use the same ordered read view. The temporary
+view is cleared on success and failure, without advancing the published epoch
+or cloning a state arena; bookkeeping is bounded by the declared state count.
 
 The coordinator separately retains the input snapshot associated with the
 last accepted publication. A rejected turn cannot replace that snapshot.
 Payloads use shared immutable ownership and each retained snapshot is bounded
 by the existing input limit, but the older accepted snapshot can outlive the
 latest capture: this has additional retained-memory cost.
+
+A declared observation can remain unpublished until its first accepted input.
+Optional interactive symbol inspection returns absence in that interval, just
+like output-ID inspection. Rendering a placeholder neither reads a provider nor
+invents a turn, and absence alone is not a document failure. Strict root-value
+queries still report unavailable values; genuine query errors still propagate.
 
 ## Security boundary
 

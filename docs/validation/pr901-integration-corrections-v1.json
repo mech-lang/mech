@@ -25,6 +25,39 @@
   ],
   "corrections": [
     {
+      "area": "mixed ordered replacement publication, optional observations and inventory review",
+      "reviewed_source_commit": "a280076095391682f3587176a34d1731066c8bcc",
+      "runtime_review": "Remove the blanket exclusion of reset-dependent outputs. Refresh non-migrated outputs using admitted initializer reads for candidate-owned state and published reads for migrated state. Reuse the inactive planned state buffers, retain actual final writer/output publications, and restore every current state publication and epoch on success or failure. Cover prefix projections, mixed state, hidden constraints, next-turn recovery and invalid read-view requests without raising limits or cloning a state arena.",
+      "inventory_review": "Trace maintained generator calls from their executed script entry point; do not credit unused helpers, disabled branches, deferred expressions or unproven loop bodies. Decode workflow constant truthiness and comparisons, nested module cfg gates, qualified harness names, both skip-filter spellings and Rust raw-string cfg values. Unknown constant-only workflow conditions and potentially allowed-failure commands supply no ownership. Keep platform, dependency-unit and per-declaration coverage outside this target-ownership claim.",
+      "browser_failure": {
+        "ci_run": 39060111762,
+        "job": 117476550426,
+        "artifact": 12111767924,
+        "cause": "The configured browser artifact contains the expected step-count diagnostic, but the Errors tab is selected after optional placeholder inspection reports that clock-second has no value. A newly added observation legitimately awaits its first accepted input; ResidentReplSession::symbol incorrectly converted that absence into a strict root-value error.",
+        "fix_commit": "6b43b203f",
+        "implementation": "Keep the known OutputId and return runtime.output_value directly, preserving None for unpublished symbols while retaining real query errors. A source/decoded interactive replacement regression checks absent observations, repeated inspection without epoch changes, first real input, clearing and zero provider reads. Retain every existing browser assertion/deadline and strengthen the clock probe to require actual publication before taking its first sample; the following change check still requires another tick. An AST-based CI contract protects that prerequisite."
+      },
+      "precommit_validation": {
+        "inventory_methods_passed": 20,
+        "ci_contract_methods_passed": 120,
+        "sharder_methods_passed": 6,
+        "ordered_projection_methods_passed": 12,
+        "published_input_methods_passed": 2,
+        "runtime_unit_methods_passed": 831,
+        "source_acceptance_methods_passed": 61,
+        "recording_methods_passed": 12,
+        "engine_execution_methods_passed": 37,
+        "frozen_precommit_base": "6b43b203ff18b99502dc72feed4a6ce3cd483fbf",
+        "frozen_precommit_git_diff_sha256": "d2991c7de13f284221fba0f731012862e1c732ba635ce49501dffc9848459fd1",
+        "frozen_precommit_git_status_sha256": "58befb7a5841b702ab23b1b8ba647de1ed3c6a452ce094e4165e5e4acf1fe4c9",
+        "logs": ["review-v79-precommit-current-runtime-units.log", "review-v79-precommit-current-runtime-source-acceptance.log", "review-v79-precommit-current-runtime-recording.log", "review-v79-precommit-current-engine-execution.log", "review-v79-precommit-current-ci-contracts.log", "review-v79-precommit-current-sharder.log", "review-v79-precommit-current-formatting.log", "review-v80-precommit-static-audits.log", "review-v81-precommit-ci-contracts.log"],
+        "static_audits": "Unsafe boundaries and their fixtures, type-system and semantic authority, managed memory, memory planner and Rust module layout all pass without new allowances. Shell syntax and formatting checks pass.",
+        "scope": "All seven serial v79 phases pass with the base commit and complete dirty-tree diff/status hashes checked before and after each phase. This includes all 12 projection methods, new-state/raw-constraint behavior, optional observation queries, extended engine read-view assertions and recording classification. Subsequent changes only strengthen the browser probe and its CI contract and update these receipts; v81 passes all120 contracts. These are precommit checks, not final immutable-source, actual browser or green-CI receipts. Prior failed mixed-prefix assertions, compile failure and disk-limited build remain failures, not passing qualification."
+      },
+      "earlier_pinned_pipeline": "All seven deeper-review phases pass on clean 0c324ef23: engine37, envelope4, runtime projection9, published input1, loader2, builder137unit+82integration (seven intentional ignored entries), and minimal core239 including doc tests. These source-pinned results predate this production follow-up and do not qualify it.",
+      "gate": "Publish tested corrections, reply to and resolve all six review notes, then request fresh exact-head review and require the complete final CI. The a280 workflow fails the browser canary and its aggregates despite all six mutation shards passing. Keep PR901 draft and unmerged; no benchmark measurements are claimed."
+    },
+    {
       "area": "static mutation deadline and conditional inventory selection follow-up",
       "source_commit_exposing_failure": "0c324ef23d7f2c042fb67d0005304abf1b29dd7a",
       "ci_run": 39058636869,
