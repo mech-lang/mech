@@ -291,6 +291,8 @@ impl MechRuntime {
         None
     }
 
+    /// Inspect available root symbols, omitting declared outputs that have not
+    /// published. Genuinely unknown requested names remain errors.
     pub fn root_symbol_values(
         &self,
         names: &[&str],
@@ -315,6 +317,7 @@ impl MechRuntime {
         }
     }
 
+    /// List available root values without inventing unpublished observations.
     pub fn root_symbol_values_all(&self) -> MResult<Vec<(String, RuntimeValueSnapshot)>> {
         #[cfg(feature = "resident-routing")]
         if let Some((artifact, _)) = self.resident_artifact_and_instance() {
@@ -615,7 +618,7 @@ fn compatible_state_mappings(
     let same_revision = source.revision() == target.revision();
     loop {
         semantic_equivalence.clear();
-        let mut candidates = Vec::new();
+        let mut candidates = std::collections::BTreeMap::new();
         let mut source_degrees = std::collections::BTreeMap::new();
         let mut target_degrees = std::collections::BTreeMap::new();
         for target_slot in target.slots().iter().filter(|slot| {
@@ -653,7 +656,7 @@ fn compatible_state_mappings(
                         &mut semantic_equivalence,
                     )))
             }) {
-                candidates.push((source_slot.slot, target_slot.slot));
+                candidates.entry(target_slot.slot).or_insert(source_slot.slot);
                 *source_degrees.entry(source_slot.slot).or_insert(0usize) += 1;
                 *target_degrees.entry(target_slot.slot).or_insert(0usize) += 1;
             }
@@ -662,7 +665,9 @@ fn compatible_state_mappings(
         // One source compatible with two targets is just as ambiguous as two
         // sources compatible with one target; declaration order is no identity.
         let mut progress = false;
-        for (source, target) in candidates {
+        // Retain only one candidate per target plus the complete degree
+        // counts, not a quadratic allocation for indistinguishable cells.
+        for (target, source) in candidates {
             if source_degrees[&source] == 1 && target_degrees[&target] == 1 {
                 mapped_sources.insert(source);
                 mapped_targets.insert(target);
