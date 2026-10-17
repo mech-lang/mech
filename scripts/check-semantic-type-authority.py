@@ -22,7 +22,7 @@ REQUIRED = (
     "src/engine/src/program/compiler_planning.rs",
     "src/engine/src/resident/general/mod.rs",
     "src/engine/src/resident/native_semantics.rs",
-    "src/build/src/analysis/bytecode.rs",
+    "src/build/src/analysis/bytecode/mod.rs",
     "src/build/src/plan/model.rs",
     "src/core/tests/canonical_type_contract.rs",
     "src/engine/tests/canonical_type_contract.rs",
@@ -45,7 +45,7 @@ PRESENCE = {
     "src/core/src/program/compiler/context.rs": (
         "instruction_type_bindings", "register_type_descriptors",
     ),
-    "src/build/src/analysis/bytecode.rs": (
+    "src/build/src/analysis/bytecode/mod.rs": (
         "validate_bound_call_for_target", "instruction_type_bindings",
     ),
 }
@@ -289,7 +289,7 @@ def failures(root: Path) -> list[str]:
     ):
         found.append("BoundResidentKernel does not retain and expose the selected semantic BoundCall")
 
-    native = sources.get("src/build/src/analysis/bytecode.rs", "")
+    native = sources.get("src/build/src/analysis/bytecode/mod.rs", "")
     if "validate_bound_call_for_target(binding, ExecutionTarget::Native)" not in native:
         found.append("native planning does not consume and validate semantic type bindings")
 

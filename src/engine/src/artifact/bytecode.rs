@@ -88,6 +88,9 @@ pub enum ArtifactBytecodeError {
     Snapshot(SnapshotValueError),
     Artifact(ArtifactBuildError),
     MissingArtifactSections,
+    ParallelLegacyExecutionAuthority {
+        sections: Vec<&'static str>,
+    },
     SectionByteLimit {
         section: &'static str,
         limit: usize,
@@ -685,11 +688,44 @@ pub fn decode_program_artifact_bytecode_v1(
     bytes: &[u8],
 ) -> Result<ProgramArtifact, ArtifactBytecodeError> {
     let parsed = ParsedProgram::from_bytes(bytes)?;
+    validate_artifact_execution_authority(&parsed)?;
     decode_program_artifact_sections_with_requirements(
         &parsed.artifact,
         Some(parsed.requirements),
         ArtifactDecodeLimits::default(),
     )
+}
+
+/// All executable bytecode entry points must admit the complete envelope.
+/// Section decoding alone cannot verify that the outer requirement table and
+/// executable authority agree with the retained semantic artifact.
+fn validate_artifact_execution_authority(
+    program: &ParsedProgram,
+) -> Result<(), ArtifactBytecodeError> {
+    if program.artifact.is_empty() {
+        return Err(ArtifactBytecodeError::MissingArtifactSections);
+    }
+    let mut sections = Vec::new();
+    for (present, section) in [
+        (program.header.register_count != 0, "registers"),
+        (program.header.instruction_count != 0, "instruction header"),
+        (!program.types.is_empty(), "types"),
+        (!program.constants.is_empty(), "constants"),
+        (!program.constant_blob.is_empty(), "constant blob"),
+        (!program.symbols.is_empty(), "symbols"),
+        (!program.mutable_symbols.is_empty(), "mutable symbols"),
+        (!program.instructions.is_empty(), "instructions"),
+        (!program.dictionary.is_empty(), "dictionary"),
+    ] {
+        if present {
+            sections.push(section);
+        }
+    }
+    if sections.is_empty() {
+        Ok(())
+    } else {
+        Err(ArtifactBytecodeError::ParallelLegacyExecutionAuthority { sections })
+    }
 }
 
 pub fn decode_program_artifact_sections(
@@ -2697,6 +2733,123 @@ fn preflight_control_graph(
     .deserialize(&mut decoder)?;
     decoder.end()?;
     Ok(())
+}
+
+#[cfg(test)]
+mod execution_authority_tests {
+    use super::*;
+    use mech_core::{BytecodeInstruction, EncodedConstant, RuntimeType, write_bytecode};
+
+    fn empty_envelope() -> BytecodeProgram {
+        BytecodeProgram {
+            register_count: 0,
+            constants: Vec::new(),
+            symbols: BTreeMap::new(),
+            mutable_symbols: BTreeSet::new(),
+            instructions: Vec::new(),
+            dictionary: BTreeMap::new(),
+            requirements: Vec::new(),
+        }
+    }
+
+    fn empty_artifact() -> ProgramArtifact {
+        let schemas = SchemaTableBuilder::new().finish().unwrap().into_parts().0;
+        let constants = ConstantStoreBuilder::new(&schemas)
+            .finish()
+            .unwrap()
+            .into_parts()
+            .0;
+        ProgramArtifactDraft {
+            schemas,
+            constants,
+            contracts: OperationContractTable::empty(),
+            requirements: ApplicationRequirementTable::empty(),
+            inputs: Box::new([]),
+            slots: Box::new([]),
+            nodes: Box::new([]),
+            bindings: Box::new([]),
+            outputs: Box::new([]),
+            constraints: Box::new([]),
+            compute_regions: Box::new([]),
+        }
+        .finalize()
+        .unwrap()
+    }
+
+    fn legacy_envelope() -> BytecodeProgram {
+        BytecodeProgram {
+            register_count: 1,
+            constants: vec![EncodedConstant {
+                runtime_type: RuntimeType::Empty,
+                alignment: 1,
+                bytes: Vec::new(),
+            }],
+            instructions: vec![
+                BytecodeInstruction::ConstLoad {
+                    dst: 0,
+                    constant: 0,
+                },
+                BytecodeInstruction::Return { src: 0 },
+            ],
+            ..empty_envelope()
+        }
+    }
+
+    #[test]
+    fn full_decoder_rejects_legacy_only_bytecode() {
+        let bytes = write_bytecode(&legacy_envelope()).unwrap();
+        assert!(matches!(
+            decode_program_artifact_bytecode_v1(&bytes),
+            Err(ArtifactBytecodeError::MissingArtifactSections)
+        ));
+    }
+
+    #[test]
+    fn full_decoder_rejects_parallel_legacy_execution_authority() {
+        let sections = encode_program_artifact_sections(&empty_artifact()).unwrap();
+        let bytes = write_bytecode_with_artifact(&legacy_envelope(), &sections).unwrap();
+        match decode_program_artifact_bytecode_v1(&bytes) {
+            Err(ArtifactBytecodeError::ParallelLegacyExecutionAuthority { sections }) => {
+                assert!(sections.contains(&"registers"));
+                assert!(sections.contains(&"instructions"));
+                assert!(sections.contains(&"constants"));
+            }
+            result => panic!("hybrid bytecode must fail admission: {result:?}"),
+        }
+    }
+
+    #[test]
+    fn full_decoder_rejects_outer_requirement_authority_absent_from_artifact() {
+        let sections = encode_program_artifact_sections(&empty_artifact()).unwrap();
+        let bytes = write_bytecode_with_artifact(
+            &BytecodeProgram {
+                requirements: vec![ApplicationRequirement::HostFunction(
+                    ExecutionHostFunctionRequest {
+                        name: "unreferenced/host".to_owned(),
+                    },
+                )],
+                ..empty_envelope()
+            },
+            &sections,
+        )
+        .unwrap();
+        assert!(matches!(
+            decode_program_artifact_bytecode_v1(&bytes),
+            Err(ArtifactBytecodeError::RequirementTableMismatch)
+        ));
+    }
+
+    #[test]
+    fn full_decoder_preserves_canonical_bytes_and_revision() {
+        let artifact = empty_artifact();
+        let bytes = encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        let decoded = decode_program_artifact_bytecode_v1(&bytes).unwrap();
+        assert_eq!(decoded.revision(), artifact.revision());
+        assert_eq!(
+            encode_program_artifact_bytecode_v1(&decoded).unwrap(),
+            bytes
+        );
+    }
 }
 
 #[cfg(test)]

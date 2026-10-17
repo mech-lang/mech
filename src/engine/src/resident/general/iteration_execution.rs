@@ -61,7 +61,7 @@ impl ReactiveInstance {
             .call_for_node(control.budget_node)
             .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
         let mut facts = live::facts(call, control.budget_node, &[], current, &self.plan.schemas)
-            .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
+            .map_err(|error| fail(budget::memory_plan_kernel_error(error)))?;
         let measurement_work = facts.additional_demand.work;
         facts.additional_demand.turn_peak_bytes = live_bytes;
         facts.additional_demand.retained_nodes = live_nodes;
@@ -70,9 +70,9 @@ impl ReactiveInstance {
             control.budget_node,
             &facts,
         )
-        .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
-        if !turn_plan.budget_violations.is_empty() {
-            return Err(fail(ResidentKernelError::InvalidShape));
+        .map_err(|error| fail(budget::memory_plan_kernel_error(error)))?;
+        if let Some(violation) = turn_plan.budget_violations.first() {
+            return Err(fail(budget::resource_budget_error(violation)));
         }
         budget::with_control_work_budget(|| {
             budget::with_resident_turn_plan(turn_plan, || {
@@ -266,10 +266,7 @@ impl ReactiveInstance {
         epoch: InstanceEpoch,
         live: (u64, u64),
     ) -> Result<(), ResidentExecutionError> {
-        let fail = || ResidentExecutionError::Kernel {
-            node,
-            error: ResidentKernelError::InvalidShape,
-        };
+        let fail = |error| ResidentExecutionError::Kernel { node, error };
         let current = if target.storage == ResidentStorageClass::Constant {
             self.activation.read(target.region)
         } else {
@@ -279,18 +276,18 @@ impl ReactiveInstance {
             .plan
             .memory_plan
             .call_for_node(memory_node)
-            .ok_or_else(fail)?;
-        let facts =
-            live::facts(call, memory_node, &[], current, &self.plan.schemas).map_err(|_| fail())?;
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        let facts = live::facts(call, memory_node, &[], current, &self.plan.schemas)
+            .map_err(|error| fail(budget::memory_plan_kernel_error(error)))?;
         let measurement_work = facts.additional_demand.work;
         let plan = crate::memory_planner::plan_current_resident_turn(
             &self.plan.memory_plan,
             memory_node,
             &facts,
         )
-        .map_err(|_| fail())?;
-        if !plan.budget_violations.is_empty() {
-            return Err(fail());
+        .map_err(|error| fail(budget::memory_plan_kernel_error(error)))?;
+        if let Some(violation) = plan.budget_violations.first() {
+            return Err(fail(budget::resource_budget_error(violation)));
         }
         budget::with_resident_turn_plan(plan, || {
             admit(|| {
@@ -300,7 +297,7 @@ impl ReactiveInstance {
                     ..budget::KernelCostEstimate::default()
                 })
             })
-            .map_err(|_| fail())?;
+            .map_err(fail)?;
             self.iteration_copy_boundary_planned(
                 node,
                 source_location,

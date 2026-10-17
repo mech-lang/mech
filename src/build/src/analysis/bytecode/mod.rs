@@ -498,3 +498,6 @@ mod tests {
         assert_eq!(error.kind_name(), "NativeRuntimeFunctionBindingInvalid");
     }
 }
+
+#[cfg(test)]
+mod planning_contracts;

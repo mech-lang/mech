@@ -1,10 +1,10 @@
 # Native Mech applications
 
-`mech build` is the authoritative path from trusted Mech source or official
-bytecode v1 to a deterministic native executable, bytecode file, build plan,
-or generated Cargo project. Native generation preserves one boundary:
-bytecode describes the program, while trusted Rust catalogs choose every
-crate, feature, installer, and host factory.
+`mech build --backend resident` (the default) turns trusted Mech source or
+canonical ProgramArtifact bytecode v1 into a deterministic resident native
+executable, bytecode file, build plan, or generated Cargo project. The artifact
+owns program meaning; trusted Rust catalogs and schema feature mappings choose
+the linked implementations, Cargo features, and host factories.
 
 ## Source planning
 
@@ -18,39 +18,44 @@ owned `ProgramCompiler` returned by `RuntimeBuilder::build_compiler`:
 4. Materialize configured provider names, effect-free trusted planning host
    factories, host instances, and run grants.
 5. Inject `mech_stdlib::source_catalog()`, resolve retained root modules in
-   order, and compile official bytecode v1.
+   order, and compile a ProgramArtifact with its canonical bytecode-v1 encoding.
 
 Compilation validates resource reads and effects but performs no external read,
 prepare, apply, deliver, driver attach, or driver start. Compiler diagnostics,
 source paths, resolver roots, filesystem capabilities, and temporary limits
 are not embedded in the generated application. Direct `.mecb` input bypasses
-source compilation but is parsed as official v1 and checked against the same
-ABI and native-analysis rules.
+source compilation but passes the same full artifact admission and native
+contract checks.
+
+The shared `decode_program_artifact_bytecode_v1` entry point requires artifact
+sections, rejects parallel legacy register/instruction/type authority, and
+checks equality between the outer and artifact-owned application requirement
+tables. Instruction-only bytecode is a valid low-level format but is not an
+executable resident application. Native planning rejects it before generating
+a project; the generated runtime never falls back to instruction execution.
 
 ## Trusted linkage
 
-Runtime factories declare `NativeFunctionLinkage` next to their owner-local
-runtime registration. The record names the package, crate, exact hidden
-installer path, and minimal sorted Cargo feature closure. Every installer
-under an owner's `__mech_native` module inserts exactly one factory. Native
-analysis resolves each bytecode runtime-function ID and exact name through
-this catalog; bytecode cannot supply linkage metadata.
+Native planning derives value and shape features from the artifact schema
+arena, and operation-specific resident features from canonical operation
+identities. It validates the artifact through the configured resident catalog
+and provider contracts before producing a plan. Every application requirement
+must belong to an artifact operation node; unreferenced requirement authority
+is rejected.
 
-The concrete factory Rust type is authoritative for each runtime function's
-input and output signature. Scalar and exact matrix representation features
-are derived from that signature; declarations list only operation-specific
-extra features. A runtime ID has one feature-invariant signature and cannot
-select a different output representation when unrelated Cargo features are
-enabled. The exact-closure contract treats every unique package/feature
-combination as an inventory identity, rejects any signature/feature mismatch,
-and compares the complete installed ID/name/signature surface. Bounded CI
-compiles one bounded exact closure per owner plus the named cross-shape matrix
-regressions in eight deterministic shards; it does not attempt tens of
-thousands of redundant owner-crate compilations.
+Generated catalogs install the maintained engine intrinsic resident binders.
+They do not reconstruct a second instruction stream or choose implementations
+from runtime-function IDs embedded in bytecode. Provider-owned planning checks
+resource schemas and value-domain obligations without performing external I/O.
+Fallible resident execution and resource preparation remain responsible for
+validating actual runtime values before publication.
 
-`MechFunction::solve_result` is the sole production execution API. Function
-errors propagate through runtime and bytecode execution; production code does
-not discard them behind an infallible `solve` wrapper.
+`NativeFunctionLinkage`, runtime-signature checks, and low-level instruction
+contract tests remain available as compatibility and owner-inventory coverage.
+The native builder's instruction and legacy type analysis helpers are
+compiled only for tests. Those tests exercise their contract APIs directly;
+they do not treat successful instruction validation as evidence that a native
+application can load or execute it.
 
 The standard native host catalog is built from the same private registration
 records as source-planning factories. Its exact provider surface is:
@@ -72,8 +77,8 @@ unknown, and unsupported native providers are rejected.
 Generated native applications execute through canonical resident artifacts. The
 production native host catalog registers resource providers, not actor host
 functions. `NativeApplicationBuilder::plan` rejects any actor bootstrap with
-`NativeActorBootstrapUnsupported` before planning either instruction bytecode
-or a canonical artifact. Public project rendering enforces the same boundary;
+`NativeActorBootstrapUnsupported` before bytecode admission or canonical
+contract planning. Public project rendering enforces the same boundary;
 there is no generated actor execution template.
 
 The retained host-function linkage types and effect-free actor planning tests
@@ -93,13 +98,16 @@ normalizer before matching or hashing, and host settings reject non-finite
 floats recursively so JSON plan identity remains lossless. A plan freezes:
 
 - bytecode and bytecode version, application kind, target, profile, binary
-  name, component version, normalized runtime configuration, and optional
-  normalized actor bootstrap;
-- exact runtime types and functions, application requirements, host
-  instances, grants, packages, features, installers, and factories;
+  name, component version, and normalized runtime configuration;
+- application requirements, host instances, grants, selected packages,
+  schema-derived value features, resident operation features, and host factories;
 - registry or workspace dependency source, optional workspace fingerprint,
   the frozen dependency-resolution SHA-256, live status, bytecode SHA-256,
   and plan SHA-256.
+
+The v1 `runtime_types` and `runtime_functions` fields remain in the public plan
+schema but are empty in canonical native plans. `actor_bootstrap` is absent;
+production plans do not restore retired instruction or actor execution.
 
 Resource requirements retain two structured identities. The request records
 the originally requested base URI, path, context name, operation, intent, and
@@ -142,25 +150,24 @@ therefore rejected instead of silently changing the binary for an existing
 plan. The resolved lock remains in the generated project and all builds use
 `--locked`.
 
-`catalog.rs` contains only the sorted exact runtime-factory installer calls
-selected by the bytecode. `runtime.rs` contains direct Rust construction of
-the normalized runtime, selected host factories and instances, grants, and
-exact host-function installers. `main.rs` embeds `program.mecb` with
-`include_bytes!`. Generated projects never depend on `mech-stdlib`,
-`mech-syntax`, `mech-bytecode`, or `mech-build`, and never enable `source`,
-`compiler`, or `native-plan`.
+`catalog.rs` reconstructs the engine-owned resident catalog under the planned
+feature closure. `runtime.rs` constructs the normalized runtime, selected host
+factories and instances, and grants. `main.rs` embeds `program.mecb` with
+`include_bytes!` and installs it with `MechRuntime::load_bytecode_program`.
+Generated resident projects never depend on `mech-stdlib`, `mech-syntax`,
+`mech-bytecode`, or `mech-build`, and never enable `source`, `compiler`, or
+`native-plan`.
 
-An engine application links `mech-core`, `mech-engine`, and only selected
-machine crates. It excludes `mech-runtime` and all host crates. A hosted
-application adds `mech-runtime` and only the selected native host crates.
-Neither application parses source or configuration at run time.
+Both engine and hosted applications link `mech-core`, `mech-engine`, and
+`mech-runtime`. A host-free engine application needs no host crates. Hosted
+applications add only the selected native providers. Neither parses source or
+configuration at run time.
 
-Bytecode contract validation performs one shared instruction traversal for
-execution and native analysis. The native build supplies the external host and
-resource resolver rather than maintaining another instruction interpreter.
-Every bytecode register is also one stable outer value cell: symbols, external
-outputs, downstream factories, transaction rollback, and the final return
-observe the same identity.
+Planning and runtime loading use the same full bytecode admission entry point.
+Artifact schemas, nodes, slots, and provider contracts own resident execution;
+legacy registers and output seeds are not a second execution authority. The
+native builder additionally checks deployment-specific requirements such as
+target Index width, trusted provider availability, grants, and feature closure.
 
 Engine applications accept no argument or exactly `--once`; other arguments
 print usage and exit with status 2. Hosted applications accept launcher controls
@@ -203,8 +210,8 @@ drain sleeps for 10 milliseconds. Normal exit and primary errors stop started
 drivers and shut down the runtime; primary errors are reported before cleanup
 failures. Only live projects depend on exact `ctrlc = "=3.5.2"`.
 
-These generated applications execute through the resident runtime. Native
-machine-code lowering of canonical artifacts is a separate compiler boundary.
+These generated applications execute through the resident runtime. Canonical
+machine-code lowering is a separate compiler boundary described below.
 
 ## Registry and workspace modes
 
@@ -234,10 +241,11 @@ Cargo-project emit is already the requested project and rejects that flag.
 
 ## Command surface
 
-The complete interface is:
+The resident build interface is:
 
 ```text
 mech build <INPUTS...>
+  --backend resident|cranelift
   --emit native|bytecode|cargo-project|plan
   --name <NAME>
   --out <PATH>
@@ -256,12 +264,46 @@ does not perform native analysis or invoke Cargo; plan emit does not generate
 a project; Cargo-project emit generates and locks a project without building
 an executable.
 
+## Canonical machine-code and experimental source routes
+
+The `mech-gpu` canonical native adapter consumes `ProgramArtifact` through
+`lower_pure_native_artifact`, using private semantic witnesses from the actual
+selected resident binders. Its immutable typed IR supports stateless Turn
+operations on `Bool`, `U64`, and `I64`. It rejects resources, constraints,
+compute regions, retained state, computed Activation nodes, matches,
+comprehensions, counted applications, and FSMs. Direct constant output aliases
+are admitted only when their metadata identifies the same validated constant.
+
+JIT compilation and object emission share one checked Cranelift definition
+pass. JIT and linked invocation share the managed typed evaluation boundary:
+finite setup/node/completion work, admitted transport storage, checked integer
+arithmetic, and complete output validation before caller-visible publication.
+Object emission alone is not linked execution evidence. The explicit linked
+application qualification builds and executes generated applications and is
+invoked by the full CI workflow.
+
+The optional CLI `--backend cranelift` route still calls the separate
+source-to-sequence/control/grid implementation in `hosts/gpu/src/native_build.rs`.
+It requires `cranelift_build`, emits only native applications for the current
+host, and rejects resident host configuration, `--debug`, and `--trace`.
+`--scalar` and `--fp-contract-loop` are specific to this route. It retains
+capabilities outside the canonical native scalar slice, including floating
+point/vector kernels, collections, control flow, and standalone I/O. Migration
+must transfer those capabilities and their behavioral tests to artifact-based
+lowering before removing the corresponding source frontends.
+
+Mixed `@compute`, `@cpu`, and `@gpu` applications use the separate
+`mech-compute` backend/session contract. Their physical CPU and wgpu executors
+are not substitutes for the resident application coordinator. The stable
+product lowering and supported backend scope are documented in
+[`hosts/gpu/README.md`](../../hosts/gpu/README.md).
+
 ## Security boundary
 
 ```text
 program:       embedded bytecode data
 runtime:       statically linked Rust code
-catalog:       generated exact installer calls
+catalog:       maintained resident binders and selected host factories
 mutable state: allocated at process startup
 ```
 

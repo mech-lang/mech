@@ -494,6 +494,11 @@ fn rejected_artifact_record(
             "ResidentOutputMaterialization",
             "resident output materialization failed",
         ),
+        ArtifactResidentExecutionError::ArtifactRevisionMismatch { .. } => (
+            TurnFailurePhase::Execution,
+            "ResidentArtifactRevisionMismatch",
+            "resident artifact revision did not match the activated plan",
+        ),
         ArtifactResidentExecutionError::ExternalSummaryRequired => (
             TurnFailurePhase::Execution,
             "ResidentExternalSummaryRequired",

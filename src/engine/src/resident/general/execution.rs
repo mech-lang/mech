@@ -276,6 +276,10 @@ pub enum ResidentExecutionError {
         violation: MemoryBudgetViolation,
     },
     ActiveCandidate,
+    ArtifactRevisionMismatch {
+        expected: ProgramRevision,
+        actual: ProgramRevision,
+    },
     EpochExhausted,
     InputCount {
         expected: usize,
@@ -762,7 +766,10 @@ impl ReactiveInstance {
         targets: &std::collections::BTreeSet<CellSlotId>,
         inputs: &[CapturedValueInput<'_>],
     ) -> Result<(), ResidentExecutionError> {
-        if targets.is_empty() {
+        if targets.is_empty()
+            && (self.plan.constraints.is_empty()
+                || self.plan.integrity_mode == ResidentIntegrityMode::Unchecked)
+        {
             return Ok(());
         }
         if self.candidate_active {
@@ -785,10 +792,40 @@ impl ReactiveInstance {
         }
 
         if artifact.revision() != self.plan.program_revision {
-            return Err(ResidentExecutionError::InvalidOutputMaterialization {
-                slot: *targets.first().expect("nonempty targets checked"),
+            return Err(ResidentExecutionError::ArtifactRevisionMismatch {
+                expected: self.plan.program_revision,
+                actual: artifact.revision(),
             });
         }
+        fn source_available(
+            artifact: &crate::ProgramArtifact,
+            plan: &super::ActivatedPlan,
+            supplied_inputs: &std::collections::BTreeSet<CellSlotId>,
+            unavailable_nodes: &std::collections::BTreeSet<NodeId>,
+            source: crate::ArtifactSource,
+        ) -> bool {
+            let source = super::forwarded_output_source(artifact, source)
+                .expect("the activated artifact has validated output aliases");
+            let crate::ArtifactSource::Slot(slot) = source else {
+                return true;
+            };
+            let declaration = &artifact.slots()[slot.get() as usize];
+            match plan.slots[slot.get() as usize].storage {
+                ResidentStorageClass::Input => supplied_inputs.contains(&slot),
+                ResidentStorageClass::Scratch => {
+                    !matches!(declaration.producer, crate::ProducerReference::NodeOutput { node, .. }
+                        if unavailable_nodes.contains(&node))
+                }
+                ResidentStorageClass::State | ResidentStorageClass::Constant => true,
+            }
+        }
+        let supplied_inputs = self
+            .plan
+            .inputs
+            .iter()
+            .filter(|declared| inputs.iter().any(|input| input.slot == declared.slot))
+            .map(|input| input.artifact_slot)
+            .collect::<std::collections::BTreeSet<_>>();
         self.install_available_value_inputs(inputs)?;
         let epoch = self.published_epoch();
         // A canonical state writer copies its final candidate into the retained
@@ -833,6 +870,18 @@ impl ReactiveInstance {
             {
                 continue;
             }
+            if matches!(
+                artifact.nodes()[producer.get() as usize].body,
+                crate::ExecutableNodeBody::Activation(_)
+            ) || self.plan.steps.iter().any(|step| {
+                matches!(step, ActivatedTurnStep::Match(control)
+                    if control.artifact_node == producer && control.continuation)
+            }) {
+                // An initialized state cell does not prove that an activation
+                // was triggered or an FSM published its first result. Only
+                // its own ready output below can establish that snapshot.
+                continue;
+            }
             if let Some(previous) = published_candidates.insert(producer, state.slot) {
                 let previous_region = self.plan.slots[previous.get() as usize].region;
                 let region = self.plan.slots[state.slot.get() as usize].region;
@@ -849,6 +898,36 @@ impl ReactiveInstance {
                 }
             }
         }
+        // Compatible outputs are authoritative snapshots too. A newly added
+        // projection may read an existing control result, including an FSM
+        // publication. Restore that result from its migrated output instead
+        // of rerunning the producer against activation defaults or advancing
+        // the FSM. Unpublished outputs cannot supply a snapshot.
+        for materialization in &self.plan.output_materializations {
+            if targets.contains(&materialization.target) {
+                continue;
+            }
+            let output_slot = self.plan.slots[materialization.target.get() as usize].physical_index;
+            if !self
+                .plan
+                .outputs
+                .iter()
+                .zip(&self.output_ready)
+                .any(|(output, ready)| output.slot == output_slot && *ready)
+            {
+                continue;
+            }
+            if !matches!(materialization.source, ResidentReadLocation::Scratch(_)) {
+                continue;
+            }
+            let Some(producer) = materialization.producer else {
+                continue;
+            };
+            let node = self.plan.steps[producer.get() as usize].artifact_node();
+            published_candidates
+                .entry(node)
+                .or_insert(materialization.target);
+        }
         // Refresh only the dependency closure of the requested projections.
         // Other outputs have already migrated from the published epoch. In
         // particular, unrelated kernels must not consume absent transient host
@@ -863,7 +942,20 @@ impl ReactiveInstance {
                 },
             )
             .collect::<Vec<_>>();
+        if self.plan.integrity_mode == ResidentIntegrityMode::Checked {
+            // Static/document compilation need not expose invariant predicates
+            // as query outputs. They still belong to the candidate snapshot and
+            // must be refreshed even if all public outputs were migrated.
+            pending.extend(
+                artifact
+                    .constraints()
+                    .iter()
+                    .flat_map(|constraint| constraint.inputs.iter().copied()),
+            );
+        }
         while let Some(source) = pending.pop() {
+            let source = super::forwarded_output_source(artifact, source)
+                .expect("the activated artifact has validated output aliases");
             let crate::ArtifactSource::Slot(slot) = source else {
                 continue;
             };
@@ -890,39 +982,108 @@ impl ReactiveInstance {
         self.refresh_f64_state_arenas(epoch);
         let execution_order = self.plan.execution_node_order.to_vec();
         let mut probe = ResidentStructuralProbe::default();
+        let mut unavailable_nodes = std::collections::BTreeSet::new();
         for node_index in execution_order {
-            let execute = matches!(
-                &self.plan.steps[node_index.get() as usize],
-                ActivatedTurnStep::Kernel(node)
-                    if node.write.storage == ResidentStorageClass::Scratch
-                        && required.contains(&node.artifact_node)
-            );
-            if execute {
-                let ActivatedTurnStep::Kernel(node) = &self.plan.steps[node_index.get() as usize]
-                else {
-                    unreachable!("projection refresh selects only kernels");
-                };
-                if let Some(source) = published_candidates.get(&node.artifact_node) {
+            let step = &self.plan.steps[node_index.get() as usize];
+            let node = step.artifact_node();
+            if !required.contains(&node) {
+                continue;
+            }
+            if !published_candidates.contains_key(&node) {
+                let declaration = &artifact.nodes()[node.get() as usize];
+                let missing_input = artifact.bindings()
+                    [declaration.input_bindings.start as usize..declaration.input_bindings.end as usize]
+                    .iter()
+                    .any(|binding| {
+                        matches!(binding, crate::BindingDeclaration::Input { source, .. }
+                            if !source_available(artifact, &self.plan, &supplied_inputs, &unavailable_nodes, *source))
+                    });
+                if missing_input
+                    || self.step_depends_on_unpublished_continuation(node_index.get() as usize)
+                {
+                    unavailable_nodes.insert(node);
+                    continue;
+                }
+            }
+            let continuation = matches!(step, ActivatedTurnStep::Match(node) if node.continuation);
+            let write = match step {
+                ActivatedTurnStep::Kernel(node) => node.write,
+                ActivatedTurnStep::Iteration(node) => node.write,
+                ActivatedTurnStep::Comprehension(node) => node.write,
+                ActivatedTurnStep::Match(node)
+                    if (!node.continuation
+                        && !matches!(
+                            artifact.nodes()[node.artifact_node.get() as usize].body,
+                            crate::ExecutableNodeBody::Activation(_)
+                        ))
+                        || published_candidates.contains_key(&node.artifact_node) =>
+                {
+                    node.write
+                }
+                // Activation scopes, continuations, and effects belong to
+                // ordinary turns. Refresh can only reuse their prior result.
+                _ => {
+                    unavailable_nodes.insert(node);
+                    continue;
+                }
+            };
+            if write.storage == ResidentStorageClass::Scratch {
+                if let Some(source) = published_candidates.get(&node) {
                     let source_region = self.plan.slots[source.get() as usize].region;
                     let source_buffer = self.state.published_buffer(*source, epoch);
                     self.workspace
                         .scratch
                         .copy_region_from(
-                            node.write.region,
+                            write.region,
                             &self.state.buffers[source_buffer],
                             source_region,
                         )
                         .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                    if continuation {
+                        // The accepted materialization proves this result is
+                        // readable, without constructing or resuming an FSM.
+                        set_bit(&mut self.published_continuations, node_index.get() as usize);
+                        set_bit(
+                            &mut self.workspace.initialized_output_bits,
+                            node_index.get() as usize,
+                        );
+                    }
                 } else {
-                    self.execute_kernel(node_index, epoch, epoch, &mut probe)?;
+                    self.execute_step_with_live_demand(node_index, epoch, epoch, &mut probe, 0, 0)?;
                 }
             }
         }
 
         let materializations = self.plan.output_materializations.to_vec();
+        let mut refreshed = std::collections::BTreeSet::new();
         let staged = (|| {
             for materialization in &materializations {
                 if !targets.contains(&materialization.target) {
+                    continue;
+                }
+                let crate::ProducerReference::Output { source, .. } =
+                    artifact.slots()[materialization.target.get() as usize].producer
+                else {
+                    unreachable!("projection target was validated")
+                };
+                if !source_available(
+                    artifact,
+                    &self.plan,
+                    &supplied_inputs,
+                    &unavailable_nodes,
+                    source,
+                ) {
+                    continue;
+                }
+                let unpublished = self.plan.steps.iter().enumerate().any(|(index, step)| {
+                    self.unpublished_continuation(index)
+                        && matches!(step, ActivatedTurnStep::Match(control)
+                        if !published_candidates.contains_key(&control.artifact_node)
+                            && output_materialization_depends_on_match(
+                                &self.plan, *materialization, index, control.write.region,
+                            ))
+                });
+                if unpublished {
                     continue;
                 }
                 let target = materialization.target;
@@ -968,17 +1129,46 @@ impl ReactiveInstance {
                     ),
                 }
                 .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                refreshed.insert(target);
             }
-            self.validate_constraints_with_projection_candidates(epoch, Some(targets))
+            let unavailable_constraints = artifact
+                .constraints()
+                .iter()
+                .filter(|constraint| {
+                    constraint.inputs.iter().any(|source| {
+                        !source_available(
+                            artifact,
+                            &self.plan,
+                            &supplied_inputs,
+                            &unavailable_nodes,
+                            *source,
+                        )
+                    })
+                })
+                .map(|constraint| constraint.constraint)
+                .collect::<std::collections::BTreeSet<_>>();
+            self.validate_constraints_with_projection_candidates(
+                epoch,
+                Some(&refreshed),
+                Some(&unavailable_constraints),
+            )
         })();
         staged?;
         for materialization in &materializations {
             let target = materialization.target;
-            if targets.contains(&target) {
+            if refreshed.contains(&target) {
                 let candidate = self.state.candidate_buffer(target, epoch);
                 let mut epochs = [None, None];
                 epochs[candidate] = Some(epoch);
                 self.state.version_mut(target).epochs = epochs;
+            }
+            if targets.contains(&target) {
+                let physical = self.plan.slots[target.get() as usize].physical_index;
+                for (output, ready) in self.plan.outputs.iter().zip(self.output_ready.iter_mut()) {
+                    if output.slot == physical {
+                        *ready = refreshed.contains(&target);
+                    }
+                }
             }
         }
         Ok(())
@@ -2123,18 +2313,24 @@ impl ReactiveInstance {
         &self,
         working_epoch: InstanceEpoch,
     ) -> Result<(), ResidentExecutionError> {
-        self.validate_constraints_with_projection_candidates(working_epoch, None)
+        self.validate_constraints_with_projection_candidates(working_epoch, None, None)
     }
 
     fn validate_constraints_with_projection_candidates(
         &self,
         working_epoch: InstanceEpoch,
         staged_outputs: Option<&std::collections::BTreeSet<CellSlotId>>,
+        unavailable_constraints: Option<&std::collections::BTreeSet<IntegrityConstraintId>>,
     ) -> Result<(), ResidentExecutionError> {
         if self.plan.integrity_mode == ResidentIntegrityMode::Unchecked {
             return Ok(());
         }
         for constraint in &self.plan.constraints {
+            if unavailable_constraints
+                .is_some_and(|unavailable| unavailable.contains(&constraint.artifact_id))
+            {
+                continue;
+            }
             if constraint.producer.is_some_and(|producer| {
                 bit_is_set(
                     &self.workspace.suppressed_activation_bits,
@@ -6785,6 +6981,134 @@ mod tests {
         .unwrap()
     }
 
+    #[cfg(feature = "source")]
+    #[test]
+    fn projection_refresh_does_not_trigger_a_dormant_activation_output() {
+        use mech_syntax::document::{
+            AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
+        };
+        let source = "trigger := true\n~count := 0.0\n~> trigger { count = count + 1.0 }\ncount\n";
+        let parsed = mech_syntax::document::parse_canonical_document(
+            TextSnapshot::new(DocumentId(824), Revision(1), source).unwrap(),
+            ParseConfig::default(),
+        );
+        assert!(parsed.is_strictly_clean());
+        let document = DocumentSyntax::cast(parsed.syntax()).unwrap();
+        let artifact = crate::CanonicalSourceFrontend
+            .compile_document(&document)
+            .unwrap()
+            .compile_artifact()
+            .unwrap();
+        let activation = artifact
+            .nodes()
+            .iter()
+            .find(|node| matches!(node.body, crate::ExecutableNodeBody::Activation(_)))
+            .unwrap();
+        let activation_result = artifact
+            .slots()
+            .iter()
+            .find(|slot| {
+                slot.role == SlotRole::Derived
+                    && matches!(slot.producer, crate::ProducerReference::NodeOutput { node, .. }
+                        if node == activation.node)
+            })
+            .unwrap();
+        // Canonical artifacts may expose a scope's candidate tuple directly,
+        // even when source lowering only exposes its assigned state cells.
+        // Such a projection cannot invent the first trigger during refresh.
+        let mut slots = artifact.slots().to_vec();
+        let mut outputs = artifact.outputs().to_vec();
+        let output_index = outputs.len();
+        let target = CellSlotId::new(slots.len() as u32);
+        let output = mech_core::OutputId::new(output_index as u32);
+        slots.push(crate::SlotDeclaration {
+            slot: target,
+            schema: activation_result.schema,
+            role: SlotRole::Output,
+            producer: crate::ProducerReference::Output {
+                source: crate::ArtifactSource::Slot(activation_result.slot),
+                output,
+            },
+            initializer: None,
+        });
+        outputs.push(crate::OutputDeclaration {
+            output,
+            name: "activation-result".to_owned(),
+            interactive_binding: None,
+            source: target,
+            schema: activation_result.schema,
+        });
+        let artifact = crate::ProgramArtifactDraft {
+            schemas: artifact.schemas().clone(),
+            constants: artifact.constants().clone(),
+            contracts: artifact.contracts().clone(),
+            requirements: artifact.requirements().clone(),
+            inputs: artifact.inputs().to_vec().into_boxed_slice(),
+            slots: slots.into_boxed_slice(),
+            nodes: artifact.nodes().to_vec().into_boxed_slice(),
+            bindings: artifact.bindings().to_vec().into_boxed_slice(),
+            outputs: outputs.into_boxed_slice(),
+            constraints: artifact.constraints().to_vec().into_boxed_slice(),
+            compute_regions: artifact.compute_regions().to_vec().into_boxed_slice(),
+        }
+        .finalize()
+        .unwrap();
+        let decoded = crate::decode_program_artifact_bytecode_v1(
+            &crate::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+        )
+        .unwrap();
+        let mut catalog = mech_core::FunctionCatalogBuilder::new();
+        crate::install_intrinsic_resident(&mut catalog).unwrap();
+        let catalog = catalog.build().unwrap();
+        for artifact in [&artifact, &decoded] {
+            let mut instance = crate::resident::activate(
+                mech_core::ReactiveInstanceId::new(824, 1),
+                artifact,
+                &catalog,
+                &crate::resident::ActivationFacts::default(),
+            )
+            .unwrap();
+            instance
+                .prepare_initial_turn(&[])
+                .unwrap()
+                .publish()
+                .unwrap();
+            let epoch = instance.published_epoch();
+            let count = instance.copied_output(0).unwrap();
+            assert_eq!(
+                count.canonical_data_draft().unwrap(),
+                mech_core::ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(0.0))
+            );
+            instance
+                .refresh_output_projections(artifact, &std::collections::BTreeSet::from([target]))
+                .unwrap();
+            assert_eq!(instance.published_epoch(), epoch);
+            assert_eq!(
+                instance
+                    .copied_output(0)
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                count.canonical_data_draft().unwrap(),
+            );
+            assert!(matches!(
+                instance.copied_output(output_index),
+                Err(ResidentActivationError::OutputUnavailable { output })
+                    if output == output_index
+            ));
+            instance.turn(&[]).unwrap();
+            assert_eq!(
+                instance
+                    .copied_output(0)
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                mech_core::ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(1.0))
+            );
+            assert!(instance.copied_output(output_index).is_ok());
+        }
+    }
+
     #[cfg(feature = "string")]
     #[test]
     fn retained_snapshot_capture_measurement_uses_its_immutable_schema_owner() {
@@ -7189,6 +7513,72 @@ mod tests {
                 },
             })
         );
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn counted_application_plan_preserves_resource_denial_and_published_output() {
+        for count in ["2", "[2]"] {
+            let mut instance = source_document_instance(&format!(
+                "identity(value<f64>) => <f64> := value\nsignal<f64> |{count}> identity\n"
+            ));
+            let slot = instance.plan.inputs[0].slot;
+            instance
+                .turn(&[CapturedSignalInput {
+                    slot,
+                    value: ResidentValueRef::F64(&[7.0]),
+                }])
+                .unwrap();
+            let published = instance.copied_output(0).unwrap();
+            let before = instance.published_epoch();
+            let operation = instance
+                .plan
+                .steps
+                .iter()
+                .position(|step| matches!(step, ActivatedTurnStep::Iteration(_)))
+                .map(|index| ActivatedNodeIndex(index as u32))
+                .expect("counted application must retain an iteration node");
+            let result = instance.execute_step_with_live_demand(
+                operation,
+                before,
+                before.checked_next().unwrap(),
+                &mut ResidentStructuralProbe::default(),
+                mech_core::RESIDENT_MAX_BYTES + 1,
+                0,
+            );
+            assert!(
+                matches!(result, Err(ResidentExecutionError::Kernel {
+                    node,
+                    error: ResidentKernelError::ResourceLimit {
+                        phase: mech_core::ResidentResourcePhase::Admission,
+                        dimension: mech_core::MemoryBudgetDimension::TemporaryBytes,
+                        required,
+                        limit,
+                    },
+                }) if node == instance.plan.steps[operation.get() as usize].artifact_node()
+                    && required > limit && limit == mech_core::RESIDENT_MAX_BYTES),
+                "count {count} must preserve the actual denied resource: {result:?}"
+            );
+            assert_eq!(instance.published_epoch(), before);
+            assert_eq!(
+                instance
+                    .copied_output(0)
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                published.canonical_data_draft().unwrap()
+            );
+            instance
+                .turn(&[CapturedSignalInput {
+                    slot,
+                    value: ResidentValueRef::F64(&[8.0]),
+                }])
+                .unwrap();
+            assert!(matches!(
+                instance.copied_output(0).unwrap().data(),
+                mech_core::ValueData::F64(value) if value.to_f64() == 8.0
+            ));
+        }
     }
 
     #[cfg(feature = "source")]

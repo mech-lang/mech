@@ -147,10 +147,27 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("--lib resident::native_semantics::tests", block)
         self.assertIn("--features canonical-native --lib native_artifact::", block)
         self.assertIn("--features canonical-native-runtime --lib", block)
+        cli_step = next(step for step in job_steps(FULL, "canonical-applications")
+                        if "Execute canonical CLI byte and resource contracts" in step)
+        self.assertIn("-p mech-build", cli_step)
+        self.assertIn("--no-default-features --features standard-hosts", cli_step)
+        for target in (
+            "canonical_cli_bytes", "canonical_resource_execution",
+            "canonical_resource_planning", "canonical_map_features",
+            "canonical_pure_text_features",
+        ):
+            self.assertIn(f"--test {target}", cli_step)
+        self.assertIn("-- --test-threads=1", cli_step)
+        self.assertNotIn("--ignored", cli_step)
         admission_step = next(step for step in job_steps(FULL, "canonical-applications")
                               if "Execute activated native host I/O and application syntax" in step)
-        for target in ("native_host_io", "repeated_application", "native_host_application", "native_source_admission"):
+        for target in (
+            "native_host_io", "repeated_application", "native_host_application",
+            "native_source_admission", "control_fsm", "control_postfix_selection",
+            "control_selection", "control_signed", "idiomatic_sources",
+        ):
             self.assertIn(f"--test {target}", admission_step)
+        self.assertIn("--features native-build,native-io", admission_step)
         self.assertIn("-- --test-threads=1", admission_step)
         self.assertNotIn("--ignored", admission_step)
         for target, case, evidence in (
@@ -163,6 +180,12 @@ class FullWorkflowContractTests(unittest.TestCase):
             ("canonical_cli_application",
              "linked_canonical_cli_arguments_and_stdin_finish_without_drivers",
              "MECH_CANONICAL_CLI_EVIDENCE_DIR"),
+            ("control_application",
+             "one_linked_control_executable_preserves_signed_machine_outputs",
+             "MECH_CONTROL_QUALIFICATION_DIRECTORY"),
+            ("native_stdin_application",
+             "one_linked_stdin_executable_preserves_unicode_snapshots_and_launch_policy",
+             "MECH_NATIVE_STDIN_QUALIFICATION_DIRECTORY"),
         ):
             step = next(step for step in job_steps(FULL, "canonical-applications")
                         if f"--test {target} " in step and case in step)
@@ -171,6 +194,13 @@ class FullWorkflowContractTests(unittest.TestCase):
             self.assertIn(case, step)
             self.assertIn("--test-threads=1", step)
             self.assertIn(evidence, step)
+            if target in {"control_application", "native_stdin_application"}:
+                self.assertIn("--features native-build,native-io", step)
+                self.assertIn("-- --list --ignored --exact", step)
+                self.assertIn(f"^{case}: test$", step)
+                self.assertIn('" -eq 1', step)
+            if target == "control_application":
+                self.assertIn('MECH_CONTROL_INLINE: "0"', step)
             if target == "canonical_cli_application":
                 self.assertIn("--features standard-hosts,process-supervision", step)
                 self.assertIn("-- --list --ignored --exact", step)
@@ -180,6 +210,50 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("MECH_CANONICAL_NATIVE_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}", block)
         self.assertIn("MECH_CANONICAL_CLI_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}", block)
         self.assertIn("uses: actions/upload-artifact@", block)
+        for evidence in ("native-control-evidence", "native-stdin-evidence"):
+            self.assertIn(f"${{{{ runner.temp }}}}/{evidence}", block)
+
+    def test_canonical_source_and_native_registration_targets_are_selected(self):
+        groups = (
+            (
+                "canonical-applications", "Execute canonical collection and text source contracts",
+                "mech-stdlib", "--no-default-features --features full_compiler",
+                (
+                    "comprehension_captures", "comprehension_work_source",
+                    "control_local_geometry", "control_matrix_captures", "control_result_shapes",
+                    "function_output_contexts", "knucleotide_record_source", "map_keys_comprehensions",
+                    "map_source", "match_result_schemas", "matrix_block_comprehensions",
+                    "postfix_selection", "primitive_snapshot_constructors", "pure_text_managed",
+                    "pure_text_source", "retention_work", "sequence_sort", "set_comprehension_operands",
+                    "string_generators", "string_literal_match", "string_membership_comprehensions",
+                    "string_selector_shapes", "text_operations", "u64_float_conversion_source",
+                ),
+            ),
+            (
+                "cargo-language", "Execute canonical resident string and input shape contracts",
+                "mech-engine", "--no-default-features --features full_compiler,resident-artifact",
+                ("canonical_string_selection", "string_set_comprehension", "value_input_shapes"),
+            ),
+            (
+                "native-linkage-owners", "Execute canonical intrinsic native-link registration",
+                "mech-engine", "--no-default-features --features native-link,pure_text,map_ops,sequence_sort",
+                ("map_native_linkage", "sequence_sort_native_linkage", "text_operations_native_linkage"),
+            ),
+            (
+                "managed-memory-runtime", "Execute the complete managed-memory conformance boundary",
+                "mech-core", "--all-features",
+                ("managed_input_descriptor", "borrowed_string_footprint", "resident_lowering_attachment"),
+            ),
+        )
+        for job, name, package, profile, targets in groups:
+            with self.subTest(job=job, name=name):
+                step = next(step for step in job_steps(FULL, job) if name in step)
+                self.assertIn(f"-p {package}", step)
+                self.assertIn(profile, step)
+                for target in targets:
+                    self.assertIn(f"--test {target}", step)
+                self.assertNotIn("--ignored", step)
+                self.assertNotIn("--no-run", step)
 
     def test_runtime_family_keeps_minimal_and_complete_source_profiles(self):
         block = job_block(FULL, "cargo-runtime")
@@ -1698,13 +1772,17 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("- managed-memory-fixed-profiles", cargo)
         self.assertIn("- managed-memory-miri", cargo)
 
-    def test_managed_memory_retains_resident_live_admission_unit_tests(self):
+    def test_managed_memory_retains_resident_live_and_execution_unit_tests(self):
         runtime = job_block(FULL, "managed-memory-runtime")
         commands = [
             " ".join(line.split())
             for line in runtime.replace("\\\n", " ").splitlines()
         ]
-        for filter in ("resident::general::live::", "resident::native_semantics::"):
+        for filter in (
+            "resident::general::live::",
+            "resident::general::execution::tests::",
+            "resident::native_semantics::",
+        ):
             self.assertIn(
                 "cargo +nightly-2026-03-03 test --locked -p mech-engine "
                 "--no-default-features --features full_compiler,resident-artifact "
