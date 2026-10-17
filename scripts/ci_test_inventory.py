@@ -191,7 +191,9 @@ def admitted_steps(source: str):
         if directory.startswith("/") or any(part not in {"", "."} for part in directory.split("/")):
             continue
         shell = step.get("shell", defaults.get("shell"))
-        if shell is not None and shell not in {"bash", "sh", "pwsh", "powershell"}:
+        if job is document.get("runs") and "run" in step and "shell" not in step:
+            continue  # composite run steps have no implicit workflow shell
+        if shell is not None and (not isinstance(shell, str) or shell not in {"bash", "sh", "pwsh", "powershell"}):
             continue  # custom shells/noexec templates cannot prove execution
         yield step
 
@@ -223,23 +225,45 @@ def cargo_test_command(arguments: list[str]):
     # A successful command that is allowed to fail is not ownership evidence.
     if any(token in {"||", "&&", ";"} for token in cargo + harness):
         return None
-    packages, targets, features, filters = [], [], [], []
+    packages, targets, features, filters, excludes = [], [], [], [], []
+    selections = {"-p": packages, "--package": packages, "--test": targets,
+                  "-F": features, "--features": features, "--exclude": excludes}
+    valued = {*selections, "-j", "--jobs", "--manifest-path", "--target-dir",
+              "--target", "--profile", "--color", "--message-format",
+              "--bin", "--example", "--bench"}
+    flags = {"--locked", "--offline", "--frozen", "--release", "--no-default-features",
+             "--all-features", "--tests", "--all-targets", "--workspace", "--all",
+             "--lib", "--bins", "--examples", "--benches", "--doc", "--quiet", "-q",
+             "--verbose", "-v", "-vv", "--keep-going", "--future-incompat-report", "--timings"}
     index = 0
     while index < len(cargo):
         token = cargo[index]
-        if token in {"-p", "--package", "--test", "--features"}:
-            index += 1
-            if index == len(cargo):
+        key, separator, value = token.partition("=")
+        if key in valued:
+            if not separator:
+                index += 1
+                if index == len(cargo):
+                    return None
+                value = cargo[index]
+            if not value or value.startswith("-"):
                 return None
-            destination = packages if token in {"-p", "--package"} else targets if token == "--test" else features
-            destination.append(cargo[index])
-        elif token.startswith(("--package=", "--test=", "--features=")):
-            key, value = token.split("=", 1)
-            destination = packages if key == "--package" else targets if key == "--test" else features
-            destination.append(value)
-        elif token in {"-j", "--jobs", "--manifest-path", "--target-dir", "--target", "--profile", "--color", "--config", "--message-format", "--exclude", "-Z"}:
-            index += 1
-        elif not token.startswith("-"):
+            if key == "--manifest-path" and value not in {"Cargo.toml", "./Cargo.toml"}:
+                return None  # another manifest is not this reviewed workspace
+            if key == "--exclude" and not re.fullmatch(r"[A-Za-z0-9_*?\[\].+-]+", value):
+                return None  # unsupported package specs cannot prove selection
+            if key in selections:
+                selections[key].append(value)
+        elif token in flags:
+            pass
+        elif token.startswith(("-p", "-F", "-j")) and len(token) > 2 and not token.startswith("--"):
+            if token[:2] in selections:
+                selections[token[:2]].append(token[2:])
+        elif token.startswith("-"):
+            # Output-only/unstable modes and configuration (including runner
+            # overrides) are not ordinary, proven test execution. Fail closed
+            # on unknown options instead of discarding their effect.
+            return None
+        else:
             filters.append(token)
         index += 1
     explicit_kind = any(
@@ -264,7 +288,7 @@ def cargo_test_command(arguments: list[str]):
             return None  # unknown selection/mode flags cannot establish ownership
         index += 1
     return {
-        "packages": packages, "targets": targets, "all_targets": all_targets,
+        "packages": packages, "excludes": excludes, "targets": targets, "all_targets": all_targets,
         "features": set(filter(None, re.split(r"[\s,]+", " ".join(features)))),
         "default": "--no-default-features" not in cargo,
         "all_features": "--all-features" in cargo,
@@ -425,6 +449,47 @@ def reachable_generator_commands(module: ast.Module):
     """
     functions = {node.name: node for node in module.body if isinstance(node, ast.FunctionDef)}
     visited = set()
+    imported_names = {}
+    for node in ast.walk(module):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                imported_names[alias.asname or alias.name] = alias.name
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            for alias in node.names:
+                imported_names[alias.asname or alias.name] = f"{node.module}.{alias.name}"
+
+    class ProcessExit(Exception):
+        pass
+
+    class CommandValue:
+        # Aliases share invalidation, but rebinding one name is not a mutation
+        # of its old list. Unknown values are never execution evidence.
+        def __init__(self, node):
+            self.node, self.valid = node, True
+
+    def call_name(node):
+        if isinstance(node, ast.Name):
+            return imported_names.get(node.id, node.id)
+        if isinstance(node, ast.Attribute):
+            return f"{call_name(node.value)}.{node.attr}"
+        return ""
+
+    def invalidate(node, assignments):
+        for child in ast.walk(node):
+            if isinstance(child, ast.Name) and child.id in assignments:
+                assignments[child.id].valid = False
+
+    def assigned_value(node, assignments):
+        if isinstance(node, ast.Name):
+            return assignments.get(node.id)
+        try:
+            value = ast.literal_eval(node)
+        except (ValueError, TypeError, SyntaxError):
+            # Putting a command into an unmodeled container can expose it to a
+            # later alias mutation. Do not retain speculative ownership.
+            invalidate(node, assignments)
+            return None
+        return CommandValue(node) if isinstance(value, (list, tuple)) else None
 
     def constant(node):
         if isinstance(node, ast.Name) and node.id == "__name__":
@@ -464,14 +529,23 @@ def reachable_generator_commands(module: ast.Module):
             return
         for child in ast.iter_child_nodes(node):
             yield from expression(child, assignments)
+        if isinstance(node, ast.Call) and call_name(node.func) in {
+            "exit", "quit", "sys.exit", "os._exit", "builtins.exit", "builtins.quit",
+        }:
+            # Arguments run first. An exit in a called helper terminates the
+            # entry point too, unlike an ordinary return from that helper.
+            raise ProcessExit
         if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Name):
-            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
-                assignments.pop(node.func.value.id, None)
+            if isinstance(node, ast.Call):
+                invalidate(node, assignments)
             return
         if node.func.id in {"run_streamed", "execute_streamed"} and node.args:
             argument = node.args[0]
             if isinstance(argument, ast.Name):
-                argument = assignments.get(argument.id)
+                value = assignments.get(argument.id)
+                if value is None or not value.valid:
+                    return
+                argument = value.node
             try:
                 arguments = ast.literal_eval(argument)
             except (ValueError, TypeError, SyntaxError):
@@ -483,6 +557,11 @@ def reachable_generator_commands(module: ast.Module):
         elif node.func.id in functions and node.func.id not in visited:
             visited.add(node.func.id)
             yield from statements(functions[node.func.id].body, {})
+            for argument in (*node.args, *[keyword.value for keyword in node.keywords]):
+                invalidate(argument, assignments)
+        else:
+            for argument in (*node.args, *[keyword.value for keyword in node.keywords]):
+                invalidate(argument, assignments)
 
     def statements(body, assignments):
         for statement in body:
@@ -495,6 +574,7 @@ def reachable_generator_commands(module: ast.Module):
                     if (yield from statements(statement.body if condition else statement.orelse, assignments)):
                         return True
                 else:
+                    invalidate(statement, assignments)
                     for child in ast.walk(statement):
                         if isinstance(child, ast.Name) and isinstance(child.ctx, (ast.Store, ast.Del)):
                             assignments.pop(child.id, None)
@@ -526,24 +606,48 @@ def reachable_generator_commands(module: ast.Module):
                 for child in ast.iter_child_nodes(statement):
                     yield from expression(child, assignments)
                 if isinstance(statement, ast.Assign):
+                    value = assigned_value(statement.value, assignments)
                     for target in statement.targets:
                         if isinstance(target, ast.Name):
-                            assignments[target.id] = statement.value
-                elif isinstance(statement, (ast.AugAssign, ast.AnnAssign)) and isinstance(statement.target, ast.Name):
-                    assignments.pop(statement.target.id, None)
+                            if value is None:
+                                assignments.pop(target.id, None)
+                            else:
+                                assignments[target.id] = value
+                        else:
+                            invalidate(target, assignments)
+                elif isinstance(statement, ast.AnnAssign):
+                    value = assigned_value(statement.value, assignments) if statement.value else None
+                    if isinstance(statement.target, ast.Name):
+                        if value is None:
+                            assignments.pop(statement.target.id, None)
+                        else:
+                            assignments[statement.target.id] = value
+                    else:
+                        invalidate(statement.target, assignments)
+                elif isinstance(statement, ast.AugAssign):
+                    invalidate(statement.target, assignments)
+                    if isinstance(statement.target, ast.Name):
+                        assignments.pop(statement.target.id, None)
                 elif isinstance(statement, ast.Delete):
                     for target in statement.targets:
                         if isinstance(target, ast.Name):
                             assignments.pop(target.id, None)
+                        else:
+                            invalidate(target, assignments)
                 if isinstance(statement, ast.Assert):
                     condition = constant(statement.test)
                     if condition is not unknown and not condition:
                         return True
-                if isinstance(statement, (ast.Return, ast.Raise, ast.Break, ast.Continue)):
+                if isinstance(statement, ast.Raise):
+                    raise ProcessExit
+                if isinstance(statement, (ast.Return, ast.Break, ast.Continue)):
                     return True
         return False
 
-    yield from statements(module.body, {})
+    try:
+        yield from statements(module.body, {})
+    except ProcessExit:
+        return
 
 
 def feature_closure(manifest: dict, command: dict) -> set[str]:
@@ -748,21 +852,26 @@ def registered_cases(source: str):
 def integration_targets(directory: Path, manifest: dict):
     targets = {}
     if manifest.get("package", {}).get("autotests", True):
-        targets.update((path.stem, {"path": path, "required-features": []}) for path in directory.glob("tests/*.rs"))
-        targets.update((path.parent.name, {"path": path, "required-features": []}) for path in directory.glob("tests/*/main.rs"))
+        targets.update((path.stem, {"path": path, "required-features": [], "harness": True}) for path in directory.glob("tests/*.rs"))
+        targets.update((path.parent.name, {"path": path, "required-features": [], "harness": True}) for path in directory.glob("tests/*/main.rs"))
     for declaration in manifest.get("test", []):
         name = declaration["name"]
         path = directory / declaration.get("path", f"tests/{name}.rs")
-        targets[name] = {"path": path, "required-features": declaration.get("required-features", [])}
+        targets[name] = {"path": path, "required-features": declaration.get("required-features", []),
+                         "harness": declaration.get("harness", True)}
     return targets
 
 
 def target_covered(package: str, name: str, target: dict, manifest: dict, commands: list[dict]) -> bool:
+    if not target.get("harness", True):
+        return False  # custom mains do not prove execution of source #[test]s
     source = target["path"].read_text(encoding="utf-8")
     predicates = list(crate_cfgs(source))
     cases = list(registered_cases(source))
     for command in commands:
-        if package not in command["packages"]:
+        if package not in command["packages"] or any(
+            fnmatch.fnmatchcase(package, pattern) for pattern in command.get("excludes", [])
+        ):
             continue
         if not command["all_targets"] and not any(fnmatch.fnmatchcase(name, pattern) for pattern in command["targets"]):
             continue
@@ -840,6 +949,11 @@ def composite_action_source(source: str, provided: dict[str, str | None]) -> str
     steps = runs.get("steps", [])
     if not isinstance(steps, list):
         return None
+    if any(isinstance(step, dict) and "run" in step
+           and (not isinstance(step.get("shell"), str)
+                or step["shell"] not in {"bash", "sh", "pwsh", "powershell"})
+           for step in steps):
+        return None  # GitHub rejects the entire invalid composite action
     expanded = []
     for step in steps:
         if not isinstance(step, dict):

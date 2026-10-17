@@ -1,5 +1,6 @@
 """Dynamically reject unowned canonical integration targets and weak profiles."""
 
+import ast
 import sys
 import tempfile
 import unittest
@@ -12,7 +13,7 @@ from ci_test_inventory import (
     cargo_test_command, cfg_predicate, crate_cfgs, feature_closure,
     integration_targets, inventory_gaps, invoked_generator_commands,
     registered_cases, target_covered, workflow_commands, workflow_truth,
-    workflow_sources,
+    workflow_sources, reachable_generator_commands,
 )
 
 
@@ -58,6 +59,44 @@ class IntegrationInventoryTests(unittest.TestCase):
         self.assertEqual(feature_closure(manifest, self.command(["--features", "full", "--no-default-features"])), {"full", "source"})
         self.assertIn("minimal", feature_closure(manifest, self.command([])))
         self.assertIn("native", feature_closure(manifest, self.command(["--all-features"])))
+
+    def test_cargo_output_only_and_unmodeled_options_cannot_own_tests(self):
+        for options in (
+            ["--unit-graph"], ["-Z", "unstable-options", "--unit-graph"],
+            ["--unit-graph=true"], ["--config", "target.host.runner='/bin/true'"],
+            ["--target", "host", "--config=target.host.runner='/bin/true'"],
+            ["--unknown-mode"], ["--profile"], ["--target="], ["--exclude"],
+        ):
+            with self.subTest(options=options):
+                self.assertIsNone(self.command(["--test", "fresh", *options]))
+        self.assertIsNotNone(self.command(["--test=fresh", "--locked", "--offline", "-j1",
+                                           "--target", "host", "--profile=test", "--message-format=json"]))
+
+    def test_manifest_paths_must_select_the_reviewed_root_workspace(self):
+        for spelling in ("--manifest-path", "--manifest-path="):
+            for path, accepted in (("Cargo.toml", True), ("./Cargo.toml", True),
+                                   ("nested/Cargo.toml", False), ("../Cargo.toml", False),
+                                   ("/tmp/other/Cargo.toml", False), ("", False)):
+                options = [spelling, path] if spelling == "--manifest-path" else [spelling + path]
+                with self.subTest(options=options):
+                    self.assertEqual(self.command(["--test", "fresh", *options]) is not None, accepted)
+        source = "steps:\n  - run: python3 scripts/run-native-plan-stage.py --stage test -- cargo test -p sample --manifest-path nested/Cargo.toml --test fresh\n"
+        self.assertEqual(list(workflow_commands(source)), [])
+
+    def test_workspace_exclusions_override_explicit_package_selections(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            (directory / "tests").mkdir()
+            (directory / "tests/fresh.rs").write_text("#[test]\nfn actual() {}\n")
+            manifest = {}
+            target = integration_targets(directory, manifest)["fresh"]
+            for spelling in ("--exclude", "--exclude="):
+                for pattern, accepted in (("sample", False), ("sam*", False),
+                                           ("s?mple", False), ("other", True)):
+                    options = [spelling, pattern] if spelling == "--exclude" else [spelling + pattern]
+                    command = self.command(["--workspace", "--test", "fresh", *options])
+                    self.assertEqual(target_covered("sample", "fresh", target, manifest, [command]), accepted)
+            self.assertIsNone(self.command(["--workspace", "--exclude=sample@1.0"]))
 
     def test_only_the_maintained_stage_wrapper_can_supply_indirect_execution(self):
         source = '''steps:
@@ -143,6 +182,49 @@ class IntegrationInventoryTests(unittest.TestCase):
                         self.assertEqual(list(invoked_generator_commands(root, [])), [])
                 path.write_text(f"def main():\n    {runner}\n")
                 self.assertEqual(list(invoked_generator_commands(root, [workflow])), [], "an uncalled main is not an entry point")
+
+    def test_generator_list_mutations_and_aliases_invalidate_execution_evidence(self):
+        literal = repr(["cargo", "test", "-p", "sample", "--test", "fresh"])
+        for mutation in (
+            "command[:] = ['true']", "command[0] = 'true'", "del command[1:]",
+            "command[0:1] += ['true']", "command += ['--no-run']",
+            "alias = command\nalias[:] = ['true']", "alias = command\ndel alias[1:]",
+            "alias = command\nalias[0] = 'true'", "alias = command\nalias.append('--no-run')",
+            "alias = command\nalias += ['--no-run']", "alias: list = command\nalias[0] = 'true'",
+            "aliases = [command]\naliases[0][:] = ['true']",
+            "if dynamic():\n    command[:] = ['true']",
+        ):
+            source = f"command = {literal}\n{mutation}\nrun_streamed(command)\n"
+            with self.subTest(mutation=mutation):
+                self.assertEqual(list(reachable_generator_commands(ast.parse(source))), [])
+        for mutation in (
+            "environment = {}\nenvironment['MODE'] = 'checked'\ndel environment['MODE']",
+            "alias = command\nalias = ['true']\nalias[:] = ['false']",
+            "alias = command\ndel alias",
+        ):
+            source = f"command = {literal}\n{mutation}\nrun_streamed(command)\n"
+            self.assertEqual([command["targets"] for command in reachable_generator_commands(ast.parse(source))], [["fresh"]])
+
+    def test_generator_exit_calls_terminate_the_entry_point_including_helpers(self):
+        runner = "run_streamed(['cargo', 'test', '-p', 'sample', '--test', 'fresh'])"
+        for exit_call in ("sys.exit(0)", "exit(0)", "quit(0)", "os._exit(0)",
+                          "system.exit(0)", "stop(0)"):
+            imports = "import sys as system\nfrom sys import exit as stop\n"
+            for body in (f"{exit_call}\n{runner}\n",
+                         f"def die():\n    {exit_call}\ndie()\n{runner}\n"):
+                self.assertEqual(list(reachable_generator_commands(ast.parse(imports + body))), [], body)
+        for source in (f"{runner}\nsys.exit(0)\n", f"sys.exit({runner})\n",
+                       f"if False:\n    sys.exit(0)\n{runner}\n",
+                       f"def helper():\n    return 0\nhelper()\n{runner}\n"):
+            self.assertEqual([command["targets"] for command in reachable_generator_commands(ast.parse(source))], [["fresh"]])
+
+    def test_real_maintained_generators_keep_their_literal_test_commands(self):
+        for relative in ("scripts/check-generated-project-determinism.py", "scripts/check-native-application-graphs.py"):
+            module = ast.parse((ROOT / relative).read_text())
+            commands = list(reachable_generator_commands(module))
+            self.assertTrue(commands, relative)
+            self.assertTrue(any("mech-build" in command["packages"]
+                                and "generate_native_projects" in command["targets"] for command in commands), relative)
 
     def test_recorded_executables_require_real_execution_of_the_same_receipt(self):
         compile_step = '''steps:
@@ -344,6 +426,24 @@ runs:
             path.write_text("inputs:\n  missing:\n    required: true\nruns:\n  using: composite\n  steps:\n    - run: cargo test -p sample --test absent\n      shell: bash\n")
             self.assertEqual(len(workflow_sources(root)), 1, "a missing required input cannot own an unconditional target")
 
+    def test_composite_run_steps_require_explicit_supported_shells(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            workflow = root / ".github/workflows/test.yml"
+            workflow.parent.mkdir(parents=True)
+            workflow.write_text("steps:\n  - uses: ./.github/actions/local\n")
+            action = root / ".github/actions/local/action.yml"
+            action.parent.mkdir(parents=True)
+            for shell, accepted in (("", False), ("      shell: bash\n", True),
+                                    ("      shell: sh\n", True), ("      shell: bash --noprofile -n {0}\n", False)):
+                action.write_text("runs:\n  using: composite\n  steps:\n    - run: cargo test -p sample --test fresh\n" + shell)
+                commands = [command for source in workflow_sources(root) for command in workflow_commands(source)]
+                self.assertEqual([command["targets"] for command in commands], [["fresh"]] if accepted else [])
+            action.write_text("runs:\n  using: composite\n  steps:\n    - run: cargo test -p sample --test fresh\n      shell: bash\n    - run: true\n")
+            self.assertEqual([command for source in workflow_sources(root) for command in workflow_commands(source)], [],
+                             "one missing shell invalidates the entire action")
+        self.assertEqual(len(list(workflow_commands("steps:\n  - run: cargo test -p sample --test fresh\n"))), 1)
+
     def test_nested_composite_actions_propagate_inputs_without_recursion_credit(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -489,6 +589,18 @@ runs:
             self.assertEqual(set(targets), {"named"})
             self.assertFalse(target_covered("sample", "named", targets["named"], manifest, [self.command(["--test", "named"])]))
             self.assertTrue(target_covered("sample", "named", targets["named"], manifest, [self.command(["--test", "named", "--features=native"])]))
+
+    def test_custom_harness_targets_cannot_own_ordinary_registered_tests(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            (directory / "tests").mkdir()
+            (directory / "tests/custom.rs").write_text("fn main() {}\n#[test]\nfn panics() { panic!(); }\n")
+            for harness in (False, True):
+                manifest = {"test": [{"name": "custom", "harness": harness}]}
+                target = integration_targets(directory, manifest)["custom"]
+                self.assertIs(target["harness"], harness)
+                self.assertEqual(target_covered("sample", "custom", target, manifest,
+                                                [self.command(["--test", "custom"])]), harness)
 
     def test_skip_filters_accept_both_harness_spellings_and_full_names(self):
         with tempfile.TemporaryDirectory() as temporary:
