@@ -151,10 +151,25 @@ impl Continuation {
                 self.application(Phase::OperatorDigits(node, true));
             }
             Phase::OperatorCount(node, factor, structure) => {
+                if !final_input && parser.is_eof() {
+                    self.application(Phase::OperatorCount(node, factor, structure));
+                    return Some(Progress::NeedInput);
+                }
                 if self.result == Attempt::NoMatch {
                     structure.abandon(parser);
                     factor.abandon(parser);
                     node.abandon(parser);
+                } else if self.result == Attempt::Matched
+                    && !parser.cursor().starts_with(">")
+                    && !parser.is_eof()
+                {
+                    // A following matrix may be the next table row rather
+                    // than a count. Like literal counts, a clean bracketed
+                    // candidate commits only at `>`; EOF can recover it.
+                    structure.abandon(parser);
+                    factor.abandon(parser);
+                    node.abandon(parser);
+                    self.result = Attempt::NoMatch;
                 } else {
                     structure.complete(parser, SyntaxKind::Structure);
                     factor.complete(parser, SyntaxKind::Factor);
