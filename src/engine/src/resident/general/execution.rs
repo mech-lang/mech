@@ -7118,19 +7118,17 @@ mod tests {
             mech_core::RESIDENT_MAX_BYTES + 1,
             0,
         );
-        assert!(
-            matches!(
-                result,
-                Err(ResidentExecutionError::Kernel {
-                    error: ResidentKernelError::ResourceLimit {
-                        phase: mech_core::ResidentResourcePhase::Admission,
-                        dimension: mech_core::MemoryBudgetDimension::TemporaryBytes,
-                        required, limit,
-                    },
-                    ..
-                }) if required > limit && limit == mech_core::RESIDENT_MAX_BYTES
-            ),
-            "{result:?}"
+        assert_eq!(
+            result,
+            Err(ResidentExecutionError::Kernel {
+                node: instance.plan.steps[operation.get() as usize].artifact_node(),
+                error: ResidentKernelError::ResourceLimit {
+                    phase: mech_core::ResidentResourcePhase::Admission,
+                    dimension: mech_core::MemoryBudgetDimension::TemporaryBytes,
+                    required: mech_core::RESIDENT_MAX_BYTES + 1,
+                    limit: mech_core::RESIDENT_MAX_BYTES,
+                },
+            })
         );
     }
 
