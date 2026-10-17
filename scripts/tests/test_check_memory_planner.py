@@ -431,8 +431,8 @@ class MemoryPlannerCheckerTests(unittest.TestCase):
         self.replace(
             root,
             "src/engine/src/resident/budget.rs",
-            "#[cfg(test)]\nfn detached_turn_plan",
-            "fn detached_turn_plan",
+            "#[cfg(test)]\npub(crate) fn detached_turn_plan",
+            "pub(crate) fn detached_turn_plan",
         )
         self.assert_failure(root, "detached turn-plan helper is available in production")
 

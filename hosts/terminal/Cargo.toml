@@ -12,7 +12,8 @@ rust-version = "1.92"
 
 [features]
 default = []
-provider = ["mech-core/string", "mech-core/u8"]
+# Canonical byte snapshots use ValueDataDraft::U8, not legacy boxed-u8 values.
+provider = ["mech-core/string"]
 
 [dependencies]
 mech-core = { version = "0.3.5", path = "../../src/core", default-features = false }

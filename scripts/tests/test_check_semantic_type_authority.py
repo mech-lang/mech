@@ -114,9 +114,18 @@ class SemanticTypeAuthorityCheckerTests(unittest.TestCase):
         root = self.fixture()
         path = root / "src/engine/src/resident/general/mod.rs"
         source = path.read_text()
-        self.assertIn("BoundCall::artifact_operation(", source)
-        path.write_text(source.replace("BoundCall::artifact_operation(", "unchecked_call(", 1))
+        self.assertIn("BoundCall::artifact_operation_for_target(", source)
+        path.write_text(source.replace("BoundCall::artifact_operation_for_target(", "unchecked_call(", 1))
         self.assert_failure(root, "resident activation does not bind the actual artifact operation")
+
+    def test_resident_wrapper_must_preserve_the_resident_target(self):
+        root = self.fixture()
+        path = root / "src/engine/src/resident/general/mod.rs"
+        source = path.read_text()
+        body = CHECKER.rust_function_body(source, "bind_resident_operation")
+        self.assertIn("ExecutionTarget::ResidentCpu", body)
+        path.write_text(source.replace(body, body.replace("ExecutionTarget::ResidentCpu", "ExecutionTarget::Other", 1), 1))
+        self.assert_failure(root, "ResidentCpu target")
 
     def test_resident_binding_must_use_the_actual_semantic_contract(self):
         root = self.fixture()
@@ -130,7 +139,7 @@ class SemanticTypeAuthorityCheckerTests(unittest.TestCase):
         root = self.fixture()
         path = root / "src/engine/src/resident/general/mod.rs"
         source = path.read_text()
-        body = CHECKER.rust_function_body(source, "bind_resident_operation")
+        body = CHECKER.rust_function_body(source, "bind_operation_for_target")
         self.assertIn("output_layout.shape_instance.clone()", body)
         path.write_text(source.replace(body, body.replace("output_layout.shape_instance.clone()", "ShapeInstance::scalar()", 1), 1))
         self.assert_failure(root, "semantic descriptors from the actual artifact contract and layouts")
@@ -139,7 +148,7 @@ class SemanticTypeAuthorityCheckerTests(unittest.TestCase):
         root = self.fixture()
         path = root / "src/engine/src/resident/general/mod.rs"
         source = path.read_text()
-        body = CHECKER.rust_function_body(source, "bind_resident_operation")
+        body = CHECKER.rust_function_body(source, "bind_operation_for_target")
         self.assertIn("&resident_context.bound_call,", body)
         path.write_text(source.replace(body, body.replace("&resident_context.bound_call,", "&unrelated_bound_call,", 1), 1))
         self.assert_failure(root, "call-memory planning does not consume the selected BoundCall")
@@ -148,8 +157,16 @@ class SemanticTypeAuthorityCheckerTests(unittest.TestCase):
         root = self.fixture()
         path = root / "src/engine/src/resident/general/mod.rs"
         source = path.read_text()
-        self.assertIn(".with_bound_call(resident_context.bound_call)", source)
-        path.write_text(source.replace(".with_bound_call(resident_context.bound_call)", ".with_unchecked_metadata()", 1))
+        self.assertIn("super::native_semantics::bind_call(kernel, &bind_request, resident_context.bound_call)", source)
+        path.write_text(source.replace("super::native_semantics::bind_call(kernel, &bind_request, resident_context.bound_call)", "super::native_semantics::bind_call(kernel, &bind_request, unrelated_bound_call)", 1))
+        self.assert_failure(root, "resident executable kernel does not retain its selected BoundCall")
+
+    def test_private_seal_binding_must_retain_the_selected_call(self):
+        root = self.fixture()
+        path = root / "src/engine/src/resident/native_semantics.rs"
+        source = path.read_text()
+        self.assertIn(".with_bound_call(bound_call.clone())", source)
+        path.write_text(source.replace(".with_bound_call(bound_call.clone())", ".with_unchecked_metadata()", 1))
         self.assert_failure(root, "resident executable kernel does not retain its selected BoundCall")
 
     def test_selected_kernel_call_is_not_merely_a_sidecar_argument(self):

@@ -59,7 +59,7 @@ pub(crate) struct NativeScalarSemantics {
 }
 impl NativeScalarSemantics {
     // The optional canonical-native adapter consumes this read-only view.
-    #[cfg_attr(not(feature = "native-artifact"), allow(dead_code))]
+    #[cfg(feature = "native-artifact")]
     pub(crate) fn op(self) -> NativeScalarOp {
         self.op
     }
@@ -257,7 +257,10 @@ pub(super) fn bind_call(
 
 /// Returns only typed semantics after auditing the actual selected kernel's
 /// private seal. It never returns a witness or executes a kernel/input read.
-#[cfg_attr(not(feature = "native-artifact"), allow(dead_code))]
+#[allow(
+    dead_code,
+    reason = "canonical-native adapter is optional; private seal inspection is exercised by witness tests"
+)]
 pub(crate) fn validated_scalar(kernel: &BoundResidentKernel) -> Option<NativeScalarSemantics> {
     let seal = kernel.lowering_witness::<SealedWitness>()?;
     (kernel.bound_call()? == &seal.bound_call).then_some(seal.semantics)
