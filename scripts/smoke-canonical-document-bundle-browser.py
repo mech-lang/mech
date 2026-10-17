@@ -279,45 +279,64 @@ try {
   if (fixtures['served-compute']) {
     const fixture = fixtures['served-compute'];
     window.__MECH_HOST_CONFIG = fixture.authority;
+    // Appending source would put these declarations inside the trailing compute
+    // section, not the root scope. Keep this regression in an independent
+    // document and insert its declarations before that section explicitly.
+    const pendingDoc = WasmDocument.fromServedEncoded(fixture.encoded, 'document.mec', fixture.config, fixture.sources);
+    const pendingSource = fixture.source.replace('\ncalculation @compute\n',
+      '\navailable := 7.0\npending-tick := @clock/tick;\n\ncalculation @compute\n');
+    assert(pendingSource !== fixture.source, 'pending fixture has an explicit root insertion boundary');
+    const pendingResponse = pendingDoc.replReplaceSource(pendingSource);
+    assert(pendingDoc.replSource() === pendingSource, 'pending root declarations accepted: ' + JSON.stringify(pendingResponse));
+    // Before starting the timer, this new observation has never published.
+    // Exercise the actual exported JS listing API, not just a native helper.
+    const pendingInfo = JSON.stringify(pendingDoc.runtimeInfo());
+    for (const requested of [null, ['available', 'pending-tick']]) {
+      const available = pendingDoc.renderedSymbols(requested);
+      assert(available.some(row => row.name === 'available' && row.inlineHtml === '7'), 'pending observation does not hide available browser rows: ' + JSON.stringify(available));
+      assert(!available.some(row => row.name === 'pending-tick'), 'pending browser row has no fabricated value');
+    }
+    const inspection = pendingDoc.replInvoke(':whos');
+    assert(!JSON.stringify(inspection).includes('has no value'), 'browser :whos tolerates unpublished observations');
+    assert(JSON.stringify(pendingDoc.runtimeInfo()) === pendingInfo, 'browser listing does not publish a turn');
+    let unknownRejected = false;
+    try {pendingDoc.renderedSymbols(['missing-symbol']);} catch (_) {unknownRejected = true;}
+    assert(unknownRejected, 'unknown browser names remain errors');
+    pendingDoc.replInvoke(':clear pending-tick');
+    assert(!pendingDoc.renderedSymbols(null).some(row => row.name === 'pending-tick'), 'unpublished browser observation can be cleared');
+    const restored = pendingDoc.replReplaceSource(pendingSource);
+    assert(pendingDoc.replSource() === pendingSource, 'pending root observation can be restored: ' + JSON.stringify(restored));
+    assert(!pendingDoc.renderedSymbols(null).some(row => row.name === 'pending-tick'), 'restored browser observation stays unpublished');
+    async function dispatchTimerTurn(document) {
+      const deadline = performance.now() + 5000;
+      let frame;
+      do {
+        await new Promise(resolve => setTimeout(resolve, 10));
+        frame = document.frame(1);
+      } while (frame.processed === 0 && performance.now() < deadline);
+      assert(frame.processed === 1 && frame.pending === 1, 'timer dispatch queues one sample: ' + JSON.stringify(frame));
+    }
+    pendingDoc.start();
+    await dispatchTimerTurn(pendingDoc);
+    assert(pendingDoc.frame(1).processed === 1, 'pending document accepts the computed sample');
+    assert(pendingDoc.renderedSymbols(null).some(row => row.name === 'pending-tick'), 'accepted input makes browser observation available');
+    assert(pendingDoc.renderedSymbols(['available'])[0]?.inlineHtml === '7', 'available root value survives actual input');
+    pendingDoc.stop();
+    pendingDoc.free();
+
+    // The original fixture and all of its output, identity and edit oracles
+    // below run in a fresh document with their original source unchanged.
     const doc = WasmDocument.fromServedEncoded(fixture.encoded, 'document.mec', fixture.config, fixture.sources);
     assert(doc.computeBackend() === 'cpu-scalar', 'configured document selects CPU compute');
     const markup = new DOMParser().parseFromString(fixture.html, 'text/html');
     const mounts = [...markup.querySelectorAll('.mech-inline-mech-code')];
     assert(mounts.length === 1, 'configured compute document has one inline result');
     const outputId = BigInt(mounts[0].getAttribute('data-mech-output-address').split(':')[0]);
-    // Before starting the timer, this new observation has never published.
-    // Exercise the actual exported JS listing API, not just a native helper.
-    doc.replInvoke('available := 7.0\npending-tick := @clock/tick;');
-    const pendingInfo = JSON.stringify(doc.runtimeInfo());
-    for (const requested of [null, ['available', 'pending-tick']]) {
-      const available = doc.renderedSymbols(requested);
-      assert(available.some(row => row.name === 'available' && row.inlineHtml === '7'), 'pending observation does not hide available browser rows');
-      assert(!available.some(row => row.name === 'pending-tick'), 'pending browser row has no fabricated value');
-    }
-    const inspection = doc.replInvoke(':whos');
-    assert(!JSON.stringify(inspection).includes('has no value'), 'browser :whos tolerates unpublished observations');
-    assert(JSON.stringify(doc.runtimeInfo()) === pendingInfo, 'browser listing does not publish a turn');
-    let unknownRejected = false;
-    try {doc.renderedSymbols(['missing-symbol']);} catch (_) {unknownRejected = true;}
-    assert(unknownRejected, 'unknown browser names remain errors');
-    doc.replInvoke(':clear pending-tick');
-    assert(!doc.renderedSymbols(null).some(row => row.name === 'pending-tick'), 'unpublished browser observation can be cleared');
-    doc.replInvoke('pending-tick := @clock/tick;');
-    async function dispatchTimerTurn() {
-      const deadline = performance.now() + 5000;
-      let frame;
-      do {
-        await new Promise(resolve => setTimeout(resolve, 10));
-        frame = doc.frame(1);
-      } while (frame.processed === 0 && performance.now() < deadline);
-      assert(frame.processed === 1 && frame.pending === 1, 'timer dispatch queues one sample: ' + JSON.stringify(frame));
-    }
     doc.start();
-    await dispatchTimerTurn();
+    await dispatchTimerTurn(doc);
     assert(doc.renderedSymbol('answer')?.inlineHtml === '0', 'dispatch turn sees the initial sample');
     const sampleFrame = doc.frame(1);
     assert(sampleFrame.processed === 1, 'sample is published on the next host-input turn: ' + JSON.stringify(sampleFrame));
-    assert(doc.renderedSymbols(null).some(row => row.name === 'pending-tick'), 'accepted input makes browser observation available');
     const initial = doc.renderedSymbol('answer');
     assert(initial?.inlineHtml === '1', 'initial compute result: ' + JSON.stringify(initial));
     assert(doc.renderedOutput(outputId)?.inlineHtml === '1', 'initial inline compute result');
@@ -328,7 +347,7 @@ try {
     assert(doc.replSource() === changed, 'compute source accepted: ' + JSON.stringify(response));
     assert(doc.computeGeneration() !== originalGeneration, 'compute generation advances after edit');
     assert(doc.computeManifest().physicalRevision !== originalManifest.physicalRevision, 'edited compute body changes kernel');
-    await dispatchTimerTurn();
+    await dispatchTimerTurn(doc);
     assert(doc.frame(1).processed === 1, "edited sample publishes on its host-input turn");
     const edited = doc.renderedSymbol('answer');
     assert(edited?.inlineHtml === '3', 'edited compute result: ' + JSON.stringify(edited));
