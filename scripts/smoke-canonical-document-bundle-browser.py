@@ -287,11 +287,11 @@ try {
     const outputId = BigInt(mounts[0].getAttribute('data-mech-output-address').split(':')[0]);
     // Before starting the timer, this new observation has never published.
     // Exercise the actual exported JS listing API, not just a native helper.
-    doc.replInvoke('pending-tick := @clock/tick;');
+    doc.replInvoke('available := 7.0\npending-tick := @clock/tick;');
     const pendingInfo = JSON.stringify(doc.runtimeInfo());
-    for (const requested of [null, ['answer', 'pending-tick']]) {
+    for (const requested of [null, ['available', 'pending-tick']]) {
       const available = doc.renderedSymbols(requested);
-      assert(available.some(row => row.name === 'answer'), 'pending observation does not hide available browser rows');
+      assert(available.some(row => row.name === 'available' && row.inlineHtml === '7'), 'pending observation does not hide available browser rows');
       assert(!available.some(row => row.name === 'pending-tick'), 'pending browser row has no fabricated value');
     }
     const inspection = doc.replInvoke(':whos');
