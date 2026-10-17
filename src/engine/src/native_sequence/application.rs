@@ -658,6 +658,7 @@ fn pipeline(
     expression: &str,
     prefix: &str,
     serial: &mut usize,
+    counted: &mut bool,
 ) -> Result<(Vec<String>, String), String> {
     let expression = unparenthesized(expression)?;
     let pipes = pipe_offsets(expression)?;
@@ -680,7 +681,7 @@ fn pipeline(
         if pipe_offsets(input)?.is_empty() {
             return Err("a nested pipeline must be a complete parenthesized expression".into());
         }
-        let (nested, result) = pipeline(input, prefix, serial)?;
+        let (nested, result) = pipeline(input, prefix, serial, counted)?;
         definitions.extend(nested);
         value = result;
     }
@@ -695,6 +696,7 @@ fn pipeline(
             if !identifier(stage) || *stage == "_" {
                 return Err("repeated application stage requires a function name".into());
             }
+            *counted = true;
             format!("sequence/iterate({name}, {count}, {stage})")
         } else {
             substitute(stage, &name)?
@@ -735,9 +737,13 @@ fn is_candidate(source: &str) -> bool {
     };
     let seed = code[..pipe.start].trim();
     let named_seed = identifier(seed);
+    let seed_binding = format!("application-seed-probe := {seed}\n");
     let counted_seed = pipe.repetitions.is_some()
-        && (seed.parse::<f64>().is_ok()
-            || (seed.starts_with('[') && seed.ends_with(']') && top_offsets(seed, "|").is_ok()));
+        && canonical_fragment(
+            &seed_binding,
+            mech_syntax::document::SyntaxKind::VariableDefine,
+            &seed_binding,
+        );
     // A standalone example may begin with a word just like a named seed.
     // Require complete valid stages before treating it as executable source;
     // bindings/functions above still retain all malformed-stage diagnostics.
@@ -746,6 +752,7 @@ fn is_candidate(source: &str) -> bool {
             code.trim_end_matches('.').trim_end(),
             "application-probe-",
             &mut 0,
+            &mut false,
         )
         .is_ok()
 }
@@ -902,6 +909,7 @@ fn normalize_arrow_body(
     result: &str,
     prefix: &str,
     serial: &mut usize,
+    counted: &mut bool,
 ) -> Result<Option<Vec<String>>, String> {
     let statements = body_statements(source)?;
     if statements.is_empty() {
@@ -933,7 +941,7 @@ fn normalize_arrow_body(
         if expression.is_empty() {
             return Err("function local requires a value".into());
         }
-        let (temporary, value) = pipeline(expression, prefix, serial)?;
+        let (temporary, value) = pipeline(expression, prefix, serial, counted)?;
         let value = group_match_result(value)?;
         definitions.extend(temporary);
         if let Some((target, operator)) = mutation {
@@ -993,6 +1001,7 @@ fn normalize_statement(
     source: &str,
     prefix: &str,
     serial: &mut usize,
+    counted: &mut bool,
 ) -> Result<Option<String>, String> {
     let code = mask(source);
     if !contains_pipe(&code) && !code.contains("=>") {
@@ -1052,21 +1061,22 @@ fn normalize_statement(
         let original_assignment = top_offsets(original, ":=")?[0];
         let original_body = original[original_assignment + 2..].trim();
         let original_body = original_body.strip_suffix('.').unwrap_or(original_body);
-        let definitions =
-            if let Some(block) = normalize_arrow_body(original_body, &result, prefix, serial)? {
-                block
-            } else {
-                let (mut definitions, value) = pipeline(expression, prefix, serial)?;
-                let value = group_match_result(value)?;
-                definitions.push(format!("{result} := {value}"));
-                definitions
-            };
+        let definitions = if let Some(block) =
+            normalize_arrow_body(original_body, &result, prefix, serial, counted)?
+        {
+            block
+        } else {
+            let (mut definitions, value) = pipeline(expression, prefix, serial, counted)?;
+            let value = group_match_result(value)?;
+            definitions.push(format!("{result} := {value}"));
+            definitions
+        };
         Ok(Some(format!(
             "{header} => ({result}{kind}) := {}.",
             definitions.join("; ")
         )))
     } else if signature.len() == 1 {
-        let (mut definitions, value) = pipeline(expression, prefix, serial)?;
+        let (mut definitions, value) = pipeline(expression, prefix, serial, counted)?;
         let value = if head.trim().is_empty() {
             value
         } else {
@@ -1088,9 +1098,22 @@ fn normalize_statement(
 /// line numbers stable. Application errors report their original line number.
 /// Parenthesized/multiline expressions and leading continuation pipes are allowed;
 /// arbitrary pipelines inside conditionals/call arguments are rejected explicitly.
+pub(super) struct NormalizedSource {
+    pub(super) source: String,
+    pub(super) counted: bool,
+}
+
+#[cfg(test)]
 pub(super) fn normalize(source: &str) -> Result<String, String> {
+    normalize_with_metadata(source).map(|normalized| normalized.source)
+}
+
+pub(super) fn normalize_with_metadata(source: &str) -> Result<NormalizedSource, String> {
     if !contains_pipe(source) && !source.contains("=>") {
-        return Ok(source.to_string());
+        return Ok(NormalizedSource {
+            source: source.to_string(),
+            counted: false,
+        });
     }
     let mut prefix = "application-temp-".to_string();
     while source.contains(&prefix) {
@@ -1108,6 +1131,7 @@ pub(super) fn normalize(source: &str) -> Result<String, String> {
         .collect();
     let mut output = String::new();
     let mut serial = 0;
+    let mut counted = false;
     let mut index = 0;
     let mut fence: Option<bool> = None;
     while index < lines.len() {
@@ -1161,7 +1185,7 @@ pub(super) fn normalize(source: &str) -> Result<String, String> {
             index += 1;
             statement.push_str(lines[index]);
         }
-        let normalized = normalize_statement(&statement, &prefix, &mut serial)
+        let normalized = normalize_statement(&statement, &prefix, &mut serial, &mut counted)
             .map_err(|e| format!("function application line {}: {e}", start + 1))?;
         if let Some(normalized) = normalized {
             output.push_str(&normalized);
@@ -1176,7 +1200,10 @@ pub(super) fn normalize(source: &str) -> Result<String, String> {
         }
         index += 1;
     }
-    Ok(output)
+    Ok(NormalizedSource {
+        source: output,
+        counted,
+    })
 }
 
 #[cfg(test)]
@@ -1441,6 +1468,62 @@ mod tests {
                 ),
                 "a table kind must not widen the literal grammar: {binding}"
             );
+        }
+    }
+
+    #[test]
+    fn standalone_counted_seeds_use_canonical_numeric_syntax() {
+        for (seed, expected) in [
+            ("2u64", super::super::Constant::Integer(2)),
+            (
+                "18446744073709551615u64",
+                super::super::Constant::Integer(u64::MAX),
+            ),
+            ("2f64", super::super::Constant::Float(2.0_f64.to_bits())),
+            ("2e0", super::super::Constant::Float(2.0_f64.to_bits())),
+        ] {
+            let source = format!("{seed} |1> step\n");
+            let normalized = normalize(&source).unwrap();
+            assert!(
+                normalized.contains(&format!("application-temp-0 := {seed}")),
+                "{normalized}"
+            );
+            assert!(normalized.contains("sequence/iterate(application-temp-0, 1, step)"));
+            let parsed = super::super::ParsedSource::parse(&source).unwrap();
+            let mut numbers = Vec::new();
+            super::super::visit(
+                &parsed.syntax,
+                mech_syntax::document::SyntaxKind::Number,
+                &mut numbers,
+            );
+            let number = numbers
+                .into_iter()
+                .find(|node| node.text().is_ok_and(|text| text.trim() == seed))
+                .unwrap();
+            assert_eq!(
+                super::super::literal(number).unwrap_or_else(|error| panic!("{seed}: {error}")),
+                expected
+            );
+        }
+    }
+
+    #[test]
+    fn counted_intrinsic_shadowing_rejects_only_actual_counted_lowering() {
+        let declaration = "sequence/iterate(x<f64>) => <f64> := x + 9.0\n";
+        for body in ["r := 2.0 |0> step\n", "r := (2.0 |1> step) |> step\n"] {
+            let source = format!("{declaration}step(x<f64>) => <f64> := x + 1.0\n{body}");
+            let error = super::super::ParsedSource::parse(&source).err().unwrap();
+            assert!(
+                error.contains("source function named sequence/iterate"),
+                "{error}"
+            );
+        }
+        for body in [
+            "r := 2.0 |> sequence/iterate(_)\n",
+            "Use `|1> step` in examples.\n",
+            "```rust\n2.0 |1> step\n```\n",
+        ] {
+            super::super::ParsedSource::parse(&format!("{declaration}{body}")).unwrap();
         }
     }
 

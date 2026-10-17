@@ -111,6 +111,37 @@ fn runtime_seed_input_is_lowered_once_before_repetition() {
 }
 
 #[test]
+fn suffixed_standalone_seeds_execute_without_float_round_trips() {
+    for (kind, seed, count, expected) in [
+        ("u64", "2u64", 1, "3"),
+        ("u64", "18446744073709551615u64", 0, "18446744073709551615"),
+        ("f64", "2f64", 1, "3"),
+    ] {
+        let increment = if kind == "u64" { "1" } else { "1.0" };
+        let source = format!(
+            "step(x<{kind}>) => <{kind}> := x + {increment}\n{seed} |{count}> step |> number/format(_, 0) |> io/write(_)\n"
+        );
+        check(&source, expected.as_bytes(), 1);
+    }
+}
+
+#[test]
+fn counted_intrinsic_collision_is_explicit_but_ordinary_shadowing_still_executes() {
+    let declaration = "sequence/iterate(x<f64>) => <f64> := x + 9.0\n";
+    let source = format!(
+        "{declaration}step(x<f64>) => <f64> := x + 1.0\nr := 2.0 |1> step\nio/write(number/format(r, 0))\n"
+    );
+    let error = compile(&source, 256).err().unwrap();
+    assert!(
+        error.contains("source function named sequence/iterate"),
+        "{error}"
+    );
+    let ordinary =
+        format!("{declaration}r := 2.0 |> sequence/iterate(_)\nio/write(number/format(r, 0))\n");
+    check(&ordinary, b"11", 0);
+}
+
+#[test]
 fn zero_still_checks_seed_callback_and_capture_dependencies() {
     for source in [
         "r := 2.0 |0> missing\n",

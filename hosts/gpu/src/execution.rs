@@ -77,6 +77,12 @@ pub fn run_cli() -> Result<(), String> {
         diagnostic(start, prepared);
         return Ok(());
     }
+    if parsed.has_activated_ports() {
+        return Err(
+            "activated native source admission failed; legacy frontend fallback is forbidden"
+                .into(),
+        );
+    }
     if let Ok(program) = mech_engine::native_sequence::control::compile_parsed(
         &parsed,
         mech_stdlib::native_control_catalog(),

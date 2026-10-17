@@ -14,8 +14,8 @@ pub use ports::{
 
 use mech_syntax::document::{
     AnyCallArgumentSyntax, AstNode, CanonicalOperator, DocumentId, FunctionCallSyntax,
-    OperatorSyntax, ParseConfig, Revision, StringLiteralSyntax, SyntaxKind, SyntaxNode,
-    TextSnapshot, VariableDefineSyntax, parse_canonical_document,
+    IntegerLiteralSyntax, NumberSyntax, OperatorSyntax, ParseConfig, Revision, StringLiteralSyntax,
+    SyntaxKind, SyntaxNode, TextSnapshot, VariableDefineSyntax, parse_canonical_document,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
@@ -108,10 +108,12 @@ pub type Catalog = &'static [OperationSignature];
 pub struct ParsedSource {
     source: String,
     syntax: SyntaxNode,
+    counted_application: bool,
 }
 impl ParsedSource {
     pub fn parse(source: &str) -> Result<Self, String> {
-        let source = application::normalize(source)?;
+        let normalized = application::normalize_with_metadata(source)?;
+        let source = normalized.source;
         let syntax = Self::parse_syntax(&source)?;
         fn bracketed_counts(node: &SyntaxNode) -> bool {
             mech_syntax::document::ApplicationOperatorSyntax::cast(node.clone())
@@ -121,7 +123,24 @@ impl ParsedSource {
         if bracketed_counts(&syntax) {
             return Err("bracketed application counts require canonical resident execution; legacy native frontends cannot lower element-wise iteration".into());
         }
-        Ok(Self { source, syntax })
+        let parsed = Self {
+            source,
+            syntax,
+            counted_application: normalized.counted,
+        };
+        if parsed.counted_application {
+            let mut functions = Vec::new();
+            visit(&parsed.syntax, SyntaxKind::FunctionDefine, &mut functions);
+            if functions.iter().any(|function| {
+                function.children().any(|child| {
+                    child.kind() == SyntaxKind::Identifier
+                        && child.text().is_ok_and(|name| name == "sequence/iterate")
+                })
+            }) {
+                return Err("counted applications cannot coexist with a source function named sequence/iterate; rename that function to avoid shadowing the iteration intrinsic".into());
+            }
+        }
+        Ok(parsed)
     }
     fn parse_syntax(source: &str) -> Result<SyntaxNode, String> {
         let parsed = parse_canonical_document(
@@ -153,6 +172,11 @@ impl ParsedSource {
 
     fn matrix_syntax(&self, catalog: Catalog) -> Result<SyntaxNode, String> {
         let imports = ports::SourceBindings::collect(&self.syntax, catalog)?;
+        if self.counted_application
+            && imports.resolve_name("sequence/iterate") != "sequence/iterate"
+        {
+            return Err("counted applications cannot coexist with an import alias named sequence/iterate; rename that alias to avoid shadowing the iteration intrinsic".into());
+        }
         let source = imports.canonical_calls(&self.source, &self.syntax)?;
         let syntax = if source == self.source {
             self.syntax.clone()
@@ -191,7 +215,54 @@ fn literal(node: SyntaxNode) -> Result<Constant, String> {
         SyntaxKind::Number => {
             let source = text(&node)?;
             let source = source.trim();
-            if source.contains('.') || source.contains('e') || source.contains('E') {
+            // Keep the existing decimal/scientific Float path. Attached
+            // integer kind suffixes use their canonical typed owner below.
+            let float_spelling =
+                source.contains('.') || source.contains('e') || source.contains('E');
+            if !float_spelling
+                && let Some(real) =
+                    NumberSyntax::cast(node.clone()).and_then(|number| number.real())
+            {
+                if let Some(typed) = real
+                    .value()
+                    .and_then(IntegerLiteralSyntax::cast)
+                    .and_then(|integer| integer.typed())
+                {
+                    let digits = text(
+                        typed
+                            .digits()
+                            .ok_or("missing typed integer digits")?
+                            .syntax(),
+                    )?
+                    .replace('_', "");
+                    let suffix = text(
+                        typed
+                            .suffix()
+                            .ok_or("missing numeric kind suffix")?
+                            .syntax(),
+                    )?;
+                    return match suffix.as_str() {
+                        "u64" if !real.is_negated() => digits
+                            .parse::<u64>()
+                            .map(Constant::Integer)
+                            .map_err(|_| "invalid u64 literal".into()),
+                        "f64" => {
+                            let mut value =
+                                digits.parse::<f64>().map_err(|_| "invalid f64 literal")?;
+                            if real.is_negated() {
+                                value = -value;
+                            }
+                            if !value.is_finite() {
+                                return Err("non-finite literal".into());
+                            }
+                            Ok(Constant::Float(value.to_bits()))
+                        }
+                        "u64" => Err("negative u64 literal".into()),
+                        _ => Err("native sequence numeric suffix must be u64 or f64".into()),
+                    };
+                }
+            }
+            if float_spelling {
                 let value = source.parse::<f64>().map_err(|_| "invalid f64 literal")?;
                 if !value.is_finite() {
                     return Err("non-finite literal".into());
