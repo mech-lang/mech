@@ -70,13 +70,14 @@ fn grammar_correction_ledger_is_well_formed_and_applied_to_the_canonical_grammar
             "correction {:?} has an empty required field",
             fields[0]
         );
-        if matches!(fields[0], "IMPORT-001" | "MATCH-001") {
+        if matches!(fields[0], "IMPORT-001" | "MATCH-001" | "COUNT-001") {
             assert_eq!(fields[2], "applied");
             applied.insert(fields[0]);
         }
     }
-    assert_eq!(applied, BTreeSet::from(["IMPORT-001", "MATCH-001"]));
-    assert_eq!(ids, BTreeSet::from(["IMPORT-001", "MATCH-001"]));
+    let expected = BTreeSet::from(["IMPORT-001", "MATCH-001", "COUNT-001"]);
+    assert_eq!(applied, expected);
+    assert_eq!(ids, expected);
 
     let specification = fs::read_to_string(root.join("docs/design/specification.mec"))
         .expect("read canonical specification");
@@ -84,4 +85,12 @@ fn grammar_correction_ledger_is_well_formed_and_applied_to_the_canonical_grammar
     assert!(rules.contains("import-sigil"));
     assert!(!rules.contains("module-import-sigil"));
     assert!(!rules.contains("module-import-end"));
+    assert!(rules.contains("application-operator"));
+    assert!(rules.contains("application-stage"));
+    let application = specification
+        .lines()
+        .find(|line| line.starts_with("application-operator :="))
+        .expect("COUNT-001 application operator is in the canonical grammar");
+    assert!(application.contains("digit-token"));
+    assert!(application.contains("matrix"));
 }

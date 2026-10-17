@@ -239,6 +239,26 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("--lib resident::general::shape_fact_tests::", step)
         self.assertIn(step, block)
 
+    def test_syntax_stress_optimization_retains_assertions_and_complete_selection(self):
+        step = next(
+            step for step in job_steps(FULL, "cargo-language")
+            if "Run syntax grammar suites" in step
+        )
+        for setting in (
+            'CARGO_PROFILE_TEST_OPT_LEVEL: "1"',
+            'CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: "true"',
+            'CARGO_PROFILE_TEST_OVERFLOW_CHECKS: "true"',
+        ):
+            self.assertIn(setting, step)
+        self.assertIn(
+            "cargo +nightly-2026-03-03 test --locked -p mech-syntax --lib --tests "
+            "--no-default-features --features full -- --test-threads=1", step
+        )
+        self.assertNotIn("--skip", step)
+        self.assertNotIn("--no-run", step)
+        self.assertNotIn("continue-on-error", step)
+        self.assertNotIn("timeout-minutes", step)
+
     def test_full_source_profile_is_bounded_and_independent(self):
         profile = job_block(CI, "full-source-profile")
         self.assertIn("standard_canaries_required == 'true'", profile)

@@ -1642,6 +1642,12 @@ jobs:
         run: cargo fetch --locked
 
       - name: Run syntax grammar suites
+        # Keep every stress size, work bound and assertion; optimize the
+        # parser's test build rather than reducing exhaustive coverage.
+        env:
+          CARGO_PROFILE_TEST_OPT_LEVEL: "1"
+          CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: "true"
+          CARGO_PROFILE_TEST_OVERFLOW_CHECKS: "true"
         run: |
           cargo +nightly-2026-03-03 test --locked -p mech-syntax --lib --tests --no-default-features --features full -- --test-threads=1
           # Exhaustive streaming/growth runs once above. Reduced profiles prove
