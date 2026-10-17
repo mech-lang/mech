@@ -66,3 +66,33 @@ class NativeHostCatalogCheckerTests(unittest.TestCase):
         result, message = self.check_source(source)
         self.assertEqual(result, 1, message)
         self.assertIn("cli factory input must be ProgramArguments", message)
+
+    def test_comments_cannot_supply_the_actual_factory_field(self):
+        original = 'factory_path: "mech_terminal::CliHostFactory::with_arguments"'
+        for comment in ("// " + original, "/* nested /* marker */ " + original + " */"):
+            with self.subTest(comment=comment):
+                source = CHECKER.STANDARD.read_text(encoding="utf-8")
+                source = source.replace(
+                    original,
+                    comment + '\n                factory_path: "mech_terminal::CliHostFactory::new"',
+                    1,
+                )
+                result, message = self.check_source(source)
+                self.assertEqual(result, 1, message)
+                self.assertIn("cli launch factory must receive explicit program arguments", message)
+
+    def test_literal_text_cannot_supply_the_actual_factory_field(self):
+        source = CHECKER.STANDARD.read_text(encoding="utf-8")
+        original = 'factory_path: "mech_terminal::CliHostFactory::with_arguments"'
+        source = source.replace(
+            original,
+            'factory_path: { let _note = r#"factory_path: "mech_terminal::CliHostFactory::with_arguments""#; "mech_terminal::CliHostFactory::new" }',
+            1,
+        )
+        result, message = self.check_source(source)
+        self.assertEqual(result, 1, message)
+        self.assertIn("cli launch factory must receive explicit program arguments", message)
+
+
+if __name__ == "__main__":
+    unittest.main()

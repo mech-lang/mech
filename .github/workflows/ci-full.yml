@@ -262,6 +262,7 @@ jobs:
             --shard-index ${{ matrix.shard }} \
             tests/ci/test_ci_full_contract.py \
             scripts/tests/test_check_obsolete_program_reachability.py \
+            scripts/tests/test_check_native_host_catalog.py \
             scripts/tests/test_check_no_retired_value_system.py \
             scripts/tests/test_rust_source.py \
             scripts/tests/test_check_type_memory_boundary.py \

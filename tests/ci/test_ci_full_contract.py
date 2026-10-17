@@ -797,6 +797,7 @@ class FullWorkflowContractTests(unittest.TestCase):
                 self.assertIn("--shard-count 4", block)
                 self.assertIn("--shard-index ${{ matrix.shard }}", block)
                 self.assertIn("scripts/tests/test_check_memory_runtime.py", block)
+                self.assertIn("scripts/tests/test_check_native_host_catalog.py", block)
                 self.assertIn(checkout, block)
                 self.assertNotIn("continue-on-error", block)
 
