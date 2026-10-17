@@ -554,10 +554,11 @@ jobs:
           cargo +nightly-2026-03-03 test --locked --offline -p mech-stdlib \
             --no-default-features --features full_compiler,native-artifact \
             --test native_artifact_lowering --test native_artifact_i64_lowering \
+            --test native_artifact_f64_lowering \
             --test native_artifact_output_initializers -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native \
-            --test canonical_artifact_native --test canonical_artifact_i64 -- --test-threads=1
+            --test canonical_artifact_native --test canonical_artifact_i64 --test canonical_artifact_f64 -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native --lib native_artifact:: -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \

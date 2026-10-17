@@ -229,8 +229,8 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertNotIn("continue-on-error", block)
         for target in (
             "applications", "tail_control", "native_artifact_lowering",
-            "native_artifact_i64_lowering", "native_artifact_output_initializers",
-            "canonical_artifact_native", "canonical_artifact_i64",
+            "native_artifact_i64_lowering", "native_artifact_f64_lowering", "native_artifact_output_initializers",
+            "canonical_artifact_native", "canonical_artifact_i64", "canonical_artifact_f64",
             "canonical_cli_bytes",
         ):
             self.assertIn(f"--test {target}", block)
