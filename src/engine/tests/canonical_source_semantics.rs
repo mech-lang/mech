@@ -3600,7 +3600,8 @@ fn dormant_activation_suppresses_mixed_paths_to_external_effects() {
                 }
             }
             mech_engine::ExecutableNodeBody::Comprehension(_)
-            | mech_engine::ExecutableNodeBody::Fsm(_) => {
+            | mech_engine::ExecutableNodeBody::Fsm(_)
+            | mech_engine::ExecutableNodeBody::Iteration(_) => {
                 panic!("simple activation fixture has no nested control")
             }
         }

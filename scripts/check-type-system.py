@@ -420,7 +420,7 @@ def failures(root: Path) -> list[str]:
         found.append("source match guard does not require the semantic Boolean schema")
     if (
         "expected != &schema_identity" not in rust_code(match_lowering)
-        or "schema.clone().finalize()" not in rust_code(match_lowering)
+        or not re.search(r"\blet\s+schema_identity\s*=\s*schema\.clone\(\)\.finalize\(\)", rust_code(match_lowering))
         or '"source-semantics/incompatible-match-result-kind"' not in match_lowering
     ):
         found.append("source match arms do not require one exact semantic result schema")

@@ -110,7 +110,7 @@ pub(crate) fn activation_failure_for_artifact(
                             format!("FSM {}", control.machine)
                         }
                         mech_engine::ExecutableNodeBody::Iteration(control) => {
-                            format!("Counted application ({})", control.count)
+                            iteration_description(control.count)
                         }
                     },
                 ),
@@ -118,4 +118,39 @@ pub(crate) fn activation_failure_for_artifact(
         }
     }
     activation_failure(error)
+}
+
+fn iteration_description(count: mech_engine::IterationCount) -> String {
+    match count {
+        mech_engine::IterationCount::Literal(count) => format!("Counted application ({count})"),
+        mech_engine::IterationCount::Elements { input } => {
+            format!("Element-wise counted application (count input {input})")
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::iteration_description;
+    use mech_engine::IterationCount;
+
+    #[test]
+    fn counted_application_diagnostics_preserve_literal_counts() {
+        assert_eq!(
+            iteration_description(IterationCount::Literal(2)),
+            "Counted application (2)"
+        );
+        assert_eq!(
+            iteration_description(IterationCount::Literal(u64::MAX)),
+            "Counted application (18446744073709551615)"
+        );
+    }
+
+    #[test]
+    fn element_wise_application_diagnostics_identify_the_count_input() {
+        assert_eq!(
+            iteration_description(IterationCount::Elements { input: 1 }),
+            "Element-wise counted application (count input 1)"
+        );
+    }
 }

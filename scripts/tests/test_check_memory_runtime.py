@@ -981,8 +981,8 @@ impl MechFunctionImpl for Bypass {
         self.replace(
             root,
             "src/engine/src/resident/composite.rs",
-            ".admit()?\n    .into_plan();\n    let constructor = current_constructor(plan, inputs)?;",
-            ".into_plan();\n    let constructor = current_constructor(plan, inputs)?;",
+            ".admit()?\n    .into_plan();\n    let dynamic_constructor;",
+            ".into_plan();\n    let dynamic_constructor;",
         )
         self.assert_failure(root, "Resident aggregate construction bypasses admitted immutable inputs")
 

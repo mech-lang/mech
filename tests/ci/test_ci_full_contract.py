@@ -147,7 +147,9 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("--features canonical-native-runtime --lib", block)
         admission_step = next(step for step in job_steps(FULL, "canonical-applications")
                               if "Execute activated native host I/O and application syntax" in step)
-        self.assertIn("--test native_host_application -- --test-threads=1", admission_step)
+        for target in ("native_host_io", "repeated_application", "native_host_application", "native_source_admission"):
+            self.assertIn(f"--test {target}", admission_step)
+        self.assertIn("-- --test-threads=1", admission_step)
         self.assertNotIn("--ignored", admission_step)
         for target, case, evidence in (
             ("native_host_application",

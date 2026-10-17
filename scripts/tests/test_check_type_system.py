@@ -339,6 +339,16 @@ class TypeSystemCheckerTests(unittest.TestCase):
         )
         self.assert_failure(root, "match arms do not require one exact semantic result schema")
 
+    def test_source_match_canonicalization_must_supply_the_checked_identity(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/engine/src/source_semantics/frontend.rs",
+            "let schema_identity = schema.clone().finalize()",
+            "let unused_identity = schema.clone().finalize()",
+        )
+        self.assert_failure(root, "match arms do not require one exact semantic result schema")
+
 
     def test_31_legacy_predicate_constraint_regression_fails(self):
         root = self.fixture()
