@@ -1365,7 +1365,7 @@ mod tests {
             "x := |a<bool>|\n|1>limit|",
             "x := |a<bool>|\n  |1>limit|\n  |0>limit|",
             "x := |a<bool>|\r\n|1>limit|",
-            "x := (|a<bool>|\n|1>limit|).a",
+            "x := (|a<bool>|\n|1>limit|\n)",
             "x := value ? |1>limit ⇒ 1 | * ⇒ 0",
         ] {
             let source = format!("limit := 2\n{binding}\n");
