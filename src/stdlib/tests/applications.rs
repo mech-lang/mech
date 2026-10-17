@@ -163,7 +163,7 @@ fn enum_metadata_application(
         ""
     };
     let source = format!(
-        "<wide> := :large<({fields})> | :small\nguard := enabled<bool>\nselect(value<wide>) => <u64>\n{small}{arms}  | * => 1u64.\nselect(signal<wide>)\n"
+        "<wide> := :large<({fields})> | :small\nguard := enabled<bool>\nresult := signal<wide>?\n{small}{arms}  | * => 1u64.\nresult\n"
     );
     compile_with_frontend(
         &source,

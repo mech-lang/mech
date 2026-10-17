@@ -67,6 +67,14 @@
       "admission_fixtures": "Retain the original small and larger Boolean and String payloads. Metadata and canonical encoding use their actual compute allowance, not an assumed comparison allowance. Add Boolean duplication beyond the unchanged output-element cap and repeated String selections whose payload alone fits but whose two staged copies exceed the unchanged temporary-byte cap. Refused producers cannot publish selector facts through strict comparisons, source loading or decoded bytecode; the original cumulative closed-analysis refusal and recovery cases remain asserted.",
       "constant_output_layout": "The EKF browser canaries exposed a constant matrix published through snapshot storage while its constant source used dense storage. Mark output aliases of immutable constants as activation-fixed, including alias chains; do not treat live control or input shapes as fixed. Regressions cover Bool/Index/F64/String matrices with turn-parameterized schemas, nonsquare geometry, two turns and original/decoded artifacts. Compile the entire shipped EKF coordinator at both one and 1000 filters with planning-only providers, not just its compute subsection.",
       "qualification": "Focused constant-alias and full EKF coordinator regressions pass. Runtime units passed 793/793 on 4d2f2f22571a6ee5bef2652864f99333423f9f05; source acceptance passed 61/61 on 9f897f8b1f6b0fd5faf31b5a90af49295303e9b2, before the constant-layout correction. Final immutable-source runtime/engine, complete affected contracts and linked qualification are still pending; this entry does not credit earlier receipts as final qualification."
+    },
+    {
+      "area": "supplied rereview correction pass",
+      "enum_projection": "Canonical enum and tuple projections retain the immutable root schema Arc and walk schema/data paths together. Reject mismatched enum ordinals before allocating a projection; matching arms also share the schema. Reserve bounded path storage separately for peak active depth and cumulative attempted pattern work.",
+      "constructor_authority": "Closed copy preparation and the selected runtime Snapshot constructor call the same borrowed retention/finalization preflight. Keep payload equality separately metered and retain existing output, copy, temporary, node and work limits. Add the two live 32768-element Boolean-input boundary and closed selector-fact boundary.",
+      "typed_denial": "Preserve existing and recomputed budget violations through ordinary permits, current-turn planning, continuation/frame measurement, recursive calls and iteration replacement. Assert exact phase/dimension/required/limit diagnostics rather than treating resource denials as InvalidShape. Existing arithmetic and malformed-layout InvalidShape assertions remain.",
+      "regressions": "Shared schema and tuple-array identity across 1024 attempts; finite cumulative path accounting; many mismatched and guard-rejected matching arms on original/decoded artifacts; binding-copy denial with unchanged output/epoch and recovery; unchanged original ten tail-control cases.",
+      "status": "Implemented locally; focused and full qualification in progress. No final-candidate qualification or new benchmark credit is claimed."
     }
   ],
   "remaining_compatibility_accounting": {
@@ -94,6 +102,18 @@
     "Continue broader packaging and optimizer work independently of the corrected stack's qualification."
   ],
   "checks": [
+    {
+      "area": "pre-rereview-fix immutable correctness baseline",
+      "source_commit": "2fad121c2b70a6822ebef2c2ba25925893639282",
+      "engine_unit_tests_passed": 835,
+      "engine_integration_tests_passed": 192,
+      "runtime_unit_tests_passed": 814,
+      "source_acceptance_tests_passed": 61,
+      "resident_ekf_contract_tests_passed": 11,
+      "syntax_unit_tests_passed": 509,
+      "logs": ["tmp/pr-stack-evidence/ci-repair-v10-engine.log", "tmp/pr-stack-evidence/ci-repair-v10-runtime-owner.log", "tmp/pr-stack-evidence/ci-repair-v10-syntax-complete.log"],
+      "scope": "All passed serially with unchanged clean source before/after. Includes complete shipped EKF coordinator compilation at one and 1000 filters. Also passed lexical/catalog, CI/type mutation, unsafe, distribution, warning, authority, memory and layout gates. Predates the supplied rereview fixes and is not their qualification. Browser WebGPU CI passed coordinator startup and completed 376 turns, then failed an idle completion deadline; this is a failure, not completed application evidence."
+    },
     {
       "area": "bracketed canonical applications",
       "source_commit": "d429cdef0ab0cfad1dd482982e6317400effff3d",
