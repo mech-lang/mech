@@ -1463,7 +1463,10 @@ mod tests {
                 .into_iter()
                 .find(|node| node.text().is_ok_and(|text| text.trim() == seed))
                 .unwrap();
-            assert_eq!(super::super::literal(number).unwrap(), expected);
+            assert_eq!(
+                super::super::literal(number).unwrap_or_else(|error| panic!("{seed}: {error}")),
+                expected
+            );
         }
     }
 

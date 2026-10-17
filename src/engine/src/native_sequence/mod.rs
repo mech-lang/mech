@@ -173,7 +173,16 @@ fn literal(node: SyntaxNode) -> Result<Constant, String> {
                 .ok_or("invalid string escape")?,
         )),
         SyntaxKind::Number => {
-            if let Some(real) = NumberSyntax::cast(node.clone()).and_then(|number| number.real()) {
+            let source = text(&node)?;
+            let source = source.trim();
+            // Keep the existing decimal/scientific Float path. Attached
+            // integer kind suffixes use their canonical typed owner below.
+            let float_spelling =
+                source.contains('.') || source.contains('e') || source.contains('E');
+            if !float_spelling
+                && let Some(real) =
+                    NumberSyntax::cast(node.clone()).and_then(|number| number.real())
+            {
                 if let Some(typed) = real
                     .value()
                     .and_then(IntegerLiteralSyntax::cast)
@@ -213,9 +222,7 @@ fn literal(node: SyntaxNode) -> Result<Constant, String> {
                     };
                 }
             }
-            let source = text(&node)?;
-            let source = source.trim();
-            if source.contains('.') || source.contains('e') || source.contains('E') {
+            if float_spelling {
                 let value = source.parse::<f64>().map_err(|_| "invalid f64 literal")?;
                 if !value.is_finite() {
                     return Err("non-finite literal".into());
