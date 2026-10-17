@@ -1022,7 +1022,11 @@ impl ReactiveInstance {
                 }
                 // Activation scopes, continuations, and effects belong to
                 // ordinary turns. Refresh can only reuse their prior result.
-                _ => {
+                ActivatedTurnStep::Match(_)
+                | ActivatedTurnStep::Recur(_)
+                | ActivatedTurnStep::Suspend(_)
+                | ActivatedTurnStep::Publish(_)
+                | ActivatedTurnStep::External(_) => {
                     unavailable_nodes.insert(node);
                     continue;
                 }
@@ -6979,6 +6983,39 @@ mod tests {
             },
         )
         .unwrap()
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn compatible_migration_rejects_suspended_frames_without_losing_their_wakeup() {
+        let source = "#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 42u64.\n#Deferred()\n";
+        let mut previous = source_document_instance(source);
+        let mut candidate = source_document_instance(source);
+        previous.turn(&[]).unwrap();
+        assert!(previous.has_suspended_continuation());
+        let wakeup = previous.continuation_wakeup().unwrap();
+        let epoch = previous.published_epoch();
+        let candidate_epoch = candidate.published_epoch();
+        assert_eq!(
+            candidate.migrate_compatible_state_from(&previous, &[]),
+            Err(ResidentActivationError::SuspendedContinuationMigration),
+        );
+        assert_eq!(previous.published_epoch(), epoch);
+        assert_eq!(candidate.published_epoch(), candidate_epoch);
+        assert!(previous.accepts_continuation_wakeup(wakeup));
+        previous.turn(&[]).unwrap();
+        assert!(!previous.has_suspended_continuation());
+        assert_eq!(
+            previous
+                .copied_output(0)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            mech_core::ValueDataDraft::U64(42),
+        );
+        candidate
+            .migrate_compatible_state_from(&previous, &[])
+            .unwrap();
     }
 
     #[cfg(feature = "source")]

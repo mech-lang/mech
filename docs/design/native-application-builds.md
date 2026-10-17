@@ -298,6 +298,36 @@ are not substitutes for the resident application coordinator. The stable
 product lowering and supported backend scope are documented in
 [`hosts/gpu/README.md`](../../hosts/gpu/README.md).
 
+## Compatible live replacement
+
+Compatible resident replacement transfers an accepted publication, not an
+in-flight computation. It rejects `SuspendedContinuationMigration` before
+copying retained inputs or state when either instance owns a suspended frame.
+The old instance keeps its captured frame, ready queue, generation-bound wakeup
+and epoch; the host can finish that computation and retry. Completed FSM
+results may migrate, and projection refresh must not resume a continuation,
+trigger a dormant activation, observe a provider or invent another turn.
+
+Document revisions must retain their defining nominal origin. Independently
+owned nominal declarations are not interchangeable even when their shape or
+source spelling matches. Anonymous state migration between different artifact
+revisions requires one unambiguous semantic writer/initializer match, not
+equality of artifact-local node offsets. Within one exact immutable revision,
+the declaration's own cell identity is retained unless state was explicitly
+mutated.
+
+Explicitly mutated state keeps the candidate's ordered initial publication,
+including projections evaluated before a later assignment. Refreshing those
+projections from the final state would apply a transition twice. Independent
+new projections still refresh from compatible retained state, and hidden
+invariants remain checked without inventing another turn.
+
+The coordinator separately retains the input snapshot associated with the
+last accepted publication. A rejected turn cannot replace that snapshot.
+Payloads use shared immutable ownership and each retained snapshot is bounded
+by the existing input limit, but the older accepted snapshot can outlive the
+latest capture: this has additional retained-memory cost.
+
 ## Security boundary
 
 ```text

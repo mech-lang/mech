@@ -85,7 +85,100 @@ fn compatible_replacement_refreshes_new_control_outputs_without_advancing_state(
 }
 
 #[test]
+fn replacement_keeps_ordered_candidate_projections_of_explicitly_mutated_state() {
+    let source = "~counter := 0.0\ncounter += 1.0\n~steady := 5.0\nsteady += 1.0\ndisplay := counter + 10.0\ndisplay\n";
+    for decoded in [false, true] {
+        let mut previous = load(source, decoded);
+        previous.step_active_program().unwrap();
+        previous.step_active_program().unwrap();
+        assert_eq!(
+            canonical_f64(previous.root_symbol_value("display").unwrap().value()),
+            13.0
+        );
+        let mut candidate = load(
+            &format!(
+                "{source}counter += 1.0\nextra := steady + 100.0\nsafe! := display < 12.0\nextra\n"
+            ),
+            decoded,
+        );
+        let epoch = resident_parts(&candidate).1.published_epoch();
+        candidate
+            .preserve_compatible_resident_state_from(
+                &previous,
+                &BTreeSet::from(["counter".to_owned()]),
+            )
+            .unwrap();
+        assert_eq!(resident_parts(&candidate).1.published_epoch(), epoch);
+        for (name, expected) in [
+            ("counter", 2.0),
+            ("display", 11.0),
+            ("steady", 8.0),
+            ("extra", 108.0),
+        ] {
+            assert_eq!(
+                canonical_f64(candidate.root_symbol_value(name).unwrap().value()),
+                expected,
+                "decoded={decoded}, projection={name}",
+            );
+        }
+        assert_eq!(
+            canonical_f64(previous.root_symbol_value("counter").unwrap().value()),
+            3.0
+        );
+        assert_eq!(
+            canonical_f64(previous.root_symbol_value("display").unwrap().value()),
+            13.0
+        );
+    }
+}
+
+#[test]
+fn replacement_keeps_hidden_invariant_order_around_an_explicit_state_edit() {
+    for decoded in [false, true] {
+        for retained_state in [false, true] {
+            let steady = if retained_state {
+                "~steady := 5.0\nsteady += 1.0\n"
+            } else {
+                "steady := 0.0\n"
+            };
+            let mut previous = load(
+                &format!("~counter := 0.0\ncounter += 1.0\n{steady}counter\n"),
+                decoded,
+            );
+            previous.step_active_program().unwrap();
+            previous.step_active_program().unwrap();
+            let mut candidate = load(
+                &format!(
+                    "~counter := 0.0\ncounter += 1.0\n{steady}safe! := counter + steady < 10.0\ncounter += 1.0\ncounter\n"
+                ),
+                decoded,
+            );
+            candidate
+                .preserve_compatible_resident_state_from(
+                    &previous,
+                    &BTreeSet::from(["counter".to_owned()]),
+                )
+                .unwrap();
+            assert_eq!(
+                canonical_f64(candidate.root_symbol_value("counter").unwrap().value()),
+                2.0
+            );
+            assert_eq!(
+                canonical_f64(candidate.root_symbol_value("steady").unwrap().value()),
+                if retained_state { 8.0 } else { 0.0 }
+            );
+            assert_eq!(
+                canonical_f64(previous.root_symbol_value("counter").unwrap().value()),
+                3.0
+            );
+        }
+    }
+}
+
+#[test]
 fn compatible_replacement_reuses_published_fsm_projection_without_resuming_it() {
+    use mech_syntax::document::{DocumentId, ParseConfig, Revision, TextSnapshot};
+
     let source = r#"
 @fast := test://clock/fast{:read(delta-seconds)}
 fast := @fast/delta-seconds
@@ -99,8 +192,20 @@ fast := @fast/delta-seconds
 deferred := #Deferred(fast)
 state
 "#;
-    let load = |source: &str, decoded: bool| {
-        let (mut loaded, reads) = independent_external_runtime_with_source(source);
+    // These are revisions of one document, not independently owned nominal
+    // declarations. Preserve the same origin exactly as an interactive host.
+    let origin = crate::SourceDocument::new_standalone_origin();
+    let load = |source: &str, decoded: bool, origin: &mech_core::CanonicalNominalPath| {
+        let (mut loaded, reads) = independent_external_runtime_with_source("true\n");
+        loaded.unload_active_program().unwrap();
+        let document = crate::SourceDocument::parse(
+            TextSnapshot::new(DocumentId(0x901), Revision(1), source).unwrap(),
+            ParseConfig::default(),
+        )
+        .with_nominal_origin(origin.clone());
+        loaded
+            .load_interactive_document_program(&document, crate::ResidentDurabilityPolicy::Retained)
+            .unwrap();
         if decoded {
             let ActiveProgramExecution::ResidentExternal(execution) = &loaded.active_program else {
                 unreachable!()
@@ -117,7 +222,7 @@ state
         (loaded, reads)
     };
     for decoded in [false, true] {
-        let (mut previous, previous_reads) = load(source, decoded);
+        let (mut previous, previous_reads) = load(source, decoded, &origin);
         previous
             .ingress()
             .submit(crate::RuntimeHostInput::single(
@@ -134,6 +239,7 @@ state
         let (mut candidate, candidate_reads) = load(
             &format!("{source}extra := deferred + state\nextra\n"),
             decoded,
+            &origin,
         );
         let ActiveProgramExecution::ResidentExternal(execution) = &candidate.active_program else {
             unreachable!()
@@ -161,6 +267,142 @@ state
         );
         assert_eq!(previous_reads.load(Ordering::SeqCst), 0);
         assert_eq!(candidate_reads.load(Ordering::SeqCst), 0);
+
+        let unrelated_origin = crate::SourceDocument::new_standalone_origin();
+        let (mut unrelated, unrelated_reads) = load(
+            &format!("{source}extra := deferred + state\nextra\n"),
+            decoded,
+            &unrelated_origin,
+        );
+        unrelated
+            .preserve_compatible_resident_state_from(&previous, &BTreeSet::new())
+            .unwrap();
+        assert!(unrelated.root_symbol_value("deferred").is_err());
+        assert!(unrelated.root_symbol_value("extra").is_err());
+        assert_eq!(unrelated_reads.load(Ordering::SeqCst), 0);
+    }
+}
+
+#[test]
+fn anonymous_state_migration_preserves_exact_identity_without_guessing_across_revisions() {
+    let source =
+        "~left := 1.0\n~right := 1.0\nleft = left + 1.0\nright = right + 1.0\nleft + right\n";
+    for decoded in [false, true] {
+        let configure = |source: &str| {
+            let mut loaded = runtime();
+            loaded
+                .load_source_program(source, crate::ResidentDurabilityPolicy::Retained)
+                .unwrap();
+            if decoded {
+                let bytes = encode_program_artifact_bytecode_v1(resident_parts(&loaded).0).unwrap();
+                loaded.unload_active_program().unwrap();
+                loaded
+                    .load_bytecode_program(&bytes, crate::ResidentDurabilityPolicy::Retained)
+                    .unwrap();
+            }
+            loaded
+        };
+        let mut previous = configure(source);
+        previous.step_active_program().unwrap();
+        previous.step_active_program().unwrap();
+        assert_eq!(
+            canonical_f64(previous.program_output_value().unwrap().unwrap().value()),
+            8.0
+        );
+        let mut unchanged = configure(source);
+        assert_eq!(
+            resident_parts(&unchanged).0.revision(),
+            resident_parts(&previous).0.revision()
+        );
+        unchanged
+            .preserve_compatible_resident_state_from(&previous, &BTreeSet::new())
+            .unwrap();
+        assert_eq!(
+            canonical_f64(unchanged.program_output_value().unwrap().unwrap().value()),
+            8.0
+        );
+        unchanged.step_active_program().unwrap();
+        assert_eq!(
+            canonical_f64(unchanged.program_output_value().unwrap().unwrap().value()),
+            10.0,
+            "retained cells, not only a cached output, must migrate"
+        );
+        let mut candidate = configure(&format!("{source}safe! := left + right < 5.0\n"));
+        assert_ne!(
+            resident_parts(&candidate).0.revision(),
+            resident_parts(&previous).0.revision()
+        );
+        candidate
+            .preserve_compatible_resident_state_from(&previous, &BTreeSet::new())
+            .unwrap();
+        assert_eq!(
+            canonical_f64(candidate.program_output_value().unwrap().unwrap().value()),
+            4.0
+        );
+        assert_eq!(
+            canonical_f64(previous.program_output_value().unwrap().unwrap().value()),
+            8.0
+        );
+    }
+}
+
+#[test]
+fn replacement_rejects_a_suspended_frame_and_leaves_the_old_runtime_resumable() {
+    let source = "#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 42u64.\n#Deferred()\n";
+    for decoded in [false, true] {
+        let mut previous = load(source, decoded);
+        let artifact = resident_parts(&previous).0.clone();
+        let mut suspended = mech_engine::resident::activate(
+            mech_core::ReactiveInstanceId::new(0x903, 0),
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            &mech_engine::resident::ActivationFacts::default(),
+        )
+        .unwrap();
+        suspended.turn(&[]).unwrap();
+        assert!(suspended.has_suspended_continuation());
+        let wakeup = suspended.continuation_wakeup().unwrap();
+        let epoch = suspended.published_epoch();
+        let ActiveProgramExecution::ResidentPure(execution) = &mut previous.active_program else {
+            unreachable!()
+        };
+        execution.instance = suspended;
+        let mut candidate = load(source, decoded);
+        let candidate_hash = resident_parts(&candidate).1.published_state_hash();
+        let error = candidate
+            .preserve_compatible_resident_state_from(&previous, &BTreeSet::new())
+            .unwrap_err();
+        assert!(
+            error
+                .display_message()
+                .contains("SuspendedContinuationMigration"),
+            "{error:?}"
+        );
+        assert_eq!(
+            resident_parts(&candidate).1.published_state_hash(),
+            candidate_hash
+        );
+        assert_eq!(resident_parts(&previous).1.published_epoch(), epoch);
+        assert!(
+            resident_parts(&previous)
+                .1
+                .accepts_continuation_wakeup(wakeup)
+        );
+        previous.step_active_program().unwrap();
+        assert!(!resident_parts(&previous).1.has_suspended_continuation());
+        assert_eq!(
+            previous
+                .program_output_value()
+                .unwrap()
+                .unwrap()
+                .value()
+                .canonical_data_draft()
+                .unwrap(),
+            ValueDataDraft::U64(42)
+        );
+        candidate
+            .preserve_compatible_resident_state_from(&previous, &BTreeSet::new())
+            .unwrap();
     }
 }
 

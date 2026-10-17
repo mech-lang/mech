@@ -47,6 +47,7 @@ pub(crate) fn activation_failure(error: ResidentActivationError) -> mech_core::M
         | OutputUnavailable { .. }
         | IncompatibleState { .. }
         | InvalidStateMigration
+        | SuspendedContinuationMigration
         | PlanGenerationExhausted
         | LayoutGenerationExhausted => ResidentRouteFailureClass::ActivationFailure,
     };

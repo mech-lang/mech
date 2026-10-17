@@ -15,8 +15,8 @@ fn malformed_bytecode_fails_closed_without_installing_a_route() {
 fn bytecode_loader_rejects_parallel_execution_and_requirement_authorities() {
     use mech_core::{
         ApplicationRequirement, BytecodeInstruction, BytecodeProgram, ConstantStoreBuilder,
-        ExecutionHostFunctionRequest, OperationContractTable, SchemaTableBuilder, write_bytecode,
-        write_bytecode_with_artifact,
+        EncodedConstant, ExecutionHostFunctionRequest, OperationContractTable, RuntimeType,
+        SchemaTableBuilder, write_bytecode, write_bytecode_with_artifact,
     };
     use mech_engine::{
         ApplicationRequirementTable, ProgramArtifactDraft, encode_program_artifact_sections,
@@ -46,21 +46,28 @@ fn bytecode_loader_rejects_parallel_execution_and_requirement_authorities() {
     .unwrap();
     let sections = encode_program_artifact_sections(&artifact).unwrap();
     let mut envelope = BytecodeProgram {
-        register_count: 0,
-        constants: Vec::new(),
+        register_count: 1,
+        constants: vec![EncodedConstant {
+            runtime_type: RuntimeType::Empty,
+            alignment: 1,
+            bytes: Vec::new(),
+        }],
         symbols: BTreeMap::new(),
         mutable_symbols: BTreeSet::new(),
-        instructions: Vec::new(),
+        instructions: vec![
+            BytecodeInstruction::ConstLoad {
+                dst: 0,
+                constant: 0,
+            },
+            BytecodeInstruction::Return { src: 0 },
+        ],
         dictionary: BTreeMap::new(),
         requirements: Vec::new(),
     };
     let legacy = write_bytecode(&envelope).unwrap();
-    envelope.register_count = 1;
-    envelope
-        .instructions
-        .push(BytecodeInstruction::Return { src: 0 });
     let hybrid = write_bytecode_with_artifact(&envelope, &sections).unwrap();
     envelope.register_count = 0;
+    envelope.constants.clear();
     envelope.instructions.clear();
     envelope
         .requirements

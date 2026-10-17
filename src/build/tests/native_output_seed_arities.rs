@@ -265,9 +265,7 @@ fn legacy_runtime_arities_preserve_contracts_but_are_rejected_as_native_applicat
 
         parsed.validate_runtime_contracts(&catalog).unwrap();
         let entry = catalog
-            .runtime_entry(mech_core::RuntimeFunctionId::from_raw(hash_str(
-                runtime_name,
-            )))
+            .runtime_entry(mech_core::RuntimeFunctionId::from_name(runtime_name))
             .unwrap();
         let linkage = entry.native_linkage.as_ref().unwrap();
         assert_eq!(entry.name, runtime_name, "{name}");

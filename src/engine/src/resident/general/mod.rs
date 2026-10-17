@@ -1619,6 +1619,12 @@ impl ReactiveInstance {
         !self.ready_continuations.is_empty()
     }
 
+    /// Published continuation frames are not transferable between plans.
+    /// A compatible replacement must wait until these computations finish.
+    pub fn has_suspended_continuation(&self) -> bool {
+        self.continuations.iter().any(Option::is_some)
+    }
+
     pub fn ready_continuation_count(&self) -> usize {
         self.ready_continuations.len()
     }
@@ -1721,6 +1727,9 @@ impl ReactiveInstance {
         if self.candidate_active || source.candidate_active {
             return Err(ResidentActivationError::ActiveCandidate);
         }
+        if self.has_suspended_continuation() || source.has_suspended_continuation() {
+            return Err(ResidentActivationError::SuspendedContinuationMigration);
+        }
 
         let mut targets = BTreeSet::<CellSlotId>::new();
         let mut sources = BTreeSet::<CellSlotId>::new();
@@ -1807,6 +1816,9 @@ impl ReactiveInstance {
             && activation_facts_fingerprint(facts) == self.plan.activation_facts_fingerprint
         {
             return Ok(());
+        }
+        if self.has_suspended_continuation() {
+            return Err(ResidentActivationError::SuspendedContinuationMigration);
         }
         let next_plan = self
             .plan
@@ -1995,6 +2007,7 @@ pub enum ResidentActivationError {
         slot: CellSlotId,
     },
     InvalidStateMigration,
+    SuspendedContinuationMigration,
     PlanGenerationExhausted,
     LayoutGenerationExhausted,
 }
