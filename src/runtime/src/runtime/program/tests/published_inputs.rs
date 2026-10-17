@@ -154,3 +154,91 @@ fn replacement_projections_keep_published_inputs_after_rejected_turn_and_replay(
         }
     }
 }
+
+#[test]
+fn interactive_symbol_queries_keep_new_observations_absent_until_publication() {
+    struct ObservationFactory {
+        decoded: bool,
+        reads: std::rc::Rc<std::cell::RefCell<Vec<Arc<AtomicUsize>>>>,
+    }
+
+    impl crate::ResidentReplRuntimeFactory for ObservationFactory {
+        fn build(&self, _events: crate::MechEventBuffer) -> mech_core::MResult<crate::MechRuntime> {
+            let (mut runtime, reads) = independent_external_runtime_with_source("true\n");
+            runtime.unload_active_program()?;
+            self.reads.borrow_mut().push(reads);
+            Ok(runtime)
+        }
+
+        fn activate(
+            &self,
+            events: crate::MechEventBuffer,
+            source: &str,
+        ) -> mech_core::MResult<(crate::MechRuntime, crate::RuntimeProgramLoadOutcome)> {
+            let mut runtime = self.build(events)?;
+            let outcome = runtime.load_interactive_source_program(
+                source,
+                crate::ResidentDurabilityPolicy::Retained,
+            )?;
+            if !self.decoded {
+                return Ok((runtime, outcome));
+            }
+            let bytes = encode_program_artifact_bytecode_v1(resident_parts(&runtime).0).unwrap();
+            runtime.unload_active_program()?;
+            let outcome =
+                runtime.load_bytecode_program(&bytes, crate::ResidentDurabilityPolicy::Retained)?;
+            Ok((runtime, outcome))
+        }
+    }
+
+    for decoded in [false, true] {
+        let reads = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
+        let mut session = crate::ResidentReplSession::from_source(
+            ObservationFactory {
+                decoded,
+                reads: std::rc::Rc::clone(&reads),
+            },
+            "@fast := test://clock/fast{:read(delta-seconds)}\nanswer := 7.0\nanswer\n".to_owned(),
+        )
+        .unwrap();
+        session
+            .submit("clock-second := @fast/delta-seconds;")
+            .unwrap();
+        let runtime = session.runtime().unwrap();
+        let output = runtime.root_symbol_output_id("clock-second").unwrap();
+        assert!(runtime.output_value(output).unwrap().is_none());
+        let epoch = resident_parts(runtime).1.published_epoch();
+        for _ in 0..3 {
+            assert!(session.symbol("clock-second").unwrap().is_none());
+            assert!(session.symbol("missing").unwrap().is_none());
+            assert_eq!(
+                canonical_f64(session.symbol("answer").unwrap().unwrap().value()),
+                7.0
+            );
+        }
+        assert_eq!(
+            resident_parts(session.runtime().unwrap())
+                .1
+                .published_epoch(),
+            epoch
+        );
+        assert!(matches!(
+            submit(session.runtime_mut().unwrap(), 8.0),
+            crate::ResidentExternalTurnOutcome::Accepted { .. }
+        ));
+        assert_eq!(
+            canonical_f64(session.symbol("clock-second").unwrap().unwrap().value()),
+            8.0
+        );
+        session
+            .clear_variables(&["clock-second".to_owned()])
+            .unwrap();
+        assert!(session.symbol("clock-second").unwrap().is_none());
+        assert!(
+            reads
+                .borrow()
+                .iter()
+                .all(|reads| reads.load(Ordering::SeqCst) == 0)
+        );
+    }
+}
