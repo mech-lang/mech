@@ -3046,7 +3046,12 @@ mod tests {
                 &Inputs(&long_product_inputs),
                 ResidentValueMut::Snapshot(&mut long_product_output),
             ),
-            Err(ResidentKernelError::InvalidShape),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                required: 165_860,
+                limit: 65_536,
+            }),
         );
         assert!(long_product_output[0].is_none());
 
@@ -3060,13 +3065,17 @@ mod tests {
             ResidentValueRef::Snapshot(&recursive_right),
         ];
         let mut recursive_output = [None];
-        assert_eq!(
+        assert!(matches!(
             output_kernel(set_union, string_set_schema).execute(
                 &Inputs(&recursive_inputs),
                 ResidentValueMut::Snapshot(&mut recursive_output),
             ),
-            Err(ResidentKernelError::InvalidShape),
-        );
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                required, limit,
+            }) if required > limit && limit == mech_core::RESIDENT_MAX_COMPARISON_WORK
+        ));
         assert!(recursive_output[0].is_none());
 
         // A one-element merge has no adjacent output-key comparison. Its

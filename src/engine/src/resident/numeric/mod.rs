@@ -30821,24 +30821,30 @@ mod tests {
             ResidentValueKind::Bool,
             ResidentShape::SCALAR,
         );
-        for kernel in [
-            bind_snapshot_equality(
-                &ResidentKernelBindRequest {
+        for (kernel, required) in [
+            (
+                bind_snapshot_equality(
+                    &ResidentKernelBindRequest {
+                        contract: &contract,
+                        schemas: &schemas,
+                        inputs: &ports,
+                        output: output_port.clone(),
+                    },
+                    snapshot_equal,
+                )
+                .unwrap(),
+                154_696,
+            ),
+            (
+                bind_strict_equal(&ResidentKernelBindRequest {
                     contract: &contract,
                     schemas: &schemas,
                     inputs: &ports,
                     output: output_port.clone(),
-                },
-                snapshot_equal,
-            )
-            .unwrap(),
-            bind_strict_equal(&ResidentKernelBindRequest {
-                contract: &contract,
-                schemas: &schemas,
-                inputs: &ports,
-                output: output_port.clone(),
-            })
-            .unwrap(),
+                })
+                .unwrap(),
+                154_692,
+            ),
         ] {
             let mut output = [1_u8];
             assert_eq!(
@@ -30846,7 +30852,7 @@ mod tests {
                 Err(ResidentKernelError::ResourceLimit {
                     phase: mech_core::ResidentResourcePhase::Admission,
                     dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
-                    required: 154696,
+                    required,
                     limit: 65536
                 }),
             );
@@ -31198,12 +31204,13 @@ mod tests {
         };
         let source_value = matrix_value();
         let source = [Some(source_value)];
-        for (executor, parameters) in [
+        for (executor, parameters, required) in [
             (
                 snapshot_numeric_negate as mech_core::ResidentKernelExecutor,
                 vec![200, 200],
+                80_063,
             ),
-            (transpose_snapshot, vec![]),
+            (transpose_snapshot, vec![], 80_004),
         ] {
             let original = matrix_value();
             let mut output = [Some(original.clone())];
@@ -31228,7 +31235,7 @@ mod tests {
                 Err(ResidentKernelError::ResourceLimit {
                     phase: mech_core::ResidentResourcePhase::Admission,
                     dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
-                    required: 80063,
+                    required,
                     limit: 65536
                 }),
             );

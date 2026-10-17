@@ -1751,7 +1751,12 @@ mod tests {
         assert_eq!(
             BoundResidentKernel::new(string_indices_assign, Box::new([]))
                 .execute(&inputs, ResidentValueMut::String(&mut output)),
-            Err(ResidentKernelError::InvalidShape),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::OutputBytes,
+                required: 16_777_275,
+                limit: 16_777_216,
+            }),
         );
         assert_eq!(
             output[0].len(),
