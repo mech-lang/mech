@@ -92,11 +92,16 @@ class NativeLinkageProfileTests(unittest.TestCase):
                 LINKAGE.retained_runtime_entries(malformed)
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "frozen.json"
-            raw = json.dumps({"runtime_factories": [{"name": "Old", "id_hex": "01"}]}).encode()
+            raw = json.dumps({"runtime_factories": [
+                {"name": entry["runtime_factory_name"], "id_hex": entry["runtime_factory_id"]}
+                for entry in entries
+            ]}).encode()
             path.write_bytes(raw)
             with patch.object(LINKAGE, "FROZEN_SURFACE", path), \
-                 patch.object(LINKAGE, "EXPECTED_FULL_COUNT", 1), \
-                 patch.object(LINKAGE, "EXPECTED_FULL_SURFACE_SHA256", LINKAGE.sha256(raw).hexdigest()):
+                 patch.object(LINKAGE, "EXPECTED_FULL_COUNT", len(entries)), \
+                 patch.object(LINKAGE, "EXPECTED_FULL_SURFACE_SHA256", LINKAGE.sha256(raw).hexdigest()), \
+                 patch.object(LINKAGE, "EXPECTED_RETAINED_FULL_RUNTIME_SURFACE_DIGEST",
+                              LINKAGE.digest([retained])):
                 LINKAGE.verify_full_surface(entries)
                 for malformed in [
                     additions,

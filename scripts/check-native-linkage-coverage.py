@@ -35,9 +35,12 @@ PREFERRED_OWNER_REPRESENTATIVES = {
     "mech-engine": "VariableDefineF64",
     "mech-math": "AddSS<f64>",
 }
-EXPECTED_FULL_COUNT = 9_716
+EXPECTED_FULL_COUNT = 9_726
 EXPECTED_FULL_SURFACE_SHA256 = (
-    "cccc5a0bc5b06689e202504d226fe9ce02f12061e2af89ec6f3bdd36720cc397"
+    "bcd742d6c4857b06d538f087c7024fd4d82fbf9d292699c0619868b967b073da"
+)
+EXPECTED_RETAINED_FULL_RUNTIME_SURFACE_DIGEST = (
+    "7bea0428c0696aab2251c3e15e9085688887de9e7f2114d80213ac5facca1374"
 )
 OWNERS: dict[str, tuple[Path, str, str]] = {
     "mech-engine": (ROOT / "src/engine/Cargo.toml", "extended-engine", "stdlib"),
@@ -470,9 +473,16 @@ def verify_full_surface(entries: list[dict[str, Any]]) -> None:
         raise ContractError("frozen full runtime surface count changed")
     expected = {(item["id_hex"], item["name"]) for item in frozen}
     retained = retained_runtime_entries(entries)
-    actual = {(item["runtime_factory_id"], item["runtime_factory_name"]) for item in retained}
-    if len(retained) != len(expected) or actual != expected:
+    actual = {(item["runtime_factory_id"], item["runtime_factory_name"]) for item in entries}
+    if len(entries) != len(expected) or actual != expected:
         raise ContractError("runtime/native-plan drift in the frozen full surface")
+    retained_identity = [
+        {"runtime_factory_id": entry["runtime_factory_id"],
+         "runtime_factory_name": entry["runtime_factory_name"]}
+        for entry in retained
+    ]
+    if digest(retained_identity) != EXPECTED_RETAINED_FULL_RUNTIME_SURFACE_DIGEST:
+        raise ContractError("runtime/native-plan drift in the retained full surface")
 
 
 def assemble_report(
