@@ -13,6 +13,8 @@ import textwrap
 import unittest
 from pathlib import Path
 
+from scripts.rust_source import rust_code
+
 
 ROOT = Path(__file__).resolve().parents[2]
 CI = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
@@ -258,6 +260,87 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertNotIn("--no-run", step)
         self.assertNotIn("continue-on-error", step)
         self.assertNotIn("timeout-minutes", step)
+        self._assert_retained_syntax_stress_settings(
+            (ROOT / "src/syntax/tests/document_streaming_complexity.rs").read_text()
+        )
+
+    def _assert_retained_syntax_stress_settings(self, source):
+        # Bind checks to executable function bodies, not comments or literals
+        # that merely repeat an old bound elsewhere in the file.
+        code = rust_code(source)
+
+        def body(name):
+            matches = list(re.finditer(rf"\bfn\s+{re.escape(name)}\s*\(", code))
+            self.assertEqual(len(matches), 1, name)
+            start = code.index("{", matches[0].end())
+            depth = 1
+            end = start + 1
+            while depth and end < len(code):
+                depth += (code[end] == "{") - (code[end] == "}")
+                end += 1
+            self.assertEqual(depth, 0, name)
+            compact = re.sub(r"\s+", "", code[start + 1:end - 1])
+            return re.sub(r"(?<=\d)_(?=\d)", "", compact)
+
+        config = body("large_config")
+        for field, value in {
+            "max_nesting": 256,
+            "max_diagnostics": 65_536,
+            "max_events": 16_000_000,
+            "max_recovery_bytes": 8_000_000,
+            "fuel": 1_000_000_000,
+            "max_source_bytes": 1_000_000,
+            "max_parser_work": 2_000_000_000,
+        }.items():
+            self.assertIn(f"{field}:{value},", config)
+        growth = body("large_growth")
+        settled = body("large_settled_prefix_does_not_increase_small_append_work")
+        for actual in (growth, settled):
+            self.assertIn("fornin[8192,16384,32768,65536]{", actual)
+        self.assertIn("workload_with_config(&source,true,clean,config,limits,64)", growth)
+        self.assertIn("assert!(work.accounted<=total*3,", growth)
+        self.assertIn("assert!(work.consumer.work()<=consumer*3,", growth)
+        self.assertIn("assert!(costs[3]<=costs[0]*3,", settled)
+        for name in (
+            "large_generated_mech_consumes_every_delta",
+            "large_mixed_documents_consume_every_delta",
+            "large_unfinished_tokens_and_late_selection_consume_every_delta",
+            "large_executable_fences_consume_every_delta",
+            "large_malformed_tails_consume_every_delta",
+            "large_settled_prefix_does_not_increase_small_append_work",
+        ):
+            self.assertRegex(code, rf"#\s*\[test\]\s*fn\s+{name}\b")
+            if name != "large_settled_prefix_does_not_increase_small_append_work":
+                self.assertIn("large_growth(", body(name))
+
+    def test_syntax_stress_contract_rejects_weakened_settings_and_decoys(self):
+        source = (ROOT / "src/syntax/tests/document_streaming_complexity.rs").read_text()
+        for before, after in (
+            ("[8_192, 16_384, 32_768, 65_536]", "[8_192, 16_384, 32_768]"),
+            ("work.accounted <= total * 3", "work.accounted <= total * 4"),
+            ("work.consumer.work() <= consumer * 3", "work.consumer.work() <= consumer * 4"),
+            ("costs[3] <= costs[0] * 3", "costs[3] <= costs[0] * 4"),
+            ("max_nesting: 256", "max_nesting: 512"),
+            ("max_diagnostics: 65_536", "max_diagnostics: 131_072"),
+            ("max_events: 16_000_000", "max_events: 32_000_000"),
+            ("max_recovery_bytes: 8_000_000", "max_recovery_bytes: 16_000_000"),
+            ("fuel: 1_000_000_000", "fuel: 1"),
+            ("max_source_bytes: 1_000_000", "max_source_bytes: 2_000_000"),
+            ("max_parser_work: 2_000_000_000", "max_parser_work: 4_000_000_000"),
+            ("config, limits, 64)", "config, limits, 128)"),
+            ("#[test]\nfn large_generated_mech", "#[ignore]\nfn large_generated_mech"),
+        ):
+            with self.subTest(setting=before):
+                mutated = source.replace(before, after)
+                self.assertNotEqual(mutated, source)
+                # Neither a comment nor a string containing the retained
+                # spelling can rescue a weakened executable setting.
+                mutated += (
+                    "\n// " + before.replace("\n", "\n// ")
+                    + "\nconst DECOY: &str = " + json.dumps(before) + ";\n"
+                )
+                with self.assertRaises(AssertionError):
+                    self._assert_retained_syntax_stress_settings(mutated)
 
     def test_full_source_profile_is_bounded_and_independent(self):
         profile = job_block(CI, "full-source-profile")
