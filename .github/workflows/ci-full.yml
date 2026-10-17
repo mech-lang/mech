@@ -408,11 +408,14 @@ jobs:
             --test native_fused_regressions --test native_map_regressions \
             --test native_sequence_admission --test native_feature_admission \
             --test batched_array_cpu -- --test-threads=1
-          for filter in batched::aot::tests batched::jit::tests sequence::runtime::matrix_tests native_build::tests
-          do
-            cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
-              --no-default-features --features native-build --lib "$filter" -- --test-threads=1
-          done
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+            --no-default-features --features native-build --lib batched::aot::tests -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+            --no-default-features --features native-build --lib batched::jit::tests -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+            --no-default-features --features native-build --lib sequence::runtime::matrix_tests -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+            --no-default-features --features native-build --lib native_build::tests -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
             --no-default-features --features full_compiler,resident-artifact,native-sequence \
             --lib native_sequence -- --test-threads=1
@@ -539,7 +542,7 @@ jobs:
           --test native_host_application -- --ignored --exact
           one_linked_executable_runs_secure_and_trusted_without_rebuilding
           --test-threads=1
-      - name: Qualify linked native control and signed outputs
+      - name: Verify linked native control selection is nonempty
         env:
           MECH_CONTROL_INLINE: "0"
           MECH_CONTROL_QUALIFICATION_DIRECTORY: ${{ runner.temp }}/native-control-evidence
@@ -550,11 +553,16 @@ jobs:
             --test control_application -- --list --ignored --exact \
             one_linked_control_executable_preserves_signed_machine_outputs)
           test "$(printf '%s\n' "$CONTROL_QUALIFICATION_TESTS" | rg -c '^one_linked_control_executable_preserves_signed_machine_outputs: test$')" -eq 1
+      - name: Qualify linked native control and signed outputs
+        env:
+          MECH_CONTROL_INLINE: "0"
+          MECH_CONTROL_QUALIFICATION_DIRECTORY: ${{ runner.temp }}/native-control-evidence
+        run: |
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features native-build,native-io \
             --test control_application -- --ignored --exact \
             one_linked_control_executable_preserves_signed_machine_outputs --test-threads=1
-      - name: Qualify linked native stdin bytes and launch policy
+      - name: Verify linked native stdin selection is nonempty
         env:
           MECH_NATIVE_STDIN_QUALIFICATION_DIRECTORY: ${{ runner.temp }}/native-stdin-evidence
         run: |
@@ -564,6 +572,10 @@ jobs:
             --test native_stdin_application -- --list --ignored --exact \
             one_linked_stdin_executable_preserves_unicode_snapshots_and_launch_policy)
           test "$(printf '%s\n' "$STDIN_QUALIFICATION_TESTS" | rg -c '^one_linked_stdin_executable_preserves_unicode_snapshots_and_launch_policy: test$')" -eq 1
+      - name: Qualify linked native stdin bytes and launch policy
+        env:
+          MECH_NATIVE_STDIN_QUALIFICATION_DIRECTORY: ${{ runner.temp }}/native-stdin-evidence
+        run: |
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features native-build,native-io \
             --test native_stdin_application -- --ignored --exact \
@@ -578,7 +590,7 @@ jobs:
           --test canonical_artifact_application -- --ignored --exact
           linked_canonical_artifact_scalar_applications_are_typed_bounded_and_atomic
           --test-threads=1
-      - name: Qualify linked canonical resident CLI applications
+      - name: Verify linked canonical resident CLI selection is nonempty
         env:
           MECH_CANONICAL_CLI_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}
           MECH_CANONICAL_CLI_EVIDENCE_DIR: ${{ runner.temp }}/canonical-cli-evidence
@@ -589,6 +601,11 @@ jobs:
             --test canonical_cli_application -- --list --ignored --exact \
             linked_canonical_cli_arguments_and_stdin_finish_without_drivers)
           test "$(printf '%s\n' "$CLI_QUALIFICATION_TESTS" | rg -c '^linked_canonical_cli_arguments_and_stdin_finish_without_drivers: test$')" -eq 1
+      - name: Qualify linked canonical resident CLI applications
+        env:
+          MECH_CANONICAL_CLI_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}
+          MECH_CANONICAL_CLI_EVIDENCE_DIR: ${{ runner.temp }}/canonical-cli-evidence
+        run: |
           cargo +nightly-2026-03-03 test --locked --offline -p mech-build \
             --no-default-features --features standard-hosts,process-supervision \
             --test canonical_cli_application -- --ignored --exact \
@@ -1119,24 +1136,24 @@ jobs:
             --manifest-path machines/math/Cargo.toml --no-default-features \
             --features compiler,native-plan,native-link,fmod,f64 \
             --lib float_binary_identity_tests
-      - name: Validate frozen catalog profile
+      - name: Validate frozen standard catalog profile
+        if: ${{ matrix.profile == 'standard' }}
         run: |
-          if test "${{ matrix.profile }}" = standard
-          then
-            cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
-              --no-default-features --features standard_compiler \
-              --test profile_contracts
-          else
-            cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
-              --no-default-features --features full_runtime \
-              --test profile_contracts
-            cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
-              --no-default-features --features full_source \
-              --test profile_contracts --test maintained_contract_authority
-            cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
-              --no-default-features --features full_compiler \
-              --test profile_contracts
-          fi
+          cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
+            --no-default-features --features standard_compiler \
+            --test profile_contracts
+      - name: Validate frozen full catalog profiles
+        if: ${{ matrix.profile != 'standard' }}
+        run: |
+          cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
+            --no-default-features --features full_runtime \
+            --test profile_contracts
+          cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
+            --no-default-features --features full_source \
+            --test profile_contracts --test maintained_contract_authority
+          cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
+            --no-default-features --features full_compiler \
+            --test profile_contracts
       - name: Upload catalog closure report
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
@@ -1737,6 +1754,12 @@ jobs:
           CARGO_PROFILE_TEST_OVERFLOW_CHECKS: "true"
         run: |
           cargo +nightly-2026-03-03 test --locked -p mech-syntax --lib --tests --no-default-features --features full -- --test-threads=1
+      - name: Run reduced syntax feature profiles
+        env:
+          CARGO_PROFILE_TEST_OPT_LEVEL: "1"
+          CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: "true"
+          CARGO_PROFILE_TEST_OVERFLOW_CHECKS: "true"
+        run: |
           # Exhaustive streaming/growth runs once above. Reduced profiles prove
           # their feature boundary without repeating the same parser algorithm.
           for suite in canonical_document_root canonical_base_contracts

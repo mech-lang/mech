@@ -298,15 +298,60 @@ def cargo_test_command(arguments: list[str]):
     }
 
 
+def shell_commands(block: str) -> list[list[str]]:
+    """Admit straight-line shell commands, not a general shell interpreter.
+
+    Compound/indirect shell control requires an explicit flat CI selection;
+    those blocks supply no ownership. A terminating command also prevents any
+    later line from supplying direct, recorded-executable or generator credit.
+    Parse the whole supported prefix before returning commands, so a heredoc,
+    function body or multiline string cannot masquerade as shell execution.
+    """
+    commands = []
+    block = re.sub(r"\\\n\s*", " ", block)
+    block = re.sub(r"\$\{\{.*?\}\}", "__GITHUB_EXPRESSION__", block, flags=re.S)
+    for line in block.splitlines():
+        lexer = shlex.shlex(line, posix=True, punctuation_chars=";&|<>()")
+        lexer.whitespace_split = True
+        lexer.commenters = "#"
+        try:
+            arguments = list(lexer)
+        except ValueError:
+            return []
+        if not arguments:
+            continue
+        if any(token and all(character in ";&|<>()" for character in token) for token in arguments):
+            return []
+        while arguments and re.match(r"^[A-Za-z_][A-Za-z_0-9]*=", arguments[0]):
+            arguments = arguments[1:]
+        if not arguments:
+            continue
+        if arguments[0] in {
+            "if", "then", "elif", "else", "fi", "case", "esac", "for", "while",
+            "until", "do", "done", "function", "{", "}", "!", "time", "coproc",
+            "eval", "source", ".", "trap", "builtin", "command", "alias", "unalias",
+            "enable", "shopt", "break", "continue",
+        } or any(marker in arguments[0] for marker in ("$", "`", "__GITHUB_EXPRESSION__")):
+            return []
+        if arguments[0] == "set" and any(
+            token not in {"pipefail", "errexit", "nounset", "xtrace"}
+            and not (token.startswith("-") and set(token[1:]) <= set("euox"))
+            for token in arguments[1:]
+        ):
+            return []
+        if arguments[0] in {"exit", "return", "exec", "false", "logout"}:
+            break
+        commands.append(arguments)
+    return commands
+
+
 def workflow_commands(source: str):
     recorded = {}
     for block in run_blocks(source):
-        block = re.sub(r"\\\n\s*", " ", block)
-        for line in block.splitlines():
-            if not re.match(r"\s*(?:cargo|python3)\s", line):
+        for arguments in shell_commands(block):
+            if arguments[0] not in {"cargo", "python3"}:
                 continue
             try:
-                arguments = shlex.split(line, comments=True)
                 # This maintained wrapper runs the command after `--` and
                 # preserves its exit status; other Python/text mentions do not.
                 if arguments[:2] == ["python3", "scripts/run-native-plan-stage.py"] and "--" in arguments:
@@ -337,9 +382,19 @@ def invoked_generator_commands(root: Path, sources: list[str]):
     Dead command arrays, display text, and an uninvoked helper supply no credit.
     These two helpers' execution/exit propagation has separate CI contracts.
     """
+    invoked = set()
+    for source in sources:
+        for block in run_blocks(source):
+            for arguments in shell_commands(block):
+                if arguments[:2] == ["python3", "scripts/run-native-plan-stage.py"] and "--" in arguments:
+                    controls = arguments[:arguments.index("--")]
+                    if "--test-executable-file" in controls:
+                        continue
+                    arguments = arguments[arguments.index("--") + 1:]
+                if len(arguments) >= 2 and arguments[0] == "python3":
+                    invoked.add(arguments[1])
     for relative in ("scripts/check-generated-project-determinism.py", "scripts/check-native-application-graphs.py"):
-        invocation = re.compile(r"(?m)^\s*python3\s+" + re.escape(relative) + r"(?:\s|$)")
-        if not any(invocation.search(block) for source in sources for block in run_blocks(source)):
+        if relative not in invoked:
             continue
         module = ast.parse((root / relative).read_text(encoding="utf-8"))
         yield from reachable_generator_commands(module)

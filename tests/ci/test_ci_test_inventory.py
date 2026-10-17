@@ -145,6 +145,67 @@ class IntegrationInventoryTests(unittest.TestCase):
             source = compile_step + f"  - run: python3 scripts/run-native-plan-stage.py --stage execute --test-executable-file {receipt} -- {harness}\n"
             self.assertEqual(len(list(workflow_commands(source))), count)
 
+    def test_shell_control_and_termination_cannot_supply_direct_or_recorded_credit(self):
+        command = "cargo test -p sample --test absent"
+        scripts = (
+            f"if false; then\n  {command}\nfi",
+            f"if false\nthen\n  {command}\nfi",
+            f"if true; then\n  true\nelse\n  {command}\nfi",
+            f"for item in; do\n  {command}\ndone",
+            f"while false; do\n  {command}\ndone",
+            f"unused() {{\n  {command}\n}}",
+            f": <<'DECOY'\n{command}\nDECOY",
+            f"text='\n{command}\n'",
+            f"false &&\n  {command}",
+            f"true ||\n  {command}",
+            f"exit 0\n{command}",
+            f"MODE=unused exit 0\n{command}",
+            f"exec true\n{command}",
+            f"return 0\n{command}",
+            f"! exit 0\n{command}",
+            f"time exit 0\n{command}",
+            f"set -n\n{command}",
+            f"set -o noexec\n{command}",
+            f"shopt -s expand_aliases\nalias cargo=true\n{command}",
+            f"eval 'exit 0'\n{command}",
+            f"trap 'exit 0' DEBUG\n{command}",
+            f"`echo exit` 0\n{command}",
+            f"$COMMAND\n{command}",
+            f"{command}\nif false; then\n  true\nfi",
+        )
+        for script in scripts:
+            source = "steps:\n  - run: |\n" + "\n".join("      " + line for line in script.splitlines())
+            with self.subTest(script=script):
+                self.assertEqual(list(workflow_commands(source)), [])
+        source = "steps:\n  - run: |\n      set -euo pipefail\n      MODE=checked cargo test -p sample --test actual\n      exit 0\n      cargo test -p sample --test absent\n  - run: cargo test -p sample --test next_step\n"
+        self.assertEqual([command["targets"] for command in workflow_commands(source)], [["actual"], ["next_step"]])
+        source = "steps:\n  - run: |\n      python3 scripts/run-native-plan-stage.py --stage compile --record-test-executable fresh --test-executable-file receipt -- cargo test -p sample --test fresh --no-run\n  - run: |\n      exit 0\n      python3 scripts/run-native-plan-stage.py --stage execute --test-executable-file receipt -- --test-threads=1\n"
+        self.assertEqual(list(workflow_commands(source)), [])
+
+    def test_generator_invocation_must_be_on_an_admitted_shell_path(self):
+        literal = repr(["cargo", "test", "-p", "sample", "--test", "fresh"])
+        script = f"def main():\n    run_streamed({literal})\nif __name__ == '__main__':\n    main()\n"
+        for relative in ("scripts/check-generated-project-determinism.py", "scripts/check-native-application-graphs.py"):
+            with tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                path = root / relative
+                path.parent.mkdir()
+                path.write_text(script)
+                for invocation in (f"python3 {relative}", f"python3 scripts/run-native-plan-stage.py --stage generator --timeout-secs 20 -- python3 {relative}"):
+                    for body, expected in (
+                        (invocation, True),
+                        (f"set -euo pipefail\n{invocation}", True),
+                        (f"if false; then\n  {invocation}\nfi", False),
+                        (f"exit 0\n{invocation}", False),
+                        (f"exec true\n{invocation}", False),
+                        (f"unused() {{\n  {invocation}\n}}", False),
+                        (f": <<'DECOY'\n{invocation}\nDECOY", False),
+                    ):
+                        source = "steps:\n  - run: |\n" + "\n".join("      " + line for line in body.splitlines())
+                        with self.subTest(relative=relative, body=body):
+                            commands = list(invoked_generator_commands(root, [source]))
+                            self.assertEqual([command["targets"] for command in commands], [["fresh"]] if expected else [])
+
     def test_boolean_cfg_features_and_unknown_platform_predicates(self):
         self.assertTrue(cfg_predicate('all(feature = "full", not(feature = "minimal"))', {"full"}))
         self.assertFalse(cfg_predicate('all(feature = "full", feature = "native")', {"full"}))

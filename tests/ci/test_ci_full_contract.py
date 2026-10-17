@@ -192,25 +192,33 @@ class FullWorkflowContractTests(unittest.TestCase):
              "MECH_NATIVE_STDIN_QUALIFICATION_DIRECTORY"),
         ):
             step = next(step for step in job_steps(FULL, "canonical-applications")
-                        if f"--test {target} " in step and case in step)
+                        if f"--test {target} " in step and case in step
+                        and "-- --ignored --exact" in step)
             self.assertIn("cargo +nightly-2026-03-03 test --locked --offline", step)
             self.assertIn("-- --ignored --exact", step)
             self.assertIn(case, step)
             self.assertIn("--test-threads=1", step)
             self.assertIn(evidence, step)
+            if target in {"control_application", "native_stdin_application", "canonical_cli_application"}:
+                selection = next(selected for selected in job_steps(FULL, "canonical-applications")
+                                 if f"--test {target} " in selected and case in selected
+                                 and "-- --list --ignored --exact" in selected)
+                self.assertIn("cargo +nightly-2026-03-03 test --locked --offline", selection)
+                self.assertIn(f"^{case}: test$", selection)
+                self.assertIn('" -eq 1', selection)
+                self.assertNotIn("continue-on-error", selection)
+                self.assertNotIn("    if:", selection)
+                self.assertNotIn("    if:", step)
+                self.assertLess(block.index(selection), block.index(step))
             if target in {"control_application", "native_stdin_application"}:
                 self.assertIn("--features native-build,native-io", step)
-                self.assertIn("-- --list --ignored --exact", step)
-                self.assertIn(f"^{case}: test$", step)
-                self.assertIn('" -eq 1', step)
+                self.assertIn("--features native-build,native-io", selection)
             if target == "control_application":
                 self.assertIn('MECH_CONTROL_INLINE: "0"', step)
             if target == "canonical_cli_application":
                 self.assertIn("--features standard-hosts,process-supervision", step)
-                self.assertIn("-- --list --ignored --exact", step)
-                self.assertIn("CLI_QUALIFICATION_TESTS", step)
-                self.assertIn("finish_without_drivers: test$", step)
-                self.assertIn('" -eq 1', step)
+                self.assertIn("--features standard-hosts,process-supervision", selection)
+                self.assertIn("CLI_QUALIFICATION_TESTS", selection)
         self.assertIn("MECH_CANONICAL_NATIVE_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}", block)
         self.assertIn("MECH_CANONICAL_CLI_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}", block)
         self.assertIn("uses: actions/upload-artifact@", block)
@@ -330,6 +338,9 @@ class FullWorkflowContractTests(unittest.TestCase):
             'CARGO_PROFILE_TEST_OVERFLOW_CHECKS: "true"',
         ):
             self.assertIn(setting, step)
+            reduced = next(selected for selected in job_steps(FULL, "cargo-language")
+                           if "Run reduced syntax feature profiles" in selected)
+            self.assertIn(setting, reduced)
         self.assertIn(
             "cargo +nightly-2026-03-03 test --locked -p mech-syntax --lib --tests "
             "--no-default-features --features full -- --test-threads=1", step
@@ -1843,7 +1854,8 @@ class FullWorkflowContractTests(unittest.TestCase):
 
     def test_syntax_grammar_step_uses_current_targets_and_features(self):
         block = job_block(FULL, "cargo-language")
-        grammar = block.split("- name: Run syntax grammar suites", 1)[1].split("- name:", 1)[0]
+        grammar = next(step for step in job_steps(FULL, "cargo-language")
+                       if "Run reduced syntax feature profiles" in step)
         self.assertNotRegex(grammar, r"--test\s+grammar_conformance\b")
         for target in (
             "canonical_rule_registry",
