@@ -39,7 +39,7 @@ def main() -> int:
     try:
         source = STANDARD.read_text(encoding="utf-8")
         expected_providers = {
-            "cli": ("mech-terminal", "mech_terminal", "provider", "mech_terminal::CliHostFactory::new"),
+            "cli": ("mech-terminal", "mech_terminal", "provider", "mech_terminal::CliHostFactory::with_arguments"),
             "console": ("mech-console", "mech_console", "native", "mech_console::NativeConsoleHostFactory::new"),
             "robot-arm": ("mech-robot-arm", "mech_robot_arm", "provider", "mech_robot_arm::RobotArmHostFactory::new"),
             "scene": ("mech-scene", "mech_scene", "native", "mech_scene::NativeSceneHostFactory::new"),
@@ -59,6 +59,22 @@ def main() -> int:
         require(
             standard_providers == {"cli", "console", "scene", "time", "timer"},
             f"standard provider set drifted: {sorted(standard_providers)}",
+        )
+        cli_registration = re.search(
+            r'NativeHostLinkage\s*\{\s*provider:\s*"cli",(?P<linkage>.*?)\},\s*'
+            r'NativeHostFactoryInput::(?P<input>\w+),',
+            standard_block.group(1),
+            re.DOTALL,
+        )
+        require(cli_registration is not None, "cli launch registration is missing")
+        require(
+            'factory_path: "mech_terminal::CliHostFactory::with_arguments"'
+            in cli_registration.group("linkage"),
+            "cli launch factory must receive explicit program arguments",
+        )
+        require(
+            cli_registration.group("input") == "ProgramArguments",
+            "cli factory input must be ProgramArguments",
         )
         all_providers = set(re.findall(r'provider:\s*"([a-z-]+)"', source))
         require(
