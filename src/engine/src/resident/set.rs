@@ -2903,6 +2903,18 @@ mod tests {
 
     #[test]
     fn set_expansions_reject_byte_amplification_before_allocating_outputs() {
+        // Temporary diagnostic probe: collect every unchanged assertion in one run.
+        let mut diagnostics = Vec::<String>::new();
+        macro_rules! collect_assert_eq {
+            ($left:expr, $right:expr $(,)?) => {{
+                let left = $left;
+                let right = $right;
+                if left != right {
+                    diagnostics.push(format!("line {}: left={left:?}; right={right:?}", line!()));
+                }
+            }};
+        }
+
         let dynamic = CardinalitySpec::Dynamic { upper_bound: None };
         let string_set_body = SchemaBody::Set {
             element: Box::new(SchemaBody::String),
@@ -2971,7 +2983,7 @@ mod tests {
             ResidentValueRef::Snapshot(&small_right),
         ];
         let mut small_output = [None];
-        assert_eq!(
+        collect_assert_eq!(
             output_kernel(set_cartesian_product, pair_set_schema).execute(
                 &Inputs(&small_inputs),
                 ResidentValueMut::Snapshot(&mut small_output),
@@ -2981,7 +2993,7 @@ mod tests {
         let ValueData::Set(small_output) = small_output[0].as_ref().unwrap().data() else {
             unreachable!()
         };
-        assert_eq!(small_output.elements().len(), 4);
+        collect_assert_eq!(small_output.elements().len(), 4);
 
         // Compact members keep byte amplification below the cap, but 65,536
         // pairs still materialize 196,608 tuple/member nodes.
@@ -2992,7 +3004,7 @@ mod tests {
             ResidentValueRef::Snapshot(&right),
         ];
         let mut cartesian_output = [None];
-        assert_eq!(
+        collect_assert_eq!(
             output_kernel(set_cartesian_product, pair_set_schema).execute(
                 &Inputs(&cartesian_inputs),
                 ResidentValueMut::Snapshot(&mut cartesian_output),
@@ -3017,7 +3029,7 @@ mod tests {
             ResidentValueRef::Snapshot(&normalization_right),
         ];
         let mut normalization_output = [None];
-        assert_eq!(
+        collect_assert_eq!(
             output_kernel(set_cartesian_product, pair_set_schema).execute(
                 &Inputs(&normalization_inputs),
                 ResidentValueMut::Snapshot(&mut normalization_output),
@@ -3041,7 +3053,7 @@ mod tests {
             ResidentValueRef::Snapshot(&long_product_right),
         ];
         let mut long_product_output = [None];
-        assert_eq!(
+        collect_assert_eq!(
             output_kernel(set_cartesian_product, pair_set_schema).execute(
                 &Inputs(&long_product_inputs),
                 ResidentValueMut::Snapshot(&mut long_product_output),
@@ -3065,7 +3077,7 @@ mod tests {
             ResidentValueRef::Snapshot(&recursive_right),
         ];
         let mut recursive_output = [None];
-        assert_eq!(
+        collect_assert_eq!(
             output_kernel(set_union, string_set_schema).execute(
                 &Inputs(&recursive_inputs),
                 ResidentValueMut::Snapshot(&mut recursive_output),
@@ -3084,7 +3096,7 @@ mod tests {
             ResidentValueRef::Snapshot(&planning_empty),
         ];
         let mut planning_output = [None];
-        assert_eq!(
+        collect_assert_eq!(
             output_kernel(set_union, string_set_schema).execute(
                 &Inputs(&planning_inputs),
                 ResidentValueMut::Snapshot(&mut planning_output),
@@ -3102,7 +3114,7 @@ mod tests {
             ResidentValueRef::Snapshot(&empty),
         ];
         let mut empty_product_output = [None];
-        assert_eq!(
+        collect_assert_eq!(
             output_kernel(set_cartesian_product, pair_set_schema).execute(
                 &Inputs(&empty_product_inputs),
                 ResidentValueMut::Snapshot(&mut empty_product_output),
@@ -3120,7 +3132,7 @@ mod tests {
             ResidentValueRef::Snapshot(&empty),
         ];
         let mut empty_node_product_output = [None];
-        assert_eq!(
+        collect_assert_eq!(
             output_kernel(set_cartesian_product, pair_set_schema).execute(
                 &Inputs(&empty_node_product_inputs),
                 ResidentValueMut::Snapshot(&mut empty_node_product_output),
@@ -3135,7 +3147,7 @@ mod tests {
         let long_keys = [Some(set(9, 6 * 1024))];
         let long_key_inputs = [ResidentValueRef::Snapshot(&long_keys)];
         let mut long_key_output = [None];
-        assert_eq!(
+        collect_assert_eq!(
             output_kernel(set_powerset, powerset_schema).execute(
                 &Inputs(&long_key_inputs),
                 ResidentValueMut::Snapshot(&mut long_key_output),
@@ -3150,7 +3162,7 @@ mod tests {
         let wrapper_heavy = [Some(set(9, 7_210))];
         let wrapper_inputs = [ResidentValueRef::Snapshot(&wrapper_heavy)];
         let mut wrapper_output = [None];
-        assert_eq!(
+        collect_assert_eq!(
             output_kernel(set_powerset, powerset_schema).execute(
                 &Inputs(&wrapper_inputs),
                 ResidentValueMut::Snapshot(&mut wrapper_output),
@@ -3164,7 +3176,7 @@ mod tests {
         let input = [Some(set(16, 1))];
         let powerset_inputs = [ResidentValueRef::Snapshot(&input)];
         let mut powerset_output = [None];
-        assert_eq!(
+        collect_assert_eq!(
             output_kernel(set_powerset, powerset_schema).execute(
                 &Inputs(&powerset_inputs),
                 ResidentValueMut::Snapshot(&mut powerset_output),
@@ -3172,6 +3184,7 @@ mod tests {
             Err(ResidentKernelError::InvalidShape),
         );
         assert!(powerset_output[0].is_none());
+        assert!(diagnostics.is_empty(), "{}", diagnostics.join("\n"));
     }
 
     #[test]
