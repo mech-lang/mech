@@ -71,6 +71,8 @@
     {
       "area": "supplied rereview correction pass",
       "enum_projection": "Canonical enum and tuple projections retain the immutable root schema Arc and walk schema/data paths together. Reject mismatched enum ordinals before allocating a projection; matching arms also share the schema. Reserve bounded path storage separately for peak active depth and cumulative attempted pattern work.",
+      "shallow_projection_storage": "Use checked U32 member ordinals and allocation-free inline storage for up to two projection steps. Cache the maximum possible projection descent in the immutable activation certificate; admit every attempt using that schema bound and active pattern depth. Deeper paths retain separately funded exact-capacity Vec/Arc storage. This removes real work, without changing target limits.",
+      "qualification_follow_up": "Final application qualification on f1792b675 exposed the unchanged 1024-transition countdown just beyond its compute allowance (16782450 required, 16777216 limit). That run is not credited as tail qualification. Allocation-free shallow paths and certified descent bounds restore all ten unchanged original tail cases on 16577f301.",
       "constructor_authority": "Closed copy preparation and the selected runtime Snapshot constructor call the same borrowed retention/finalization preflight. Keep payload equality separately metered and retain existing output, copy, temporary, node and work limits. Add the two live 32768-element Boolean-input boundary and closed selector-fact boundary.",
       "typed_denial": "Preserve existing and recomputed budget violations through ordinary permits, current-turn planning, continuation/frame measurement, recursive calls and iteration replacement. Assert exact phase/dimension/required/limit diagnostics rather than treating resource denials as InvalidShape. Existing arithmetic and malformed-layout InvalidShape assertions remain.",
       "regressions": "Shared schema and tuple-array identity across 1024 attempts; finite cumulative path accounting; many mismatched and guard-rejected matching arms on original/decoded artifacts; binding-copy denial with unchanged output/epoch and recovery; unchanged original ten tail-control cases.",
@@ -102,6 +104,15 @@
     "Continue broader packaging and optimizer work independently of the corrected stack's qualification."
   ],
   "checks": [
+    {
+      "area": "allocation-free projection follow-up",
+      "source_commit": "16577f301d4e1e7886fd9499c2ad001f9621aba3",
+      "engine_unit_tests_passed": 840,
+      "engine_integration_tests_passed": 192,
+      "original_tail_control_tests_passed": 10,
+      "logs": ["tmp/pr-stack-evidence/review-v23-engine-all.log", "tmp/pr-stack-evidence/review-v23-all-tail.log"],
+      "scope": "Complete engine selection and every original tail-control test pass. Inputs, limits, expected values and recovery assertions are unchanged. Explicit tests distinguish allocation-free shallow paths from funded deeper shared storage, retain actual wide schema/tuple-array sharing across 1024 attempts, and enforce finite cumulative accounting. Full final-head application/runtime/contracts/native/linked/CI qualification remains pending."
+    },
     {
       "area": "supplied rereview probe-free engine owner",
       "source_commit": "c871683e121e1a93e2104e4bf9804901c03cecd6",
