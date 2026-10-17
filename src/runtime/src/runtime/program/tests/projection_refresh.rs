@@ -485,6 +485,92 @@ fn anonymous_state_migration_preserves_exact_identity_without_guessing_across_re
 }
 
 #[test]
+fn anonymous_state_migration_rejects_asymmetric_ambiguity_in_every_declaration_order() {
+    fn configure(source: &str, decoded: bool) -> crate::MechRuntime {
+        let mut loaded = runtime();
+        loaded
+            .load_source_program(source, crate::ResidentDurabilityPolicy::Retained)
+            .unwrap();
+        if decoded {
+            let bytes = encode_program_artifact_bytecode_v1(resident_parts(&loaded).0).unwrap();
+            loaded.unload_active_program().unwrap();
+            loaded
+                .load_bytecode_program(&bytes, crate::ResidentDurabilityPolicy::Retained)
+                .unwrap();
+        }
+        loaded
+    }
+    fn states(runtime: &crate::MechRuntime) -> Vec<f64> {
+        let (artifact, instance) = resident_parts(runtime);
+        artifact
+            .slots()
+            .iter()
+            .filter(|slot| slot.role == SlotRole::State)
+            .map(|slot| {
+                let ResidentValueBorrow::F64 { values, .. } =
+                    instance.state_borrow(slot.slot).unwrap()
+                else {
+                    panic!("anonymous fixture must retain scalar F64 state")
+                };
+                assert_eq!(values.len(), 1);
+                values[0]
+            })
+            .collect()
+    }
+    let single = "~kept := 1.0\nkept = kept + 1.0\nkept\n";
+    for decoded in [false, true] {
+        for declarations in [
+            "~fresh := 1.0\n~kept := 1.0\n",
+            "~kept := 1.0\n~fresh := 1.0\n",
+        ] {
+            for assignments in [
+                "fresh = fresh + 1.0\nkept = kept + 1.0\n",
+                "kept = kept + 1.0\nfresh = fresh + 1.0\n",
+            ] {
+                let pair = format!("{declarations}{assignments}kept - fresh\n");
+                for (old, new, old_count, new_count) in
+                    [(single, pair.as_str(), 1, 2), (pair.as_str(), single, 2, 1)]
+                {
+                    let mut previous = configure(old, decoded);
+                    previous.step_active_program().unwrap();
+                    previous.step_active_program().unwrap();
+                    assert_eq!(states(&previous), vec![4.0; old_count]);
+                    let old_epoch = resident_parts(&previous).1.published_epoch();
+                    let old_hash = resident_parts(&previous).1.published_state_hash();
+                    let mut candidate = configure(new, decoded);
+                    assert_eq!(states(&candidate), vec![2.0; new_count]);
+                    let candidate_epoch = resident_parts(&candidate).1.published_epoch();
+                    candidate
+                        .preserve_compatible_resident_state_from(&previous, &BTreeSet::new())
+                        .unwrap();
+                    assert_eq!(states(&candidate), vec![2.0; new_count]);
+                    assert_eq!(
+                        resident_parts(&candidate).1.published_epoch(),
+                        candidate_epoch
+                    );
+                    candidate.step_active_program().unwrap();
+                    assert_eq!(states(&candidate), vec![3.0; new_count]);
+                    assert_eq!(states(&previous), vec![4.0; old_count]);
+                    assert_eq!(resident_parts(&previous).1.published_epoch(), old_epoch);
+                    assert_eq!(resident_parts(&previous).1.published_state_hash(), old_hash);
+                }
+            }
+        }
+        // A unique anonymous writer is still a legitimate migration, even
+        // across revisions and lexical spelling changes in noninteractive input.
+        let mut previous = configure(single, decoded);
+        previous.step_active_program().unwrap();
+        let mut unique = configure("~other := 1.0\nother = other + 1.0\nother\n", decoded);
+        unique
+            .preserve_compatible_resident_state_from(&previous, &BTreeSet::new())
+            .unwrap();
+        assert_eq!(states(&unique), [3.0]);
+        unique.step_active_program().unwrap();
+        assert_eq!(states(&unique), [4.0]);
+    }
+}
+
+#[test]
 fn replacement_rejects_a_suspended_frame_and_leaves_the_old_runtime_resumable() {
     let source = "#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 42u64.\n#Deferred()\n";
     for decoded in [false, true] {

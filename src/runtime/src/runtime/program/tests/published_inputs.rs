@@ -215,6 +215,45 @@ fn interactive_symbol_queries_keep_new_observations_absent_until_publication() {
                 canonical_f64(session.symbol("answer").unwrap().unwrap().value()),
                 7.0
             );
+            for requested in [vec![], vec!["answer".to_owned(), "clock-second".to_owned()]] {
+                let rows = session.symbols(&requested).unwrap();
+                assert!(
+                    rows.iter().any(
+                        |(name, value)| name == "answer" && canonical_f64(value.value()) == 7.0
+                    )
+                );
+                assert!(!rows.iter().any(|(name, _)| name == "clock-second"));
+                let rows = session.symbol_inspections(&requested).unwrap();
+                assert!(rows.iter().any(|row| row.name == "answer"));
+                assert!(!rows.iter().any(|row| row.name == "clock-second"));
+            }
+            assert!(session.symbols(&["missing".to_owned()]).is_err());
+            crate::dispatch_repl_request(
+                &mut session,
+                crate::parse_repl_request(":whos").unwrap(),
+                &crate::ReplHostAvailability::all_available(),
+                crate::ReplStepMode::Cooperative,
+            )
+            .unwrap();
+            crate::emit_step_complete(&mut session, 0).unwrap();
+            let tables = session
+                .drain_events()
+                .unwrap()
+                .into_iter()
+                .filter_map(|envelope| match envelope.event {
+                    crate::MechEvent::Repl(crate::ReplEvent::Response(crate::ReplResponse {
+                        kind: crate::ReplResponseKind::SymbolInspection,
+                        content: crate::OutputContent::Table(table),
+                        ..
+                    })) => Some(table),
+                    _ => None,
+                })
+                .collect::<Vec<_>>();
+            assert_eq!(tables.len(), 2);
+            for table in tables {
+                assert!(table.rows.iter().any(|row| row[0] == "answer"));
+                assert!(!table.rows.iter().any(|row| row[0] == "clock-second"));
+            }
         }
         assert_eq!(
             resident_parts(session.runtime().unwrap())
@@ -222,6 +261,23 @@ fn interactive_symbol_queries_keep_new_observations_absent_until_publication() {
                 .published_epoch(),
             epoch
         );
+        session
+            .clear_variables(&["clock-second".to_owned()])
+            .unwrap();
+        assert!(session.symbol("clock-second").unwrap().is_none());
+        let rows = session.symbols(&[]).unwrap();
+        assert!(rows.iter().any(|(name, _)| name == "answer"));
+        assert!(!rows.iter().any(|(name, _)| name == "clock-second"));
+        assert_eq!(
+            resident_parts(session.runtime().unwrap())
+                .1
+                .published_epoch(),
+            epoch
+        );
+        session
+            .submit("clock-second := @fast/delta-seconds;")
+            .unwrap();
+        assert!(session.symbol("clock-second").unwrap().is_none());
         assert!(matches!(
             submit(session.runtime_mut().unwrap(), 8.0),
             crate::ResidentExternalTurnOutcome::Accepted { .. }
@@ -230,10 +286,38 @@ fn interactive_symbol_queries_keep_new_observations_absent_until_publication() {
             canonical_f64(session.symbol("clock-second").unwrap().unwrap().value()),
             8.0
         );
+        assert!(
+            session
+                .symbols(&[])
+                .unwrap()
+                .iter()
+                .any(|(name, value)| name == "clock-second" && canonical_f64(value.value()) == 8.0)
+        );
+        assert!(
+            session
+                .symbol_inspections(&[])
+                .unwrap()
+                .iter()
+                .any(|row| row.name == "clock-second" && canonical_f64(row.value.value()) == 8.0)
+        );
         session
             .clear_variables(&["clock-second".to_owned()])
             .unwrap();
         assert!(session.symbol("clock-second").unwrap().is_none());
+        assert!(
+            session
+                .symbols(&[])
+                .unwrap()
+                .iter()
+                .any(|(name, _)| name == "answer")
+        );
+        assert!(
+            !session
+                .symbols(&[])
+                .unwrap()
+                .iter()
+                .any(|(name, _)| name == "clock-second")
+        );
         assert!(
             reads
                 .borrow()

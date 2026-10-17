@@ -285,6 +285,24 @@ try {
     const mounts = [...markup.querySelectorAll('.mech-inline-mech-code')];
     assert(mounts.length === 1, 'configured compute document has one inline result');
     const outputId = BigInt(mounts[0].getAttribute('data-mech-output-address').split(':')[0]);
+    // Before starting the timer, this new observation has never published.
+    // Exercise the actual exported JS listing API, not just a native helper.
+    doc.replInvoke('pending-tick := @clock/tick;');
+    const pendingInfo = JSON.stringify(doc.runtimeInfo());
+    for (const requested of [null, ['answer', 'pending-tick']]) {
+      const available = doc.renderedSymbols(requested);
+      assert(available.some(row => row.name === 'answer'), 'pending observation does not hide available browser rows');
+      assert(!available.some(row => row.name === 'pending-tick'), 'pending browser row has no fabricated value');
+    }
+    const inspection = doc.replInvoke(':whos');
+    assert(!JSON.stringify(inspection).includes('has no value'), 'browser :whos tolerates unpublished observations');
+    assert(JSON.stringify(doc.runtimeInfo()) === pendingInfo, 'browser listing does not publish a turn');
+    let unknownRejected = false;
+    try {doc.renderedSymbols(['missing-symbol']);} catch (_) {unknownRejected = true;}
+    assert(unknownRejected, 'unknown browser names remain errors');
+    doc.replInvoke(':clear pending-tick');
+    assert(!doc.renderedSymbols(null).some(row => row.name === 'pending-tick'), 'unpublished browser observation can be cleared');
+    doc.replInvoke('pending-tick := @clock/tick;');
     async function dispatchTimerTurn() {
       const deadline = performance.now() + 5000;
       let frame;
@@ -299,6 +317,7 @@ try {
     assert(doc.renderedSymbol('answer')?.inlineHtml === '0', 'dispatch turn sees the initial sample');
     const sampleFrame = doc.frame(1);
     assert(sampleFrame.processed === 1, 'sample is published on the next host-input turn: ' + JSON.stringify(sampleFrame));
+    assert(doc.renderedSymbols(null).some(row => row.name === 'pending-tick'), 'accepted input makes browser observation available');
     const initial = doc.renderedSymbol('answer');
     assert(initial?.inlineHtml === '1', 'initial compute result: ' + JSON.stringify(initial));
     assert(doc.renderedOutput(outputId)?.inlineHtml === '1', 'initial inline compute result');

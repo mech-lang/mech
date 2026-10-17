@@ -307,7 +307,7 @@ impl MechRuntime {
                         .any(|constraint| constraint.name == *name)
                 })
                 .collect::<Vec<_>>();
-            return self.resident_symbol_values(ordinary_names);
+            return self.resident_symbol_values(ordinary_names, true);
         }
         match names.first() {
             Some(name) => Err(missing_resident_symbol("root_symbol_values", name)),
@@ -335,15 +335,18 @@ impl MechRuntime {
                 })
                 .collect::<Vec<_>>();
             if !lexical_names.is_empty() {
-                return self.resident_symbol_values(lexical_names.iter().map(String::as_str));
+                return self.resident_symbol_values(lexical_names.iter().map(String::as_str), true);
             }
-            return self.resident_symbol_values(artifact.outputs().iter().filter_map(|output| {
-                (!artifact
-                    .constraints()
-                    .iter()
-                    .any(|constraint| constraint.name == output.name))
-                .then_some(output.name.as_str())
-            }));
+            return self.resident_symbol_values(
+                artifact.outputs().iter().filter_map(|output| {
+                    (!artifact
+                        .constraints()
+                        .iter()
+                        .any(|constraint| constraint.name == output.name))
+                    .then_some(output.name.as_str())
+                }),
+                true,
+            );
         }
         Ok(Vec::new())
     }
@@ -364,7 +367,7 @@ impl MechRuntime {
                 .map(|constraint| constraint.name.as_str())
                 .filter(|name| names.is_empty() || names.contains(name))
                 .collect::<Vec<_>>();
-            return self.resident_symbol_values(constraint_names);
+            return self.resident_symbol_values(constraint_names, false);
         }
         Ok(Vec::new())
     }
@@ -411,6 +414,7 @@ impl MechRuntime {
     fn resident_symbol_values<'a>(
         &self,
         names: impl IntoIterator<Item = &'a str>,
+        omit_unpublished: bool,
     ) -> MResult<Vec<(String, RuntimeValueSnapshot)>> {
         let (artifact, instance) = self
             .resident_artifact_and_instance()
@@ -441,15 +445,21 @@ impl MechRuntime {
                     None,
                 ));
             };
-            let value = super::output_value(instance, index)?.ok_or_else(|| {
-                MechError::new(
+            let Some(value) = super::output_value(instance, index)? else {
+                // A declared observation may await its first accepted input.
+                // Bulk value inspection must still show the available rows,
+                // without manufacturing a publication or hiding unknown names.
+                if omit_unpublished {
+                    continue;
+                }
+                return Err(MechError::new(
                     RuntimeInvalidOperationError {
                         operation: "resident_symbol_values",
                         reason: format!("resident output symbol `{name}` has no value"),
                     },
                     None,
-                )
-            })?;
+                ));
+            };
             values.push((name.to_owned(), value));
         }
         Ok(values)
@@ -603,18 +613,21 @@ fn compatible_state_mappings(
     // state whose named match failed must retain its replacement initializer,
     // and a retired named state must not supply an unnamed replacement cell.
     let same_revision = source.revision() == target.revision();
-    for target_slot in target
-        .slots()
-        .iter()
-        .filter(|slot| slot.role == SlotRole::State && !target_named_states.contains(&slot.slot))
-    {
-        if mapped_targets.contains(&target_slot.slot)
-            || excluded_targets.contains(&target_slot.slot)
-        {
-            continue;
-        }
-        let mut candidates = source.slots().iter().filter(|source_slot| {
-            source_slot.role == SlotRole::State
+    loop {
+        semantic_equivalence.clear();
+        let mut candidates = Vec::new();
+        let mut source_degrees = std::collections::BTreeMap::new();
+        let mut target_degrees = std::collections::BTreeMap::new();
+        for target_slot in target.slots().iter().filter(|slot| {
+            slot.role == SlotRole::State && !target_named_states.contains(&slot.slot)
+        }) {
+            if mapped_targets.contains(&target_slot.slot)
+                || excluded_targets.contains(&target_slot.slot)
+            {
+                continue;
+            }
+            for source_slot in source.slots().iter().filter(|source_slot| {
+                source_slot.role == SlotRole::State
                 && !source_named_states.contains(&source_slot.slot)
                 && (!same_revision || source_slot.slot == target_slot.slot)
                 && source.schemas().get(source_slot.schema)
@@ -639,23 +652,28 @@ fn compatible_state_mappings(
                         &compatible_state_pairs,
                         &mut semantic_equivalence,
                     )))
-        });
-        let Some(source_slot) = candidates.next() else {
-            continue;
-        };
-        // Identical anonymous writers cannot establish which retained cell a
-        // declaration owns. Leave ambiguous cells at their candidate defaults.
-        if candidates.next().is_some() {
-            continue;
+            }) {
+                candidates.push((source_slot.slot, target_slot.slot));
+                *source_degrees.entry(source_slot.slot).or_insert(0usize) += 1;
+                *target_degrees.entry(target_slot.slot).or_insert(0usize) += 1;
+            }
         }
-        drop(candidates);
-        mapped_sources.insert(source_slot.slot);
-        mapped_targets.insert(target_slot.slot);
-        compatible_state_pairs.insert((source_slot.slot, target_slot.slot));
-        mappings.push(StateMigrationMapping {
-            source: source_slot.slot,
-            target: target_slot.slot,
-        });
+        // Determine the complete relationship before consuming either end.
+        // One source compatible with two targets is just as ambiguous as two
+        // sources compatible with one target; declaration order is no identity.
+        let mut progress = false;
+        for (source, target) in candidates {
+            if source_degrees[&source] == 1 && target_degrees[&target] == 1 {
+                mapped_sources.insert(source);
+                mapped_targets.insert(target);
+                compatible_state_pairs.insert((source, target));
+                mappings.push(StateMigrationMapping { source, target });
+                progress = true;
+            }
+        }
+        if !progress {
+            break;
+        }
     }
 
     // A replacement is activated from source defaults before compatible live
