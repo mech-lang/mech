@@ -12,6 +12,7 @@ from ci_test_inventory import (
     cargo_test_command, cfg_predicate, crate_cfgs, feature_closure,
     integration_targets, inventory_gaps, invoked_generator_commands,
     registered_cases, target_covered, workflow_commands, workflow_truth,
+    workflow_sources,
 )
 
 
@@ -167,11 +168,19 @@ class IntegrationInventoryTests(unittest.TestCase):
             f"set -n\n{command}",
             f"set -o noexec\n{command}",
             f"shopt -s expand_aliases\nalias cargo=true\n{command}",
+            f"hash -p /bin/true cargo\n{command}",
+            f"export PATH=/tmp/decoy\n{command}",
+            f"PATH=/tmp/decoy\n{command}",
+            f"PATH=/tmp/decoy {command}",
+            f"cd /tmp/decoy\n{command}",
+            f"unset PATH\n{command}",
             f"eval 'exit 0'\n{command}",
             f"trap 'exit 0' DEBUG\n{command}",
             f"`echo exit` 0\n{command}",
             f"$COMMAND\n{command}",
             f"{command}\nif false; then\n  true\nfi",
+            f"{command} $EXTRA_FLAGS",
+            f"{command} ${{{{ inputs.flags }}}}",
         )
         for script in scripts:
             source = "steps:\n  - run: |\n" + "\n".join("      " + line for line in script.splitlines())
@@ -198,6 +207,7 @@ class IntegrationInventoryTests(unittest.TestCase):
                         (f"if false; then\n  {invocation}\nfi", False),
                         (f"exit 0\n{invocation}", False),
                         (f"exec true\n{invocation}", False),
+                        (f"hash -p /bin/true python3\n{invocation}", False),
                         (f"unused() {{\n  {invocation}\n}}", False),
                         (f": <<'DECOY'\n{invocation}\nDECOY", False),
                     ):
@@ -205,6 +215,126 @@ class IntegrationInventoryTests(unittest.TestCase):
                         with self.subTest(relative=relative, body=body):
                             commands = list(invoked_generator_commands(root, [source]))
                             self.assertEqual([command["targets"] for command in commands], [["fresh"]] if expected else [])
+
+    def test_composite_action_credit_requires_invocation_and_effective_inputs(self):
+        action = '''inputs:
+  suite:
+    default: engine
+runs:
+  using: composite
+  steps:
+    - if: inputs.suite == 'engine'
+      shell: bash
+      run: cargo test -p sample --test engine
+    - if: ${{ inputs.suite == 'hosted' }}
+      shell: bash
+      run: cargo test -p sample --test hosted
+'''
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = root / ".github/actions/select/action.yaml"
+            path.parent.mkdir(parents=True)
+            path.write_text(action)
+            workflow = root / ".github/workflows/test.yml"
+            workflow.parent.mkdir()
+            for steps, expected in (
+                ("  - run: true", []),
+                ("  - uses: ./.github/actions/select", ["engine"]),
+                ("  - uses: ./.github/actions/select\n    with:\n      suite: hosted", ["hosted"]),
+                ("  - uses: ./.github/actions/select\n    with:\n      suite: ''", []),
+                ("  - uses: ./.github/actions/select\n    with:\n      suite: ${{ matrix.suite }}", []),
+                ("  - uses: ./.github/actions/select\n    if: false", []),
+                ("  - uses: ./.github/actions/select\n    continue-on-error: true", []),
+                ("  - uses: ./.github/actions/select\n    with:\n      suite: engine\n      suite: hosted", []),
+                ("  - run: |\n      uses: ./.github/actions/select", []),
+                ("  - run: |\n      steps:\n        - uses: ./.github/actions/select", []),
+            ):
+                workflow.write_text("steps:\n" + steps + "\n")
+                with self.subTest(steps=steps):
+                    commands = [command for source in workflow_sources(root) for command in workflow_commands(source)]
+                    self.assertEqual([command["targets"] for command in commands], [[name] for name in expected])
+            workflow.write_text("jobs:\n  disabled:\n    if: ${{ 0 }}\n    steps:\n      - uses: ./.github/actions/select\n")
+            self.assertEqual(len(workflow_sources(root)), 1)
+            workflow.write_text("steps:\n  - uses: ./.github/actions/select\n")
+            path.write_text(action.replace("using: composite", "using: node24"))
+            self.assertEqual(len(workflow_sources(root)), 1)
+            path.write_text("inputs:\n  missing:\n    required: true\nruns:\n  using: composite\n  steps:\n    - run: cargo test -p sample --test absent\n      shell: bash\n")
+            self.assertEqual(len(workflow_sources(root)), 1, "a missing required input cannot own an unconditional target")
+
+    def test_nested_composite_actions_propagate_inputs_without_recursion_credit(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            workflow = root / ".github/workflows/test.yml"
+            workflow.parent.mkdir(parents=True)
+            workflow.write_text("steps:\n  - uses: ./.github/actions/outer\n    with:\n      suite: hosted\n")
+            outer = root / ".github/actions/outer/action.yml"
+            outer.parent.mkdir(parents=True)
+            outer.write_text('''inputs:
+  suite:
+    default: engine
+runs:
+  using: composite
+  steps:
+    - uses: ./.github/actions/inner
+      with:
+        suite: ${{ inputs.suite }}
+''')
+            inner = root / ".github/actions/inner/action.yml"
+            inner.parent.mkdir()
+            inner.write_text('''runs:
+  using: composite
+  steps:
+    - if: inputs.suite == 'hosted'
+      shell: bash
+      run: cargo test -p sample --test actual
+    - if: inputs.suite == 'engine'
+      shell: bash
+      run: cargo test -p sample --test absent
+    - uses: ./.github/actions/outer
+      with:
+        suite: engine
+''')
+            sources = workflow_sources(root)
+            self.assertEqual(len(sources), 3)
+            self.assertEqual([command["targets"] for source in sources for command in workflow_commands(source)], [["actual"]])
+
+    def test_inventory_does_not_accept_uninvoked_action_or_wrong_input_profile(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for ordinal, relative in enumerate(("src/core", "src/syntax", "src/engine", "src/stdlib", "src/runtime", "src/build", "hosts/gpu")):
+                directory = root / relative
+                directory.mkdir(parents=True)
+                (directory / "Cargo.toml").write_text(f'[package]\nname = "package{ordinal}"\n[features]\nfull = []\nbase = []\n')
+            target = root / "src/core/tests/fresh.rs"
+            target.parent.mkdir()
+            target.write_text('#[cfg(feature = "full")]\n#[test]\nfn actual() {}\n')
+            owners = root / ".github/ci/owners.toml"
+            owners.parent.mkdir(parents=True)
+            owners.write_text("version = 1\n")
+            action = root / ".github/actions/unused/action.yml"
+            action.parent.mkdir(parents=True)
+            action.write_text('''inputs:
+  profile:
+    default: full
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: cargo test -p package0 --features ${{ inputs.profile }} --test fresh
+''')
+            workflow = root / ".github/workflows/test.yml"
+            workflow.parent.mkdir()
+            for steps, owned in (
+                ("  - run: true", False),
+                ("  - uses: ./.github/actions/unused", True),
+                ("  - uses: ./.github/actions/unused\n    with:\n      profile: full", True),
+                ("  - uses: ./.github/actions/unused\n    with:\n      profile: base", False),
+                ("  - uses: ./.github/actions/unused\n    with:\n      profile: 'full --no-run'", False),
+                ("  - uses: ./.github/actions/unused\n    with:\n      profile: ${{ matrix.profile }}", False),
+            ):
+                workflow.write_text("steps:\n" + steps + "\n")
+                with self.subTest(steps=steps):
+                    self.assertEqual(inventory_gaps(root), [] if owned else ["package0:fresh (src/core/tests/fresh.rs)"])
 
     def test_boolean_cfg_features_and_unknown_platform_predicates(self):
         self.assertTrue(cfg_predicate('all(feature = "full", not(feature = "minimal"))', {"full"}))

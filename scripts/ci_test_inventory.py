@@ -323,6 +323,8 @@ def shell_commands(block: str) -> list[list[str]]:
         if any(token and all(character in ";&|<>()" for character in token) for token in arguments):
             return []
         while arguments and re.match(r"^[A-Za-z_][A-Za-z_0-9]*=", arguments[0]):
+            if arguments[0].split("=", 1)[0] in {"PATH", "IFS", "BASH_ENV", "ENV", "SHELLOPTS", "BASHOPTS", "CDPATH", "ZDOTDIR"}:
+                return []
             arguments = arguments[1:]
         if not arguments:
             continue
@@ -330,7 +332,8 @@ def shell_commands(block: str) -> list[list[str]]:
             "if", "then", "elif", "else", "fi", "case", "esac", "for", "while",
             "until", "do", "done", "function", "{", "}", "!", "time", "coproc",
             "eval", "source", ".", "trap", "builtin", "command", "alias", "unalias",
-            "enable", "shopt", "break", "continue",
+            "enable", "shopt", "hash", "cd", "export", "unset", "readonly",
+            "declare", "typeset", "local", "break", "continue",
         } or any(marker in arguments[0] for marker in ("$", "`", "__GITHUB_EXPRESSION__")):
             return []
         if arguments[0] == "set" and any(
@@ -350,6 +353,9 @@ def workflow_commands(source: str):
     for block in run_blocks(source):
         for arguments in shell_commands(block):
             if arguments[0] not in {"cargo", "python3"}:
+                continue
+            if any(marker in argument for argument in arguments
+                   for marker in ("$", "`", "__GITHUB_EXPRESSION__")):
                 continue
             try:
                 # This maintained wrapper runs the command after `--` and
@@ -392,6 +398,9 @@ def invoked_generator_commands(root: Path, sources: list[str]):
                         continue
                     arguments = arguments[arguments.index("--") + 1:]
                 if len(arguments) >= 2 and arguments[0] == "python3":
+                    if any(marker in argument for argument in arguments
+                           for marker in ("$", "`", "__GITHUB_EXPRESSION__")):
+                        continue
                     invoked.add(arguments[1])
     for relative in ("scripts/check-generated-project-determinism.py", "scripts/check-native-application-graphs.py"):
         if relative not in invoked:
@@ -776,13 +785,165 @@ def target_covered(package: str, name: str, target: dict, manifest: dict, comman
     return False
 
 
+def literal_yaml_scalar(value: str) -> str | None:
+    """The maintained single-line string subset; unknown inputs stay unknown."""
+    value = value.strip()
+    if value.startswith('"'):
+        encoded = value
+        try:
+            value, end = json.JSONDecoder().raw_decode(value)
+        except ValueError:
+            return None
+        if not isinstance(value, str) or (encoded[end:].strip() and not encoded[end:].lstrip().startswith("#")):
+            return None
+    elif value.startswith("'"):
+        match = re.fullmatch(r"'((?:''|[^'])*)'\s*(?:#.*)?", value)
+        if not match:
+            return None
+        value = match[1].replace("''", "'")
+    else:
+        value = re.split(r"\s+#", value, maxsplit=1)[0].strip()
+        if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_./,:+-]*(?: [A-Za-z0-9_./,+-]+)*", value):
+            return None
+        if value in {"true", "false", "null", "~"} or re.match(r"^[+-]?(?:\d|\.)", value):
+            return None  # non-string YAML scalars are outside the proven subset
+    return None if any(marker in value for marker in ("$", "`", "\n", "\r")) else value
+
+
+def local_action_invocations(source: str):
+    """Read actual step properties, not `uses:` text inside a run scalar."""
+    lines = source.splitlines()
+    scalar_body = set()
+    for index, line in enumerate(lines):
+        scalar = re.fullmatch(r"(\s*)(-\s+)?[A-Za-z_][A-Za-z_0-9-]*:\s*[|>][-+0-9]*\s*(?:#.*)?", line)
+        if not scalar or index in scalar_body:
+            continue
+        indent = len(scalar[1]) + (2 if scalar[2] else 0)
+        for offset in range(index + 1, len(lines)):
+            following = lines[offset]
+            if following.strip() and len(following) - len(following.lstrip()) <= indent:
+                break
+            scalar_body.add(offset)
+    for index, line in enumerate(lines):
+        match = re.fullmatch(r"(\s*)(-\s+)?uses:\s*(\./[^\s#]+)\s*(?:#.*)?", line)
+        if not match or index in scalar_body:
+            continue
+        indent = len(match[1])
+        steps = [(offset, len(step[1])) for offset, previous in enumerate(lines[:index + 1])
+                 if (step := re.match(r"(\s*)-\s+", previous)) and len(step[1]) <= indent]
+        if not steps:
+            continue
+        start, step_indent = steps[-1]
+        headers = [(offset, len(header[1])) for offset, previous in enumerate(lines[:start])
+                   if offset not in scalar_body and (header := re.fullmatch(r"(\s*)steps:\s*", previous))]
+        if not headers or step_indent != headers[-1][1] + 2:
+            continue
+        header, header_indent = headers[-1]
+        if any(previous.strip() and len(previous) - len(previous.lstrip()) <= header_indent
+               for previous in lines[header + 1:start]):
+            continue
+        property_indent = step_indent + 2
+        if indent + (2 if match[2] else 0) != property_indent or disabled_run(lines, index, indent):
+            continue
+        provided, in_with, valid = {}, False, True
+        for offset in range(start, len(lines)):
+            current = lines[offset]
+            prefix = len(current) - len(current.lstrip())
+            if offset > start and current.strip() and prefix <= step_indent:
+                break
+            if prefix == property_indent:
+                in_with = current.strip() == "with:"
+            elif in_with and prefix == property_indent + 2:
+                item = re.fullmatch(r"\s*([A-Za-z_][A-Za-z_0-9-]*):\s*(.*)", current)
+                if not item or item[1] in provided:
+                    valid = False
+                    break
+                provided[item[1]] = literal_yaml_scalar(item[2])
+        if valid:
+            yield match[3], provided
+
+
+def composite_action_source(source: str, provided: dict[str, str | None]) -> str | None:
+    """Expand only proven literal inputs and fail closed on unknown gates."""
+    sections = re.split(r"(?m)^(?=[A-Za-z_][A-Za-z_0-9-]*:)", source)
+    inputs = next((section for section in sections if section.startswith("inputs:")), "")
+    defaults, required, declared, name = {}, set(), set(), None
+    for line in inputs.splitlines()[1:]:
+        declaration = re.fullmatch(r"  ([A-Za-z_][A-Za-z_0-9-]*):\s*", line)
+        if declaration:
+            name = declaration[1]
+            if name in declared:
+                return None
+            declared.add(name)
+        elif name and (default := re.fullmatch(r"    default:\s*(.*)", line)):
+            defaults[name] = literal_yaml_scalar(default[1])
+        elif name and re.fullmatch(r"    required:\s*true\s*(?:#.*)?", line):
+            required.add(name)
+    values = {**defaults, **provided}
+    if any(values.get(name) is None for name in required):
+        return None
+    runs = next((section for section in sections if section.startswith("runs:")), "")
+    using = re.search(r"(?m)^  using:\s*(.*)$", runs)
+    if not using or literal_yaml_scalar(using[1]) != "composite":
+        return None
+    expanded = []
+    for line in runs.splitlines():
+        condition = re.fullmatch(r"(\s*(?:-\s+)?if:\s*)(.*)", line)
+        if condition:
+            expression = workflow_expression(condition[2])
+            references = re.findall(r"\binputs\.([A-Za-z_][A-Za-z_0-9-]*)", expression)
+            if any(values.get(name) is None for name in references):
+                expanded.append(condition[1] + "false")
+                continue
+            expression = re.sub(r"\binputs\.([A-Za-z_][A-Za-z_0-9-]*)",
+                                lambda match: "'" + values[match[1]].replace("'", "''") + "'", expression)
+            if re.search(r"\binputs(?:\.|\[)", expression):
+                expression = "false"  # unsupported indexed input syntax
+            if workflow_truth("${{ " + expression + " }}") is None:
+                expression = "false"  # action-local gates need proven inputs
+            expanded.append(condition[1] + "${{ " + expression + " }}")
+        else:
+            expanded.append(re.sub(
+                r"\$\{\{\s*inputs\.([A-Za-z_][A-Za-z_0-9-]*)\s*\}\}",
+                lambda match: values.get(match[1]) if values.get(match[1]) is not None else match[0], line))
+    return "\n".join(expanded)
+
+
+def workflow_sources(root: Path) -> list[str]:
+    """Include composite steps only through admitted local action invocations.
+
+    Literal `with` values override defaults. Unknown input-dependent gates and
+    commands cannot own targets. Unsupported YAML forms supply no action credit;
+    nested local actions are followed with path confinement and cycle detection.
+    """
+    sources, visited = [], set()
+
+    def visit(source, ancestors):
+        sources.append(source)
+        for relative, provided in local_action_invocations(source):
+            directory = (root / relative).resolve()
+            if not directory.is_relative_to(root.resolve()) or directory in ancestors:
+                continue
+            path = next((directory / name for name in ("action.yml", "action.yaml")
+                         if (directory / name).is_file()), None)
+            identity = directory, tuple(sorted(provided.items()))
+            if path is None or not path.resolve().is_relative_to(root.resolve()) or identity in visited:
+                continue
+            visited.add(identity)
+            action = composite_action_source(path.read_text(encoding="utf-8"), provided)
+            if action is not None:
+                visit(action, (*ancestors, directory))
+
+    paths = [*(root / ".github/workflows").glob("*.yml"),
+             *(root / ".github/workflows").glob("*.yaml")]
+    for path in sorted(paths):
+        visit(path.read_text(encoding="utf-8"), ())
+    return sources
+
+
 def inventory_gaps(root: Path = ROOT) -> list[str]:
     commands = []
-    sources = []
-    for path in sorted((root / ".github/workflows").glob("*.yml")):
-        sources.append(path.read_text(encoding="utf-8"))
-    for path in sorted((root / ".github/actions").glob("*/action.yml")):
-        sources.append(path.read_text(encoding="utf-8"))
+    sources = workflow_sources(root)
     for source in sources:
         commands.extend(workflow_commands(source))
     commands.extend(invoked_generator_commands(root, sources))
