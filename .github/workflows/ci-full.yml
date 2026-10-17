@@ -261,6 +261,7 @@ jobs:
             --shard-count 4 \
             --shard-index ${{ matrix.shard }} \
             tests/ci/test_ci_full_contract.py \
+            tests/ci/test_ci_test_inventory.py \
             scripts/tests/test_check_obsolete_program_reachability.py \
             scripts/tests/test_check_native_host_catalog.py \
             scripts/tests/test_check_no_retired_value_system.py \
@@ -355,7 +356,10 @@ jobs:
         run: |
           cargo +nightly-2026-03-03 test --locked -p mech-core \
             --all-features --test memory_runtime --test managed_input_descriptor \
-            --test borrowed_string_footprint --test resident_lowering_attachment
+            --test borrowed_string_footprint --test resident_lowering_attachment \
+            --test canonical_schema_vectors --test semantic_serde_contract \
+            --test snapshot_canonical_vectors --test snapshot_serde_contract \
+            --test stdlib_macro_hygiene
           cargo +nightly-2026-03-03 test --locked -p mech-core \
             --no-default-features \
             --features functions,u8,u64,f64,string,matrixd,bool \
@@ -415,6 +419,19 @@ jobs:
           cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
             --no-default-features --features full_compiler,resident-artifact,native-sequence \
             --test native_sequence_effects -- --test-threads=1
+      - name: Execute retained engine EKF integration targets
+        run: >-
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine
+          --no-default-features --features full_compiler,resident-artifact,resident-ekf
+          --test resident_ekf_artifact_closure --test resident_ekf_contract
+          --test resident_ekf_program_activation --test resident_ekf_program_execution
+          -- --test-threads=1
+      - name: Execute canonical compute and native backend integration targets
+        run: >-
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu
+          --no-default-features --features native,jit
+          --test canonical_control --test canonical_publication --test canonical_shipped_ekf
+          --test parallel_ekf --test particle_source -- --test-threads=1
       - name: Check CLI kept-project collision before native build
         timeout-minutes: 25
         run: |
@@ -477,6 +494,11 @@ jobs:
           --test string_generators --test string_literal_match
           --test string_membership_comprehensions --test string_selector_shapes
           --test text_operations --test u64_float_conversion_source -- --test-threads=1
+      - name: Execute source assignment and fixed-shape specialization contracts
+        run: >-
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-stdlib
+          --no-default-features --features full_compiler,matrix2,vector2
+          --test source_op_assign_contract --test specialization_contract -- --test-threads=1
       - name: Execute canonical native lowering and selected implementation witnesses
         run: |
           cargo +nightly-2026-03-03 test --locked --offline -p mech-stdlib \
@@ -1043,6 +1065,11 @@ jobs:
           --no-default-features --features native-link,pure_text,map_ops,sequence_sort
           --test map_native_linkage --test sequence_sort_native_linkage
           --test text_operations_native_linkage
+      - name: Execute general native-link installer contracts
+        run: >-
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine
+          --no-default-features --features full_compiler,native-link
+          --test native_linkage -- --test-threads=1
 
   catalog-closure:
     if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'linkage') }}

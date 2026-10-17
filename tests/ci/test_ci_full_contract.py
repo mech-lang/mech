@@ -133,6 +133,10 @@ def literal_assignment(source: str, name: str):
 
 
 class FullWorkflowContractTests(unittest.TestCase):
+    def test_dynamic_integration_inventory_executes_in_both_contract_paths(self):
+        self.assertIn("tests.ci.test_ci_test_inventory", job_block(CI, "static-architecture"))
+        self.assertIn("tests/ci/test_ci_test_inventory.py", job_block(FULL, "architecture-mutations"))
+
     def test_canonical_applications_execute_linked_qualifications_explicitly(self):
         block = job_block(FULL, "canonical-applications")
         self.assertIn("RUSTUP_TOOLCHAIN: nightly-2026-03-03", block)
