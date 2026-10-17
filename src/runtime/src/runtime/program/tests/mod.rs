@@ -33,6 +33,23 @@ use super::*;
 mod projection_refresh;
 mod published_inputs;
 
+fn resident_parts(
+    runtime: &crate::MechRuntime,
+) -> (
+    &mech_engine::ProgramArtifact,
+    &mech_engine::resident::ReactiveInstance,
+) {
+    match &runtime.active_program {
+        ActiveProgramExecution::ResidentPure(execution) => {
+            (&execution.artifact, &execution.instance)
+        }
+        ActiveProgramExecution::ResidentExternal(execution) => {
+            (&execution.artifact, execution.coordinator.instance())
+        }
+        ActiveProgramExecution::None => panic!("fixture must own a resident program"),
+    }
+}
+
 const PURE_SOURCE: &str =
     include_str!("../../../../../../tests/architecture/resident-activation/n-body-source-v1.mec");
 const PRODUCT_NBODY_SOURCE: &str =

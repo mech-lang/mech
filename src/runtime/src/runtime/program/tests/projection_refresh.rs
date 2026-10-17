@@ -173,7 +173,7 @@ fn replacement_refreshes_renamed_outputs_without_any_state_mapping() {
         let configure = |source| {
             let (mut loaded, reads) = independent_external_runtime_with_source(source);
             if decoded {
-                let (artifact, _) = loaded.resident_artifact_and_instance().unwrap();
+                let (artifact, _) = resident_parts(&loaded);
                 let bytes = encode_program_artifact_bytecode_v1(artifact).unwrap();
                 loaded.unload_active_program().unwrap();
                 loaded
@@ -196,7 +196,7 @@ fn replacement_refreshes_renamed_outputs_without_any_state_mapping() {
             8.0
         );
         let (mut candidate, candidate_reads) = configure(replacement);
-        let (artifact, instance) = candidate.resident_artifact_and_instance().unwrap();
+        let (artifact, instance) = resident_parts(&candidate);
         assert!(
             artifact
                 .slots()
@@ -217,14 +217,7 @@ fn replacement_refreshes_renamed_outputs_without_any_state_mapping() {
             canonical_f64(candidate.root_symbol_value("new").unwrap().value()),
             17.0
         );
-        assert_eq!(
-            candidate
-                .resident_artifact_and_instance()
-                .unwrap()
-                .1
-                .published_epoch(),
-            epoch
-        );
+        assert_eq!(resident_parts(&candidate).1.published_epoch(), epoch);
         assert_eq!(previous_reads.load(Ordering::SeqCst), 0);
         assert_eq!(candidate_reads.load(Ordering::SeqCst), 0);
     }
@@ -238,7 +231,7 @@ fn replacement_leaves_new_observation_projections_unavailable_until_a_real_turn(
         let configure = |source| {
             let (mut loaded, reads) = independent_external_runtime_with_source(source);
             if decoded {
-                let (artifact, _) = loaded.resident_artifact_and_instance().unwrap();
+                let (artifact, _) = resident_parts(&loaded);
                 let bytes = encode_program_artifact_bytecode_v1(artifact).unwrap();
                 loaded.unload_active_program().unwrap();
                 loaded
@@ -303,7 +296,7 @@ fn replacement_checks_unpublished_document_invariants_against_migrated_state() {
                     .load_source_program(source, crate::ResidentDurabilityPolicy::Retained)
                     .unwrap();
                 if decoded {
-                    let (artifact, _) = loaded.resident_artifact_and_instance().unwrap();
+                    let (artifact, _) = resident_parts(&loaded);
                     let bytes = encode_program_artifact_bytecode_v1(artifact).unwrap();
                     loaded.unload_active_program().unwrap();
                     loaded

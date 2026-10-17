@@ -23,7 +23,7 @@ extra
 fn load(source: &str, decoded: bool) -> (crate::MechRuntime, Arc<AtomicUsize>) {
     let (mut runtime, reads) = independent_external_runtime_with_source(source);
     if decoded {
-        let (artifact, _) = runtime.resident_artifact_and_instance().unwrap();
+        let (artifact, _) = resident_parts(&runtime);
         let bytes = encode_program_artifact_bytecode_v1(artifact).unwrap();
         runtime.unload_active_program().unwrap();
         runtime
@@ -102,20 +102,12 @@ fn replacement_projections_keep_published_inputs_after_rejected_turn_and_replay(
             assert_eq!(value(&previous, "answer"), 4.0);
 
             let (mut candidate, candidate_reads) = load(&format!("{SOURCE}{EXTRA}"), decoded);
-            let epoch = candidate
-                .resident_artifact_and_instance()
-                .unwrap()
-                .1
-                .published_epoch();
+            let epoch = resident_parts(&candidate).1.published_epoch();
             candidate
                 .preserve_compatible_resident_state_from(&previous, &BTreeSet::new())
                 .unwrap();
             assert_eq!(
-                candidate
-                    .resident_artifact_and_instance()
-                    .unwrap()
-                    .1
-                    .published_epoch(),
+                resident_parts(&candidate).1.published_epoch(),
                 epoch,
                 "refresh must not publish a synthetic turn"
             );
@@ -126,11 +118,7 @@ fn replacement_projections_keep_published_inputs_after_rejected_turn_and_replay(
             assert_eq!(previous_reads.load(Ordering::SeqCst), 0);
             assert_eq!(candidate_reads.load(Ordering::SeqCst), 0);
 
-            let migrated_hash = candidate
-                .resident_artifact_and_instance()
-                .unwrap()
-                .1
-                .published_state_hash();
+            let migrated_hash = resident_parts(&candidate).1.published_state_hash();
             assert!(matches!(
                 submit(&mut candidate, -4.0),
                 crate::ResidentExternalTurnOutcome::Rejected { .. }
