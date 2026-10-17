@@ -6685,6 +6685,30 @@ mod tests {
     use crate::resident::general::{ResidentArenaSizes, StateVersion};
     use mech_core::ResidentShape;
 
+    fn scalar_snapshot(body: mech_core::SchemaBody, data: mech_core::ValueDataDraft) -> Value {
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let handle = builder
+            .insert(
+                mech_core::SchemaDraft {
+                    body,
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let schema = build.resolve(handle).unwrap();
+        let schemas = std::sync::Arc::new(build.table);
+        mech_core::snapshot::ValueDraft {
+            schema,
+            shape_values: Box::new([]),
+            data,
+        }
+        .finalize(&mech_core::snapshot::SnapshotValidationContext::with_shared_schemas(&schemas))
+        .unwrap()
+    }
+
     #[cfg(feature = "source")]
     #[test]
     fn tail_control_proof_requires_final_exact_yield_without_postprocessing() {
@@ -7017,10 +7041,10 @@ mod tests {
 
     #[test]
     fn recursive_frame_cost_includes_entries_and_snapshot_nodes() {
-        let snapshot = mech_core::ValueCell::from_exact(true)
-            .unwrap()
-            .snapshot()
-            .unwrap();
+        let snapshot = scalar_snapshot(
+            mech_core::SchemaBody::Bool,
+            mech_core::ValueDataDraft::Bool(true),
+        );
         let schemas = snapshot.schemas().unwrap();
         let mut meter = budget::ResidentBudgetMeter::default();
         let (scalar_bytes, scalar_nodes) =
@@ -7303,10 +7327,10 @@ mod tests {
     #[cfg(feature = "string")]
     #[test]
     fn retained_snapshot_capture_measurement_uses_its_immutable_schema_owner() {
-        let retained = mech_core::ValueCell::from_exact("owned arena".to_owned())
-            .unwrap()
-            .snapshot()
-            .unwrap();
+        let retained = scalar_snapshot(
+            mech_core::SchemaBody::String,
+            mech_core::ValueDataDraft::String("owned arena".to_owned()),
+        );
         let mut builder = mech_core::SchemaTableBuilder::new();
         builder
             .insert(
@@ -7334,12 +7358,12 @@ mod tests {
                     .retained_bytes
         );
         assert!(footprint.1 >= 1);
-        let large = mech_core::ValueCell::from_exact(
-            "x".repeat(mech_core::RESIDENT_MAX_COMPARISON_WORK as usize + 1),
-        )
-        .unwrap()
-        .snapshot()
-        .unwrap();
+        let large = scalar_snapshot(
+            mech_core::SchemaBody::String,
+            mech_core::ValueDataDraft::String(
+                "x".repeat(mech_core::RESIDENT_MAX_COMPARISON_WORK as usize + 1),
+            ),
+        );
         let owner = large.schemas().unwrap();
         let mut metadata_meter = budget::ResidentBudgetMeter::default();
         let measured = resident_frame_value_footprint(
@@ -8367,12 +8391,10 @@ mod tests {
         instance.plan.slots[write.slot.get() as usize].shape = original_shape;
         instance.plan.slots[write.slot.get() as usize].activation_fixed_shape = false;
         assert_eq!(validate(&instance.plan), Ok(()));
-        let wrong = [Some(
-            mech_core::ValueCell::from_exact(true)
-                .unwrap()
-                .snapshot()
-                .unwrap(),
-        )];
+        let wrong = [Some(scalar_snapshot(
+            mech_core::SchemaBody::Bool,
+            mech_core::ValueDataDraft::Bool(true),
+        ))];
         assert_eq!(
             validate_snapshot_control_result(
                 &instance.plan,
