@@ -63,12 +63,28 @@ fn every_document_rule_has_a_clean_specification_derived_source() {
     );
     let rows = lines.collect::<Vec<_>>();
     assert_eq!(rows.len(), 113);
+    let non_mika_witness: String = serde_json::from_str(
+        rows.iter()
+            .find(|line| line.starts_with("mechdown-list\t"))
+            .unwrap()
+            .split('\t')
+            .nth(1)
+            .unwrap(),
+    )
+    .unwrap();
 
     for line in rows {
         let fields = line.split('\t').collect::<Vec<_>>();
         assert_eq!(fields.len(), 5, "{line}");
         let name = fields[0];
-        let text: String = serde_json::from_str(fields[1]).unwrap();
+        // The full-profile witness is a Mika closer. With Mika disabled,
+        // retain positive coverage of this choice through its certified list
+        // alternative instead of treating the whole production as disabled.
+        let text: String = if name == "not-mech-code" && !cfg!(feature = "mika") {
+            non_mika_witness.clone()
+        } else {
+            serde_json::from_str(fields[1]).unwrap()
+        };
         let rule = canonical_rule_id(name).unwrap();
         let parsed =
             parse_canonical_document_rule_for_test(source(&text), rule, ParseConfig::default())
