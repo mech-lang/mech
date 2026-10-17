@@ -455,7 +455,15 @@ fn validate_test_write_payload(value: &Value) -> MResult<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{
+        ExternalTestProviderTrace, ExternalTestSceneProvider, ExternalTestTransactionalProvider,
+    };
+    use crate::{
+        RuntimeEffectId, RuntimeHostInputValue, RuntimeResourceProvider,
+        RuntimeResourceWriteCommand, RuntimeResourceWriteIntent,
+        RuntimeResourceWritePreflightRequest,
+    };
+    use std::sync::{Arc, Mutex};
 
     #[test]
     fn external_fixture_target_preflight_has_no_effect_and_live_payloads_stay_checked() {
