@@ -103,6 +103,30 @@
   ],
   "checks": [
     {
+      "area": "supplied rereview probe-free engine owner",
+      "source_commit": "c871683e121e1a93e2104e4bf9804901c03cecd6",
+      "engine_unit_tests_passed": 839,
+      "engine_integration_tests_passed": 192,
+      "log": "tmp/pr-stack-evidence/review-v20-engine-all.log",
+      "scope": "Complete engine lib plus canonical executable/source, iteration-artifact and memory-runtime integration targets; zero failures or ignored tests. Includes exact ordinary and tail resource diagnostics, shared enum schema/tuple-array identity and cumulative projection cost, and two distinct live 32768-element Snapshot Bool inputs in both concatenation orientations. All temporary diagnostic instrumentation is removed; the original ten tail-control cases remain unchanged and await the separate final application selection."
+    },
+    {
+      "area": "supplied rereview source enum regressions",
+      "source_commit": "50f19b6ef571b05753687c4d70e940ebed483d17",
+      "passed": 2,
+      "log": "tmp/pr-stack-evidence/review-v14-source-enum.log",
+      "scope": "Both original and decoded artifacts; 512-U64 tuple payload and 1024 mismatched or guard-rejected matching arms; genuine binding-copy denial preserves output/epoch and recovers. Uses unchanged normal resource limits. Later changes are diagnostic expectations and browser failure evidence, not new benchmark measurements."
+    },
+    {
+      "area": "supplied rereview complete runtime owner",
+      "source_commit": "13c2cb74cf8b35ffa98ffe5b7fd09479cda85798",
+      "runtime_unit_tests_passed": 814,
+      "source_acceptance_tests_passed": 61,
+      "resident_ekf_contract_tests_passed": 11,
+      "log": "tmp/pr-stack-evidence/review-v16-runtime-owner.log",
+      "scope": "Full serial owner selection passed on clean immutable source. Includes the 32768-element Snapshot Bool constructor/closed-selector boundary, exact successful values/schema identities/shapes, actual gather-producer refusal, public-session typed denial, original/decoded artifacts and recovery. Final-head owner, unchanged tail/application and actual linked qualification are still required."
+    },
+    {
       "area": "pre-rereview-fix immutable correctness baseline",
       "source_commit": "2fad121c2b70a6822ebef2c2ba25925893639282",
       "engine_unit_tests_passed": 835,
