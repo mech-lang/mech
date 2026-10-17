@@ -296,13 +296,14 @@ fn assert_map_runtime_additions(catalog: &FunctionCatalog) -> [&'static str; 3] 
         assert_eq!(entry.name, name);
         assert_eq!(entry.id.raw(), id);
         assert_eq!(OperationId::from_name(name).raw(), id);
+        let operation = OperationId::from_raw(id);
         assert_eq!(
             entry.signature(),
             RuntimeFunctionSignature::unary(Value::AnyValue, Value::AnyValue)
         );
         assert!(
             matches!(entry.operation_binding(), RuntimeOperationBinding::Fixed(ids)
-            if ids.as_ref() == [OperationId::from_raw(id)])
+            if ids.as_ref() == [operation])
         );
         assert_eq!(entry.contract_kind(), name);
         assert_eq!(
@@ -311,7 +312,7 @@ fn assert_map_runtime_additions(catalog: &FunctionCatalog) -> [&'static str; 3] 
         );
         assert_eq!(entry.implementation_memory_class(), memory);
         assert_eq!(
-            entry.operation_contract(OperationId::from_raw(id)),
+            entry.operation_contract(operation),
             Some(&map_operation_contract())
         );
         assert!(entry.supports_target(ExecutionTarget::DirectRuntime));
