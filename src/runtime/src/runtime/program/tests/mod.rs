@@ -8289,7 +8289,7 @@ fn canonical_static_symbol_result_does_not_alias_the_implicit_result() {
 }
 
 #[test]
-fn canonical_functions_do_not_capture_caller_symbols_or_existing_inputs() {
+fn canonical_functions_capture_lexical_bindings_without_inheriting_caller_locals() {
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()
@@ -8298,14 +8298,32 @@ fn canonical_functions_do_not_capture_caller_symbols_or_existing_inputs() {
         let document = canonical_planning_test_document(&format!(
             "{prelude}\nwrong(value<f32>) = result<f32> :=\n  result := hidden.\n\nanswer := wrong(1f32)\n",
         ));
-        let error = compiler
-            .compile_document(&document)
-            .unwrap_err()
-            .display_message();
-        assert!(error.contains("undeclared local hidden"), "{error}");
+        let product = compiler.compile_document(&document).unwrap();
+        if prelude.starts_with("before") {
+            assert!(
+                product
+                    .artifact()
+                    .inputs()
+                    .iter()
+                    .any(|input| input.name == "hidden")
+            );
+        } else {
+            assert_eq!(
+                compiler
+                    .evaluate_static_document_symbols(&document, &["answer"])
+                    .unwrap(),
+                BTreeMap::from([("answer".to_owned(), RuntimeHostInputValue::F32(42.0))])
+            );
+        }
     }
     let document = canonical_planning_test_document(
         "hidden := [42f32]\nwrong(value<f32>) = result<f32> :=\n  result := hidden[1].\n\nanswer := wrong(1f32)\n",
+    );
+    assert!(compiler.compile_document(&document).is_ok());
+    // A source lexical binding can be frozen into a function. A parameter of
+    // the caller, however, must not become the callee's free variable.
+    let document = canonical_planning_test_document(
+        "wrong(value<f32>) = result<f32> :=\n  result := hidden.\n\ncaller(hidden<f32>) = result<f32> :=\n  result := wrong(1f32).\n\nanswer := caller(42f32)\n",
     );
     let error = compiler
         .compile_document(&document)
@@ -9185,9 +9203,9 @@ fn canonical_interactive_resource_planning_does_not_execute_host_effects() {
 }
 
 #[test]
-fn canonical_planned_selectors_enforce_portable_index_width_before_activation() {
+fn canonical_planned_selector_representatives_supply_schema_without_becoming_indices() {
     let source = "@typed := test://typed/value{:read(data)}\nvalues := [10.0 20.0 30.0]\nselected := values[1,@typed/data]\nselected\n";
-    for (planned, accepted) in [(1u64, true), (u32::MAX as u64 + 1, false)] {
+    for planned in [1u64, u32::MAX as u64 + 1] {
         let mut compiler = RuntimeBuilder::new()
             .function_catalog(mech_stdlib::source_catalog())
             .resource_provider(Box::new(TypedObservationProvider {
@@ -9195,7 +9213,19 @@ fn canonical_planned_selectors_enforce_portable_index_width_before_activation() 
             }))
             .build_compiler()
             .unwrap();
-        assert_eq!(compiler.compile_canonical_source(source).is_ok(), accepted);
+        // A planning representative determines the input schema, not the
+        // future live selector value. The dynamic selector round-trip tests
+        // above retain actual portable-width denial, atomicity and recovery.
+        let product = compiler.compile_canonical_source(source).unwrap();
+        assert!(product.artifact().nodes().iter().any(|node| {
+            node.as_operation()
+                .and_then(|operation| operation.requirement)
+                .is_some_and(|id| {
+                    matches!(product.artifact().requirements().get(id),
+                    Some(mech_core::ApplicationRequirement::Resource(request))
+                    if request.base_uri == "test://typed/value" && request.path == "data")
+                })
+        }));
     }
 }
 
