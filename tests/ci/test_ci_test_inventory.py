@@ -24,8 +24,16 @@ class IntegrationInventoryTests(unittest.TestCase):
         return cargo_test_command(["cargo", "+nightly-2026-03-03", "test", "-p", "sample", *tail])
 
     def test_compilation_and_listing_do_not_supply_execution_credit(self):
-        for arguments in (["--test", "fresh", "--no-run"], ["--test", "fresh", "--", "--list"]):
+        for arguments in (
+            ["--test", "fresh", "--no-run"], ["--test", "fresh", "--", "--list"],
+            ["--test", "fresh", "--", "--bench"],
+            ["--test", "fresh", "--", "--bench", "--test"],
+            ["--test", "fresh", "--", "--help"],
+            ["--test", "fresh", "--help"],
+            ["--test", "fresh", "--", "--exclude-should-panic"],
+        ):
             self.assertIsNone(self.command(arguments))
+        self.assertIsNotNone(self.command(["--test", "fresh", "--", "--test", "--test-threads=1", "--color", "always"]))
         self.assertIsNone(cargo_test_command(["cargo", "check", "-p", "sample"]))
 
     def test_folded_and_literal_commands_are_extracted_without_comment_decoys(self):
@@ -55,7 +63,7 @@ class IntegrationInventoryTests(unittest.TestCase):
         source = '''steps:
   - run: |
       python3 scripts/run-native-plan-stage.py --stage fixture --timeout-secs 20 -- cargo test -p sample --test actual
-      python3 print_decoy.py -- cargo test -p sample --test decoy
+  - run: python3 print_decoy.py -- cargo test -p sample --test decoy
 '''
         self.assertEqual([command["targets"] for command in workflow_commands(source)], [["actual"]])
 
@@ -94,7 +102,7 @@ class IntegrationInventoryTests(unittest.TestCase):
             "steps:\n  - name: disabled\n    if: |\n      ${{ false ||\n          0 }}\n    run: cargo test -p sample --test absent\n",
         ):
             self.assertEqual(list(workflow_commands(source)), [], source)
-        source = "steps:\n  - run: |\n      if: false\n      cargo test -p sample --test actual\n"
+        source = "steps:\n  - run: |\n      echo 'if: false'\n      cargo test -p sample --test actual\n"
         self.assertEqual([command["targets"] for command in workflow_commands(source)], [["actual"]], "run content is not step metadata")
 
     def test_generator_commands_require_a_reachable_entry_point_call(self):
@@ -208,6 +216,7 @@ class IntegrationInventoryTests(unittest.TestCase):
                         (f"exit 0\n{invocation}", False),
                         (f"exec true\n{invocation}", False),
                         (f"hash -p /bin/true python3\n{invocation}", False),
+                        (f"rm -f /home/runner/.cargo/bin/cargo\nln -s /bin/true /home/runner/.cargo/bin/cargo\n{invocation}", False),
                         (f"unused() {{\n  {invocation}\n}}", False),
                         (f": <<'DECOY'\n{invocation}\nDECOY", False),
                     ):
@@ -215,6 +224,80 @@ class IntegrationInventoryTests(unittest.TestCase):
                         with self.subTest(relative=relative, body=body):
                             commands = list(invoked_generator_commands(root, [source]))
                             self.assertEqual([command["targets"] for command in commands], [["fresh"]] if expected else [])
+
+    def test_only_supported_commands_can_precede_cargo_or_recorded_execution(self):
+        command = "cargo test -p sample --test absent"
+        for prefix in (
+            "rm -f /home/runner/.cargo/bin/cargo\nln -s /bin/true /home/runner/.cargo/bin/cargo",
+            "cp /bin/true /home/runner/.cargo/bin/cargo",
+            "mv /tmp/fake /home/runner/.cargo/bin/cargo",
+            "install /bin/true /home/runner/.cargo/bin/cargo",
+            "python3 arbitrary_mutator.py",
+            "cargo install fake-cargo --force",
+            "python3 scripts/run-native-plan-stage.py --stage replace --timeout-secs 20 -- rm -f /home/runner/.cargo/bin/cargo",
+            "printf -v PATH /tmp/decoy",
+            "MODE=${BASH_CMDS[cargo]:=/bin/true}",
+        ):
+            body = prefix + "\n" + command
+            source = "steps:\n  - run: |\n" + "\n".join("      " + line for line in body.splitlines())
+            with self.subTest(prefix=prefix):
+                self.assertEqual(list(workflow_commands(source)), [])
+        compile_step = "steps:\n  - run: python3 scripts/run-native-plan-stage.py --stage compile --record-test-executable fresh --test-executable-file receipt -- cargo test -p sample --test fresh --no-run\n"
+        for body in (
+            "rm -f /home/runner/.cargo/bin/cargo\npython3 scripts/run-native-plan-stage.py --stage execute --test-executable-file receipt -- --test-threads=1",
+            "python3 scripts/run-native-plan-stage.py --stage execute --test-executable-file receipt -- --bench",
+        ):
+            source = compile_step + "  - run: |\n" + "\n".join("      " + line for line in body.splitlines())
+            self.assertEqual(list(workflow_commands(source)), [])
+
+    def test_step_and_inherited_working_directory_and_shell_must_be_admitted(self):
+        command = "cargo test -p sample --test actual"
+        for directory in ("nested", "../other", "/tmp/other", "${{ matrix.checkout }}"):
+            for source in (
+                f"steps:\n  - run: {command}\n    working-directory: {directory}\n",
+                f"defaults:\n  run:\n    working-directory: {directory}\nsteps:\n  - run: {command}\n",
+                f"jobs:\n  sample:\n    steps:\n      - run: {command}\n    defaults:\n      run:\n        working-directory: {directory}\n",
+            ):
+                with self.subTest(source=source):
+                    self.assertEqual(list(workflow_commands(source)), [])
+        for directory in (".", "./", "./.", "${{ github.workspace }}", "${{github.workspace}}/."):
+            source = f"jobs:\n  sample:\n    defaults:\n      run:\n        working-directory: nested\n    steps:\n      - run: {command}\n        working-directory: {directory}\n"
+            self.assertEqual([entry["targets"] for entry in workflow_commands(source)], [["actual"]])
+        for setting in ("shell: bash -n {0}", "working-directory: nested"):
+            source = f"steps:\n  - uses: ./.github/actions/absent\n    {setting}\n"
+            from ci_test_inventory import local_action_invocations
+            self.assertEqual(list(local_action_invocations(source)), [])
+        source = f"defaults:\n  run:\n    shell: bash -n {{0}}\nsteps:\n  - run: {command}\n"
+        self.assertEqual(list(workflow_commands(source)), [])
+
+    def test_job_gates_cover_the_complete_mapping_in_any_key_order(self):
+        for clause in ("if: false", "if: ${{ 0 }}", "continue-on-error: true", "continue-on-error: ${{ matrix.optional }}"):
+            source = f"jobs:\n  disabled:\n    steps:\n      - run: cargo test -p sample --test absent\n    {clause}\n  enabled:\n    steps:\n      - run: cargo test -p sample --test actual\n    if: true\n"
+            with self.subTest(clause=clause):
+                self.assertEqual([entry["targets"] for entry in workflow_commands(source)], [["actual"]])
+
+    def test_run_properties_inside_metadata_or_scalar_text_never_execute(self):
+        decoy = "run: cargo test -p sample --test absent"
+        for metadata in (
+            "env:\n  DECOY: |\n    " + decoy + "\n",
+            "name: |\n  " + decoy + "\n",
+            "env:\n  DECOY:\n    " + decoy + "\n",
+            "env:\n  DECOY: >-\n    steps:\n      - " + decoy + "\n",
+        ):
+            source = metadata + "steps:\n  - run: cargo test -p sample --test actual\n"
+            with self.subTest(metadata=metadata):
+                self.assertEqual([entry["targets"] for entry in workflow_commands(source)], [["actual"]])
+        source = "steps:\n  - name: |\n      " + decoy + "\n    env:\n      MESSAGE: |\n        " + decoy + "\n    run: cargo test -p sample --test actual\n"
+        self.assertEqual([entry["targets"] for entry in workflow_commands(source)], [["actual"]])
+
+    def test_ambiguous_or_recursive_yaml_cannot_supply_ownership(self):
+        for source in (
+            "steps:\n  - run: cargo test -p sample --test absent\n    run: true\n",
+            "steps: &recursive\n  - env:\n      LOOP: *recursive\n    run: cargo test -p sample --test absent\n",
+            "steps:\n  - !!python/object:decoy\n    run: cargo test -p sample --test absent\n",
+            "steps: [this is not a step mapping]\n",
+        ):
+            self.assertEqual(list(workflow_commands(source)), [])
 
     def test_composite_action_credit_requires_invocation_and_effective_inputs(self):
         action = '''inputs:

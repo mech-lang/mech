@@ -144,6 +144,11 @@ jobs:
               -o Dir::Etc::sourceparts=-
             sudo apt-get install --yes ripgrep
           fi
+      - name: Install pinned CI YAML parser
+        run: |
+          python3 -m venv "$RUNNER_TEMP/ci-inventory-python"
+          "$RUNNER_TEMP/ci-inventory-python/bin/python" -m pip install --disable-pip-version-check --only-binary=:all: --require-hashes -r .github/ci/python-requirements.txt
+          echo "$RUNNER_TEMP/ci-inventory-python/bin" >> "$GITHUB_PATH"
       - name: Check formatting and global contracts
         run: |
           cargo +nightly-2026-03-03 fmt --all -- --check

@@ -254,6 +254,11 @@ jobs:
               -o Dir::Etc::sourceparts=-
             sudo apt-get install --yes ripgrep
           fi
+      - name: Install pinned CI YAML parser
+        run: |
+          python3 -m venv "$RUNNER_TEMP/ci-inventory-python"
+          "$RUNNER_TEMP/ci-inventory-python/bin/python" -m pip install --disable-pip-version-check --only-binary=:all: --require-hashes -r .github/ci/python-requirements.txt
+          echo "$RUNNER_TEMP/ci-inventory-python/bin" >> "$GITHUB_PATH"
       - name: Execute one balanced architecture mutation shard
         run: |
           python3 -B scripts/run-python-unittest-shards.py \
@@ -364,11 +369,15 @@ jobs:
             --no-default-features \
             --features functions,u8,u64,f64,string,matrixd,bool \
             --test memory_safety
+      - name: Execute the retained release-mode memory safety boundary
+        run: |
           RUSTFLAGS="${RUSTFLAGS:-} -C debug-assertions=no" \
             cargo +nightly-2026-03-03 test --locked --release -p mech-core \
             --no-default-features \
             --features functions,u8,u64,f64,string,matrixd,bool \
             --test memory_safety
+      - name: Execute maintained runtime and host memory boundaries
+        run: |
           cargo +nightly-2026-03-03 test --locked -p mech-engine \
             --no-default-features --features full_compiler,resident-artifact \
             --test memory_runtime

@@ -18,6 +18,7 @@ import tomllib
 from pathlib import Path
 
 from ci_owners import load_owners
+from ci_workflow import step_contexts, workflow_document
 from rust_source import rust_code
 
 
@@ -29,12 +30,8 @@ CANONICAL_PACKAGES = (
 
 
 def workflow_expression(value: str) -> str:
+    # YAML decoding belongs to ci_workflow, not the expression grammar.
     value = value.strip()
-    # Remove the YAML scalar's quoting before parsing the expression. Quotes
-    # inside ${{ ... }} instead belong to GitHub string literals ("false" is
-    # a nonempty, truthy string there, not the Boolean false).
-    if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
-        value = json.loads(value) if value[0] == '"' else value[1:-1].replace("''", "'")
     if value.startswith("${{") and value.endswith("}}"):
         value = value[3:-2].strip()
     return value
@@ -155,82 +152,55 @@ def workflow_truth(value: str) -> bool | None:
         return None
 
 
-def disabled_run(lines: list[str], index: int, indent: int) -> bool:
-    def disabled(metadata, expected_indent):
-        for offset, line in enumerate(metadata):
-            prefix = len(line) - len(line.lstrip())
-            text = line.strip()
-            if text.startswith("- "):
-                prefix, text = prefix + 2, text[2:]
-            if prefix != expected_indent:
-                continue
-            match = re.fullmatch(r"(if|continue-on-error):\s*(.*)", text)
-            if match:
-                # A '#' inside a YAML/expression string is data, not a comment.
-                scalar = re.match(r'''(?:'(?:''|[^'])*'|"(?:\\.|[^"\\])*"|[^'"#])*''', match[2])[0]
-                if scalar.strip().startswith(("|", ">")):
-                    body = []
-                    for following in metadata[offset + 1:]:
-                        if following.strip() and len(following) - len(following.lstrip()) <= expected_indent:
-                            break
-                        body.append(following.strip())
-                    scalar = " ".join(body)
-                value = workflow_truth(scalar)
-                if match[1] == "if" and value is False:
-                    return True
-                if match[1] == "if" and value is None:
-                    # Unsupported constant-only expressions cannot establish
-                    # execution. Dynamic impact/status gates remain ownership
-                    # candidates, not claims of every platform/trigger running.
-                    expression = re.sub(r"'(?:''|[^'])*'", "''", workflow_expression(scalar))
-                    if not re.search(r"\b(?:github|inputs|needs|matrix|runner|steps|env|vars|secrets|strategy|job)\.|\b(?:success|failure|cancelled)\s*\(", expression):
-                        return True
-                if match[1] == "continue-on-error" and value is not False:
-                    return True
-        return False
-
-    jobs = [offset for offset, line in enumerate(lines[:index]) if re.fullmatch(r"  [a-zA-Z_][a-zA-Z_0-9-]*:\s*", line)]
-    if jobs:
-        header = []
-        for line in lines[jobs[-1] + 1:index]:
-            if re.fullmatch(r"    steps:\s*", line):
-                break
-            header.append(line)
-        if disabled(header, 4):
+def disabled_metadata(metadata: dict) -> bool:
+    for key in ("if", "continue-on-error"):
+        if key not in metadata:
+            continue
+        scalar = metadata[key]
+        if not isinstance(scalar, str):
             return True
-    steps = [(offset, len(match[1])) for offset, line in enumerate(lines[:index + 1])
-             if (match := re.match(r"(\s*)-\s+", line)) and len(match[1]) <= indent]
-    if not steps:
-        return False
-    start, step_indent = steps[-1]
-    metadata = []
-    for offset in range(start, len(lines)):
-        line = lines[offset]
-        if offset > start and (match := re.match(r"(\s*)-\s+", line)) and len(match[1]) <= step_indent:
-            break
-        metadata.append(line)
-    return disabled(metadata, step_indent + 2)
+        value = workflow_truth(scalar)
+        if key == "if" and value is False:
+            return True
+        if key == "if" and value is None:
+            # Dynamic trigger/impact gates remain ownership candidates, not
+            # proof that every platform or trigger executes this profile.
+            expression = re.sub(r"'(?:''|[^'])*'", "''", workflow_expression(scalar))
+            if not re.search(r"\b(?:github|inputs|needs|matrix|runner|steps|env|vars|secrets|strategy|job)\.|\b(?:success|failure|cancelled)\s*\(", expression):
+                return True
+        if key == "continue-on-error" and value is not False:
+            return True
+    return False
+
+
+def admitted_steps(source: str):
+    for document, job, step in step_contexts(source):
+        if disabled_metadata(job) or disabled_metadata(step):
+            continue
+        defaults, valid = {}, True
+        for context in (document, job):
+            mapping = context.get("defaults", {})
+            if not isinstance(mapping, dict) or not isinstance(mapping.get("run", {}), dict):
+                valid = False
+                break
+            defaults.update(mapping.get("run", {}))
+        directory = step.get("working-directory", defaults.get("working-directory", "."))
+        if not valid or not isinstance(directory, str) or not directory.strip():
+            continue
+        directory = re.sub(r"\$\{\{\s*github\.workspace\s*\}\}", ".", directory.strip())
+        if directory.startswith("/") or any(part not in {"", "."} for part in directory.split("/")):
+            continue
+        shell = step.get("shell", defaults.get("shell"))
+        if shell is not None and shell not in {"bash", "sh", "pwsh", "powershell"}:
+            continue  # custom shells/noexec templates cannot prove execution
+        yield step
 
 
 def run_blocks(source: str):
-    """Read YAML run scalars, not comments, environment values or display names."""
-    lines = source.splitlines()
-    for index, line in enumerate(lines):
-        match = re.fullmatch(r"(\s*)(?:-\s+)?run:\s*(.*)", line)
-        if not match:
-            continue
-        indent, value = len(match[1]), match[2]
-        if disabled_run(lines, index, indent):
-            continue
-        if value.startswith(("|", ">")):
-            body = []
-            for following in lines[index + 1:]:
-                if following.strip() and len(following) - len(following.lstrip()) <= indent:
-                    break
-                body.append(following.strip())
-            yield " ".join(body) if value.startswith(">") else "\n".join(body)
-        else:
-            yield value
+    """Read real executable step properties after all inherited job settings."""
+    for step in admitted_steps(source):
+        if isinstance(step.get("run"), str):
+            yield step["run"]
 
 
 def cargo_test_command(arguments: list[str]):
@@ -245,7 +215,10 @@ def cargo_test_command(arguments: list[str]):
     if "--" in cargo:
         index = cargo.index("--")
         cargo, harness = cargo[:index], cargo[index + 1:]
-    if "--no-run" in cargo or "--list" in harness:
+    if "--no-run" in cargo or any(token in {"--help", "-h", "--version"} for token in cargo):
+        return None
+    if any(token in {"--list", "--bench", "--help", "-h", "--version"}
+           or token.startswith("--bench=") for token in harness):
         return None
     # A successful command that is allowed to fail is not ownership evidence.
     if any(token in {"||", "&&", ";"} for token in cargo + harness):
@@ -277,7 +250,7 @@ def cargo_test_command(arguments: list[str]):
     index = 0
     while index < len(harness):
         token = harness[index]
-        if token in {"--skip", "--test-threads", "--format", "--logfile"}:
+        if token in {"--skip", "--test-threads", "--format", "--logfile", "--color"}:
             index += 1
             if index == len(harness):
                 return None
@@ -287,6 +260,8 @@ def cargo_test_command(arguments: list[str]):
             skips.append(token.split("=", 1)[1])
         elif not token.startswith("-"):
             filters.append(token)
+        elif token not in {"--exact", "--ignored", "--include-ignored", "--nocapture", "--show-output", "--test", "--quiet", "-q"} and not token.startswith(("--test-threads=", "--format=", "--logfile=", "--color=")):
+            return None  # unknown selection/mode flags cannot establish ownership
         index += 1
     return {
         "packages": packages, "targets": targets, "all_targets": all_targets,
@@ -296,6 +271,36 @@ def cargo_test_command(arguments: list[str]):
         "filters": filters, "skips": skips, "exact": "--exact" in harness,
         "ignored_mode": "all" if "--include-ignored" in harness else "only" if "--ignored" in harness else "ordinary",
     }
+
+
+def supported_shell_command(arguments: list[str]) -> bool:
+    """Bounded command forms; arbitrary preceding programs can replace Cargo."""
+    if any(marker in argument for argument in arguments for marker in ("$", "`", "__GITHUB_EXPRESSION__")):
+        return False
+    command = arguments[0]
+    if command in {"set", "true", ":", "echo", "test", "["}:
+        return True
+    if command == "printf":
+        return "-v" not in arguments and not any("%n" in argument for argument in arguments[1:])
+    if command == "cargo":
+        tail = arguments[1:]
+        if tail and tail[0].startswith("+"):
+            tail = tail[1:]
+        return bool(tail) and (tail[0] in {"test", "check", "fetch", "build"}
+                               or (tail[0] == "fmt" and "--check" in tail))
+    if command != "python3" or len(arguments) < 2:
+        return False
+    if arguments[1] in {"scripts/check-generated-project-determinism.py", "scripts/check-native-application-graphs.py"}:
+        return True
+    if arguments[1] != "scripts/run-native-plan-stage.py" or "--" not in arguments:
+        return False
+    separator = arguments.index("--")
+    controls, payload = arguments[:separator], arguments[separator + 1:]
+    if not payload:
+        return False
+    if "--test-executable-file" in controls and "--record-test-executable" not in controls:
+        return cargo_test_command(["cargo", "test", "-p", "recorded", "--test", "recorded", "--", *payload]) is not None
+    return supported_shell_command(payload)
 
 
 def shell_commands(block: str) -> list[list[str]]:
@@ -323,7 +328,7 @@ def shell_commands(block: str) -> list[list[str]]:
         if any(token and all(character in ";&|<>()" for character in token) for token in arguments):
             return []
         while arguments and re.match(r"^[A-Za-z_][A-Za-z_0-9]*=", arguments[0]):
-            if arguments[0].split("=", 1)[0] in {"PATH", "IFS", "BASH_ENV", "ENV", "SHELLOPTS", "BASHOPTS", "CDPATH", "ZDOTDIR"}:
+            if any(marker in arguments[0] for marker in ("$", "`", "__GITHUB_EXPRESSION__")) or arguments[0].split("=", 1)[0] in {"PATH", "IFS", "BASH_ENV", "ENV", "SHELLOPTS", "BASHOPTS", "BASH_CMDS", "BASH_ALIASES", "CDPATH", "ZDOTDIR"}:
                 return []
             arguments = arguments[1:]
         if not arguments:
@@ -344,6 +349,8 @@ def shell_commands(block: str) -> list[list[str]]:
             return []
         if arguments[0] in {"exit", "return", "exec", "false", "logout"}:
             break
+        if not supported_shell_command(arguments):
+            return []
         commands.append(arguments)
     return commands
 
@@ -785,128 +792,76 @@ def target_covered(package: str, name: str, target: dict, manifest: dict, comman
     return False
 
 
-def literal_yaml_scalar(value: str) -> str | None:
-    """The maintained single-line string subset; unknown inputs stay unknown."""
-    value = value.strip()
-    if value.startswith('"'):
-        encoded = value
-        try:
-            value, end = json.JSONDecoder().raw_decode(value)
-        except ValueError:
-            return None
-        if not isinstance(value, str) or (encoded[end:].strip() and not encoded[end:].lstrip().startswith("#")):
-            return None
-    elif value.startswith("'"):
-        match = re.fullmatch(r"'((?:''|[^'])*)'\s*(?:#.*)?", value)
-        if not match:
-            return None
-        value = match[1].replace("''", "'")
-    else:
-        value = re.split(r"\s+#", value, maxsplit=1)[0].strip()
-        if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_./,:+-]*(?: [A-Za-z0-9_./,+-]+)*", value):
-            return None
-        if value in {"true", "false", "null", "~"} or re.match(r"^[+-]?(?:\d|\.)", value):
-            return None  # non-string YAML scalars are outside the proven subset
-    return None if any(marker in value for marker in ("$", "`", "\n", "\r")) else value
+def literal_action_input(value) -> str | None:
+    if not isinstance(value, str) or any(marker in value for marker in ("$", "\x60", "\n", "\r")):
+        return None
+    return value
 
 
 def local_action_invocations(source: str):
-    """Read actual step properties, not `uses:` text inside a run scalar."""
-    lines = source.splitlines()
-    scalar_body = set()
-    for index, line in enumerate(lines):
-        scalar = re.fullmatch(r"(\s*)(-\s+)?[A-Za-z_][A-Za-z_0-9-]*:\s*[|>][-+0-9]*\s*(?:#.*)?", line)
-        if not scalar or index in scalar_body:
+    for step in admitted_steps(source):
+        relative = step.get("uses")
+        provided = step.get("with", {})
+        if not isinstance(relative, str) or not relative.startswith("./") or not isinstance(provided, dict):
             continue
-        indent = len(scalar[1]) + (2 if scalar[2] else 0)
-        for offset in range(index + 1, len(lines)):
-            following = lines[offset]
-            if following.strip() and len(following) - len(following.lstrip()) <= indent:
-                break
-            scalar_body.add(offset)
-    for index, line in enumerate(lines):
-        match = re.fullmatch(r"(\s*)(-\s+)?uses:\s*(\./[^\s#]+)\s*(?:#.*)?", line)
-        if not match or index in scalar_body:
+        if literal_action_input(relative) is None:
             continue
-        indent = len(match[1])
-        steps = [(offset, len(step[1])) for offset, previous in enumerate(lines[:index + 1])
-                 if (step := re.match(r"(\s*)-\s+", previous)) and len(step[1]) <= indent]
-        if not steps:
-            continue
-        start, step_indent = steps[-1]
-        headers = [(offset, len(header[1])) for offset, previous in enumerate(lines[:start])
-                   if offset not in scalar_body and (header := re.fullmatch(r"(\s*)steps:\s*", previous))]
-        if not headers or step_indent != headers[-1][1] + 2:
-            continue
-        header, header_indent = headers[-1]
-        if any(previous.strip() and len(previous) - len(previous.lstrip()) <= header_indent
-               for previous in lines[header + 1:start]):
-            continue
-        property_indent = step_indent + 2
-        if indent + (2 if match[2] else 0) != property_indent or disabled_run(lines, index, indent):
-            continue
-        provided, in_with, valid = {}, False, True
-        for offset in range(start, len(lines)):
-            current = lines[offset]
-            prefix = len(current) - len(current.lstrip())
-            if offset > start and current.strip() and prefix <= step_indent:
-                break
-            if prefix == property_indent:
-                in_with = current.strip() == "with:"
-            elif in_with and prefix == property_indent + 2:
-                item = re.fullmatch(r"\s*([A-Za-z_][A-Za-z_0-9-]*):\s*(.*)", current)
-                if not item or item[1] in provided:
-                    valid = False
-                    break
-                provided[item[1]] = literal_yaml_scalar(item[2])
-        if valid:
-            yield match[3], provided
+        yield relative, {name: literal_action_input(value) for name, value in provided.items()}
 
 
 def composite_action_source(source: str, provided: dict[str, str | None]) -> str | None:
-    """Expand only proven literal inputs and fail closed on unknown gates."""
-    sections = re.split(r"(?m)^(?=[A-Za-z_][A-Za-z_0-9-]*:)", source)
-    inputs = next((section for section in sections if section.startswith("inputs:")), "")
-    defaults, required, declared, name = {}, set(), set(), None
-    for line in inputs.splitlines()[1:]:
-        declaration = re.fullmatch(r"  ([A-Za-z_][A-Za-z_0-9-]*):\s*", line)
-        if declaration:
-            name = declaration[1]
-            if name in declared:
-                return None
-            declared.add(name)
-        elif name and (default := re.fullmatch(r"    default:\s*(.*)", line)):
-            defaults[name] = literal_yaml_scalar(default[1])
-        elif name and re.fullmatch(r"    required:\s*true\s*(?:#.*)?", line):
-            required.add(name)
-    values = {**defaults, **provided}
-    if any(values.get(name) is None for name in required):
+    """Expand decoded literal inputs, preserving unknown gates as disabled."""
+    document = workflow_document(source)
+    definitions = document.get("inputs", {})
+    runs = document.get("runs", {})
+    if not isinstance(definitions, dict) or not isinstance(runs, dict) or runs.get("using") != "composite":
         return None
-    runs = next((section for section in sections if section.startswith("runs:")), "")
-    using = re.search(r"(?m)^  using:\s*(.*)$", runs)
-    if not using or literal_yaml_scalar(using[1]) != "composite":
+    if any(not isinstance(definition, dict) for definition in definitions.values()):
+        return None
+    defaults = {name: literal_action_input(definition.get("default"))
+                for name, definition in definitions.items()}
+    required = {name for name, definition in definitions.items()
+                if str(definition.get("required", "false")).lower() == "true"}
+    values = {**defaults, **provided}
+    if any(not values.get(name) for name in required):
+        return None
+
+    def expand(value):
+        if isinstance(value, str):
+            return re.sub(r"\$\{\{\s*inputs\.([A-Za-z_][A-Za-z_0-9-]*)\s*\}\}",
+                          lambda match: values.get(match[1]) if values.get(match[1]) is not None else match[0],
+                          value)
+        if isinstance(value, dict):
+            return {key: expand(item) for key, item in value.items()}
+        if isinstance(value, list):
+            return [expand(item) for item in value]
+        return value
+
+    steps = runs.get("steps", [])
+    if not isinstance(steps, list):
         return None
     expanded = []
-    for line in runs.splitlines():
-        condition = re.fullmatch(r"(\s*(?:-\s+)?if:\s*)(.*)", line)
-        if condition:
-            expression = workflow_expression(condition[2])
-            references = re.findall(r"\binputs\.([A-Za-z_][A-Za-z_0-9-]*)", expression)
-            if any(values.get(name) is None for name in references):
-                expanded.append(condition[1] + "false")
-                continue
-            expression = re.sub(r"\binputs\.([A-Za-z_][A-Za-z_0-9-]*)",
-                                lambda match: "'" + values[match[1]].replace("'", "''") + "'", expression)
-            if re.search(r"\binputs(?:\.|\[)", expression):
-                expression = "false"  # unsupported indexed input syntax
-            if workflow_truth("${{ " + expression + " }}") is None:
-                expression = "false"  # action-local gates need proven inputs
-            expanded.append(condition[1] + "${{ " + expression + " }}")
-        else:
-            expanded.append(re.sub(
-                r"\$\{\{\s*inputs\.([A-Za-z_][A-Za-z_0-9-]*)\s*\}\}",
-                lambda match: values.get(match[1]) if values.get(match[1]) is not None else match[0], line))
-    return "\n".join(expanded)
+    for step in steps:
+        if not isinstance(step, dict):
+            continue
+        selected = expand(step)
+        if "if" in step:
+            if not isinstance(step["if"], str):
+                selected["if"] = "false"
+            else:
+                expression = workflow_expression(step["if"])
+                references = re.findall(r"\binputs\.([A-Za-z_][A-Za-z_0-9-]*)", expression)
+                if any(values.get(name) is None for name in references):
+                    expression = "false"
+                else:
+                    expression = re.sub(r"\binputs\.([A-Za-z_][A-Za-z_0-9-]*)",
+                                        lambda match: "'" + values[match[1]].replace("'", "''") + "'",
+                                        expression)
+                if re.search(r"\binputs(?:\.|\[)", expression) or workflow_truth("${{ " + expression + " }}") is None:
+                    expression = "false"
+                selected["if"] = "${{ " + expression + " }}"
+        expanded.append(selected)
+    return json.dumps({**document, "runs": {**runs, "steps": expanded}})
 
 
 def workflow_sources(root: Path) -> list[str]:

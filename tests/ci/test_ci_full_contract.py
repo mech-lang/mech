@@ -137,6 +137,22 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("tests.ci.test_ci_test_inventory", job_block(CI, "static-architecture"))
         self.assertIn("tests/ci/test_ci_test_inventory.py", job_block(FULL, "architecture-mutations"))
 
+    def test_inventory_yaml_dependency_is_pinned_and_installed_before_execution(self):
+        requirements = (ROOT / ".github/ci/python-requirements.txt").read_text()
+        self.assertIn("PyYAML==6.0.3", requirements)
+        self.assertGreater(len(re.findall(r"--hash=sha256:[0-9a-f]{64}", requirements)), 1)
+        for source, job, selection in (
+            (CI, "static-architecture", "tests.ci.test_ci_test_inventory"),
+            (FULL, "architecture-mutations", "tests/ci/test_ci_test_inventory.py"),
+        ):
+            block = job_block(source, job)
+            install = next(step for step in job_steps(source, job) if "Install pinned CI YAML parser" in step)
+            self.assertIn('python3 -m venv "$RUNNER_TEMP/ci-inventory-python"', install)
+            self.assertIn("--only-binary=:all: --require-hashes -r .github/ci/python-requirements.txt", install)
+            self.assertIn('>> "$GITHUB_PATH"', install)
+            self.assertNotIn("continue-on-error", install)
+            self.assertLess(block.index(install), block.index(selection))
+
     def test_canonical_applications_execute_linked_qualifications_explicitly(self):
         block = job_block(FULL, "canonical-applications")
         self.assertIn("RUSTUP_TOOLCHAIN: nightly-2026-03-03", block)
@@ -266,6 +282,16 @@ class FullWorkflowContractTests(unittest.TestCase):
                     self.assertIn(f"--test {target}", step)
                 self.assertNotIn("--ignored", step)
                 self.assertNotIn("--no-run", step)
+        memory = job_block(FULL, "managed-memory-runtime")
+        release = next(step for step in job_steps(FULL, "managed-memory-runtime")
+                       if "Execute the retained release-mode memory safety boundary" in step)
+        self.assertIn('RUSTFLAGS="${RUSTFLAGS:-} -C debug-assertions=no"', release)
+        self.assertIn("--release -p mech-core", release)
+        self.assertIn("--features functions,u8,u64,f64,string,matrixd,bool", release)
+        self.assertIn("--test memory_safety", release)
+        self.assertNotIn("continue-on-error", release)
+        self.assertLess(memory.index("Execute the complete managed-memory conformance boundary"), memory.index(release))
+        self.assertLess(memory.index(release), memory.index("Execute maintained runtime and host memory boundaries"))
 
     def test_runtime_family_keeps_minimal_and_complete_source_profiles(self):
         block = job_block(FULL, "cargo-runtime")
