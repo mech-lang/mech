@@ -356,12 +356,40 @@ fn bar_starts_match_arm(code: &str, start: usize) -> bool {
             b'=' if delimiters.is_empty() && bytes.get(index + 1) == Some(&b'>') => {
                 return true;
             }
+            _ if delimiters.is_empty() && bytes[index..].starts_with("⇒".as_bytes()) => {
+                return true;
+            }
             b'|' | b'\n' | b'\r' | b';' if delimiters.is_empty() => return false,
             _ => {}
         }
         index += 1;
     }
     false
+}
+
+// Locate one possible row boundary. The canonical probe below validates it;
+// projections, outer closers and following stages must not enter that probe.
+fn table_row_end(code: &str, start: usize) -> Option<usize> {
+    let bytes = code.as_bytes();
+    let mut delimiters = Vec::new();
+    for index in start + 1..bytes.len() {
+        match bytes[index] {
+            b'(' | b'[' | b'{' => delimiters.push(bytes[index]),
+            b')' | b']' | b'}' => {
+                delimiters.pop()?;
+            }
+            b'|' if delimiters.is_empty()
+                && bytes.get(index + 1) != Some(&b'|')
+                && bytes[index - 1] != b'|'
+                && !bar_starts_match_arm(code, index) =>
+            {
+                return Some(index + 1);
+            }
+            b'\n' | b'\r' | b';' if delimiters.is_empty() => return None,
+            _ => {}
+        }
+    }
+    None
 }
 
 /// Collect table separators in a forward pass. Header candidates slide over
@@ -372,6 +400,7 @@ fn table_bar_offsets(code: &str) -> Vec<usize> {
     struct Context {
         first_bar: Option<usize>,
         in_table: bool,
+        row_start: Option<usize>,
     }
     let bytes = code.as_bytes();
     let mut contexts = vec![Context::default()];
@@ -384,9 +413,16 @@ fn table_bar_offsets(code: &str) -> Vec<usize> {
                     contexts.pop();
                 }
             }
-            b'\n' | b'\r' | b';' => {
-                *contexts.last_mut().unwrap() = Context::default();
+            b'\r' if bytes.get(index + 1) == Some(&b'\n') => {}
+            b'\n' | b'\r' => {
+                let context = contexts.last_mut().unwrap();
+                if context.in_table && context.row_start.is_none() {
+                    context.row_start = Some(index + 1);
+                } else {
+                    *context = Context::default();
+                }
             }
+            b';' => *contexts.last_mut().unwrap() = Context::default(),
             b'|' => {
                 if bytes.get(index + 1) == Some(&b'|')
                     || index
@@ -396,6 +432,29 @@ fn table_bar_offsets(code: &str) -> Vec<usize> {
                     continue;
                 }
                 let context = contexts.last_mut().unwrap();
+                if let Some(start) = context.row_start.take() {
+                    let leading = code[start..index].trim().is_empty();
+                    // Ordinary leading separators are cheap. Only a row
+                    // which looks like a pipe needs an independent canonical
+                    // row probe, not a growing multi-row table prefix.
+                    let regular_row = leading
+                        && (matches!(pipe_at(code, index), Ok(None))
+                            || table_row_end(code, index).is_some_and(|end| {
+                                let row = &code[index..end];
+                                let table = format!("|application-cell<u64>|\n{row}");
+                                canonical_fragment(
+                                    &format!("application-table := {table}\n"),
+                                    mech_syntax::document::SyntaxKind::Table,
+                                    &table,
+                                )
+                            }));
+                    if regular_row {
+                        offsets.push(index);
+                        context.first_bar = Some(index);
+                        continue;
+                    }
+                    *context = Context::default();
+                }
                 if context.in_table {
                     if bar_starts_match_arm(code, index) {
                         continue;
@@ -430,6 +489,9 @@ fn table_bar_offsets(code: &str) -> Vec<usize> {
                     if let Some(start) = context.first_bar {
                         let header = code[start + 1..index].trim();
                         let table = format!("|{header}| 0 |");
+                        // A literal header requires a kind annotation. Bare
+                        // fields belong to table *kinds*, not table literals.
+                        // Keep prose bar pairs off the canonical probe path.
                         context.in_table = header.contains('<')
                             && header.contains('>')
                             && canonical_fragment(
@@ -713,10 +775,24 @@ fn indentation(line: &str) -> usize {
 /// while retaining ordinary statement order in a function body.
 fn body_statements(source: &str) -> Result<Vec<String>, String> {
     let mut statements: Vec<String> = Vec::new();
+    let table_bars = table_bar_offsets(&mask(source));
+    let mut consumed = 0;
     for line in split_top(source, "\n")? {
         for part in split_top(line, ";")? {
+            let offset = consumed
+                + source[consumed..]
+                    .find(part)
+                    .expect("split parts remain in source order");
+            consumed = offset + part.len();
+            let table_row = table_bars.binary_search(&offset).is_ok() && part.starts_with('|');
             let part = compact(part);
             if part.is_empty() {
+                continue;
+            }
+            if table_row && !statements.is_empty() {
+                let previous = statements.last_mut().unwrap();
+                previous.push('\n');
+                previous.push_str(&part);
                 continue;
             }
             let continuation = starts_pipe(&part)
@@ -828,6 +904,7 @@ fn normalize_arrow_body(
     }
     // Preserve existing expression normalization byte-for-byte.
     if statements.len() == 1
+        && !statements[0].contains('\n')
         && matches!(
             arrow_statement(&statements[0])?,
             ArrowStatement::Expression(_)
@@ -993,6 +1070,15 @@ pub(super) fn normalize(source: &str) -> Result<String, String> {
         prefix.push_str("local-");
     }
     let lines: Vec<&str> = source.split_inclusive('\n').collect();
+    let table_bars = table_bar_offsets(&mask(source));
+    let line_offsets: Vec<usize> = lines
+        .iter()
+        .scan(0, |offset, line| {
+            let start = *offset;
+            *offset += line.len();
+            Some(start)
+        })
+        .collect();
     let mut output = String::new();
     let mut serial = 0;
     let mut index = 0;
@@ -1038,7 +1124,10 @@ pub(super) fn normalize(source: &str) -> Result<String, String> {
                             .split(":=")
                             .next()
                             .is_some_and(|s| identifier(s.trim()))))
-                || lines.get(index + 1).is_some_and(|s| starts_pipe(s));
+                || lines.get(index + 1).is_some_and(|s| {
+                    let start = line_offsets[index + 1] + s.len() - s.trim_start().len();
+                    table_bars.binary_search(&start).is_err() && starts_pipe(s)
+                });
             if !(unbalanced || continuation || arrow_continuation) || index + 1 >= lines.len() {
                 break;
             }
@@ -1268,6 +1357,63 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn canonical_regular_tables_and_unicode_arms_keep_their_bars() {
+        for binding in [
+            "x := |a<bool>|\n|1>limit|",
+            "x := |a<bool>|\n  |1>limit|\n  |0>limit|",
+            "x := |a<bool>|\r\n|1>limit|",
+            "x := (|a<bool>|\n|1>limit|\n)",
+            "x := value ? |1>limit ⇒ 1 | * ⇒ 0",
+        ] {
+            let source = format!("limit := 2\n{binding}\n");
+            assert!(
+                canonical_fragment(
+                    &source,
+                    mech_syntax::document::SyntaxKind::VariableDefine,
+                    binding,
+                ),
+                "{source}"
+            );
+            assert_eq!(normalize(&source).unwrap(), source);
+            // An unrelated real pipeline forces the document normalization
+            // pass, so its continuation classifier must use the same owners.
+            let program = format!("inc(x<f64>) => <f64> := x + 1.0\nr := 2.0 |1> inc\n{source}");
+            let normalized = normalize(&program).unwrap();
+            assert!(normalized.contains(binding), "{normalized}");
+            assert_eq!(normalized.matches("sequence/iterate").count(), 1);
+            super::super::ParsedSource::parse(&program).unwrap();
+        }
+    }
+
+    #[test]
+    fn unannotated_table_kinds_are_not_unannotated_table_literals() {
+        assert!(canonical_fragment(
+            "value<|a|>\n",
+            mech_syntax::document::SyntaxKind::TableKind,
+            "|a|",
+        ));
+        for binding in ["x := |a|1>limit|", "x := |a|\n|1>limit|"] {
+            assert!(
+                !canonical_fragment(
+                    &format!("limit := 2\n{binding}\n"),
+                    mech_syntax::document::SyntaxKind::VariableDefine,
+                    binding,
+                ),
+                "a table kind must not widen the literal grammar: {binding}"
+            );
+        }
+    }
+
+    #[test]
+    fn arrow_body_table_rows_retain_newlines_instead_of_becoming_pipes() {
+        let source = "F(limit<f64>) => <f64> :=\n  |a<bool>|\n  |1>limit|\n";
+        let normalized = normalize(source).unwrap();
+        assert!(!normalized.contains("sequence/iterate"), "{normalized}");
+        assert!(normalized.contains("|a<bool>|\n|1>limit|"), "{normalized}");
+        super::super::ParsedSource::parse(source).unwrap();
     }
     #[test]
     fn counted_detection_preserves_comprehension_and_match_comparisons() {
