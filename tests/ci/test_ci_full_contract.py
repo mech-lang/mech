@@ -586,7 +586,7 @@ class FullWorkflowContractTests(unittest.TestCase):
             self.assertIn("--features native-build,native-io", step)
             self.assertIn("--test native_host_application", step)
             self.assertIn("--test-threads=1", step)
-        for target in ("native_host_io", "repeated_application"):
+        for target in ("native_host_io", "repeated_application", "native_source_admission"):
             self.assertIn(f"--test {target}", admission)
         self.assertNotIn("--ignored", admission)
         self.assertIn("-- --ignored --exact", linked)
