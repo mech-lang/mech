@@ -1450,7 +1450,12 @@ mod tests {
                 ResidentValueRef::Bool(&input),
                 &ResidentValueMut::Snapshot(&mut output)
             ),
-            Err(ResidentKernelError::InvalidShape)
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::OutputElements,
+                required: 65537,
+                limit: 65536
+            })
         );
         assert!(output[0].is_none());
     }
@@ -1491,7 +1496,12 @@ mod tests {
                 ResidentValueRef::String(&oversized),
                 &ResidentValueMut::Snapshot(&mut output)
             ),
-            Err(ResidentKernelError::InvalidShape)
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::OutputBytes,
+                required: 16777568,
+                limit: 16777216
+            })
         );
         assert!(matches!(
             output[0].as_ref().unwrap().data(),
@@ -1565,7 +1575,12 @@ mod tests {
                 length,
                 target_schema.body(),
             ),
-            Err(ResidentKernelError::InvalidShape)
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::OutputElements,
+                required: 65537,
+                limit: 65536
+            })
         );
         assert!(output[0].is_none());
     }

@@ -6842,9 +6842,13 @@ mod tests {
                 |_| Ok(()),
             ),
             Err(ResidentExecutionError::Kernel {
-                error: ResidentKernelError::InvalidShape,
+                error: ResidentKernelError::ResourceLimit {
+                    phase: mech_core::ResidentResourcePhase::Admission,
+                    dimension: mech_core::MemoryBudgetDimension::TemporaryBytes,
+                    required, limit,
+                },
                 ..
-            })
+            }) if required > limit && limit == mech_core::RESIDENT_MAX_BYTES
         ));
     }
 
@@ -7032,9 +7036,13 @@ mod tests {
         assert!(matches!(
             result,
             Err(ResidentExecutionError::Kernel {
-                error: ResidentKernelError::InvalidShape,
+                error: ResidentKernelError::ResourceLimit {
+                    phase: mech_core::ResidentResourcePhase::Admission,
+                    dimension: mech_core::MemoryBudgetDimension::TemporaryBytes,
+                    required, limit,
+                },
                 ..
-            })
+            }) if required > limit && limit == mech_core::RESIDENT_MAX_BYTES
         ));
     }
 
@@ -7114,9 +7122,13 @@ mod tests {
             matches!(
                 result,
                 Err(ResidentExecutionError::Kernel {
-                    error: ResidentKernelError::InvalidShape,
+                    error: ResidentKernelError::ResourceLimit {
+                        phase: mech_core::ResidentResourcePhase::Admission,
+                        dimension: mech_core::MemoryBudgetDimension::TemporaryBytes,
+                        required, limit,
+                    },
                     ..
-                })
+                }) if required > limit && limit == mech_core::RESIDENT_MAX_BYTES
             ),
             "{result:?}"
         );
@@ -7154,9 +7166,13 @@ mod tests {
         assert!(matches!(
             result,
             Err(ResidentExecutionError::Kernel {
-                error: ResidentKernelError::InvalidShape,
+                error: ResidentKernelError::ResourceLimit {
+                    phase: mech_core::ResidentResourcePhase::Admission,
+                    dimension: mech_core::MemoryBudgetDimension::TemporaryBytes,
+                    required, limit,
+                },
                 ..
-            })
+            }) if required > limit && limit == mech_core::RESIDENT_MAX_BYTES
         ));
     }
 
@@ -7192,9 +7208,13 @@ mod tests {
                 1,
             ),
             Err(ResidentExecutionError::Kernel {
-                error: ResidentKernelError::InvalidShape,
+                error: ResidentKernelError::ResourceLimit {
+                    phase: mech_core::ResidentResourcePhase::Admission,
+                    dimension: mech_core::MemoryBudgetDimension::TemporaryBytes,
+                    required, limit,
+                },
                 ..
-            })
+            }) if required > limit && limit == mech_core::RESIDENT_MAX_BYTES
         ));
     }
 
@@ -7638,7 +7658,12 @@ mod tests {
             )
             .admit_control()
             .map(|permit| permit.into_plan()),
-            Err(ResidentKernelError::InvalidShape)
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::RetainedNodes,
+                required: 65540,
+                limit: 65536
+            })
         );
         assert_eq!(
             match_conversion_peak_retained_nodes(u64::MAX, 1),
@@ -7755,7 +7780,15 @@ mod tests {
                 )
             })
         };
-        assert_eq!(deny(), Err(ResidentKernelError::InvalidShape));
+        assert_eq!(
+            deny(),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComputeWork,
+                required: 132,
+                limit: 131
+            })
+        );
         // A malformed fixed target would also reject. With insufficient work,
         // the metadata permit must still fail before any shape traversal.
         instance.plan.slots[write.slot.get() as usize].activation_fixed_shape = true;
@@ -7855,7 +7888,12 @@ mod tests {
             budget::with_resident_turn_plan(metadata_denial, || {
                 match_conversion_prior_footprint(Some(&output), &instance.plan.schemas)
             }),
-            Err(ResidentKernelError::InvalidShape)
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComputeWork,
+                required: 448,
+                limit: 447
+            })
         );
 
         // The candidate's actual materialization cost already reserves its

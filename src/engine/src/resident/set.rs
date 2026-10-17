@@ -2997,7 +2997,12 @@ mod tests {
                 &Inputs(&cartesian_inputs),
                 ResidentValueMut::Snapshot(&mut cartesian_output),
             ),
-            Err(ResidentKernelError::InvalidShape),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::RetainedNodes,
+                required: 198665,
+                limit: 65536
+            }),
         );
         assert!(cartesian_output[0].is_none());
 
@@ -3212,7 +3217,15 @@ mod tests {
         };
 
         let (result, output) = execute(22_000);
-        assert_eq!(result, Err(ResidentKernelError::InvalidShape),);
+        assert_eq!(
+            result,
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::RetainedNodes,
+                required: 66007,
+                limit: 65536
+            }),
+        );
         assert!(output[0].is_none());
 
         let (result, output) = execute(21_843);
@@ -3227,7 +3240,12 @@ mod tests {
         // populations and must be summed rather than replaced by a maximum.
         assert_eq!(
             admit_set_materialization(2_000, 0, 4_000, 1_024, 48_000, 24_000).unwrap_err(),
-            ResidentKernelError::InvalidShape,
+            ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::RetainedNodes,
+                required: 120000,
+                limit: 65536
+            },
         );
     }
 
@@ -3344,7 +3362,12 @@ mod tests {
 
         assert_eq!(
             kernel.execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output)),
-            Err(ResidentKernelError::InvalidShape),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::RetainedNodes,
+                required: 134416,
+                limit: 65536
+            }),
         );
         assert!(output[0].is_none());
     }
@@ -3413,7 +3436,12 @@ mod tests {
                     &Inputs(&membership_inputs),
                     ResidentValueMut::Bool(&mut output),
                 ),
-                Err(ResidentKernelError::InvalidShape),
+                Err(ResidentKernelError::ResourceLimit {
+                    phase: mech_core::ResidentResourcePhase::Admission,
+                    dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                    required: 16777226,
+                    limit: 65536
+                }),
             );
             assert_eq!(output, [initial]);
         }
@@ -3507,7 +3535,12 @@ mod tests {
         let mut output = [1_u8];
         assert_eq!(
             kernel.execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut output)),
-            Err(ResidentKernelError::InvalidShape),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                required: 65537,
+                limit: 65536
+            }),
         );
         assert_eq!(output, [1]);
     }
@@ -3578,7 +3611,12 @@ mod tests {
 
         assert_eq!(
             kernel.execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output)),
-            Err(ResidentKernelError::InvalidShape),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                required: 65683,
+                limit: 65536
+            }),
         );
         assert!(
             output[0]
@@ -3636,7 +3674,12 @@ mod tests {
         let mut output = [1_u8];
         assert_eq!(
             kernel.execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut output)),
-            Err(ResidentKernelError::InvalidShape),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                required: 65537,
+                limit: 65536
+            }),
         );
         assert_eq!(output, [1]);
     }
@@ -3852,7 +3895,12 @@ mod tests {
                 ]),
                 ResidentValueMut::Bool(&mut output)
             ),
-            Err(ResidentKernelError::InvalidShape)
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                required: 65619,
+                limit: 65536
+            })
         );
         assert_eq!(output, [1]);
         let absent = ["absent".to_owned()];

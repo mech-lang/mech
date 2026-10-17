@@ -832,7 +832,12 @@ mod tests {
                 &Inputs(vec![ResidentValueRef::String(&source)]),
                 ResidentValueMut::String(&mut output),
             ),
-            Err(ResidentKernelError::InvalidShape)
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::OutputBytes,
+                required: 16777241,
+                limit: 16777216
+            })
         );
         assert_eq!(output, ["unchanged"]);
     }
@@ -952,7 +957,12 @@ mod tests {
             super::super::budget::with_resident_turn_plan(denied.clone(), || {
                 kernel.execute(&before_draft, ResidentValueMut::Snapshot(&mut output))
             }),
-            Err(ResidentKernelError::InvalidShape),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                required: 48368,
+                limit: 48367
+            }),
         );
         assert_eq!(before_draft.reads.get(), 1);
         assert!(output[0].is_none());
@@ -1105,7 +1115,12 @@ mod tests {
         assert!(admit_literal_output(65_536, ResidentValueKind::Snapshot).is_ok());
         assert_eq!(
             admit_literal_output(65_537, ResidentValueKind::Snapshot),
-            Err(ResidentKernelError::InvalidShape),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::OutputElements,
+                required: 65537,
+                limit: 65536
+            }),
         );
     }
 
@@ -1241,7 +1256,12 @@ mod tests {
                 &Inputs(vec![ResidentValueRef::Snapshot(&source)]),
                 ResidentValueMut::Snapshot(&mut output),
             ),
-            Err(ResidentKernelError::InvalidShape),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::RetainedNodes,
+                required: 88011,
+                limit: 65536
+            }),
         );
         assert!(
             output[0]

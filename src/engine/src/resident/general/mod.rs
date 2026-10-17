@@ -18909,9 +18909,15 @@ mod shape_fact_tests {
                     let mut instance = match instance {
                         Ok(instance) => instance,
                         Err(ResidentActivationError::ActivationKernelExecution {
-                            error: ResidentKernelError::InvalidShape,
+                            error:
+                                ResidentKernelError::ResourceLimit {
+                                    phase: mech_core::ResidentResourcePhase::Admission,
+                                    required,
+                                    limit,
+                                    ..
+                                },
                             ..
-                        }) if large => {
+                        }) if large && required > limit => {
                             assert!(
                                 folded.is_none(),
                                 "analysis accepted runtime preparation refusal: {case}"

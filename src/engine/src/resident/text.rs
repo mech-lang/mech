@@ -1694,7 +1694,12 @@ mod tests {
         let mut output = ["unchanged".to_owned()];
         assert_eq!(
             kernel.execute(&inputs, ResidentValueMut::String(&mut output)),
-            Err(ResidentKernelError::InvalidShape)
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::OutputBytes,
+                required: 16777241,
+                limit: 16777216
+            })
         );
         assert_eq!(output, ["unchanged"]);
     }
@@ -1713,7 +1718,12 @@ mod tests {
         assert_eq!(
             BoundResidentKernel::new(string_mask_assign, Box::new([]))
                 .execute(&inputs, ResidentValueMut::String(&mut output)),
-            Err(ResidentKernelError::InvalidShape),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::OutputBytes,
+                required: 16777275,
+                limit: 16777216
+            }),
         );
         assert_eq!(output[0].len(), oversized.len());
         assert_eq!(output[1], "old");
@@ -1784,7 +1794,12 @@ mod tests {
             let mut output = [9_u8];
             assert_eq!(
                 kernel.execute(&inputs, ResidentValueMut::Bool(&mut output)),
-                Err(ResidentKernelError::InvalidShape),
+                Err(ResidentKernelError::ResourceLimit {
+                    phase: mech_core::ResidentResourcePhase::Admission,
+                    dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                    required: 65537,
+                    limit: 65536
+                }),
             );
             assert_eq!(output, [9]);
         }

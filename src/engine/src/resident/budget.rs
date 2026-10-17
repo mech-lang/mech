@@ -2254,7 +2254,12 @@ mod tests {
                     .admit_control()
                 })
             }),
-            Err(ResidentKernelError::InvalidShape)
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::OutputBytes,
+                required: 24,
+                limit: 23,
+            })
         ));
     }
 
@@ -2345,7 +2350,12 @@ mod tests {
             }
             .admit()
             .unwrap_err(),
-            ResidentKernelError::InvalidShape
+            ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ClonedBytes,
+                required: 16777217,
+                limit: 16777216
+            }
         );
         assert_eq!(
             checked_product(&[usize::MAX, 2]),
@@ -2389,7 +2399,12 @@ mod tests {
             )
             .admit()
             .unwrap_err(),
-            ResidentKernelError::InvalidShape
+            ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::TemporaryBytes,
+                required: 16777217,
+                limit: 16777216
+            }
         );
         assert_eq!(
             PreparedKernel::new(
@@ -2415,7 +2430,12 @@ mod tests {
             .unwrap();
         assert_eq!(
             meter.charge_comparison_work(1),
-            Err(ResidentKernelError::InvalidShape),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                required: 65537,
+                limit: 65536
+            }),
         );
         assert_eq!(
             meter.estimate().comparison_work(),
@@ -2493,7 +2513,12 @@ mod tests {
             .unwrap()
             .admit()
             .unwrap_err(),
-            ResidentKernelError::InvalidShape,
+            ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::RetainedNodes,
+                required: 65537,
+                limit: 65536
+            },
         );
         assert_eq!(
             PreparedMutationPlan::new(
