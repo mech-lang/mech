@@ -27,6 +27,7 @@ pub(in crate::resident::general) struct PlanPatternSource {
     key: SchemaKey,
     body: Arc<SchemaBody>,
     borrowed_body: bool,
+    max_projection_steps: u64,
     metadata_bytes: u64,
     max_shape_parameters: usize,
 }
@@ -98,11 +99,13 @@ impl PlanPatternSource {
                     .ok()?
                     .checked_mul(core::mem::size_of::<u64>() as u64)?,
             )?;
+        let projection_steps = borrowed_plan_pattern_projection_steps(entry.schema().body());
         Some(Self {
             schema,
             key: entry.key(),
             body: Arc::new(entry.schema().body().clone()),
-            borrowed_body: borrowed_plan_pattern_body_supported(entry.schema().body()),
+            borrowed_body: projection_steps.is_some(),
+            max_projection_steps: projection_steps.unwrap_or(0),
             metadata_bytes,
             max_shape_parameters,
         })
@@ -137,7 +140,7 @@ impl PlanPatternSource {
     }
 }
 
-fn borrowed_plan_pattern_body_supported(body: &SchemaBody) -> bool {
+fn borrowed_plan_pattern_projection_steps(body: &SchemaBody) -> Option<u64> {
     match body {
         SchemaBody::Bool
         | SchemaBody::UnsignedInteger(_)
@@ -148,14 +151,17 @@ fn borrowed_plan_pattern_body_supported(body: &SchemaBody) -> bool {
         | SchemaBody::String
         | SchemaBody::Id
         | SchemaBody::Index
-        | SchemaBody::Atom(_) => true,
-        SchemaBody::Option(child) => borrowed_plan_pattern_body_supported(child),
-        SchemaBody::Tuple(children) => children.iter().all(borrowed_plan_pattern_body_supported),
-        SchemaBody::Enum { variants, .. } => variants.iter().all(|variant| {
-            variant
-                .payload
-                .as_ref()
-                .is_none_or(borrowed_plan_pattern_body_supported)
+        | SchemaBody::Atom(_) => Some(0),
+        SchemaBody::Option(child) => borrowed_plan_pattern_projection_steps(child)?.checked_add(1),
+        SchemaBody::Tuple(children) => children.iter().try_fold(0, |depth, child| {
+            Some(depth.max(borrowed_plan_pattern_projection_steps(child)?.checked_add(1)?))
+        }),
+        SchemaBody::Enum { variants, .. } => variants.iter().try_fold(0, |depth, variant| {
+            let child = match variant.payload.as_ref() {
+                Some(body) => borrowed_plan_pattern_projection_steps(body)?.checked_add(1)?,
+                None => 0,
+            };
+            Some(depth.max(child))
         }),
         SchemaBody::Dynamic
         | SchemaBody::ReifiedType
@@ -164,7 +170,7 @@ fn borrowed_plan_pattern_body_supported(body: &SchemaBody) -> bool {
         | SchemaBody::Matrix { .. }
         | SchemaBody::Table { .. }
         | SchemaBody::Set { .. }
-        | SchemaBody::Map { .. } => false,
+        | SchemaBody::Map { .. } => None,
     }
 }
 
@@ -713,7 +719,7 @@ pub(in crate::resident::general) enum PatternItem {
         body: Arc<SchemaBody>,
         shape_values: Arc<[u64]>,
         value: Value,
-        path: Arc<[CanonicalPatternStep]>,
+        path: CanonicalPatternPath,
     },
     Component {
         schema: Option<SchemaId>,
@@ -740,6 +746,35 @@ pub(in crate::resident::general) enum CanonicalPatternStep {
     // Keep checked member ordinals compact instead of carrying host-pointer
     // padding through every copied borrowed projection path.
     Child(u32),
+}
+
+#[derive(Clone, Debug)]
+pub(in crate::resident::general) enum CanonicalPatternPath {
+    Inline {
+        len: u8,
+        steps: [CanonicalPatternStep; 2],
+    },
+    Shared(Arc<[CanonicalPatternStep]>),
+}
+
+impl Default for CanonicalPatternPath {
+    fn default() -> Self {
+        Self::Inline {
+            len: 0,
+            steps: [CanonicalPatternStep::OptionPayload; 2],
+        }
+    }
+}
+
+impl core::ops::Deref for CanonicalPatternPath {
+    type Target = [CanonicalPatternStep];
+
+    fn deref(&self) -> &Self::Target {
+        match self {
+            Self::Inline { len, steps } => &steps[..usize::from(*len)],
+            Self::Shared(steps) => steps,
+        }
+    }
 }
 
 fn canonical_pattern_projection<'a>(
@@ -777,24 +812,37 @@ fn canonical_pattern_projection<'a>(
 fn canonical_child_path(
     path: &[CanonicalPatternStep],
     steps: &[CanonicalPatternStep],
-) -> Arc<[CanonicalPatternStep]> {
+) -> CanonicalPatternPath {
+    let len = path.len() + steps.len();
+    if len <= 2 {
+        let mut inline = [CanonicalPatternStep::OptionPayload; 2];
+        inline[..path.len()].copy_from_slice(path);
+        inline[path.len()..len].copy_from_slice(steps);
+        return CanonicalPatternPath::Inline {
+            len: len as u8,
+            steps: inline,
+        };
+    }
     // Exact capacity avoids reallocation while extending the immutable view.
     // Admission covers both this temporary vector and the final Arc.
-    let mut child = Vec::with_capacity(path.len() + steps.len());
+    let mut child = Vec::with_capacity(len);
     child.extend_from_slice(path);
     child.extend_from_slice(steps);
-    Arc::from(child)
+    CanonicalPatternPath::Shared(Arc::from(child))
 }
 
-fn canonical_projection_path_bytes(depth: u64) -> Result<u64, ResidentKernelError> {
-    // One enum visit can also unwrap an Option. Fund both path buffers, Arc
-    // headers and allocator overhead, independently of shared schema evidence.
-    depth
-        .checked_mul(4)
+fn canonical_projection_path_bytes(steps: u64) -> Result<u64, ResidentKernelError> {
+    let inline = core::mem::size_of::<CanonicalPatternPath>() as u64;
+    if steps <= 2 {
+        return Ok(inline);
+    }
+    // Deeper paths additionally own the exact-capacity Vec and final Arc.
+    steps
+        .checked_mul(2)
         .and_then(|entries| {
             entries.checked_mul(core::mem::size_of::<CanonicalPatternStep>() as u64)
         })
-        .and_then(|bytes| bytes.checked_add(2 * core::mem::size_of::<usize>() as u64 + 32))
+        .and_then(|bytes| bytes.checked_add(2 * core::mem::size_of::<usize>() as u64 + 32 + inline))
         .ok_or(ResidentKernelError::InvalidShape)
 }
 
@@ -2065,7 +2113,7 @@ impl PatternItem {
             body,
             shape_values: Arc::from(value.shape().parameter_values()),
             value: value.clone(),
-            path: Arc::from([]),
+            path: CanonicalPatternPath::default(),
         }
     }
 
@@ -4316,7 +4364,18 @@ fn prepare_pattern_item_materialization_with_source(
         .checked_add(draft_expansion.bytes)
         .ok_or(ResidentKernelError::InvalidShape)?;
     let projection_path_bytes = if borrowed_plan_item {
-        canonical_projection_path_bytes(clone_multiplicity.max(1))?
+        // The immutable activation certificate bounds actual schema/data
+        // descent, including Option unwraps; pattern depth bounds active work.
+        let steps = planned_source
+            .ok_or(ResidentKernelError::InvalidInput)?
+            .max_projection_steps
+            .min(
+                clone_multiplicity
+                    .max(1)
+                    .checked_mul(2)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+            );
+        canonical_projection_path_bytes(steps)?
     } else {
         0
     };
@@ -8172,6 +8231,46 @@ mod tests {
     }
 
     #[test]
+    fn canonical_projection_paths_inline_shallow_steps_and_fund_deeper_storage() {
+        let first = canonical_child_path(&[], &[CanonicalPatternStep::EnumPayload]);
+        assert!(matches!(
+            &first,
+            CanonicalPatternPath::Inline { len: 1, .. }
+        ));
+        let second = canonical_child_path(&first, &[CanonicalPatternStep::Child(511)]);
+        assert!(matches!(
+            &second,
+            CanonicalPatternPath::Inline { len: 2, .. }
+        ));
+        assert_eq!(
+            canonical_projection_path_bytes(2).unwrap(),
+            core::mem::size_of::<CanonicalPatternPath>() as u64
+        );
+        let deep = canonical_child_path(&second, &[CanonicalPatternStep::EnumPayload]);
+        let CanonicalPatternPath::Shared(steps) = &deep else {
+            panic!("funded deep storage")
+        };
+        assert_eq!(
+            steps.as_ref(),
+            &[
+                CanonicalPatternStep::EnumPayload,
+                CanonicalPatternStep::Child(511),
+                CanonicalPatternStep::EnumPayload
+            ]
+        );
+        let CanonicalPatternPath::Shared(cloned) = deep.clone() else {
+            panic!("shared path")
+        };
+        assert!(Arc::ptr_eq(steps, &cloned));
+        assert!(
+            canonical_projection_path_bytes(3).unwrap()
+                >= (2 * 3 * core::mem::size_of::<CanonicalPatternStep>()
+                    + core::mem::size_of::<CanonicalPatternPath>()
+                    + 2 * core::mem::size_of::<usize>()) as u64
+        );
+    }
+
+    #[test]
     fn enum_projections_share_wide_schema_and_fund_every_attempt() {
         let mut schemas = SchemaTableBuilder::new();
         let schema = schemas
@@ -8216,6 +8315,7 @@ mod tests {
         .unwrap();
         let (plan, projections) = structural_projection_schema_context(&built.table).unwrap();
         let source = PlanPatternSource::new(schema, &plan, &projections).unwrap();
+        assert_eq!(source.max_projection_steps, 2);
         let storage = [Some(value)];
         let item = resident_pattern_item_from_plan(
             ResidentValueRef::Snapshot(&storage),
@@ -8247,6 +8347,7 @@ mod tests {
             else {
                 panic!("shared projection")
             };
+            assert!(matches!(path, CanonicalPatternPath::Inline { len: 1, .. }));
             assert!(Arc::ptr_eq(root, body));
             let (SchemaBody::Tuple(actual), _) =
                 canonical_pattern_projection(body, value, path).unwrap()
@@ -8261,6 +8362,7 @@ mod tests {
             else {
                 panic!("shared child")
             };
+            assert!(matches!(path, CanonicalPatternPath::Inline { len: 2, .. }));
             assert!(Arc::ptr_eq(root, body));
             assert!(matches!(
                 canonical_pattern_projection(body, value, path).unwrap(),
