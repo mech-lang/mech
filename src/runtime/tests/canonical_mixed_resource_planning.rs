@@ -96,9 +96,9 @@ fn canonical_mixed_sample_shapes_survive_bytecode() {
             RuntimeHostInputValue::F64(7.25)
         } else {
             RuntimeHostInputValue::F64Matrix {
-                rows: dimensions[0],
-                columns: dimensions[1],
-                values: (0..dimensions.iter().product::<usize>())
+                rows: usize::try_from(dimensions[0]).unwrap(),
+                columns: usize::try_from(dimensions[1]).unwrap(),
+                values: (0..dimensions.iter().product::<u64>())
                     .map(|index| index as f64 + 0.25)
                     .collect(),
             }
