@@ -40,7 +40,8 @@ fsm-state-definition-variables	"(x<u8>)"	node:FsmStateDefinitionVariables	syntax
 fsm-statement-transition	"->+> x"	node:FsmStatementTransition	syntax-only	docs/design/specification.mec::fsm-statement-transition
 fsm-transition	"42 ->{}"	node:FsmTransition	syntax-only	docs/design/specification.mec::fsm-transition
 function-arg	"x<u8>"	node:FunctionArg	syntax-only	docs/design/specification.mec::function-arg
-function-define	"x()=><u8> |1 + 2"	node:FunctionDefine	syntax-only	docs/design/specification.mec::function-define
+function-define	"x()=><u8>:=1"	node:FunctionDefine	syntax-only	docs/design/specification.mec::function-define
+function-define-expression	"=><u8>:=1"	node:FunctionDefineExpression	syntax-only	docs/design/specification.mec::function-define-expression
 function-define-match-arms	"=><u8> |1 + 2"	node:FunctionDefineMatchArms	syntax-only	docs/design/specification.mec::function-define-match-arms
 function-define-statements	"=out<u8>:=value:=1."	node:FunctionDefineStatements	syntax-only	docs/design/specification.mec::function-define-statements
 function-match-arm	"|1 + 2"	node:FunctionMatchArm	syntax-only	docs/design/specification.mec::function-match-arm

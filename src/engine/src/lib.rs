@@ -23,6 +23,8 @@ pub mod intrinsics;
 pub mod memory_planner;
 #[cfg(any(feature = "semantic-compiler", feature = "resident-artifact"))]
 pub mod memory_runtime;
+#[cfg(feature = "native-artifact")]
+pub mod native_artifact;
 #[cfg(feature = "native-sequence")]
 pub mod native_sequence;
 pub mod numeric_optimizations;
@@ -34,6 +36,11 @@ mod resident;
 pub mod resident;
 #[cfg(feature = "resident-artifact")]
 mod resident_value_adapter;
+#[cfg(any(
+    feature = "resident-artifact",
+    all(feature = "semantic-compiler", feature = "access")
+))]
+mod text_index;
 #[cfg(feature = "resident-ekf")]
 #[doc(hidden)]
 pub mod __resident_ekf {
@@ -117,8 +124,21 @@ pub mod __mech_native {
     pub use crate::intrinsics::horzcat::__mech_native::*;
     #[cfg(all(feature = "convert", feature = "semantic-compiler"))]
     pub use crate::intrinsics::kind_conversion::install_runtime_kind_conversion;
+    #[cfg(feature = "map_ops")]
+    pub use crate::intrinsics::map_ops::{
+        install_map_histogram, install_map_keys, install_map_values,
+    };
+    #[cfg(feature = "pure_text")]
+    pub use crate::intrinsics::pure_text::{
+        install_number_format_matrix, install_number_format_scalar, install_parse_u64,
+        install_sequence_length,
+    };
+    #[cfg(feature = "sequence_sort")]
+    pub use crate::intrinsics::sequence_sort::install_sequence_sort_indices;
     #[cfg(feature = "table")]
     pub use crate::intrinsics::table_ops::__mech_native::*;
+    #[cfg(feature = "pure_text")]
+    pub use crate::intrinsics::text_ops::{install_text_join, install_text_lines};
     #[cfg(feature = "matrix_vertcat")]
     pub use crate::intrinsics::vertcat::__mech_native::*;
 }

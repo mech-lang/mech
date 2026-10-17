@@ -2390,7 +2390,32 @@ now the normative corrected grammar. The original extraction contained 540
 productions. Deliberate post-extraction language corrections are recorded in
 `docs/design/grammar-audit/corrections.tsv`.
 
-The current canonical inventory contains 539 productions. The notation is
+Bracketed application counts
+----------------------------
+
+`seed |[counts]> step` evaluates the seed and count expression once, then
+applies the pure unary callback to individual scalar elements. A single count
+broadcasts; otherwise the actual count matrix shape must equal the seed matrix
+shape. Results retain the seed shape and element positions. A scalar seed
+requires one count. Empty matrices retain their geometry and invoke no callback.
+
+For example, `[10 20 30] |[1 3 2]> increment` produces `[11 23 32]` when
+`increment` adds one. `|[n * 2]>` uses ordinary expression typing. Counts must
+be finite, nonnegative whole numbers below 2^64; integer values are checked
+without conversion through floating point. Use an explicit `u64` suffix for
+large integer counts; unsuffixed numbers retain normal Mech number typing.
+Fractional or out-of-range counts
+are rejected, not rounded or truncated. Zero counts preserve their input but
+still require a valid callback and captures. Any lane failure aborts the whole
+publication. Current scheduling is serial in canonical element order; syntax
+does not promise parallel scheduling. Effectful callbacks are not admitted.
+
+The existing `|N>` shorthand retains whole-value iteration, including callbacks
+that take a matrix as one carrier. `|>` remains ordinary unary application.
+Bracketed counts are canonical resident control; canonical native lowering of
+iteration remains separate work.
+
+The current canonical inventory contains 543 productions. The notation is
 defined in section 12; descriptive primitive terms name implementation-level
 operations that are not expressible by the grammar meta-parser itself.
 
@@ -2667,9 +2692,9 @@ false-literal := english-false-literal
 
 number := complex-number
         | real-number ;
-complex-number := untyped-real-number, ("i" | "j")
+complex-number := untyped-real-number, ("i" | "j"), ¬(alphanumeric | emoji)
                 | untyped-real-number, (plus | dash),
-                  untyped-real-number, ("i" | "j") ;
+                  untyped-real-number, ("i" | "j"), ¬(alphanumeric | emoji) ;
 real-number := ?dash,
                (hexadecimal-literal
               | decimal-literal
@@ -2746,12 +2771,15 @@ kind-tuple := left-parenthesis, [list-separator, kind],
               right-parenthesis ;
 kind-scalar := identifier, ?(colon, range-expression) ;
 
-expression := fsm-pipe
-            | set-comprehension
-            | matrix-comprehension
-            | range-expression
-            | formula,
+expression := application-expression,
               ?(whitespace0, question, whitespace0, +match-arm, ?period) ;
+application-expression := (fsm-pipe
+                        | set-comprehension
+                        | matrix-comprehension
+                        | range-expression
+                        | formula), *application-stage ;
+application-stage := whitespace0, application-operator, whitespace0, identifier ;
+application-operator := bar, (*digit-token | matrix), right-angle ;
 formula := l1 ;
 l1 := l2, *(logic-operator, l2) ;
 l2 := l3, *(comparison-operator, l3) ;
@@ -2764,13 +2792,14 @@ factor := (parenthetical-term
          | negate-factor
          | not-factor
          | matrix-comprehension
+         | set-comprehension
          | structure
          | function-call
          | literal
          | slice
          | var),
          ?transpose ;
-parenthetical-term := left-parenthesis, space-tab0, formula,
+parenthetical-term := left-parenthesis, space-tab0, expression,
                       space-tab0, right-parenthesis ;
 negate-factor := dash, factor ;
 not-factor := not, factor ;
@@ -2871,13 +2900,13 @@ not-element-of := ws0e, "∉", ws0e ;
 symmetric-difference := ws1e, "Δ", ws1e ;
 
 set-comprehension := left-brace, space-tab0, expression, space-tab0,
-                     bar, space-tab0,
+                     bar, whitespace0,
                      [list-separator, comprehension-qualifier],
-                     space-tab0, right-brace ;
-matrix-comprehension := left-bracket, space-tab0, expression, space-tab0,
-                        bar, space-tab0,
+                     whitespace0, right-brace ;
+matrix-comprehension := left-bracket, whitespace0, expression, whitespace0,
+                        bar, whitespace0,
                         [list-separator, comprehension-qualifier],
-                        space-tab0, right-bracket ;
+                        whitespace0, right-bracket ;
 comprehension-qualifier := generator
                          | variable-define
                          | expression ;
@@ -3016,8 +3045,8 @@ subscript := +(swizzle-subscript
              | dot-subscript-int
              | bracket-subscript
              | brace-subscript) ;
-slice := prefixed-context-path, subscript
-       | identifier, subscript ;
+slice := (prefixed-context-path | identifier | function-call | parenthetical-term),
+         subscript ;
 slice-ref := prefixed-context-path, ?subscript
            | identifier, ?subscript ;
 swizzle-subscript := period, identifier, comma,
@@ -3209,10 +3238,14 @@ module-import := whitespace0, import-sigil, space-tab0,
 function-define := identifier, left-parenthesis,
                    ?[list-separator, function-arg],
                    right-parenthesis, whitespace0,
-                   (function-define-match-arms
+                   (function-define-expression
+                  | function-define-match-arms
                   | function-define-statements) ;
+function-define-expression :=
+  output-operator, whitespace0, kind-annotation,
+  define-operator, expression, ?period ;
 function-define-statements :=
-  equal, whitespace0,
+  (output-operator | equal), whitespace0,
   (function-out-args | function-out-arg),
   define-operator,
   [(whitespace1 | statement-separator), statement],
@@ -3257,11 +3290,11 @@ fsm-arm := (fsm-guard-arm | fsm-transition | fsm-comment-arm),
 fsm-guard-arm := pattern, +fsm-guard ;
 fsm-comment-arm := comment ;
 fsm-guard := guard-operator, pattern,
-             +(fsm-statement-transition
+             +(fsm-block-transition
+             | fsm-statement-transition
              | fsm-state-transition
              | fsm-output
-             | fsm-async-transition
-             | fsm-block-transition) ;
+             | fsm-async-transition) ;
 fsm-transition := pattern,
                   +(fsm-block-transition
                   | fsm-statement-transition

@@ -1,0 +1,258 @@
+{
+  "schema": "mech.validation.canonical-native-i64.v1",
+  "status": "JIT_OBJECT_AND_LINKED_EXECUTION_PASSED",
+  "source_parent": "4b4a450935438e8ececa0603d42391badcf358b0",
+  "source_files": {
+    "hosts/gpu/Cargo.toml": "9faa45b59de0e61faa8e6349b28487731519cc98391899dfb6d88bdd20b7f747",
+    "hosts/gpu/src/native_artifact/abi.rs": "e38f013848713dc78dd73893eb6cd6970fed32b07d49417125e3531ef6880744",
+    "hosts/gpu/src/native_artifact/application.rs": "fb263879eb4a4c5c1e133357deb7a918215a6ed7f9ca1294a05ae2d36806430e",
+    "hosts/gpu/src/native_artifact/compiler.rs": "849bef87826a4886ced74bb5abb5157d0717e27792960e617411e78aacbd4c2a",
+    "hosts/gpu/src/native_artifact/identity.rs": "5a92fe23fd754d38abfed5e38e63e6cd6f8b90654b294464ffe67233ecca5b1d",
+    "hosts/gpu/src/native_artifact/runtime.rs": "454aa83b9ca816abd1905f942138752bb6c87aca5fa2f881661c10d6b6c2cd29",
+    "hosts/gpu/src/native_artifact/templates/linked_main.rs.in": "0b93f2e3793990c79d2eab4ccd267c4b4ccde0feb7384c5a3603bd2cc27912c4",
+    "hosts/gpu/tests/canonical_artifact_application.rs": "02b64d8b0b83a0f506d6ff0b3ae8f704f8e49a107822b01d87db73f66566efa7",
+    "hosts/gpu/tests/canonical_artifact_native.rs": "54bb7f4d80a30d12db0a59c8677dba498d56e08a71c8a85a981ec9ec3555c205",
+    "src/engine/Cargo.toml": "dca80aa8ffdef465c114680179c04f574bac42b22a5aa2eb393a1d7aee9fbe26",
+    "src/engine/src/native_artifact/ir.rs": "7c036fda158ddc7e23325061cc8d875efdc9ba82a7426d9553a1b32d79e0d6e0",
+    "src/engine/src/resident/general/mod.rs": "0aa2e7206a470e5ce095800793fbc8b4d6979dcbb102dfac6596371a5f334049",
+    "src/engine/src/resident/general/native_lowering.rs": "7e536c3ca16a4617959da3da3bfbf50736eaf0328cdd5c54fc3c9c2f6dfe5866",
+    "src/engine/src/resident/native_semantics.rs": "d1665deb944407e8ff6abb5f545bb311b648f5723a8d5cacdf2f510fe6e58c43",
+    "src/engine/src/resident/numeric/mod.rs": "c012355d814aa9c066d1b504c81432ce78ad4a175fd28d07f4cf9813298bcd49",
+    "src/stdlib/Cargo.toml": "27bb4475cae7c1529a156b99f7f9dfa686982bb1863bdb6d0e459a97be2073ae",
+    "hosts/gpu/tests/canonical_artifact_i64.rs": "7a56bdb5674d971cbe5e87bac1a94ef35ac359b580e52afe025bc1d0b3e2071d",
+    "src/stdlib/tests/native_artifact_i64_lowering.rs": "e8490e205c971f6a969fd4ee86c132d0e3a117146990a8fc8956ad0453066f33"
+  },
+  "target": {
+    "machine": "arm64",
+    "os": "Darwin",
+    "pointer_width": 64,
+    "endianness": "little"
+  },
+  "scope": [
+    "Checked native i64 add, subtract, multiply, divide, remainder, negate and six signed comparisons.",
+    "Exact actual selected binder/request/private witness; public names and claimed work policy cannot certify replacements.",
+    "Real NativeHost Signed64 storage and exact two-complement eight-byte transport.",
+    "Shared Cranelift JIT/Object emitter; integer overflow and zero/MIN-minus-one division/remainder guards precede machine arithmetic.",
+    "Ordered checked nodes, exact origin/denial ordering, staged atomic outputs and recovery after failure.",
+    "Runtime-only feature build; explicit typed identity version2 appends signed kind/value tag3 and op tags18..29. C ABI1 and work policy1 unchanged."
+  ],
+  "checks": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "mech-engine",
+        "--no-default-features",
+        "--features",
+        "full_compiler,resident-artifact,native-artifact",
+        "--lib",
+        "--offline",
+        "--locked",
+        "--target-dir",
+        "/private/tmp/mech-build-cache",
+        "--",
+        "--test-threads=1",
+        "--nocapture",
+        "resident::native_semantics::tests"
+      ],
+      "source_commit": "4b4a450935438e8ececa0603d42391badcf358b0",
+      "started_utc": "2026-10-16T19:19:09.927502+00:00",
+      "finished_utc": "2026-10-16T19:19:54.576031+00:00",
+      "exit_code": 0,
+      "test_results": [
+        "test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 698 filtered out; finished in 0.02s"
+      ],
+      "sources_unchanged_during_run": true,
+      "serial_preflight": true,
+      "benchmark_measurements": 0,
+      "log_sha256": "41cf699daefc179430d4d6bd32c328e1c743954afab17bbd51eb71dfa55692ef"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "mech-stdlib",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "mech-stdlib/full_compiler,mech-stdlib/native-artifact,mech-gpu/canonical-native",
+        "--test",
+        "native_artifact_i64_lowering",
+        "--test",
+        "native_artifact_lowering",
+        "--test",
+        "native_artifact_output_initializers",
+        "--test",
+        "canonical_artifact_native",
+        "--test",
+        "canonical_artifact_i64",
+        "--offline",
+        "--locked",
+        "--target-dir",
+        "/private/tmp/mech-build-cache",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "source_commit": "4b4a450935438e8ececa0603d42391badcf358b0",
+      "started_utc": "2026-10-16T19:36:03.704819+00:00",
+      "finished_utc": "2026-10-16T19:42:26.888004+00:00",
+      "exit_code": 0,
+      "test_results": [
+        "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.67s",
+        "test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.60s",
+        "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.21s",
+        "test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.13s",
+        "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.19s"
+      ],
+      "sources_unchanged_during_run": true,
+      "serial_preflight": true,
+      "benchmark_measurements": 0,
+      "log_sha256": "0071a37d891190c82adb2de5599acef4946f6e968d14c4df15554fba7a25518a"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native",
+        "--lib",
+        "--offline",
+        "--locked",
+        "--target-dir",
+        "/private/tmp/mech-build-cache",
+        "--",
+        "--test-threads=1",
+        "--nocapture",
+        "native_artifact::"
+      ],
+      "source_commit": "4b4a450935438e8ececa0603d42391badcf358b0",
+      "started_utc": "2026-10-16T19:43:47.460407+00:00",
+      "finished_utc": "2026-10-16T19:44:06.776369+00:00",
+      "exit_code": 0,
+      "test_results": [
+        "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 35 filtered out; finished in 5.00s"
+      ],
+      "sources_unchanged_during_run": true,
+      "serial_preflight": true,
+      "benchmark_measurements": 0,
+      "log_sha256": "5021ac641efd24ed9afef775941b7e6d30d0c71fc8f04234dab27e994e5962af"
+    },
+    {
+      "command": [
+        "cargo",
+        "check",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-runtime",
+        "--lib",
+        "--offline",
+        "--locked",
+        "--target-dir",
+        "/private/tmp/mech-build-cache"
+      ],
+      "source_commit": "4b4a450935438e8ececa0603d42391badcf358b0",
+      "started_utc": "2026-10-16T19:46:10.649898+00:00",
+      "finished_utc": "2026-10-16T19:46:18.808132+00:00",
+      "exit_code": 0,
+      "test_results": [],
+      "sources_unchanged_during_run": true,
+      "serial_preflight": true,
+      "benchmark_measurements": 0,
+      "log_sha256": "2e2b362d2a62108212ae1366f0333635896b592dea79800ea0cbf8d9d58bc178"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "mech-syntax",
+        "--no-default-features",
+        "--features",
+        "full",
+        "--lib",
+        "--offline",
+        "--locked",
+        "--target-dir",
+        "/private/tmp/mech-build-cache",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "source_commit": "099e17b7b76e27c1426d4fa546eec66d03203f02",
+      "started_utc": "2026-10-16T19:50:40.009326+00:00",
+      "finished_utc": "2026-10-16T20:00:31.065441+00:00",
+      "exit_code": 0,
+      "test_results": [
+        "test result: ok. 507 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 590.76s"
+      ],
+      "sources_unchanged_during_run": true,
+      "serial_preflight": true,
+      "benchmark_measurements": 0,
+      "log_sha256": "70c5f0b426f2f887aefe2ce06bb44bfc885a3c75c743580373ee1f3919e47008"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native",
+        "--test",
+        "canonical_artifact_application",
+        "--offline",
+        "--locked",
+        "--target-dir",
+        "/private/tmp/mech-build-cache",
+        "--",
+        "--exact",
+        "--ignored",
+        "--test-threads=1",
+        "--nocapture",
+        "linked_canonical_artifact_scalar_applications_are_typed_bounded_and_atomic"
+      ],
+      "source_commit": "099e17b7b76e27c1426d4fa546eec66d03203f02",
+      "started_utc": "2026-10-16T20:01:20.068358+00:00",
+      "finished_utc": "2026-10-16T20:02:40.866936+00:00",
+      "exit_code": 0,
+      "test_results": [
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 65.59s"
+      ],
+      "sources_unchanged_during_run": true,
+      "serial_preflight": true,
+      "benchmark_measurements": 0,
+      "log_sha256": "b46868be92d1941cf22c258f02dfb38f5b182150602d9076ca2609e9a483845d"
+    }
+  ],
+  "evidence_limits": [
+    "Combined run has27 test methods across five exact integration targets. Private engine semantics6 methods and native private ABI/identity4 methods are separate checks.",
+    "Object-emission metadata remains explicitly unlinked and unexecuted for that phase. Separate clean-source linked qualification builds and executes three actual binaries in35 fresh processes, with complete stream/error comparison and runtime-only compiled-unit reconciliation.",
+    "The original and decoded resident reference helpers map ActivatedInput.artifact_slot to artifact inputs; the actual resident SlotIndex is still passed to input installation.",
+    "Only stateless Turn-only Bool/U64/I64 scalar graphs are supported. Computed Activation, state, Match, Iteration, F64, collections and resources remain outside this native subset.",
+    "No full benchmark admission or secured/trusted same-binary timing equivalence is established."
+  ],
+  "failed_predecessor": "native-i64-metadata-v1 exposed the typed-i64 literal parser gap; original native fixture inputs retained.",
+  "benchmark_measurements": 0,
+  "remaining": [
+    "Full canonical native scalar/control/matrix/collection/resource support, ten idiomatic workloads, secured/trusted same-binary lifecycle and serial Mech-only measurements remain pending."
+  ],
+  "qualified_source_commit": "099e17b7b76e27c1426d4fa546eec66d03203f02",
+  "linked_execution": {
+    "receipt": "canonical-native-i64-linked-v1.json",
+    "sha256": "ab3b3a64b27e6c2889e34666fcca1dbbddd52f27822254adb2a9a6f98539e9be",
+    "executables": 3,
+    "fresh_process_launches": 35,
+    "independently_reconciled_saved_pins": 79,
+    "actual_compiled_units_exclude_parser_and_codegen": true
+  }
+}

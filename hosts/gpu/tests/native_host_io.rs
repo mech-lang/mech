@@ -15,6 +15,7 @@ use std::{
 #[derive(Debug, Default)]
 struct State {
     reads: usize,
+    stdin_reads: usize,
     output: String,
     write_attempts: usize,
     fail_writes: bool,
@@ -24,6 +25,11 @@ struct State {
 struct Backend(Arc<Mutex<State>>);
 
 impl CliBackend for Backend {
+    fn stdin_text(&self) -> MResult<String> {
+        self.0.lock().unwrap().stdin_reads += 1;
+        Ok("héllo e\u{301} 👋\n\nlast\r\n".into())
+    }
+
     fn env_var(&self, _: &str) -> MResult<Option<String>> {
         Ok(None)
     }
@@ -78,6 +84,87 @@ fn grants() -> Vec<NativeIoGrant> {
 }
 
 const SOURCE: &str = "+> @args := cli/args\n+> @out := cli/stdout\nstep(x<u64>) => <u64> := x + 3\nn := number/parse-u64(@args/1)\nr := n |19> step\n@out/line <- \"result: \" + number/format(r, 0) + \" \" + @args/2\n";
+
+fn stdin_grants() -> Vec<NativeIoGrant> {
+    vec![
+        NativeIoGrant {
+            target: "cli/stdin".into(),
+            operations: vec!["read".into()],
+            paths: vec!["text".into()],
+        },
+        NativeIoGrant {
+            target: "cli/stdout".into(),
+            operations: vec!["write".into()],
+            paths: vec!["text".into()],
+        },
+    ]
+}
+
+#[test]
+fn stdin_snapshot_is_shared_by_secure_trusted_jit_and_resident_routes() {
+    let source = "+> @in := cli/stdin\n+> @out := cli/stdout\na := @in/text\nb := @in/text\n@out/text <- a + \"|\" + b\n";
+    let program = compile(source, 256).unwrap();
+    let requirements = program.resource_requirements().unwrap();
+    for resident in [false, true] {
+        for trusted in [false, true] {
+            let backend = Backend::default();
+            let policy = if trusted {
+                NativeIoPolicy::Trusted
+            } else {
+                NativeIoPolicy::Secure {
+                    grants: stdin_grants(),
+                }
+            };
+            let host = CliHostIo::activate(&requirements, policy, backend.clone()).unwrap();
+            assert_eq!(backend.0.lock().unwrap().stdin_reads, 0);
+            let mut context = Context::activated(&program.constants, Box::new(host)).unwrap();
+            if resident {
+                context.run_resident(&program).unwrap();
+            } else {
+                JitProgram::compile(&program, 256, true)
+                    .unwrap()
+                    .run(&mut context)
+                    .unwrap();
+            }
+            let state = backend.0.lock().unwrap();
+            assert_eq!(state.stdin_reads, 1);
+            assert_eq!(state.reads, 0);
+            let text = "héllo e\u{301} 👋\n\nlast\r\n";
+            assert_eq!(state.output, format!("{text}|{text}"));
+        }
+    }
+    for grants in [
+        Vec::new(),
+        vec![stdin_grants()[1].clone()],
+        vec![
+            NativeIoGrant {
+                paths: vec!["line".into()],
+                ..stdin_grants()[0].clone()
+            },
+            stdin_grants()[1].clone(),
+        ],
+        vec![
+            NativeIoGrant {
+                operations: vec!["write".into()],
+                ..stdin_grants()[0].clone()
+            },
+            stdin_grants()[1].clone(),
+        ],
+    ] {
+        let backend = Backend::default();
+        assert!(
+            CliHostIo::activate(
+                &requirements,
+                NativeIoPolicy::Secure { grants },
+                backend.clone()
+            )
+            .is_err()
+        );
+        let state = backend.0.lock().unwrap();
+        assert_eq!(state.stdin_reads, 0);
+        assert!(state.output.is_empty());
+    }
+}
 
 #[test]
 fn one_native_program_has_equal_secure_and_trusted_outputs() {

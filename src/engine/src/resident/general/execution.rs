@@ -2,6 +2,8 @@
 
 #[path = "comprehension_execution.rs"]
 pub(super) mod comprehension_execution;
+#[path = "iteration_execution.rs"]
+mod iteration_execution;
 
 pub(super) use comprehension_execution::StructuralProjectionTable;
 
@@ -28,9 +30,10 @@ use core::sync::atomic::Ordering;
 use mech_core::snapshot::ValueFootprint;
 use mech_core::{
     ApplicationRequirementId, CellSlotId, ChangeDetectionPolicy, ExternalInteraction,
-    InstanceEpoch, IntegrityConstraintId, MResult, MechError, MechErrorKind, NodeId,
-    OutputConstruction, ProgramRevision, ReactiveInstanceId, ResidentKernelError,
-    ResidentKernelInputs, ResidentValueKind, ResidentValueMut, ResidentValueRef, SlotIndex, Value,
+    InstanceEpoch, IntegrityConstraintId, MResult, MechError, MechErrorKind, MemoryBudgetViolation,
+    MemoryPlanError, NodeId, OutputConstruction, ProgramRevision, ReactiveInstanceId,
+    ResidentKernelError, ResidentKernelInputs, ResidentValueKind, ResidentValueMut,
+    ResidentValueRef, SlotIndex, Value,
 };
 
 use super::{
@@ -42,12 +45,135 @@ use super::{
     output_materialization_depends_on_match,
 };
 
+struct ProjectionStatePublication {
+    buffer: usize,
+    epochs: [Option<InstanceEpoch>; 2],
+    initializer: ResidentRegion,
+}
+
+fn literal_string_text<'a>(
+    value: ResidentValueRef<'a>,
+    schema: mech_core::SchemaKey,
+) -> Option<&'a str> {
+    match value {
+        ResidentValueRef::String([text]) => Some(text),
+        ResidentValueRef::Snapshot([Some(value)]) if value.schema_key() == schema => {
+            match value.data() {
+                mech_core::ValueData::String(text) => Some(text),
+                _ => None,
+            }
+        }
+        _ => None,
+    }
+}
+
+fn string_literal_matches(left: &str, right: &str) -> Result<bool, ResidentKernelError> {
+    // String equality first checks byte lengths. Unequal lengths need no
+    // payload traversal; equal lengths compare raw UTF-8 with no normalization.
+    // Charge only this attempted arm before its first byte comparison. Later
+    // arms and their guards/bodies remain lazy under the same control budget.
+    let bytes = if left.len() == right.len() {
+        left.len().max(1)
+    } else {
+        1
+    };
+    let comparison = budget::checked_u64(bytes)?;
+    budget::PreparedKernel::new(
+        (),
+        budget::resident_cost! {
+            comparison_work: comparison,
+            compute_work: comparison.checked_add(4).ok_or(ResidentKernelError::InvalidShape)?,
+            ..budget::KernelCostEstimate::default()
+        },
+    )
+    .admit_control()?
+    .into_plan();
+    Ok(left.as_bytes() == right.as_bytes())
+}
+
+fn control_step_is_exact_tail_yield(
+    block: &super::ActivatedControlBlock,
+    ordinal: usize,
+    step: &ActivatedTurnStep,
+) -> bool {
+    if ordinal.checked_add(1) != Some(block.steps.len()) {
+        return false;
+    }
+    let write = match step {
+        ActivatedTurnStep::Recur(call) => call.write,
+        ActivatedTurnStep::Match(matched) => matched.write,
+        _ => return false,
+    };
+    let read = match write.storage {
+        ResidentStorageClass::Constant => ResidentReadLocation::Constant(write.region),
+        ResidentStorageClass::Input => ResidentReadLocation::Input(write.region),
+        ResidentStorageClass::State => ResidentReadLocation::State {
+            slot: write.slot,
+            region: write.region,
+        },
+        ResidentStorageClass::Scratch => ResidentReadLocation::Scratch(write.region),
+    };
+    block.yield_identity
+        == Some(super::ControlYieldIdentity {
+            slot: write.slot,
+            storage: write.storage,
+        })
+        && block.yield_value == read
+}
+
+// One state copy is prepared while its source locals and the previous carrier
+// are still live. This estimate uses the existing control admission authority;
+// it is not an independent physical-allocation reservation.
+fn tail_jump_cost(
+    live: (u64, u64),
+    source: (u64, u64),
+    carrier: (u64, u64),
+    measurement_work: u64,
+) -> Result<budget::KernelCostEstimate, ResidentKernelError> {
+    // Recur's control-step exclusions remove its argument local because
+    // ordinary child calls account for their own inputs. Keep that borrowed
+    // source alive in this copy's estimate as well as the new owned carrier.
+    // Counting an already-retained immutable input twice is conservative; it
+    // never permits an unaccounted source/copy overlap.
+    Ok(budget::resident_cost! {
+        compute_work: measurement_work.checked_add(carrier.0)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        temporary_bytes: live.0.checked_add(source.0)
+            .and_then(|bytes| bytes.checked_add(carrier.0))
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        cloned_bytes: carrier.0,
+        retained_nodes: live.1.checked_add(source.1)
+            .and_then(|nodes| nodes.checked_add(carrier.1))
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        ..budget::KernelCostEstimate::default()
+    })
+}
+
 // This is a host-stack safety ceiling, not the language's recursion budget.
 // Every call is independently admitted through the cumulative resident work
 // and frame-memory budget below. Keeping the emergency ceiling modest ensures
 // an adversarial call cannot reach the Rust stack limit before admission can
 // report a recoverable turn failure.
 const MAX_RESIDENT_RECURSION_DEPTH: usize = 24;
+
+// Only a final selected value may forward this context. It is execution-local:
+// no artifact role, operation spelling or caller-provided flag proves tailness.
+#[derive(Clone, Copy)]
+struct TailContext {
+    target: ActivatedNodeIndex,
+}
+
+struct OwnedTailJump {
+    argument_location: ResidentReadLocation,
+    argument: super::OwnedResidentValue,
+    bytes: u64,
+    nodes: u64,
+}
+
+enum MatchOutcome {
+    Complete(bool),
+    TailJump(OwnedTailJump),
+}
 
 #[derive(Clone, Copy, Debug)]
 pub struct CapturedSignalInput<'a> {
@@ -147,7 +273,19 @@ pub enum ResidentExecutionError {
     MemoryRuntime {
         error: mech_core::MemoryRuntimeError,
     },
+    MemoryPlan {
+        node: NodeId,
+        error: MemoryPlanError,
+    },
+    ResourceAdmission {
+        node: NodeId,
+        violation: MemoryBudgetViolation,
+    },
     ActiveCandidate,
+    ArtifactRevisionMismatch {
+        expected: ProgramRevision,
+        actual: ProgramRevision,
+    },
     EpochExhausted,
     InputCount {
         expected: usize,
@@ -173,6 +311,9 @@ pub enum ResidentExecutionError {
         node: NodeId,
     },
     InvalidOutputMaterialization {
+        slot: CellSlotId,
+    },
+    InvalidProjectionState {
         slot: CellSlotId,
     },
     ExternalSummaryRequired,
@@ -421,9 +562,14 @@ impl ReactiveInstance {
         live_nodes: u64,
         execute: impl FnOnce(&mut Self) -> Result<T, ResidentExecutionError>,
     ) -> Result<T, ResidentExecutionError> {
+        let _index_owner = super::super::text_index::OwnerGuard::enter(
+            self._managed_memory.domain().id(),
+            self.memory_budget(),
+        );
         let index = node_index.get() as usize;
         if live_bytes == 0
             && live_nodes == 0
+            && !super::super::text_index::has_index_scope()
             && let Some(cached) = self.workspace.fixed_turn_plans[index].clone()
         {
             // Reuse the certified base plan, not a materialization permit.
@@ -537,18 +683,20 @@ impl ReactiveInstance {
             node.memory_node,
             &facts,
         )
-        .map_err(|_| ResidentExecutionError::Kernel {
+        .map_err(|error| ResidentExecutionError::Kernel {
             node: artifact_node,
-            error: ResidentKernelError::InvalidShape,
+            error: budget::memory_plan_kernel_error(error),
         })?;
-        if !turn_plan.budget_violations.is_empty() {
+        if let Some(violation) = turn_plan.budget_violations.first() {
             return Err(ResidentExecutionError::Kernel {
                 node: artifact_node,
-                error: ResidentKernelError::InvalidShape,
+                error: budget::resource_budget_error(violation),
             });
         }
-        let cacheable =
-            live_bytes == 0 && live_nodes == 0 && super::live::has_invariant_memory_facts(call);
+        let cacheable = live_bytes == 0
+            && live_nodes == 0
+            && !super::super::text_index::has_index_scope()
+            && super::live::has_invariant_memory_facts(call);
         let has_canonical_input = inputs
             .iter()
             .any(|input| input.kind() == ResidentValueKind::Snapshot);
@@ -615,7 +763,133 @@ impl ReactiveInstance {
         artifact: &crate::ProgramArtifact,
         targets: &std::collections::BTreeSet<CellSlotId>,
     ) -> Result<(), ResidentExecutionError> {
-        if targets.is_empty() {
+        self.refresh_output_projections_with_inputs(artifact, targets, &[])
+    }
+
+    /// Refresh a replacement's projections from its accepted input snapshot,
+    /// without observing providers or executing another state transition.
+    /// Inputs may be partial: unrelated, never-observed sources are not invented.
+    pub fn refresh_output_projections_with_inputs(
+        &mut self,
+        artifact: &crate::ProgramArtifact,
+        targets: &std::collections::BTreeSet<CellSlotId>,
+        inputs: &[CapturedValueInput<'_>],
+    ) -> Result<(), ResidentExecutionError> {
+        self.refresh_replacement_projections(artifact, targets, inputs, &Default::default())
+    }
+
+    /// Refresh an isolated replacement after migration, preserving the ordered
+    /// initial publication of states that belong to the candidate, not the old
+    /// runtime. Prefix computations read those states' admitted initializers;
+    /// final writer results and state outputs still use their actual publication.
+    /// The inactive, already planned state buffers supply the temporary read
+    /// view. No arena is cloned, no state transition or host observation runs,
+    /// and every published state/epoch is restored on both success and failure.
+    pub fn refresh_replacement_projections(
+        &mut self,
+        artifact: &crate::ProgramArtifact,
+        targets: &std::collections::BTreeSet<CellSlotId>,
+        inputs: &[CapturedValueInput<'_>],
+        candidate_owned_states: &std::collections::BTreeSet<CellSlotId>,
+    ) -> Result<(), ResidentExecutionError> {
+        let mut publications = std::collections::BTreeMap::new();
+        if candidate_owned_states.is_empty()
+            || (targets.is_empty()
+                && (self.plan.constraints.is_empty()
+                    || self.plan.integrity_mode == ResidentIntegrityMode::Unchecked))
+        {
+            return self.refresh_output_projections_inner(artifact, targets, inputs, &publications);
+        }
+        if self.candidate_active {
+            return Err(ResidentExecutionError::ActiveCandidate);
+        }
+        if artifact.revision() != self.plan.program_revision {
+            return Err(ResidentExecutionError::ArtifactRevisionMismatch {
+                expected: self.plan.program_revision,
+                actual: artifact.revision(),
+            });
+        }
+        let epoch = self.published_epoch();
+        // Validate the complete read view before touching either buffer.
+        for &slot in candidate_owned_states {
+            let invalid = || ResidentExecutionError::InvalidProjectionState { slot };
+            let declaration = artifact
+                .slots()
+                .get(slot.get() as usize)
+                .ok_or_else(invalid)?;
+            let resolved = self
+                .plan
+                .slots
+                .get(slot.get() as usize)
+                .ok_or_else(invalid)?;
+            if declaration.role != SlotRole::State
+                || resolved.storage != ResidentStorageClass::State
+            {
+                return Err(invalid());
+            }
+            let initializer = match declaration.initializer {
+                Some(crate::InitializerReference::Constant(constant)) => *self
+                    .plan
+                    .constant_regions
+                    .get(constant.get() as usize)
+                    .ok_or_else(invalid)?,
+                Some(crate::InitializerReference::Activation(source)) => {
+                    let source = self
+                        .plan
+                        .slots
+                        .get(source.get() as usize)
+                        .ok_or_else(invalid)?;
+                    if source.storage != ResidentStorageClass::Constant {
+                        return Err(invalid());
+                    }
+                    source.region
+                }
+                None => return Err(invalid()),
+            };
+            publications.insert(
+                slot,
+                ProjectionStatePublication {
+                    buffer: self.state.published_buffer(slot, epoch),
+                    epochs: self.state.version(slot).epochs,
+                    initializer,
+                },
+            );
+        }
+        let result = (|| {
+            for (&slot, publication) in &publications {
+                let initial = 1 - publication.buffer;
+                let region = self.state.version(slot).region;
+                self.state.buffers[initial]
+                    .copy_region_from(region, &self.activation, publication.initializer)
+                    .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                let mut epochs = [None, None];
+                epochs[initial] = Some(epoch);
+                self.state.version_mut(slot).epochs = epochs;
+            }
+            self.refresh_output_projections_inner(artifact, targets, inputs, &publications)
+        })();
+        for (&slot, publication) in &publications {
+            let mut epochs = publication.epochs;
+            // The inactive buffer was scratch for this refresh, not a retained
+            // historical publication. Keep the actual published buffer/tag.
+            epochs[1 - publication.buffer] = None;
+            self.state.version_mut(slot).epochs = epochs;
+        }
+        self.refresh_f64_state_arenas(epoch);
+        result
+    }
+
+    fn refresh_output_projections_inner(
+        &mut self,
+        artifact: &crate::ProgramArtifact,
+        targets: &std::collections::BTreeSet<CellSlotId>,
+        inputs: &[CapturedValueInput<'_>],
+        publications: &std::collections::BTreeMap<CellSlotId, ProjectionStatePublication>,
+    ) -> Result<(), ResidentExecutionError> {
+        if targets.is_empty()
+            && (self.plan.constraints.is_empty()
+                || self.plan.integrity_mode == ResidentIntegrityMode::Unchecked)
+        {
             return Ok(());
         }
         if self.candidate_active {
@@ -638,11 +912,48 @@ impl ReactiveInstance {
         }
 
         if artifact.revision() != self.plan.program_revision {
-            return Err(ResidentExecutionError::InvalidOutputMaterialization {
-                slot: *targets.first().expect("nonempty targets checked"),
+            return Err(ResidentExecutionError::ArtifactRevisionMismatch {
+                expected: self.plan.program_revision,
+                actual: artifact.revision(),
             });
         }
+        fn source_available(
+            artifact: &crate::ProgramArtifact,
+            plan: &super::ActivatedPlan,
+            supplied_inputs: &std::collections::BTreeSet<CellSlotId>,
+            unavailable_nodes: &std::collections::BTreeSet<NodeId>,
+            source: crate::ArtifactSource,
+        ) -> bool {
+            let source = super::forwarded_output_source(artifact, source)
+                .expect("the activated artifact has validated output aliases");
+            let crate::ArtifactSource::Slot(slot) = source else {
+                return true;
+            };
+            let declaration = &artifact.slots()[slot.get() as usize];
+            match plan.slots[slot.get() as usize].storage {
+                ResidentStorageClass::Input => supplied_inputs.contains(&slot),
+                ResidentStorageClass::Scratch => {
+                    !matches!(declaration.producer, crate::ProducerReference::NodeOutput { node, .. }
+                        if unavailable_nodes.contains(&node))
+                }
+                ResidentStorageClass::State | ResidentStorageClass::Constant => true,
+            }
+        }
+        let supplied_inputs = self
+            .plan
+            .inputs
+            .iter()
+            .filter(|declared| inputs.iter().any(|input| input.slot == declared.slot))
+            .map(|input| input.artifact_slot)
+            .collect::<std::collections::BTreeSet<_>>();
+        self.install_available_value_inputs(inputs)?;
         let epoch = self.published_epoch();
+        let published_buffer = |state: &StateArena, slot| {
+            publications.get(&slot).map_or_else(
+                || state.published_buffer(slot, epoch),
+                |publication| publication.buffer,
+            )
+        };
         // A canonical state writer copies its final candidate into the retained
         // cell. During projection refresh that candidate means the published
         // state value: recomputing it would execute the transition a second time.
@@ -685,13 +996,25 @@ impl ReactiveInstance {
             {
                 continue;
             }
+            if matches!(
+                artifact.nodes()[producer.get() as usize].body,
+                crate::ExecutableNodeBody::Activation(_)
+            ) || self.plan.steps.iter().any(|step| {
+                matches!(step, ActivatedTurnStep::Match(control)
+                    if control.artifact_node == producer && control.continuation)
+            }) {
+                // An initialized state cell does not prove that an activation
+                // was triggered or an FSM published its first result. Only
+                // its own ready output below can establish that snapshot.
+                continue;
+            }
             if let Some(previous) = published_candidates.insert(producer, state.slot) {
                 let previous_region = self.plan.slots[previous.get() as usize].region;
                 let region = self.plan.slots[state.slot.get() as usize].region;
                 if !rmw_outputs_equal(
-                    &self.state.buffers[self.state.published_buffer(previous, epoch)],
+                    &self.state.buffers[published_buffer(&self.state, previous)],
                     previous_region,
-                    &self.state.buffers[self.state.published_buffer(state.slot, epoch)],
+                    &self.state.buffers[published_buffer(&self.state, state.slot)],
                     region,
                     &self.plan.schemas,
                 ) {
@@ -701,41 +1024,196 @@ impl ReactiveInstance {
                 }
             }
         }
+        // Compatible outputs are authoritative snapshots too. A newly added
+        // projection may read an existing control result, including an FSM
+        // publication. Restore that result from its migrated output instead
+        // of rerunning the producer against activation defaults or advancing
+        // the FSM. Unpublished outputs cannot supply a snapshot.
+        for materialization in &self.plan.output_materializations {
+            if targets.contains(&materialization.target) {
+                continue;
+            }
+            let output_slot = self.plan.slots[materialization.target.get() as usize].physical_index;
+            if !self
+                .plan
+                .outputs
+                .iter()
+                .zip(&self.output_ready)
+                .any(|(output, ready)| output.slot == output_slot && *ready)
+            {
+                continue;
+            }
+            if !matches!(materialization.source, ResidentReadLocation::Scratch(_)) {
+                continue;
+            }
+            let Some(producer) = materialization.producer else {
+                continue;
+            };
+            let node = self.plan.steps[producer.get() as usize].artifact_node();
+            published_candidates
+                .entry(node)
+                .or_insert(materialization.target);
+        }
+        // Refresh only the dependency closure of the requested projections.
+        // Other outputs have already migrated from the published epoch. In
+        // particular, unrelated kernels must not consume absent transient host
+        // observations or execute unused work merely because they share a plan.
+        let mut required = std::collections::BTreeSet::new();
+        let mut pending = targets
+            .iter()
+            .filter_map(
+                |target| match artifact.slots()[target.get() as usize].producer {
+                    crate::ProducerReference::Output { source, .. } => Some(source),
+                    _ => None,
+                },
+            )
+            .collect::<Vec<_>>();
+        if self.plan.integrity_mode == ResidentIntegrityMode::Checked {
+            // Static/document compilation need not expose invariant predicates
+            // as query outputs. They still belong to the candidate snapshot and
+            // must be refreshed even if all public outputs were migrated.
+            pending.extend(
+                artifact
+                    .constraints()
+                    .iter()
+                    .flat_map(|constraint| constraint.inputs.iter().copied()),
+            );
+        }
+        while let Some(source) = pending.pop() {
+            let source = super::forwarded_output_source(artifact, source)
+                .expect("the activated artifact has validated output aliases");
+            let crate::ArtifactSource::Slot(slot) = source else {
+                continue;
+            };
+            if self.plan.slots[slot.get() as usize].storage != ResidentStorageClass::Scratch {
+                continue;
+            }
+            let crate::ProducerReference::NodeOutput { node, .. } =
+                artifact.slots()[slot.get() as usize].producer
+            else {
+                continue;
+            };
+            if !required.insert(node) || published_candidates.contains_key(&node) {
+                continue;
+            }
+            let declaration = &artifact.nodes()[node.get() as usize];
+            for binding in &artifact.bindings()
+                [declaration.input_bindings.start as usize..declaration.input_bindings.end as usize]
+            {
+                if let crate::BindingDeclaration::Input { source, .. } = binding {
+                    pending.push(*source);
+                }
+            }
+        }
         self.refresh_f64_state_arenas(epoch);
         let execution_order = self.plan.execution_node_order.to_vec();
         let mut probe = ResidentStructuralProbe::default();
+        let mut unavailable_nodes = std::collections::BTreeSet::new();
         for node_index in execution_order {
-            let execute = matches!(
-                &self.plan.steps[node_index.get() as usize],
-                ActivatedTurnStep::Kernel(node)
-                    if node.write.storage == ResidentStorageClass::Scratch
-            );
-            if execute {
-                let ActivatedTurnStep::Kernel(node) = &self.plan.steps[node_index.get() as usize]
-                else {
-                    unreachable!("projection refresh selects only kernels");
-                };
-                if let Some(source) = published_candidates.get(&node.artifact_node) {
+            let step = &self.plan.steps[node_index.get() as usize];
+            let node = step.artifact_node();
+            if !required.contains(&node) {
+                continue;
+            }
+            if !published_candidates.contains_key(&node) {
+                let declaration = &artifact.nodes()[node.get() as usize];
+                let missing_input = artifact.bindings()
+                    [declaration.input_bindings.start as usize..declaration.input_bindings.end as usize]
+                    .iter()
+                    .any(|binding| {
+                        matches!(binding, crate::BindingDeclaration::Input { source, .. }
+                            if !source_available(artifact, &self.plan, &supplied_inputs, &unavailable_nodes, *source))
+                    });
+                if missing_input
+                    || self.step_depends_on_unpublished_continuation(node_index.get() as usize)
+                {
+                    unavailable_nodes.insert(node);
+                    continue;
+                }
+            }
+            let continuation = matches!(step, ActivatedTurnStep::Match(node) if node.continuation);
+            let write = match step {
+                ActivatedTurnStep::Kernel(node) => node.write,
+                ActivatedTurnStep::Iteration(node) => node.write,
+                ActivatedTurnStep::Comprehension(node) => node.write,
+                ActivatedTurnStep::Match(node)
+                    if (!node.continuation
+                        && !matches!(
+                            artifact.nodes()[node.artifact_node.get() as usize].body,
+                            crate::ExecutableNodeBody::Activation(_)
+                        ))
+                        || published_candidates.contains_key(&node.artifact_node) =>
+                {
+                    node.write
+                }
+                // Activation scopes, continuations, and effects belong to
+                // ordinary turns. Refresh can only reuse their prior result.
+                ActivatedTurnStep::Match(_)
+                | ActivatedTurnStep::Recur(_)
+                | ActivatedTurnStep::Suspend(_)
+                | ActivatedTurnStep::Publish(_)
+                | ActivatedTurnStep::External(_) => {
+                    unavailable_nodes.insert(node);
+                    continue;
+                }
+            };
+            if write.storage == ResidentStorageClass::Scratch {
+                if let Some(source) = published_candidates.get(&node) {
                     let source_region = self.plan.slots[source.get() as usize].region;
-                    let source_buffer = self.state.published_buffer(*source, epoch);
+                    let source_buffer = published_buffer(&self.state, *source);
                     self.workspace
                         .scratch
                         .copy_region_from(
-                            node.write.region,
+                            write.region,
                             &self.state.buffers[source_buffer],
                             source_region,
                         )
                         .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                    if continuation {
+                        // The accepted materialization proves this result is
+                        // readable, without constructing or resuming an FSM.
+                        set_bit(&mut self.published_continuations, node_index.get() as usize);
+                        set_bit(
+                            &mut self.workspace.initialized_output_bits,
+                            node_index.get() as usize,
+                        );
+                    }
                 } else {
-                    self.execute_kernel(node_index, epoch, epoch, &mut probe)?;
+                    self.execute_step_with_live_demand(node_index, epoch, epoch, &mut probe, 0, 0)?;
                 }
             }
         }
 
         let materializations = self.plan.output_materializations.to_vec();
+        let mut refreshed = std::collections::BTreeSet::new();
         let staged = (|| {
             for materialization in &materializations {
                 if !targets.contains(&materialization.target) {
+                    continue;
+                }
+                let crate::ProducerReference::Output { source, .. } =
+                    artifact.slots()[materialization.target.get() as usize].producer
+                else {
+                    unreachable!("projection target was validated")
+                };
+                if !source_available(
+                    artifact,
+                    &self.plan,
+                    &supplied_inputs,
+                    &unavailable_nodes,
+                    source,
+                ) {
+                    continue;
+                }
+                let unpublished = self.plan.steps.iter().enumerate().any(|(index, step)| {
+                    self.unpublished_continuation(index)
+                        && matches!(step, ActivatedTurnStep::Match(control)
+                        if !published_candidates.contains_key(&control.artifact_node)
+                            && output_materialization_depends_on_match(
+                                &self.plan, *materialization, index, control.write.region,
+                            ))
+                });
+                if unpublished {
                     continue;
                 }
                 let target = materialization.target;
@@ -772,26 +1250,58 @@ impl ReactiveInstance {
                     ResidentReadLocation::State {
                         slot: source_slot,
                         region: source_region,
-                    } => self.state.stage_projection_from_state_slot(
-                        target,
-                        target_region,
-                        source_slot,
-                        source_region,
-                        epoch,
-                    ),
+                    } => {
+                        let source_buffer = published_buffer(&self.state, source_slot);
+                        self.state.stage_projection_from_state_buffer(
+                            target,
+                            target_region,
+                            source_buffer,
+                            source_region,
+                            epoch,
+                        )
+                    }
                 }
                 .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                refreshed.insert(target);
             }
-            self.validate_constraints_with_projection_candidates(epoch, Some(targets))
+            let unavailable_constraints = artifact
+                .constraints()
+                .iter()
+                .filter(|constraint| {
+                    constraint.inputs.iter().any(|source| {
+                        !source_available(
+                            artifact,
+                            &self.plan,
+                            &supplied_inputs,
+                            &unavailable_nodes,
+                            *source,
+                        )
+                    })
+                })
+                .map(|constraint| constraint.constraint)
+                .collect::<std::collections::BTreeSet<_>>();
+            self.validate_constraints_with_projection_candidates(
+                epoch,
+                Some(&refreshed),
+                Some(&unavailable_constraints),
+            )
         })();
         staged?;
         for materialization in &materializations {
             let target = materialization.target;
-            if targets.contains(&target) {
+            if refreshed.contains(&target) {
                 let candidate = self.state.candidate_buffer(target, epoch);
                 let mut epochs = [None, None];
                 epochs[candidate] = Some(epoch);
                 self.state.version_mut(target).epochs = epochs;
+            }
+            if targets.contains(&target) {
+                let physical = self.plan.slots[target.get() as usize].physical_index;
+                for (output, ready) in self.plan.outputs.iter().zip(self.output_ready.iter_mut()) {
+                    if output.slot == physical {
+                        *ready = refreshed.contains(&target);
+                    }
+                }
             }
         }
         Ok(())
@@ -1110,7 +1620,8 @@ impl ReactiveInstance {
                 | ActivatedTurnStep::Recur(_)
                 | ActivatedTurnStep::Suspend(_)
                 | ActivatedTurnStep::Publish(_)
-                | ActivatedTurnStep::Comprehension(_) => None,
+                | ActivatedTurnStep::Comprehension(_)
+                | ActivatedTurnStep::Iteration(_) => None,
             })
             .filter(|(_, node)| {
                 node.write.storage == ResidentStorageClass::State
@@ -1176,6 +1687,7 @@ impl ReactiveInstance {
                     (region, None)
                 }
                 ActivatedTurnStep::Comprehension(node) => (Some(node.write.region), None),
+                ActivatedTurnStep::Iteration(node) => (Some(node.write.region), None),
             };
             if let Some(region) = scratch {
                 self.workspace.scratch.discard_payload_write(region);
@@ -1322,6 +1834,13 @@ impl ReactiveInstance {
                 actual: inputs.len(),
             });
         }
+        self.install_available_value_inputs(inputs)
+    }
+
+    fn install_available_value_inputs(
+        &mut self,
+        inputs: &[CapturedValueInput<'_>],
+    ) -> Result<(), ResidentExecutionError> {
         for (ordinal, input) in inputs.iter().enumerate() {
             let Some(declared) = self
                 .plan
@@ -1334,12 +1853,55 @@ impl ReactiveInstance {
             if inputs[..ordinal].iter().any(|seen| seen.slot == input.slot) {
                 return Err(ResidentExecutionError::DuplicateInput { slot: input.slot });
             }
+            let invalid = || ResidentExecutionError::InputLayout { slot: input.slot };
+            let resolved = self
+                .plan
+                .slots
+                .get(declared.artifact_slot.get() as usize)
+                .filter(|resolved| {
+                    resolved.artifact_id == declared.artifact_slot
+                        && resolved.physical_index == declared.slot
+                        && resolved.storage == ResidentStorageClass::Input
+                        && resolved.schema == declared.schema
+                        && resolved.schema_key == declared.schema_key
+                        && resolved.shape == declared.shape
+                        && resolved.region == declared.region
+                })
+                .ok_or_else(invalid)?;
             if input.value.schema() != declared.schema
                 || input.value.schema_key() != declared.schema_key
-                || input.value.shape() != &declared.shape
             {
-                return Err(ResidentExecutionError::InputLayout { slot: input.slot });
+                return Err(invalid());
             }
+            // A finalized Value already owns its validated shape and payload.
+            // Bind its exact schema identity to this plan before consulting
+            // lifetimes; no data reconstruction or placeholder is required.
+            let schema = input
+                .value
+                .validate_against(&self.plan.schemas)
+                .map_err(|_| invalid())?;
+            if input.value.shape() != &resolved.shape
+                && !(resolved.region.kind == ResidentValueKind::Snapshot
+                    && !resolved.activation_fixed_shape
+                    && mech_core::shape_change_allowed(
+                        schema,
+                        &resolved.shape,
+                        input.value.shape(),
+                    ))
+            {
+                return Err(invalid());
+            }
+        }
+        // Validate the complete batch before changing any input backing. The
+        // existing writer then admits each actual payload before retaining or
+        // copying it, including managed-memory failures.
+        for input in inputs {
+            let declared = self
+                .plan
+                .inputs
+                .iter()
+                .find(|declared| declared.slot == input.slot)
+                .ok_or(ResidentExecutionError::UnknownInput { slot: input.slot })?;
             crate::resident_value_adapter::write_value(
                 &mut self.workspace.input,
                 declared.region,
@@ -1884,18 +2446,24 @@ impl ReactiveInstance {
         &self,
         working_epoch: InstanceEpoch,
     ) -> Result<(), ResidentExecutionError> {
-        self.validate_constraints_with_projection_candidates(working_epoch, None)
+        self.validate_constraints_with_projection_candidates(working_epoch, None, None)
     }
 
     fn validate_constraints_with_projection_candidates(
         &self,
         working_epoch: InstanceEpoch,
         staged_outputs: Option<&std::collections::BTreeSet<CellSlotId>>,
+        unavailable_constraints: Option<&std::collections::BTreeSet<IntegrityConstraintId>>,
     ) -> Result<(), ResidentExecutionError> {
         if self.plan.integrity_mode == ResidentIntegrityMode::Unchecked {
             return Ok(());
         }
         for constraint in &self.plan.constraints {
+            if unavailable_constraints
+                .is_some_and(|unavailable| unavailable.contains(&constraint.artifact_id))
+            {
+                continue;
+            }
             if constraint.producer.is_some_and(|producer| {
                 bit_is_set(
                     &self.workspace.suppressed_activation_bits,
@@ -2044,7 +2612,7 @@ impl ReactiveInstance {
                 scratch: &self.workspace.scratch,
                 epoch: working_epoch,
             };
-            node.kernel.execute(&inputs, output)
+            super::super::text_index::execute(node, &inputs, output, &self.plan.reads)
         } else {
             let output = self.state.buffers[candidate].write(node.write.region);
             if let Some(tape) = &self.plan.f64_read_tape {
@@ -2056,7 +2624,7 @@ impl ReactiveInstance {
                         &self.workspace.scratch.f64s,
                     ],
                 };
-                node.kernel.execute(&inputs, output)
+                super::super::text_index::execute(node, &inputs, output, &self.plan.reads)
             } else {
                 let inputs = StateNodeInputsWithoutState {
                     locations: &self.plan.reads[node.reads.start as usize..node.reads.end as usize],
@@ -2065,7 +2633,7 @@ impl ReactiveInstance {
                     captures: &self.workspace.continuation_capture_frames,
                     scratch: &self.workspace.scratch,
                 };
-                node.kernel.execute(&inputs, output)
+                super::super::text_index::execute(node, &inputs, output, &self.plan.reads)
             }
         }
         .map_err(|error| ResidentExecutionError::Kernel {
@@ -2106,32 +2674,44 @@ impl ReactiveInstance {
     fn live_continuation_footprint(
         &self,
         meter: &mut budget::ResidentBudgetMeter,
-    ) -> Option<(u64, u64)> {
+    ) -> Result<(u64, u64), ResidentKernelError> {
         fn account(
             value: &super::OwnedResidentValue,
             schemas: &mech_core::SchemaTable,
             meter: &mut budget::ResidentBudgetMeter,
             bytes: &mut u64,
             nodes: &mut u64,
-        ) -> Option<()> {
+        ) -> Result<(), ResidentKernelError> {
             let footprint = resident_frame_value_footprint(value.as_ref(), schemas, meter)?;
-            *bytes = bytes.checked_add(footprint.0)?;
-            *nodes = nodes.checked_add(footprint.1)?;
-            Some(())
+            *bytes = bytes
+                .checked_add(footprint.0)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            *nodes = nodes
+                .checked_add(footprint.1)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            Ok(())
         }
         let mut bytes = 0_u64;
         let mut nodes = 0_u64;
         for continuation in self.continuations.iter().flatten() {
             let footprint =
                 resident_continuation_footprint(continuation, &self.plan.schemas, meter)?;
-            bytes = bytes.checked_add(footprint.0)?;
-            nodes = nodes.checked_add(footprint.1)?;
+            bytes = bytes
+                .checked_add(footprint.0)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            nodes = nodes
+                .checked_add(footprint.1)
+                .ok_or(ResidentKernelError::InvalidShape)?;
         }
         for continuation in self.workspace.continuation_candidates.iter().flatten() {
             let footprint =
                 resident_continuation_footprint(continuation, &self.plan.schemas, meter)?;
-            bytes = bytes.checked_add(footprint.0)?;
-            nodes = nodes.checked_add(footprint.1)?;
+            bytes = bytes
+                .checked_add(footprint.0)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            nodes = nodes
+                .checked_add(footprint.1)
+                .ok_or(ResidentKernelError::InvalidShape)?;
         }
         if let Some(state) = self.workspace.active_resume_state.as_ref() {
             account(state, &self.plan.schemas, meter, &mut bytes, &mut nodes)?;
@@ -2141,7 +2721,7 @@ impl ReactiveInstance {
                 account(value, &self.plan.schemas, meter, &mut bytes, &mut nodes)?;
             }
         }
-        Some((bytes, nodes))
+        Ok((bytes, nodes))
     }
 
     pub(super) fn execute_step_with_live_demand(
@@ -2153,6 +2733,10 @@ impl ReactiveInstance {
         live_bytes: u64,
         live_nodes: u64,
     ) -> Result<bool, ResidentExecutionError> {
+        let _index_owner = super::super::text_index::OwnerGuard::enter(
+            self._managed_memory.domain().id(),
+            self.memory_budget(),
+        );
         if self.step_depends_on_unpublished_continuation(node_index.get() as usize) {
             // A dirty root can also be downstream of a suspended FSM through
             // another live input. Do not let any such kernel consume the
@@ -2164,6 +2748,19 @@ impl ReactiveInstance {
             ActivatedTurnStep::Kernel(_)
         ) {
             budget::charge_planning_step()?;
+        }
+        if matches!(
+            self.plan.steps[node_index.get() as usize],
+            ActivatedTurnStep::Iteration(_)
+        ) {
+            return self.execute_iteration_with_live_demand(
+                node_index,
+                before_epoch,
+                working_epoch,
+                probe,
+                live_bytes,
+                live_nodes,
+            );
         }
         if matches!(
             self.plan.steps[node_index.get() as usize],
@@ -2185,147 +2782,26 @@ impl ReactiveInstance {
             self.plan.steps[node_index.get() as usize],
             ActivatedTurnStep::Match(_)
         ) {
-            let ActivatedTurnStep::Match(matched) = &self.plan.steps[node_index.get() as usize]
-            else {
-                unreachable!()
-            };
-            if matched.continuation
-                && self.continuations[node_index.get() as usize].is_none()
-                && !self.ready_continuations.is_empty()
-                && bit_is_set(
-                    &self.completed_continuation_roots,
-                    node_index.get() as usize,
+            return self
+                .execute_match_step(
+                    node_index,
+                    before_epoch,
+                    working_epoch,
+                    probe,
+                    live_bytes,
+                    live_nodes,
+                    None,
+                    None,
                 )
-            {
-                // A continuation drain belongs to the host turn that created
-                // the queue. Roots that already completed in that drain stay
-                // complete until the next ordinary host turn begins.
-                return Ok(false);
-            }
-            if matched.continuation
-                && self.continuations[node_index.get() as usize].is_none()
-                && self
-                    .match_depends_on_unpublished_continuation(node_index.get() as usize, matched)
-            {
-                // A fresh continuation must not persist scratch defaults from
-                // an upstream FSM that has not published yet. Its real result
-                // will dirty this match when the upstream continuation resumes.
-                return Ok(false);
-            }
-            if matched.continuation
-                && self.continuations[node_index.get() as usize].is_some()
-                && self.ready_continuations.front().copied() != Some(node_index)
-            {
-                // One drain resumes only the selected continuation. Other
-                // ready roots keep their state and lexical captures intact.
-                return Ok(false);
-            }
-            let node = matched.artifact_node;
-            let resuming = self.ready_continuations.front().copied() == Some(node_index)
-                && self.continuations[node_index.get() as usize].is_some();
-            let continuation = matched.continuation;
-            let mut facts = crate::memory_planner::TurnMemoryFacts::default();
-            facts.additional_demand.turn_peak_bytes = live_bytes;
-            facts.additional_demand.retained_nodes = live_nodes;
-            let turn_plan = crate::memory_planner::plan_current_resident_turn(
-                &self.plan.memory_plan,
-                matched.budget_node,
-                &facts,
-            )
-            .map_err(|_| ResidentExecutionError::Kernel {
-                node,
-                error: ResidentKernelError::InvalidShape,
-            })?;
-            if !turn_plan.budget_violations.is_empty() {
-                return Err(ResidentExecutionError::Kernel {
-                    node,
-                    error: ResidentKernelError::InvalidShape,
+                .map(|outcome| match outcome {
+                    MatchOutcome::Complete(changed) => changed,
+                    MatchOutcome::TailJump(_) => {
+                        unreachable!("an owning match driver consumes its tail jumps")
+                    }
                 });
-            }
-            let turn_plan = std::sync::Arc::new(turn_plan);
-            let (continuation_bytes, continuation_nodes, continuation_work) =
-                budget::with_resident_turn_plan(turn_plan.clone(), || {
-                    let mut meter = budget::ResidentBudgetMeter::default();
-                    let (bytes, nodes) = if continuation {
-                        self.live_continuation_footprint(&mut meter).ok_or(
-                            ResidentExecutionError::Kernel {
-                                node,
-                                error: ResidentKernelError::InvalidShape,
-                            },
-                        )?
-                    } else {
-                        (0, 0)
-                    };
-                    Ok::<_, ResidentExecutionError>((bytes, nodes, meter.estimate().compute_work()))
-                })?;
-            let body_live_bytes = live_bytes.checked_add(continuation_bytes).ok_or(
-                ResidentExecutionError::Kernel {
-                    node,
-                    error: ResidentKernelError::InvalidShape,
-                },
-            )?;
-            let body_live_nodes = live_nodes.checked_add(continuation_nodes).ok_or(
-                ResidentExecutionError::Kernel {
-                    node,
-                    error: ResidentKernelError::InvalidShape,
-                },
-            )?;
-            if resuming {
-                self.workspace
-                    .continuation_capture_frames
-                    .try_reserve(1)
-                    .map_err(|_| ResidentExecutionError::Kernel {
-                        node,
-                        error: ResidentKernelError::InvalidShape,
-                    })?;
-                let saved = self.continuations[node_index.get() as usize]
-                    .take()
-                    .expect("selected continuation remains available");
-                self.workspace.active_resume_state = Some(saved.state);
-                self.workspace
-                    .continuation_capture_frames
-                    .push(saved.captures);
-            }
-            let result = budget::with_resident_turn_plan(turn_plan, || {
-                let result = budget::with_control_work_budget(|| {
-                    self.execute_match_expression(
-                        node_index,
-                        before_epoch,
-                        working_epoch,
-                        probe,
-                        body_live_bytes,
-                        body_live_nodes,
-                        continuation_work,
-                    )
-                });
-                let ActivatedTurnStep::Match(control) = &self.plan.steps[node_index.get() as usize]
-                else {
-                    unreachable!()
-                };
-                // The selected yield has been copied into its enclosing result.
-                // No block-local payload survives success, failure or a later abort.
-                for region in &control.locals {
-                    self.workspace.scratch.discard_payload_write(*region);
-                }
-                result
-            });
-            if resuming {
-                let captures = self
-                    .workspace
-                    .continuation_capture_frames
-                    .pop()
-                    .expect("selected continuation capture frame remains present");
-                let state = self
-                    .workspace
-                    .active_resume_state
-                    .take()
-                    .expect("selected continuation state remains present");
-                self.continuations[node_index.get() as usize] =
-                    Some(super::ResidentContinuation { state, captures });
-            }
-            return result;
         }
         if let ActivatedTurnStep::Recur(call) = self.plan.steps[node_index.get() as usize] {
+            let _text_barrier = super::super::text_index::LookupBarrier::enter();
             return self.execute_recursive_call(
                 node_index,
                 call,
@@ -2337,173 +2813,21 @@ impl ReactiveInstance {
             );
         }
         if let ActivatedTurnStep::Suspend(suspension) = self.plan.steps[node_index.get() as usize] {
-            let target = suspension.target.get() as usize;
-            let capture_sources = match &self.plan.steps[target] {
-                ActivatedTurnStep::Match(control) => control.capture_sources.clone(),
-                _ => {
-                    return Err(ResidentExecutionError::Kernel {
-                        node: suspension.artifact_node,
-                        error: ResidentKernelError::InvalidInput,
-                    });
-                }
-            };
-            let fail = |error| ResidentExecutionError::Kernel {
-                node: suspension.artifact_node,
-                error,
-            };
-            let mut capture_meter = budget::ResidentBudgetMeter::default();
-            let (capture_bytes, capture_nodes) = core::iter::once(suspension.argument)
-                .chain(
-                    capture_sources
-                        .iter()
-                        .copied()
-                        .filter(|source| !matches!(source, ResidentReadLocation::Input(_))),
-                )
-                .try_fold((0_u64, 0_u64), |(bytes, nodes), source| {
-                    let value = self.read_location(source, working_epoch)?;
-                    let footprint = resident_frame_value_footprint(
-                        value,
-                        &self.plan.schemas,
-                        &mut capture_meter,
-                    )?;
-                    Some((
-                        bytes.checked_add(footprint.0)?,
-                        nodes.checked_add(footprint.1)?,
-                    ))
-                })
-                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
-            let peak_bytes = live_bytes
-                .checked_add(capture_bytes)
-                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
-            let retained_nodes = live_nodes
-                .checked_add(capture_nodes)
-                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
-            let capture_work = capture_meter
-                .estimate()
-                .compute_work()
-                .checked_add(capture_bytes)
-                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
-            (|| -> Result<(), ResidentKernelError> {
-                budget::PreparedKernel::new(
-                    (),
-                    budget::resident_cost! {
-                        compute_work: capture_work,
-                        temporary_bytes: peak_bytes,
-                        cloned_bytes: capture_bytes,
-                        retained_nodes,
-                        ..budget::KernelCostEstimate::default()
-                    },
-                )
-                .admit_control()?
-                .into_plan();
-                Ok(())
-            })()
-            .map_err(fail)?;
-            let state = self
-                .read_location(suspension.argument, working_epoch)
-                .map(owned_resident_value)
-                .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
-            let captures = capture_sources
-                .iter()
-                .copied()
-                .filter(|source| !matches!(source, ResidentReadLocation::Input(_)))
-                .map(|source| {
-                    self.read_location(source, working_epoch)
-                        .map(|value| (source, owned_resident_value(value)))
-                        .ok_or(ResidentExecutionError::Kernel {
-                            node: suspension.artifact_node,
-                            error: ResidentKernelError::InvalidInput,
-                        })
-                })
-                .collect::<Result<Box<[_]>, _>>()?;
-            self.workspace.continuation_candidates[target] =
-                Some(super::ResidentContinuation { state, captures });
-            clear_bit(&mut self.workspace.completed_continuations, target);
-            return Ok(false);
+            return self.execute_suspension_with_live_demand(
+                suspension,
+                working_epoch,
+                live_bytes,
+                live_nodes,
+            );
         }
         if let ActivatedTurnStep::Publish(publication) = self.plan.steps[node_index.get() as usize]
         {
-            let fail = |error| ResidentExecutionError::Kernel {
-                node: publication.artifact_node,
-                error,
-            };
-            let target = publication.target.get() as usize;
-            let write = match &self.plan.steps[target] {
-                ActivatedTurnStep::Match(control)
-                    if control.write.storage == ResidentStorageClass::Scratch =>
-                {
-                    control.write
-                }
-                _ => return Err(fail(ResidentKernelError::InvalidInput)),
-            };
-            let mut publication_meter = budget::ResidentBudgetMeter::default();
-            let (bytes, nodes) = self
-                .read_location(publication.value, working_epoch)
-                .and_then(|value| {
-                    resident_frame_value_footprint(
-                        value,
-                        &self.plan.schemas,
-                        &mut publication_meter,
-                    )
-                })
-                .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
-            let (replaced_bytes, replaced_nodes) = resident_frame_value_footprint(
-                self.workspace.scratch.read(write.region),
-                &self.plan.schemas,
-                &mut publication_meter,
-            )
-            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
-            let cloned_bytes = bytes
-                .checked_mul(2)
-                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
-            let retained_nodes = nodes
-                .checked_mul(2)
-                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
-            let peak_bytes = live_bytes
-                .checked_add(cloned_bytes)
-                .and_then(|bytes| bytes.checked_add(replaced_bytes))
-                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
-            let retained_nodes = live_nodes
-                .checked_add(retained_nodes)
-                .and_then(|nodes| nodes.checked_add(replaced_nodes))
-                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
-            let publication_work = publication_meter
-                .estimate()
-                .compute_work()
-                .checked_add(cloned_bytes)
-                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
-            (|| -> Result<(), ResidentKernelError> {
-                budget::PreparedKernel::new(
-                    (),
-                    budget::resident_cost! {
-                        compute_work: publication_work,
-                        temporary_bytes: peak_bytes,
-                        cloned_bytes,
-                        retained_nodes,
-                        ..budget::KernelCostEstimate::default()
-                    },
-                )
-                .admit_control()?
-                .into_plan();
-                Ok(())
-            })()
-            .map_err(fail)?;
-            let value = self
-                .read_location(publication.value, working_epoch)
-                .map(owned_resident_value)
-                .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
-            let unchanged =
-                resident_values_equal(self.workspace.scratch.read(write.region), value.as_ref());
-            copy_input(&mut self.workspace.scratch, write.region, value.as_ref()).map_err(
-                |error| {
-                    error.at(ResidentExecutionError::Kernel {
-                        node: publication.artifact_node,
-                        error: ResidentKernelError::InvalidOutput,
-                    })
-                },
-            )?;
-            set_bit(&mut self.workspace.continuation_publications, target);
-            return Ok(!unchanged);
+            return self.execute_publication_with_live_demand(
+                publication,
+                working_epoch,
+                live_bytes,
+                live_nodes,
+            );
         }
         if matches!(
             self.plan.steps[node_index.get() as usize],
@@ -2522,6 +2846,365 @@ impl ReactiveInstance {
         )
     }
 
+    // Recursive calls retain the dispatcher on the host stack. Keep the
+    // unrelated continuation materialization paths out of that frame, even
+    // in unoptimized builds, without allocating another runtime carrier.
+    #[inline(never)]
+    fn execute_suspension_with_live_demand(
+        &mut self,
+        suspension: super::ActivatedSuspension,
+        working_epoch: InstanceEpoch,
+        live_bytes: u64,
+        live_nodes: u64,
+    ) -> Result<bool, ResidentExecutionError> {
+        let target = suspension.target.get() as usize;
+        let capture_sources = match &self.plan.steps[target] {
+            ActivatedTurnStep::Match(control) => control.capture_sources.clone(),
+            _ => {
+                return Err(ResidentExecutionError::Kernel {
+                    node: suspension.artifact_node,
+                    error: ResidentKernelError::InvalidInput,
+                });
+            }
+        };
+        let fail = |error| ResidentExecutionError::Kernel {
+            node: suspension.artifact_node,
+            error,
+        };
+        let mut capture_meter = budget::ResidentBudgetMeter::default();
+        let (capture_bytes, capture_nodes) = core::iter::once(suspension.argument)
+            .chain(
+                capture_sources
+                    .iter()
+                    .copied()
+                    .filter(|source| !matches!(source, ResidentReadLocation::Input(_))),
+            )
+            .try_fold((0_u64, 0_u64), |(bytes, nodes), source| {
+                let value = self
+                    .read_location(source, working_epoch)
+                    .ok_or(ResidentKernelError::InvalidInput)?;
+                let footprint =
+                    resident_frame_value_footprint(value, &self.plan.schemas, &mut capture_meter)?;
+                Ok::<_, ResidentKernelError>((
+                    bytes
+                        .checked_add(footprint.0)
+                        .ok_or(ResidentKernelError::InvalidShape)?,
+                    nodes
+                        .checked_add(footprint.1)
+                        .ok_or(ResidentKernelError::InvalidShape)?,
+                ))
+            })
+            .map_err(fail)?;
+        let peak_bytes = live_bytes
+            .checked_add(capture_bytes)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        let retained_nodes = live_nodes
+            .checked_add(capture_nodes)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        let capture_work = capture_meter
+            .estimate()
+            .compute_work()
+            .checked_add(capture_bytes)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        (|| -> Result<(), ResidentKernelError> {
+            budget::PreparedKernel::new(
+                (),
+                budget::resident_cost! {
+                    compute_work: capture_work,
+                    temporary_bytes: peak_bytes,
+                    cloned_bytes: capture_bytes,
+                    retained_nodes,
+                    ..budget::KernelCostEstimate::default()
+                },
+            )
+            .admit_control()?
+            .into_plan();
+            Ok(())
+        })()
+        .map_err(fail)?;
+        let state = self
+            .read_location(suspension.argument, working_epoch)
+            .map(owned_resident_value)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
+        let captures = capture_sources
+            .iter()
+            .copied()
+            .filter(|source| !matches!(source, ResidentReadLocation::Input(_)))
+            .map(|source| {
+                self.read_location(source, working_epoch)
+                    .map(|value| (source, owned_resident_value(value)))
+                    .ok_or(ResidentExecutionError::Kernel {
+                        node: suspension.artifact_node,
+                        error: ResidentKernelError::InvalidInput,
+                    })
+            })
+            .collect::<Result<Box<[_]>, _>>()?;
+        self.workspace.continuation_candidates[target] =
+            Some(super::ResidentContinuation { state, captures });
+        clear_bit(&mut self.workspace.completed_continuations, target);
+        Ok(false)
+    }
+
+    #[inline(never)]
+    fn execute_publication_with_live_demand(
+        &mut self,
+        publication: super::ActivatedPublication,
+        working_epoch: InstanceEpoch,
+        live_bytes: u64,
+        live_nodes: u64,
+    ) -> Result<bool, ResidentExecutionError> {
+        let fail = |error| ResidentExecutionError::Kernel {
+            node: publication.artifact_node,
+            error,
+        };
+        let target = publication.target.get() as usize;
+        let write = match &self.plan.steps[target] {
+            ActivatedTurnStep::Match(control)
+                if control.write.storage == ResidentStorageClass::Scratch =>
+            {
+                control.write
+            }
+            _ => return Err(fail(ResidentKernelError::InvalidInput)),
+        };
+        let mut publication_meter = budget::ResidentBudgetMeter::default();
+        let (bytes, nodes) = self
+            .read_location(publication.value, working_epoch)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidInput))
+            .and_then(|value| {
+                resident_frame_value_footprint(value, &self.plan.schemas, &mut publication_meter)
+                    .map_err(fail)
+            })?;
+        let (replaced_bytes, replaced_nodes) = resident_frame_value_footprint(
+            self.workspace.scratch.read(write.region),
+            &self.plan.schemas,
+            &mut publication_meter,
+        )
+        .map_err(fail)?;
+        let cloned_bytes = bytes
+            .checked_mul(2)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        let retained_nodes = nodes
+            .checked_mul(2)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        let peak_bytes = live_bytes
+            .checked_add(cloned_bytes)
+            .and_then(|bytes| bytes.checked_add(replaced_bytes))
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        let retained_nodes = live_nodes
+            .checked_add(retained_nodes)
+            .and_then(|nodes| nodes.checked_add(replaced_nodes))
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        let publication_work = publication_meter
+            .estimate()
+            .compute_work()
+            .checked_add(cloned_bytes)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        (|| -> Result<(), ResidentKernelError> {
+            budget::PreparedKernel::new(
+                (),
+                budget::resident_cost! {
+                    compute_work: publication_work,
+                    temporary_bytes: peak_bytes,
+                    cloned_bytes,
+                    retained_nodes,
+                    ..budget::KernelCostEstimate::default()
+                },
+            )
+            .admit_control()?
+            .into_plan();
+            Ok(())
+        })()
+        .map_err(fail)?;
+        let value = self
+            .read_location(publication.value, working_epoch)
+            .map(owned_resident_value)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
+        let unchanged =
+            resident_values_equal(self.workspace.scratch.read(write.region), value.as_ref());
+        copy_input(&mut self.workspace.scratch, write.region, value.as_ref()).map_err(|error| {
+            error.at(ResidentExecutionError::Kernel {
+                node: publication.artifact_node,
+                error: ResidentKernelError::InvalidOutput,
+            })
+        })?;
+        set_bit(&mut self.workspace.continuation_publications, target);
+        Ok(!unchanged)
+    }
+
+    fn execute_match_step(
+        &mut self,
+        node_index: ActivatedNodeIndex,
+        before_epoch: InstanceEpoch,
+        working_epoch: InstanceEpoch,
+        probe: &mut ResidentStructuralProbe,
+        live_bytes: u64,
+        live_nodes: u64,
+        forwarded_tail: Option<TailContext>,
+        tail_schema_proof: Option<&mut Option<budget::BorrowedFootprintSchemaProof>>,
+    ) -> Result<MatchOutcome, ResidentExecutionError> {
+        // Every entry, including a forwarded terminal Match, may select a
+        // different lexical/capture frame. Keep enclosing indices live but
+        // disable their lookup until this exact entry unwinds.
+        let _text_barrier = super::super::text_index::LookupBarrier::enter();
+        let ActivatedTurnStep::Match(matched) = &self.plan.steps[node_index.get() as usize] else {
+            unreachable!()
+        };
+        if matched.continuation
+            && self.continuations[node_index.get() as usize].is_none()
+            && !self.ready_continuations.is_empty()
+            && bit_is_set(
+                &self.completed_continuation_roots,
+                node_index.get() as usize,
+            )
+        {
+            // A continuation drain belongs to the host turn that created
+            // the queue. Roots that already completed in that drain stay
+            // complete until the next ordinary host turn begins.
+            return Ok(MatchOutcome::Complete(false));
+        }
+        if matched.continuation
+            && self.continuations[node_index.get() as usize].is_none()
+            && self.match_depends_on_unpublished_continuation(node_index.get() as usize, matched)
+        {
+            // A fresh continuation must not persist scratch defaults from
+            // an upstream FSM that has not published yet. Its real result
+            // will dirty this match when the upstream continuation resumes.
+            return Ok(MatchOutcome::Complete(false));
+        }
+        if matched.continuation
+            && self.continuations[node_index.get() as usize].is_some()
+            && self.ready_continuations.front().copied() != Some(node_index)
+        {
+            // One drain resumes only the selected continuation. Other
+            // ready roots keep their state and lexical captures intact.
+            return Ok(MatchOutcome::Complete(false));
+        }
+        let node = matched.artifact_node;
+        let resuming = self.ready_continuations.front().copied() == Some(node_index)
+            && self.continuations[node_index.get() as usize].is_some();
+        let continuation = matched.continuation;
+        let mut facts = crate::memory_planner::TurnMemoryFacts::default();
+        facts.additional_demand.turn_peak_bytes = live_bytes;
+        facts.additional_demand.retained_nodes = live_nodes;
+        let turn_plan = crate::memory_planner::plan_current_resident_turn(
+            &self.plan.memory_plan,
+            matched.budget_node,
+            &facts,
+        )
+        .map_err(|error| ResidentExecutionError::Kernel {
+            node,
+            error: budget::memory_plan_kernel_error(error),
+        })?;
+        if let Some(violation) = turn_plan.budget_violations.first() {
+            return Err(ResidentExecutionError::Kernel {
+                node,
+                error: budget::resource_budget_error(violation),
+            });
+        }
+        let turn_plan = std::sync::Arc::new(turn_plan);
+        let (continuation_bytes, continuation_nodes, continuation_work) =
+            budget::with_resident_turn_plan(turn_plan.clone(), || {
+                let mut meter = budget::ResidentBudgetMeter::default();
+                let (bytes, nodes) = if continuation {
+                    self.live_continuation_footprint(&mut meter)
+                        .map_err(|error| ResidentExecutionError::Kernel { node, error })?
+                } else {
+                    (0, 0)
+                };
+                Ok::<_, ResidentExecutionError>((bytes, nodes, meter.estimate().compute_work()))
+            })?;
+        let body_live_bytes =
+            live_bytes
+                .checked_add(continuation_bytes)
+                .ok_or(ResidentExecutionError::Kernel {
+                    node,
+                    error: ResidentKernelError::InvalidShape,
+                })?;
+        let body_live_nodes =
+            live_nodes
+                .checked_add(continuation_nodes)
+                .ok_or(ResidentExecutionError::Kernel {
+                    node,
+                    error: ResidentKernelError::InvalidShape,
+                })?;
+        if resuming {
+            self.workspace
+                .continuation_capture_frames
+                .try_reserve(1)
+                .map_err(|_| ResidentExecutionError::Kernel {
+                    node,
+                    error: ResidentKernelError::InvalidShape,
+                })?;
+            let saved = self.continuations[node_index.get() as usize]
+                .take()
+                .expect("selected continuation remains available");
+            self.workspace.active_resume_state = Some(saved.state);
+            self.workspace
+                .continuation_capture_frames
+                .push(saved.captures);
+        }
+        let result = budget::with_resident_turn_plan(turn_plan, || {
+            let result = budget::with_control_work_budget(|| {
+                if let Some(tail) = forwarded_tail {
+                    let resume_state = self.workspace.active_resume_state.take();
+                    let tail_schema_proof = tail_schema_proof
+                        .expect("forwarded tail execution carries its schema proof");
+                    let result = self.execute_match_expression_with_state(
+                        node_index,
+                        before_epoch,
+                        working_epoch,
+                        probe,
+                        body_live_bytes,
+                        body_live_nodes,
+                        continuation_work,
+                        resume_state.as_ref(),
+                        tail,
+                        None,
+                        tail_schema_proof,
+                    );
+                    self.workspace.active_resume_state = resume_state;
+                    result
+                } else {
+                    self.execute_match_expression(
+                        node_index,
+                        before_epoch,
+                        working_epoch,
+                        probe,
+                        body_live_bytes,
+                        body_live_nodes,
+                        continuation_work,
+                    )
+                    .map(MatchOutcome::Complete)
+                }
+            });
+            let ActivatedTurnStep::Match(control) = &self.plan.steps[node_index.get() as usize]
+            else {
+                unreachable!()
+            };
+            // The selected yield has been copied into its enclosing result.
+            // No block-local payload survives success, failure or a later abort.
+            for region in &control.locals {
+                self.workspace.scratch.discard_payload_write(*region);
+            }
+            result
+        });
+        if resuming {
+            let captures = self
+                .workspace
+                .continuation_capture_frames
+                .pop()
+                .expect("selected continuation capture frame remains present");
+            let state = self
+                .workspace
+                .active_resume_state
+                .take()
+                .expect("selected continuation state remains present");
+            self.continuations[node_index.get() as usize] =
+                Some(super::ResidentContinuation { state, captures });
+        }
+        result
+    }
+
     fn execute_match_expression(
         &mut self,
         node_index: ActivatedNodeIndex,
@@ -2533,16 +3216,83 @@ impl ReactiveInstance {
         continuation_work: u64,
     ) -> Result<bool, ResidentExecutionError> {
         let resume_state = self.workspace.active_resume_state.take();
-        let result = self.execute_match_expression_with_state(
-            node_index,
-            before_epoch,
-            working_epoch,
-            probe,
-            body_live_bytes,
-            body_live_nodes,
-            continuation_work,
-            resume_state.as_ref(),
-        );
+        let result = (|| {
+            let mut current: Option<OwnedTailJump> = None;
+            let mut carrier_schema_proof = None;
+            loop {
+                let (carrier_bytes, carrier_nodes) = current
+                    .as_ref()
+                    .map_or((0, 0), |carrier| (carrier.bytes, carrier.nodes));
+                let ActivatedTurnStep::Match(root) = &self.plan.steps[node_index.get() as usize]
+                else {
+                    unreachable!("match driver owns a match target")
+                };
+                let owner = root.artifact_node;
+                let budget_node = root.budget_node;
+                let iteration_bytes = body_live_bytes.checked_add(carrier_bytes).ok_or(
+                    ResidentExecutionError::Kernel {
+                        node: owner,
+                        error: ResidentKernelError::InvalidShape,
+                    },
+                )?;
+                let iteration_nodes = body_live_nodes.checked_add(carrier_nodes).ok_or(
+                    ResidentExecutionError::Kernel {
+                        node: owner,
+                        error: ResidentKernelError::InvalidShape,
+                    },
+                )?;
+                // The next invocation owns one carrier, not an accumulating
+                // frame stack. The old carrier and live locals were included
+                // in admission before the next carrier was copied.
+                let mut facts = crate::memory_planner::TurnMemoryFacts::default();
+                facts.additional_demand.turn_peak_bytes = iteration_bytes;
+                facts.additional_demand.retained_nodes = iteration_nodes;
+                let plan = crate::memory_planner::plan_current_resident_turn(
+                    &self.plan.memory_plan,
+                    budget_node,
+                    &facts,
+                )
+                .map_err(|error| ResidentExecutionError::MemoryPlan { node: owner, error })?;
+                if let Some(violation) = plan.budget_violations.first() {
+                    return Err(ResidentExecutionError::ResourceAdmission {
+                        node: owner,
+                        violation: violation.clone(),
+                    });
+                }
+                let outcome = budget::with_resident_turn_plan(plan, || {
+                    self.execute_match_expression_with_state(
+                        node_index,
+                        before_epoch,
+                        working_epoch,
+                        probe,
+                        iteration_bytes,
+                        iteration_nodes,
+                        continuation_work,
+                        resume_state.as_ref(),
+                        TailContext { target: node_index },
+                        current.as_ref(),
+                        &mut carrier_schema_proof,
+                    )
+                })?;
+                match outcome {
+                    MatchOutcome::Complete(changed) => return Ok(changed),
+                    MatchOutcome::TailJump(next) => {
+                        let ActivatedTurnStep::Match(root) =
+                            &self.plan.steps[node_index.get() as usize]
+                        else {
+                            unreachable!("match driver target remains immutable")
+                        };
+                        // The owned argument is prepared before any source
+                        // local dies. Nested lexical match frames have already
+                        // returned and released their own locals/captures.
+                        for region in &root.locals {
+                            self.workspace.scratch.discard_payload_write(*region);
+                        }
+                        current = Some(next);
+                    }
+                }
+            }
+        })();
         self.workspace.active_resume_state = resume_state;
         result
     }
@@ -2557,7 +3307,10 @@ impl ReactiveInstance {
         body_live_nodes: u64,
         continuation_work: u64,
         resume_state: Option<&super::OwnedResidentValue>,
-    ) -> Result<bool, ResidentExecutionError> {
+        tail: TailContext,
+        tail_argument: Option<&OwnedTailJump>,
+        tail_schema_proof: &mut Option<budget::BorrowedFootprintSchemaProof>,
+    ) -> Result<MatchOutcome, ResidentExecutionError> {
         let index = node_index.get() as usize;
         let ActivatedTurnStep::Match(matched) = &self.plan.steps[index] else {
             unreachable!()
@@ -2578,8 +3331,13 @@ impl ReactiveInstance {
             .iter()
             .rev()
             .find_map(|frame| (frame.target == node_index).then_some(frame.argument));
-        let scrutinee_source = recursive_scrutinee.unwrap_or(matched.scrutinee);
-        let continuation_scrutinee = if recursive_scrutinee.is_none()
+        let scrutinee_source = tail_argument
+            .map(|jump| jump.argument_location)
+            .or(recursive_scrutinee)
+            .unwrap_or(matched.scrutinee);
+        let continuation_scrutinee = if let Some(jump) = tail_argument {
+            Some(&jump.argument)
+        } else if recursive_scrutinee.is_none()
             && matched.continuation
             && self.ready_continuations.front().copied() == Some(node_index)
         {
@@ -2588,6 +3346,7 @@ impl ReactiveInstance {
             None
         };
         let scrutinee_schema = matched.scrutinee_schema;
+        let structural_source = matched.structural_source.clone();
         let scrutinee_shape_values = matched.scrutinee_shape_values.clone();
         let structural_work = matched.arms.iter().try_fold(0u64, |total, arm| {
             let super::ActivatedMatchPattern::Structural { work, .. } = &arm.pattern else {
@@ -2659,40 +3418,58 @@ impl ReactiveInstance {
                         .map(|value| value.as_ref())
                         .or_else(|| self.read_location(scrutinee_source, working_epoch))
                         .ok_or_else(fail)?;
-                    match (
-                        scrutinee,
-                        self.read_location(literal, working_epoch)
-                            .ok_or_else(fail)?,
-                    ) {
-                        (
-                            ResidentValueRef::Bool([left @ (0 | 1)]),
-                            ResidentValueRef::Bool([right @ (0 | 1)]),
-                        ) => left == right,
-                        (ResidentValueRef::Index([left]), ResidentValueRef::Index([right])) => {
-                            left == right
-                        }
-                        (ResidentValueRef::F64([left]), ResidentValueRef::F64([right])) => {
-                            left == right
-                        }
-                        (
-                            ResidentValueRef::Snapshot([Some(left)]),
-                            ResidentValueRef::Snapshot([Some(right)]),
-                        ) => {
-                            let left_schema = left
-                                .validate_against(&self.plan.schemas)
-                                .map_err(|_| fail())?;
-                            let right_schema = right
-                                .validate_against(&self.plan.schemas)
-                                .map_err(|_| fail())?;
-                            if !crate::is_control_scalar_schema(left_schema)
-                                || left_schema != right_schema
-                            {
-                                return Err(fail());
+                    let peer = self
+                        .read_location(literal, working_epoch)
+                        .ok_or_else(fail)?;
+                    if self
+                        .plan
+                        .schemas
+                        .get(scrutinee_schema)
+                        .is_some_and(|schema| {
+                            matches!(schema.body(), mech_core::SchemaBody::String)
+                        })
+                    {
+                        let key = self
+                            .plan
+                            .schemas
+                            .entry(scrutinee_schema)
+                            .ok_or_else(fail)?
+                            .key();
+                        let left = literal_string_text(scrutinee, key).ok_or_else(fail)?;
+                        let right = literal_string_text(peer, key).ok_or_else(fail)?;
+                        string_literal_matches(left, right).map_err(kernel_fail)?
+                    } else {
+                        match (scrutinee, peer) {
+                            (
+                                ResidentValueRef::Bool([left @ (0 | 1)]),
+                                ResidentValueRef::Bool([right @ (0 | 1)]),
+                            ) => left == right,
+                            (ResidentValueRef::Index([left]), ResidentValueRef::Index([right])) => {
+                                left == right
                             }
-                            left.language_eq(&self.plan.schemas, right, &self.plan.schemas)
-                                .map_err(|_| fail())?
+                            (ResidentValueRef::F64([left]), ResidentValueRef::F64([right])) => {
+                                left == right
+                            }
+                            (
+                                ResidentValueRef::Snapshot([Some(left)]),
+                                ResidentValueRef::Snapshot([Some(right)]),
+                            ) => {
+                                let left_schema = left
+                                    .validate_against(&self.plan.schemas)
+                                    .map_err(|_| fail())?;
+                                let right_schema = right
+                                    .validate_against(&self.plan.schemas)
+                                    .map_err(|_| fail())?;
+                                if !crate::is_control_scalar_schema(left_schema)
+                                    || left_schema != right_schema
+                                {
+                                    return Err(fail());
+                                }
+                                left.language_eq(&self.plan.schemas, right, &self.plan.schemas)
+                                    .map_err(|_| fail())?
+                            }
+                            _ => return Err(fail()),
                         }
-                        _ => return Err(fail()),
                     }
                 }
                 super::ActivatedMatchPattern::Wildcard | super::ActivatedMatchPattern::Bind => true,
@@ -2728,7 +3505,7 @@ impl ReactiveInstance {
                             mech_core::SchemaBody::Matrix { .. }
                         );
                         let canonical_finalization_work =
-                            comprehension_execution::admit_pattern_item_materialization(
+                            comprehension_execution::admit_pattern_item_materialization_from_plan(
                                 scrutinee,
                                 scrutinee_source.region(),
                                 scrutinee_schema,
@@ -2740,15 +3517,17 @@ impl ReactiveInstance {
                                 clone_multiplicity,
                                 dynamic_target_depth,
                                 &self.plan.schemas,
+                                structural_source.as_ref(),
                             )
                             .map_err(kernel_fail)?;
-                        let item = comprehension_execution::resident_pattern_item(
+                        let item = comprehension_execution::resident_pattern_item_from_plan(
                             scrutinee,
                             scrutinee_source.region(),
                             scrutinee_schema,
                             &shape_values,
                             &self.plan.schemas,
                             structural_array,
+                            structural_source.as_ref(),
                         )
                         .ok_or_else(fail)?;
                         structural_scrutinee =
@@ -2803,7 +3582,67 @@ impl ReactiveInstance {
                 }
             }
             let mut body_live = ControlBlockLiveFootprint::default();
-            for step in body.steps.iter() {
+            for (ordinal, step) in body.steps.iter().enumerate() {
+                // A checked but unused operation after a recursive result is
+                // observable. Only the exact final selected yield can forward
+                // a tail jump through this lexical match.
+                let terminal = control_step_is_exact_tail_yield(
+                    &body,
+                    ordinal,
+                    &self.plan.steps[step.node.get() as usize],
+                );
+                if terminal
+                    && !self.step_depends_on_unpublished_continuation(step.node.get() as usize)
+                {
+                    let eligible_recur = matches!(
+                        self.plan.steps[step.node.get() as usize],
+                        ActivatedTurnStep::Recur(call) if call.target == tail.target
+                            && call.write.storage == ResidentStorageClass::Scratch
+                    );
+                    let forwarded_match = matches!(
+                        self.plan.steps[step.node.get() as usize],
+                        ActivatedTurnStep::Match(_)
+                    );
+                    if eligible_recur || forwarded_match {
+                        let (live_bytes, live_nodes) = self.control_step_live_demand(
+                            node,
+                            &body,
+                            step,
+                            &mut body_live,
+                            &mut local_meter,
+                            (body_live_bytes, body_live_nodes),
+                        )?;
+                        budget::charge_planning_step()?;
+                        if let ActivatedTurnStep::Recur(call) =
+                            self.plan.steps[step.node.get() as usize]
+                        {
+                            let jump = self.prepare_tail_jump(
+                                call,
+                                working_epoch,
+                                live_bytes,
+                                live_nodes,
+                                tail_schema_proof,
+                            )?;
+                            return Ok(MatchOutcome::TailJump(jump));
+                        }
+                        match self.execute_match_step(
+                            step.node,
+                            before_epoch,
+                            working_epoch,
+                            probe,
+                            live_bytes,
+                            live_nodes,
+                            Some(tail),
+                            Some(tail_schema_proof),
+                        )? {
+                            MatchOutcome::TailJump(jump) => {
+                                return Ok(MatchOutcome::TailJump(jump));
+                            }
+                            MatchOutcome::Complete(_) => {}
+                        }
+                        continue;
+                    }
+                }
                 // Branch switches always initialize their selected locals; no
                 // sibling output participates in scheduling or initialization.
                 self.execute_control_step_with_live_demand(
@@ -2822,7 +3661,7 @@ impl ReactiveInstance {
                 if published {
                     set_bit(&mut self.workspace.initialized_output_bits, index);
                 }
-                return Ok(published);
+                return Ok(MatchOutcome::Complete(published));
             }
             if continuation {
                 set_bit(&mut self.workspace.completed_continuations, index);
@@ -2841,11 +3680,18 @@ impl ReactiveInstance {
                     budget_node,
                     &facts,
                 )
-                .map_err(|_| kernel_fail(ResidentKernelError::InvalidShape))?;
-                if !publication_plan.budget_violations.is_empty() {
-                    return Err(kernel_fail(ResidentKernelError::InvalidShape));
+                .map_err(|error| ResidentExecutionError::MemoryPlan { node, error })?;
+                if let Some(violation) = publication_plan.budget_violations.first() {
+                    return Err(ResidentExecutionError::ResourceAdmission {
+                        node,
+                        violation: violation.clone(),
+                    });
                 }
                 return budget::with_resident_turn_plan(publication_plan, || {
+                    if write.region.kind == ResidentValueKind::Snapshot {
+                        validate_snapshot_control_result(&self.plan, &write, captured.as_ref())
+                            .map_err(kernel_fail)?;
+                    }
                     let target = if write.storage == ResidentStorageClass::Constant {
                         &mut self.activation
                     } else {
@@ -2858,7 +3704,8 @@ impl ReactiveInstance {
                     let initialized = bit_is_set(&self.workspace.initialized_output_bits, index);
                     set_bit(&mut self.workspace.initialized_output_bits, index);
                     Ok(!initialized || !unchanged)
-                });
+                })
+                .map(MatchOutcome::Complete);
             }
             // The selected body's bindings and earlier results remain live
             // through publication, including locals the final yield does not
@@ -2884,13 +3731,20 @@ impl ReactiveInstance {
                 budget_node,
                 &facts,
             )
-            .map_err(|_| kernel_fail(ResidentKernelError::InvalidShape))?;
-            if !publication_plan.budget_violations.is_empty() {
-                return Err(kernel_fail(ResidentKernelError::InvalidShape));
+            .map_err(|error| kernel_fail(budget::memory_plan_kernel_error(error)))?;
+            if let Some(violation) = publication_plan.budget_violations.first() {
+                return Err(kernel_fail(budget::resource_budget_error(violation)));
             }
             return budget::with_resident_turn_plan(publication_plan, || {
                 let converts_to_snapshot = write.region.kind == ResidentValueKind::Snapshot
                     && body.yield_value.region().kind != ResidentValueKind::Snapshot;
+                if write.region.kind == ResidentValueKind::Snapshot && !converts_to_snapshot {
+                    let source = self
+                        .read_location(body.yield_value, working_epoch)
+                        .ok_or_else(fail)?;
+                    validate_snapshot_control_result(&self.plan, &write, source)
+                        .map_err(kernel_fail)?;
+                }
                 let converted = if converts_to_snapshot {
                     let target = if write.storage == ResidentStorageClass::Constant {
                         &self.activation
@@ -3141,30 +3995,28 @@ impl ReactiveInstance {
                 let initialized = bit_is_set(&self.workspace.initialized_output_bits, index);
                 set_bit(&mut self.workspace.initialized_output_bits, index);
                 Ok(!initialized || !unchanged)
-            });
+            })
+            .map(MatchOutcome::Complete);
         }
         Err(fail())
     }
 
-    fn execute_control_step_with_live_demand(
-        &mut self,
+    fn control_step_live_demand(
+        &self,
         owner: NodeId,
         block: &super::ActivatedControlBlock,
         step: &super::ActivatedControlStep,
         block_live: &mut ControlBlockLiveFootprint,
         meter: &mut budget::ResidentBudgetMeter,
-        epochs: (InstanceEpoch, InstanceEpoch),
-        probe: &mut ResidentStructuralProbe,
         live: (u64, u64),
-    ) -> Result<bool, ResidentExecutionError> {
-        let (before_epoch, working_epoch) = epochs;
+    ) -> Result<(u64, u64), ResidentExecutionError> {
         let (live_bytes, live_nodes) = live;
         let fail = |error| ResidentExecutionError::Kernel { node: owner, error };
         let retained = usize::try_from(step.retained_local_count)
             .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
         let nested_match = matches!(
             self.plan.steps[step.node.get() as usize],
-            ActivatedTurnStep::Match(_)
+            ActivatedTurnStep::Match(_) | ActivatedTurnStep::Iteration(_)
         );
         // Nested matches count their prior output while executing, but may
         // replace it. Keep that slot out of the persistent prefix and measure
@@ -3239,6 +4091,23 @@ impl ReactiveInstance {
         let live_nodes = live_nodes
             .checked_add(locals.node_count)
             .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        Ok((live_bytes, live_nodes))
+    }
+
+    fn execute_control_step_with_live_demand(
+        &mut self,
+        owner: NodeId,
+        block: &super::ActivatedControlBlock,
+        step: &super::ActivatedControlStep,
+        block_live: &mut ControlBlockLiveFootprint,
+        meter: &mut budget::ResidentBudgetMeter,
+        epochs: (InstanceEpoch, InstanceEpoch),
+        probe: &mut ResidentStructuralProbe,
+        live: (u64, u64),
+    ) -> Result<bool, ResidentExecutionError> {
+        let (before_epoch, working_epoch) = epochs;
+        let (live_bytes, live_nodes) =
+            self.control_step_live_demand(owner, block, step, block_live, meter, live)?;
         self.execute_step_with_live_demand(
             step.node,
             before_epoch,
@@ -3247,6 +4116,54 @@ impl ReactiveInstance {
             live_bytes,
             live_nodes,
         )
+    }
+
+    fn prepare_tail_jump(
+        &self,
+        call: super::ActivatedRecursiveCall,
+        working_epoch: InstanceEpoch,
+        live_bytes: u64,
+        live_nodes: u64,
+        schema_proof: &mut Option<budget::BorrowedFootprintSchemaProof>,
+    ) -> Result<OwnedTailJump, ResidentExecutionError> {
+        let fail = |error| ResidentExecutionError::Kernel {
+            node: call.artifact_node,
+            error,
+        };
+        let argument = self
+            .read_location(call.argument, working_epoch)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
+        let mut meter = budget::ResidentBudgetMeter::default();
+        let (payload_bytes, payload_nodes) = resident_frame_value_footprint_with_schema_proof(
+            argument,
+            &self.plan.schemas,
+            &mut meter,
+            schema_proof,
+        )
+        .map_err(fail)?;
+        let bytes = payload_bytes
+            .checked_add(core::mem::size_of::<OwnedTailJump>() as u64)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        let nodes = payload_nodes
+            .checked_add(1)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        let cost = tail_jump_cost(
+            (live_bytes, live_nodes),
+            (payload_bytes, payload_nodes),
+            (bytes, nodes),
+            meter.estimate().compute_work(),
+        )
+        .map_err(fail)?;
+        budget::PreparedKernel::new((), cost)
+            .admit_control()
+            .map_err(fail)?
+            .into_plan();
+        Ok(OwnedTailJump {
+            argument_location: call.argument,
+            argument: owned_resident_value(argument),
+            bytes,
+            nodes,
+        })
     }
 
     fn execute_recursive_call(
@@ -3269,6 +4186,34 @@ impl ReactiveInstance {
         {
             return Err(fail(ResidentKernelError::InvalidShape));
         }
+        self.execute_recursive_frame(
+            node_index,
+            call,
+            before_epoch,
+            working_epoch,
+            probe,
+            live_bytes,
+            live_nodes,
+        )
+    }
+
+    // The emergency depth check must run before reserving this larger host
+    // frame. Its logical frame, work and memory admission remain unchanged.
+    #[inline(never)]
+    fn execute_recursive_frame(
+        &mut self,
+        node_index: ActivatedNodeIndex,
+        call: super::ActivatedRecursiveCall,
+        before_epoch: InstanceEpoch,
+        working_epoch: InstanceEpoch,
+        probe: &mut ResidentStructuralProbe,
+        live_bytes: u64,
+        live_nodes: u64,
+    ) -> Result<bool, ResidentExecutionError> {
+        let fail = |error| ResidentExecutionError::Kernel {
+            node: call.artifact_node,
+            error,
+        };
         let (regions, returned, region_inventory_bytes) = {
             let ActivatedTurnStep::Match(root) = &self.plan.steps[call.target.get() as usize]
             else {
@@ -3315,8 +4260,7 @@ impl ReactiveInstance {
                     self.workspace.scratch.read(*region),
                     &self.plan.schemas,
                     &mut frame_meter,
-                )
-                .ok_or(ResidentKernelError::InvalidShape)?;
+                )?;
                 Ok::<_, ResidentKernelError>((
                     bytes
                         .checked_add(value.0)
@@ -3383,9 +4327,9 @@ impl ReactiveInstance {
             budget_node,
             &facts,
         )
-        .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
-        if !child_plan.budget_violations.is_empty() {
-            return Err(fail(ResidentKernelError::InvalidShape));
+        .map_err(|error| fail(budget::memory_plan_kernel_error(error)))?;
+        if let Some(violation) = child_plan.budget_violations.first() {
+            return Err(fail(budget::resource_budget_error(violation)));
         }
 
         let frame = regions
@@ -3462,7 +4406,7 @@ impl ReactiveInstance {
             let mut result_meter = budget::ResidentBudgetMeter::default();
             let (result_bytes, result_nodes) =
                 resident_frame_value_footprint(value, &self.plan.schemas, &mut result_meter)
-                    .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+                    .map_err(fail)?;
             let measured_result_work = result_meter.estimate().compute_work();
             let result_copy_work = result_bytes
                 .checked_mul(2)
@@ -3564,8 +4508,9 @@ impl ReactiveInstance {
                 .ok_or_else(|| fail(ResidentKernelError::InvalidInput))
             }
             crate::CollectionPattern::Enum { ordinal, payload } => {
-                let Some((actual, value_payload)) =
-                    item.enum_variant(&self.plan.schemas).map_err(fail)?
+                let Some((actual, value_payload)) = item
+                    .enum_variant_matching(*ordinal, &self.plan.schemas)
+                    .map_err(fail)?
                 else {
                     return Ok(false);
                 };
@@ -4149,7 +5094,7 @@ impl ReactiveInstance {
                             ],
                             state_arena_by_slot: &self.workspace.state_f64_arena_by_slot,
                         };
-                        node.kernel.execute(&inputs, output)
+                        super::super::text_index::execute(node, &inputs, output, &self.plan.reads)
                     } else {
                         let inputs = ScratchNodeInputs {
                             locations: &self.plan.reads
@@ -4161,7 +5106,7 @@ impl ReactiveInstance {
                             scratch,
                             epoch: working_epoch,
                         };
-                        node.kernel.execute(&inputs, output)
+                        super::super::text_index::execute(node, &inputs, output, &self.plan.reads)
                     }
                 } else {
                     let (scratch, output) = self.workspace.scratch.split_output(node.write.region);
@@ -4175,7 +5120,7 @@ impl ReactiveInstance {
                         scratch,
                         epoch: working_epoch,
                     };
-                    node.kernel.execute(&inputs, output)
+                    super::super::text_index::execute(node, &inputs, output, &self.plan.reads)
                 }
                 .map_err(|error| ResidentExecutionError::Kernel {
                     node: node.artifact_node,
@@ -4271,12 +5216,11 @@ impl ReactiveInstance {
                         scratch: &self.workspace.scratch,
                         epoch: working_epoch,
                     };
-                    node.kernel.execute(&inputs, output).map_err(|error| {
-                        ResidentExecutionError::Kernel {
+                    super::super::text_index::execute(node, &inputs, output, &self.plan.reads)
+                        .map_err(|error| ResidentExecutionError::Kernel {
                             node: node.artifact_node,
                             error,
-                        }
-                    })?
+                        })?
                 } else {
                     let output = self.state.buffers[candidate].write(node.write.region);
                     if let Some(tape) = &self.plan.f64_read_tape {
@@ -4288,7 +5232,7 @@ impl ReactiveInstance {
                                 &self.workspace.scratch.f64s,
                             ],
                         };
-                        node.kernel.execute(&inputs, output)
+                        super::super::text_index::execute(node, &inputs, output, &self.plan.reads)
                     } else {
                         let inputs = StateNodeInputsWithoutState {
                             locations: &self.plan.reads
@@ -4298,7 +5242,7 @@ impl ReactiveInstance {
                             captures: &self.workspace.continuation_capture_frames,
                             scratch: &self.workspace.scratch,
                         };
-                        node.kernel.execute(&inputs, output)
+                        super::super::text_index::execute(node, &inputs, output, &self.plan.reads)
                     }
                     .map_err(|error| ResidentExecutionError::Kernel {
                         node: node.artifact_node,
@@ -4409,7 +5353,8 @@ fn match_conversion_prior_footprint(
     let mut meter = budget::ResidentBudgetMeter::default();
     let nodes = match prior {
         Some(prior) => {
-            budget::measure_canonical_value_footprint(&mut meter, prior, schemas)?.node_count
+            budget::measure_borrowed_canonical_value_footprint(&mut meter, prior, schemas)?
+                .node_count
         }
         None => 0,
     };
@@ -4453,16 +5398,15 @@ impl StateArena {
         self.buffers[target_buffer].copy_region_from(target_region, source, source_region)
     }
 
-    fn stage_projection_from_state_slot(
+    fn stage_projection_from_state_buffer(
         &mut self,
         target_slot: CellSlotId,
         target_region: ResidentRegion,
-        source_slot: CellSlotId,
+        source_buffer: usize,
         source_region: ResidentRegion,
         epoch: InstanceEpoch,
     ) -> mech_core::MemoryRuntimeResult<()> {
         let target_buffer = self.candidate_buffer(target_slot, epoch);
-        let source_buffer = self.published_buffer(source_slot, epoch);
         if source_buffer == target_buffer {
             self.buffers[target_buffer].copy_region_within(target_region, source_region)?;
         } else if target_buffer == 0 {
@@ -5316,6 +6260,64 @@ impl ResidentCopyError {
     }
 }
 
+/// Validate the selected immutable value before retaining it in a result
+/// lane. Shape metadata work is admitted before comparisons; payload copying
+/// remains under the existing managed write scope below.
+fn validate_snapshot_control_result(
+    plan: &super::ActivatedPlan,
+    write: &super::ResidentWriteLocation,
+    source: ResidentValueRef<'_>,
+) -> Result<(), ResidentKernelError> {
+    let target = plan
+        .slots
+        .get(write.slot.get() as usize)
+        .filter(|target| {
+            target.artifact_id == write.slot
+                && target.storage == write.storage
+                && target.region == write.region
+                && target.region.kind == ResidentValueKind::Snapshot
+                && target.region.shape == mech_core::ResidentShape::SCALAR
+                && target.region.len == 1
+        })
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let ResidentValueRef::Snapshot([Some(value)]) = source else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    if value.schema() != target.schema || value.schema_key() != target.schema_key {
+        return Err(ResidentKernelError::InvalidOutput);
+    }
+    let parameter_count = budget::checked_u64(value.shape().parameter_values().len())?;
+    let compute_work = parameter_count
+        .checked_mul(2)
+        .and_then(|work| work.checked_add(128))
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    budget::PreparedKernel::new(
+        (),
+        budget::resident_cost! {
+            compute_work,
+            ..budget::KernelCostEstimate::default()
+        },
+    )
+    .admit_control()?
+    .into_plan();
+    // A finalized Value owns its validated payload and shape. Preserve that
+    // owner and bind its exact identity to the plan; never remap or rebuild it.
+    let owner = value.schemas().ok_or(ResidentKernelError::InvalidOutput)?;
+    value
+        .validate_against(&owner)
+        .map_err(|_| ResidentKernelError::InvalidOutput)?;
+    let schema = value
+        .validate_against(&plan.schemas)
+        .map_err(|_| ResidentKernelError::InvalidOutput)?;
+    if value.shape() != &target.shape
+        && (target.activation_fixed_shape
+            || !mech_core::shape_change_allowed(schema, &target.shape, value.shape()))
+    {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    Ok(())
+}
+
 fn copy_input(
     arena: &mut TypedResidentArena,
     region: ResidentRegion,
@@ -5361,14 +6363,18 @@ fn resident_continuation_footprint(
     continuation: &super::ResidentContinuation,
     schemas: &mech_core::SchemaTable,
     meter: &mut budget::ResidentBudgetMeter,
-) -> Option<(u64, u64)> {
+) -> Result<(u64, u64), ResidentKernelError> {
     core::iter::once(&continuation.state)
         .chain(continuation.captures.iter().map(|(_, value)| value))
         .try_fold((0_u64, 0_u64), |(bytes, nodes), value| {
             let footprint = resident_frame_value_footprint(value.as_ref(), schemas, meter)?;
-            Some((
-                bytes.checked_add(footprint.0)?,
-                nodes.checked_add(footprint.1)?,
+            Ok((
+                bytes
+                    .checked_add(footprint.0)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+                nodes
+                    .checked_add(footprint.1)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
             ))
         })
 }
@@ -5377,46 +6383,63 @@ fn resident_frame_value_footprint(
     value: ResidentValueRef<'_>,
     schemas: &mech_core::SchemaTable,
     meter: &mut budget::ResidentBudgetMeter,
-) -> Option<(u64, u64)> {
+) -> Result<(u64, u64), ResidentKernelError> {
+    resident_frame_value_footprint_impl(value, schemas, meter, None)
+}
+
+fn resident_frame_value_footprint_with_schema_proof(
+    value: ResidentValueRef<'_>,
+    schemas: &mech_core::SchemaTable,
+    meter: &mut budget::ResidentBudgetMeter,
+    schema_proof: &mut Option<budget::BorrowedFootprintSchemaProof>,
+) -> Result<(u64, u64), ResidentKernelError> {
+    resident_frame_value_footprint_impl(value, schemas, meter, Some(schema_proof))
+}
+
+fn resident_frame_value_footprint_impl(
+    value: ResidentValueRef<'_>,
+    schemas: &mech_core::SchemaTable,
+    meter: &mut budget::ResidentBudgetMeter,
+    mut schema_proof: Option<&mut Option<budget::BorrowedFootprintSchemaProof>>,
+) -> Result<(u64, u64), ResidentKernelError> {
     // The frame Vec owns one entry and one boxed slice per local. Include an
     // allocator allowance per box so many small scalar locals cannot evade
     // the byte ceiling. The entry contains the enum and its slice header.
     const ALLOCATION_OVERHEAD: u64 = 16;
-    let entry = u64::try_from(core::mem::size_of::<(
+    let entry = budget::checked_u64(core::mem::size_of::<(
         ResidentRegion,
         super::OwnedResidentValue,
-    )>())
-    .ok()?
-    .checked_add(ALLOCATION_OVERHEAD)?;
+    )>())?
+    .checked_add(ALLOCATION_OVERHEAD)
+    .ok_or(ResidentKernelError::InvalidShape)?;
     let fixed = |len: usize, element: usize| {
-        u64::try_from(len)
-            .ok()?
-            .checked_mul(u64::try_from(element).ok()?)
+        budget::checked_u64(len)?
+            .checked_mul(budget::checked_u64(element)?)
+            .ok_or(ResidentKernelError::InvalidShape)
     };
     let (payload_bytes, payload_nodes) = match value {
         ResidentValueRef::Bool(values) => (fixed(values.len(), core::mem::size_of::<u8>())?, 0),
         ResidentValueRef::Index(values) => (fixed(values.len(), core::mem::size_of::<u64>())?, 0),
         ResidentValueRef::F64(values) => (fixed(values.len(), core::mem::size_of::<f64>())?, 0),
         ResidentValueRef::String(values) => {
-            meter
-                .charge_compute_work(u64::try_from(values.len()).ok()?)
-                .ok()?;
+            meter.charge_compute_work(budget::checked_u64(values.len())?)?;
             values.iter().try_fold(
                 (fixed(values.len(), core::mem::size_of::<String>())?, 0u64),
                 |(bytes, nodes), value| {
-                    Some((
+                    Ok::<_, ResidentKernelError>((
                         bytes
-                            .checked_add(u64::try_from(value.len()).ok()?)?
-                            .checked_add(ALLOCATION_OVERHEAD)?,
-                        nodes.checked_add(1)?,
+                            .checked_add(budget::checked_u64(value.len())?)
+                            .and_then(|bytes| bytes.checked_add(ALLOCATION_OVERHEAD))
+                            .ok_or(ResidentKernelError::InvalidShape)?,
+                        nodes
+                            .checked_add(1)
+                            .ok_or(ResidentKernelError::InvalidShape)?,
                     ))
                 },
             )?
         }
         ResidentValueRef::Snapshot(values) => {
-            meter
-                .charge_compute_work(u64::try_from(values.len()).ok()?)
-                .ok()?;
+            meter.charge_compute_work(budget::checked_u64(values.len())?)?;
             values.iter().try_fold(
                 (
                     fixed(values.len(), core::mem::size_of::<Option<Value>>())?,
@@ -5424,21 +6447,45 @@ fn resident_frame_value_footprint(
                 ),
                 |(bytes, nodes), value| {
                     let Some(value) = value else {
-                        return Some((bytes, nodes));
+                        return Ok((bytes, nodes));
                     };
-                    let footprint =
-                        budget::measure_canonical_value_footprint(meter, value, schemas).ok()?;
-                    Some((
-                        bytes.checked_add(footprint.retained_bytes)?,
-                        nodes.checked_add(footprint.node_count)?,
+                    // Schema ids belong to the retained snapshot's arena, not
+                    // necessarily the enclosing program's arena. The snapshot
+                    // owns both that immutable arena and its concrete shape.
+                    let owner = value.schemas();
+                    let footprint = if let Some(proof) = schema_proof.as_deref_mut() {
+                        budget::measure_borrowed_canonical_value_footprint_with_proof(
+                            meter,
+                            value,
+                            owner.as_deref().unwrap_or(schemas),
+                            proof,
+                        )
+                    } else {
+                        budget::measure_borrowed_canonical_value_footprint(
+                            meter,
+                            value,
+                            owner.as_deref().unwrap_or(schemas),
+                        )
+                    }?;
+                    Ok::<_, ResidentKernelError>((
+                        bytes
+                            .checked_add(footprint.retained_bytes)
+                            .ok_or(ResidentKernelError::InvalidShape)?,
+                        nodes
+                            .checked_add(footprint.node_count)
+                            .ok_or(ResidentKernelError::InvalidShape)?,
                     ))
                 },
             )?
         }
     };
-    Some((
-        entry.checked_add(payload_bytes)?,
-        payload_nodes.checked_add(1)?,
+    Ok((
+        entry
+            .checked_add(payload_bytes)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        payload_nodes
+            .checked_add(1)
+            .ok_or(ResidentKernelError::InvalidShape)?,
     ))
 }
 
@@ -5692,12 +6739,366 @@ mod tests {
     use crate::resident::general::{ResidentArenaSizes, StateVersion};
     use mech_core::ResidentShape;
 
+    fn scalar_snapshot(body: mech_core::SchemaBody, data: mech_core::ValueDataDraft) -> Value {
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let handle = builder
+            .insert(
+                mech_core::SchemaDraft {
+                    body,
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let schema = build.resolve(handle).unwrap();
+        let schemas = std::sync::Arc::new(build.table);
+        mech_core::snapshot::ValueDraft {
+            schema,
+            shape_values: Box::new([]),
+            data,
+        }
+        .finalize(&mech_core::snapshot::SnapshotValidationContext::with_shared_schemas(&schemas))
+        .unwrap()
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn tail_control_proof_requires_final_exact_yield_without_postprocessing() {
+        let tail = source_document_instance(
+            "walk(n<f64>) => <f64>\n  | 0 => 0\n  | n => walk(n - 1).\nwalk(signal<f64>)\n",
+        );
+        let block = tail
+            .plan
+            .steps
+            .iter()
+            .find_map(|step| {
+                let ActivatedTurnStep::Match(control) = step else {
+                    return None;
+                };
+                control.arms.iter().find_map(|arm| {
+                    let ordinal = arm.body.steps.len().checked_sub(1)?;
+                    let step = &tail.plan.steps[arm.body.steps[ordinal].node.get() as usize];
+                    matches!(step, ActivatedTurnStep::Recur(_)).then_some((
+                        arm.body.clone(),
+                        ordinal,
+                        step,
+                    ))
+                })
+            })
+            .expect("the actual pattern function has a terminal Recur");
+        assert!(control_step_is_exact_tail_yield(&block.0, block.1, block.2));
+        let mut after = block.0.clone();
+        let mut steps = after.steps.to_vec();
+        steps.push(steps.last().unwrap().clone());
+        after.steps = steps.into();
+        assert!(!control_step_is_exact_tail_yield(&after, block.1, block.2));
+        let mut different_yield = block.0.clone();
+        different_yield.yield_value = ResidentReadLocation::Constant(block.0.yield_value.region());
+        assert!(!control_step_is_exact_tail_yield(
+            &different_yield,
+            block.1,
+            block.2
+        ));
+
+        let non_tail = source_document_instance(
+            "factorial(n<f64>) => <f64>\n  | 0 => 1\n  | n => n * factorial(n - 1).\nfactorial(signal<f64>)\n",
+        );
+        let mut recur_count = 0;
+        for step in &non_tail.plan.steps {
+            let ActivatedTurnStep::Match(control) = step else {
+                continue;
+            };
+            for arm in &control.arms {
+                for (ordinal, step) in arm.body.steps.iter().enumerate() {
+                    let selected = &non_tail.plan.steps[step.node.get() as usize];
+                    if matches!(selected, ActivatedTurnStep::Recur(_)) {
+                        recur_count += 1;
+                        assert!(!control_step_is_exact_tail_yield(
+                            &arm.body, ordinal, selected
+                        ));
+                    }
+                }
+            }
+        }
+        assert!(recur_count > 0);
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn tail_control_zero_lane_proof_keeps_distinct_logical_locals_distinct() {
+        let instance = source_document_instance(
+            "#Empty(seed<[f64]:0,2>, count<u64>) => <[f64]:0,2>\n  | :Step(value<[f64]:0,2>, left<u64>)\n  | :Done(value<[f64]:0,2>).\n#Empty(seed, count) -> :Step(seed, count)\n  :Step(value, left)\n    | left == 0u64 -> :Done(value)\n    | * -> :Step(value, left - 1u64)\n  :Done(value) => value.\n#Empty(empty<[f64]:0,2>, count<u64>)\n",
+        );
+        let (block, ordinal, step, written) = instance
+            .plan
+            .steps
+            .iter()
+            .find_map(|step| {
+                let ActivatedTurnStep::Match(control) = step else {
+                    return None;
+                };
+                control.arms.iter().find_map(|arm| {
+                    let ordinal = arm.body.steps.len().checked_sub(1)?;
+                    let step = &instance.plan.steps[arm.body.steps[ordinal].node.get() as usize];
+                    let ActivatedTurnStep::Recur(call) = step else {
+                        return None;
+                    };
+                    (call.write.region.len == 0).then_some((&arm.body, ordinal, step, call.write))
+                })
+            })
+            .expect("the actual fixed-empty result has a zero-lane tail Recur");
+        assert!(control_step_is_exact_tail_yield(block, ordinal, step));
+        let other = instance
+            .plan
+            .slots
+            .iter()
+            .find(|slot| {
+                slot.artifact_id != written.slot
+                    && slot.storage == written.storage
+                    && slot.region == written.region
+            })
+            .expect("distinct empty locals can share the same physical region");
+        let mut different = block.clone();
+        different.yield_identity = Some(super::super::ControlYieldIdentity {
+            slot: other.artifact_id,
+            storage: other.storage,
+        });
+        // The physical yield is deliberately identical. Logical identity is
+        // the positive proof that prevents this discarded call being a tail.
+        assert_eq!(different.yield_value, block.yield_value);
+        assert!(!control_step_is_exact_tail_yield(&different, ordinal, step));
+        different.yield_identity = None;
+        assert!(!control_step_is_exact_tail_yield(&different, ordinal, step));
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn tail_control_carrier_uses_actual_control_admission_for_every_finite_dimension() {
+        let overlap = tail_jump_cost((11, 2), (17, 3), (23, 5), 7).unwrap();
+        assert_eq!(overlap.temporary_bytes(), 11 + 17 + 23);
+        assert_eq!(overlap.retained_nodes(), 2 + 3 + 5);
+        assert_eq!(overlap.cloned_bytes(), 23);
+        assert_eq!(overlap.compute_work(), 7 + 23);
+        let instance = source_document_instance(
+            "walk(n<f64>) => <f64>\n  | 0 => 0\n  | n => walk(n - 1).\nwalk(signal<f64>)\n",
+        );
+        let node = instance
+            .plan
+            .steps
+            .iter()
+            .find_map(|step| match step {
+                ActivatedTurnStep::Match(control) => Some(control.budget_node),
+                _ => None,
+            })
+            .unwrap();
+        let base = crate::memory_planner::plan_current_resident_turn(
+            &instance.plan.memory_plan,
+            node,
+            &crate::memory_planner::TurnMemoryFacts::default(),
+        )
+        .unwrap();
+        assert!(base.budget_violations.is_empty());
+        let cost = tail_jump_cost(
+            (
+                base.demand.turn_peak_bytes + 1024,
+                base.demand.retained_nodes + 1024,
+            ),
+            (17, 2),
+            (base.demand.cloned_bytes + 1024, 3),
+            base.demand.work.compute + 1024,
+        )
+        .unwrap();
+        assert!(cost.temporary_bytes() > base.demand.turn_peak_bytes);
+        assert!(cost.retained_nodes() > base.demand.retained_nodes);
+        budget::with_resident_turn_plan(base.clone(), || {
+            budget::PreparedKernel::new((), cost)
+                .admit_control()
+                .unwrap()
+                .into_plan();
+        });
+        for dimension in 0..4 {
+            let mut bounded = base.clone();
+            match dimension {
+                0 => bounded.budget_limits.max_temporary_bytes = Some(cost.temporary_bytes() - 1),
+                1 => bounded.budget_limits.max_cloned_bytes = Some(cost.cloned_bytes() - 1),
+                2 => bounded.budget_limits.max_retained_nodes = Some(cost.retained_nodes() - 1),
+                3 => bounded.budget_limits.max_compute_work = Some(cost.compute_work() - 1),
+                _ => unreachable!(),
+            }
+            let denied = budget::with_resident_turn_plan(bounded, || {
+                budget::PreparedKernel::new((), cost).admit_control()
+            });
+            assert!(
+                denied.is_err(),
+                "finite dimension {dimension} must reject before the state clone"
+            );
+        }
+        assert!(tail_jump_cost((u64::MAX, 0), (0, 0), (1, 0), 0).is_err());
+        assert!(tail_jump_cost((0, u64::MAX), (0, 0), (0, 1), 0).is_err());
+        assert!(tail_jump_cost((0, 0), (0, 0), (1, 0), u64::MAX).is_err());
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn tail_control_never_allocates_a_recursive_frame_and_shares_the_planning_limit() {
+        let mut instance = source_document_instance(
+            "walk(n<f64>) => <f64>\n  | 0 => 0\n  | n => walk(n - 1).\nwalk(signal<f64>)\n",
+        );
+        let slot = instance.plan.inputs[0].slot;
+        instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::F64(&[128.0]),
+            }])
+            .unwrap();
+        assert_eq!(
+            instance.workspace.recursive_scrutinees.capacity(),
+            0,
+            "tail backedges never enter the saved recursive-frame path"
+        );
+        let epoch = instance.published_epoch();
+        let previous = instance.copied_output(0).unwrap();
+        let result = budget::with_planning_step_limit(32, || {
+            instance.turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::F64(&[1024.0]),
+            }])
+        });
+        assert!(matches!(result, Err(32)));
+        assert_eq!(instance.published_epoch(), epoch);
+        assert_eq!(
+            instance
+                .copied_output(0)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            previous.canonical_data_draft().unwrap()
+        );
+        assert_eq!(instance.workspace.recursive_scrutinees.capacity(), 0);
+        instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::F64(&[1.0]),
+            }])
+            .unwrap();
+        assert!(instance.workspace.recursive_scrutinees.is_empty());
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn tail_control_infinite_backedge_is_stopped_by_the_existing_finite_work_budget() {
+        let mut instance = source_document_instance(
+            "spin(n<f64>) => <f64>\n  | 0 => 0\n  | n => spin(n).\nspin(signal<f64>)\n",
+        );
+        let slot = instance.plan.inputs[0].slot;
+        instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::F64(&[0.0]),
+            }])
+            .unwrap();
+        let epoch = instance.published_epoch();
+        let previous = instance.copied_output(0).unwrap();
+        let error = instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::F64(&[1.0]),
+            }])
+            .unwrap_err();
+        assert!(
+            matches!(
+                error,
+                ResidentExecutionError::Kernel {
+                    error: ResidentKernelError::ResourceLimit {
+                        phase: mech_core::ResidentResourcePhase::Admission,
+                        dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                        required,
+                        limit,
+                    },
+                    ..
+                } if required == mech_core::RESIDENT_MAX_COMPARISON_WORK + 1
+                    && limit == mech_core::RESIDENT_MAX_COMPARISON_WORK
+            ),
+            "{error:?}"
+        );
+        assert_eq!(
+            instance.workspace.recursive_scrutinees.capacity(),
+            0,
+            "denial comes from finite admission, not the non-tail frame ceiling"
+        );
+        assert_eq!(instance.published_epoch(), epoch);
+        assert_eq!(
+            instance
+                .copied_output(0)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            previous.canonical_data_draft().unwrap()
+        );
+        instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::F64(&[0.0]),
+            }])
+            .unwrap();
+    }
+
+    #[cfg(all(feature = "source", feature = "string"))]
+    #[test]
+    fn tail_measurement_preserves_node_and_resource_diagnostic_on_retry() {
+        let live = source_document_instance(
+            "repeat(value<string>) => <string>\n  | value => repeat(value).\nrepeat(signal<string>)\n",
+        );
+        let call = live
+            .plan
+            .steps
+            .iter()
+            .find_map(|step| match step {
+                ActivatedTurnStep::Recur(call) => Some(*call),
+                _ => None,
+            })
+            .unwrap();
+        let mut bounded = budget::detached_turn_plan(mech_core::ResourceDemand::default()).unwrap();
+        bounded.budget_limits.max_compute_work = Some(0);
+        let mut proof = None;
+        let epoch = live.published_epoch();
+        let result = budget::with_resident_turn_plan(bounded.clone(), || {
+            live.prepare_tail_jump(call, epoch, 0, 0, &mut proof)
+        });
+        let error = match result {
+            Err(error) => error,
+            Ok(_) => panic!("tail metadata work must be admitted"),
+        };
+        assert_eq!(
+            error,
+            ResidentExecutionError::Kernel {
+                node: call.artifact_node,
+                error: ResidentKernelError::ResourceLimit {
+                    phase: mech_core::ResidentResourcePhase::Admission,
+                    dimension: mech_core::MemoryBudgetDimension::ComputeWork,
+                    required: 1,
+                    limit: 0,
+                },
+            }
+        );
+        assert_eq!(live.published_epoch(), epoch);
+        bounded.budget_limits.max_compute_work = Some(mech_core::RESIDENT_MAX_COMPUTE_WORK);
+        let retry = budget::with_resident_turn_plan(bounded, || {
+            live.prepare_tail_jump(call, epoch, 0, 0, &mut proof)
+        })
+        .unwrap();
+        assert!(retry.bytes > 0);
+        assert_eq!(live.published_epoch(), epoch);
+    }
+
     #[test]
     fn recursive_frame_cost_includes_entries_and_snapshot_nodes() {
-        let snapshot = mech_core::ValueCell::from_exact(true)
-            .unwrap()
-            .snapshot()
-            .unwrap();
+        let snapshot = scalar_snapshot(
+            mech_core::SchemaBody::Bool,
+            mech_core::ValueDataDraft::Bool(true),
+        );
         let schemas = snapshot.schemas().unwrap();
         let mut meter = budget::ResidentBudgetMeter::default();
         let (scalar_bytes, scalar_nodes) =
@@ -5723,6 +7124,33 @@ mod tests {
     #[cfg(feature = "source")]
     fn source_instance(source: &str) -> ReactiveInstance {
         source_instance_with_budget(source, None)
+    }
+
+    #[cfg(feature = "source")]
+    fn source_document_instance(source: &str) -> ReactiveInstance {
+        use mech_syntax::document::{
+            AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
+        };
+        let parsed = mech_syntax::document::parse_canonical_document(
+            TextSnapshot::new(DocumentId(823), Revision(1), source).unwrap(),
+            ParseConfig::default(),
+        );
+        assert!(parsed.is_strictly_clean());
+        let document = DocumentSyntax::cast(parsed.syntax()).unwrap();
+        let artifact = crate::CanonicalSourceFrontend
+            .compile_document(&document)
+            .unwrap()
+            .compile_artifact()
+            .unwrap();
+        let mut catalog = mech_core::FunctionCatalogBuilder::new();
+        crate::install_intrinsic_resident(&mut catalog).unwrap();
+        crate::resident::activate(
+            mech_core::ReactiveInstanceId::new(823, 1),
+            &artifact,
+            &catalog.build().unwrap(),
+            &crate::resident::ActivationFacts::default(),
+        )
+        .unwrap()
     }
 
     #[cfg(feature = "source")]
@@ -5761,6 +7189,255 @@ mod tests {
             },
         )
         .unwrap()
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn compatible_migration_rejects_suspended_frames_without_losing_their_wakeup() {
+        let source = "#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 42u64.\n#Deferred()\n";
+        let mut previous = source_document_instance(source);
+        let mut candidate = source_document_instance(source);
+        previous.turn(&[]).unwrap();
+        assert!(previous.has_suspended_continuation());
+        let wakeup = previous.continuation_wakeup().unwrap();
+        let epoch = previous.published_epoch();
+        let candidate_epoch = candidate.published_epoch();
+        assert_eq!(
+            candidate.migrate_compatible_state_from(&previous, &[]),
+            Err(ResidentActivationError::SuspendedContinuationMigration),
+        );
+        assert_eq!(previous.published_epoch(), epoch);
+        assert_eq!(candidate.published_epoch(), candidate_epoch);
+        assert!(previous.accepts_continuation_wakeup(wakeup));
+        previous.turn(&[]).unwrap();
+        assert!(!previous.has_suspended_continuation());
+        assert_eq!(
+            previous
+                .copied_output(0)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            mech_core::ValueDataDraft::U64(42),
+        );
+        candidate
+            .migrate_compatible_state_from(&previous, &[])
+            .unwrap();
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn projection_refresh_does_not_trigger_a_dormant_activation_output() {
+        use mech_syntax::document::{
+            AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
+        };
+        let source = "trigger := true\n~count := 0.0\n~> trigger { count = count + 1.0 }\ncount\n";
+        let parsed = mech_syntax::document::parse_canonical_document(
+            TextSnapshot::new(DocumentId(824), Revision(1), source).unwrap(),
+            ParseConfig::default(),
+        );
+        assert!(parsed.is_strictly_clean());
+        let document = DocumentSyntax::cast(parsed.syntax()).unwrap();
+        let artifact = crate::CanonicalSourceFrontend
+            .compile_document(&document)
+            .unwrap()
+            .compile_artifact()
+            .unwrap();
+        let activation = artifact
+            .nodes()
+            .iter()
+            .find(|node| matches!(node.body, crate::ExecutableNodeBody::Activation(_)))
+            .unwrap();
+        let activation_result = artifact
+            .slots()
+            .iter()
+            .find(|slot| {
+                slot.role == SlotRole::Derived
+                    && matches!(slot.producer, crate::ProducerReference::NodeOutput { node, .. }
+                        if node == activation.node)
+            })
+            .unwrap();
+        // Canonical artifacts may expose a scope's candidate tuple directly,
+        // even when source lowering only exposes its assigned state cells.
+        // Such a projection cannot invent the first trigger during refresh.
+        let mut slots = artifact.slots().to_vec();
+        let mut outputs = artifact.outputs().to_vec();
+        let output_index = outputs.len();
+        let target = CellSlotId::new(slots.len() as u32);
+        let output = mech_core::OutputId::new(output_index as u32);
+        slots.push(crate::SlotDeclaration {
+            slot: target,
+            schema: activation_result.schema,
+            role: SlotRole::Output,
+            producer: crate::ProducerReference::Output {
+                source: crate::ArtifactSource::Slot(activation_result.slot),
+                output,
+            },
+            initializer: None,
+        });
+        outputs.push(crate::OutputDeclaration {
+            output,
+            name: "activation-result".to_owned(),
+            interactive_binding: None,
+            source: target,
+            schema: activation_result.schema,
+        });
+        let artifact = crate::ProgramArtifactDraft {
+            schemas: artifact.schemas().clone(),
+            constants: artifact.constants().clone(),
+            contracts: artifact.contracts().clone(),
+            requirements: artifact.requirements().clone(),
+            inputs: artifact.inputs().to_vec().into_boxed_slice(),
+            slots: slots.into_boxed_slice(),
+            nodes: artifact.nodes().to_vec().into_boxed_slice(),
+            bindings: artifact.bindings().to_vec().into_boxed_slice(),
+            outputs: outputs.into_boxed_slice(),
+            constraints: artifact.constraints().to_vec().into_boxed_slice(),
+            compute_regions: artifact.compute_regions().to_vec().into_boxed_slice(),
+        }
+        .finalize()
+        .unwrap();
+        let decoded = crate::decode_program_artifact_bytecode_v1(
+            &crate::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+        )
+        .unwrap();
+        let mut catalog = mech_core::FunctionCatalogBuilder::new();
+        crate::install_intrinsic_resident(&mut catalog).unwrap();
+        let catalog = catalog.build().unwrap();
+        for artifact in [&artifact, &decoded] {
+            let mut instance = crate::resident::activate(
+                mech_core::ReactiveInstanceId::new(824, 1),
+                artifact,
+                &catalog,
+                &crate::resident::ActivationFacts::default(),
+            )
+            .unwrap();
+            instance
+                .prepare_initial_turn(&[])
+                .unwrap()
+                .publish()
+                .unwrap();
+            let epoch = instance.published_epoch();
+            let count = instance.copied_output(0).unwrap();
+            assert_eq!(
+                count.canonical_data_draft().unwrap(),
+                mech_core::ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(0.0))
+            );
+            instance
+                .refresh_output_projections(artifact, &std::collections::BTreeSet::from([target]))
+                .unwrap();
+            let state = artifact
+                .slots()
+                .iter()
+                .find(|slot| slot.role == SlotRole::State)
+                .unwrap()
+                .slot;
+            let state_hash = instance.published_state_hash();
+            assert!(matches!(
+                instance.refresh_replacement_projections(
+                    artifact,
+                    &std::collections::BTreeSet::from([target]),
+                    &[],
+                    &std::collections::BTreeSet::from([state, target]),
+                ),
+                Err(ResidentExecutionError::InvalidProjectionState { slot }) if slot == target
+            ));
+            assert_eq!(instance.published_state_hash(), state_hash);
+            instance
+                .refresh_replacement_projections(
+                    artifact,
+                    &std::collections::BTreeSet::from([target]),
+                    &[],
+                    &std::collections::BTreeSet::from([state]),
+                )
+                .unwrap();
+            assert_eq!(instance.published_epoch(), epoch);
+            assert_eq!(instance.published_state_hash(), state_hash);
+            assert_eq!(
+                instance
+                    .copied_output(0)
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                count.canonical_data_draft().unwrap(),
+            );
+            assert!(matches!(
+                instance.copied_output(output_index),
+                Err(ResidentActivationError::OutputUnavailable { output })
+                    if output == output_index
+            ));
+            instance.turn(&[]).unwrap();
+            assert_eq!(
+                instance
+                    .copied_output(0)
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                mech_core::ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(1.0))
+            );
+            assert!(instance.copied_output(output_index).is_ok());
+        }
+    }
+
+    #[cfg(feature = "string")]
+    #[test]
+    fn retained_snapshot_capture_measurement_uses_its_immutable_schema_owner() {
+        let retained = scalar_snapshot(
+            mech_core::SchemaBody::String,
+            mech_core::ValueDataDraft::String("owned arena".to_owned()),
+        );
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        builder
+            .insert(
+                mech_core::SchemaDraft {
+                    body: mech_core::SchemaBody::Bool,
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let fallback = builder.finish().unwrap().table;
+        let mut meter = budget::ResidentBudgetMeter::default();
+        let footprint = resident_frame_value_footprint(
+            ResidentValueRef::Snapshot(&[Some(retained.clone())]),
+            &fallback,
+            &mut meter,
+        )
+        .expect("the captured value owns its String schema, not fallback Bool");
+        assert!(
+            footprint.0
+                >= retained
+                    .retained_footprint(&retained.schemas().unwrap())
+                    .unwrap()
+                    .retained_bytes
+        );
+        assert!(footprint.1 >= 1);
+        let large = scalar_snapshot(
+            mech_core::SchemaBody::String,
+            mech_core::ValueDataDraft::String(
+                "x".repeat(mech_core::RESIDENT_MAX_COMPARISON_WORK as usize + 1),
+            ),
+        );
+        let owner = large.schemas().unwrap();
+        let mut metadata_meter = budget::ResidentBudgetMeter::default();
+        let measured = resident_frame_value_footprint(
+            ResidentValueRef::Snapshot(&[Some(large.clone())]),
+            &fallback,
+            &mut metadata_meter,
+        )
+        .expect("borrowed retention reads headers, not UTF-8 payload bytes");
+        assert!(measured.0 > mech_core::RESIDENT_MAX_COMPARISON_WORK);
+        assert_eq!(metadata_meter.estimate().comparison_work(), 0);
+        assert!(metadata_meter.estimate().compute_work() > 0);
+        assert!(
+            budget::charge_canonical_value_footprint(
+                &mut budget::ResidentBudgetMeter::default(),
+                &large,
+                &owner,
+            )
+            .is_err(),
+            "a separate payload materialization still requires its full original allowance"
+        );
     }
 
     #[cfg(feature = "source")]
@@ -5817,17 +7494,22 @@ mod tests {
                 |_| Ok(()),
             ),
             Err(ResidentExecutionError::Kernel {
-                error: ResidentKernelError::InvalidShape,
+                error: ResidentKernelError::ResourceLimit {
+                    phase: mech_core::ResidentResourcePhase::Admission,
+                    dimension: mech_core::MemoryBudgetDimension::TemporaryBytes,
+                    required, limit,
+                },
                 ..
-            })
+            }) if required > limit && limit == mech_core::RESIDENT_MAX_BYTES
         ));
     }
 
     #[cfg(feature = "source")]
     #[test]
     fn nested_parameterized_operation_locals_use_turn_shaped_snapshot_storage() {
-        let instance =
-            source_instance("[[z | z <- rest] + rest | [head | rest] <- signal<[[f64]:1,3]:1,2>]");
+        let instance = source_document_instance(
+            "nested<[[f64]]> := [[z | z <- rest] + rest | [head | rest] <- signal<[[f64]:1,3]:1,2>]\nnested",
+        );
         assert!(instance.plan.steps.iter().any(|step| {
             matches!(
                 step,
@@ -5879,8 +7561,9 @@ mod tests {
     #[cfg(feature = "source")]
     #[test]
     fn nested_comprehension_child_omits_live_captured_rest_input() {
-        let instance =
-            source_instance("[[z + 1 | z <- rest] | [head | rest] <- signal<[[f64]:1,3]:1,2>]");
+        let instance = source_document_instance(
+            "nested<[[f64]]> := [[z + 1 | z <- rest] | [head | rest] <- signal<[[f64]:1,3]:1,2>]\nnested",
+        );
         let (capture, child_reads) = instance
             .plan
             .steps
@@ -6005,9 +7688,13 @@ mod tests {
         assert!(matches!(
             result,
             Err(ResidentExecutionError::Kernel {
-                error: ResidentKernelError::InvalidShape,
+                error: ResidentKernelError::ResourceLimit {
+                    phase: mech_core::ResidentResourcePhase::Admission,
+                    dimension: mech_core::MemoryBudgetDimension::TemporaryBytes,
+                    required, limit,
+                },
                 ..
-            })
+            }) if required > limit && limit == mech_core::RESIDENT_MAX_BYTES
         ));
     }
 
@@ -6083,16 +7770,84 @@ mod tests {
             mech_core::RESIDENT_MAX_BYTES + 1,
             0,
         );
-        assert!(
-            matches!(
-                result,
-                Err(ResidentExecutionError::Kernel {
-                    error: ResidentKernelError::InvalidShape,
-                    ..
-                })
-            ),
-            "{result:?}"
+        assert_eq!(
+            result,
+            Err(ResidentExecutionError::Kernel {
+                node: instance.plan.steps[operation.get() as usize].artifact_node(),
+                error: ResidentKernelError::ResourceLimit {
+                    phase: mech_core::ResidentResourcePhase::Admission,
+                    dimension: mech_core::MemoryBudgetDimension::TemporaryBytes,
+                    required: mech_core::RESIDENT_MAX_BYTES + 1,
+                    limit: mech_core::RESIDENT_MAX_BYTES,
+                },
+            })
         );
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn counted_application_plan_preserves_resource_denial_and_published_output() {
+        for count in ["2", "[2]"] {
+            let mut instance = source_document_instance(&format!(
+                "identity(value<f64>) => <f64> := value\nsignal<f64> |{count}> identity\n"
+            ));
+            let slot = instance.plan.inputs[0].slot;
+            instance
+                .turn(&[CapturedSignalInput {
+                    slot,
+                    value: ResidentValueRef::F64(&[7.0]),
+                }])
+                .unwrap();
+            let published = instance.copied_output(0).unwrap();
+            let before = instance.published_epoch();
+            let operation = instance
+                .plan
+                .steps
+                .iter()
+                .position(|step| matches!(step, ActivatedTurnStep::Iteration(_)))
+                .map(|index| ActivatedNodeIndex(index as u32))
+                .expect("counted application must retain an iteration node");
+            let result = instance.execute_step_with_live_demand(
+                operation,
+                before,
+                before.checked_next().unwrap(),
+                &mut ResidentStructuralProbe::default(),
+                mech_core::RESIDENT_MAX_BYTES + 1,
+                0,
+            );
+            assert!(
+                matches!(result, Err(ResidentExecutionError::Kernel {
+                    node,
+                    error: ResidentKernelError::ResourceLimit {
+                        phase: mech_core::ResidentResourcePhase::Admission,
+                        dimension: mech_core::MemoryBudgetDimension::TemporaryBytes,
+                        required,
+                        limit,
+                    },
+                }) if node == instance.plan.steps[operation.get() as usize].artifact_node()
+                    && required > limit && limit == mech_core::RESIDENT_MAX_BYTES),
+                "count {count} must preserve the actual denied resource: {result:?}"
+            );
+            assert_eq!(instance.published_epoch(), before);
+            assert_eq!(
+                instance
+                    .copied_output(0)
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                published.canonical_data_draft().unwrap()
+            );
+            instance
+                .turn(&[CapturedSignalInput {
+                    slot,
+                    value: ResidentValueRef::F64(&[8.0]),
+                }])
+                .unwrap();
+            assert!(matches!(
+                instance.copied_output(0).unwrap().data(),
+                mech_core::ValueData::F64(value) if value.to_f64() == 8.0
+            ));
+        }
     }
 
     #[cfg(feature = "source")]
@@ -6127,17 +7882,22 @@ mod tests {
         assert!(matches!(
             result,
             Err(ResidentExecutionError::Kernel {
-                error: ResidentKernelError::InvalidShape,
+                error: ResidentKernelError::ResourceLimit {
+                    phase: mech_core::ResidentResourcePhase::Admission,
+                    dimension: mech_core::MemoryBudgetDimension::TemporaryBytes,
+                    required, limit,
+                },
                 ..
-            })
+            }) if required > limit && limit == mech_core::RESIDENT_MAX_BYTES
         ));
     }
 
     #[cfg(feature = "source")]
     #[test]
     fn nested_comprehension_plan_counts_live_enclosing_arena() {
-        let mut instance =
-            source_instance("[[z | z <- [1 2], z <= item] | item <- signal<[f64]:1,1>]");
+        let mut instance = source_document_instance(
+            "nested<[[f64]]> := [[z | z <- [1 2], z <= item] | item <- signal<[f64]:1,1>]\nnested",
+        );
         let slot = instance.plan.inputs[0].slot;
         instance
             .turn(&[CapturedSignalInput {
@@ -6164,9 +7924,13 @@ mod tests {
                 1,
             ),
             Err(ResidentExecutionError::Kernel {
-                error: ResidentKernelError::InvalidShape,
+                error: ResidentKernelError::ResourceLimit {
+                    phase: mech_core::ResidentResourcePhase::Admission,
+                    dimension: mech_core::MemoryBudgetDimension::TemporaryBytes,
+                    required, limit,
+                },
                 ..
-            })
+            }) if required > limit && limit == mech_core::RESIDENT_MAX_BYTES
         ));
     }
 
@@ -6402,9 +8166,14 @@ mod tests {
             assert!(matches!(
                 instance.turn(&inputs(&[1])),
                 Err(ResidentExecutionError::Kernel {
-                    error: ResidentKernelError::InvalidShape,
+                    error: ResidentKernelError::ResourceLimit {
+                        phase: mech_core::ResidentResourcePhase::Admission,
+                        dimension: mech_core::MemoryBudgetDimension::ComputeWork,
+                        required,
+                        limit,
+                    },
                     ..
-                })
+                }) if required > limit && limit == mech_core::RESIDENT_MAX_COMPUTE_WORK
             ));
             assert_eq!(instance.published_epoch(), epoch);
             assert_eq!(
@@ -6605,13 +8374,165 @@ mod tests {
             )
             .admit_control()
             .map(|permit| permit.into_plan()),
-            Err(ResidentKernelError::InvalidShape)
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::RetainedNodes,
+                required: 65540,
+                limit: 65536
+            })
         );
         assert_eq!(
             match_conversion_peak_retained_nodes(u64::MAX, 1),
             Err(ResidentKernelError::InvalidShape)
         );
         Ok(())
+    }
+
+    #[cfg(feature = "source")]
+    fn matrix_result_instance_and_value(
+        extents: [u64; 2],
+    ) -> (ReactiveInstance, super::super::ResidentWriteLocation, Value) {
+        let instance = source_document_instance(
+            "left := first<[u64]>\nright := second<[u64]>\n(flag<bool>? | true => left | false => right)\n",
+        );
+        let write = instance
+            .plan
+            .steps
+            .iter()
+            .find_map(|step| match step {
+                ActivatedTurnStep::Match(control) => Some(control.write),
+                _ => None,
+            })
+            .unwrap();
+        let target = &instance.plan.slots[write.slot.get() as usize];
+        let schema = instance.plan.schemas.get(target.schema).unwrap();
+        let shape = mech_core::shape_for_resolved_extents(schema, &extents).unwrap();
+        let value = mech_core::snapshot::ValueDraft {
+            schema: target.schema,
+            shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
+            data: mech_core::ValueDataDraft::Matrix(
+                (0..extents[0] * extents[1])
+                    .map(mech_core::ValueDataDraft::U64)
+                    .collect(),
+            ),
+        }
+        .finalize(&mech_core::snapshot::SnapshotValidationContext::new(
+            &instance.plan.schemas,
+        ))
+        .unwrap();
+        (instance, write, value)
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn snapshot_result_validation_preserves_actual_geometry_and_fixed_fact_authority() {
+        let (mut instance, write, value) = matrix_result_instance_and_value([2, 3]);
+        let source = [Some(value.clone())];
+        let validate = |plan: &super::super::ActivatedPlan| {
+            validate_snapshot_control_result(plan, &write, ResidentValueRef::Snapshot(&source))
+        };
+        assert_eq!(validate(&instance.plan), Ok(()));
+        let target = &mut instance.plan.slots[write.slot.get() as usize];
+        assert!(!target.activation_fixed_shape);
+        let original_shape = target.shape.clone();
+        target.activation_fixed_shape = true;
+        assert_eq!(
+            validate(&instance.plan),
+            Err(ResidentKernelError::InvalidShape)
+        );
+        instance.plan.slots[write.slot.get() as usize].shape = value.shape().clone();
+        assert_eq!(validate(&instance.plan), Ok(()));
+        instance.plan.slots[write.slot.get() as usize].shape = original_shape;
+        instance.plan.slots[write.slot.get() as usize].activation_fixed_shape = false;
+        assert_eq!(validate(&instance.plan), Ok(()));
+        let wrong = [Some(scalar_snapshot(
+            mech_core::SchemaBody::Bool,
+            mech_core::ValueDataDraft::Bool(true),
+        ))];
+        assert_eq!(
+            validate_snapshot_control_result(
+                &instance.plan,
+                &write,
+                ResidentValueRef::Snapshot(&wrong)
+            ),
+            Err(ResidentKernelError::InvalidOutput)
+        );
+        assert_eq!(
+            validate_snapshot_control_result(
+                &instance.plan,
+                &write,
+                ResidentValueRef::Snapshot(&[None])
+            ),
+            Err(ResidentKernelError::InvalidOutput)
+        );
+        let mut wrong_target = write;
+        wrong_target.region.len = 0;
+        assert_eq!(
+            validate_snapshot_control_result(
+                &instance.plan,
+                &wrong_target,
+                ResidentValueRef::Snapshot(&source)
+            ),
+            Err(ResidentKernelError::InvalidOutput)
+        );
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn snapshot_result_metadata_is_admitted_before_shape_validation_and_recovers() {
+        let (mut instance, write, value) = matrix_result_instance_and_value([2, 3]);
+        let source = [Some(value.clone())];
+        let mut plan = budget::detached_turn_plan(mech_core::ResourceDemand::default()).unwrap();
+        let work = 128 + 2 * value.shape().parameter_values().len() as u64;
+        plan.budget_limits.max_compute_work = Some(work - 1);
+        let deny = || {
+            budget::with_resident_turn_plan(plan.clone(), || {
+                validate_snapshot_control_result(
+                    &instance.plan,
+                    &write,
+                    ResidentValueRef::Snapshot(&source),
+                )
+            })
+        };
+        assert_eq!(
+            deny(),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComputeWork,
+                required: 132,
+                limit: 131
+            })
+        );
+        // A malformed fixed target would also reject. With insufficient work,
+        // the metadata permit must still fail before any shape traversal.
+        instance.plan.slots[write.slot.get() as usize].activation_fixed_shape = true;
+        assert_eq!(
+            budget::with_resident_turn_plan(plan.clone(), || {
+                validate_snapshot_control_result(
+                    &instance.plan,
+                    &write,
+                    ResidentValueRef::Snapshot(&source),
+                )
+            }),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComputeWork,
+                required: 132,
+                limit: 131
+            })
+        );
+        instance.plan.slots[write.slot.get() as usize].activation_fixed_shape = false;
+        plan.budget_limits.max_compute_work = Some(work);
+        assert_eq!(
+            budget::with_resident_turn_plan(plan, || {
+                validate_snapshot_control_result(
+                    &instance.plan,
+                    &write,
+                    ResidentValueRef::Snapshot(&source),
+                )
+            }),
+            Ok(())
+        );
     }
 
     #[test]
@@ -6641,24 +8562,142 @@ mod tests {
             }])
             .unwrap();
         let output = instance.copied_output(0).unwrap();
+        let epoch = instance.published_epoch();
+        let published_pointers = match instance.output_borrow(0).unwrap() {
+            ResidentValueBorrow::String { values, .. } => values
+                .iter()
+                .map(|value| value.as_ptr())
+                .collect::<Vec<_>>(),
+            value => panic!("expected dense String publication: {value:?}"),
+        };
         let (nodes, work) =
             match_conversion_prior_footprint(Some(&output), &instance.plan.schemas).unwrap();
-        assert!(nodes >= 5);
-        assert!(work.comparison_work() >= 50 * 1024);
-
-        let candidate_work = 20 * 1024;
         assert_eq!(
-            budget::PreparedKernel::new(
-                (),
-                budget::resident_cost! {
-                    comparison_work: work.comparison_work() + candidate_work,
-                    compute_work: work.compute_work() + candidate_work,
-                    ..budget::KernelCostEstimate::default()
+            nodes,
+            output
+                .retained_footprint(&instance.plan.schemas)
+                .unwrap()
+                .node_count
+        );
+        assert_eq!(work.comparison_work(), 0);
+        assert!(work.compute_work() > 0);
+
+        // Borrowed retention reads the complete container metadata, not the
+        // String payload. Its work must depend on topology rather than bytes.
+        let short = [String::new(), String::new()];
+        let short_value = crate::resident::numeric::resident_value_to_snapshot(
+            &instance.plan.schemas,
+            output.schema(),
+            output.shape(),
+            ResidentShape {
+                rows: 1,
+                columns: 2,
+            },
+            ResidentValueRef::String(&short),
+        )?;
+        let (short_nodes, short_work) =
+            match_conversion_prior_footprint(Some(&short_value), &instance.plan.schemas)?;
+        assert_eq!(short_nodes, nodes);
+        assert_eq!(short_work.compute_work(), work.compute_work());
+        assert_eq!(short_work.comparison_work(), 0);
+
+        let mut metadata_denial = budget::detached_turn_plan(mech_core::ResourceDemand::default())?;
+        metadata_denial.budget_limits.max_compute_work = Some(work.compute_work() - 1);
+        assert_eq!(
+            budget::with_resident_turn_plan(metadata_denial, || {
+                match_conversion_prior_footprint(Some(&output), &instance.plan.schemas)
+            }),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComputeWork,
+                required: 448,
+                limit: 447
+            })
+        );
+
+        // The candidate's actual materialization cost already reserves its
+        // publication comparison. Prior retention adds only metadata compute.
+        let candidate = ["p".repeat(10 * 1024), "q".repeat(10 * 1024)];
+        let cost = crate::resident::numeric::resident_value_snapshot_materialization_cost(
+            &instance.plan.schemas,
+            output.schema(),
+            output.shape(),
+            ResidentValueRef::String(&candidate),
+        )?;
+        assert_eq!(cost.comparison_work, 20 * 1024 + 2);
+        assert_eq!(cost.compute_work, 20 * 1024 + 4);
+        let complete = budget::resident_cost! {
+            comparison_work: cost.comparison_work + work.comparison_work(),
+            compute_work: cost.compute_work + work.compute_work(),
+            ..budget::KernelCostEstimate::default()
+        };
+        let mut denied = budget::detached_turn_plan(mech_core::ResourceDemand::default())?;
+        denied.budget_limits.max_comparison_work = Some(cost.comparison_work);
+        denied.budget_limits.max_compute_work = Some(complete.compute_work() - 1);
+        let materialized = std::cell::Cell::new(false);
+        let convert = || -> Result<Value, ResidentKernelError> {
+            budget::PreparedKernel::new((), complete)
+                .admit_control()?
+                .into_plan();
+            materialized.set(true);
+            crate::resident::numeric::resident_value_to_snapshot(
+                &instance.plan.schemas,
+                output.schema(),
+                output.shape(),
+                ResidentShape {
+                    rows: 1,
+                    columns: 2,
                 },
+                ResidentValueRef::String(&candidate),
             )
-            .admit_control()
-            .map(|permit| permit.into_plan()),
-            Err(ResidentKernelError::InvalidShape)
+        };
+        assert_eq!(
+            budget::with_resident_turn_plan(denied.clone(), convert).map(drop),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComputeWork,
+                required: complete.compute_work(),
+                limit: complete.compute_work() - 1,
+            })
+        );
+        assert!(!materialized.get());
+        assert_eq!(instance.published_epoch(), epoch);
+        let retained_pointers = match instance.output_borrow(0).unwrap() {
+            ResidentValueBorrow::String { values, .. } => values
+                .iter()
+                .map(|value| value.as_ptr())
+                .collect::<Vec<_>>(),
+            value => panic!("expected retained dense String publication: {value:?}"),
+        };
+        assert_eq!(retained_pointers, published_pointers);
+        assert!(
+            instance
+                .copied_output(0)
+                .unwrap()
+                .snapshot_eq(&instance.plan.schemas, &output, &instance.plan.schemas)
+                .unwrap()
+        );
+
+        denied.budget_limits.max_compute_work = Some(complete.compute_work());
+        let next = budget::with_resident_turn_plan(denied, convert)?;
+        assert!(materialized.get());
+        assert!(
+            !output
+                .snapshot_eq(&instance.plan.schemas, &next, &instance.plan.schemas)
+                .unwrap()
+        );
+        instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::String(&candidate),
+            }])
+            .unwrap();
+        assert!(
+            instance
+                .copied_output(0)
+                .unwrap()
+                .snapshot_eq(&instance.plan.schemas, &next, &instance.plan.schemas)
+                .unwrap()
         );
         Ok(())
     }

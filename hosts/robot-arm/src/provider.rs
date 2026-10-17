@@ -1,10 +1,10 @@
 use std::sync::{Arc, Mutex};
 
-use mech_core::{MResult, MechError, MechErrorKind, OperationContractDeclaration, Value};
+use mech_core::{MResult, MechError, MechErrorKind, OperationContractDeclaration, Schema, Value};
 use mech_runtime::{
-    ConfigValue, HostManifestConfig, PreparedRuntimeEffect, RuntimeCompensatableEffect,
-    RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeHostFactory,
-    RuntimeHostInputValue, RuntimeHostInstallation, RuntimeResourceProvider,
+    ConfigValue, HostManifestConfig, PreparedRuntimeEffect, ResourceSchemaPreflight,
+    RuntimeCompensatableEffect, RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource,
+    RuntimeHostFactory, RuntimeHostInputValue, RuntimeHostInstallation, RuntimeResourceProvider,
     RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
     RuntimeResourceWriteRequest, materialize_host_manifest,
 };
@@ -112,6 +112,15 @@ impl RuntimeResourceProvider for RobotArmResourceProvider {
             ));
         }
         validate_command_target(request.base_uri, request.operation.name(), &request.path)
+    }
+
+    fn preflight_write_schema(
+        &self,
+        request: RuntimeResourceWritePreflightRequest,
+        _payload_schema: &Schema,
+    ) -> MResult<ResourceSchemaPreflight> {
+        self.preflight_write(request)?;
+        Ok(ResourceSchemaPreflight::Validated)
     }
 
     fn prepare_write(
@@ -348,6 +357,7 @@ impl MechErrorKind for RobotArmResourceProviderError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use mech_core::{DimensionExpr, IntegerWidth, SchemaBody, SchemaDraft};
     use mech_runtime::{
         RuntimeCapabilityOperation, RuntimeEffectId, RuntimeResourceProvider, TransactionId,
         value_bool,
@@ -362,6 +372,97 @@ mod tests {
 
     fn bool_value(value: bool) -> Value {
         value_bool(value)
+    }
+
+    #[test]
+    fn schema_preflight_accepts_existing_payload_kinds_without_changing_robot_state() {
+        let provider = RobotArmResourceProvider::new("arm");
+        let schemas = [
+            SchemaBody::Bool,
+            SchemaBody::String,
+            SchemaBody::UnsignedInteger(IntegerWidth::W64),
+            SchemaBody::Matrix {
+                element: Box::new(SchemaBody::String),
+                dimensions: Box::new([DimensionExpr::Constant(1), DimensionExpr::Constant(2)]),
+            },
+        ]
+        .map(|body| {
+            SchemaDraft {
+                body,
+                dimension_parameters: Box::new([]),
+            }
+            .finalize()
+            .unwrap()
+        });
+        let request = |base: &str, operation: &str, path: &str, intent| {
+            RuntimeResourceWritePreflightRequest {
+                base_uri: base.into(),
+                path: path.into(),
+                context_name: "commands".into(),
+                operation: RuntimeCapabilityOperation::Custom(operation.into()),
+                intent,
+            }
+        };
+        for schema in &schemas {
+            for command in ["move", "grip", "home"] {
+                assert_eq!(
+                    provider
+                        .preflight_write_schema(
+                            request(
+                                "robot://arm/commands",
+                                command,
+                                command,
+                                RuntimeResourceWriteIntent::Send
+                            ),
+                            schema,
+                        )
+                        .unwrap(),
+                    ResourceSchemaPreflight::Validated,
+                );
+            }
+            for (base, operation, path, intent) in [
+                (
+                    "robot://other/commands",
+                    "move",
+                    "move",
+                    RuntimeResourceWriteIntent::Send,
+                ),
+                (
+                    "robot://arm/state",
+                    "move",
+                    "move",
+                    RuntimeResourceWriteIntent::Send,
+                ),
+                (
+                    "robot://arm/commands",
+                    "move",
+                    "grip",
+                    RuntimeResourceWriteIntent::Send,
+                ),
+                (
+                    "robot://arm/commands",
+                    "dance",
+                    "dance",
+                    RuntimeResourceWriteIntent::Send,
+                ),
+                (
+                    "robot://arm/commands",
+                    "move",
+                    "move",
+                    RuntimeResourceWriteIntent::Assign,
+                ),
+            ] {
+                assert!(
+                    provider
+                        .preflight_write_schema(request(base, operation, path, intent), schema)
+                        .is_err()
+                );
+            }
+        }
+        let state = provider.state.lock().unwrap();
+        assert!(state.position.is_none());
+        assert!(state.gripper.is_none());
+        assert!(state.last_command.is_none());
     }
 
     fn apply_write(

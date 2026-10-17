@@ -713,8 +713,45 @@ pub fn maintained_source_type_declaration(
     ) {
         declaration.parameter_names = Some(vec!["left".into(), "right".into()].into_boxed_slice());
     }
+    match canonical_name {
+        "number/parse-u64" => {
+            declaration.parameter_names = Some(vec!["text".into()].into_boxed_slice())
+        }
+        "number/format" => {
+            declaration.parameter_names =
+                Some(vec!["value".into(), "precision".into()].into_boxed_slice())
+        }
+        "sequence/length" => {
+            declaration.parameter_names = Some(vec!["value".into()].into_boxed_slice())
+        }
+        "sequence/sort-indices" => {
+            declaration.parameter_names = Some(
+                vec![
+                    "primary".into(),
+                    "primary-order".into(),
+                    "secondary".into(),
+                    "secondary-order".into(),
+                ]
+                .into_boxed_slice(),
+            )
+        }
+        "text/lines" => declaration.parameter_names = Some(vec!["text".into()].into_boxed_slice()),
+        "text/join" => {
+            declaration.parameter_names =
+                Some(vec!["values".into(), "separator".into()].into_boxed_slice())
+        }
+        "map/histogram" | "map/keys" | "map/values" => {
+            declaration.parameter_names = Some(vec!["value".into()].into_boxed_slice())
+        }
+        _ => {}
+    }
     validate_type_declaration(canonical_name, &declaration)?;
     let output_rule = match canonical_name {
+        "map/histogram" => Some(ResolvedOutputSchemaRule::Declared(crate::SchemaBody::Map {
+            key: Box::new(crate::SchemaBody::String),
+            value: Box::new(crate::SchemaBody::UnsignedInteger(crate::IntegerWidth::W64)),
+            cardinality: crate::CardinalitySpec::Dynamic { upper_bound: None },
+        })),
         "matrix/transpose" => Some(ResolvedOutputSchemaRule::TransposeOfInput(0)),
         "set/cartesian-product" => Some(ResolvedOutputSchemaRule::DynamicSetCartesianProduct),
         "set/powerset" => Some(ResolvedOutputSchemaRule::DynamicSetPowerset),

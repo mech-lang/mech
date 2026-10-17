@@ -1,0 +1,174 @@
+{
+  "schema": "mech.validation.iteration-boundaries.v1",
+  "recorded_utc": "2026-10-16T17:56:52.078267+00:00",
+  "changes": [
+    "Plan independent typed materialization boundaries for the private Iteration carrier and enclosing result using the existing call memory planner.",
+    "Measure the actual prior target at each boundary and charge its traversal work without resetting control limits.",
+    "Resolve implicit carrier locals by their reserved identity through nested matches and collections.",
+    "Store matrix inputs with only Turn-lived parameters in snapshot lanes when no fixed activation witness is supplied. Activation-lived input dimensions still require their own witness."
+  ],
+  "acceptance": [
+    {
+      "name": "ordinary-application-library-v7",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "mech-stdlib",
+        "--no-default-features",
+        "--features",
+        "full_compiler",
+        "--test",
+        "applications",
+        "--offline",
+        "--locked",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "base_commit": "78f21c3f5b8e60bedb5522b946a605b922407a36",
+      "exit_code": 0,
+      "results": [
+        "test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.76s"
+      ],
+      "log_sha256": "b0aa550ad3bbb3b00b47d12b995b0679d88e2ac00ae102ad0ff43c0e52bf973c",
+      "source_pins": {
+        "src/engine/src/resident/general/comprehension.rs": "0763b4db50681be5f830cf409a19e8a551006a260381ea0c0aeb3eebb18db99f",
+        "src/engine/src/resident/general/iteration.rs": "41a895b65898e07f4cafa370752856e976276b03752c32a8eda7522d740aaae4",
+        "src/engine/src/resident/general/iteration_execution.rs": "9d12ce26c7b186cb40e8e350d374d1e6879608ff60e16d7ec949b40c1fe6e2c6",
+        "src/engine/src/resident/general/mod.rs": "589c1343506c0a3e61fd47eceb2b240b5932de4d32793e819f39ff43bec82d45",
+        "src/engine/tests/iteration_artifact.rs": "82953191258960cb832b051459c50c3d01aed4ac5abbc0df6e56254d2eb2168e",
+        "src/stdlib/tests/applications.rs": "7b5dc95018581a807df99f7d2eaac05c7f44332e92409664b325361f2f576408"
+      },
+      "serial_preflight": true,
+      "sources_unchanged_during_run": true
+    },
+    {
+      "name": "ordinary-iteration-artifact-v2",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "mech-engine",
+        "--no-default-features",
+        "--features",
+        "full_compiler,full_source,resident-artifact,native-sequence,native-artifact",
+        "--test",
+        "iteration_artifact",
+        "--offline",
+        "--locked",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "base_commit": "78f21c3f5b8e60bedb5522b946a605b922407a36",
+      "exit_code": 0,
+      "results": [
+        "test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s"
+      ],
+      "log_sha256": "baac886553a3909dd0160c4d2d44c562f4682c9d483e53c79b5dd5206f76ef2d",
+      "source_pins": {
+        "src/engine/src/resident/general/comprehension.rs": "0763b4db50681be5f830cf409a19e8a551006a260381ea0c0aeb3eebb18db99f",
+        "src/engine/src/resident/general/iteration.rs": "41a895b65898e07f4cafa370752856e976276b03752c32a8eda7522d740aaae4",
+        "src/engine/src/resident/general/iteration_execution.rs": "9d12ce26c7b186cb40e8e350d374d1e6879608ff60e16d7ec949b40c1fe6e2c6",
+        "src/engine/src/resident/general/mod.rs": "589c1343506c0a3e61fd47eceb2b240b5932de4d32793e819f39ff43bec82d45",
+        "src/engine/tests/iteration_artifact.rs": "c94f8d4452151e51c60ab99bbc54b770e11260ce822cd2c45d6ba076ba673f66",
+        "src/stdlib/tests/applications.rs": "7b5dc95018581a807df99f7d2eaac05c7f44332e92409664b325361f2f576408"
+      },
+      "serial_preflight": true,
+      "sources_unchanged_during_run": true
+    }
+  ],
+  "retained_checks": [
+    {
+      "name": "ordinary-iteration-retained-v1",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "mech-engine",
+        "--no-default-features",
+        "--features",
+        "full_compiler,full_source,resident-artifact,native-sequence,native-artifact",
+        "--test",
+        "iteration_artifact",
+        "--test",
+        "canonical_source_collections",
+        "--test",
+        "canonical_source_structures",
+        "--test",
+        "canonical_boolean_match",
+        "--offline",
+        "--locked",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "base_commit": "78f21c3f5b8e60bedb5522b946a605b922407a36",
+      "exit_code": 101,
+      "results": [
+        "test result: ok. 38 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.13s",
+        "test result: FAILED. 8 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.45s"
+      ],
+      "log_sha256": "f10dcdeab3c80aef9422543ac46f2f8bbb9d3bf80e4a47753cd651f4f8eac41c",
+      "source_pins": {
+        "src/engine/src/resident/general/comprehension.rs": "0763b4db50681be5f830cf409a19e8a551006a260381ea0c0aeb3eebb18db99f",
+        "src/engine/src/resident/general/iteration.rs": "41a895b65898e07f4cafa370752856e976276b03752c32a8eda7522d740aaae4",
+        "src/engine/src/resident/general/iteration_execution.rs": "9d12ce26c7b186cb40e8e350d374d1e6879608ff60e16d7ec949b40c1fe6e2c6",
+        "src/engine/src/resident/general/mod.rs": "589c1343506c0a3e61fd47eceb2b240b5932de4d32793e819f39ff43bec82d45",
+        "src/engine/tests/iteration_artifact.rs": "82953191258960cb832b051459c50c3d01aed4ac5abbc0df6e56254d2eb2168e",
+        "src/stdlib/tests/applications.rs": "7b5dc95018581a807df99f7d2eaac05c7f44332e92409664b325361f2f576408"
+      },
+      "serial_preflight": true,
+      "sources_unchanged_during_run": true
+    },
+    {
+      "name": "ordinary-iteration-artifact-structures-v1",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "mech-engine",
+        "--no-default-features",
+        "--features",
+        "full_compiler,full_source,resident-artifact,native-sequence,native-artifact",
+        "--test",
+        "iteration_artifact",
+        "--test",
+        "canonical_source_structures",
+        "--offline",
+        "--locked",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "base_commit": "78f21c3f5b8e60bedb5522b946a605b922407a36",
+      "exit_code": 101,
+      "results": [
+        "test result: FAILED. 20 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.73s"
+      ],
+      "log_sha256": "4e5361356d18e8a00b114523cae5882135b7f398bc2e0f24a3400825825e7d5d",
+      "source_pins": {
+        "src/engine/src/resident/general/comprehension.rs": "0763b4db50681be5f830cf409a19e8a551006a260381ea0c0aeb3eebb18db99f",
+        "src/engine/src/resident/general/iteration.rs": "41a895b65898e07f4cafa370752856e976276b03752c32a8eda7522d740aaae4",
+        "src/engine/src/resident/general/iteration_execution.rs": "9d12ce26c7b186cb40e8e350d374d1e6879608ff60e16d7ec949b40c1fe6e2c6",
+        "src/engine/src/resident/general/mod.rs": "589c1343506c0a3e61fd47eceb2b240b5932de4d32793e819f39ff43bec82d45",
+        "src/engine/tests/iteration_artifact.rs": "82953191258960cb832b051459c50c3d01aed4ac5abbc0df6e56254d2eb2168e",
+        "src/stdlib/tests/applications.rs": "7b5dc95018581a807df99f7d2eaac05c7f44332e92409664b325361f2f576408"
+      },
+      "serial_preflight": true,
+      "sources_unchanged_during_run": true
+    }
+  ],
+  "qualification": "All ten unchanged application cases and all seven artifact cases pass. The first retained run passed all 38 match cases, then passed eight collection cases and failed two table parsing cases. The follow-up structure run passed twenty cases and failed one table parsing case. Cargo stopped each multi-target run before the artifact target, which was subsequently run directly.",
+  "unchanged_acceptance_sources": [
+    "src/stdlib/tests/applications.rs",
+    "src/stdlib/tests/tail_control.rs"
+  ],
+  "remaining": [
+    "Correct canonical application detection of table row bars; the three retained table failures occur before source semantics.",
+    "Complete the 81-rule grammar and semantic certification.",
+    "Qualify native counted lowering and complete idiomatic benchmark workloads, capability-based input geometry, and secured/trusted same-executable whole-process measurements."
+  ],
+  "benchmark_measurements": 0
+}

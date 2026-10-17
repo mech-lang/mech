@@ -8,7 +8,7 @@ use cranelift_codegen::{
     },
     settings::{self, Configurable},
 };
-use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
+use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext, Variable};
 use cranelift_module::{DataDescription, DataId, FuncId, Linkage, Module, default_libcall_names};
 use cranelift_object::{ObjectBuilder, ObjectModule};
 use mech_engine::native_sequence::control::{ControlKind, Expr, Op, Program};
@@ -90,7 +90,10 @@ struct CountSum {
 }
 fn types_for(k: &ControlKind) -> Vec<Type> {
     match k {
-        ControlKind::Integer | ControlKind::Reference | ControlKind::BigInteger => vec![types::I64],
+        ControlKind::Integer
+        | ControlKind::SignedInteger
+        | ControlKind::Reference
+        | ControlKind::BigInteger => vec![types::I64],
         ControlKind::Float => vec![types::F64],
         ControlKind::Boolean => vec![types::I8],
         ControlKind::Bytes(n) => vec![types::I8X16; n.div_ceil(16)],
@@ -109,6 +112,9 @@ fn abstract_bounds(e: &Expr, params: &[Option<u64>], program: &Program) -> Vec<O
     }
     match &e.op {
         Op::Integer(n) => vec![Some(*n)],
+        Op::SignedInteger(_) | Op::Convert(_) | Op::Fold { .. } | Op::Accumulate { .. } => {
+            vec![None; count]
+        }
         Op::Float(_) => vec![None],
         Op::ReadBytes(bytes) => vec![None, Some(bytes.len() as u64)],
         Op::Floats(bits) => vec![None, Some(bits.len() as u64)],
@@ -277,7 +283,10 @@ fn scan_domains(e: &Expr, program: &Program, domains: &mut BTreeMap<String, Vec<
                 scan_domains(e, program, domains);
             }
         }
-        Op::Field(child, _) => scan_domains(child, program, domains),
+        Op::Field(child, _)
+        | Op::Convert(child)
+        | Op::Fold { body: child, .. }
+        | Op::Accumulate { value: child, .. } => scan_domains(child, program, domains),
         _ => {}
     }
 }
@@ -304,7 +313,10 @@ fn nested_loop(
                     nested_loop(condition, program, visited) || nested_loop(body, program, visited)
                 })
         }
-        Op::Field(e, _) => nested_loop(e, program, visited),
+        Op::Field(e, _)
+        | Op::Convert(e)
+        | Op::Fold { body: e, .. }
+        | Op::Accumulate { value: e, .. } => nested_loop(e, program, visited),
         Op::Branch {
             condition,
             state,
@@ -460,6 +472,7 @@ fn scan_sample_expression(e: &Expr, next: &Expr) -> Option<Expr> {
         Op::Primitive(name, items) => Op::Primitive(name.clone(), children(items)?),
         Op::Call(name, items) => Op::Call(name.clone(), children(items)?),
         Op::Field(value, i) => Op::Field(Box::new(scan_sample_expression(value, next)?), *i),
+        Op::Convert(value) => Op::Convert(Box::new(scan_sample_expression(value, next)?)),
         Op::Loop {
             id,
             initial,
@@ -485,6 +498,7 @@ fn scan_sample_expression(e: &Expr, next: &Expr) -> Option<Expr> {
             state: Box::new(scan_sample_expression(state, next)?),
         },
         Op::Integer(_)
+        | Op::SignedInteger(_)
         | Op::Float(_)
         | Op::Boolean(_)
         | Op::Text(_)
@@ -572,7 +586,10 @@ fn scan_mapping_work(
                 .map(|e| scan_mapping_work(e, program, active))
                 .sum::<usize>()
         }
-        Op::Field(e, _) => 1 + scan_mapping_work(e, program, active),
+        Op::Field(e, _)
+        | Op::Convert(e)
+        | Op::Fold { body: e, .. }
+        | Op::Accumulate { value: e, .. } => 1 + scan_mapping_work(e, program, active),
         _ => 0,
     }
 }
@@ -596,6 +613,7 @@ struct Emit<'a, 'b, 'c, M: Module> {
     arena_callbacks: &'c BTreeMap<(String, ControlKind), FuncId>,
     arena_context: Value,
     active_inline: BTreeMap<String, usize>,
+    folds: BTreeMap<usize, Variable>,
     recursive_inline: usize,
     print: Option<FuncId>,
     bigint: Option<FuncId>,
@@ -727,11 +745,23 @@ impl<M: Module> Emit<'_, '_, '_, M> {
                 self.b.ins().imul(a, b)
             };
             self.b.ins().uextend(types::I64, result)
-        } else if name == "+" {
-            self.b.ins().iadd(a, b)
         } else {
-            self.b.ins().imul(a, b)
+            self.checked_arithmetic(name, a, b, false)
         }
+    }
+    fn checked_arithmetic(&mut self, name: &str, a: Value, b: Value, signed: bool) -> Value {
+        let (result, overflow) = match (name, signed) {
+            ("+", false) => self.b.ins().uadd_overflow(a, b),
+            ("-", false) => self.b.ins().usub_overflow(a, b),
+            ("*", false) => self.b.ins().umul_overflow(a, b),
+            ("+", true) => self.b.ins().sadd_overflow(a, b),
+            ("-", true) => self.b.ins().ssub_overflow(a, b),
+            ("*", true) => self.b.ins().smul_overflow(a, b),
+            _ => unreachable!("checked integer arithmetic"),
+        };
+        let valid = self.b.ins().icmp_imm(IntCC::Equal, overflow, 0);
+        self.guard(valid, 2);
+        result
     }
     fn divide(&mut self, name: &str, a: Value, b: Value) -> Value {
         if let Some((&maximum, &divisor)) = self.facts.get(&a).zip(self.constants.get(&b)) {
@@ -792,7 +822,7 @@ impl<M: Module> Emit<'_, '_, '_, M> {
     }
     /// Pack independent Boolean counts, preserving each IEEE comparison and
     /// ordinary wrapping integer addition. No floating arithmetic is reassociated.
-    fn add_counts(&mut self, left: Value, right: Value) -> Value {
+    fn add_counts(&mut self, left: Value, right: Value, checked: Value) -> Value {
         let mut sum = CountSum::default();
         for value in [left, right] {
             if let Some(part) = self.count_sums.get(&value) {
@@ -868,7 +898,7 @@ impl<M: Module> Emit<'_, '_, '_, M> {
             }
             result
         } else {
-            self.integer_arithmetic("+", left, right)
+            checked
         };
         if count != 0 && count <= 64 {
             self.count_sums.insert(value, sum);
@@ -989,6 +1019,13 @@ impl<M: Module> Emit<'_, '_, '_, M> {
             .insert(ConstantData::from(data.to_vec()));
         self.b.ins().vconst(types::I8X16, constant)
     }
+    fn zero(&mut self, kind: Type) -> Value {
+        match kind {
+            types::F64 => self.b.ins().f64const(0.0),
+            types::I8X16 => self.vector([0; 16]),
+            _ => self.b.ins().iconst(kind, 0),
+        }
+    }
     fn slot(&mut self, n: usize) -> Value {
         let s = self.b.create_sized_stack_slot(StackSlotData::new(
             StackSlotKind::ExplicitSlot,
@@ -1009,11 +1046,7 @@ impl<M: Module> Emit<'_, '_, '_, M> {
             .collect();
         let mut values = vec![status];
         for kind in kinds {
-            values.push(if kind == types::F64 {
-                self.b.ins().f64const(0.0)
-            } else {
-                self.b.ins().iconst(kind, 0)
-            });
+            values.push(self.zero(kind));
         }
         self.b.ins().return_(&values);
     }
@@ -1024,9 +1057,10 @@ impl<M: Module> Emit<'_, '_, '_, M> {
             .get(name)
             .ok_or("missing native function")?;
         let active = self.active_inline.get(name).copied().unwrap_or(0);
-        if self.functions.contains_key(name)
-            && (active == 0 || active <= self.recursive_inline)
-            && std::env::var("MECH_CONTROL_INLINE").as_deref() != Ok("0")
+        if f.native_inline
+            || (self.functions.contains_key(name)
+                && (active == 0 || active <= self.recursive_inline)
+                && std::env::var("MECH_CONTROL_INLINE").as_deref() != Ok("0"))
         {
             let original_depth = self.depth;
             if active > 0 {
@@ -1039,6 +1073,7 @@ impl<M: Module> Emit<'_, '_, '_, M> {
             }
             self.active_inline.insert(name.to_owned(), active + 1);
             let caller_bigint_values = self.bigint_values;
+            let caller_folds = std::mem::take(&mut self.folds);
             // A value-free callee only borrows existing handles, so its empty
             // frame cannot own or promote anything, including in nested calls.
             self.bigint_values &= self.program.computation.functions[name].big_integer_values;
@@ -1049,6 +1084,7 @@ impl<M: Module> Emit<'_, '_, '_, M> {
                 Ok(values)
             })();
             self.bigint_values = caller_bigint_values;
+            self.folds = caller_folds;
             if active == 0 {
                 self.active_inline.remove(name);
             } else {
@@ -1097,6 +1133,7 @@ impl<M: Module> Emit<'_, '_, '_, M> {
             }
         } else {
             let caller_bigint_values = self.bigint_values;
+            let caller_folds = std::mem::take(&mut self.folds);
             // The inferred callee summary includes transitive value creation;
             // borrowed returns require no ownership transfer without it.
             self.bigint_values &= self.program.computation.functions[name].big_integer_values;
@@ -1107,6 +1144,7 @@ impl<M: Module> Emit<'_, '_, '_, M> {
                 Ok(values)
             })();
             self.bigint_values = caller_bigint_values;
+            self.folds = caller_folds;
             result
         }
     }
@@ -1212,6 +1250,36 @@ impl<M: Module> Emit<'_, '_, '_, M> {
         }
         let out = match &e.op {
             Op::Integer(n) => vec![self.int(*n)],
+            Op::SignedInteger(n) => vec![self.b.ins().iconst(types::I64, *n)],
+            Op::Convert(inner) => {
+                let value = self.expression(inner, params, memo)?[0];
+                let value = match (&inner.kind, &e.kind) {
+                    (ControlKind::Integer, ControlKind::SignedInteger) => {
+                        let valid =
+                            self.b
+                                .ins()
+                                .icmp_imm(IntCC::UnsignedLessThanOrEqual, value, i64::MAX);
+                        self.guard(valid, 2);
+                        value
+                    }
+                    (ControlKind::SignedInteger, ControlKind::Integer) => {
+                        let valid =
+                            self.b
+                                .ins()
+                                .icmp_imm(IntCC::SignedGreaterThanOrEqual, value, 0);
+                        self.guard(valid, 2);
+                        value
+                    }
+                    (ControlKind::Integer, ControlKind::Float) => {
+                        self.b.ins().fcvt_from_uint(types::F64, value)
+                    }
+                    (ControlKind::SignedInteger, ControlKind::Float) => {
+                        self.b.ins().fcvt_from_sint(types::F64, value)
+                    }
+                    _ => return Err("unsupported native scalar conversion".into()),
+                };
+                vec![value]
+            }
             Op::Float(bits) => {
                 let value = self.b.ins().f64const(Ieee64::with_bits(*bits));
                 self.float_constants.insert(value, *bits);
@@ -1411,6 +1479,12 @@ impl<M: Module> Emit<'_, '_, '_, M> {
                 let length = self.int(format.len() as u64);
                 let fields = self.int(values.len() as u64);
                 let input = self.slot((values.len() * 8).max(16));
+                let codes = self.literal_table(
+                    values
+                        .iter()
+                        .map(|value| u8::from(value.kind == ControlKind::SignedInteger))
+                        .collect(),
+                )?;
                 for (i, value) in values.iter().enumerate() {
                     let value = self.expression(value, params, memo)?[0];
                     self.b
@@ -1420,7 +1494,10 @@ impl<M: Module> Emit<'_, '_, '_, M> {
                 let callee = self
                     .module
                     .declare_func_in_func(self.print.ok_or("missing print ABI")?, self.b.func);
-                let call = self.b.ins().call(callee, &[ptr, length, input, fields]);
+                let call = self
+                    .b
+                    .ins()
+                    .call(callee, &[ptr, length, input, fields, codes]);
                 let status = self.b.inst_results(call)[0];
                 self.status(status);
                 vec![self.int(0)]
@@ -1553,7 +1630,26 @@ impl<M: Module> Emit<'_, '_, '_, M> {
                 self.b.switch_to_block(exit);
                 self.b.block_params(exit).to_vec()
             }
+            Op::Fold { fold, body } => {
+                if self.folds.contains_key(fold) {
+                    return Err("duplicate active comprehension fold".into());
+                }
+                let kind = match e.kind {
+                    ControlKind::Integer | ControlKind::SignedInteger => types::I64,
+                    ControlKind::Float => types::F64,
+                    _ => return Err("unsupported comprehension accumulator kind".into()),
+                };
+                let variable = self.b.declare_var(kind);
+                let zero = self.zero(kind);
+                self.b.def_var(variable, zero);
+                self.folds.insert(*fold, variable);
+                let emitted = self.expression(body, params, &mut memo.clone());
+                self.folds.remove(fold);
+                emitted?;
+                vec![self.b.use_var(variable)]
+            }
             Op::Reduce {
+                fold,
                 index,
                 start,
                 step,
@@ -1570,34 +1666,22 @@ impl<M: Module> Emit<'_, '_, '_, M> {
                 let before_memo = memo.clone();
                 let before_facts = self.facts.clone();
                 let before_context = self.context_facts.clone();
-                let sum_type = types_for(&e.kind)[0];
-                let zero = if sum_type == types::F64 {
-                    self.b.ins().f64const(0.0)
-                } else {
-                    self.int(0)
-                };
+                let accumulator = *self.folds.get(fold).ok_or("unbound comprehension fold")?;
                 let head = self.b.create_block();
                 self.b.append_block_param(head, types::I64);
-                self.b.append_block_param(head, sum_type);
                 let advance = self.b.create_block();
                 let exit = self.b.create_block();
-                self.b.append_block_param(exit, sum_type);
                 let comparison = if *inclusive {
                     IntCC::UnsignedLessThanOrEqual
                 } else {
                     IntCC::UnsignedLessThan
                 };
                 let has_items = self.b.ins().icmp(comparison, start, end);
-                self.b.ins().brif(
-                    has_items,
-                    head,
-                    &[start.into(), zero.into()],
-                    exit,
-                    &[zero.into()],
-                );
+                self.b
+                    .ins()
+                    .brif(has_items, head, &[start.into()], exit, &[]);
                 self.b.switch_to_block(head);
                 let current = self.b.block_params(head)[0];
-                let previous = self.b.block_params(head)[1];
                 let mut body_memo = before_memo.clone();
                 body_memo.insert(
                     Expr {
@@ -1607,28 +1691,37 @@ impl<M: Module> Emit<'_, '_, '_, M> {
                     vec![current],
                 );
                 self.bigint_frame(40, &ControlKind::Integer, &[])?;
-                let item = self.expression(body, params, &mut body_memo)?[0];
+                self.expression(body, params, &mut body_memo)?;
                 self.bigint_frame(41, &ControlKind::Integer, &[])?;
-                let sum = if sum_type == types::F64 {
-                    self.b.ins().fadd(previous, item)
-                } else {
-                    self.integer_arithmetic("+", previous, item)
-                };
                 // Compare remaining distance before incrementing: inclusive
                 // ranges ending at u64::MAX terminate without wrapping.
                 let remaining = self.b.ins().isub(end, current);
                 let another = self.b.ins().icmp(comparison, step, remaining);
-                self.b
-                    .ins()
-                    .brif(another, advance, &[], exit, &[sum.into()]);
+                self.b.ins().brif(another, advance, &[], exit, &[]);
                 self.b.switch_to_block(advance);
                 let next = self.b.ins().iadd(current, step);
-                self.b.ins().jump(head, &[next.into(), sum.into()]);
+                self.b.ins().jump(head, &[next.into()]);
                 self.b.switch_to_block(exit);
+                let value = self.b.use_var(accumulator);
                 *memo = before_memo;
                 self.facts = before_facts;
                 self.context_facts = before_context;
-                self.b.block_params(exit).to_vec()
+                vec![value]
+            }
+            Op::Accumulate { fold, value } => {
+                let item = self.expression(value, params, memo)?[0];
+                let variable = *self.folds.get(fold).ok_or("unbound comprehension fold")?;
+                let previous = self.b.use_var(variable);
+                let sum = match e.kind {
+                    ControlKind::Float => self.b.ins().fadd(previous, item),
+                    ControlKind::SignedInteger => {
+                        self.checked_arithmetic("+", previous, item, true)
+                    }
+                    ControlKind::Integer => self.integer_arithmetic("+", previous, item),
+                    _ => return Err("unsupported comprehension accumulator kind".into()),
+                };
+                self.b.def_var(variable, sum);
+                vec![sum]
             }
             Op::Match {
                 scrutinee, arms, ..
@@ -1677,13 +1770,7 @@ impl<M: Module> Emit<'_, '_, '_, M> {
                     self.guard(no_match, 10);
                     let empty = kinds
                         .into_iter()
-                        .map(|kind| {
-                            if kind == types::F64 {
-                                self.b.ins().f64const(0.0)
-                            } else {
-                                self.b.ins().iconst(kind, 0)
-                            }
-                        })
+                        .map(|kind| self.zero(kind))
                         .collect::<Vec<_>>();
                     self.b
                         .ins()
@@ -1719,14 +1806,8 @@ impl<M: Module> Emit<'_, '_, '_, M> {
                     .module
                     .declare_func_in_func(self.callbacks[function], self.b.func);
                 let function = self.b.ins().func_addr(types::I64, function);
-                let codes = reductions
-                    .iter()
-                    .map(|r| if r == "sum" { 0u8 } else { 1u8 })
-                    .collect::<Vec<_>>();
-                let table = self.table(
-                    format!("mech_control_reducers_{}", reductions.join("_")),
-                    codes,
-                )?;
+                let codes = super::runtime::reducer_codes(&e.kind, reductions)?;
+                let table = self.table(format!("mech_control_reducers_{codes:?}"), codes)?;
                 let len = self.int(reductions.len() as u64);
                 let out = self.slot(reductions.len() * 8);
                 let reduce = self.module.declare_func_in_func(self.reduce, self.b.func);
@@ -1828,9 +1909,72 @@ impl<M: Module> Emit<'_, '_, '_, M> {
                     v.push(self.expression(arg, params, memo)?);
                 }
                 let x = v.first().and_then(|v| v.first()).copied();
+                if args
+                    .first()
+                    .is_some_and(|arg| arg.kind == ControlKind::SignedInteger)
+                {
+                    let a = x.ok_or("signed operand required")?;
+                    let value = match name.as_str() {
+                        "+" | "*" => self.checked_arithmetic(name, a, v[1][0], true),
+                        "-" if v.len() == 1 => {
+                            let zero = self.b.ins().iconst(types::I64, 0);
+                            self.checked_arithmetic("-", zero, a, true)
+                        }
+                        "-" => self.checked_arithmetic("-", a, v[1][0], true),
+                        "/" | "number/mod" | "%" => {
+                            let d = v[1][0];
+                            let nonzero = self.b.ins().icmp_imm(IntCC::NotEqual, d, 0);
+                            let minimum = self.b.ins().icmp_imm(IntCC::Equal, a, i64::MIN);
+                            let negative_one = self.b.ins().icmp_imm(IntCC::Equal, d, -1);
+                            let overflow = self.b.ins().band(minimum, negative_one);
+                            let safe = self.b.ins().icmp_imm(IntCC::Equal, overflow, 0);
+                            let valid = self.b.ins().band(nonzero, safe);
+                            self.guard(valid, 2);
+                            // Keep the unreachable continuation nontrapping as
+                            // well when a constant invalid arm is optimized.
+                            let one = self.b.ins().iconst(types::I64, 1);
+                            let divisor = self.b.ins().select(valid, d, one);
+                            if name == "/" {
+                                self.b.ins().sdiv(a, divisor)
+                            } else {
+                                self.b.ins().srem(a, divisor)
+                            }
+                        }
+                        "==" | "!=" | "<" | "<=" | ">" | ">=" => {
+                            let cc = match name.as_str() {
+                                "==" => IntCC::Equal,
+                                "!=" => IntCC::NotEqual,
+                                "<" => IntCC::SignedLessThan,
+                                "<=" => IntCC::SignedLessThanOrEqual,
+                                ">" => IntCC::SignedGreaterThan,
+                                _ => IntCC::SignedGreaterThanOrEqual,
+                            };
+                            self.b.ins().icmp(cc, a, v[1][0])
+                        }
+                        "number/max" => {
+                            let b = v[1][0];
+                            let greater = self.b.ins().icmp(IntCC::SignedGreaterThan, a, b);
+                            self.b.ins().select(greater, a, b)
+                        }
+                        "number/bounded" => {
+                            let lower =
+                                self.b
+                                    .ins()
+                                    .icmp(IntCC::SignedGreaterThanOrEqual, a, v[1][0]);
+                            let upper = self.b.ins().icmp(IntCC::SignedLessThanOrEqual, a, v[2][0]);
+                            let valid = self.b.ins().band(lower, upper);
+                            self.guard(valid, 4);
+                            a
+                        }
+                        "number/to-f64" => self.b.ins().fcvt_from_sint(types::F64, a),
+                        _ => return Err(format!("unsupported signed control operation {name}")),
+                    };
+                    memo.insert(e.clone(), vec![value]);
+                    return Ok(vec![value]);
+                }
                 if args.first().is_some_and(|e| e.kind == ControlKind::Float) {
                     let a = x.unwrap();
-                    let b = v[1][0];
+                    let b = v.get(1).map_or(a, |values| values[0]);
                     let comparison = match name.as_str() {
                         "<" => Some(FloatCC::LessThan),
                         "<=" => Some(FloatCC::LessThanOrEqual),
@@ -1846,6 +1990,7 @@ impl<M: Module> Emit<'_, '_, '_, M> {
                     }
                     let value = match name.as_str() {
                         "+" => self.b.ins().fadd(a, b),
+                        "-" if v.len() == 1 => self.b.ins().fneg(a),
                         "-" => self.b.ins().fsub(a, b),
                         "*" => self.b.ins().fmul(a, b),
                         "/" => self.b.ins().fdiv(a, b),
@@ -2014,17 +2159,31 @@ impl<M: Module> Emit<'_, '_, '_, M> {
                             })
                             .collect()
                     }
-                    "+" => vec![self.add_counts(x.unwrap(), v[1][0])],
-                    "-" => vec![self.b.ins().isub(x.unwrap(), v[1][0])],
+                    "+" => {
+                        let a = x.unwrap();
+                        let b = v[1][0];
+                        // Preserve every source-node overflow check before a
+                        // count-packing optimization changes its value tree.
+                        let checked = self.integer_arithmetic("+", a, b);
+                        vec![self.add_counts(a, b, checked)]
+                    }
+                    "-" if v.len() == 1 => {
+                        return Err("unsigned negation is unsupported".into());
+                    }
+                    "-" => vec![self.checked_arithmetic("-", x.unwrap(), v[1][0], false)],
                     "*" => vec![self.integer_arithmetic("*", x.unwrap(), v[1][0])],
-                    "/" | "number/mod" => {
+                    "/" | "number/mod" | "%" => {
                         let a = x.unwrap();
                         let d = v[1][0];
                         if let Some(&n) = self.constants.get(&d) {
                             if n == 0 {
-                                return Err("constant division by zero".into());
-                            }
-                            if n.is_power_of_two() {
+                                // Emitting a lazy arm must not evaluate it.
+                                // Fail only when execution reaches this arm,
+                                // and keep its unreachable continuation typed.
+                                let valid = self.b.ins().iconst(types::I8, 0);
+                                self.guard(valid, 2);
+                                vec![self.int(0)]
+                            } else if n.is_power_of_two() {
                                 vec![if name == "/" {
                                     self.b.ins().ushr_imm(a, n.trailing_zeros() as i64)
                                 } else {
@@ -2163,7 +2322,9 @@ impl<M: Module> Emit<'_, '_, '_, M> {
                 self.facts.insert(*v, bound);
             }
         }
-        memo.insert(e.clone(), out.clone());
+        if !matches!(e.op, Op::Accumulate { .. }) {
+            memo.insert(e.clone(), out.clone());
+        }
         Ok(out)
     }
     fn bytes(
@@ -2419,7 +2580,10 @@ fn flatten_parameters(e: &mut Expr, inputs: &[ControlKind]) {
                 flatten_parameters(e, inputs);
             }
         }
-        Op::Field(e, _) => flatten_parameters(e, inputs),
+        Op::Field(e, _)
+        | Op::Convert(e)
+        | Op::Fold { body: e, .. }
+        | Op::Accumulate { value: e, .. } => flatten_parameters(e, inputs),
         Op::Loop { initial, .. } => flatten_parameters(initial, inputs),
         Op::Branch {
             condition, state, ..
@@ -2504,7 +2668,10 @@ fn parallel_names(e: &Expr, out: &mut Vec<String>) {
                 parallel_names(e, out);
             }
         }
-        Op::Field(e, _) => parallel_names(e, out),
+        Op::Field(e, _)
+        | Op::Convert(e)
+        | Op::Fold { body: e, .. }
+        | Op::Accumulate { value: e, .. } => parallel_names(e, out),
         _ => {}
     }
 }
@@ -2571,7 +2738,10 @@ fn scan_names(e: &Expr, out: &mut Vec<String>) {
                 scan_names(e, out);
             }
         }
-        Op::Field(e, _) => scan_names(e, out),
+        Op::Field(e, _)
+        | Op::Convert(e)
+        | Op::Fold { body: e, .. }
+        | Op::Accumulate { value: e, .. } => scan_names(e, out),
         Op::Loop { initial, .. } => scan_names(initial, out),
         Op::Branch {
             condition, state, ..
@@ -2637,7 +2807,11 @@ fn arena_names(e: &Expr, out: &mut BTreeSet<(String, ControlKind)>) {
                 arena_names(e, out);
             }
         }
-        Op::Field(e, _) | Op::Loop { initial: e, .. } => arena_names(e, out),
+        Op::Field(e, _)
+        | Op::Convert(e)
+        | Op::Fold { body: e, .. }
+        | Op::Accumulate { value: e, .. }
+        | Op::Loop { initial: e, .. } => arena_names(e, out),
         Op::Branch {
             condition, state, ..
         } => {
@@ -2759,7 +2933,10 @@ fn memory_layouts(
                 memory_layouts(e, program, active, out, regions);
             }
         }
-        Op::Field(e, _) => memory_layouts(e, program, active, out, regions),
+        Op::Field(e, _)
+        | Op::Convert(e)
+        | Op::Fold { body: e, .. }
+        | Op::Accumulate { value: e, .. } => memory_layouts(e, program, active, out, regions),
         Op::Loop {
             initial,
             predicate,
@@ -2904,9 +3081,9 @@ fn define_program<M: Module>(
         let arena = module
             .declare_function("mech_control_ref_arena", Linkage::Import, &sig)
             .map_err(|e| e.to_string())?;
-        sig.params.truncate(4);
+        sig.params.truncate(5);
         let print = module
-            .declare_function("mech_control_print", Linkage::Import, &sig)
+            .declare_function("mech_control_print_typed", Linkage::Import, &sig)
             .map_err(|e| e.to_string())?;
         (Some(arena), Some(print))
     } else {
@@ -3021,6 +3198,7 @@ fn define_program<M: Module>(
                     kind: ControlKind::Tuple(vec![ControlKind::Integer, ControlKind::Integer]),
                     op: Op::Tuple(vec![items[0].clone(), items[0].clone()]),
                 },
+                native_inline: false,
             };
             program.functions.insert(producer_name.clone(), producer);
             program.functions.insert(
@@ -3028,6 +3206,7 @@ fn define_program<M: Module>(
                 mech_engine::native_sequence::control::Function {
                     inputs: vec![ControlKind::Integer],
                     output: mapping,
+                    native_inline: false,
                 },
             );
             state_domains.insert(producer_name.clone(), state_domains[name].clone());
@@ -3085,6 +3264,11 @@ fn define_program<M: Module>(
     let mut functions = BTreeMap::new();
     if program.native_functions {
         for (i, (name, f)) in program.functions.iter().enumerate() {
+            // Structural callbacks belong to their enclosing native expression,
+            // even when ordinary source-function inlining is disabled.
+            if f.native_inline {
+                continue;
+            }
             let mut sig = module.make_signature();
             sig.params.push(AbiParam::new(types::I64)); // checked recursion depth
             sig.params.push(AbiParam::new(types::I64)); // exclusive live arena context
@@ -3239,6 +3423,7 @@ fn define_program<M: Module>(
             } else {
                 BTreeMap::new()
             },
+            folds: BTreeMap::new(),
             recursive_inline,
             print,
             bigint,
@@ -3525,6 +3710,7 @@ fn define_program<M: Module>(
             .map_err(|e| format!("native control codegen: {e}"))?;
     }
     let mut descriptor = serde_json::json!({"arguments":program.argument_count,"format":program.format,"outputs":types_for(&program.output.kind).len(),"simd":simd,"dynamic_byte_index_lowering":if !simd || stack_index {"stack"} else {"vector"}});
+    descriptor["output_signed"] = super::runtime::signed_fields(&program.output.kind).into();
     if program.computation.entry.coeffects.big_integers {
         descriptor["big_integers"] = true.into();
     }

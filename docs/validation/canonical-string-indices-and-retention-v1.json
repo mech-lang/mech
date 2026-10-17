@@ -1,0 +1,106 @@
+{
+  "schema": "mech.validation.canonical-string-indices-and-retention.v1",
+  "status": "engine-source-qualified-library-acceptance-pending",
+  "parent_commit": "226261fae66a80d288a40ce33b1917074b9aa2e5",
+  "scope": [
+    "Reuse admitted grapheme indices within actual String binding and lexical lifetimes, preserving raw Unicode identity, frozen suspended captures, selection order and empty masks.",
+    "Classify proven borrowed retention inventory as finite metadata compute. Materialization, encoding, token calculation, real key normalization and publication equality retain explicit admission.",
+    "Align closed copying preparation with actual runtime source/selector retention. Actual selected core Matrix projection copies canonical cells without key normalization and funds its token/copy work as compute.",
+    "Qualify exact closed homogeneous scalar Snapshot constructors through the private completed implementation plan; retain exclusions for nullary, dense, mixed, aggregate and unsupported shapes, with explicit singleton packed output and overlap accounting."
+  ],
+  "source_pins": {
+    "src/engine/src/intrinsics/access/mod.rs": "ac8355a6b78f06aaed8c4cf27f03210437e6d21cdea2ae7be253e0d1599126cb",
+    "src/engine/src/lib.rs": "54a227d58aab5bd76ab5c017d38b10cb1e7398153796fa9b56f830b28c5a3212",
+    "src/engine/src/memory_planner/turn.rs": "6d49bca45a6b27db5a590db7d5361531dad71dbe0f50836645295f8aac6be0e8",
+    "src/engine/src/resident/budget.rs": "df2d29f8a7b735420c7e5507090d01edc21c1ef21a70585de2041d5d93ca878b",
+    "src/engine/src/resident/composite.rs": "97935a684bd7dbfed32914fd07947b29dada213d05ceebdf0797de13ba748cfb",
+    "src/engine/src/resident/general/closed_comprehension.rs": "164670a0afe814da9a9a33a6b24eddbf0e50cd370b1e87506004422ad4fa77fa",
+    "src/engine/src/resident/general/comprehension.rs": "3a01b16327c29766757a088192e5820be0d7af2775faf3f4f317c50e7ea9c632",
+    "src/engine/src/resident/general/comprehension_execution.rs": "d4efe548493c568aa4690a4fc1a5e4e7602bc7af1623ea3fe5a850291b00eb2d",
+    "src/engine/src/resident/general/execution.rs": "d526f6a8cee5ffebab61c1c6108ae28ca5f9bcee43bcad9022eb3f2d88af8bcc",
+    "src/engine/src/resident/general/mod.rs": "69fe110fe9ffe85834a99d149881c1c1633f9b3bf47cfa7a03207bc09acdfa69",
+    "src/engine/src/resident/matrix_literal.rs": "2745e615fe4723bcad94d9d2eb0312a69485c47a465a782bbba936f6a5feafdc",
+    "src/engine/src/resident/mod.rs": "5adcf8d2f3f795c239440d6a09fa148738b5ae5ebc74b2262bab15ec049b0e5f",
+    "src/engine/src/resident/numeric/mod.rs": "4e87573542e297eee423d29c7fdb54e8efbc9781edd0f892b84efadc28e12649",
+    "src/engine/src/resident/payload_budget.rs": "019a6ae495edc41a432d77b473168edbdd46441e807a0e93c68804493b1c8a9c",
+    "src/engine/src/resident/text.rs": "32e425ec3dc6cd626106835f81dc7787a1ce95a68348ada14e5f702db48c60da",
+    "src/engine/src/intrinsics/access/managed_string.rs": "e01e43abae2c3b934202d55a51103d43b15c2d3f6806f0eb0e99a1221dfde603",
+    "src/engine/src/resident/text_index.rs": "bdcccab84f0a2e6f842aa696cbe9fb9d0b154d907902e03c13326374a85171d5",
+    "src/engine/src/text_index.rs": "629e0313ba430a928590c4a2728efcf2be0823901d1cee79b5d07cced5f6269c",
+    "src/stdlib/tests/primitive_snapshot_constructors.rs": "2a95a0681f866937d04e790ff789e31ed59cd44f47a263d99c6abccd8058186c",
+    "src/stdlib/tests/retention_work.rs": "9fd77281988dcf5d12a7bea30da7e5bd2841cb73ef18dacdd0bb475451e90464"
+  },
+  "validation": [
+    {
+      "suite": "engine unit",
+      "passed": 822,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "suite": "canonical source completion",
+      "passed": 36,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "suite": "canonical source semantics",
+      "passed": 147,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "suite": "canonical String selection",
+      "passed": 8,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "suite": "native sequence effect order",
+      "passed": 6,
+      "failed": 0,
+      "ignored": 0
+    }
+  ],
+  "distinct_engine_source_checks": 1019,
+  "new_string_cases_present_in_full_zero_failure_run": 20,
+  "new_constructor_private_cases_present": 6,
+  "unit_log_note": "The intentional lexical unwind case catches its own panic; the complete unit target reports zero failures/ignored/filtered.",
+  "logs": [
+    {
+      "name": "string-retention-constructor-rebased-engine-v7.log",
+      "sha256": "2d4d15a39a21022f3d808bf71d4408154bf91d3baeb4c555c4d65cb51cb36e83"
+    }
+  ],
+  "original_tail_fixture_sha256": "14c1b6e8968a11ed81e5f622ac7b9be2ac819fe42d001ee654d623f39aa1d902",
+  "limits_changed": false,
+  "fixture_exemptions": 0,
+  "accounting_regression_oracles": "Original payload sizes retained. Independent copy/equality/key-work bounds, exact-minus-one denial before draft/publication, retained roots/epochs and exact-funded retry replace byte-as-comparison assumptions. Repeated gathers retain duplicates and add at least11000copiedStringbytes compute between2and3occurrences.",
+  "benchmark_measurements": 0,
+  "new_runtime_timings": false,
+  "independent_review_hashes": [
+    "18464fe35bbb4d7b845c5de41907d2f5fc378c6e32ed236c44dbfcd0e591f2f3",
+    "55b3fde3ca81c953aeca68185ddf20efc67cbe7d2f42b210f3a90724d35039c4",
+    "fd9cef37d1e786616bdbb5a36bda99d89f73cabb72c5068b4367cd63c62687b3"
+  ],
+  "remaining_scope": [
+    "All ten full idiomatic benchmark sources and complete outputs/argument contracts.",
+    "Ordinary repeated application and actual canonical native value/control/matrix support.",
+    "Generic raw-byte capability ports, strict argument count and canonical activated native IO.",
+    "One actual AOT executable qualified under secured/trusted complete-process behavior before serial Mech-only timing replacement."
+  ],
+  "serial_validation": true,
+  "pending_validation": [
+    "Seven constructor/retention source cases on the current combined branch; latest attempt failed before test execution due build archive disk exhaustion.",
+    "Retained standard-library String-selector geometry and ordinary record-source suites.",
+    "All ten unchanged tail-control acceptance cases, run individually to retain every result.",
+    "Runtime-only and managed String-helper feature closures."
+  ],
+  "latest_library_attempt": {
+    "tests_executed": 0,
+    "reason": "No space left on device while building the math archive.",
+    "log_name": "string-retention-constructor-source-v3.log",
+    "log_sha256": "cf41dccb47170dde8082d033ccf2cd2d17cf3930ba5075739d26c2dbd2689555"
+  },
+  "native_workload_qualification": false
+}

@@ -13,16 +13,28 @@ mod full_write;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod general;
 mod kernel;
+#[cfg(all(feature = "resident-artifact", feature = "map_ops"))]
+pub(crate) mod map_ops;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod matrix_literal;
 #[cfg(feature = "resident-artifact")]
+pub(crate) mod native_semantics;
+#[cfg(feature = "resident-artifact")]
 pub(crate) mod numeric;
+#[cfg(all(feature = "resident-artifact", feature = "pure_text"))]
+pub(crate) mod pure_text;
+#[cfg(all(feature = "resident-artifact", feature = "sequence_sort"))]
+pub(crate) mod sequence_sort;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod set;
 #[cfg(all(feature = "resident-artifact", feature = "table"))]
 pub(crate) mod table;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod text;
+#[cfg(feature = "resident-artifact")]
+pub(crate) mod text_index;
+#[cfg(all(feature = "resident-artifact", feature = "pure_text"))]
+pub(crate) mod text_ops;
 mod workspace;
 mod efficacy {
     pub(crate) mod ekf;

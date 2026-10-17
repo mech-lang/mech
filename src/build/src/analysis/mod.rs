@@ -5,10 +5,10 @@
 //! metadata from names embedded in a program.
 
 pub(crate) mod artifact;
+#[cfg(test)]
 pub(crate) mod bytecode;
 pub(crate) mod requirements;
+#[cfg(test)]
 pub(crate) mod runtime_types;
 
-pub(crate) use bytecode::analyze_runtime_functions;
 pub(crate) use requirements::{NativeBytecodeContractResolver, application_requires_hosting};
-pub(crate) use runtime_types::analyze_runtime_types;

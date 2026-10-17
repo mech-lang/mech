@@ -13,6 +13,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 STANDARD = ROOT / "src/build/src/host/standard.rs"
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from rust_source import rust_code
+
 
 def capture(*arguments: str) -> str:
     process = subprocess.run(
@@ -37,9 +40,9 @@ def require(condition: bool, message: str) -> None:
 
 def main() -> int:
     try:
-        source = STANDARD.read_text(encoding="utf-8")
+        source = rust_code(STANDARD.read_text(encoding="utf-8"), preserve_literals=True)
         expected_providers = {
-            "cli": ("mech-terminal", "mech_terminal", "provider", "mech_terminal::CliHostFactory::new"),
+            "cli": ("mech-terminal", "mech_terminal", "provider", "mech_terminal::CliHostFactory::with_arguments"),
             "console": ("mech-console", "mech_console", "native", "mech_console::NativeConsoleHostFactory::new"),
             "robot-arm": ("mech-robot-arm", "mech_robot_arm", "provider", "mech_robot_arm::RobotArmHostFactory::new"),
             "scene": ("mech-scene", "mech_scene", "native", "mech_scene::NativeSceneHostFactory::new"),
@@ -59,6 +62,30 @@ def main() -> int:
         require(
             standard_providers == {"cli", "console", "scene", "time", "timer"},
             f"standard provider set drifted: {sorted(standard_providers)}",
+        )
+        registration_pattern = (
+            r'NativeHostLinkage\s*\{\s*provider:\s*"cli",(?P<linkage>.*?)\},\s*'
+            r'NativeHostFactoryInput::(?P<input>\w+),'
+        )
+        block_code = rust_code(standard_block.group(1))
+        registrations = [
+            match for match in re.finditer(registration_pattern, standard_block.group(1), re.DOTALL)
+            if block_code.startswith("NativeHostLinkage", match.start())
+        ]
+        require(len(registrations) == 1, "exactly one cli launch registration is required")
+        cli_registration = registrations[0]
+        linkage = cli_registration.group("linkage")
+        factory_fields = list(re.finditer(r"\bfactory_path\s*:", rust_code(linkage)))
+        require(
+            len(factory_fields) == 1 and re.match(
+                r'"mech_terminal::CliHostFactory::with_arguments"\s*,',
+                linkage[factory_fields[0].end():].lstrip(),
+            ) is not None,
+            "cli launch factory must receive explicit program arguments",
+        )
+        require(
+            cli_registration.group("input") == "ProgramArguments",
+            "cli factory input must be ProgramArguments",
         )
         all_providers = set(re.findall(r'provider:\s*"([a-z-]+)"', source))
         require(

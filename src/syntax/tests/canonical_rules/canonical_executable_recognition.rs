@@ -363,9 +363,16 @@ fn record_candidates_fall_through_to_maps_after_complete_clean_failure() {
 }
 
 #[test]
-fn set_comprehensions_cannot_become_formula_operands() {
-    let parsed = assert_recovered(rules::EXPRESSION, "1 + {x | x <- xs}");
-    assert!(contains_kind(&parsed.syntax(), SyntaxKind::Error));
+fn set_comprehensions_are_recognized_as_formula_operands() {
+    let parsed = assert_clean(rules::EXPRESSION, "1 + {x | x <- xs}");
+    assert!(contains_kind(
+        &parsed.syntax(),
+        SyntaxKind::SetComprehension
+    ));
+    assert!(contains_kind(
+        &parsed.syntax(),
+        SyntaxKind::AdditiveExpression
+    ));
 }
 
 #[test]

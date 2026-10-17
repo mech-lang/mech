@@ -71,6 +71,12 @@ mod canonical_cell_sealed {
         fn matrix_extents(&self) -> Option<(usize, usize)> {
             None
         }
+
+        /// Measures only borrowed String layout; no payload is reconstructed.
+        #[cfg(all(feature = "functions", feature = "string"))]
+        fn borrowed_string_footprint(&self) -> MResult<Option<(Option<[u64; 2]>, u64)>> {
+            Ok(None)
+        }
     }
 }
 
@@ -280,6 +286,10 @@ pub(crate) trait ErasedCellStorage {
     fn borrow_state(&self) -> CellBorrowState;
     fn managed_host_binding(&self) -> Option<ManagedHostCellBinding> {
         None
+    }
+    #[cfg(all(feature = "functions", feature = "string"))]
+    fn borrowed_string_footprint(&self) -> MResult<Option<(Option<[u64; 2]>, u64)>> {
+        Ok(None)
     }
 }
 
@@ -717,6 +727,14 @@ pub(crate) enum CellBorrowState {
 impl<T: CanonicalCellBacking> ErasedCellStorage for ExactCellStorage<T> {
     fn as_any(&self) -> &dyn Any {
         self
+    }
+
+    #[cfg(all(feature = "functions", feature = "string"))]
+    fn borrowed_string_footprint(&self) -> MResult<Option<(Option<[u64; 2]>, u64)>> {
+        self.reference
+            .try_borrow()
+            .map_err(|_| borrow_conflict(CellAccess::Snapshot))?
+            .borrowed_string_footprint()
     }
 
     fn representation(&self, schema: &SchemaBody) -> FunctionValueRepresentation {
@@ -1696,14 +1714,13 @@ impl ValueCell {
     }
 
     /// Measures the currently published semantic value for managed live
-    /// footprint resolution. This walks an immutable snapshot without
-    /// rebuilding its canonical tree.
+    /// footprint resolution. Immutable canonical roots are shared, while
+    /// pinned String backings are measured through borrowed layout metadata.
     #[cfg(feature = "functions")]
     pub fn current_memory_footprint(&self) -> MResult<crate::CurrentMemoryFootprint> {
         let descriptor = self.resolved_descriptor()?;
-        let logical_elements = descriptor
-            .current_extents()
-            .map_err(MechError::from)?
+        let current_extents = descriptor.current_extents().map_err(MechError::from)?;
+        let logical_elements = current_extents
             .iter()
             .try_fold(1_u64, |product, extent| product.checked_mul(*extent))
             .ok_or_else(|| {
@@ -1781,6 +1798,64 @@ impl ValueCell {
                 ..crate::CurrentMemoryFootprint::default()
             });
         }
+        #[cfg(feature = "string")]
+        if let Some((matrix_extents, payload_bytes)) = storage.borrowed_string_footprint()? {
+            let matrix = match (matrix_extents, descriptor.schema().body()) {
+                (None, SchemaBody::String) => false,
+                (
+                    Some(actual),
+                    SchemaBody::Matrix {
+                        element,
+                        dimensions,
+                    },
+                ) if element.as_ref() == &SchemaBody::String && dimensions.len() == 2 => {
+                    if current_extents.as_ref() != actual.as_slice() {
+                        return Err(MechError::new(
+                            ValueCellShapeMismatch {
+                                expected: descriptor
+                                    .shape()
+                                    .parameter_values()
+                                    .to_vec()
+                                    .into_boxed_slice(),
+                                actual: actual.to_vec().into_boxed_slice(),
+                            },
+                            None,
+                        )
+                        .with_compiler_loc());
+                    }
+                    true
+                }
+                _ => {
+                    return Err(backing_mismatch::<String>(
+                        storage.representation(descriptor.schema().body()),
+                    ));
+                }
+            };
+            let retained = crate::snapshot::prospective_string_value_footprint(
+                descriptor.shape().parameter_values().len(),
+                matrix,
+                logical_elements,
+                payload_bytes,
+            )
+            .map_err(|error| {
+                MechError::new(
+                    crate::GenericError {
+                        msg: format!("unable to measure live value: {error:?}"),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+            return Ok(crate::CurrentMemoryFootprint {
+                logical_elements,
+                payload_bytes: retained.retained_bytes,
+                encoded_bytes: retained.encoded_bytes,
+                retained_nodes: retained.node_count,
+                schema_bytes,
+                shape_parameter_count,
+                ..crate::CurrentMemoryFootprint::default()
+            });
+        }
         let snapshot = self.snapshot()?;
         let retained = snapshot
             .retained_footprint(self.schema_table().as_ref())
@@ -1801,6 +1876,44 @@ impl ValueCell {
             schema_bytes,
             shape_parameter_count,
             ..crate::CurrentMemoryFootprint::default()
+        })
+    }
+
+    /// Reads the current entry count of a published canonical Map without
+    /// reconstructing, cloning, or traversing its key/value payloads. Managed
+    /// shape planning uses this metadata before acquiring physical call views.
+    #[cfg(all(feature = "functions", feature = "map"))]
+    pub fn current_map_entry_count(&self) -> MResult<u64> {
+        let storage = self.binding.storage()?;
+        let canonical = storage
+            .as_any()
+            .downcast_ref::<ManagedCanonicalCellStorage>()
+            .ok_or_else(|| {
+                MechError::new(
+                    crate::GenericError {
+                        msg: "map cardinality requires immutable canonical storage".into(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        let ValueData::Map(map) = canonical.value.data() else {
+            return Err(MechError::new(
+                crate::GenericError {
+                    msg: "map cardinality requires a Map value".into(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        };
+        u64::try_from(map.entries().len()).map_err(|_| {
+            MechError::new(
+                crate::MemoryPlanError::ArithmeticOverflow {
+                    field: "current map cardinality",
+                },
+                None,
+            )
+            .with_compiler_loc()
         })
     }
 
@@ -2665,8 +2778,25 @@ impl ValueCell {
         let capabilities = crate::runtime_storage::actual_backing_capabilities(representation);
         validate_storage_compatibility(descriptor.schema(), descriptor.shape(), &capabilities)?;
         if capabilities.topology == crate::StorageTopology::CanonicalValue {
+            // This is an explicit physical allocation request. Reconstructing
+            // runtime storage from the data would silently turn numeric
+            // canonical outputs back into dense host cells.
             let data = initial_data_for_descriptor(descriptor)?;
-            return Self::from_resolved_descriptor_data_in(owner, descriptor, data);
+            let mut builder = SchemaTableBuilder::new();
+            let handle = builder
+                .insert(descriptor.schema().clone())
+                .map_err(MechError::from)?;
+            let build = builder.finish().map_err(MechError::from)?;
+            let schema = build.resolve(handle).map_err(MechError::from)?;
+            let value = finalize_draft(schema, descriptor.shape(), &build.table, data)?;
+            let cell = Self::from_bound_value_with_representation_in(
+                owner,
+                value,
+                Rc::new(build.table),
+                representation,
+            )?;
+            cell.validate_descriptor(descriptor)?;
+            return Ok(cell);
         }
         let extents = descriptor.current_extents().map_err(MechError::from)?;
         let dimensions = if matches!(representation, FunctionValueRepresentation::Matrix { .. }) {
@@ -7036,6 +7166,20 @@ impl canonical_matrix_element_sealed::Sealed for String {}
 
 #[cfg(feature = "string")]
 impl canonical_cell_sealed::Sealed for String {
+    #[cfg(feature = "functions")]
+    fn borrowed_string_footprint(&self) -> MResult<Option<(Option<[u64; 2]>, u64)>> {
+        let bytes = u64::try_from(self.len()).map_err(|_| {
+            MechError::new(
+                crate::MemoryPlanError::ArithmeticOverflow {
+                    field: "borrowed String payload bytes",
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        Ok(Some((None, bytes)))
+    }
+
     fn snapshot_bound(
         &self,
         schema: SchemaId,
@@ -7250,6 +7394,38 @@ trait CanonicalMatrix<T>: Sized {
     fn replace_elements(&mut self, rows: usize, columns: usize, elements: Vec<T>) -> Option<()>;
 }
 
+/// Inspect existing String elements without allocating their payloads.
+#[cfg(all(feature = "functions", feature = "matrix", feature = "string"))]
+fn borrowed_matrix_string_footprint<T: CanonicalMatrixElementBacking>(
+    matrix: &impl CanonicalMatrix<T>,
+) -> MResult<Option<(Option<[u64; 2]>, u64)>> {
+    if !matches!(T::REPRESENTATION, FunctionValueRepresentation::String) {
+        return Ok(None);
+    }
+    let overflow = |field| {
+        MechError::new(crate::MemoryPlanError::ArithmeticOverflow { field }, None)
+            .with_compiler_loc()
+    };
+    let rows = u64::try_from(matrix.rows()).map_err(|_| overflow("borrowed String rows"))?;
+    let columns = u64::try_from(matrix.cols()).map_err(|_| overflow("borrowed String columns"))?;
+    let mut payload_bytes = 0_u64;
+    for row in 0..matrix.rows() {
+        for column in 0..matrix.cols() {
+            // CanonicalMatrixElementBacking is sealed; only String advertises
+            // this representation. Keep the checked downcast at that boundary.
+            let text = (matrix.element(row, column) as &dyn Any)
+                .downcast_ref::<String>()
+                .ok_or_else(|| backing_mismatch::<T>(T::REPRESENTATION))?;
+            let bytes =
+                u64::try_from(text.len()).map_err(|_| overflow("borrowed String payload bytes"))?;
+            payload_bytes = payload_bytes
+                .checked_add(bytes)
+                .ok_or_else(|| overflow("borrowed String payload bytes"))?;
+        }
+    }
+    Ok(Some((Some([rows, columns]), payload_bytes)))
+}
+
 #[cfg(feature = "matrix")]
 fn validate_matrix_shape<T>(
     matrix: &impl CanonicalMatrix<T>,
@@ -7347,6 +7523,11 @@ macro_rules! matrix_backing {
             fn matrix_extents(&self) -> Option<(usize, usize)> {
                 Some((self.nrows(), self.ncols()))
             }
+
+            #[cfg(all(feature = "functions", feature = "string"))]
+            fn borrowed_string_footprint(&self) -> MResult<Option<(Option<[u64; 2]>, u64)>> {
+                borrowed_matrix_string_footprint(self)
+            }
         }
     };
 }
@@ -7408,6 +7589,11 @@ macro_rules! dynamic_matrix_storage {
 
             fn matrix_extents(&self) -> Option<(usize, usize)> {
                 Some((self.nrows(), self.ncols()))
+            }
+
+            #[cfg(all(feature = "functions", feature = "string"))]
+            fn borrowed_string_footprint(&self) -> MResult<Option<(Option<[u64; 2]>, u64)>> {
+                borrowed_matrix_string_footprint(self)
             }
         }
     };
@@ -8433,6 +8619,43 @@ mod tests {
             matrix.current_top_level_extents().unwrap().as_ref(),
             &[2, 3]
         );
+    }
+
+    #[cfg(all(feature = "functions", feature = "u64", feature = "matrixd"))]
+    #[test]
+    fn descriptor_allocation_preserves_explicit_canonical_numeric_topology() {
+        let owner = MemoryDomain::new().unwrap();
+        let scalar = ValueCell::from_exact(0_u64).unwrap();
+        let matrix = ValueCell::dynamic_matrix(
+            SchemaBody::UnsignedInteger(IntegerWidth::W64),
+            Box::new([1, 0]),
+            Box::new([]),
+        )
+        .unwrap();
+        for template in [&scalar, &matrix] {
+            let descriptor = template.resolved_descriptor().unwrap();
+            let canonical = ValueCell::allocate_for_descriptor_in(
+                &owner,
+                &descriptor,
+                FunctionValueRepresentation::AnyValue,
+            )
+            .unwrap();
+            assert!(canonical.requires_canonical_output_builder().unwrap());
+            assert_eq!(
+                canonical.representation(),
+                FunctionValueRepresentation::AnyValue
+            );
+            assert_eq!(canonical.resolved_descriptor().unwrap(), descriptor);
+            assert_eq!(canonical.memory_domain().unwrap().id(), owner.id());
+        }
+        let typed = ValueCell::allocate_for_descriptor_in(
+            &owner,
+            &matrix.resolved_descriptor().unwrap(),
+            <crate::DMatrix<u64> as FunctionRuntimeType>::REPRESENTATION,
+        )
+        .unwrap();
+        assert!(!typed.requires_canonical_output_builder().unwrap());
+        assert_eq!(typed.current_top_level_extents().unwrap().as_ref(), &[1, 0]);
     }
 
     #[cfg(all(feature = "f64", feature = "functions", feature = "vectord"))]

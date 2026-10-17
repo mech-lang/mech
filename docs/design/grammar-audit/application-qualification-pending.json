@@ -1,0 +1,30 @@
+{
+  "schema": "mech.ordinary-application-syntax-pending.v1",
+  "status": "compiled-focused-tests-failing-certification-pending",
+  "new_rules": [
+    "application-expression",
+    "application-stage",
+    "application-operator",
+    "function-define-expression"
+  ],
+  "structural_rule_count": 543,
+  "recursive_component_count": 81,
+  "old_parser_hashes": "retained verbatim; no invented replacements",
+  "required_actual_qualification": [
+    "Run focused new canonical_application source tests before inventory promotion.",
+    "Capture new application-expression accepted/rejected/recovery and semantic hashes from real parser/frontend.",
+    "Promote candidate status only after real qualification; then extend full certification inventory from captured bytes.",
+    "Run all retained parser/hash/recovery/budget/streaming cases to detect actual compatibility changes."
+  ],
+  "actual_qualification": {
+    "focused_application_tests": {
+      "passed": 2,
+      "failed": 3,
+      "ignored": 0,
+      "filtered": 500
+    },
+    "streaming_target": "Compile rejected: shared test helper equivalent is unused under deny(warnings); zero tests executed.",
+    "engine_feature_closure": "typecheck passed; execution qualification pending",
+    "receipt": "docs/validation/counted-application-and-cli-bytes-checkpoint-v1.json"
+  }
+}

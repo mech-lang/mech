@@ -258,7 +258,12 @@ fn plan_specialized_call(
         .outputs()
         .iter()
         .map(|_| match output_cell {
-            Some(cell) => cell_physical_storage_descriptor(cell, &target, lifetime),
+            Some(cell) => output_cell_physical_storage_descriptor(
+                cell,
+                &target,
+                lifetime,
+                implementation_memory,
+            ),
             None => Ok(physical_storage_descriptor(
                 output_representation,
                 &target,
@@ -324,6 +329,29 @@ fn cell_physical_storage_descriptor(
     let mut storage = physical_storage_descriptor(planned_representation, target, lifetime);
     if cell.has_managed_canonical_storage()?
         && !matches!(storage.slot, PlannedSlotKind::FixedScalar(_))
+    {
+        storage.capabilities = cell.storage_capabilities();
+        storage.slot = PlannedSlotKind::CanonicalValueHandle;
+    }
+    Ok(storage)
+}
+
+fn output_cell_physical_storage_descriptor(
+    cell: &ValueCell,
+    target: &TargetMemoryProfile,
+    lifetime: MemoryLifetime,
+    implementation_memory: ImplementationMemoryClass,
+) -> MResult<PhysicalStorageDescriptor> {
+    let mut storage = cell_physical_storage_descriptor(cell, target, lifetime)?;
+    // Numeric inputs retain their fixed-width import layout. An output that
+    // is actually canonical needs its payload transaction when the installed
+    // implementation constructs through the canonical lifecycle instead.
+    if matches!(
+        implementation_memory,
+        ImplementationMemoryClass::CanonicalFinalize
+            | ImplementationMemoryClass::CanonicalSortUnique
+            | ImplementationMemoryClass::CanonicalCloneInput { .. }
+    ) && cell.has_managed_canonical_storage()?
     {
         storage.capabilities = cell.storage_capabilities();
         storage.slot = PlannedSlotKind::CanonicalValueHandle;
@@ -719,6 +747,34 @@ impl BoundCall {
         outputs: Box<[ResolvedValueDescriptor]>,
         resident_operation: crate::ResidentOperationKey,
     ) -> MResult<Self> {
+        Self::artifact_operation_for_target(
+            operation,
+            inputs,
+            outputs,
+            resident_operation,
+            ExecutionTarget::ResidentCpu,
+        )
+    }
+
+    /// Joins an artifact operation to its selected implementation and explicit
+    /// destination. This descriptor is not proof that a backend implements the
+    /// operation; native lowering additionally requires its private binder seal.
+    pub fn artifact_operation_for_target(
+        operation: ResolvedOperationDescriptor,
+        inputs: Box<[ResolvedValueDescriptor]>,
+        outputs: Box<[ResolvedValueDescriptor]>,
+        resident_operation: crate::ResidentOperationKey,
+        target: ExecutionTarget,
+    ) -> MResult<Self> {
+        if !matches!(
+            target,
+            ExecutionTarget::ResidentCpu | ExecutionTarget::Native
+        ) {
+            return Err(
+                MechError::new(crate::MemoryPlanError::DescriptorMismatch, None)
+                    .with_compiler_loc(),
+            );
+        }
         let canonical_name = format!(
             "{}/{}",
             resident_operation.module_path.join("/"),
@@ -742,7 +798,7 @@ impl BoundCall {
             inputs,
             outputs,
             implementation: BoundImplementationId::Resident(resident_operation),
-            target: ExecutionTarget::ResidentCpu,
+            target,
         })
     }
 

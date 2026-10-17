@@ -412,7 +412,48 @@ fn rejected_artifact_record(
     before_epoch: u64,
     failure: ArtifactResidentExecutionError,
 ) -> MResult<ResidentTurnRecord> {
+    let resource_message = match &failure {
+        ArtifactResidentExecutionError::ResourceAdmission { violation, .. } => Some(format!(
+            "resident admission denied: {:?}; required {}, limit {}",
+            violation.dimension, violation.required, violation.limit
+        )),
+        ArtifactResidentExecutionError::Kernel {
+            error:
+                mech_core::ResidentKernelError::ResourceLimit {
+                    phase,
+                    dimension,
+                    required,
+                    limit,
+                },
+            ..
+        } => Some(format!(
+            "resident {phase:?} denied: {dimension:?}; required {required}, limit {limit}"
+        )),
+        _ => None,
+    };
     let (phase, kind, message) = match failure {
+        ArtifactResidentExecutionError::MemoryPlan { .. } => (
+            TurnFailurePhase::Execution,
+            "ResidentMemoryPlan",
+            "resident memory planning failed",
+        ),
+        ArtifactResidentExecutionError::ResourceAdmission { .. } => (
+            TurnFailurePhase::Execution,
+            "ResidentResourceAdmission",
+            "resident resource admission failed",
+        ),
+        ArtifactResidentExecutionError::Kernel {
+            error: mech_core::ResidentKernelError::ResourceLimit { phase, .. },
+            ..
+        } => (
+            if phase == mech_core::ResidentResourcePhase::Publication {
+                TurnFailurePhase::Publication
+            } else {
+                TurnFailurePhase::Execution
+            },
+            "ResidentResourceLimit",
+            "resident resource limit exceeded",
+        ),
         ArtifactResidentExecutionError::PlanningStepLimit { .. } => (
             TurnFailurePhase::Execution,
             "ResidentPlanningStepLimit",
@@ -453,6 +494,16 @@ fn rejected_artifact_record(
             "ResidentOutputMaterialization",
             "resident output materialization failed",
         ),
+        ArtifactResidentExecutionError::InvalidProjectionState { .. } => (
+            TurnFailurePhase::Execution,
+            "ResidentProjectionState",
+            "resident replacement projection state was invalid",
+        ),
+        ArtifactResidentExecutionError::ArtifactRevisionMismatch { .. } => (
+            TurnFailurePhase::Execution,
+            "ResidentArtifactRevisionMismatch",
+            "resident artifact revision did not match the activated plan",
+        ),
         ArtifactResidentExecutionError::ExternalSummaryRequired => (
             TurnFailurePhase::Execution,
             "ResidentExternalSummaryRequired",
@@ -481,7 +532,7 @@ fn rejected_artifact_record(
             Some(TurnFailureRecord {
                 phase,
                 kind: kind.to_string(),
-                message: message.to_string(),
+                message: resource_message.unwrap_or_else(|| message.to_string()),
             }),
         )?,
         body: ResidentEkfReceipt::rejected(before_epoch),
@@ -527,6 +578,30 @@ mod tests {
     use mech_engine::__resident_ekf::ResidentEkfBatch;
 
     const INPUT: [f64; 4] = [1.0, 0.1, 24.0, -0.6];
+
+    #[test]
+    fn artifact_resource_failure_records_preserve_limit_details() {
+        let record = rejected_artifact_record(
+            1,
+            0,
+            ArtifactResidentExecutionError::Kernel {
+                node: mech_core::NodeId::new(2),
+                error: mech_core::ResidentKernelError::ResourceLimit {
+                    phase: mech_core::ResidentResourcePhase::Admission,
+                    dimension: mech_core::MemoryBudgetDimension::ComputeWork,
+                    required: 9,
+                    limit: 8,
+                },
+            },
+        )
+        .unwrap();
+        let failure = record.header.failure.unwrap();
+        assert_eq!(failure.kind, "ResidentResourceLimit");
+        assert_eq!(
+            failure.message,
+            "resident Admission denied: ComputeWork; required 9, limit 8"
+        );
+    }
 
     #[test]
     fn record_preparation_failure_automatically_aborts_before_publication() {

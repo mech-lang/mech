@@ -1,0 +1,88 @@
+{
+  "schema": "mech.validation.numeric-kind-suffix.v1",
+  "status": "TARGETED_AND_COMPLETE_SYNTAX_LIBRARY_PASSED",
+  "source_parent": "4b4a450935438e8ececa0603d42391badcf358b0",
+  "source_files": {
+    "docs/design/specification.mec": "7054aa149f7091848487ac4b6f8340e4ae64a43dbe919a45b9c121960f3903a5",
+    "docs/design/grammar-audit/canonical-dependencies.tsv": "e0595bfe699f75d322655a2494b30bcec4453a4728498598b56bb226e83e4e00",
+    "src/syntax/src/document/parser/canonical/literals/continuation.rs": "be0dc6f8616fb18f720966196747f24f95b04caaaeabc8004a9731779fd40c68",
+    "src/syntax/tests/canonical_rules/canonical_application.rs": "0ee0fe2799237f28b4f31bcc672a9c6024cc157bf2c8439f11f839b22c5ec076"
+  },
+  "problem": "The numeric complex-number candidate accepted the i prefix of integer kind suffixes, leaving suffix digits unconsumed and preventing ordinary canonical documents such as value := 7i64 from selecting code.",
+  "change": "Imaginary i/j units use a resumable, non-consuming alphanumeric/emoji boundary probe. Integer kind suffixes remain whole typed integers; complex arithmetic remains supported. Probe rewinds preserve charged resource work.",
+  "validation": {
+    "command": [
+      "cargo",
+      "test",
+      "-p",
+      "mech-syntax",
+      "--no-default-features",
+      "--features",
+      "full",
+      "--lib",
+      "--offline",
+      "--locked",
+      "--target-dir",
+      "/private/tmp/mech-build-cache",
+      "--",
+      "--test-threads=1",
+      "--nocapture",
+      "integer_kind_suffixes_do_not_select_imaginary_unit_prefixes",
+      "numeric_candidates_payload_recovery_and_limits_survive_input_cuts",
+      "numeric_candidate_replay_and_growing_payloads_retain_linear_work",
+      "certification_table_executes_every_direct_accept_reject_and_recovery_case",
+      "generated_canonical_inventory_is_exact_and_collision_free"
+    ],
+    "source_commit": "4b4a450935438e8ececa0603d42391badcf358b0",
+    "started_utc": "2026-10-16T19:33:35.447156+00:00",
+    "finished_utc": "2026-10-16T19:33:44.292379+00:00",
+    "exit_code": 0,
+    "test_results": [
+      "test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 502 filtered out; finished in 2.76s"
+    ],
+    "sources_unchanged_during_run": true,
+    "serial_preflight": true,
+    "benchmark_measurements": 0,
+    "log_sha256": "98500ca890fc9b3a7333af5f486b0d37081afa8d89e07e497f8450d9774adc04"
+  },
+  "regression_scope": [
+    "All signed-width suffixes, exact signed64 maximum, unsigned64 maximum and identifier/emoji suffixes consumed in full as TypedInteger.",
+    "Original failing signed-MAX document input preserved.",
+    "Both i/j units, mixed real/imaginary forms and complex arithmetic preserved.",
+    "UTF8 chunk partitions, one-transition resumes, shared fuel/event/recovery bounds and measured linear growth.",
+    "Complete81-rule syntax certification,543-rule registry inventory and four generated-source checks."
+  ],
+  "failed_diagnostic": "First signed native metadata qualification stopped before execution of the failing constant/alias fixture; diagnostic source and log retained separately.",
+  "product_resource_limits_changed": false,
+  "benchmark_measurements": 0,
+  "complete_syntax_library": {
+    "command": [
+      "cargo",
+      "test",
+      "-p",
+      "mech-syntax",
+      "--no-default-features",
+      "--features",
+      "full",
+      "--lib",
+      "--offline",
+      "--locked",
+      "--target-dir",
+      "/private/tmp/mech-build-cache",
+      "--",
+      "--test-threads=1",
+      "--nocapture"
+    ],
+    "source_commit": "099e17b7b76e27c1426d4fa546eec66d03203f02",
+    "started_utc": "2026-10-16T19:50:40.009326+00:00",
+    "finished_utc": "2026-10-16T20:00:31.065441+00:00",
+    "exit_code": 0,
+    "test_results": [
+      "test result: ok. 507 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 590.76s"
+    ],
+    "sources_unchanged_during_run": true,
+    "serial_preflight": true,
+    "benchmark_measurements": 0,
+    "log_sha256": "70c5f0b426f2f887aefe2ce06bb44bfc885a3c75c743580373ee1f3919e47008"
+  }
+}

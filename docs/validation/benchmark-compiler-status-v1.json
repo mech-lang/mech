@@ -1,0 +1,135 @@
+{
+  "schema": "mech.benchmark-compiler-status.v1",
+  "as_of_utc": "2026-10-17",
+  "status": "IN_PROGRESS_NOT_BENCHMARK_QUALIFIED",
+  "integration": {
+    "repository": "https://github.com/mech-lang/mech",
+    "branch": "codex/idiomatic-native-programs",
+    "pull_request": "https://github.com/mech-lang/mech/pull/901",
+    "pull_request_status": "OPEN_DRAFT",
+    "current_correction_source_commit": "efe8046f8a33b3c29cd42864431f6cc1f1965201",
+    "current_correction_record": "pr901-integration-corrections-v1.json",
+    "current_qualification": "All46 retained application/text/retention/tail methods, including all10 original tail cases, pass on clean a0d000061 with optimization0/default thread stack. Two selected engine non-tail boundary methods also pass. The new host-stack repair requires fresh owner/runtime/source qualification: earlier832 runtime units and61 source-acceptance cases remain scoped to392a96e2e, not this later Rust source. Actual corrected browser execution, all five linked routes, fresh clean review and complete green CI remain pending. The following scalar receipts retain their historical source scope.",
+    "qualified_source_commit": "099e17b7b76e27c1426d4fa546eec66d03203f02",
+    "qualification_receipts_commit": "6ffc5e0e8febaf6b9718753e2037840548c5bd4d"
+  },
+  "runtime_authority": {
+    "required_architecture": "One canonical source compiler and admitted executable artifact define Mech semantics. Resident execution, native JIT and native Object/AOT are execution backends of that artifact, not independent language implementations. Host adapters supply typed effects; they must not create a second language or bypass common capability admission and atomic publication contracts.",
+    "current_gap": "The opt-in CLI build --backend cranelift still calls mech_gpu::native_build::emit_application with a source path. That route reparses source through native_sequence::ParsedSource and separate sequence/control/grid lowering. This is an unresolved competing compiler authority, not a supported permanent alternative architecture. Shared syntax normalization alone does not make its semantics canonical.",
+    "observed_difference": "The source-native path rejects bracketed element-wise application counts that canonical resident execution supports. This establishes different accepted capability sets, not a reproduced same-program output mismatch.",
+    "migration_required": "Move remaining source-native capabilities into canonical artifact lowering and typed host/resource admission, preserve differential resident/JIT/actually-linked AOT qualification, route production native building through the artifact, then remove the alternate source lowering. Unsupported artifact/backend combinations must fail explicitly without reparsing source or silently falling back. Renaming paths or documenting the gap does not complete this requirement.",
+    "qualified_boundary": "Only stateless Turn-only Bool/U64/I64 artifact-native execution is qualified by the recorded scalar receipts. Locally staged F64 remains uncompiled, unqualified and outside the published PR."
+  },
+  "implemented_corrections_not_full_benchmark_qualification": {
+    "record": "pr901-integration-corrections-v1.json",
+    "resident": [
+      "Structural enum/tuple projections share immutable schema evidence instead of repeated whole-schema copies; shallow paths use bounded inline storage and deeper paths retain admitted storage.",
+      "Persistent projection metadata is included in ActivatedPlan.memory_plan and initial/refined peak demands, including budget None, with realization/release accounting.",
+      "Join comparison accounting, shared map schema ownership, typed resource denials and retained original tail contracts are implemented; complete current-source qualification remains mandatory.",
+      "Bracketed element-wise counts use canonical parsing, singleton broadcast or exact matrix geometry, one count evaluation, serial lane order and atomic publication. This does not establish native lowering or parallel execution.",
+      "Replacement refresh preserves ordered reset/new/retained-state views and accepted observations; optional queries retain unpublished absence.",
+      "The latest review correction requires anonymous state identity to be unambiguous in both directions and makes bulk interactive listing omit unpublished observations while retaining unknown-name errors. All832 runtime units and61 source-acceptance cases pass on clean392a96e2e; actual browser, linked and full final-head CI qualification remains pending.",
+      "The original ten tail-control methods and36 other retained application/text/retention methods pass on a0d000061 after reducing recursive dispatcher host-stack use. The unchanged depth ceiling remains24; explicit source/decoded boundary/refusal/recovery tests use the default stack with optimization0. The browser pending-observation regression now uses root-scoped declarations in an independent document; its actual browser rerun remains pending."
+    ],
+    "boundary": "Do not reapply preserved whole-file candidates over these newer corrections. Historical source-only gap descriptions in the original handoff are not the current implementation status."
+  },
+  "qualified": [
+    {
+      "feature": "Canonical integer kind suffix boundary",
+      "evidence": "numeric-kind-suffix-v1.json",
+      "result": "507 complete parser-library tests pass; integer suffixes consume in full and complex arithmetic remains supported."
+    },
+    {
+      "feature": "Canonical native Bool/U64/I64 scalar graph",
+      "evidence": [
+        "canonical-native-i64-v1.json",
+        "canonical-native-i64-linked-v1.json"
+      ],
+      "result": "27 integration checks,6 private selected-semantics checks,4 private native ABI/identity checks, runtime-only build,3 actual linked executables and35 fresh-process launches. Original and decoded resident/JIT results, complete output streams and failures agree; runtime compiled units exclude parser and code generators.",
+      "limits": "Stateless Turn-only scalar graph; not full workload support."
+    },
+    {
+      "feature": "Full resource input schemas and actual observation geometry",
+      "source_commit": "4ef7ef70455b153f51e9006201e6120dde9b1098",
+      "result": "44 distinct runtime cases and8 retained CLI byte-stream cases passed. Native resource machine-code lowering remains separate."
+    }
+  ],
+  "preserved_candidates": {
+    "branch": "codex/compiler-pending-work",
+    "commit": "69bbfb71e8f3e4b422aec2bed844bbb9bf9558b7",
+    "status": "SOURCE_ONLY_UNRUN_UNLESS_SEPARATELY_QUALIFIED_ON_INTEGRATION_BRANCH",
+    "composed_index": "native-scalar/composed-candidates-v1.json",
+    "next_layers": [
+      {
+        "feature": "F64",
+        "path": "native-scalar/f64/composed-i64-v1",
+        "source_files": 21,
+        "baseline": "099e17b7b76e27c1426d4fa546eec66d03203f02"
+      },
+      {
+        "feature": "checked numeric casts",
+        "path": "native-scalar/casts/composed-i64-v1",
+        "source_files": 14,
+        "baseline": "F64 composed layer; recompose after any F64 qualification fix."
+      }
+    ],
+    "other_features": [
+      "native Match and linked Match",
+      "native Iteration",
+      "native matrix engine/GPU and constant-output consistency",
+      "strict CLI argument count",
+      "packed U8 snapshot constructor",
+      "borrowed structural Match projections",
+      "nbody and six other idiomatic workload source candidates"
+    ],
+    "application_rule": "Check exact before hashes and compose additive changes. Archived whole files target older source compositions and must not overwrite current fixes."
+  },
+  "remaining": [
+    {
+      "requirement": "Qualify all ten canonical idiomatic Mech programs",
+      "work": "Parse, compile, execute full input/output and required-work contracts; validate publication LOC. Named-output =>, ordinary functions and captures, pipelines, repeated application syntax, match and state-machine control must use general language semantics."
+    },
+    {
+      "requirement": "Complete canonical Cranelift AOT lowering",
+      "work": "F64, checked casts, computed activation/state, Match/Iteration, matrix/collection and resource execution. Migrate the older source-native compiler's capabilities onto this artifact path and retire its independent source lowering; do not preserve two semantic authorities. No whole-program interpreter fallback or benchmark-sized Rust bridge."
+    },
+    {
+      "requirement": "Close collection and ownership gaps",
+      "work": "Qualify the implemented structural projection and persistent metadata accounting on the final source while keeping cumulative limits unchanged. Genuine tree/arena references, bigint and remaining byte/collection operations still require compiler/runtime support."
+    },
+    {
+      "requirement": "Native capability and CLI lifecycle",
+      "work": "Typed argv/stdin/stdout/raw-byte ABI, strict payload argument boundary/count, ordered errors and output staging. Hosted resident CLI byte success does not establish native AOT resource support."
+    },
+    {
+      "requirement": "Same AOT binary trusted and secured",
+      "work": "Qualify both modes across complete process startup, arguments, inputs, work, output/flush, shutdown and errors. AOT first."
+    },
+    {
+      "requirement": "Serial Mech-only timing and publication",
+      "work": "Measure only after correctness/admission gates pass; preserve all other language cohorts and historical optimization evidence. Never overlap benchmark measurements."
+    }
+  ],
+  "known_gaps": [
+    "Canonical native remains stateless Turn-only Bool/U64/I64; resident control, projection and bracketed-count corrections do not supply native lowering.",
+    "Source CLI has no explicit parsed payload-vector boundary in current run options. Generated hosted applications already receive immutable payload OsStrings; preserve the custom factory seam.",
+    "Pidigits source requires general bigint support. Replacing its algorithm with a Rust whole-program helper would not close that language gap.",
+    "Archived native Match/Iteration control supports Bool/U64 only until wider scalar kinds, identities and transport are explicitly composed."
+  ],
+  "website": {
+    "repository": "https://github.com/mech-lang/benchmarks",
+    "branch": "main",
+    "commit": "00db6bdc9473d0fb2391eecf7a4dab452b890140",
+    "url": "https://mech-lang.org/benchmarks/",
+    "last_verified_build": "21dcbb5405ae1684",
+    "last_verified_pipeline": "2956249210",
+    "status": "Published and desktop/mobile verified; Fastest/Fewest LOC compose samples, summaries and sample-density selection. Independent brightness controls retained.",
+    "selected_runs": 2877,
+    "execution_variants": 59,
+    "language_families": 52,
+    "timing_dataset_changed_in_native_scalar_qualification": false
+  },
+  "benchmark_measurements_in_native_scalar_qualification": 0,
+  "release_policy": "Keep PR901 draft and unmerged. Fresh clean review and complete green CI are required but do not authorize readiness or merge; explicit user approval is still required.",
+  "continuation_record": "benchmark-agent-handoff-v1.json"
+}

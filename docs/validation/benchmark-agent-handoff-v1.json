@@ -1,0 +1,283 @@
+{
+  "schema": "mech.benchmark-agent-handoff.v1",
+  "as_of": "2026-10-16",
+  "status": "READY_FOR_RESUMPTION_FULL_BENCHMARK_GOAL_INCOMPLETE",
+  "purpose": "Compiler and benchmark continuation record. Verified implementation, unexecuted candidates and remaining qualification gates are distinguished explicitly.",
+  "compiler": {
+    "repository": "https://github.com/mech-lang/mech",
+    "branch": "codex/idiomatic-native-programs",
+    "checkpoint_commit": "bafd50662f600ec30f73db0f34073e256acf6ec4",
+    "qualified_source_commit": "099e17b7b76e27c1426d4fa546eec66d03203f02",
+    "qualification_receipts_commit": "6ffc5e0e8febaf6b9718753e2037840548c5bd4d",
+    "pull_request": "https://github.com/mech-lang/mech/pull/901",
+    "pull_request_status_at_handoff": "OPEN_DRAFT",
+    "checkout_at_handoff": "Clean and synchronized with the remote; no compiler validation or benchmark running."
+  },
+  "source_archive": {
+    "repository": "https://github.com/mech-lang/mech",
+    "branch": "codex/compiler-pending-work",
+    "commit": "69bbfb71e8f3e4b422aec2bed844bbb9bf9558b7",
+    "archive_kind": "Independent source-preservation tree, not a branch to merge wholesale into the compiler.",
+    "qualification_credit": 0,
+    "entrypoints": [
+      "manifest.json",
+      "file-inventory.json",
+      "supplemental-candidates.json",
+      "native-scalar/composed-candidates-v1.json"
+    ],
+    "latest_addition": {
+      "files": 69,
+      "source_files": 35,
+      "features": [
+        "21-file additive F64 layer",
+        "14-file checked cast layer"
+      ],
+      "verification": "Every saved file was read back from Git and compared byte for byte. All70 before/merged source hashes were independently verified."
+    },
+    "application_rule": "Check exact before hashes and compose additive changes. Archived whole files target older source compositions and must not overwrite current fixes."
+  },
+  "qualified": [
+    {
+      "feature": "Canonical integer kind suffix boundary",
+      "evidence": "numeric-kind-suffix-v1.json",
+      "result": "507 complete parser-library tests pass; integer suffixes consume in full and complex arithmetic remains supported."
+    },
+    {
+      "feature": "Canonical native Bool/U64/I64 scalar graph",
+      "evidence": [
+        "canonical-native-i64-v1.json",
+        "canonical-native-i64-linked-v1.json"
+      ],
+      "result": "27 integration checks,6 private selected-semantics checks,4 private native ABI/identity checks, runtime-only build,3 actual linked executables and35 fresh-process launches. Original and decoded resident/JIT results, complete output streams and failures agree; runtime compiled units exclude parser and code generators.",
+      "limits": "Stateless Turn-only scalar graph; not full workload support."
+    },
+    {
+      "feature": "Full resource input schemas and actual observation geometry",
+      "source_commit": "4ef7ef70455b153f51e9006201e6120dde9b1098",
+      "result": "44 distinct runtime cases and8 retained CLI byte-stream cases passed. Native resource machine-code lowering remains separate."
+    }
+  ],
+  "latest_validation": {
+    "receipt": "canonical-native-i64-v1.json",
+    "linked_receipt": "canonical-native-i64-linked-v1.json",
+    "parser_receipt": "numeric-kind-suffix-v1.json",
+    "qualified_source_commit": "099e17b7b76e27c1426d4fa546eec66d03203f02",
+    "syntax_library_tests": 507,
+    "integration_test_methods": 27,
+    "private_engine_semantics_checks": 6,
+    "private_native_abi_identity_checks": 4,
+    "runtime_only_feature_check_passed": true,
+    "actual_linked_executables": 3,
+    "fresh_process_launches": 35,
+    "saved_pins_independently_reconciled": 79,
+    "runtime_compiled_units_exclude_parser_and_codegen": true,
+    "benchmark_measurements": 0,
+    "commands_and_log_hashes": "Exact command arrays, source pins, timestamps and log hashes are retained in the qualification receipts. These execution times describe validation, not benchmark timings."
+  },
+  "implemented_native_scalar_details": [
+    "Bool/U64/I64 stateless Turn-only canonical scalar graphs use the private selected binder/request/finished BoundCall certification. Public operation names or claimed work tags cannot certify a replacement.",
+    "I64 checked add/subtract/multiply/divide/remainder/negate and six comparisons use real NativeHost Signed64 physical storage and raw eight-byte two-complement transport.",
+    "Shared Cranelift JIT/Object emitter guards integer overflow, zero division, MIN/-1 division/remainder and MIN negation before machine arithmetic. Errors keep source order; outputs are staged atomically and the same JIT instance recovers after failure.",
+    "Typed IR identity version2 appends signed kind/value tag3 and operation tags18..29. C ABI1 and work policy1 are unchanged.",
+    "Resident differential helpers match ActivatedInput.artifact_slot to the artifact input declaration; actual input installation still uses the resident input.slot SlotIndex.",
+    "The i64 literal parser fix uses a resumable non-consuming alphanumeric/emoji boundary after imaginary i/j units. Original signed-MAX source is retained; suffixes are fully consumed and complex arithmetic remains valid.543rules,1527dependency edges and81recursive rules remain unchanged."
+  ],
+  "next_source_layers": [
+    {
+      "feature": "F64",
+      "archive_path": "native-scalar/f64/composed-i64-v1",
+      "manifest": "native-scalar/f64/composed-i64-v1/manifest.json",
+      "patch": "native-scalar/f64/composed-i64-v1/candidate.patch",
+      "source_files": 21,
+      "status": "SOURCE_ONLY_UNRUN_NOT_APPLIED",
+      "baseline": "099e17b7b76e27c1426d4fa546eec66d03203f02 production/test source; subsequent handoff commits only add validation records.",
+      "scope": "12 F64 operations: add/subtract/multiply/divide/negate/sqrt and six comparisons. Exact DenseF64 private certification and raw F64Bits transport.",
+      "identity": "IRversion3, kind/value tag4, operations30..41; C ABI1/work policy1 unchanged.",
+      "qualification_requirements": [
+        "Check all before and candidate hashes before applying. Preserve current resource slot_shape_seeds, private factory accessors, selected witnesses and dependency provenance.",
+        "Compare actual original and decoded resident execution against JIT and linked Object execution, including28 binary pairs and18 unary bit patterns, NaN payloads, infinities and signed zero.",
+        "Retain no-fast-math, no-FMA, no-reassociation behavior; do not reject otherwise valid inputs or fall back to an interpreter to hide a mismatch.",
+        "Retain Bool/U64/I64 checks and add denial ordering, failure atomicity, recovery and runtime-only build/actual compiled dependency closure.",
+        "The linked candidate adds a fourth program with57 prepared cases:46 valid,5 denial,5 malformed and1 recovery. These are unexecuted test sources, not passing results."
+      ],
+      "corrections_already_composed": [
+        "The F64 reference helper uses artifact_slot to select declarations and retains the actual resident SlotIndex for installation."
+      ]
+    },
+    {
+      "feature": "Checked numeric casts",
+      "archive_path": "native-scalar/casts/composed-i64-v1",
+      "manifest": "native-scalar/casts/composed-i64-v1/manifest.json",
+      "patch": "native-scalar/casts/composed-i64-v1/candidate.patch",
+      "source_files": 14,
+      "status": "SOURCE_ONLY_UNRUN_NOT_APPLIED",
+      "baseline": "The preserved additive F64 layer. Any F64 qualification fix requires recomposition before applying casts.",
+      "scope": "U64/I64 conversions and U64/I64 to F64, F64 to U64/I64 through private ExplicitScalarBuiltinConversionPlan certification. No wrapping/dynamic/matrix casts.",
+      "semantics": "Floating casts reject nonfinite values, truncate toward zero and use half-open range bounds. Fractions in(-1,0) convert to unsigned0; compare against the actual resident oracle.",
+      "identity": "IRversion4, operations42..47; C ABI1/work policy1 unchanged.",
+      "corrections_already_composed": [
+        "The two source_catalog arguments include the saved borrow follow-up."
+      ]
+    }
+  ],
+  "other_pending_source": [
+    {
+      "feature": "Native Match and linked Match",
+      "archive_paths": [
+        "native-control/match",
+        "native-control/linked-match"
+      ],
+      "status": "SOURCE_ONLY_UNRUN",
+      "work": "Compose wider I64/F64/cast kinds, transport, literal equality and identity with the current scalar implementation. Original candidates support only Bool/U64. Preserve the separate reference-slot correction."
+    },
+    {
+      "feature": "Native Iteration",
+      "archive_path": "native-iteration",
+      "patch_sha256": "6b2ed53b61e03d7a9b5263d8bd5759cf94852f0e2e6d4b4980177988e3a90201",
+      "prepared_checks": 12,
+      "status": "SOURCE_ONLY_UNRUN",
+      "work": "Compose after native Match/linked Match and wider scalars. Candidate uses actual header/latch/backedge, private per-visit locals and cumulative work for legal visits. Its ABI3 differs from scalarABI1/MatchABI2. Matrix/lifecycle/resource/full-workload support remains separate."
+    },
+    {
+      "feature": "Native matrix",
+      "archive_path": "native-matrix",
+      "status": "SOURCE_ONLY_UNRUN",
+      "work": "Compose engine aggregate, constant-output consistency overlay and GPU implementation additively. Preserve qualified resource schema/shape and scalar fixes. The earlier symbolic-template patch is superseded inside the engine aggregate."
+    },
+    {
+      "feature": "Borrowed structural Match projections",
+      "archive_path": "structural-match-projections",
+      "patch_sha256": "c647c1bc77adc95a86a7e254f48f18ffff2620c516de384313fa7b7b4f198a14",
+      "prepared_checks": 9,
+      "status": "SOURCE_ONLY_UNRUN_IMPLEMENTATION_GAP",
+      "work": "v3 lacks the admitted persistent projection metadata baseline in ActivatedPlan.memory_plan and runtime initial/refined demands, including budgetNone. Implement a general non-double-counted charge and exact-limit, growth and denial coverage. No v4 candidate exists.",
+      "retained_failure": "Original tail acceptance had8passing and2failing cases: Count1024 and Recordprefix128/body96 reach the16777216 work limit through full enum/schema clones. Optimize actual cloning/work; retain the cap and original fixtures."
+    },
+    {
+      "feature": "Strict CLI argument count",
+      "archive_path": "cli-argument-count",
+      "patch_sha256": "1b07172b09ff98ec7168906bb3cf5749511cb0f0c919db35acaa871b78081195",
+      "prepared_checks": 14,
+      "status": "SOURCE_ONLY_UNRUN",
+      "work": "Generated hosted applications already receive immutable payload OsStrings. Source CLI has no parsed payload-vector boundary in run paths/options: add explicit -- payload separation and forwarding, preserving custom factory injection. NativeSequence typed U64 count ABI remains unsupported; do not serialize counts through a String bridge."
+    },
+    {
+      "feature": "Packed U8 snapshot",
+      "archive_path": "packed-u8-snapshot",
+      "patch_sha256": "f48ab7bcd2efd068ea7b69e98089ff872964b7b2bc61f20bc0d3483c01afd723",
+      "prepared_checks": 6,
+      "status": "SOURCE_ONLY_UNRUN",
+      "work": "Safe constructor validates full schema, shape, bounds and cardinality before packed allocation; preserve normal finalization and allocation tickets. Compose provider changes with strict argv changes."
+    },
+    {
+      "feature": "Nbody source qualification",
+      "archive_path": "workloads/nbody",
+      "prepared_checks": 11,
+      "status": "SOURCE_ONLY_UNRUN",
+      "work": "Preserve its deliberately unmet strict extra-argument contract. Expected files are retained oracles, not executed candidate results."
+    },
+    {
+      "feature": "Six idiomatic workload sources",
+      "archive_path": "workloads/idiomatic-six",
+      "workloads": [
+        "binarytrees",
+        "fasta",
+        "mandelbrot",
+        "pidigits",
+        "regexredux",
+        "revcomp"
+      ],
+      "retained_input_output_contracts": 113,
+      "status": "SOURCE_ONLY_UNRUN_NO_PUBLICATION_LOC",
+      "work": "Read compiler-gap-workmap.json, provider-workmap.json and source-contracts.json in the archived package. Parse, compile and execute actual candidates before assigning LOC or timing credit.",
+      "specific_gaps": [
+        "Pidigits needs general bigint primitives; its nested FSM/spigot source must not become a whole-program Rust Pi helper.",
+        "Binarytrees needs genuine recursive record/reference allocation, arena/frame lifetimes and non-tail recursive work.",
+        "FASTA needs genuine per-character state, probability selection, capability output and bounded flushing; no workload-sized write-scan helper.",
+        "Raw byte workloads must preserve binary input/output contracts and ordered resource effects."
+      ]
+    }
+  ],
+  "remaining_full_scope": [
+    {
+      "requirement": "Qualify all ten canonical idiomatic Mech programs",
+      "work": "Parse, compile, execute full input/output and required-work contracts; validate publication LOC. Named-output =>, ordinary functions and captures, pipelines, repeated application syntax, match and state-machine control must use general language semantics."
+    },
+    {
+      "requirement": "Complete canonical Cranelift AOT lowering",
+      "work": "F64, checked casts, computed activation/state, Match/Iteration, matrix/collection and resource execution. No whole-program interpreter fallback or benchmark-sized Rust bridge."
+    },
+    {
+      "requirement": "Close collection and ownership gaps",
+      "work": "Borrowed structural Match projections still require persistent metadata memory charges in initial and refined plans, including budget None. Keep cumulative work limits; do not raise or discount them. Tree/arena references, bigint and byte operations require genuine compiler/runtime support."
+    },
+    {
+      "requirement": "Native capability and CLI lifecycle",
+      "work": "Typed argv/stdin/stdout/raw-byte ABI, strict payload argument boundary/count, ordered errors and output staging. Hosted resident CLI byte success does not establish native AOT resource support."
+    },
+    {
+      "requirement": "Same AOT binary trusted and secured",
+      "work": "Qualify both modes across complete process startup, arguments, inputs, work, output/flush, shutdown and errors. AOT first."
+    },
+    {
+      "requirement": "Serial Mech-only timing and publication",
+      "work": "Measure only after correctness/admission gates pass; preserve all other language cohorts and historical optimization evidence. Never overlap benchmark measurements."
+    }
+  ],
+  "operating_rules": [
+    "Use one owner for compiler source mutations. Fetch and compose upstream PR901 changes before future commits; do not force-overwrite another change.",
+    "Preserve unrelated work on other branches/worktrees. The original EKF/GPU/watch/serve and prototype checkout is outside this benchmark task.",
+    "Run validation and benchmark processes serially. No active validation or benchmark remained at handoff. A polling timeout does not establish process termination or justify restarting a live run.",
+    "Pin the source commit and relevant source/test hashes for qualification; do not edit a pinned checkout during a live run. Capture complete process streams and exit codes.",
+    "Use locked, offline Cargo dependency resolution for the recorded qualification commands. Shared validation cache reuse does not supply passing-test credit.",
+    "Retain cumulative resource accounting and admission limits. Do not raise, reset or discount work caps, or omit persistent memory charges to pass a case.",
+    "General Rust library leaves are permitted; whole-program interpreters or benchmark-sized Rust bridges do not close canonical compiler gaps.",
+    "Use a single AOT binary for trusted/secured qualification and include complete startup, arguments, input, work, output/flush, shutdown and errors.",
+    "Only Mech requires the new measurements. Preserve existing52-language cohorts and historical optimization evidence; never run simultaneous benchmark timings.",
+    "Commit and push source and accurately scoped qualification evidence. Keep project documentation directed to maintainers; keep draft compiler PRs unmerged."
+  ],
+  "important_distinctions": [
+    "Current canonical native support is stateless Turn-only Bool/U64/I64. ComputedActivation/state, Match/Iteration, F64, matrix/collection and resources are outside this admitted scalar subset.",
+    "Standard generated hosted applications execute the resident runtime. They are distinct from the separately qualified canonical Cranelift Object route and must not be relabeled native benchmark AOT.",
+    "Object-emission metadata intentionally records linked=false/executed=false for that phase. The separate enclosing linked qualification proves actual binary execution; phase metadata must remain truthful.",
+    "The temporary parser diagnostic supplies no acceptance credit. The permanent boundary fix retains the original failing signed-MAX source.",
+    "Passing scalar/linking tests does not establish all ten workloads, same-binary security equivalence or new timing results."
+  ],
+  "next_actions": [
+    "Verify the compiler and archive refs, then inspect and apply the additive F64 layer after matching all before hashes.",
+    "Qualify actual resident/decoded/JIT/Object/linked F64 semantics and runtime-only dependency closure, preserving Bool/U64/I64.",
+    "Recompose and qualify casts after any F64 fixes; compose wider native control/Iteration, matrix and typed resources without replacing current fixes.",
+    "Close structural metadata accounting, CLI payload, ownership, collection and bigint gaps; qualify all ten idiomatic programs and publication LOC.",
+    "Qualify the same AOT binary in trusted/secured modes, run serial Mech-only measurements and publish the verified evidence."
+  ],
+  "website": {
+    "repository": "https://github.com/mech-lang/benchmarks",
+    "branch": "main",
+    "commit": "00db6bdc9473d0fb2391eecf7a4dab452b890140",
+    "url": "https://mech-lang.org/benchmarks/",
+    "last_verified_build": "21dcbb5405ae1684",
+    "last_verified_pipeline": "2956249210",
+    "status": "Published and desktop/mobile verified; Fastest/Fewest LOC compose samples, summaries and sample-density selection. Independent brightness controls retained.",
+    "selected_runs": 2877,
+    "execution_variants": 59,
+    "language_families": 52,
+    "timing_dataset_changed_in_native_scalar_qualification": false
+  },
+  "benchmark_measurements_during_handoff": 0,
+  "evidence_availability": {
+    "committed": "Qualification receipts in docs/validation and exact unrun sources/patches/oracle fixtures on the preservation branch.",
+    "local_only_not_in_repository": [
+      "Operational session ledger and local runner plans",
+      "Raw Cargo/test logs",
+      "Generated linked binaries, build directories and full raw process-stream evidence"
+    ],
+    "fresh_checkout": "Use the committed command arrays and fixture sources to reproduce checks. Local cache paths in historical command arrays may be replaced with an available target directory; source pins and test/input semantics must remain equivalent.",
+    "original_tail_fixture_sha256": "14c1b6e8968a11ed81e5f622ac7b9be2ac819fe42d001ee654d623f39aa1d902"
+  },
+  "recovery": {
+    "tag": "codex/pr901-before-upstream-20261016",
+    "old_lineage_commit": "0aa72e8af33054a8efb4e33404a47082e716d204",
+    "rule": "Old lineage is retained for recovery; rebased equivalents were already incorporated. Do not blindly cherry-pick the old lineage."
+  },
+  "related_review_checkpoint": "PR897 previously had ten review threads replied to and resolved, and a new review requested. Recheck only for subsequent review activity."
+}

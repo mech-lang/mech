@@ -1,0 +1,60 @@
+{
+  "schema": "mech.ordinary-knucleotide-source-smoke.v1",
+  "source_parent_commit": "3899f3de5f164dde8d445562ab4304fbb35d7ea9",
+  "scope": "Ordinary canonical source, record selection and small-input k-nucleotide computation.",
+  "source_files": [
+    {
+      "path": "hosts/gpu/tests/fixtures/native/knucleotide-idiomatic.mec",
+      "sha256": "503a0a315d7b6e30de5d10561e865cd901883b8f32985fee9617f47cd02f4de0"
+    },
+    {
+      "path": "hosts/gpu/tests/idiomatic_sources.rs",
+      "sha256": "b3bb193b2ab197d1493f64f64ae14e2b68b99f514df3ddf11a81cec24b29caaa"
+    },
+    {
+      "path": "src/stdlib/tests/knucleotide_record_source.rs",
+      "sha256": "883ee0f01e7038ea34ecda627cfec89f1b132d60a0a935b0f9cd2ad0585022de"
+    }
+  ],
+  "actual_test_runs": [
+    {
+      "target": "knucleotide_record_source",
+      "passed": 3,
+      "log": "string-selector-shapes-knucleotide-v1.log",
+      "coverage": "Actual fixture parsing, 11 record boundary inputs, and exact complete GGTA output on three inputs; original and decoded artifacts."
+    },
+    {
+      "target": "idiomatic_sources",
+      "passed": 1,
+      "log": "string-selection-retained-host-syntax-v1.log",
+      "coverage": "All named function declarations use =>; actual ContextSend and comprehension syntax retained."
+    }
+  ],
+  "actual_checks_passed": 4,
+  "known_scale_failure": {
+    "qualification_credit": 0,
+    "input": "FASTA prefix containing repeated ignored TT lines before >THREE",
+    "successful_ignored_line_counts": [
+      0,
+      8,
+      16
+    ],
+    "failed_ignored_line_counts": [
+      24,
+      32,
+      64
+    ],
+    "error": "NodeId(3) InvalidShape",
+    "recovery_passed": true,
+    "log": "knucleotide-fsm-scale-diagnostic-v1.log",
+    "log_sha256": "f8a9971e9f92086f9e537400d13d6f516de5740e986582ab59da4d1f13c4831f",
+    "cause": "Synchronous state transitions lower to recursive calls; resident execution enforces a recursion depth limit of 24. Bounded-frame loop lowering remains required."
+  },
+  "scope_limits": {
+    "benchmark_input_sizes_qualified": false,
+    "native_execution_qualified": false,
+    "host_io_qualified": false,
+    "benchmark_measurements": 0
+  },
+  "prerequisite_receipt": "canonical-string-selector-geometry-v1.json"
+}

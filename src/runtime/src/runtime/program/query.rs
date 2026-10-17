@@ -25,6 +25,31 @@ impl MechRuntime {
         previous: &MechRuntime,
         changed_state_names: &std::collections::BTreeSet<String>,
     ) -> MResult<()> {
+        use crate::runtime::program::ActiveProgramExecution;
+        // Compatible replacement preserves a publication, not live frame or
+        // ready-queue identities. Reject before copying inputs or state so the
+        // original runtime can resume unchanged and the host can retry later.
+        for runtime in [&*self, previous] {
+            if let Some((artifact, instance)) = runtime.resident_artifact_and_instance()
+                && instance.has_suspended_continuation()
+            {
+                return Err(super::diagnostics::activation_failure_for_artifact(
+                    artifact,
+                    mech_engine::resident::ResidentActivationError::SuspendedContinuationMigration,
+                ));
+            }
+        }
+        if let (
+            ActiveProgramExecution::ResidentExternal(candidate),
+            ActiveProgramExecution::ResidentExternal(previous),
+        ) = (&mut self.active_program, &previous.active_program)
+        {
+            // Projection kernels read the accepted captured snapshot, not
+            // empty activation input storage or capture-only pending updates.
+            candidate
+                .coordinator
+                .preserve_compatible_live_inputs_from(&previous.coordinator)?;
+        }
         let Some((previous_artifact, previous_instance)) =
             previous.resident_artifact_and_instance()
         else {
@@ -35,25 +60,41 @@ impl MechRuntime {
         };
         let mappings =
             compatible_state_mappings(previous_artifact, candidate_artifact, changed_state_names);
-        if !mappings.is_empty() {
-            let mapped_targets = mappings
-                .iter()
-                .map(|mapping| mapping.target)
-                .collect::<std::collections::BTreeSet<_>>();
-            let projection_refresh_targets = candidate_artifact
-                .outputs()
-                .iter()
-                .map(|output| output.source)
-                .filter(|slot| {
-                    !mapped_targets.contains(slot)
-                        && candidate_artifact
-                            .slots()
-                            .get(slot.get() as usize)
-                            .is_some_and(|declaration| declaration.role == SlotRole::Output)
-                })
-                .collect::<std::collections::BTreeSet<_>>();
+        let mapped_targets = mappings
+            .iter()
+            .map(|mapping| mapping.target)
+            .collect::<std::collections::BTreeSet<_>>();
+        let candidate_owned_states = candidate_artifact
+            .slots()
+            .iter()
+            .filter(|slot| slot.role == SlotRole::State && !mapped_targets.contains(&slot.slot))
+            .map(|slot| slot.slot)
+            .collect::<std::collections::BTreeSet<_>>();
+        let projection_refresh_targets = candidate_artifact
+            .outputs()
+            .iter()
+            .map(|output| output.source)
+            .filter(|slot| {
+                !mapped_targets.contains(slot)
+                    && candidate_artifact
+                        .slots()
+                        .get(slot.get() as usize)
+                        .is_some_and(|declaration| declaration.role == SlotRole::Output)
+            })
+            .collect::<std::collections::BTreeSet<_>>();
 
-            let candidate_artifact = std::sync::Arc::new(candidate_artifact.clone());
+        let candidate_artifact = match &self.active_program {
+            ActiveProgramExecution::ResidentExternal(candidate) => {
+                std::sync::Arc::clone(&candidate.artifact)
+            }
+            ActiveProgramExecution::ResidentPure(candidate) => {
+                std::sync::Arc::clone(&candidate.artifact)
+            }
+            ActiveProgramExecution::None => {
+                unreachable!("candidate artifact was checked above")
+            }
+        };
+        if !mappings.is_empty() {
             let (_, candidate_instance) = self
                 .resident_artifact_and_instance_mut()
                 .expect("candidate artifact was checked above");
@@ -62,21 +103,26 @@ impl MechRuntime {
                 .map_err(|error| {
                     super::diagnostics::activation_failure_for_artifact(&candidate_artifact, error)
                 })?;
-            candidate_instance
-                .refresh_output_projections(&candidate_artifact, &projection_refresh_targets)
-                .map_err(super::diagnostics::projection_refresh_failure)?;
         }
-
-        use crate::runtime::program::ActiveProgramExecution;
-        if let (
-            ActiveProgramExecution::ResidentExternal(candidate),
-            ActiveProgramExecution::ResidentExternal(previous),
-        ) = (&mut self.active_program, &previous.active_program)
-        {
-            candidate
+        // Compatible inputs can survive even when every output is renamed
+        // and no state slot maps. Those new projections still need refresh.
+        match &mut self.active_program {
+            ActiveProgramExecution::ResidentExternal(candidate) => candidate
                 .coordinator
-                .preserve_compatible_live_inputs_from(&previous.coordinator)?;
+                .refresh_output_projections(&projection_refresh_targets, &candidate_owned_states),
+            ActiveProgramExecution::ResidentPure(candidate) => {
+                candidate.instance.refresh_replacement_projections(
+                    &candidate_artifact,
+                    &projection_refresh_targets,
+                    &[],
+                    &candidate_owned_states,
+                )
+            }
+            ActiveProgramExecution::None => {
+                unreachable!("candidate artifact was checked above")
+            }
         }
+        .map_err(super::diagnostics::projection_refresh_failure)?;
         Ok(())
     }
 
@@ -181,7 +227,7 @@ impl MechRuntime {
     ) -> MResult<Vec<(String, RuntimeValueSnapshot)>> {
         #[cfg(feature = "resident-routing")]
         if self.resident_artifact_and_instance().is_some() {
-            return self.resident_symbol_values(names.iter().map(String::as_str));
+            return self.resident_symbol_values(names.iter().map(String::as_str), false);
         }
         Ok(Vec::new())
     }
@@ -197,7 +243,7 @@ impl MechRuntime {
                 return Err(missing_resident_symbol("root_symbol_value", name));
             }
             return self
-                .resident_symbol_values(std::iter::once(name))?
+                .resident_symbol_values(std::iter::once(name), false)?
                 .pop()
                 .map(|(_, value)| value)
                 .ok_or_else(|| {
@@ -245,6 +291,8 @@ impl MechRuntime {
         None
     }
 
+    /// Inspect available root symbols, omitting declared outputs that have not
+    /// published. Genuinely unknown requested names remain errors.
     pub fn root_symbol_values(
         &self,
         names: &[&str],
@@ -261,7 +309,7 @@ impl MechRuntime {
                         .any(|constraint| constraint.name == *name)
                 })
                 .collect::<Vec<_>>();
-            return self.resident_symbol_values(ordinary_names);
+            return self.resident_symbol_values(ordinary_names, true);
         }
         match names.first() {
             Some(name) => Err(missing_resident_symbol("root_symbol_values", name)),
@@ -269,6 +317,7 @@ impl MechRuntime {
         }
     }
 
+    /// List available root values without inventing unpublished observations.
     pub fn root_symbol_values_all(&self) -> MResult<Vec<(String, RuntimeValueSnapshot)>> {
         #[cfg(feature = "resident-routing")]
         if let Some((artifact, _)) = self.resident_artifact_and_instance() {
@@ -289,15 +338,18 @@ impl MechRuntime {
                 })
                 .collect::<Vec<_>>();
             if !lexical_names.is_empty() {
-                return self.resident_symbol_values(lexical_names.iter().map(String::as_str));
+                return self.resident_symbol_values(lexical_names.iter().map(String::as_str), true);
             }
-            return self.resident_symbol_values(artifact.outputs().iter().filter_map(|output| {
-                (!artifact
-                    .constraints()
-                    .iter()
-                    .any(|constraint| constraint.name == output.name))
-                .then_some(output.name.as_str())
-            }));
+            return self.resident_symbol_values(
+                artifact.outputs().iter().filter_map(|output| {
+                    (!artifact
+                        .constraints()
+                        .iter()
+                        .any(|constraint| constraint.name == output.name))
+                    .then_some(output.name.as_str())
+                }),
+                true,
+            );
         }
         Ok(Vec::new())
     }
@@ -318,7 +370,7 @@ impl MechRuntime {
                 .map(|constraint| constraint.name.as_str())
                 .filter(|name| names.is_empty() || names.contains(name))
                 .collect::<Vec<_>>();
-            return self.resident_symbol_values(constraint_names);
+            return self.resident_symbol_values(constraint_names, false);
         }
         Ok(Vec::new())
     }
@@ -365,6 +417,7 @@ impl MechRuntime {
     fn resident_symbol_values<'a>(
         &self,
         names: impl IntoIterator<Item = &'a str>,
+        omit_unpublished: bool,
     ) -> MResult<Vec<(String, RuntimeValueSnapshot)>> {
         let (artifact, instance) = self
             .resident_artifact_and_instance()
@@ -395,19 +448,42 @@ impl MechRuntime {
                     None,
                 ));
             };
-            let value = super::output_value(instance, index)?.ok_or_else(|| {
-                MechError::new(
+            let Some(value) = super::output_value(instance, index)? else {
+                // A declared observation may await its first accepted input.
+                // Bulk value inspection must still show the available rows,
+                // without manufacturing a publication or hiding unknown names.
+                if omit_unpublished {
+                    continue;
+                }
+                return Err(MechError::new(
                     RuntimeInvalidOperationError {
                         operation: "resident_symbol_values",
                         reason: format!("resident output symbol `{name}` has no value"),
                     },
                     None,
-                )
-            })?;
+                ));
+            };
             values.push((name.to_owned(), value));
         }
         Ok(values)
     }
+}
+
+#[cfg(feature = "resident-routing-source")]
+fn changed_state_slots(
+    artifact: &ProgramArtifact,
+    changed_state_names: &std::collections::BTreeSet<String>,
+) -> std::collections::BTreeSet<mech_core::CellSlotId> {
+    artifact
+        .interactive_symbol_bindings()
+        .filter(|binding| {
+            binding.lexical_name != "ans" && changed_state_names.contains(&binding.lexical_name)
+        })
+        .filter_map(|binding| match binding.artifact_source {
+            ArtifactSource::Slot(slot) => Some(slot),
+            ArtifactSource::Constant(_) => None,
+        })
+        .collect()
 }
 
 #[cfg(feature = "resident-routing-source")]
@@ -451,16 +527,7 @@ fn compatible_state_mappings(
         .collect::<BTreeSet<_>>();
     let mut mapped_sources = BTreeSet::new();
     let mut mapped_targets = BTreeSet::new();
-    let excluded_targets = target
-        .interactive_symbol_bindings()
-        .filter(|binding| {
-            binding.lexical_name != "ans" && changed_state_names.contains(&binding.lexical_name)
-        })
-        .filter_map(|binding| match binding.artifact_source {
-            ArtifactSource::Slot(slot) => Some(slot),
-            ArtifactSource::Constant(_) => None,
-        })
-        .collect::<BTreeSet<_>>();
+    let excluded_targets = changed_state_slots(target, changed_state_names);
     let affected_targets = artifact_slots_depending_on(target, &excluded_targets);
     let mut semantic_equivalence = BTreeMap::new();
     let mut compatible_state_pairs = BTreeSet::new();
@@ -548,41 +615,72 @@ fn compatible_state_mappings(
     // producer positions do not establish lexical declaration identity: a named
     // state whose named match failed must retain its replacement initializer,
     // and a retired named state must not supply an unnamed replacement cell.
-    for target_slot in target
-        .slots()
-        .iter()
-        .filter(|slot| slot.role == SlotRole::State && !target_named_states.contains(&slot.slot))
-    {
-        if mapped_targets.contains(&target_slot.slot)
-            || excluded_targets.contains(&target_slot.slot)
-        {
-            continue;
-        }
-        let Some(source_slot) = source.slots().iter().find(|source_slot| {
-            source_slot.role == SlotRole::State
+    let same_revision = source.revision() == target.revision();
+    loop {
+        semantic_equivalence.clear();
+        let mut candidates = std::collections::BTreeMap::new();
+        let mut source_degrees = std::collections::BTreeMap::new();
+        let mut target_degrees = std::collections::BTreeMap::new();
+        for target_slot in target.slots().iter().filter(|slot| {
+            slot.role == SlotRole::State && !target_named_states.contains(&slot.slot)
+        }) {
+            if mapped_targets.contains(&target_slot.slot)
+                || excluded_targets.contains(&target_slot.slot)
+            {
+                continue;
+            }
+            for source_slot in source.slots().iter().filter(|source_slot| {
+                source_slot.role == SlotRole::State
                 && !source_named_states.contains(&source_slot.slot)
-                && source_slot.producer == target_slot.producer
+                && (!same_revision || source_slot.slot == target_slot.slot)
                 && source.schemas().get(source_slot.schema)
                     == target.schemas().get(target_slot.schema)
-                && state_initializers_semantically_equal(
-                    source,
-                    source_slot,
-                    target,
-                    target_slot,
-                    &compatible_state_pairs,
-                    &mut semantic_equivalence,
-                )
                 && !mapped_sources.contains(&source_slot.slot)
-        }) else {
-            continue;
-        };
-        mapped_sources.insert(source_slot.slot);
-        mapped_targets.insert(target_slot.slot);
-        compatible_state_pairs.insert((source_slot.slot, target_slot.slot));
-        mappings.push(StateMigrationMapping {
-            source: source_slot.slot,
-            target: target_slot.slot,
-        });
+                // A full artifact revision identifies its declarations, not
+                // just their shapes. Exact cell identity is safe even when
+                // several anonymous writers have identical bodies. Explicit
+                // state mutations still require dependency-aware matching.
+                && ((same_revision && changed_state_names.is_empty())
+                    || (state_writers_semantically_equal(
+                        source,
+                        source_slot,
+                        target,
+                        target_slot,
+                        &compatible_state_pairs,
+                    ) && state_initializers_semantically_equal(
+                        source,
+                        source_slot,
+                        target,
+                        target_slot,
+                        &compatible_state_pairs,
+                        &mut semantic_equivalence,
+                    )))
+            }) {
+                candidates
+                    .entry(target_slot.slot)
+                    .or_insert(source_slot.slot);
+                *source_degrees.entry(source_slot.slot).or_insert(0usize) += 1;
+                *target_degrees.entry(target_slot.slot).or_insert(0usize) += 1;
+            }
+        }
+        // Determine the complete relationship before consuming either end.
+        // One source compatible with two targets is just as ambiguous as two
+        // sources compatible with one target; declaration order is no identity.
+        let mut progress = false;
+        // Retain only one candidate per target plus the complete degree
+        // counts, not a quadratic allocation for indistinguishable cells.
+        for (target, source) in candidates {
+            if source_degrees[&source] == 1 && target_degrees[&target] == 1 {
+                mapped_sources.insert(source);
+                mapped_targets.insert(target);
+                compatible_state_pairs.insert((source, target));
+                mappings.push(StateMigrationMapping { source, target });
+                progress = true;
+            }
+        }
+        if !progress {
+            break;
+        }
     }
 
     // A replacement is activated from source defaults before compatible live
@@ -671,6 +769,77 @@ fn compatible_state_mappings(
         });
     }
     mappings
+}
+
+#[cfg(feature = "resident-routing-source")]
+fn state_writers_semantically_equal(
+    source_artifact: &ProgramArtifact,
+    source: &SlotDeclaration,
+    target_artifact: &ProgramArtifact,
+    target: &SlotDeclaration,
+    compatible_state_pairs: &std::collections::BTreeSet<(
+        mech_core::CellSlotId,
+        mech_core::CellSlotId,
+    )>,
+) -> bool {
+    let (
+        ProducerReference::NodeOutput {
+            node: left,
+            output_ordinal: left_ordinal,
+        },
+        ProducerReference::NodeOutput {
+            node: right,
+            output_ordinal: right_ordinal,
+        },
+    ) = (source.producer, target.producer)
+    else {
+        return false;
+    };
+    let left = &source_artifact.nodes()[left.get() as usize];
+    let right = &target_artifact.nodes()[right.get() as usize];
+    if left_ordinal != right_ordinal
+        || !node_bodies_semantically_equal(
+            source_artifact,
+            &left.body,
+            target_artifact,
+            &right.body,
+        )
+    {
+        return false;
+    }
+    // Artifact-local node numbers shift when a constraint is added. Compare
+    // the writer's actual dependency graph, closing only this prospective
+    // state pair, rather than treating equal table offsets as declaration IDs.
+    let mut pairs = compatible_state_pairs.clone();
+    pairs.insert((source.slot, target.slot));
+    let inputs = |artifact: &ProgramArtifact, node: &mech_engine::NodeDeclaration| {
+        artifact.bindings()[node.input_bindings.start as usize..node.input_bindings.end as usize]
+            .iter()
+            .filter_map(|binding| match binding {
+                BindingDeclaration::Input {
+                    port_ordinal,
+                    source,
+                    ..
+                } => Some((*port_ordinal, *source)),
+                BindingDeclaration::Output { .. } => None,
+            })
+            .collect::<Vec<_>>()
+    };
+    let left = inputs(source_artifact, left);
+    let right = inputs(target_artifact, right);
+    let mut cache = std::collections::BTreeMap::new();
+    left.len() == right.len()
+        && left.iter().zip(&right).all(|(left, right)| {
+            left.0 == right.0
+                && artifact_sources_semantically_equal(
+                    source_artifact,
+                    left.1,
+                    target_artifact,
+                    right.1,
+                    &pairs,
+                    &mut cache,
+                )
+        })
 }
 
 #[cfg(feature = "resident-routing-source")]

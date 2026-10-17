@@ -12,6 +12,8 @@ rust-version = "1.92"
 
 [features]
 default = []
+canonical-native-runtime = ["mech-engine/native-artifact"]
+canonical-native = ["canonical-native-runtime", "aot", "dep:toml_edit"]
 native-build = ["sequence-cli", "fused-cli"]
 system-gmp = ["dep:gmp-mpfr-sys", "gmp-mpfr-sys/use-system-libs"]
 sequence-cli = ["aot", "dep:hashbrown", "dep:fxhash", "dep:rayon", "dep:memchr", "dep:regex", "dep:rug", "dep:mech-stdlib", "mech-stdlib/native-sequence"]
@@ -68,6 +70,7 @@ web-time = "1.1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sha2 = { version = "0.11.0", default-features = false }
+toml_edit = { version = "0.23", optional = true }
 wgpu = { version = "0.20.1", optional = true }
 wide = "0.7.33"
 cranelift-codegen = { version = "=0.131.3", optional = true }
@@ -118,6 +121,7 @@ path = "tests/particle_source.rs"
 required-features = ["native"]
 
 [dev-dependencies]
+mech-build = { path = "../../src/build", default-features = false, features = ["process-supervision"] }
 mech-core = { version = "0.3.5", path = "../../src/core", default-features = false, features = ["f32", "matrixd"] }
 mech-engine = { version = "0.3.5", path = "../../src/engine", default-features = false, features = ["full_compiler"] }
 mech-stdlib = { version = "0.3.5", path = "../../src/stdlib", default-features = false, features = ["full_compiler", "native-plan"] }
@@ -128,3 +132,17 @@ mech-runtime = { version = "0.3.5", path = "../../src/runtime", default-features
 name = "mech-native-map"
 path = "src/bin/mech-native-map.rs"
 required-features = ["fused-cli"]
+
+[[test]]
+name = "canonical_artifact_native"
+required-features = ["canonical-native"]
+
+[[test]]
+name = "canonical_artifact_application"
+path = "tests/canonical_artifact_application.rs"
+required-features = ["canonical-native"]
+
+[[test]]
+name = "canonical_artifact_i64"
+path = "tests/canonical_artifact_i64.rs"
+required-features = ["canonical-native"]

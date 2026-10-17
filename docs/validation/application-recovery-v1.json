@@ -1,0 +1,94 @@
+{
+  "schema": "mech.validation.application-recovery.v1",
+  "source_parent": "4a71d5dc9bc0b1ea7e408c695723a5ebfbe0b0a5",
+  "scope": "Canonical expression diagnostic ownership and selected typed bodies during bounded recovery.",
+  "status": "FULL_SYNTAX_LIBRARY_PASSED",
+  "source_files": {
+    "src/syntax/src/document/ast/recursive_core/expressions.rs": "0b77f8173bdb6c9d283ec0e7b71eb8ef5dd5554e1e3b39c368a82be587218bd9",
+    "src/syntax/src/document/parser/canonical/recursive_core/precedence/continuation/expression.rs": "786d4bed1280e3cdecac562c9f7a9f9982c6080e57a1bd37af1203610dc6dc35",
+    "src/syntax/src/document/parser/rule.rs": "ba36063dae27b50933716ef9fabcf4f1f580b481215efc4085e5ae50cd6ef653",
+    "src/syntax/tests/canonical_rules/canonical_executable_selected_owner_views.rs": "9f7424dc188f0d2c5bb06da4142f803479f821f9261c9c8a64915b0b313a233a",
+    "src/syntax/tests/canonical_rules/canonical_executable_typed_views.rs": "d53caadfa1a18b15641a2f85ab4bd7d26fc0f55dcf786c03e57585c7e6c78a39",
+    "src/syntax/tests/canonical_rules/canonical_literal_recovery.rs": "06a6e3a497a360e529be522cd031c704b1eb80848ad80c31d8ad19ae711b5f37"
+  },
+  "validation": {
+    "command": [
+      "cargo",
+      "test",
+      "-p",
+      "mech-syntax",
+      "--no-default-features",
+      "--features",
+      "full",
+      "--lib",
+      "--offline",
+      "--locked",
+      "--target-dir",
+      "/private/tmp/mech-build-cache",
+      "--",
+      "--test-threads=1",
+      "--nocapture",
+      "canonical_application",
+      "certification_table_executes_every_direct_accept_reject_and_recovery_case",
+      "mapping_lookahead_ignores_colons_inside_both_angle_annotation_families",
+      "missing_first_set_item_keeps_later_item_and_only_the_set_owner",
+      "halted_tuple_does_not_select_a_provisional_parenthetical",
+      "provisional_selection_flags_are_local_and_absent_from_clean_trees",
+      "expression_body_descends_through_a_recovery_wrapper",
+      "fuel_exhausted_at_string_recovery_opening_retains_its_selected_owner",
+      "generated_canonical_inventory_is_exact_and_collision_free"
+    ],
+    "started_utc": "2026-10-16T18:45:58.775863+00:00",
+    "finished_utc": "2026-10-16T18:46:31.634078+00:00",
+    "exit_code": 0,
+    "test_results": [
+      "test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 492 filtered out; finished in 26.79s"
+    ],
+    "log_sha256": "a000b93955600e6b2879be9f7a0f44e332611cea4432de9d43befad3ba045090",
+    "sources_unchanged": true
+  },
+  "retained_contracts": [
+    "All seven failures from the complete 506-test predecessor run are covered.",
+    "All original recovery source strings and exact diagnostics, ranges, element identities, source sharing, and delimiter expectations are retained.",
+    "Raw tuple tests follow only an explicitly provisional Slice candidate. The selected parenthetical and tuple expectations remain unchanged.",
+    "The 64-fuel expression recovery test now also verifies that the body is the retained formula, with identical node identity, range, and green node. An unselected provisional application is transparent.",
+    "Two nested string-opening fuel witnesses move from 93 and 141 to 95 and 144 after the added application probes. Physical opening quote, UTF-8 owner, exact remainder range, diagnostic owner, and losslessness assertions are unchanged.",
+    "The exact canonical inventory includes all 543 rules; stable rule identities are unchanged.",
+    "All six existing application fixtures and the 81-rule syntax fingerprint certification pass."
+  ],
+  "product_resource_limits_changed": false,
+  "benchmark_measurements": 0,
+  "limits": [
+    "Native AOT application lowering and resource-schema integration are separate pending work."
+  ],
+  "full_library_validation": {
+    "source_commit": "f8b8eb61195d6eabc24834bad7fa58a0f3efe40e",
+    "command": [
+      "cargo",
+      "test",
+      "-p",
+      "mech-syntax",
+      "--no-default-features",
+      "--features",
+      "full",
+      "--lib",
+      "--offline",
+      "--locked",
+      "--target-dir",
+      "/private/tmp/mech-build-cache",
+      "--",
+      "--test-threads=1",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-16T18:47:14.237102+00:00",
+    "finished_utc": "2026-10-16T18:57:02.974914+00:00",
+    "exit_code": 0,
+    "test_results": [
+      "test result: ok. 506 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 588.47s"
+    ],
+    "sources_unchanged_during_run": true,
+    "serial_preflight": true,
+    "benchmark_measurements": 0,
+    "log_sha256": "da80405f5cdf3def2afa78f07a83aebfd721ec56670ab1d69c3d3438b366e05f"
+  }
+}

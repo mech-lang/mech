@@ -1,0 +1,81 @@
+{
+  "schema": "mech.canonical-string-selector-geometry.v1",
+  "source_parent_commit": "890962f328c7f888674d33f4f944a5794ec4bae1",
+  "scope": "Canonical resident String selection with live immutable Snapshot matrix selectors.",
+  "changes": [
+    "Read each immutable selector value’s current matrix geometry before selector-count admission.",
+    "Retain exact schema identity, activation dimension authority and fixed-shape constraints.",
+    "Preserve Snapshot row-major gather order, grapheme semantics and atomic publication."
+  ],
+  "source_files": [
+    {
+      "path": "src/engine/src/resident/text.rs",
+      "sha256": "c15ce8dc946659bc797c30e3b3e7f26eaa7ed9f2dbd6939a602c0a5232754ebf"
+    },
+    {
+      "path": "src/stdlib/tests/string_selector_shapes.rs",
+      "sha256": "d523818349e1dfa7be328d65457b5fd121a156a11cb40e15d708f736b52332ea"
+    }
+  ],
+  "actual_test_runs": [
+    {
+      "target": "string_selector_shapes",
+      "passed": 3,
+      "log": "string-selector-shapes-knucleotide-v1.log",
+      "log_sha256": "1b7ee7c8fb70df6d2943aab4d7fdbe012f97d53fb2872eb8460d5f00360da303"
+    },
+    {
+      "target": "resident::text::tests",
+      "passed": 9,
+      "log": "string-selector-private-retained-v1.log",
+      "log_sha256": "62b9b9ee1643ade3e0800db0896d3a81715d643771a18e292683a01bb3540a43"
+    },
+    {
+      "target": "canonical_string_selection",
+      "passed": 8,
+      "log": "string-selection-retained-host-syntax-v1.log",
+      "log_sha256": "072da484e4d0b0de2ca699929e16261d266246d29c6ddc26073f832f544a1b3d"
+    }
+  ],
+  "actual_checks_passed": 20,
+  "minimal_runtime_check": {
+    "package": "mech-engine",
+    "default_features": false,
+    "features": [
+      "std",
+      "resident-artifact",
+      "bool",
+      "u64",
+      "string",
+      "map_ops",
+      "set"
+    ],
+    "target": "lib",
+    "passed": true,
+    "log": "string-selector-runtime-check-v1.log",
+    "log_sha256": "221744b8ca496d6deb3c7db6d3a9e6c4300dd5a115ef3f5f73d2a9e65bea2903"
+  },
+  "build_environment": {
+    "cargo_incremental": 0,
+    "dev_debug": 0,
+    "build_jobs": 2,
+    "rust_min_stack": 67108864,
+    "offline": true,
+    "locked": true,
+    "test_threads": 1
+  },
+  "compiler_test_features": [
+    "mech-stdlib/full_compiler",
+    "mech-stdlib/pure_text",
+    "mech-stdlib/sequence_sort",
+    "mech-stdlib/map_ops",
+    "mech-stdlib/native-sequence",
+    "mech-stdlib/native-artifact"
+  ],
+  "scope_limits": {
+    "native_execution_qualified": false,
+    "host_io_qualified": false,
+    "benchmark_measurements": 0,
+    "full_workload_qualified": false
+  }
+}

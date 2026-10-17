@@ -1,0 +1,175 @@
+{
+  "schema": "mech.validation.resource-input-schema.v1",
+  "status": "RUNTIME_AND_CANONICAL_CLI_BYTE_CHECKS_PASSED",
+  "source_parent": "a9fb18bc1fd5c52490a43e2d53e4422cb4a50018",
+  "source_files": {
+    "src/engine/src/resident/general/mod.rs": "efd21c079347cd16a53cf0ca757ff111cebfeac2e8152de32f7810f738e3de02",
+    "src/engine/src/source_semantics/document_lowering.rs": "ba80b162ae1799bdd106a5708390f0360353d8cd3ab9673aae5ebe98ecc54cc8",
+    "src/engine/src/source_semantics/frontend.rs": "60853b308e671c99a0dac5ef4c6cf96011908af212fb2e0282205a3c924e778c",
+    "src/runtime/src/runtime/program/compiler.rs": "03e5a00e337e60fefa159d7704517ea9a2a55b357261dd54422611aa4d496138",
+    "src/runtime/src/runtime/program/external/coordinator.rs": "7b1341823cad74654c69de81b43b2292c9a813056eac8b6232f13210da905651",
+    "src/runtime/src/runtime/program/loading.rs": "d9a6783504e42553df02f3b61ce9ca1727c6fa2461af0dcb6055d2ae673644d9",
+    "src/runtime/src/runtime/program/tests.rs": "5345c58358b45f4c11e40622a80f427ab7022ae8799537053479b452fb45de07",
+    "src/runtime/src/runtime/program/tests/resource_input_schema.rs": "5a3a8e8863aea484ed13f3a0266cdc2378a8271412dce374b42b70a8b785bbb7"
+  },
+  "scope": [
+    "Retain provider-declared canonical schema identity, dimension lifetimes, and lower/upper bounds through frontend planning and bytecode.",
+    "Separate initial per-turn geometry seeds from fixed activation shape authority; keep mixed-lifetime values in snapshot storage.",
+    "Rebind validated actual observation geometry for host input, provider reads, sampled captures, compatible replacement, and replay.",
+    "Retain actual observation shapes in facts and byte accounting; reject forged replay payload hashes before canonical reconstruction."
+  ],
+  "checks": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "mech-runtime",
+        "--no-default-features",
+        "--features",
+        "resident_external_test_support",
+        "--lib",
+        "--offline",
+        "--locked",
+        "--target-dir",
+        "/private/tmp/mech-build-cache",
+        "--",
+        "--test-threads=1",
+        "--nocapture",
+        "resource_input_schema",
+        "canonical_resource_planning_closes_provider_matrix_shapes"
+      ],
+      "source_commit": "a9fb18bc1fd5c52490a43e2d53e4422cb4a50018",
+      "started_utc": "2026-10-16T19:06:14.614164+00:00",
+      "finished_utc": "2026-10-16T19:06:46.817462+00:00",
+      "exit_code": 0,
+      "test_results": [
+        "test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 778 filtered out; finished in 10.57s"
+      ],
+      "sources_unchanged_during_run": true,
+      "serial_preflight": true,
+      "benchmark_measurements": 0,
+      "log_sha256": "efc41be1c9c46e3fe0c2a6ff9ca658199615aed87f60580aef1c8c80526c49dc"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "mech-runtime",
+        "--no-default-features",
+        "--features",
+        "resident_external_test_support",
+        "--lib",
+        "--offline",
+        "--locked",
+        "--target-dir",
+        "/private/tmp/mech-build-cache",
+        "--",
+        "--test-threads=1",
+        "--nocapture",
+        "dynamic_matrix_select",
+        "resident_observation_profile_covers_scalars_and_dense_matrices",
+        "explicit_dependency_root_plans_provider_reads_exactly_once",
+        "transitive_explicit_provider_is_planned_and_read_once_per_turn",
+        "external_source_plans_without_a_live_provider_read_and_freezes_environment",
+        "resident_host_packets_coalesce_and_capture_the_latest_packet_value",
+        "activation_capture_packets_sample_without_running_until_the_trigger_arrives",
+        "capture_only_update_is_retained_by_the_next_explicit_snapshot_step",
+        "snapshot_step_replay_rejects_conflicting_values_from_one_host_packet",
+        "rejected_snapshot_step_keeps_the_pending_replay_mode",
+        "replay_explicit_steps_preserve_the_latest_observation_snapshot",
+        "duplicate_observations_share_one_authoritative_host_update",
+        "driverless_observation",
+        "independent_observations_seed_then_retain_the_accepted_host_snapshot",
+        "compatible_replacement",
+        "missing_provider_and_malformed_bytecode_fail_closed",
+        "product_nbody_denied_grant_missing_provider_and_contract_mismatch_never_fallback",
+        "initial_publication_replays_with_activations_dormant",
+        "continuation_drain_replay_keeps_input_free_activations_dormant",
+        "canonical_resource_",
+        "canonical_dimensionless_matrix_annotations_preserve_inferred_shapes",
+        "canonical_static",
+        "canonical_interactive_uses_configured_resource_planning",
+        "canonical_interactive_resource_planning_does_not_execute_host_effects",
+        "canonical_missing_provider_keeps_the_public_route_failure_class"
+      ],
+      "source_commit": "a9fb18bc1fd5c52490a43e2d53e4422cb4a50018",
+      "started_utc": "2026-10-16T19:09:00.337446+00:00",
+      "finished_utc": "2026-10-16T19:09:37.392558+00:00",
+      "exit_code": 0,
+      "test_results": [
+        "test result: ok. 37 passed; 0 failed; 0 ignored; 0 measured; 750 filtered out; finished in 15.97s"
+      ],
+      "sources_unchanged_during_run": true,
+      "serial_preflight": true,
+      "benchmark_measurements": 0,
+      "log_sha256": "94802a7a9d7c3ef5cf91a065f99317b045116662610f95b6a3cad29c411707af"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "mech-build",
+        "--no-default-features",
+        "--features",
+        "standard-hosts",
+        "--test",
+        "canonical_cli_bytes",
+        "--offline",
+        "--locked",
+        "--target-dir",
+        "/private/tmp/mech-build-cache",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "source_commit": "4ef7ef70455b153f51e9006201e6120dde9b1098",
+      "started_utc": "2026-10-16T19:10:18.818847+00:00",
+      "finished_utc": "2026-10-16T19:14:35.768170+00:00",
+      "exit_code": 0,
+      "test_results": [
+        "test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.23s"
+      ],
+      "sources_unchanged_during_run": true,
+      "serial_preflight": true,
+      "benchmark_measurements": 0,
+      "log_sha256": "161f4ff515ce2ec2d77792024ccce053966d08f9acffd9039d06f07893360430"
+    }
+  ],
+  "distinct_runtime_test_cases": 44,
+  "prepared_new_test_cases": 8,
+  "transport_contract": "The existing numeric-matrix host transport requires positive dimensions. Empty provider planning values are retained; changing host packet widths 3,1,8,1 exercise actual geometry. The unchanged canonical CLI byte sessions separately qualify empty raw-byte reads, byte/text views, grants, delivery errors, and shutdown.",
+  "fixture_corrections": [
+    "New sequence/length fixtures use an explicit +> sequence source import and the source native-plan catalog.",
+    "The portable selector test no longer executes a representative planning payload as real input. This follows the existing compiler contract introduced by e73a80732. It retains the original source and source/bytecode oversized-input rejection checks, and now adds actual valid input, rejection with unchanged publication, and successful recovery."
+  ],
+  "failed_predecessors": [
+    {
+      "run": "integrated-v1",
+      "passed": 3,
+      "failed": 6,
+      "reason": "New fixture setup: missing sequence visibility and unsupported empty numeric-matrix host packets."
+    },
+    {
+      "run": "integrated-v2",
+      "passed": 6,
+      "failed": 3,
+      "reason": "New fixtures still lacked explicit sequence import."
+    },
+    {
+      "run": "retained-runtime-v1",
+      "passed": 36,
+      "failed": 1,
+      "reason": "Outdated representative-payload execution assertion; actual malformed-input assertions retained and strengthened."
+    }
+  ],
+  "product_resource_limits_changed": false,
+  "benchmark_measurements": 0,
+  "remaining": [
+    "Canonical Cranelift AOT lowering, same-binary secured/trusted lifecycle, full idiomatic benchmark qualification and serial Mech timing runs remain separate work."
+  ],
+  "canonical_cli_test_cases": 8,
+  "canonical_cli_fixtures_and_expected_streams_unchanged": true
+}

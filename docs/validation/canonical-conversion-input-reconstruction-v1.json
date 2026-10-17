@@ -1,0 +1,66 @@
+{
+  "schema": "mech.canonical-conversion-input-reconstruction.v1",
+  "source_parent_commit": "f190f06ad4f21b2ea856d7d0b7ceb4b13d0aa61d",
+  "scope": "Direct managed explicit conversions that reconstruct a dense input before building a canonical output.",
+  "changes": [
+    "Plan input snapshot draft and finalization separately from converted-output construction, using refreshed current metadata and maintained host scalar widths.",
+    "Reconstruct the leased input before sealing the converted-output construction allowance.",
+    "Share existing canonical snapshot roots without charging dense-input reconstruction."
+  ],
+  "source_files": [
+    {
+      "path": "src/engine/src/intrinsics/kind_conversion.rs",
+      "sha256": "8a6204940290d64ab025801f67d3955f57a70bc18fd837acb0c3b66f7f23ed58"
+    }
+  ],
+  "authority_source_pins": {
+    "src/core/src/memory_runtime/access.rs": "ec4b37cdd802a7572d0bccb5ac9ba34ddde6ffc4d73f353f8c2512d1cbcf8d98",
+    "src/core/src/memory_runtime/payload.rs": "5fd0534e540714661841a9cfb508df4b6841eb8fefa17763a8fd2a5e81cd193a",
+    "src/core/src/cell_binding.rs": "10280db3bbc4b811691630d4f7bcb23745cc2001a77b61ea361bbd8f1d039278",
+    "src/core/src/function/mod.rs": "a7191577cd19e8372c4f26b52168e1ed3856598baad271774eb5235698d34ceb",
+    "src/core/src/function/specialization.rs": "aef50e06246d9eb7efa78ba31439b36ebffad894fdeaa2058daebde8c229268a",
+    "src/core/src/memory_plan/derive.rs": "5d8a57822f431fd237eb4a449dabfa51b036c6840d598f540adf2b5581d808e2",
+    "src/core/src/memory_plan/model.rs": "af0c53e7ad5894b556efaf9f6d42238dfe040fd688800c6ef4e8b9f562d6099a",
+    "src/core/src/memory_plan/target.rs": "7b890b162a51c53402a75f370f8a0b965fd8379db821823f5a897dc26ffe6d04",
+    "src/core/src/function/execution_demand_tests.rs": "9ae31e953d8536fc964985e4d8ae47def656f9607a7c16aad6d1d0dbb7da4ed0"
+  },
+  "actual_test_runs": [
+    {
+      "package": "mech-engine",
+      "target": "lib",
+      "filter": "canonical_conversion_tests",
+      "passed": 74,
+      "failed": 0,
+      "log": "conversion-input-module-v2.log",
+      "log_sha256": "bf0b742fad27b9175f08b4582441f3bd62eac632357d08c00813802f657a4bc3"
+    }
+  ],
+  "regression_coverage": [
+    "Original numeric_to_string_conversion_plans_the_converted_payload test retained unchanged; previously failed with a 256-byte input draft shortfall.",
+    "Dense input sizes 4,1,7,2 and extreme, subnormal, nonfinite and signed-zero Float64 formatting.",
+    "Shared canonical root and demand parity through all three conversion implementations.",
+    "Finite temporary-memory denial and injected host-allocation failure preserve publication and allow retry."
+  ],
+  "build_environment": {
+    "default_features": false,
+    "features": [
+      "full_compiler",
+      "full_source",
+      "resident-artifact",
+      "native-sequence",
+      "native-artifact"
+    ],
+    "cargo_incremental": 0,
+    "dev_debug": 0,
+    "build_jobs": 1,
+    "rust_min_stack": 67108864,
+    "offline": true,
+    "locked": true,
+    "test_threads": 1
+  },
+  "scope_limits": {
+    "native_execution_qualified": false,
+    "benchmark_measurements": 0,
+    "full_workload_qualified": false
+  }
+}

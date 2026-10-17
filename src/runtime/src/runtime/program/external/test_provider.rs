@@ -16,7 +16,7 @@ use crate::{
     PreparedRuntimeEffect, RuntimeAfterCommitEffect, RuntimeCompensatableEffect, RuntimeEffectCost,
     RuntimeEffectId, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeHostInputValue,
     RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteCommand,
-    RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
+    RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
 };
 
 pub static TEST_OBSERVATION_CONTRACT: LazyLock<OperationContractDeclaration> =
@@ -214,10 +214,28 @@ impl RuntimeResourceProvider for ExternalTestSceneProvider {
         validate_test_write_command(&request, "test-resource://scene/output", "frame")
     }
 
+    fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
+        validate_test_write_target(
+            &request.base_uri,
+            &request.path,
+            request.intent,
+            "test-resource://scene/output",
+            "frame",
+        )
+    }
+
     fn prepare_write(
         &self,
         request: RuntimeResourceWriteRequest,
     ) -> MResult<PreparedRuntimeEffect> {
+        validate_test_write_target(
+            &request.base_uri,
+            &request.path,
+            request.intent,
+            "test-resource://scene/output",
+            "frame",
+        )?;
+        validate_test_write_payload(&request.value)?;
         if request.idempotency_key.is_empty() {
             return Err(provider_error(
                 "external scene effect requires an idempotency key",
@@ -314,10 +332,28 @@ impl RuntimeResourceProvider for ExternalTestTransactionalProvider {
         validate_test_write_command(&request, "test-resource://transactional/state", "value")
     }
 
+    fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
+        validate_test_write_target(
+            &request.base_uri,
+            &request.path,
+            request.intent,
+            "test-resource://transactional/state",
+            "value",
+        )
+    }
+
     fn prepare_write(
         &self,
         request: RuntimeResourceWriteRequest,
     ) -> MResult<PreparedRuntimeEffect> {
+        validate_test_write_target(
+            &request.base_uri,
+            &request.path,
+            request.intent,
+            "test-resource://transactional/state",
+            "value",
+        )?;
+        validate_test_write_payload(&request.value)?;
         self.trace
             .lock()
             .expect("external test provider trace")
@@ -380,16 +416,156 @@ fn validate_test_write_command(
     expected_base_uri: &str,
     expected_path: &str,
 ) -> MResult<()> {
-    if request.base_uri != expected_base_uri
-        || request.path != expected_path
-        || request.intent != RuntimeResourceWriteIntent::Send
-        || !matches!(request.value.data(), ValueData::F64(_))
+    validate_test_write_target(
+        &request.base_uri,
+        &request.path,
+        request.intent,
+        expected_base_uri,
+        expected_path,
+    )?;
+    validate_test_write_payload(&request.value)
+}
+
+fn validate_test_write_target(
+    base_uri: &str,
+    path: &str,
+    intent: RuntimeResourceWriteIntent,
+    expected_base_uri: &str,
+    expected_path: &str,
+) -> MResult<()> {
+    if base_uri != expected_base_uri
+        || path != expected_path
+        || intent != RuntimeResourceWriteIntent::Send
     {
         return Err(provider_error(
-            "external test fixture write does not match its declared numeric send target",
+            "external test fixture write does not match its declared send target",
         ));
     }
     Ok(())
+}
+
+fn validate_test_write_payload(value: &Value) -> MResult<()> {
+    if !matches!(value.data(), ValueData::F64(_)) {
+        return Err(provider_error(
+            "external test fixture requires a numeric send payload",
+        ));
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        ExternalTestProviderTrace, ExternalTestSceneProvider, ExternalTestTransactionalProvider,
+    };
+    use crate::{
+        RuntimeEffectId, RuntimeHostInputValue, RuntimeResourceProvider,
+        RuntimeResourceWriteCommand, RuntimeResourceWriteIntent,
+        RuntimeResourceWritePreflightRequest,
+    };
+    use std::sync::{Arc, Mutex};
+
+    #[test]
+    fn external_fixture_target_preflight_has_no_effect_and_live_payloads_stay_checked() {
+        for transactional in [false, true] {
+            let trace = Arc::new(Mutex::new(ExternalTestProviderTrace::default()));
+            let (provider, base, path): (Box<dyn RuntimeResourceProvider>, _, _) = if transactional
+            {
+                (
+                    Box::new(ExternalTestTransactionalProvider::new(trace.clone())),
+                    "test-resource://transactional/state",
+                    "value",
+                )
+            } else {
+                (
+                    Box::new(ExternalTestSceneProvider::new(trace.clone())),
+                    "test-resource://scene/output",
+                    "frame",
+                )
+            };
+            let request = RuntimeResourceWritePreflightRequest {
+                base_uri: base.to_owned(),
+                path: path.to_owned(),
+                context_name: "fixture".to_owned(),
+                operation: crate::RuntimeCapabilityOperation::Write,
+                intent: RuntimeResourceWriteIntent::Send,
+            };
+            provider.preflight_write(request.clone()).unwrap();
+            let boolean = mech_core::SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body: mech_core::SchemaBody::Bool,
+            }
+            .finalize()
+            .unwrap();
+            assert_eq!(
+                provider
+                    .preflight_write_schema(request.clone(), &boolean)
+                    .unwrap(),
+                crate::ResourceSchemaPreflight::DeferredToRuntime
+            );
+            for wrong in [
+                RuntimeResourceWritePreflightRequest {
+                    path: "wrong".to_owned(),
+                    ..request.clone()
+                },
+                RuntimeResourceWritePreflightRequest {
+                    base_uri: "test-resource://wrong".to_owned(),
+                    ..request.clone()
+                },
+                RuntimeResourceWritePreflightRequest {
+                    intent: RuntimeResourceWriteIntent::Assign,
+                    ..request.clone()
+                },
+            ] {
+                assert!(provider.preflight_write(wrong).is_err());
+            }
+            let command = |value| RuntimeResourceWriteCommand {
+                base_uri: base.to_owned(),
+                path: path.to_owned(),
+                context_name: "fixture".to_owned(),
+                operation: crate::RuntimeCapabilityOperation::Write,
+                intent: RuntimeResourceWriteIntent::Send,
+                value,
+            };
+            let id = RuntimeEffectId {
+                transaction: crate::TransactionId(1),
+                sequence: 1,
+            };
+            assert!(
+                provider
+                    .plan_write(command(
+                        RuntimeHostInputValue::Bool(false).into_value().unwrap()
+                    ))
+                    .is_err()
+            );
+            assert!(
+                provider
+                    .prepare_write(
+                        command(RuntimeHostInputValue::Bool(false).into_value().unwrap())
+                            .bind_effect(id, "fixture".to_owned())
+                    )
+                    .is_err()
+            );
+            assert_eq!(*trace.lock().unwrap(), ExternalTestProviderTrace::default());
+            provider
+                .plan_write(command(
+                    RuntimeHostInputValue::F64(1.0).into_value().unwrap(),
+                ))
+                .unwrap();
+            assert_eq!(*trace.lock().unwrap(), ExternalTestProviderTrace::default());
+            let effect = provider
+                .prepare_write(
+                    command(RuntimeHostInputValue::F64(1.0).into_value().unwrap())
+                        .bind_effect(id, "fixture".to_owned()),
+                )
+                .unwrap();
+            drop(effect);
+            let trace = trace.lock().unwrap();
+            assert_eq!(trace.prepared.len(), 1);
+            assert_eq!(trace.delivered, 0);
+            assert_eq!(trace.applied, 0);
+        }
+    }
 }
 
 fn provider_error(message: &str) -> MechError {

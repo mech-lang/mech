@@ -86,6 +86,7 @@ impl CanonicalArtifactWriter {
                     self.u8(1);
                     self.u16(index);
                 }
+                super::ControlParameterSource::IterationCarrier => self.u8(3),
             }
         }
         self.u64(block.operations.len() as u64);
@@ -126,7 +127,33 @@ impl CanonicalArtifactWriter {
 
             super::ControlOperationBody::Suspend => self.u8(4),
             super::ControlOperationBody::Publish => self.u8(5),
+            super::ControlOperationBody::Iteration(control) => {
+                self.u8(
+                    if matches!(control.count, super::IterationCount::Literal(_)) {
+                        6
+                    } else {
+                        7
+                    },
+                );
+                self.iteration(control);
+            }
         }
+    }
+
+    fn iteration(&mut self, control: &super::IterationDeclaration) {
+        match control.count {
+            super::IterationCount::Literal(count) => self.u64(count),
+            super::IterationCount::Elements { input } => self.u16(input),
+        }
+        self.u16(control.seed);
+        self.u64(control.captures.len() as u64);
+        for capture in &control.captures {
+            self.u16(capture.input);
+            self.u32(capture.schema.get());
+            self.u8(u8::from(capture.freeze_on_suspend));
+        }
+        self.u32(control.carrier.get());
+        self.control_block(&control.body);
     }
 
     fn match_declaration(&mut self, control: &super::MatchDeclaration) {
@@ -310,7 +337,21 @@ impl CanonicalArtifactWriter {
             super::ComprehensionKind::Matrix => 0,
             super::ComprehensionKind::Set => 1,
             super::ComprehensionKind::MatrixPreserveShape => 2,
+            super::ComprehensionKind::MatrixHorizontalBlocks { .. } => 3,
         });
+        if let super::ComprehensionKind::MatrixHorizontalBlocks { rows } = control.kind {
+            match rows {
+                super::MatrixBlockRows::InferOrZero => self.u8(0),
+                super::MatrixBlockRows::Fixed(rows) => {
+                    self.u8(1);
+                    self.u64(rows);
+                }
+                super::MatrixBlockRows::InputMatrixElements { input } => {
+                    self.u8(2);
+                    self.u16(input);
+                }
+            }
+        }
         self.u64(control.steps.len() as u64);
         for step in &control.steps {
             match step {
@@ -563,6 +604,16 @@ fn revision(draft: RevisionData<'_>) -> Result<ProgramRevision, ArtifactBuildErr
             super::ExecutableNodeBody::Activation(control) => {
                 writer.u8(4);
                 writer.match_declaration(control);
+            }
+            super::ExecutableNodeBody::Iteration(control) => {
+                writer.u8(
+                    if matches!(control.count, super::IterationCount::Literal(_)) {
+                        5
+                    } else {
+                        6
+                    },
+                );
+                writer.iteration(control);
             }
             super::ExecutableNodeBody::Fsm(control) => {
                 writer.u8(3);

@@ -173,6 +173,11 @@ pub struct ProgramMemoryPlan {
     pub arenas: Box<[ArenaPlan]>,
     pub transfers: Box<[TransferPlan]>,
     pub budget_limits: mech_core::MemoryBudgetLimits,
+    /// Activation-owned metadata that remains live with the plan but is not
+    /// backed by a planned value arena (for example, structural projection
+    /// indices). This is kept separate from allocations so footprint
+    /// refinement can recompute arena demand without losing or duplicating it.
+    pub metadata_demand: ResourceDemand,
     pub peak: ResourceDemand,
     pub budget_violations: Box<[MemoryBudgetViolation]>,
 }
@@ -804,6 +809,7 @@ pub fn instantiate_program_memory_plan_with_target_overrides(
             .fold(default_target.limits, |limits, target| {
                 restrictive_budget_limits(limits, target.limits)
             }),
+        metadata_demand: ResourceDemand::default(),
         peak,
         budget_violations: budget_violations.into_boxed_slice(),
     })
@@ -1031,7 +1037,7 @@ pub(crate) fn attach_resident_call_memory_template(
     plan.calls = calls.into_boxed_slice();
     plan.allocations = allocations.into_boxed_slice();
     plan.arenas = arenas.into_boxed_slice();
-    plan.peak = program_peak(&plan.allocations, &plan.calls, &plan.transfers)?;
+    plan.peak = recompute_program_peak(plan)?;
     let mut violations = plan.budget_violations.to_vec();
     violations.extend(instantiated_call_budget_violations(
         &plan.call_nodes,
@@ -1076,7 +1082,10 @@ pub(crate) fn attach_resident_call_memory_template(
 pub(crate) fn recompute_program_peak(
     plan: &ProgramMemoryPlan,
 ) -> Result<ResourceDemand, MemoryPlanError> {
-    program_peak(&plan.allocations, &plan.calls, &plan.transfers)
+    checked_demand_add(
+        program_peak(&plan.allocations, &plan.calls, &plan.transfers)?,
+        plan.metadata_demand,
+    )
 }
 
 fn insert_object_mapping(

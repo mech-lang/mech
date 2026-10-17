@@ -3,7 +3,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::PathBuf;
 
-const EXPECTED_SCHEMA_ROWS: usize = 80;
+const EXPECTED_SCHEMA_ROWS: usize = 83;
 const SCHEMA_HEADER: &str =
     "grammar-name\tparser-module\temission-policy\tsyntax-kind\tkind-origin\tnotes";
 const COMPONENT_HEADER: &str = "grammar-name\tfamily\tcomponent-id\tcomponent-size\t\
@@ -258,18 +258,18 @@ fn schema_inventory_and_categorical_contracts_are_exact() {
 
     assert_eq!(
         policy_totals,
-        BTreeMap::from([("conditional-node", 7), ("node", 71), ("transparent", 2)])
+        BTreeMap::from([("conditional-node", 8), ("node", 73), ("transparent", 2)])
     );
     assert_eq!(
         origin_totals,
-        BTreeMap::from([("existing", 5), ("new", 73), ("none", 2)])
+        BTreeMap::from([("existing", 5), ("new", 76), ("none", 2)])
     );
     assert_eq!(
         module_totals,
         BTreeMap::from([
             ("calls", 4),
             ("comprehensions", 4),
-            ("expressions", 2),
+            ("expressions", 5),
             ("fsm", 7),
             ("kinds", 11),
             ("literals", 1),
@@ -293,6 +293,7 @@ fn transparent_conditional_and_reused_mappings_are_exact() {
     assert_eq!(transparent, names(&["formula", "pattern-array-item"]));
 
     let conditional = BTreeMap::from([
+        ("application-expression", "ApplicationExpression"),
         ("l1", "LogicExpression"),
         ("l2", "ComparisonExpression"),
         ("l3", "AdditiveExpression"),
@@ -347,7 +348,7 @@ fn concrete_role_mappings_are_exact() {
 #[test]
 fn new_kinds_match_the_exact_append_only_schema() {
     assert_eq!(EXECUTABLE_NEW_KINDS.len(), 73);
-    let expected = EXECUTABLE_NEW_KINDS
+    let mut expected = EXECUTABLE_NEW_KINDS
         .iter()
         .enumerate()
         .map(|(offset, kind)| {
@@ -357,6 +358,20 @@ fn new_kinds_match_the_exact_append_only_schema() {
         })
         .collect::<BTreeSet<_>>();
     assert_eq!(SyntaxKind::SetExpression as u16, 340);
+    // Application kinds follow the complete existing document schema. Keep
+    // the original contiguous recursive-kind range and every later ID fixed.
+    for (kind, ordinal) in [
+        (SyntaxKind::ApplicationExpression, 442),
+        (SyntaxKind::ApplicationStage, 443),
+        (SyntaxKind::ApplicationOperator, 444),
+        (SyntaxKind::FunctionDefineExpression, 445),
+    ] {
+        assert_eq!(kind as u16, ordinal);
+        assert!(!kind.is_token());
+    }
+    assert!(expected.insert(format!("{:?}", SyntaxKind::ApplicationExpression)));
+    assert!(expected.insert(format!("{:?}", SyntaxKind::ApplicationOperator)));
+    assert!(expected.insert(format!("{:?}", SyntaxKind::ApplicationStage)));
 
     let actual = schema()
         .values()

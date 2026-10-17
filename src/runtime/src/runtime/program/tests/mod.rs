@@ -30,11 +30,32 @@ use crate::{
 
 use super::*;
 
+mod projection_refresh;
+mod published_inputs;
+
+fn resident_parts(
+    runtime: &crate::MechRuntime,
+) -> (
+    &mech_engine::ProgramArtifact,
+    &mech_engine::resident::ReactiveInstance,
+) {
+    match &runtime.active_program {
+        ActiveProgramExecution::ResidentPure(execution) => {
+            (&execution.artifact, &execution.instance)
+        }
+        ActiveProgramExecution::ResidentExternal(execution) => {
+            (&execution.artifact, execution.coordinator.instance())
+        }
+        ActiveProgramExecution::None => panic!("fixture must own a resident program"),
+    }
+}
+
 const PURE_SOURCE: &str =
-    include_str!("../../../../../tests/architecture/resident-activation/n-body-source-v1.mec");
+    include_str!("../../../../../../tests/architecture/resident-activation/n-body-source-v1.mec");
 const PRODUCT_NBODY_SOURCE: &str =
-    include_str!("../../../../../examples/resident-n-body/n-body.mec");
-const PUBLIC_NBODY_VIEWER_SOURCE: &str = include_str!("../../../../../examples/n-body/n-body.mec");
+    include_str!("../../../../../../examples/resident-n-body/n-body.mec");
+const PUBLIC_NBODY_VIEWER_SOURCE: &str =
+    include_str!("../../../../../../examples/n-body/n-body.mec");
 
 fn runtime() -> crate::MechRuntime {
     RuntimeBuilder::new()
@@ -271,6 +292,14 @@ impl IndependentObservationProvider {
             "test://clock/slow" => self.slow_bits.load(Ordering::SeqCst),
             other => panic!("unexpected independent observation URI {other}"),
         };
+        if request.path == "vector" {
+            return RuntimeHostInputValue::F64Matrix {
+                rows: 2,
+                columns: 1,
+                values: vec![f64::from_bits(bits), f64::from_bits(bits) + 1.0],
+            }
+            .into_value();
+        }
         ValueCell::from_exact(f64::from_bits(bits))?.snapshot()
     }
 }
@@ -1115,7 +1144,7 @@ fn ordinary_output_names_are_never_inferred_as_interactive_symbols() {
         .unwrap();
     let product = compiler
         .compile_source(include_str!(
-            "../../../../../tests/fixtures/shims/all-slots.mec"
+            "../../../../../../tests/fixtures/shims/all-slots.mec"
         ))
         .unwrap();
     let compiled = product.artifact();
@@ -1174,7 +1203,7 @@ fn ordinary_output_names_are_never_inferred_as_interactive_symbols() {
 
 #[test]
 fn formatted_document_outputs_survive_source_and_bytecode_publication() {
-    let source = include_str!("../../../../../examples/working/fizzbuzz.mec");
+    let source = include_str!("../../../../../../examples/working/fizzbuzz.mec");
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_catalog())
         .build_compiler()
@@ -1264,7 +1293,7 @@ fn formatted_document_outputs_survive_source_and_bytecode_publication() {
         "rooted formatted documents must publish the same output symbols"
     );
 
-    let rich_source = include_str!("../../../../../tests/fixtures/shims/all-slots.mec");
+    let rich_source = include_str!("../../../../../../tests/fixtures/shims/all-slots.mec");
     let rich = compiler.compile_source(rich_source).unwrap();
     let rich_outputs = rich
         .artifact()
@@ -1309,7 +1338,7 @@ fn formatted_document_outputs_survive_source_and_bytecode_publication() {
 
 #[test]
 fn interactive_program_output_is_the_final_statement_without_a_fenced_output() {
-    let source = include_str!("../../../../../examples/working/factorial.mec");
+    let source = include_str!("../../../../../../examples/working/factorial.mec");
     let mut runtime = runtime();
     let loaded = runtime
         .load_interactive_source_program(source, crate::ResidentDurabilityPolicy::Volatile)
@@ -2826,11 +2855,57 @@ selected
     };
 
     let mut initially_oversized = configured_runtime(OUTSIDE_PORTABLE_INDEX);
-    assert!(
+    // A representative planning value supplies the input schema, not a
+    // selector to execute during compilation. Portable-width checks apply to
+    // the actual input, and a rejected input must leave the program usable.
+    initially_oversized
+        .load_source_program(SOURCE, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+    for (index, expected) in [
+        (1, Some(10.0)),
+        (OUTSIDE_PORTABLE_INDEX, None),
+        (2, Some(20.0)),
+    ] {
         initially_oversized
-            .load_source_program(SOURCE, crate::ResidentDurabilityPolicy::Volatile)
-            .is_err()
-    );
+            .ingress()
+            .submit(crate::RuntimeHostInput::single(
+                crate::RuntimeHostInputSource::new("test://typed/value", "data").unwrap(),
+                crate::RuntimeHostInputValue::U64(index),
+            ))
+            .unwrap();
+        let outcome = initially_oversized.drain_resident_host_inputs(1).unwrap();
+        if let Some(expected) = expected {
+            assert!(matches!(
+                outcome.turn,
+                Some(crate::ResidentExternalTurnOutcome::Accepted { .. })
+            ));
+            assert_eq!(
+                canonical_f64(
+                    initially_oversized
+                        .program_output_value()
+                        .unwrap()
+                        .unwrap()
+                        .value()
+                ),
+                expected
+            );
+        } else {
+            assert!(matches!(
+                outcome.turn,
+                Some(crate::ResidentExternalTurnOutcome::Rejected { .. })
+            ));
+            assert_eq!(
+                canonical_f64(
+                    initially_oversized
+                        .program_output_value()
+                        .unwrap()
+                        .unwrap()
+                        .value()
+                ),
+                10.0
+            );
+        }
+    }
 
     let mut source = configured_runtime(1);
     source
@@ -6114,6 +6189,178 @@ fn compatible_replacement_migrates_the_accepted_host_snapshot() {
 }
 
 #[test]
+fn compatible_replacement_refreshes_matrix_projections_from_retained_inputs() {
+    fn load(source: &str, decoded: bool) -> (crate::MechRuntime, Arc<AtomicUsize>) {
+        let reads = Arc::new(AtomicUsize::new(0));
+        let configured = || {
+            let mut runtime = runtime();
+            runtime
+                .register_resource_provider(Box::new(IndependentObservationProvider {
+                    reads: reads.clone(),
+                    fast_bits: Arc::new(AtomicU64::new(2.0_f64.to_bits())),
+                    slow_bits: Arc::new(AtomicU64::new(3.0_f64.to_bits())),
+                }))
+                .unwrap();
+            let subject = runtime.runtime_context().unwrap().subject;
+            runtime
+                .grant_capability(Arc::new(BasicCapability::from_keys(
+                    CapabilityId(9_022),
+                    subject,
+                    "test://clock/fast/vector",
+                    ["read"],
+                )))
+                .unwrap();
+            runtime
+        };
+        let mut runtime = configured();
+        runtime
+            .load_interactive_source_program(source, crate::ResidentDurabilityPolicy::Retained)
+            .unwrap();
+        if decoded {
+            let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program
+            else {
+                panic!("the vector source must use resident external execution")
+            };
+            let bytes =
+                mech_engine::encode_program_artifact_bytecode_v1(&execution.artifact).unwrap();
+            let artifact = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+            runtime = configured();
+            runtime
+                .load_compiled_program(artifact, crate::ResidentDurabilityPolicy::Retained)
+                .unwrap();
+        }
+        (runtime, reads)
+    }
+
+    let source = "@fast := test://clock/fast{:read(vector)}\nvector := @fast/vector\n~state := 1.0\nstate = state + 1.0\nanswer := vector * state\nanswer\n";
+    for decoded in [false, true] {
+        let (idle_previous, idle_reads) = load(source, decoded);
+        let (mut idle_candidate, idle_candidate_reads) =
+            load(&format!("{source}unrelated := 99.0\nunrelated\n"), decoded);
+        idle_candidate
+            .preserve_compatible_resident_state_from(&idle_previous, &BTreeSet::new())
+            .unwrap();
+        assert_eq!(
+            canonical_f64(
+                idle_candidate
+                    .root_symbol_value("unrelated")
+                    .unwrap()
+                    .value()
+            ),
+            99.0
+        );
+        assert_eq!(
+            canonical_f64(idle_candidate.root_symbol_value("state").unwrap().value()),
+            1.0
+        );
+        assert!(
+            idle_candidate.root_symbol_value("answer").is_err(),
+            "an unobserved matrix must remain unavailable"
+        );
+        assert_eq!(idle_reads.load(Ordering::SeqCst), 0);
+        assert_eq!(idle_candidate_reads.load(Ordering::SeqCst), 0);
+        let (mut previous, previous_reads) = load(source, decoded);
+        previous
+            .ingress()
+            .submit(crate::RuntimeHostInput::single(
+                crate::RuntimeHostInputSource::new("test://clock/fast", "vector").unwrap(),
+                RuntimeHostInputValue::F64Matrix {
+                    rows: 2,
+                    columns: 1,
+                    values: vec![7.0, 9.0],
+                },
+            ))
+            .unwrap();
+        previous.drain_resident_host_inputs(1).unwrap();
+        assert_eq!(
+            canonical_f64_matrix(previous.root_symbol_value("answer").unwrap().value()),
+            [14.0, 18.0]
+        );
+
+        let (mut candidate, candidate_reads) = load(
+            &format!("{source}extra := answer + vector\nextra\n"),
+            decoded,
+        );
+        let ActiveProgramExecution::ResidentExternal(execution) = &candidate.active_program else {
+            unreachable!()
+        };
+        let candidate_epoch = execution.coordinator.instance().published_epoch();
+        candidate
+            .preserve_compatible_resident_state_from(&previous, &BTreeSet::new())
+            .unwrap();
+        let ActiveProgramExecution::ResidentExternal(execution) = &candidate.active_program else {
+            unreachable!()
+        };
+        assert_eq!(
+            execution.coordinator.instance().published_epoch(),
+            candidate_epoch
+        );
+        let extra = candidate.root_symbol_value("extra").unwrap();
+        let declared = execution
+            .artifact
+            .outputs()
+            .iter()
+            .find(|output| {
+                output
+                    .interactive_binding
+                    .as_ref()
+                    .is_some_and(|binding| binding.lexical_name == "extra")
+            })
+            .unwrap();
+        assert_eq!(extra.value().schema(), declared.schema);
+        assert_eq!(
+            extra.value().schema_key(),
+            execution
+                .artifact
+                .schemas()
+                .entry(declared.schema)
+                .unwrap()
+                .key()
+        );
+        assert_eq!(extra.value().shape().parameter_values(), [2]);
+        assert_eq!(
+            canonical_f64(candidate.root_symbol_value("state").unwrap().value()),
+            2.0
+        );
+        assert_eq!(
+            canonical_f64_matrix(candidate.root_symbol_value("extra").unwrap().value()),
+            [21.0, 27.0]
+        );
+        assert_eq!(
+            canonical_f64_matrix(previous.root_symbol_value("answer").unwrap().value()),
+            [14.0, 18.0]
+        );
+        assert_eq!(previous_reads.load(Ordering::SeqCst), 0);
+        assert_eq!(
+            candidate_reads.load(Ordering::SeqCst),
+            0,
+            "refresh must not observe providers or synthesize a turn"
+        );
+        candidate
+            .ingress()
+            .submit(crate::RuntimeHostInput::single(
+                crate::RuntimeHostInputSource::new("test://clock/fast", "vector").unwrap(),
+                RuntimeHostInputValue::F64Matrix {
+                    rows: 2,
+                    columns: 1,
+                    values: vec![11.0, 13.0],
+                },
+            ))
+            .unwrap();
+        candidate.drain_resident_host_inputs(1).unwrap();
+        assert_eq!(
+            canonical_f64(candidate.root_symbol_value("state").unwrap().value()),
+            3.0
+        );
+        assert_eq!(
+            canonical_f64_matrix(candidate.root_symbol_value("extra").unwrap().value()),
+            [44.0, 52.0]
+        );
+        assert_eq!(candidate_reads.load(Ordering::SeqCst), 0);
+    }
+}
+
+#[test]
 fn compatible_replacement_does_not_project_an_unstarted_fsm_default() {
     let (previous, _) = independent_external_runtime_with_source(
         r#"
@@ -8242,23 +8489,61 @@ fn canonical_static_symbol_result_does_not_alias_the_implicit_result() {
 }
 
 #[test]
-fn canonical_functions_do_not_capture_caller_symbols_or_existing_inputs() {
+fn canonical_functions_capture_lexical_bindings_without_inheriting_caller_locals() {
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()
         .unwrap();
-    for prelude in ["hidden := 42f32", "before := hidden<f32>"] {
+    for prelude in ["hidden := 42f32", "hidden := input<f32>"] {
         let document = canonical_planning_test_document(&format!(
             "{prelude}\nwrong(value<f32>) = result<f32> :=\n  result := hidden.\n\nanswer := wrong(1f32)\n",
         ));
-        let error = compiler
-            .compile_document(&document)
-            .unwrap_err()
-            .display_message();
-        assert!(error.contains("undeclared local hidden"), "{error}");
+        let product = compiler.compile_document(&document).unwrap();
+        if prelude.contains("input<f32>") {
+            assert!(
+                product
+                    .artifact()
+                    .inputs()
+                    .iter()
+                    .any(|input| input.name == mech_engine::encode_source_input_name("input")),
+                "{:?}",
+                product.artifact().inputs()
+            );
+            assert_eq!(
+                compiler
+                    .evaluate_static_document_symbols_with_inputs(
+                        &document,
+                        &BTreeMap::from([("input".to_owned(), RuntimeHostInputValue::F32(42.0))]),
+                        &["answer"],
+                    )
+                    .unwrap(),
+                BTreeMap::from([("answer".to_owned(), RuntimeHostInputValue::F32(42.0))])
+            );
+        } else {
+            assert_eq!(
+                compiler
+                    .evaluate_static_document_symbols(&document, &["answer"])
+                    .unwrap(),
+                BTreeMap::from([("answer".to_owned(), RuntimeHostInputValue::F32(42.0))])
+            );
+        }
     }
     let document = canonical_planning_test_document(
         "hidden := [42f32]\nwrong(value<f32>) = result<f32> :=\n  result := hidden[1].\n\nanswer := wrong(1f32)\n",
+    );
+    assert!(compiler.compile_document(&document).is_ok());
+    let document = canonical_planning_test_document(
+        "before := hidden<f32>\nwrong(value<f32>) = result<f32> :=\n  result := hidden.\n\nanswer := wrong(1f32)\n",
+    );
+    let error = compiler
+        .compile_document(&document)
+        .unwrap_err()
+        .display_message();
+    assert!(error.contains("undeclared local hidden"), "{error}");
+    // A source lexical binding can be frozen into a function. A parameter of
+    // the caller, however, must not become the callee's free variable.
+    let document = canonical_planning_test_document(
+        "wrong(value<f32>) = result<f32> :=\n  result := hidden.\n\ncaller(hidden<f32>) = result<f32> :=\n  result := wrong(1f32).\n\nanswer := caller(42f32)\n",
     );
     let error = compiler
         .compile_document(&document)
@@ -8367,7 +8652,7 @@ fn canonical_mixed_source_retains_tuple_destructured_results() {
 #[cfg(feature = "compute")]
 #[test]
 fn canonical_mixed_shipped_ekf_region_compiles() {
-    let shipped = include_str!("../../../../../examples/ekf/localization.mec");
+    let shipped = include_str!("../../../../../../examples/ekf/localization.mec");
     let start = shipped.find("5. ekf-batch @compute\n").unwrap();
     let end = shipped.find("6. Live Tracking Field\n").unwrap();
     let source = format!(
@@ -8407,6 +8692,92 @@ fn canonical_mixed_shipped_ekf_region_compiles() {
         ["result.0", "result.2"],
     );
     assert!(!mixed.compute.artifact.nodes().is_empty());
+}
+
+#[cfg(feature = "compute")]
+#[test]
+fn canonical_mixed_shipped_ekf_coordinator_compiles() {
+    #[derive(Debug)]
+    struct PlanningScene;
+
+    impl RuntimeResourceProvider for PlanningScene {
+        fn scheme(&self) -> &str {
+            "scene"
+        }
+
+        fn base_uris(&self) -> Vec<String> {
+            vec!["scene://localization/frame".to_owned()]
+        }
+
+        fn semantic_read_contract(&self) -> Option<&'static OperationContractDeclaration> {
+            Some(crate::resource_observation_contract())
+        }
+
+        fn semantic_write_contract(
+            &self,
+            intent: RuntimeResourceWriteIntent,
+        ) -> Option<&'static OperationContractDeclaration> {
+            (intent == RuntimeResourceWriteIntent::Send).then_some(&PRODUCT_SCENE_CONTRACT)
+        }
+
+        fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+            match request.path.as_str() {
+                "pointer-pulse" => RuntimeHostInputValue::F64(0.0).into_value(),
+                "pointer-position" => RuntimeHostInputValue::F64Matrix {
+                    rows: 2,
+                    columns: 1,
+                    values: vec![0.0; 2],
+                }
+                .into_value(),
+                other => panic!("unexpected scene read: {other}"),
+            }
+        }
+
+        fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
+            assert_eq!(request.path, "replace");
+            assert_eq!(request.intent, RuntimeResourceWriteIntent::Send);
+            Ok(())
+        }
+
+        fn plan_write(&self, request: RuntimeResourceWriteCommand) -> MResult<()> {
+            assert_eq!(request.path, "replace");
+            Ok(())
+        }
+
+        fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
+            panic!("compilation must not observe the live scene")
+        }
+
+        fn prepare_write(
+            &self,
+            _request: RuntimeResourceWriteRequest,
+        ) -> MResult<PreparedRuntimeEffect> {
+            panic!("compilation must not prepare a live scene effect")
+        }
+    }
+
+    let shipped = include_str!("../../../../../../examples/ekf/localization.mec");
+    assert_eq!(shipped.matches("  filter-count := 1000.0").count(), 1);
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .resource_provider(Box::new(ProductTimerProvider))
+        .resource_provider(Box::new(PlanningScene))
+        .build_compiler()
+        .unwrap();
+    for filter_count in [1, 1000] {
+        let source = shipped.replacen(
+            "  filter-count := 1000.0",
+            &format!("  filter-count := {filter_count}.0"),
+            1,
+        );
+        let mixed = compiler
+            .compile_mixed_source(&source)
+            .unwrap_or_else(|error| {
+                panic!("EKF coordinator with {filter_count} filters: {error:?}")
+            });
+        assert_eq!(mixed.compute.declaration.name.as_ref(), "ekf-batch");
+        assert_eq!(mixed.activation_inputs.len(), 3);
+    }
 }
 
 #[test]
@@ -8577,7 +8948,7 @@ fn canonical_resource_planning_closes_provider_matrix_shapes() {
 #[cfg(feature = "compute")]
 #[test]
 fn canonical_mixed_shipped_particle_region_initializes() {
-    let shipped = include_str!("../../../../../examples/gpu-particles/particles.mec");
+    let shipped = include_str!("../../../../../../examples/gpu-particles/particles.mec");
     let start = shipped.find("particle-field @compute\n").unwrap();
     for count in [5, 257, 16384, 1_000_000] {
         let source = format!(
@@ -9138,9 +9509,9 @@ fn canonical_interactive_resource_planning_does_not_execute_host_effects() {
 }
 
 #[test]
-fn canonical_planned_selectors_enforce_portable_index_width_before_activation() {
+fn canonical_planned_selector_representatives_supply_schema_without_becoming_indices() {
     let source = "@typed := test://typed/value{:read(data)}\nvalues := [10.0 20.0 30.0]\nselected := values[1,@typed/data]\nselected\n";
-    for (planned, accepted) in [(1u64, true), (u32::MAX as u64 + 1, false)] {
+    for planned in [1u64, u32::MAX as u64 + 1] {
         let mut compiler = RuntimeBuilder::new()
             .function_catalog(mech_stdlib::source_catalog())
             .resource_provider(Box::new(TypedObservationProvider {
@@ -9148,7 +9519,19 @@ fn canonical_planned_selectors_enforce_portable_index_width_before_activation() 
             }))
             .build_compiler()
             .unwrap();
-        assert_eq!(compiler.compile_canonical_source(source).is_ok(), accepted);
+        // A planning representative determines the input schema, not the
+        // future live selector value. The dynamic selector round-trip tests
+        // above retain actual portable-width denial, atomicity and recovery.
+        let product = compiler.compile_canonical_source(source).unwrap();
+        assert!(product.artifact().nodes().iter().any(|node| {
+            node.as_operation()
+                .and_then(|operation| operation.requirement)
+                .is_some_and(|id| {
+                    matches!(product.artifact().requirements().get(id),
+                    Some(mech_core::ApplicationRequirement::Resource(request))
+                    if request.base_uri == "test://typed/value" && request.path == "data")
+                })
+        }));
     }
 }
 
@@ -9245,7 +9628,7 @@ fn canonical_ordered_roots_share_prior_definitions_and_reject_invalid_edges() {
 
 #[test]
 fn canonical_fizzbuzz_preserves_constraints_and_presentation_through_bytecode() {
-    let source = include_str!("../../../../../examples/working/fizzbuzz.mec");
+    let source = include_str!("../../../../../../examples/working/fizzbuzz.mec");
     let document = canonical_planning_test_document(source);
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_catalog())
@@ -9514,3 +9897,5 @@ fn rooted_runtime_source_limit_rejection_leaves_the_runtime_usable() {
         );
     }
 }
+
+mod resource_input_schema;

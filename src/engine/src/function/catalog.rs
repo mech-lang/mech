@@ -34,6 +34,14 @@ pub fn install_intrinsic_resident(
     crate::resident::matrix_literal::install(builder)?;
     #[cfg(feature = "resident-artifact")]
     crate::resident::numeric::install(builder)?;
+    #[cfg(all(feature = "resident-artifact", feature = "pure_text"))]
+    crate::resident::pure_text::install(builder)?;
+    #[cfg(all(feature = "resident-artifact", feature = "pure_text"))]
+    crate::resident::text_ops::install(builder)?;
+    #[cfg(all(feature = "resident-artifact", feature = "map_ops"))]
+    crate::resident::map_ops::install(builder)?;
+    #[cfg(all(feature = "resident-artifact", feature = "sequence_sort"))]
+    crate::resident::sequence_sort::install(builder)?;
     #[cfg(feature = "resident-artifact")]
     crate::resident::set::install(builder)?;
     #[cfg(all(feature = "resident-artifact", feature = "table"))]

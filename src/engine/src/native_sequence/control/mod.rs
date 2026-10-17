@@ -1,15 +1,19 @@
 //! Canonical-source IR for closed native loops and small immutable byte vectors.
 //! Loop bodies, predicates and range callbacks are ordinary Mech functions.
 pub mod analysis;
+mod fsm;
+mod selection;
+#[cfg(test)]
+mod signed_tests;
 
 use super::{text, visit};
 use mech_syntax::document::{
     AnyCallArgumentSyntax, AstNode, ComprehensionQualifierSyntax,
     ComprehensionQualifierValueSyntax, ExpressionSyntax, FunctionCallSyntax, KindAnnotationSyntax,
-    KindDefineSyntax, KindSyntax, KindValueSyntax, MatrixComprehensionSyntax, PatternSyntax,
-    PatternValueSyntax, RangeExpressionSyntax, RecordSyntax, SliceSyntax, StringLiteralSyntax,
-    SyntaxKind, SyntaxNode, TupleDestructureSyntax, VariableDefineSyntax, VariableStemSyntax,
-    VariableSyntax,
+    KindDefineSyntax, KindSyntax, KindValueSyntax, LiteralSyntax, LiteralValueSyntax,
+    MatrixComprehensionSyntax, PatternSyntax, PatternValueSyntax, RangeExpressionSyntax,
+    RecordSyntax, SliceSyntax, StringLiteralSyntax, SyntaxKind, SyntaxNode, TupleDestructureSyntax,
+    VariableDefineSyntax, VariableStemSyntax, VariableSyntax,
 };
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -18,6 +22,7 @@ use std::collections::{BTreeMap, BTreeSet};
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ControlKind {
     Integer,
+    SignedInteger,
     Reference,
     BigInteger,
     Float,
@@ -38,6 +43,7 @@ pub struct Expr {
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Op {
     Integer(u64),
+    SignedInteger(i64),
     Float(u64),
     Boolean(bool),
     Text(String),
@@ -48,6 +54,9 @@ pub enum Op {
     Local(usize),
     Tuple(Vec<Expr>),
     Field(Box<Expr>, usize),
+    /// An ordinary, checked kind-annotation conversion. The enclosing
+    /// expression carries the destination kind; the operand retains its source.
+    Convert(Box<Expr>),
     Primitive(String, Vec<Expr>),
     Loop {
         id: usize,
@@ -67,14 +76,25 @@ pub enum Op {
         scrutinee: Box<Expr>,
         arms: Vec<(Expr, Expr)>,
     },
+    Fold {
+        fold: usize,
+        body: Box<Expr>,
+    },
     Reduce {
         id: usize,
+        /// All generators in one comprehension share a source-ordered fold.
+        /// An explicitly nested sum receives a distinct fold identity.
+        fold: usize,
         index: usize,
         start: Box<Expr>,
         step: Box<Expr>,
         end: Box<Expr>,
         inclusive: bool,
         body: Box<Expr>,
+    },
+    Accumulate {
+        fold: usize,
+        value: Box<Expr>,
     },
     Call(String, Vec<Expr>),
     Invoke {
@@ -133,6 +153,9 @@ pub enum Op {
 pub struct Function {
     pub inputs: Vec<ControlKind>,
     pub output: Expr,
+    /// Compiler-generated structural callbacks must remain inline even when
+    /// general source-function inlining is disabled.
+    pub native_inline: bool,
 }
 #[derive(Clone, Debug)]
 pub struct Program {
@@ -244,6 +267,7 @@ fn native_kind(
     }
     let kind = match s.as_str() {
         "<u64>" => ControlKind::Integer,
+        "<i64>" => ControlKind::SignedInteger,
         "<ref>" => ControlKind::Reference,
         "<bigint>" => ControlKind::BigInteger,
         "<f64>" => ControlKind::Float,
@@ -255,7 +279,7 @@ fn native_kind(
                 .strip_prefix("<[u8]:")
                 .and_then(|s| s.strip_suffix(",1>"))
                 .and_then(|s| s.parse().ok())
-                .ok_or("native control supports u64, bool and fixed byte columns")?;
+                .ok_or("native control supports u64, i64, f64, bool and fixed byte columns")?;
             if !(1..=64).contains(&n) {
                 return Err("fixed byte length must be 1..64".into());
             }
@@ -296,7 +320,10 @@ fn flat(kind: &ControlKind) -> Vec<ControlKind> {
 fn scope_scalar(kind: &ControlKind) -> bool {
     matches!(
         kind,
-        ControlKind::Integer | ControlKind::Float | ControlKind::Boolean
+        ControlKind::Integer
+            | ControlKind::SignedInteger
+            | ControlKind::Float
+            | ControlKind::Boolean
     )
 }
 pub fn scalar_lanes(kind: &ControlKind) -> Vec<ControlKind> {
@@ -352,6 +379,7 @@ fn record_lanes(kind: &ControlKind) -> Result<Vec<ControlKind>, String> {
 }
 struct Lower<'a> {
     source: &'a BTreeMap<String, SourceFunction>,
+    machines: &'a BTreeMap<String, fsm::Machine>,
     aliases: &'a BTreeMap<String, SyntaxNode>,
     functions: BTreeMap<String, Function>,
     active: BTreeSet<String>,
@@ -366,13 +394,23 @@ impl Lower<'_> {
         value: &SyntaxNode,
         qualifiers: &[ComprehensionQualifierSyntax],
         vars: &BTreeMap<String, Expr>,
+        fold: usize,
     ) -> Result<Expr, String> {
         let Some((first, rest)) = qualifiers.split_first() else {
             let body = self.expr(value, vars)?;
-            if !matches!(body.kind, ControlKind::Integer | ControlKind::Float) {
-                return Err("native comprehension sums require u64 or f64 values".into());
+            if !matches!(
+                body.kind,
+                ControlKind::Integer | ControlKind::SignedInteger | ControlKind::Float
+            ) {
+                return Err("native comprehension sums require u64, i64 or f64 values".into());
             }
-            return Ok(body);
+            return Ok(Expr {
+                kind: body.kind.clone(),
+                op: Op::Accumulate {
+                    fold,
+                    value: Box::new(body),
+                },
+            });
         };
         match first.value().ok_or("comprehension qualifier")? {
             ComprehensionQualifierValueSyntax::Generator(generator) => {
@@ -429,7 +467,7 @@ impl Lower<'_> {
                     &mut locals,
                     &mut BTreeSet::new(),
                 )?;
-                let mut body = self.reduced(value, rest, &locals)?;
+                let mut body = self.reduced(value, rest, &locals, fold)?;
                 if !total {
                     body = self.filtered(condition, body);
                 }
@@ -437,6 +475,7 @@ impl Lower<'_> {
                     kind: body.kind.clone(),
                     op: Op::Reduce {
                         id: self.effect_id(),
+                        fold,
                         index,
                         start: Box::new(start),
                         step: Box::new(step),
@@ -451,7 +490,7 @@ impl Lower<'_> {
                     return Err("native comprehension bindings are immutable".into());
                 }
                 let name = text(definition.name().ok_or("qualifier binding name")?.syntax())?;
-                let binding = self.expr(
+                let mut binding = self.expr(
                     definition
                         .value()
                         .ok_or("qualifier binding value")?
@@ -459,15 +498,13 @@ impl Lower<'_> {
                     vars,
                 )?;
                 if let Some(annotation) = definition.variable().and_then(|v| v.annotation()) {
-                    if native_kind(annotation.syntax(), self.aliases, &mut BTreeSet::new())?
-                        != binding.kind
-                    {
-                        return Err("comprehension binding annotation mismatch".into());
-                    }
+                    let kind =
+                        native_kind(annotation.syntax(), self.aliases, &mut BTreeSet::new())?;
+                    binding = self.coerce(binding, &kind)?;
                 }
                 let mut locals = vars.clone();
                 locals.insert(name, binding.clone());
-                let output = self.reduced(value, rest, &locals)?;
+                let output = self.reduced(value, rest, &locals, fold)?;
                 Ok(Expr {
                     kind: output.kind.clone(),
                     op: Op::Sequence {
@@ -481,7 +518,7 @@ impl Lower<'_> {
                 if condition.kind != ControlKind::Boolean {
                     return Err("native comprehension filter must be boolean".into());
                 }
-                let body = self.reduced(value, rest, vars)?;
+                let body = self.reduced(value, rest, vars, fold)?;
                 Ok(self.filtered(condition, body))
             }
         }
@@ -489,10 +526,10 @@ impl Lower<'_> {
     fn filtered(&mut self, condition: Expr, body: Expr) -> Expr {
         let zero = Expr {
             kind: body.kind.clone(),
-            op: if body.kind == ControlKind::Float {
-                Op::Float(0)
-            } else {
-                Op::Integer(0)
+            op: match body.kind {
+                ControlKind::Float => Op::Float(0),
+                ControlKind::SignedInteger => Op::SignedInteger(0),
+                _ => Op::Integer(0),
             },
         };
         Expr {
@@ -586,7 +623,11 @@ impl Lower<'_> {
                 if literal.kind != value.kind
                     || !matches!(
                         literal.op,
-                        Op::Integer(_) | Op::Float(_) | Op::Boolean(_) | Op::Heap { action: 0, .. }
+                        Op::Integer(_)
+                            | Op::SignedInteger(_)
+                            | Op::Float(_)
+                            | Op::Boolean(_)
+                            | Op::Heap { action: 0, .. }
                     )
                 {
                     return Err("native match patterns require same-kind scalar constants or lexical bindings".into());
@@ -695,6 +736,7 @@ impl Lower<'_> {
             let outputs: Vec<_> = declaration.outputs.iter().map(|(_, k)| k.clone()).collect();
             return Ok(Function {
                 inputs: declaration.inputs.iter().map(|(_, k)| k.clone()).collect(),
+                native_inline: false,
                 output: Expr {
                     kind: if outputs.len() == 1 {
                         outputs[0].clone()
@@ -759,19 +801,31 @@ impl Lower<'_> {
                 format!("pattern function result differs from declared kind: {error}")
             })?
         } else {
-            let mut effects = Vec::new();
-            for statement in source
+            let statements = source
                 .body
                 .children()
                 .filter(|n| n.kind() == SyntaxKind::Statement)
-            {
-                let previous: BTreeSet<_> = locals.keys().cloned().collect();
-                self.statement(&statement, &mut locals)?;
-                if self.native_functions {
+                .collect::<Vec<_>>();
+            let local_writes = statements.iter().any(|statement| {
+                statement.children().any(|node| {
+                    matches!(
+                        node.kind(),
+                        SyntaxKind::VariableAssign | SyntaxKind::OpAssign
+                    ) || VariableDefineSyntax::cast(node)
+                        .is_some_and(|definition| definition.mutability_marker().is_some())
+                })
+            });
+            let retain_statements = self.native_functions || local_writes;
+            let mut mutable = BTreeSet::new();
+            let mut effects = Vec::new();
+            for statement in statements {
+                let previous = locals.clone();
+                self.branch_statement(&statement, &mut locals, &mut mutable)?;
+                if retain_statements {
                     effects.extend(
                         locals
                             .iter()
-                            .filter(|(k, _)| !previous.contains(*k))
+                            .filter(|(name, value)| previous.get(*name) != Some(*value))
                             .map(|(_, v)| v.clone()),
                     );
                 }
@@ -793,7 +847,7 @@ impl Lower<'_> {
             } else {
                 tuple(values)
             };
-            let output = if self.native_functions {
+            let output = if retain_statements {
                 Expr {
                     kind: output.kind.clone(),
                     op: Op::Sequence {
@@ -809,6 +863,7 @@ impl Lower<'_> {
         let f = Function {
             inputs: source.inputs.iter().map(|(_, k)| k.clone()).collect(),
             output,
+            native_inline: false,
         };
         self.functions.insert(name.to_owned(), f.clone());
         self.active.remove(name);
@@ -822,6 +877,11 @@ impl Lower<'_> {
             return Ok(value);
         }
         match (&value.kind, kind) {
+            (ControlKind::Integer, ControlKind::SignedInteger | ControlKind::Float)
+            | (ControlKind::SignedInteger, ControlKind::Integer | ControlKind::Float) => Ok(Expr {
+                kind: kind.clone(),
+                op: Op::Convert(Box::new(value)),
+            }),
             (ControlKind::BigInteger, ControlKind::Integer) => {
                 Ok(self.bigint_value(32, ControlKind::Integer, vec![value]))
             }
@@ -889,12 +949,52 @@ impl Lower<'_> {
         if let Some(e) = vars.get(s) {
             return Ok(e.clone());
         }
+        if let Some(pipe) = mech_syntax::document::FsmPipeSyntax::cast(node.clone()) {
+            return self.machine(&pipe, vars);
+        }
         if node.kind() == SyntaxKind::NegateFactor {
             let operand = node.children().last().ok_or("negation operand required")?;
+            // Decode an annotated negative literal as one value. In particular,
+            // i64::MIN has no representable positive i64 intermediate.
+            fn literal(node: &SyntaxNode) -> Option<LiteralSyntax> {
+                if node.kind() == SyntaxKind::NegateFactor {
+                    return None;
+                }
+                if let Some(value) = LiteralSyntax::cast(node.clone()) {
+                    return Some(value);
+                }
+                let children = node.children().collect::<Vec<_>>();
+                (children.len() == 1)
+                    .then(|| literal(&children[0]))
+                    .flatten()
+            }
+            if let Some(literal) = literal(&operand)
+                && let Some(annotation) = literal.annotation()
+                && native_kind(annotation.syntax(), self.aliases, &mut BTreeSet::new())?
+                    == ControlKind::SignedInteger
+                && let Some(LiteralValueSyntax::Number(number)) = literal.value()
+            {
+                let spelling = text(number.syntax())?;
+                // Explicit unsigned suffixes retain their own type and cannot
+                // be reinterpreted by an outer signed annotation.
+                if !spelling.ends_with("u64") {
+                    let value = format!("-{}", spelling.trim())
+                        .parse::<i64>()
+                        .map_err(|_| "annotated i64 literal is out of range")?;
+                    return Ok(Expr {
+                        kind: ControlKind::SignedInteger,
+                        op: Op::SignedInteger(value),
+                    });
+                }
+            }
             let value = self.expr(&operand, vars)?;
-            if value.kind == ControlKind::BigInteger {
+            if matches!(
+                value.kind,
+                ControlKind::BigInteger | ControlKind::SignedInteger | ControlKind::Float
+            ) {
                 return self.primitive("-".into(), vec![value]);
             }
+            return Err("native negation requires a numeric operand".into());
         }
         if let Some(expression) = ExpressionSyntax::cast(node.clone()) {
             let arms = expression.match_arms();
@@ -914,6 +1014,28 @@ impl Lower<'_> {
                 return self.matched(scrutinee, arms, vars, true);
             }
         }
+        if let Some(literal) = LiteralSyntax::cast(node.clone())
+            && let Some(annotation) = literal.annotation()
+            && let Some(LiteralValueSyntax::Number(number)) = literal.value()
+        {
+            let kind = native_kind(annotation.syntax(), self.aliases, &mut BTreeSet::new())?;
+            let spelling = text(number.syntax())?;
+            if kind == ControlKind::SignedInteger
+                && !spelling.ends_with("u64")
+                && !spelling.ends_with("f64")
+            {
+                return Ok(Expr {
+                    kind,
+                    op: Op::SignedInteger(
+                        spelling
+                            .parse()
+                            .map_err(|_| "annotated i64 literal is out of range")?,
+                    ),
+                });
+            }
+            let value = self.expr(number.syntax(), vars)?;
+            return self.coerce(value, &kind);
+        }
         if node.kind() == SyntaxKind::Number {
             if s.contains('.') || s.contains('e') || s.ends_with("f64") {
                 let value = s
@@ -928,7 +1050,12 @@ impl Lower<'_> {
             }
             return Ok(Expr {
                 kind: ControlKind::Integer,
-                op: Op::Integer(s.parse().map_err(|_| "u64 literal required")?),
+                op: Op::Integer(
+                    s.strip_suffix("u64")
+                        .unwrap_or(s)
+                        .parse()
+                        .map_err(|_| "u64 literal required")?,
+                ),
             });
         }
         if let Some(l) = StringLiteralSyntax::cast(node.clone()) {
@@ -980,26 +1107,7 @@ impl Lower<'_> {
             });
         }
         if let Some(slice) = SliceSyntax::cast(node.clone()) {
-            let mut value = self.expr(slice.stem().ok_or("field stem")?.syntax(), vars)?;
-            for item in slice.subscripts().ok_or("field selectors")?.items() {
-                let selection = text(item.syntax())?;
-                let name = selection
-                    .trim()
-                    .strip_prefix('.')
-                    .ok_or("native record requires dot fields")?;
-                let ControlKind::Record(fields) = &value.kind else {
-                    return Err("dot field requires record".into());
-                };
-                let index = fields
-                    .iter()
-                    .position(|(field, _)| field == name)
-                    .ok_or("unknown record field")?;
-                value = Expr {
-                    kind: fields[index].1.clone(),
-                    op: Op::Field(Box::new(value), index),
-                };
-            }
-            return Ok(value);
+            return self.selection(&slice, vars);
         }
         if node.kind() == SyntaxKind::Tuple {
             let mut items = node
@@ -1060,7 +1168,15 @@ impl Lower<'_> {
                 let expression = comprehension(&a[0])
                     .ok_or("native stats/sum requires a matrix comprehension")?;
                 let value = expression.value().ok_or("comprehension result")?;
-                return self.reduced(value.syntax(), &expression.qualifiers(), vars);
+                let fold = self.effect_id();
+                let body = self.reduced(value.syntax(), &expression.qualifiers(), vars, fold)?;
+                return Ok(Expr {
+                    kind: body.kind.clone(),
+                    op: Op::Fold {
+                        fold,
+                        body: Box::new(body),
+                    },
+                });
             }
             if !self.active.is_empty() && name == "io/argument-u64" {
                 return Err("entry arguments cannot be captured by native source functions".into());
@@ -1226,13 +1342,20 @@ impl Lower<'_> {
                 let f = self.function(&function)?;
                 let mut inputs = vec![ControlKind::Integer; 2];
                 inputs.extend(flat(&arguments.kind));
-                if inputs.iter().any(|kind| kind != &ControlKind::Integer) {
-                    return Err("parallel range arguments must be u64 scalars".into());
+                if inputs
+                    .iter()
+                    .any(|kind| !matches!(kind, ControlKind::Integer | ControlKind::SignedInteger))
+                {
+                    return Err("parallel range arguments must be u64 or i64 scalars".into());
                 }
+                let outputs = flat(&f.output.kind);
                 if [start.kind.clone(), end.kind.clone(), grain.kind.clone()]
                     != [const { ControlKind::Integer }; 3]
                     || f.inputs != inputs
-                    || flat(&f.output.kind) != vec![ControlKind::Integer; reductions.len()]
+                    || outputs.len() != reductions.len()
+                    || outputs.iter().any(|kind| {
+                        !matches!(kind, ControlKind::Integer | ControlKind::SignedInteger)
+                    })
                     || reductions.iter().any(|s| s != "sum" && s != "max")
                 {
                     return Err("parallel range signature/reducers".into());
@@ -1278,7 +1401,10 @@ impl Lower<'_> {
                     || kinds.iter().any(|k| {
                         !matches!(
                             k,
-                            ControlKind::Integer | ControlKind::Float | ControlKind::Boolean
+                            ControlKind::Integer
+                                | ControlKind::SignedInteger
+                                | ControlKind::Float
+                                | ControlKind::Boolean
                         )
                     })
                     || callback.inputs != kinds
@@ -1328,6 +1454,17 @@ impl Lower<'_> {
     }
     fn primitive(&mut self, name: String, values: Vec<Expr>) -> Result<Expr, String> {
         let kinds: Vec<_> = values.iter().map(|e| e.kind.clone()).collect();
+        if name == "+" && kinds == [ControlKind::Text, ControlKind::Text] {
+            let (Op::Text(left), Op::Text(right)) = (&values[0].op, &values[1].op) else {
+                return Err(
+                    "native control text concatenation currently requires constant strings".into(),
+                );
+            };
+            return Ok(Expr {
+                kind: ControlKind::Text,
+                op: Op::Text(format!("{left}{right}")),
+            });
+        }
         let int = ControlKind::Integer;
         let boolean = ControlKind::Boolean;
         let big = ControlKind::BigInteger;
@@ -1501,7 +1638,9 @@ impl Lower<'_> {
                 "io/print"
                     if !values.is_empty()
                         && kinds[0] == ControlKind::Text
-                        && kinds[1..].iter().all(|k| k == &int) =>
+                        && kinds[1..].iter().all(|k| {
+                            matches!(k, ControlKind::Integer | ControlKind::SignedInteger)
+                        }) =>
                 {
                     let Op::Text(format) = &values[0].op else {
                         return Err("literal print format required".into());
@@ -1539,7 +1678,17 @@ impl Lower<'_> {
             {
                 boolean
             }
-            "number/to-f64" if kinds == [int.clone()] => ControlKind::Float,
+            "number/to-f64"
+                if kinds.len() == 1
+                    && matches!(kinds[0], ControlKind::Integer | ControlKind::SignedInteger) =>
+            {
+                ControlKind::Float
+            }
+            "-" if kinds.len() == 1
+                && matches!(kinds[0], ControlKind::SignedInteger | ControlKind::Float) =>
+            {
+                kinds[0].clone()
+            }
             "bytes/from-text" if kinds == [ControlKind::Text] => {
                 let Op::Text(s) = &values[0].op else {
                     return Err("constant byte text required by this native subset".into());
@@ -1560,6 +1709,7 @@ impl Lower<'_> {
                     .map(|e| match e.op {
                         Op::Float(v) => Ok(v),
                         Op::Integer(v) => Ok((v as f64).to_bits()),
+                        Op::SignedInteger(v) => Ok((v as f64).to_bits()),
                         _ => Err("literal numeric values required"),
                     })
                     .collect::<Result<Vec<_>, _>>()?;
@@ -1620,14 +1770,24 @@ impl Lower<'_> {
                     },
                 });
             }
-            "+" | "-" | "*" | "/" | "number/mod" | "number/max"
+            "+" | "-" | "*" | "/" | "%" | "number/mod" | "number/max"
                 if kinds == [int.clone(), int.clone()] =>
             {
                 int
             }
+            "+" | "-" | "*" | "/" | "%" | "number/mod" | "number/max"
+                if kinds == [ControlKind::SignedInteger, ControlKind::SignedInteger] =>
+            {
+                ControlKind::SignedInteger
+            }
             "==" | "!=" if kinds == [ControlKind::Reference, ControlKind::Reference] => boolean,
             "==" | "!=" if kinds == [boolean.clone(), boolean.clone()] => boolean,
             "==" | "!=" | "<" | "<=" | ">" | ">=" if kinds == [int.clone(), int.clone()] => boolean,
+            "==" | "!=" | "<" | "<=" | ">" | ">="
+                if kinds == [ControlKind::SignedInteger, ControlKind::SignedInteger] =>
+            {
+                boolean
+            }
             "&&" | "||" if kinds == [boolean.clone(), boolean.clone()] => boolean,
             "control/select" if kinds.len() == 3 && kinds[0] == boolean && kinds[1] == kinds[2] => {
                 kinds[1].clone()
@@ -1635,6 +1795,9 @@ impl Lower<'_> {
             "number/shift-left" if kinds == [int.clone(), int.clone()] => int,
             "number/factorial" if kinds == [int.clone()] => int,
             "number/bounded" if kinds == vec![int.clone(); 3] => int,
+            "number/bounded" if kinds == vec![ControlKind::SignedInteger; 3] => {
+                ControlKind::SignedInteger
+            }
             "io/argument-u64" if kinds == [int.clone()] => {
                 let Op::Integer(i) = values[0].op else {
                     return Err("argument index must be constant".into());
@@ -1831,8 +1994,10 @@ pub fn compile_parsed(parsed: &super::ParsedSource, catalog: &[&str]) -> Result<
                 })
             })
         };
+    let machines = fsm::collect(syntax, &aliases)?;
     let mut lower = Lower {
         source: &functions,
+        machines: &machines,
         aliases: &aliases,
         functions: BTreeMap::new(),
         active: BTreeSet::new(),
@@ -1869,7 +2034,15 @@ pub fn compile_parsed(parsed: &super::ParsedSource, catalog: &[&str]) -> Result<
                     new |= collect_effects(e, ids);
                 }
             }
-            Op::Field(e, _) => new |= collect_effects(e, ids),
+            Op::Field(e, _) | Op::Convert(e) => new |= collect_effects(e, ids),
+            Op::Fold { fold, body } => {
+                new |= ids.insert(*fold);
+                new |= collect_effects(body, ids);
+            }
+            Op::Accumulate { fold, value } => {
+                new |= ids.insert(*fold);
+                new |= collect_effects(value, ids);
+            }
             Op::Reduce {
                 id,
                 start,
@@ -1910,6 +2083,14 @@ pub fn compile_parsed(parsed: &super::ParsedSource, catalog: &[&str]) -> Result<
     }
     for root in roots {
         if root.children().all(|n| n.kind() == SyntaxKind::Comment) {
+            continue;
+        }
+        if root.children().any(|node| {
+            matches!(
+                node.kind(),
+                SyntaxKind::FsmSpecification | SyntaxKind::FsmImplementation
+            )
+        }) {
             continue;
         }
         let mut root_kinds = Vec::new();
@@ -1978,7 +2159,9 @@ pub fn compile_parsed(parsed: &super::ParsedSource, catalog: &[&str]) -> Result<
             .iter()
             .map(|x| lower.expr(x, &vars))
             .collect::<Result<Vec<_>, _>>()?;
-        if values.iter().any(|v| v.kind != ControlKind::Integer)
+        if values
+            .iter()
+            .any(|v| !matches!(v.kind, ControlKind::Integer | ControlKind::SignedInteger))
             || (format.matches("{}").count() + format.matches("{:i64}").count()) != values.len()
             || values.len() > 64
             || format
