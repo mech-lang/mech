@@ -39,7 +39,7 @@ fn compile(source: &str) -> (ProgramArtifact, usize) {
         .output as usize;
     (product.compile_artifact().unwrap(), output)
 }
-fn artifacts(source: &str) -> ([ProgramArtifact; 2], usize) {
+fn source_artifacts(source: &str) -> ([ProgramArtifact; 2], usize) {
     let (original, output) = compile(source);
     let bytes = mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap();
     let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
@@ -146,7 +146,7 @@ fn evaluate(jit: &JitArtifact, arguments: &[NativeScalarValue]) -> Vec<NativeSca
 #[test]
 fn dense_f64_arithmetic_and_platform_sqrt_match_resident_bits() {
     for operator in ["+", "-", "*", "/"] {
-        let (artifacts, _) = artifacts(&format!("left<f64> {operator} right<f64>\n"));
+        let (artifacts, _) = source_artifacts(&format!("left<f64> {operator} right<f64>\n"));
         for artifact in artifacts {
             let plan =
                 lower_pure_native_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
@@ -165,7 +165,7 @@ fn dense_f64_arithmetic_and_platform_sqrt_match_resident_bits() {
         ("-left<f64>\n", true),
         ("+> math\nmath/sqrt(left<f64>)\n", false),
     ] {
-        let (artifacts, result) = artifacts(source);
+        let (artifacts, result) = source_artifacts(source);
         for artifact in artifacts {
             let plan =
                 lower_pure_native_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
@@ -189,7 +189,7 @@ fn dense_f64_arithmetic_and_platform_sqrt_match_resident_bits() {
 #[test]
 fn f64_comparisons_are_numeric_for_nan_and_signed_zero() {
     for operator in ["==", "!=", "<", "<=", ">", ">="] {
-        let (artifacts, result) = artifacts(&format!("left<f64> {operator} right<f64>\n"));
+        let (artifacts, result) = source_artifacts(&format!("left<f64> {operator} right<f64>\n"));
         for artifact in artifacts {
             let plan =
                 lower_pure_native_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
@@ -231,7 +231,7 @@ fn f64_ordered_nodes_are_not_fused_reassociated_or_dropped() {
             1.0f64.to_bits(),
         ),
     ] {
-        let (artifacts, result) = artifacts(source);
+        let (artifacts, result) = source_artifacts(source);
         for artifact in artifacts {
             let plan =
                 lower_pure_native_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
@@ -250,7 +250,7 @@ fn f64_ordered_nodes_are_not_fused_reassociated_or_dropped() {
             assert_eq!(evaluate(&jit, &arguments), expected);
         }
     }
-    let (artifacts, _) = artifacts("unused := value<f64> / 0.0\n-value<f64>\n");
+    let (artifacts, _) = source_artifacts("unused := value<f64> / 0.0\n-value<f64>\n");
     for artifact in artifacts {
         let plan = lower_pure_native_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
         assert_eq!(plan.lets().len(), 2);
@@ -268,7 +268,7 @@ fn f64_ordered_nodes_are_not_fused_reassociated_or_dropped() {
         assert_eq!(output, before);
     }
     let (artifacts, _) =
-        artifacts("+> math\nunused := integer<u64> / 0u64\nmath/sqrt(value<f64>)\n");
+        source_artifacts("+> math\nunused := integer<u64> / 0u64\nmath/sqrt(value<f64>)\n");
     for artifact in artifacts {
         let plan = lower_pure_native_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
         let jit = JitArtifact::compile(&plan).unwrap();
@@ -295,7 +295,7 @@ fn f64_ordered_nodes_are_not_fused_reassociated_or_dropped() {
 
 #[test]
 fn f64_setup_completion_memory_and_type_denials_are_atomic_and_recover() {
-    let (artifacts, _) = artifacts("+> math\nmath/sqrt(value<f64>)\n");
+    let (artifacts, _) = source_artifacts("+> math\nmath/sqrt(value<f64>)\n");
     for artifact in artifacts {
         let plan = lower_pure_native_artifact(&artifact, &mech_stdlib::source_catalog()).unwrap();
         assert_eq!(plan.inputs().len(), 1);
