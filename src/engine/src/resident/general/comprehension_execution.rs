@@ -737,7 +737,9 @@ pub(in crate::resident::general) enum PatternItem {
 pub(in crate::resident::general) enum CanonicalPatternStep {
     OptionPayload,
     EnumPayload,
-    Child(usize),
+    // Keep checked member ordinals compact instead of carrying host-pointer
+    // padding through every copied borrowed projection path.
+    Child(u32),
 }
 
 fn canonical_pattern_projection<'a>(
@@ -765,7 +767,7 @@ fn canonical_pattern_projection<'a>(
                 CanonicalPatternStep::Child(index),
                 SchemaBody::Tuple(children),
                 ValueData::Tuple(values),
-            ) => (children.get(*index)?, values.get(*index)?),
+            ) => (children.get(*index as usize)?, values.get(*index as usize)?),
             _ => return None,
         };
     }
@@ -806,7 +808,9 @@ fn canonical_pattern_data<'a>(
                 Some(value.as_ref())
             }
             (CanonicalPatternStep::EnumPayload, ValueData::Enum(value)) => value.payload(),
-            (CanonicalPatternStep::Child(index), ValueData::Tuple(values)) => values.get(*index),
+            (CanonicalPatternStep::Child(index), ValueData::Tuple(values)) => {
+                values.get(*index as usize)
+            }
             _ => None,
         })
 }
@@ -2440,7 +2444,10 @@ impl PatternItem {
                     body: Arc::clone(body),
                     shape_values: Arc::clone(shape_values),
                     value: value.clone(),
-                    path: canonical_child_path(path, &[CanonicalPatternStep::Child(index)]),
+                    path: canonical_child_path(
+                        path,
+                        &[CanonicalPatternStep::Child(u32::try_from(index).ok()?)],
+                    ),
                 })
             }
             Self::Dynamic(None) => None,
