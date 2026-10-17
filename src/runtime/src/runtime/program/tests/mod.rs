@@ -30,6 +30,9 @@ use crate::{
 
 use super::*;
 
+mod projection_refresh;
+mod published_inputs;
+
 const PURE_SOURCE: &str =
     include_str!("../../../../../../tests/architecture/resident-activation/n-body-source-v1.mec");
 const PRODUCT_NBODY_SOURCE: &str =

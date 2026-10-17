@@ -47,25 +47,35 @@ impl MechRuntime {
         };
         let mappings =
             compatible_state_mappings(previous_artifact, candidate_artifact, changed_state_names);
-        if !mappings.is_empty() {
-            let mapped_targets = mappings
-                .iter()
-                .map(|mapping| mapping.target)
-                .collect::<std::collections::BTreeSet<_>>();
-            let projection_refresh_targets = candidate_artifact
-                .outputs()
-                .iter()
-                .map(|output| output.source)
-                .filter(|slot| {
-                    !mapped_targets.contains(slot)
-                        && candidate_artifact
-                            .slots()
-                            .get(slot.get() as usize)
-                            .is_some_and(|declaration| declaration.role == SlotRole::Output)
-                })
-                .collect::<std::collections::BTreeSet<_>>();
+        let mapped_targets = mappings
+            .iter()
+            .map(|mapping| mapping.target)
+            .collect::<std::collections::BTreeSet<_>>();
+        let projection_refresh_targets = candidate_artifact
+            .outputs()
+            .iter()
+            .map(|output| output.source)
+            .filter(|slot| {
+                !mapped_targets.contains(slot)
+                    && candidate_artifact
+                        .slots()
+                        .get(slot.get() as usize)
+                        .is_some_and(|declaration| declaration.role == SlotRole::Output)
+            })
+            .collect::<std::collections::BTreeSet<_>>();
 
-            let candidate_artifact = std::sync::Arc::new(candidate_artifact.clone());
+        let candidate_artifact = match &self.active_program {
+            ActiveProgramExecution::ResidentExternal(candidate) => {
+                std::sync::Arc::clone(&candidate.artifact)
+            }
+            ActiveProgramExecution::ResidentPure(candidate) => {
+                std::sync::Arc::clone(&candidate.artifact)
+            }
+            ActiveProgramExecution::None => {
+                unreachable!("candidate artifact was checked above")
+            }
+        };
+        if !mappings.is_empty() {
             let (_, candidate_instance) = self
                 .resident_artifact_and_instance_mut()
                 .expect("candidate artifact was checked above");
@@ -74,19 +84,21 @@ impl MechRuntime {
                 .map_err(|error| {
                     super::diagnostics::activation_failure_for_artifact(&candidate_artifact, error)
                 })?;
-            match &mut self.active_program {
-                ActiveProgramExecution::ResidentExternal(candidate) => candidate
-                    .coordinator
-                    .refresh_output_projections(&projection_refresh_targets),
-                ActiveProgramExecution::ResidentPure(candidate) => candidate
-                    .instance
-                    .refresh_output_projections(&candidate_artifact, &projection_refresh_targets),
-                ActiveProgramExecution::None => {
-                    unreachable!("candidate artifact was checked above")
-                }
-            }
-            .map_err(super::diagnostics::projection_refresh_failure)?;
         }
+        // Compatible inputs can survive even when every output is renamed
+        // and no state slot maps. Those new projections still need refresh.
+        match &mut self.active_program {
+            ActiveProgramExecution::ResidentExternal(candidate) => candidate
+                .coordinator
+                .refresh_output_projections(&projection_refresh_targets),
+            ActiveProgramExecution::ResidentPure(candidate) => candidate
+                .instance
+                .refresh_output_projections(&candidate_artifact, &projection_refresh_targets),
+            ActiveProgramExecution::None => {
+                unreachable!("candidate artifact was checked above")
+            }
+        }
+        .map_err(super::diagnostics::projection_refresh_failure)?;
         Ok(())
     }
 

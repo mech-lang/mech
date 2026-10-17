@@ -198,6 +198,11 @@ pub struct ResidentExternalCoordinator {
     latest_live_inputs: Vec<Option<Value>>,
     latest_live_input_bytes: Vec<usize>,
     latest_live_input_retained_bytes: usize,
+    // The latest capture may belong to a rejected turn. Projections of the
+    // published state must retain the snapshot that actually published.
+    published_live_inputs: Vec<Option<Value>>,
+    published_live_input_bytes: Vec<usize>,
+    published_live_input_retained_bytes: usize,
     pending_live_inputs: Vec<Option<Value>>,
     pending_live_input_bytes: Vec<usize>,
     pending_live_input_retained_bytes: usize,
@@ -355,6 +360,8 @@ impl ResidentExternalCoordinator {
         let publication_authority = RuntimeResidentPublicationAuthority { _private: () };
         let latest_live_inputs = vec![None; bound.observations().len()];
         let latest_live_input_bytes = vec![0; bound.observations().len()];
+        let published_live_inputs = vec![None; bound.observations().len()];
+        let published_live_input_bytes = vec![0; bound.observations().len()];
         let pending_live_inputs = vec![None; bound.observations().len()];
         let pending_live_input_bytes = vec![0; bound.observations().len()];
         Ok(Self {
@@ -380,6 +387,9 @@ impl ResidentExternalCoordinator {
             latest_live_inputs,
             latest_live_input_bytes,
             latest_live_input_retained_bytes: 0,
+            published_live_inputs,
+            published_live_input_bytes,
+            published_live_input_retained_bytes: 0,
             pending_live_inputs,
             pending_live_input_bytes,
             pending_live_input_retained_bytes: 0,
@@ -431,8 +441,8 @@ impl ResidentExternalCoordinator {
             .expect("resident instance is present")
     }
 
-    /// Transfers both the last retained live-input snapshot and any staged
-    /// capture-only replacements across a compatible resident replacement.
+    /// Transfers the latest captured snapshot, the last published snapshot,
+    /// and staged capture-only replacements across a compatible replacement.
     /// Observation node/slot identities are artifact local, so migration
     /// matches the stable resource request plus its schema and shape, then
     /// re-materializes the value against the candidate schema table. Every
@@ -451,6 +461,12 @@ impl ResidentExternalCoordinator {
             "live input snapshot",
         )?;
         self.install_live_input_replacements(replacements)?;
+        let published_replacements = self.compatible_live_input_replacements_from(
+            previous,
+            &previous.published_live_inputs,
+            "published input snapshot",
+        )?;
+        self.install_published_live_input_replacements(published_replacements)?;
         let pending_replacements = self.compatible_live_input_replacements_from(
             previous,
             &previous.pending_live_inputs,
@@ -468,7 +484,7 @@ impl ResidentExternalCoordinator {
             .bound
             .observations()
             .iter()
-            .zip(&self.latest_live_inputs)
+            .zip(&self.published_live_inputs)
             .filter_map(|(observation, value)| {
                 Some(CapturedValueInput {
                     slot: observation.input.slot,
@@ -476,10 +492,15 @@ impl ResidentExternalCoordinator {
                 })
             })
             .collect::<Vec<_>>();
-        self.instance
+        let instance = self
+            .instance
             .as_mut()
-            .expect("resident instance is present")
-            .refresh_output_projections_with_inputs(&self.artifact, targets, &inputs)
+            .expect("resident instance is present");
+        instance.refresh_output_projections_with_inputs(&self.artifact, targets, &inputs)?;
+        // Migration changes the published snapshot without creating a turn.
+        // The next rejected receipt must describe that same snapshot.
+        self.published_state_hash = instance.published_state_hash();
+        Ok(())
     }
 
     #[cfg(feature = "resident-routing-source")]
@@ -727,6 +748,27 @@ impl ResidentExternalCoordinator {
             self.pending_live_input_bytes[ordinal] = replacement_bytes;
         }
         self.pending_live_input_retained_bytes = pending_retained_bytes;
+        Ok(())
+    }
+
+    #[cfg(feature = "resident-routing-source")]
+    fn install_published_live_input_replacements(
+        &mut self,
+        replacements: Vec<(usize, Value, usize)>,
+    ) -> MResult<()> {
+        let retained_bytes = live_input_retained_bytes_after_replacements(
+            self.published_live_input_retained_bytes,
+            &self.published_live_input_bytes,
+            replacements
+                .iter()
+                .map(|(ordinal, _, retained_bytes)| (*ordinal, *retained_bytes)),
+            self.latest_live_input_byte_limit,
+        )?;
+        for (ordinal, value, replacement_bytes) in replacements {
+            self.published_live_inputs[ordinal] = Some(value);
+            self.published_live_input_bytes[ordinal] = replacement_bytes;
+        }
+        self.published_live_input_retained_bytes = retained_bytes;
         Ok(())
     }
 
@@ -1387,6 +1429,7 @@ impl ResidentExternalCoordinator {
             if let Some(batch) = batch {
                 self.remember_live_inputs(batch);
             }
+            self.remember_published_inputs();
             if let Some(next_input) = next_input {
                 self.next_input = next_input;
             }
@@ -1958,6 +2001,7 @@ impl ResidentExternalCoordinator {
             }
         };
         self.publish_prepared(turn, prepared_turn)?;
+        self.remember_published_inputs();
         let receipt_sequence = self.append_receipt(prepared_receipt);
         if let Some(prepared) = prepared_outbox {
             self.outbox.append(prepared);
@@ -2800,6 +2844,20 @@ impl ResidentExternalCoordinator {
             .checked_add(1)
             .ok_or_else(sequence_exhausted)?;
         Ok(())
+    }
+
+    fn remember_published_inputs(&mut self) {
+        // The complete captured snapshot was admitted against input_bytes
+        // before execution. Value clones retain immutable Arc-backed payloads;
+        // clone_from reuses these fixed observation-sized vectors.
+        self.published_live_inputs
+            .clone_from(&self.latest_live_inputs);
+        self.published_live_input_bytes
+            .clone_from(&self.latest_live_input_bytes);
+        self.published_live_input_retained_bytes = self.latest_live_input_retained_bytes;
+        debug_assert!(
+            self.published_live_input_retained_bytes <= self.latest_live_input_byte_limit
+        );
     }
 
     fn remember_live_inputs(&mut self, batch: &CapturedInputBatch) {

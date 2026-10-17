@@ -79,6 +79,29 @@ class ValueExecutionBoundaryTests(unittest.TestCase):
         self.addCleanup(temporary.cleanup)
         self.assertEqual(CHECKER.audit(root, manifest), [])
 
+    def test_deleted_path_requires_retiring_its_allowance_before_reintroduction(self):
+        relative = "src/pkg/src/good.rs"
+        temporary, root, manifest = self.fixture(
+            {relative: "fn approved() { legacy_call(); }"}
+        )
+        self.addCleanup(temporary.cleanup)
+        (root / relative).unlink()
+        failures = CHECKER.audit(root, manifest)
+        self.assertEqual(len(failures), 1)
+        self.assertIn("stale allowance references missing file", failures[0])
+        self.assertIn(relative, failures[0])
+
+        payload = json.loads(manifest.read_text(encoding="utf-8"))
+        payload["boundaries"][0]["allowed"] = []
+        manifest.write_text(json.dumps(payload), encoding="utf-8")
+        self.assertEqual(CHECKER.audit(root, manifest), [])
+
+        (root / relative).write_text("fn approved() { legacy_call(); }", encoding="utf-8")
+        failures = CHECKER.audit(root, manifest)
+        self.assertEqual(len(failures), 1)
+        self.assertIn("legacy: unapproved occurrence", failures[0])
+        self.assertIn(relative, failures[0])
+
     def test_new_path_fails_with_location(self):
         temporary, root, manifest = self.fixture(
             {

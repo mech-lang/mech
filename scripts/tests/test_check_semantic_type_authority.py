@@ -88,7 +88,7 @@ class SemanticTypeAuthorityCheckerTests(unittest.TestCase):
 
     def test_native_semantic_validation_omission_fails(self):
         root = self.fixture()
-        path = root / "src/build/src/analysis/bytecode.rs"
+        path = root / "src/build/src/analysis/bytecode/mod.rs"
         path.write_text(
             path.read_text().replace(
                 "validate_bound_call_for_target(binding, ExecutionTarget::Native)",
