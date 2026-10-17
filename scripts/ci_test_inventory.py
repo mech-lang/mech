@@ -176,13 +176,19 @@ def disabled_metadata(metadata: dict) -> bool:
 def unproven_environment_variable(name: str) -> bool:
     """Explicit overrides that can replace a command, compiler or test runner."""
     name = name.upper()
+    # Target-specific Cargo configuration controls not just execution runners
+    # but also linkers, flags and build-script link overrides. None of that
+    # configuration is modeled here. TARGET_DIR is only the shared cache path,
+    # not a target-specific execution setting.
+    if name.startswith("CARGO_TARGET_") and name != "CARGO_TARGET_DIR":
+        return True
     return name in {
         "PATH", "PATHEXT", "COMSPEC", "IFS", "BASH_ENV", "ENV", "SHELLOPTS", "BASHOPTS",
         "BASH_CMDS", "BASH_ALIASES", "CDPATH", "ZDOTDIR", "HOME", "USERPROFILE",
         "CARGO_HOME", "RUSTUP_HOME", "RUSTC", "RUSTC_WRAPPER", "RUSTC_WORKSPACE_WRAPPER",
         "RUSTDOC", "RUSTFLAGS", "RUSTDOCFLAGS", "PYTHONPATH", "PYTHONHOME", "PYTHONSTARTUP",
         "LD_PRELOAD", "DYLD_INSERT_LIBRARIES",
-    } or re.fullmatch(r"CARGO_(?:TARGET_.+_(?:RUNNER|RUSTFLAGS)|BUILD_(?:RUNNER|RUSTC(?:_WRAPPER|_WORKSPACE_WRAPPER)?|RUSTDOC|RUSTFLAGS)|ENCODED_RUST(?:DOC)?FLAGS)", name) is not None
+    } or re.fullmatch(r"CARGO_(?:BUILD_(?:RUNNER|RUSTC(?:_WRAPPER|_WORKSPACE_WRAPPER)?|RUSTDOC|RUST(?:DOC)?FLAGS)|ENCODED_RUST(?:DOC)?FLAGS|PROFILE_.+_RUST(?:DOC)?FLAGS)", name) is not None
 
 
 def admitted_steps(source: str):

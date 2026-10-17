@@ -101,7 +101,15 @@ class IntegrationInventoryTests(unittest.TestCase):
     def test_inherited_execution_environment_overrides_cannot_own_commands(self):
         cargo = "cargo test --target x86_64-unknown-linux-gnu -p sample --test fresh"
         runner = "CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER"
-        for key in (runner, "CARGO_BUILD_RUNNER", "RUSTC_WRAPPER", "CARGO_HOME", "PATH", "PYTHONPATH", "CARGO_ENCODED_RUSTFLAGS"):
+        linker = "CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER"
+        for key in (
+            runner, linker, "CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER",
+            "CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTDOCFLAGS",
+            "CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_UNMODELED_SETTING",
+            "CARGO_BUILD_RUNNER", "CARGO_BUILD_RUSTDOCFLAGS",
+            "CARGO_PROFILE_TEST_RUSTFLAGS", "CARGO_PROFILE_TEST_BUILD_OVERRIDE_RUSTFLAGS",
+            "RUSTC_WRAPPER", "CARGO_HOME", "PATH", "PYTHONPATH", "CARGO_ENCODED_RUSTFLAGS",
+        ):
             for scope in ("workflow", "job", "step"):
                 workflow_env = f"env:\n  {key}: /bin/true\n" if scope == "workflow" else ""
                 job_env = f"    env:\n      {key}: /bin/true\n" if scope == "job" else ""
@@ -117,8 +125,9 @@ class IntegrationInventoryTests(unittest.TestCase):
             path = root / relative
             path.parent.mkdir()
             path.write_text("run_streamed(['cargo', 'test', '-p', 'sample', '--test', 'fresh'])\n")
-            source = f"env:\n  {runner}: /bin/true\nsteps:\n  - run: python3 {relative}\n"
-            self.assertEqual(list(invoked_generator_commands(root, [source])), [])
+            for key in (runner, linker):
+                source = f"env:\n  {key}: /bin/true\nsteps:\n  - run: python3 {relative}\n"
+                self.assertEqual(list(invoked_generator_commands(root, [source])), [])
         for environment in ("env: ${{ matrix.environment }}\n", "env:\n  INVALID: {nested: mapping}\n"):
             self.assertEqual(list(workflow_commands(environment + f"steps:\n  - run: {cargo}\n")), [])
         source = f"env:\n  CARGO_BUILD_JOBS: '1'\n  CARGO_TARGET_DIR: target/ci\njobs:\n  test:\n    env:\n      CARGO_PROFILE_TEST_DEBUG: '0'\n    steps:\n      - run: {cargo}\n        env:\n          CARGO_TERM_COLOR: always\n          MODE: checked\n"
