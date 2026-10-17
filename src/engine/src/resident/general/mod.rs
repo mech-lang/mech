@@ -4950,28 +4950,18 @@ fn closed_copy_preparation(
     let mut meter = analysis.construction.preparation_meter();
     let mut finalization = 0_u64;
     for operand in operands {
-        if super::budget::measure_borrowed_canonical_value_footprint(
+        let Ok((_, work)) = super::budget::prepare_snapshot_copy_input(
             &mut meter,
             &operand.value,
             artifact.schemas(),
-        )
-        .is_err()
-        {
+            closed_operand_resident_kind(artifact, operand, facts)? == ResidentValueKind::Snapshot,
+        ) else {
             return Ok(None);
-        }
-        if closed_operand_resident_kind(artifact, operand, facts)? == ResidentValueKind::Snapshot {
-            let Ok(work) = super::budget::preflight_canonical_data_finalization(
-                &mut meter,
-                &operand.schema,
-                operand.value.data(),
-            ) else {
-                return Ok(None);
-            };
-            let Some(work) = finalization.checked_add(work) else {
-                return Ok(None);
-            };
-            finalization = work;
-        }
+        };
+        let Some(total) = finalization.checked_add(work) else {
+            return Ok(None);
+        };
+        finalization = total;
     }
     let measured = meter.estimate();
     let Some(non_comparison_work) = measured

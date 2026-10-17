@@ -699,7 +699,7 @@ impl KernelCostEstimate {
                 && index_growth(&active)? == (0, 0)
                 && let Some(demand) =
                     try_admit_fixed_turn_memory(&active, self.demand, final_output)
-                        .map_err(|_| ResidentKernelError::InvalidShape)?
+                        .map_err(memory_plan_kernel_error)?
             {
                 admit_payload_plan(&active)?;
                 return Ok(ResidentBudgetPermit {
@@ -708,7 +708,7 @@ impl KernelCostEstimate {
                 });
             }
             return apply_observed_turn_demand((*active).clone(), self.demand, final_output)
-                .map_err(|_| ResidentKernelError::InvalidShape)
+                .map_err(memory_plan_kernel_error)
                 .and_then(ResidentBudgetPermit::from_turn_plan);
         }
         #[cfg(test)]
@@ -728,7 +728,7 @@ impl KernelCostEstimate {
         let result = with_active_turn_plan(|active| {
             active.as_ref().map(|plan| {
                 check_turn_planning_progress(plan, self.demand)
-                    .map_err(|_| ResidentKernelError::InvalidShape)?;
+                    .map_err(memory_plan_kernel_error)?;
                 let (bytes, nodes) = index_growth(plan)?;
                 let temporary = self
                     .demand
@@ -749,7 +749,7 @@ impl KernelCostEstimate {
                     retained_nodes,
                     ..ResourceDemand::default()
                 };
-                if !mech_core::evaluate_call_memory_budget(
+                if let Some(violation) = mech_core::evaluate_call_memory_budget(
                     mech_core::MemoryObjectOwner::NodeOutput {
                         node: plan.node,
                         port: 0,
@@ -759,9 +759,9 @@ impl KernelCostEstimate {
                     plan.storage_buffer_bytes,
                     plan.budget_limits,
                 )
-                .is_empty()
+                .first()
                 {
-                    return Err(ResidentKernelError::InvalidShape);
+                    return Err(resource_budget_error(violation));
                 }
                 Ok(())
             })
@@ -866,8 +866,8 @@ fn index_growth(plan: &TurnMemoryPlan) -> Result<(u64, u64), ResidentKernelError
 
 impl ResidentBudgetPermit {
     fn from_turn_plan(mut plan: TurnMemoryPlan) -> Result<Self, ResidentKernelError> {
-        if !plan.budget_violations.is_empty() {
-            return Err(ResidentKernelError::InvalidShape);
+        if let Some(violation) = plan.budget_violations.first() {
+            return Err(resource_budget_error(violation));
         }
         let (bytes, nodes) = index_growth(&plan)?;
         plan.demand.turn_peak_bytes = plan
@@ -880,7 +880,7 @@ impl ResidentBudgetPermit {
             .retained_nodes
             .checked_add(nodes)
             .ok_or(ResidentKernelError::InvalidShape)?;
-        if !mech_core::evaluate_call_memory_budget(
+        if let Some(violation) = mech_core::evaluate_call_memory_budget(
             mech_core::MemoryObjectOwner::NodeOutput {
                 node: plan.node,
                 port: 0,
@@ -890,15 +890,35 @@ impl ResidentBudgetPermit {
             plan.storage_buffer_bytes,
             plan.budget_limits,
         )
-        .is_empty()
+        .first()
         {
-            return Err(ResidentKernelError::InvalidShape);
+            return Err(resource_budget_error(violation));
         }
         admit_payload_plan(&plan)?;
         Ok(Self {
             _demand: plan.demand,
             _plan: Arc::new(plan),
         })
+    }
+}
+
+pub(crate) fn resource_budget_error(
+    violation: &mech_core::MemoryBudgetViolation,
+) -> ResidentKernelError {
+    ResidentKernelError::ResourceLimit {
+        phase: mech_core::ResidentResourcePhase::Admission,
+        dimension: violation.dimension,
+        required: violation.required,
+        limit: violation.limit,
+    }
+}
+
+pub(crate) fn memory_plan_kernel_error(error: mech_core::MemoryPlanError) -> ResidentKernelError {
+    match error {
+        mech_core::MemoryPlanError::TargetLimitExceeded { violation } => {
+            resource_budget_error(&violation)
+        }
+        _ => ResidentKernelError::InvalidShape,
     }
 }
 
@@ -1131,6 +1151,27 @@ pub(crate) fn preflight_canonical_data_finalization(
     .map_err(map_snapshot_work_error)?;
     meter.charge_comparison_work(work)?;
     Ok(work)
+}
+
+/// Shared preparation for a selected immutable snapshot input. Closed
+/// evaluation and the runtime constructor use the same retention inspection
+/// and finalization reservation; only actual equality consumes scan work.
+pub(crate) fn prepare_snapshot_copy_input(
+    meter: &mut ResidentBudgetMeter,
+    value: &Value,
+    schemas: &SchemaTable,
+    finalizes: bool,
+) -> Result<(ValueFootprint, u64), ResidentKernelError> {
+    let footprint = measure_borrowed_canonical_value_footprint(meter, value, schemas)?;
+    let finalization = if finalizes {
+        let schema = value
+            .validate_against(schemas)
+            .map_err(|_| ResidentKernelError::InvalidInput)?;
+        preflight_canonical_data_finalization(meter, schema.body(), value.data())?
+    } else {
+        0
+    };
+    Ok((footprint, finalization))
 }
 
 /// Conservative work for the recursive `Value::language_eq` performed before
@@ -1982,6 +2023,71 @@ mod tests {
             charge_canonical_value_footprint(&mut clone, &value, &schemas),
             Err(ResidentKernelError::InvalidShape),
         );
+    }
+
+    #[test]
+    fn ordinary_admission_retains_existing_and_recomputed_resource_violations() {
+        for (index, dimension) in [
+            mech_core::MemoryBudgetDimension::TemporaryBytes,
+            mech_core::MemoryBudgetDimension::ClonedBytes,
+            mech_core::MemoryBudgetDimension::RetainedNodes,
+            mech_core::MemoryBudgetDimension::ComparisonWork,
+            mech_core::MemoryBudgetDimension::ComputeWork,
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            let mut plan = detached_turn_plan(ResourceDemand::default()).unwrap();
+            plan.node = mech_core::NodeId::new(17);
+            match index {
+                0 => {
+                    plan.demand.turn_peak_bytes = 42;
+                    plan.budget_limits.max_temporary_bytes = Some(41);
+                }
+                1 => {
+                    plan.demand.cloned_bytes = 42;
+                    plan.budget_limits.max_cloned_bytes = Some(41);
+                }
+                2 => {
+                    plan.demand.retained_nodes = 42;
+                    plan.budget_limits.max_retained_nodes = Some(41);
+                }
+                3 => {
+                    plan.demand.work.comparison = 42;
+                    plan.budget_limits.max_comparison_work = Some(41);
+                }
+                4 => {
+                    plan.demand.work.compute = 42;
+                    plan.budget_limits.max_compute_work = Some(41);
+                }
+                _ => unreachable!(),
+            }
+            let expected = ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension,
+                required: 42,
+                limit: 41,
+            };
+            let mut precomputed = plan.clone();
+            precomputed.budget_violations = vec![mech_core::MemoryBudgetViolation {
+                owner: mech_core::MemoryObjectOwner::NodeOutput {
+                    node: plan.node,
+                    port: 0,
+                },
+                dimension,
+                required: 42,
+                limit: 41,
+            }]
+            .into_boxed_slice();
+            assert_eq!(
+                ResidentBudgetPermit::from_turn_plan(precomputed).map(drop),
+                Err(expected.clone())
+            );
+            assert_eq!(
+                ResidentBudgetPermit::from_turn_plan(plan).map(drop),
+                Err(expected)
+            );
+        }
     }
 
     #[test]

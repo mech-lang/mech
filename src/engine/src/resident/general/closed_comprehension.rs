@@ -1039,7 +1039,7 @@ fn match_pattern(
                 .flatten())
         }
         Pattern::Enum { ordinal, payload } => {
-            let (actual, child) = match item.enum_variant(schemas) {
+            let (actual, child) = match item.enum_variant_matching(*ordinal, schemas) {
                 Ok(Some(pair)) => pair,
                 Ok(None) => return Ok(Some(false)),
                 Err(_) => return Ok(None),

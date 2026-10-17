@@ -709,6 +709,7 @@ pub(in crate::resident::general) enum PatternItem {
     Dynamic(Option<Box<ValueDraft>>),
     Canonical {
         schema: Option<SchemaId>,
+        // Immutable root evidence; projections walk the same path as the data.
         body: Arc<SchemaBody>,
         shape_values: Arc<[u64]>,
         value: Value,
@@ -737,6 +738,62 @@ pub(in crate::resident::general) enum CanonicalPatternStep {
     OptionPayload,
     EnumPayload,
     Child(usize),
+}
+
+fn canonical_pattern_projection<'a>(
+    mut body: &'a SchemaBody,
+    value: &'a Value,
+    path: &[CanonicalPatternStep],
+) -> Option<(&'a SchemaBody, &'a ValueData)> {
+    let mut data = value.data();
+    for step in path {
+        (body, data) = match (step, body, data) {
+            (
+                CanonicalPatternStep::OptionPayload,
+                SchemaBody::Option(child),
+                ValueData::Option(Some(value)),
+            ) => (child.as_ref(), value.as_ref()),
+            (
+                CanonicalPatternStep::EnumPayload,
+                SchemaBody::Enum { variants, .. },
+                ValueData::Enum(value),
+            ) => (
+                variants.get(value.ordinal() as usize)?.payload.as_ref()?,
+                value.payload()?,
+            ),
+            (
+                CanonicalPatternStep::Child(index),
+                SchemaBody::Tuple(children),
+                ValueData::Tuple(values),
+            ) => (children.get(*index)?, values.get(*index)?),
+            _ => return None,
+        };
+    }
+    Some((body, data))
+}
+
+fn canonical_child_path(
+    path: &[CanonicalPatternStep],
+    steps: &[CanonicalPatternStep],
+) -> Arc<[CanonicalPatternStep]> {
+    // Exact capacity avoids reallocation while extending the immutable view.
+    // Admission covers both this temporary vector and the final Arc.
+    let mut child = Vec::with_capacity(path.len() + steps.len());
+    child.extend_from_slice(path);
+    child.extend_from_slice(steps);
+    Arc::from(child)
+}
+
+fn canonical_projection_path_bytes(depth: u64) -> Result<u64, ResidentKernelError> {
+    // One enum visit can also unwrap an Option. Fund both path buffers, Arc
+    // headers and allocator overhead, independently of shared schema evidence.
+    depth
+        .checked_mul(4)
+        .and_then(|entries| {
+            entries.checked_mul(core::mem::size_of::<CanonicalPatternStep>() as u64)
+        })
+        .and_then(|bytes| bytes.checked_add(2 * core::mem::size_of::<usize>() as u64 + 32))
+        .ok_or(ResidentKernelError::InvalidShape)
 }
 
 fn canonical_pattern_data<'a>(
@@ -1445,10 +1502,10 @@ fn resolve_pattern_item(
             value,
             path,
         } => {
-            let data =
-                canonical_pattern_data(&value, &path).ok_or(ResidentKernelError::InvalidInput)?;
+            let (body, data) = canonical_pattern_projection(&body, &value, &path)
+                .ok_or(ResidentKernelError::InvalidInput)?;
             let data = canonical_snapshot_data_draft_with_context(
-                body.as_ref(),
+                body,
                 data,
                 &SnapshotValidationContext::with_shared_schemas(
                     &value.schemas().ok_or(ResidentKernelError::InvalidInput)?,
@@ -1459,7 +1516,7 @@ fn resolve_pattern_item(
                 projection_schema: schema,
                 value_schema: schema,
                 shape_values: shape_values.to_vec().into_boxed_slice(),
-                body: body.as_ref().clone(),
+                body: body.clone(),
                 data,
                 schemas: None,
                 source_data: None,
@@ -1961,8 +2018,17 @@ impl PatternItem {
     fn metadata_bytes(&self) -> Result<u64, ResidentKernelError> {
         let (body, shape_values) = match self {
             Self::Canonical {
-                body, shape_values, ..
-            } => (body.as_ref(), shape_values.as_ref()),
+                body,
+                shape_values,
+                value,
+                path,
+                ..
+            } => (
+                canonical_pattern_projection(body, value, path)
+                    .ok_or(ResidentKernelError::InvalidInput)?
+                    .0,
+                shape_values.as_ref(),
+            ),
             Self::Component {
                 body, shape_values, ..
             }
@@ -2004,21 +2070,20 @@ impl PatternItem {
         schemas: &SchemaTable,
     ) -> Result<Option<(u32, Option<Self>)>, ResidentKernelError> {
         if let Self::Canonical {
-            body,
+            body: root_body,
             shape_values,
             value,
             path,
             ..
         } = self
         {
-            let mut body = body.as_ref();
-            let mut data =
-                canonical_pattern_data(value, path).ok_or(ResidentKernelError::InvalidInput)?;
-            let mut child_path = path.to_vec();
+            let (mut body, mut data) = canonical_pattern_projection(root_body, value, path)
+                .ok_or(ResidentKernelError::InvalidInput)?;
+            let mut option = false;
             if let (SchemaBody::Option(child), ValueData::Option(Some(value))) = (body, data) {
                 body = child;
                 data = value;
-                child_path.push(CanonicalPatternStep::OptionPayload);
+                option = true;
             }
             let (SchemaBody::Enum { variants, .. }, ValueData::Enum(selected)) = (body, data)
             else {
@@ -2030,16 +2095,23 @@ impl PatternItem {
                 .ok_or(ResidentKernelError::InvalidInput)?;
             let payload = match (variant.payload.as_ref(), selected.payload()) {
                 (None, None) => None,
-                (Some(body), Some(_)) => {
-                    child_path.push(CanonicalPatternStep::EnumPayload);
-                    Some(Self::Canonical {
-                        schema: None,
-                        body: Arc::new(body.clone()),
-                        shape_values: Arc::clone(shape_values),
-                        value: value.clone(),
-                        path: Arc::from(child_path),
-                    })
-                }
+                (Some(_), Some(_)) => Some(Self::Canonical {
+                    schema: None,
+                    body: Arc::clone(root_body),
+                    shape_values: Arc::clone(shape_values),
+                    value: value.clone(),
+                    path: canonical_child_path(
+                        path,
+                        if option {
+                            &[
+                                CanonicalPatternStep::OptionPayload,
+                                CanonicalPatternStep::EnumPayload,
+                            ]
+                        } else {
+                            &[CanonicalPatternStep::EnumPayload]
+                        },
+                    ),
+                }),
                 _ => return Err(ResidentKernelError::InvalidInput),
             };
             return Ok(Some((ordinal, payload)));
@@ -2107,6 +2179,30 @@ impl PatternItem {
             _ => return Err(ResidentKernelError::InvalidInput),
         };
         Ok(Some((value.ordinal, payload)))
+    }
+
+    pub(in crate::resident::general) fn enum_variant_matching(
+        &self,
+        expected: u32,
+        schemas: &SchemaTable,
+    ) -> Result<Option<(u32, Option<Self>)>, ResidentKernelError> {
+        if let Self::Canonical {
+            body, value, path, ..
+        } = self
+        {
+            let (_, mut data) = canonical_pattern_projection(body, value, path)
+                .ok_or(ResidentKernelError::InvalidInput)?;
+            if let ValueData::Option(Some(child)) = data {
+                data = child;
+            }
+            if let ValueData::Enum(value) = data
+                && value.ordinal() != expected
+            {
+                // Reject by ordinal before allocating a payload projection.
+                return Ok(None);
+            }
+        }
+        self.enum_variant(schemas)
     }
 
     fn component(
@@ -2330,21 +2426,21 @@ impl PatternItem {
                 value,
                 path,
             } => {
+                let (selected_body, selected_data) =
+                    canonical_pattern_projection(body, value, path)?;
                 let (SchemaBody::Tuple(children), ValueData::Tuple(values)) =
-                    (body.as_ref(), canonical_pattern_data(value, path)?)
+                    (selected_body, selected_data)
                 else {
                     return None;
                 };
-                let body = children.get(index)?.clone();
+                let _ = children.get(index)?;
                 let _ = values.get(index)?;
-                let mut child_path = path.to_vec();
-                child_path.push(CanonicalPatternStep::Child(index));
                 Some(Self::Canonical {
                     schema: schema.and_then(|schema| projections.tuple_child(schema, index)),
-                    body: Arc::new(body),
+                    body: Arc::clone(body),
                     shape_values: Arc::clone(shape_values),
                     value: value.clone(),
-                    path: Arc::from(child_path),
+                    path: canonical_child_path(path, &[CanonicalPatternStep::Child(index)]),
                 })
             }
             Self::Dynamic(None) => None,
@@ -2502,8 +2598,19 @@ impl PatternItem {
             .ok_or(ResidentKernelError::InvalidShape)?;
         let (body, shape_values) = match self {
             Self::Canonical {
-                body, shape_values, ..
-            } => (Some(body.as_ref()), shape_values.len()),
+                body,
+                shape_values,
+                value,
+                path,
+                ..
+            } => (
+                Some(
+                    canonical_pattern_projection(body, value, path)
+                        .ok_or(ResidentKernelError::InvalidInput)?
+                        .0,
+                ),
+                shape_values.len(),
+            ),
             Self::Component {
                 body, shape_values, ..
             } => (Some(body), shape_values.len()),
@@ -2549,12 +2656,15 @@ impl PatternItem {
             ..
         } = &self
             && binding.dimension_parameters().is_empty()
-            && binding.body() == body.as_ref()
+            && canonical_pattern_projection(body, value, path)
+                .is_some_and(|(body, _)| binding.body() == body)
         {
+            let (body, selected) = canonical_pattern_projection(body, value, path)
+                .ok_or(ResidentKernelError::InvalidInput)?;
             let owner = value.schemas().ok_or(ResidentKernelError::InvalidInput)?;
             let data = canonical_snapshot_data_draft_with_context(
                 body,
-                canonical_pattern_data(value, path).ok_or(ResidentKernelError::InvalidInput)?,
+                selected,
                 &SnapshotValidationContext::with_shared_schemas(&owner),
             )
             .map_err(|_| ResidentKernelError::InvalidInput)?;
@@ -2739,9 +2849,13 @@ impl PatternItem {
         };
         match self {
             Self::Plain(_) => true,
-            Self::Canonical { body, .. } => peer_schema
-                .closed_body(peer.shape())
-                .is_ok_and(|peer| peer == **body),
+            Self::Canonical {
+                body, value, path, ..
+            } => canonical_pattern_projection(body, value, path).is_some_and(|(body, _)| {
+                peer_schema
+                    .closed_body(peer.shape())
+                    .is_ok_and(|peer| peer == *body)
+            }),
             Self::Component { body, .. } => peer_schema
                 .closed_body(peer.shape())
                 .is_ok_and(|peer| peer == *body),
@@ -4194,13 +4308,22 @@ fn prepare_pattern_item_materialization_with_source(
     let item_bytes = item_clone_bytes(footprint)?
         .checked_add(draft_expansion.bytes)
         .ok_or(ResidentKernelError::InvalidShape)?;
+    let projection_path_bytes = if borrowed_plan_item {
+        canonical_projection_path_bytes(clone_multiplicity.max(1))?
+    } else {
+        0
+    };
     let temporary_pattern_bytes = if borrowed_plan_item {
         // The certified canonical view shares its immutable root and schema.
         // At most one selected binding draft coexists with the metadata path.
         item_bytes
             .checked_add(
                 pattern_metadata_bytes
-                    .checked_mul(clone_multiplicity.max(1))
+                    .checked_add(
+                        projection_path_bytes
+                            .checked_mul(clone_multiplicity.max(1))
+                            .ok_or(ResidentKernelError::InvalidShape)?,
+                    )
                     .ok_or(ResidentKernelError::InvalidShape)?,
             )
             .ok_or(ResidentKernelError::InvalidShape)?
@@ -4229,7 +4352,7 @@ fn prepare_pattern_item_materialization_with_source(
             .checked_mul(selected_drafts)
             .and_then(|bytes| {
                 pattern_metadata_bytes
-                    .checked_mul(clone_multiplicity.max(1))
+                    .checked_add(projection_path_bytes.checked_mul(pattern_work)?)
                     .and_then(|metadata| bytes.checked_add(metadata))
             })
             .and_then(|bytes| bytes.checked_add(source_context_bound.retained_bytes))
@@ -6839,7 +6962,10 @@ impl ReactiveInstance {
                 Ok(matched)
             }
             crate::CollectionPattern::Enum { ordinal, payload } => {
-                let Some((actual, child)) = item.enum_variant(schemas).map_err(fail)? else {
+                let Some((actual, child)) = item
+                    .enum_variant_matching(*ordinal, schemas)
+                    .map_err(fail)?
+                else {
                     return Ok(false);
                 };
                 if actual != *ordinal {
@@ -8036,6 +8162,170 @@ mod tests {
                 .unwrap();
             assert!(matches!(binding.data, ValueDataDraft::U64(19)));
         }
+    }
+
+    #[test]
+    fn enum_projections_share_wide_schema_and_fund_every_attempt() {
+        let mut schemas = SchemaTableBuilder::new();
+        let schema = schemas
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::Enum {
+                        key: NominalKey::from_bytes([0x51; 32]),
+                        variants: vec![
+                            mech_core::EnumVariantSchema {
+                                name: "large".to_owned(),
+                                payload: Some(SchemaBody::Tuple(
+                                    vec![SchemaBody::UnsignedInteger(IntegerWidth::W64); 512]
+                                        .into_boxed_slice(),
+                                )),
+                            },
+                            mech_core::EnumVariantSchema {
+                                name: "small".to_owned(),
+                                payload: None,
+                            },
+                        ]
+                        .into_boxed_slice(),
+                    },
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let built = schemas.finish().unwrap();
+        let schema = built.resolve(schema).unwrap();
+        let value = ValueDraft {
+            schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Enum(mech_core::snapshot::EnumDraft {
+                ordinal: 0,
+                payload: Some(Box::new(ValueDataDraft::Tuple(
+                    (0..512).map(ValueDataDraft::U64).collect(),
+                ))),
+            }),
+        }
+        .finalize(&SnapshotValidationContext::new(&built.table))
+        .unwrap();
+        let (plan, projections) = structural_projection_schema_context(&built.table).unwrap();
+        let source = PlanPatternSource::new(schema, &plan, &projections).unwrap();
+        let storage = [Some(value)];
+        let item = resident_pattern_item_from_plan(
+            ResidentValueRef::Snapshot(&storage),
+            snapshot_pattern_region(),
+            schema,
+            &[],
+            &plan,
+            false,
+            Some(&source),
+        )
+        .unwrap();
+        let PatternItem::Canonical { body: root, .. } = &item else {
+            panic!("certified shared enum")
+        };
+        let SchemaBody::Enum { variants, .. } = root.as_ref() else {
+            panic!("enum")
+        };
+        let SchemaBody::Tuple(expected) = variants[0].payload.as_ref().unwrap() else {
+            panic!("tuple")
+        };
+        for _ in 0..1024 {
+            assert!(item.enum_variant_matching(1, &plan).unwrap().is_none());
+            let (_, Some(payload)) = item.enum_variant_matching(0, &plan).unwrap().unwrap() else {
+                panic!("payload")
+            };
+            let PatternItem::Canonical {
+                body, value, path, ..
+            } = &payload
+            else {
+                panic!("shared projection")
+            };
+            assert!(Arc::ptr_eq(root, body));
+            let (SchemaBody::Tuple(actual), _) =
+                canonical_pattern_projection(body, value, path).unwrap()
+            else {
+                panic!("tuple view")
+            };
+            assert!(core::ptr::eq(expected.as_ref(), actual.as_ref()));
+            let child = payload.child(511, &plan, &projections).unwrap();
+            let PatternItem::Canonical {
+                body, value, path, ..
+            } = &child
+            else {
+                panic!("shared child")
+            };
+            assert!(Arc::ptr_eq(root, body));
+            assert!(matches!(
+                canonical_pattern_projection(body, value, path).unwrap(),
+                (
+                    SchemaBody::UnsignedInteger(IntegerWidth::W64),
+                    ValueData::U64(511)
+                )
+            ));
+        }
+        let prepare = |attempts, meter| {
+            prepare_pattern_item_materialization_with_source(
+                ResidentValueRef::Snapshot(&storage),
+                snapshot_pattern_region(),
+                schema,
+                false,
+                attempts,
+                0,
+                0,
+                0,
+                2,
+                0,
+                &plan,
+                meter,
+                None,
+                Some(&source),
+            )
+        };
+        let estimate = |attempts| {
+            let mut measured = None;
+            prepare(
+                attempts,
+                ResidentBudgetMeter::for_closed_analysis(
+                    mech_core::RESIDENT_MAX_COMPUTE_WORK,
+                    mech_core::RESIDENT_MAX_COMPARISON_WORK,
+                ),
+            )
+            .unwrap()
+            .prepare_for_analysis(|cost| {
+                measured = Some(cost);
+                Ok(())
+            })
+            .unwrap();
+            measured.unwrap()
+        };
+        let one = estimate(1);
+        let many = estimate(1024);
+        assert_eq!(one.temporary_bytes(), many.temporary_bytes());
+        assert_eq!(
+            many.cloned_bytes() - one.cloned_bytes(),
+            1023 * canonical_projection_path_bytes(2).unwrap()
+        );
+        assert!(many.cloned_bytes() < mech_core::RESIDENT_MAX_BYTES);
+        assert!(
+            prepare(
+                1024,
+                ResidentBudgetMeter::for_closed_analysis(
+                    many.compute_work() - 1,
+                    many.comparison_work()
+                )
+            )
+            .is_err()
+        );
+        assert!(
+            prepare(
+                1024,
+                ResidentBudgetMeter::for_closed_analysis(
+                    many.compute_work(),
+                    many.comparison_work()
+                )
+            )
+            .is_ok()
+        );
     }
 
     #[test]

@@ -670,14 +670,14 @@ impl ReactiveInstance {
             node.memory_node,
             &facts,
         )
-        .map_err(|_| ResidentExecutionError::Kernel {
+        .map_err(|error| ResidentExecutionError::Kernel {
             node: artifact_node,
-            error: ResidentKernelError::InvalidShape,
+            error: budget::memory_plan_kernel_error(error),
         })?;
-        if !turn_plan.budget_violations.is_empty() {
+        if let Some(violation) = turn_plan.budget_violations.first() {
             return Err(ResidentExecutionError::Kernel {
                 node: artifact_node,
-                error: ResidentKernelError::InvalidShape,
+                error: budget::resource_budget_error(violation),
             });
         }
         let cacheable = live_bytes == 0
@@ -2286,32 +2286,44 @@ impl ReactiveInstance {
     fn live_continuation_footprint(
         &self,
         meter: &mut budget::ResidentBudgetMeter,
-    ) -> Option<(u64, u64)> {
+    ) -> Result<(u64, u64), ResidentKernelError> {
         fn account(
             value: &super::OwnedResidentValue,
             schemas: &mech_core::SchemaTable,
             meter: &mut budget::ResidentBudgetMeter,
             bytes: &mut u64,
             nodes: &mut u64,
-        ) -> Option<()> {
+        ) -> Result<(), ResidentKernelError> {
             let footprint = resident_frame_value_footprint(value.as_ref(), schemas, meter)?;
-            *bytes = bytes.checked_add(footprint.0)?;
-            *nodes = nodes.checked_add(footprint.1)?;
-            Some(())
+            *bytes = bytes
+                .checked_add(footprint.0)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            *nodes = nodes
+                .checked_add(footprint.1)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            Ok(())
         }
         let mut bytes = 0_u64;
         let mut nodes = 0_u64;
         for continuation in self.continuations.iter().flatten() {
             let footprint =
                 resident_continuation_footprint(continuation, &self.plan.schemas, meter)?;
-            bytes = bytes.checked_add(footprint.0)?;
-            nodes = nodes.checked_add(footprint.1)?;
+            bytes = bytes
+                .checked_add(footprint.0)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            nodes = nodes
+                .checked_add(footprint.1)
+                .ok_or(ResidentKernelError::InvalidShape)?;
         }
         for continuation in self.workspace.continuation_candidates.iter().flatten() {
             let footprint =
                 resident_continuation_footprint(continuation, &self.plan.schemas, meter)?;
-            bytes = bytes.checked_add(footprint.0)?;
-            nodes = nodes.checked_add(footprint.1)?;
+            bytes = bytes
+                .checked_add(footprint.0)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            nodes = nodes
+                .checked_add(footprint.1)
+                .ok_or(ResidentKernelError::InvalidShape)?;
         }
         if let Some(state) = self.workspace.active_resume_state.as_ref() {
             account(state, &self.plan.schemas, meter, &mut bytes, &mut nodes)?;
@@ -2321,7 +2333,7 @@ impl ReactiveInstance {
                 account(value, &self.plan.schemas, meter, &mut bytes, &mut nodes)?;
             }
         }
-        Some((bytes, nodes))
+        Ok((bytes, nodes))
     }
 
     pub(super) fn execute_step_with_live_demand(
@@ -2436,18 +2448,24 @@ impl ReactiveInstance {
                         .filter(|source| !matches!(source, ResidentReadLocation::Input(_))),
                 )
                 .try_fold((0_u64, 0_u64), |(bytes, nodes), source| {
-                    let value = self.read_location(source, working_epoch)?;
+                    let value = self
+                        .read_location(source, working_epoch)
+                        .ok_or(ResidentKernelError::InvalidInput)?;
                     let footprint = resident_frame_value_footprint(
                         value,
                         &self.plan.schemas,
                         &mut capture_meter,
                     )?;
-                    Some((
-                        bytes.checked_add(footprint.0)?,
-                        nodes.checked_add(footprint.1)?,
+                    Ok::<_, ResidentKernelError>((
+                        bytes
+                            .checked_add(footprint.0)
+                            .ok_or(ResidentKernelError::InvalidShape)?,
+                        nodes
+                            .checked_add(footprint.1)
+                            .ok_or(ResidentKernelError::InvalidShape)?,
                     ))
                 })
-                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+                .map_err(fail)?;
             let peak_bytes = live_bytes
                 .checked_add(capture_bytes)
                 .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
@@ -2515,20 +2533,21 @@ impl ReactiveInstance {
             let mut publication_meter = budget::ResidentBudgetMeter::default();
             let (bytes, nodes) = self
                 .read_location(publication.value, working_epoch)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidInput))
                 .and_then(|value| {
                     resident_frame_value_footprint(
                         value,
                         &self.plan.schemas,
                         &mut publication_meter,
                     )
-                })
-                .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
+                    .map_err(fail)
+                })?;
             let (replaced_bytes, replaced_nodes) = resident_frame_value_footprint(
                 self.workspace.scratch.read(write.region),
                 &self.plan.schemas,
                 &mut publication_meter,
             )
-            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            .map_err(fail)?;
             let cloned_bytes = bytes
                 .checked_mul(2)
                 .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
@@ -2658,14 +2677,14 @@ impl ReactiveInstance {
             matched.budget_node,
             &facts,
         )
-        .map_err(|_| ResidentExecutionError::Kernel {
+        .map_err(|error| ResidentExecutionError::Kernel {
             node,
-            error: ResidentKernelError::InvalidShape,
+            error: budget::memory_plan_kernel_error(error),
         })?;
-        if !turn_plan.budget_violations.is_empty() {
+        if let Some(violation) = turn_plan.budget_violations.first() {
             return Err(ResidentExecutionError::Kernel {
                 node,
-                error: ResidentKernelError::InvalidShape,
+                error: budget::resource_budget_error(violation),
             });
         }
         let turn_plan = std::sync::Arc::new(turn_plan);
@@ -2673,12 +2692,8 @@ impl ReactiveInstance {
             budget::with_resident_turn_plan(turn_plan.clone(), || {
                 let mut meter = budget::ResidentBudgetMeter::default();
                 let (bytes, nodes) = if continuation {
-                    self.live_continuation_footprint(&mut meter).ok_or(
-                        ResidentExecutionError::Kernel {
-                            node,
-                            error: ResidentKernelError::InvalidShape,
-                        },
-                    )?
+                    self.live_continuation_footprint(&mut meter)
+                        .map_err(|error| ResidentExecutionError::Kernel { node, error })?
                 } else {
                     (0, 0)
                 };
@@ -3302,9 +3317,9 @@ impl ReactiveInstance {
                 budget_node,
                 &facts,
             )
-            .map_err(|_| kernel_fail(ResidentKernelError::InvalidShape))?;
-            if !publication_plan.budget_violations.is_empty() {
-                return Err(kernel_fail(ResidentKernelError::InvalidShape));
+            .map_err(|error| kernel_fail(budget::memory_plan_kernel_error(error)))?;
+            if let Some(violation) = publication_plan.budget_violations.first() {
+                return Err(kernel_fail(budget::resource_budget_error(violation)));
             }
             return budget::with_resident_turn_plan(publication_plan, || {
                 let converts_to_snapshot = write.region.kind == ResidentValueKind::Snapshot
@@ -3711,7 +3726,7 @@ impl ReactiveInstance {
             &mut meter,
             schema_proof,
         )
-        .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        .map_err(fail)?;
         let bytes = payload_bytes
             .checked_add(core::mem::size_of::<OwnedTailJump>() as u64)
             .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
@@ -3803,8 +3818,7 @@ impl ReactiveInstance {
                     self.workspace.scratch.read(*region),
                     &self.plan.schemas,
                     &mut frame_meter,
-                )
-                .ok_or(ResidentKernelError::InvalidShape)?;
+                )?;
                 Ok::<_, ResidentKernelError>((
                     bytes
                         .checked_add(value.0)
@@ -3871,9 +3885,9 @@ impl ReactiveInstance {
             budget_node,
             &facts,
         )
-        .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
-        if !child_plan.budget_violations.is_empty() {
-            return Err(fail(ResidentKernelError::InvalidShape));
+        .map_err(|error| fail(budget::memory_plan_kernel_error(error)))?;
+        if let Some(violation) = child_plan.budget_violations.first() {
+            return Err(fail(budget::resource_budget_error(violation)));
         }
 
         let frame = regions
@@ -3950,7 +3964,7 @@ impl ReactiveInstance {
             let mut result_meter = budget::ResidentBudgetMeter::default();
             let (result_bytes, result_nodes) =
                 resident_frame_value_footprint(value, &self.plan.schemas, &mut result_meter)
-                    .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+                    .map_err(fail)?;
             let measured_result_work = result_meter.estimate().compute_work();
             let result_copy_work = result_bytes
                 .checked_mul(2)
@@ -4052,8 +4066,9 @@ impl ReactiveInstance {
                 .ok_or_else(|| fail(ResidentKernelError::InvalidInput))
             }
             crate::CollectionPattern::Enum { ordinal, payload } => {
-                let Some((actual, value_payload)) =
-                    item.enum_variant(&self.plan.schemas).map_err(fail)?
+                let Some((actual, value_payload)) = item
+                    .enum_variant_matching(*ordinal, &self.plan.schemas)
+                    .map_err(fail)?
                 else {
                     return Ok(false);
                 };
@@ -5907,14 +5922,18 @@ fn resident_continuation_footprint(
     continuation: &super::ResidentContinuation,
     schemas: &mech_core::SchemaTable,
     meter: &mut budget::ResidentBudgetMeter,
-) -> Option<(u64, u64)> {
+) -> Result<(u64, u64), ResidentKernelError> {
     core::iter::once(&continuation.state)
         .chain(continuation.captures.iter().map(|(_, value)| value))
         .try_fold((0_u64, 0_u64), |(bytes, nodes), value| {
             let footprint = resident_frame_value_footprint(value.as_ref(), schemas, meter)?;
-            Some((
-                bytes.checked_add(footprint.0)?,
-                nodes.checked_add(footprint.1)?,
+            Ok((
+                bytes
+                    .checked_add(footprint.0)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+                nodes
+                    .checked_add(footprint.1)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
             ))
         })
 }
@@ -5923,7 +5942,7 @@ fn resident_frame_value_footprint(
     value: ResidentValueRef<'_>,
     schemas: &mech_core::SchemaTable,
     meter: &mut budget::ResidentBudgetMeter,
-) -> Option<(u64, u64)> {
+) -> Result<(u64, u64), ResidentKernelError> {
     resident_frame_value_footprint_impl(value, schemas, meter, None)
 }
 
@@ -5932,7 +5951,7 @@ fn resident_frame_value_footprint_with_schema_proof(
     schemas: &mech_core::SchemaTable,
     meter: &mut budget::ResidentBudgetMeter,
     schema_proof: &mut Option<budget::BorrowedFootprintSchemaProof>,
-) -> Option<(u64, u64)> {
+) -> Result<(u64, u64), ResidentKernelError> {
     resident_frame_value_footprint_impl(value, schemas, meter, Some(schema_proof))
 }
 
@@ -5941,46 +5960,45 @@ fn resident_frame_value_footprint_impl(
     schemas: &mech_core::SchemaTable,
     meter: &mut budget::ResidentBudgetMeter,
     mut schema_proof: Option<&mut Option<budget::BorrowedFootprintSchemaProof>>,
-) -> Option<(u64, u64)> {
+) -> Result<(u64, u64), ResidentKernelError> {
     // The frame Vec owns one entry and one boxed slice per local. Include an
     // allocator allowance per box so many small scalar locals cannot evade
     // the byte ceiling. The entry contains the enum and its slice header.
     const ALLOCATION_OVERHEAD: u64 = 16;
-    let entry = u64::try_from(core::mem::size_of::<(
+    let entry = budget::checked_u64(core::mem::size_of::<(
         ResidentRegion,
         super::OwnedResidentValue,
-    )>())
-    .ok()?
-    .checked_add(ALLOCATION_OVERHEAD)?;
+    )>())?
+    .checked_add(ALLOCATION_OVERHEAD)
+    .ok_or(ResidentKernelError::InvalidShape)?;
     let fixed = |len: usize, element: usize| {
-        u64::try_from(len)
-            .ok()?
-            .checked_mul(u64::try_from(element).ok()?)
+        budget::checked_u64(len)?
+            .checked_mul(budget::checked_u64(element)?)
+            .ok_or(ResidentKernelError::InvalidShape)
     };
     let (payload_bytes, payload_nodes) = match value {
         ResidentValueRef::Bool(values) => (fixed(values.len(), core::mem::size_of::<u8>())?, 0),
         ResidentValueRef::Index(values) => (fixed(values.len(), core::mem::size_of::<u64>())?, 0),
         ResidentValueRef::F64(values) => (fixed(values.len(), core::mem::size_of::<f64>())?, 0),
         ResidentValueRef::String(values) => {
-            meter
-                .charge_compute_work(u64::try_from(values.len()).ok()?)
-                .ok()?;
+            meter.charge_compute_work(budget::checked_u64(values.len())?)?;
             values.iter().try_fold(
                 (fixed(values.len(), core::mem::size_of::<String>())?, 0u64),
                 |(bytes, nodes), value| {
-                    Some((
+                    Ok::<_, ResidentKernelError>((
                         bytes
-                            .checked_add(u64::try_from(value.len()).ok()?)?
-                            .checked_add(ALLOCATION_OVERHEAD)?,
-                        nodes.checked_add(1)?,
+                            .checked_add(budget::checked_u64(value.len())?)
+                            .and_then(|bytes| bytes.checked_add(ALLOCATION_OVERHEAD))
+                            .ok_or(ResidentKernelError::InvalidShape)?,
+                        nodes
+                            .checked_add(1)
+                            .ok_or(ResidentKernelError::InvalidShape)?,
                     ))
                 },
             )?
         }
         ResidentValueRef::Snapshot(values) => {
-            meter
-                .charge_compute_work(u64::try_from(values.len()).ok()?)
-                .ok()?;
+            meter.charge_compute_work(budget::checked_u64(values.len())?)?;
             values.iter().try_fold(
                 (
                     fixed(values.len(), core::mem::size_of::<Option<Value>>())?,
@@ -5988,7 +6006,7 @@ fn resident_frame_value_footprint_impl(
                 ),
                 |(bytes, nodes), value| {
                     let Some(value) = value else {
-                        return Some((bytes, nodes));
+                        return Ok((bytes, nodes));
                     };
                     // Schema ids belong to the retained snapshot's arena, not
                     // necessarily the enclosing program's arena. The snapshot
@@ -6007,19 +6025,26 @@ fn resident_frame_value_footprint_impl(
                             value,
                             owner.as_deref().unwrap_or(schemas),
                         )
-                    }
-                    .ok()?;
-                    Some((
-                        bytes.checked_add(footprint.retained_bytes)?,
-                        nodes.checked_add(footprint.node_count)?,
+                    }?;
+                    Ok::<_, ResidentKernelError>((
+                        bytes
+                            .checked_add(footprint.retained_bytes)
+                            .ok_or(ResidentKernelError::InvalidShape)?,
+                        nodes
+                            .checked_add(footprint.node_count)
+                            .ok_or(ResidentKernelError::InvalidShape)?,
                     ))
                 },
             )?
         }
     };
-    Some((
-        entry.checked_add(payload_bytes)?,
-        payload_nodes.checked_add(1)?,
+    Ok((
+        entry
+            .checked_add(payload_bytes)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        payload_nodes
+            .checked_add(1)
+            .ok_or(ResidentKernelError::InvalidShape)?,
     ))
 }
 
@@ -6553,6 +6578,54 @@ mod tests {
                 value: ResidentValueRef::F64(&[0.0]),
             }])
             .unwrap();
+    }
+
+    #[cfg(all(feature = "source", feature = "string"))]
+    #[test]
+    fn tail_measurement_preserves_node_and_resource_diagnostic_on_retry() {
+        let live = source_document_instance(
+            "repeat(value<string>) => <string>\n  | value => repeat(value).\nrepeat(signal<string>)\n",
+        );
+        let call = live
+            .plan
+            .steps
+            .iter()
+            .find_map(|step| match step {
+                ActivatedTurnStep::Recur(call) => Some(*call),
+                _ => None,
+            })
+            .unwrap();
+        let mut bounded = budget::detached_turn_plan(mech_core::ResourceDemand::default()).unwrap();
+        bounded.budget_limits.max_compute_work = Some(0);
+        let mut proof = None;
+        let epoch = live.published_epoch();
+        let result = budget::with_resident_turn_plan(bounded.clone(), || {
+            live.prepare_tail_jump(call, epoch, 0, 0, &mut proof)
+        });
+        let error = match result {
+            Err(error) => error,
+            Ok(_) => panic!("tail metadata work must be admitted"),
+        };
+        assert_eq!(
+            error,
+            ResidentExecutionError::Kernel {
+                node: call.artifact_node,
+                error: ResidentKernelError::ResourceLimit {
+                    phase: mech_core::ResidentResourcePhase::Admission,
+                    dimension: mech_core::MemoryBudgetDimension::ComputeWork,
+                    required: 1,
+                    limit: 0,
+                },
+            }
+        );
+        assert_eq!(live.published_epoch(), epoch);
+        bounded.budget_limits.max_compute_work = Some(mech_core::RESIDENT_MAX_COMPUTE_WORK);
+        let retry = budget::with_resident_turn_plan(bounded, || {
+            live.prepare_tail_jump(call, epoch, 0, 0, &mut proof)
+        })
+        .unwrap();
+        assert!(retry.bytes > 0);
+        assert_eq!(live.published_epoch(), epoch);
     }
 
     #[test]

@@ -32,7 +32,15 @@ fn syntax(source: &str) -> DocumentSyntax {
 }
 
 fn compile(source: &str, catalog: Arc<FunctionCatalog>) -> ([ProgramArtifact; 2], usize) {
-    let product = CanonicalSourceFrontend
+    compile_with_frontend(source, catalog, CanonicalSourceFrontend)
+}
+
+fn compile_with_frontend(
+    source: &str,
+    catalog: Arc<FunctionCatalog>,
+    frontend: CanonicalSourceFrontend,
+) -> ([ProgramArtifact; 2], usize) {
+    let product = frontend
         .compile_document_with_catalog(&syntax(source), catalog)
         .unwrap_or_else(|error| panic!("{source}: {error:?}"));
     let output = product
@@ -139,6 +147,139 @@ fn assert_scalar(value: &Value, expected: u64) {
         matches!(value.data(), ValueData::U64(actual) if *actual == expected),
         "{value:?}"
     );
+}
+
+fn enum_metadata_application(
+    pattern: &str,
+    guard: &str,
+    small_arm: bool,
+) -> ([ProgramArtifact; 2], usize) {
+    let fields = vec!["u64"; 512].join(",");
+    let arms = format!("  | {pattern}, {guard} => 0u64\n").repeat(1024);
+    let small = if small_arm {
+        "  | :small => 0u64\n"
+    } else {
+        ""
+    };
+    let source = format!(
+        "<wide> := :large<({fields})> | :small\nselect(value<wide>, enabled<bool>) => <u64>\n{small}{arms}  | * => 1u64.\nselect(signal<wide>, enabled<bool>)\n"
+    );
+    compile_with_frontend(
+        &source,
+        mech_stdlib::source_catalog(),
+        CanonicalSourceFrontend.with_nominal_origin(
+            mech_core::CanonicalNominalPath::new(
+                vec!["tests".to_owned(), "enum-metadata".to_owned()].into_boxed_slice(),
+            )
+            .unwrap(),
+        ),
+    )
+}
+
+fn enum_metadata_input(artifact: &ProgramArtifact, large: bool) -> Value {
+    let declaration = artifact
+        .inputs()
+        .iter()
+        .find(|input| {
+            mech_engine::decode_source_input_name(&input.name).as_deref() == Some("signal")
+        })
+        .unwrap();
+    let SchemaBody::Enum { variants, .. } =
+        artifact.schemas().get(declaration.schema).unwrap().body()
+    else {
+        panic!("enum input")
+    };
+    let name = if large { "large" } else { "small" };
+    let ordinal = variants
+        .iter()
+        .position(|variant| variant.name == name)
+        .unwrap() as u32;
+    input(
+        artifact,
+        "signal",
+        None,
+        ValueDataDraft::Enum(mech_core::snapshot::EnumDraft {
+            ordinal,
+            payload: large.then(|| {
+                Box::new(ValueDataDraft::Tuple(
+                    (0..512).map(ValueDataDraft::U64).collect(),
+                ))
+            }),
+        }),
+    )
+}
+
+#[test]
+fn enum_metadata_is_shared_across_mismatched_and_guard_rejected_arms() {
+    for (pattern, small_arm) in [(":small", false), (":large(_)", true)] {
+        let (artifacts, output) = enum_metadata_application(pattern, "enabled", small_arm);
+        let catalog = mech_stdlib::source_catalog();
+        for (ordinal, artifact) in artifacts.iter().enumerate() {
+            let mut live = instance(artifact, &catalog, ordinal);
+            turn(
+                &mut live,
+                artifact,
+                &[
+                    ("signal", enum_metadata_input(artifact, false)),
+                    ("enabled", boolean(artifact, "enabled", true)),
+                ],
+            )
+            .unwrap();
+            assert_scalar(&live.copied_output(output).unwrap(), 0);
+            let epoch = live.published_epoch();
+            turn(
+                &mut live,
+                artifact,
+                &[
+                    ("signal", enum_metadata_input(artifact, true)),
+                    ("enabled", boolean(artifact, "enabled", false)),
+                ],
+            )
+            .unwrap();
+            assert_scalar(&live.copied_output(output).unwrap(), 1);
+            assert_eq!(live.published_epoch().get(), epoch.get() + 1);
+        }
+    }
+}
+
+#[test]
+fn enum_binding_copy_denial_keeps_publication_and_recovers() {
+    let (artifacts, output) =
+        enum_metadata_application(":large(payload)", "enabled && payload === payload", true);
+    let catalog = mech_stdlib::source_catalog();
+    for (ordinal, artifact) in artifacts.iter().enumerate() {
+        let mut live = instance(artifact, &catalog, ordinal);
+        let seed = || {
+            [
+                ("signal", enum_metadata_input(artifact, false)),
+                ("enabled", boolean(artifact, "enabled", false)),
+            ]
+        };
+        turn(&mut live, artifact, &seed()).unwrap();
+        assert_scalar(&live.copied_output(output).unwrap(), 0);
+        let epoch = live.published_epoch();
+        let before = live.copied_output(output).unwrap();
+        let error = turn(
+            &mut live,
+            artifact,
+            &[
+                ("signal", enum_metadata_input(artifact, true)),
+                ("enabled", boolean(artifact, "enabled", false)),
+            ],
+        )
+        .unwrap_err();
+        assert!(error.contains("ResourceLimit"), "{error}");
+        assert_eq!(live.published_epoch(), epoch);
+        assert_eq!(
+            live.copied_output(output)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            before.canonical_data_draft().unwrap()
+        );
+        turn(&mut live, artifact, &seed()).unwrap();
+        assert_scalar(&live.copied_output(output).unwrap(), 0);
+    }
 }
 
 fn assert_matrix(value: &Value, extents: [u64; 2], data: ValueDataDraft) {

@@ -13832,8 +13832,8 @@ fn constructor_snapshot_inputs(
         output_count = output_count
             .checked_add(count)
             .ok_or(ResidentKernelError::InvalidShape)?;
-        let footprint =
-            super::budget::measure_canonical_value_footprint(&mut footprint_meter, input, schemas)?;
+        let (footprint, input_finalization) =
+            super::budget::prepare_snapshot_copy_input(&mut footprint_meter, input, schemas, true)?;
         retained_bytes = retained_bytes
             .checked_add(footprint.retained_bytes)
             .ok_or(ResidentKernelError::InvalidShape)?;
@@ -13844,11 +13844,7 @@ fn constructor_snapshot_inputs(
             .checked_add(footprint.encoded_bytes)
             .ok_or(ResidentKernelError::InvalidShape)?;
         finalization_work = finalization_work
-            .checked_add(snapshot_data_finalization_work(
-                &mut footprint_meter,
-                input_schema.body(),
-                input.data(),
-            )?)
+            .checked_add(input_finalization)
             .ok_or(ResidentKernelError::InvalidShape)?;
     }
     let output_dimensions = if dimensions.is_empty() {
@@ -13901,7 +13897,7 @@ fn constructor_snapshot_inputs(
         resolved_snapshot_output_shape(kernel, output_dimensions.0, output_dimensions.1)?
     };
     let previous_footprint = match previous {
-        Some(previous) => super::budget::measure_canonical_value_footprint(
+        Some(previous) => super::budget::measure_borrowed_canonical_value_footprint(
             &mut footprint_meter,
             previous,
             schemas,
@@ -21412,6 +21408,122 @@ mod tests {
             Err(ResidentKernelError::InvalidShape)
         );
         assert!(output[0].is_none());
+    }
+
+    #[test]
+    fn snapshot_boolean_constructor_admits_two_live_half_limit_matrices() {
+        for horizontal in [true, false] {
+            let half = mech_core::RESIDENT_MAX_OUTPUT_ELEMENTS / 2;
+            assert_eq!(half, 32_768);
+            let matrix = |count| SchemaBody::Matrix {
+                element: Box::new(SchemaBody::Bool),
+                dimensions: if horizontal {
+                    Box::new([
+                        mech_core::DimensionExpr::Constant(1),
+                        mech_core::DimensionExpr::Constant(count),
+                    ])
+                } else {
+                    Box::new([
+                        mech_core::DimensionExpr::Constant(count),
+                        mech_core::DimensionExpr::Constant(1),
+                    ])
+                },
+            };
+            let (schemas, ids) = test_schema_table([matrix(half), matrix(2 * half)]);
+            let port = |schema| {
+                test_layout(
+                    &schemas,
+                    schema,
+                    ResidentValueKind::Snapshot,
+                    ResidentShape::SCALAR,
+                )
+            };
+            let contract = test_contract(
+                &[ids[0], ids[0]],
+                ids[1],
+                OutputConstruction::Build {
+                    postcondition: ShapeContractReference {
+                        module_path: vec!["matrix".to_owned(), "concatenate".to_owned()]
+                            .into_boxed_slice(),
+                        contract_name: if horizontal {
+                            "horizontal-output"
+                        } else {
+                            "vertical-output"
+                        }
+                        .to_owned(),
+                    },
+                },
+                AccessMode::Write,
+                AliasPolicy::NoAlias,
+                ChangeDetectionPolicy::KernelReported,
+            );
+            let layouts = [port(ids[0]), port(ids[0])];
+            let request = ResidentKernelBindRequest {
+                contract: &contract,
+                schemas: &schemas,
+                inputs: &layouts,
+                output: port(ids[1]),
+            };
+            let kernel = if horizontal {
+                bind_horizontal(&request)
+            } else {
+                bind_vertical(&request)
+            }
+            .unwrap();
+            assert!(
+                kernel
+                    .retained_state::<SnapshotConstructorPlan>()
+                    .unwrap()
+                    .primitive_output_dimensions
+                    .is_none()
+            );
+            let value = |selected| {
+                test_value(
+                    &schemas,
+                    ids[0],
+                    ValueDataDraft::Matrix(
+                        (0..half)
+                            .map(|index| ValueDataDraft::Bool(index == selected))
+                            .collect(),
+                    ),
+                )
+            };
+            let left = [Some(value(1))];
+            let right = [Some(value(half - 1))];
+            let inputs = [
+                ResidentValueRef::Snapshot(&left),
+                ResidentValueRef::Snapshot(&right),
+            ];
+            let mut output = [None];
+            kernel
+                .execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output))
+                .unwrap();
+            let actual = output[0].as_ref().unwrap();
+            assert_eq!(actual.schema(), ids[1]);
+            assert_eq!(actual.schema_key(), schemas.entry(ids[1]).unwrap().key());
+            assert_eq!(
+                actual.shape(),
+                &mech_core::shape_for_resolved_extents(
+                    schemas.get(ids[1]).unwrap(),
+                    &if horizontal {
+                        [1, 2 * half]
+                    } else {
+                        [2 * half, 1]
+                    },
+                )
+                .unwrap()
+            );
+            let ValueData::Matrix(matrix) = actual.data() else {
+                panic!("matrix")
+            };
+            let SequenceView::Bool(values) = matrix.elements() else {
+                panic!("Bool")
+            };
+            let expected = (0..2 * half)
+                .map(|index| index == 1 || index == 2 * half - 1)
+                .collect::<Vec<_>>();
+            assert_eq!(values, expected);
+        }
     }
 
     #[test]

@@ -1257,7 +1257,12 @@ fn refused_snapshot_boolean_copy_cannot_publish_selector_facts_through_masks() {
         // Keep the original small and 20,000-element inputs. Metadata and
         // encoding now consume compute, not comparison work, so both fit.
         // Doubling 40,000 elements must still exceed the output-element cap.
-        for (rows, columns, refused) in [(2, 3, false), (200, 100, false), (200, 200, true)] {
+        for (rows, columns, refused) in [
+            (2, 3, false),
+            (200, 100, false),
+            (256, 128, false),
+            (200, 200, true),
+        ] {
             if refused {
                 assert!(2 * rows * columns > mech_core::RESIDENT_MAX_OUTPUT_ELEMENTS);
             }
@@ -1310,6 +1315,10 @@ fn refused_snapshot_boolean_copy_cannot_publish_selector_facts_through_masks() {
                         [2 * rows, columns]
                     };
                     assert_eq!(actual.schema(), producer.outputs()[0].schema);
+                    assert_eq!(
+                        actual.schema_key(),
+                        producer.schemas().entry(actual.schema()).unwrap().key()
+                    );
                     assert_eq!(
                         actual.shape(),
                         &mech_core::shape_for_resolved_extents(
@@ -2255,6 +2264,24 @@ fn snapshot_gather_preparation_cannot_publish_a_cross_schema_selector_fact() {
         .unwrap();
         instance.turn(&[]).unwrap();
         let value = instance.copied_output(0).unwrap();
+        assert_eq!(value.schema(), artifact.outputs()[0].schema);
+        assert_eq!(
+            value.schema_key(),
+            artifact.schemas().entry(value.schema()).unwrap().key()
+        );
+        assert_eq!(
+            value.canonical_data_draft().unwrap(),
+            mech_core::ValueDataDraft::Matrix(
+                vec![mech_core::ValueDataDraft::Tuple(
+                    vec![
+                        mech_core::ValueDataDraft::U8(2),
+                        mech_core::ValueDataDraft::String("b".repeat(25_000)),
+                    ]
+                    .into_boxed_slice()
+                )]
+                .into_boxed_slice(),
+            )
+        );
         assert_eq!(
             value.shape(),
             &mech_core::shape_for_resolved_extents(
@@ -2480,6 +2507,29 @@ fn genuine_snapshot_literal_and_available_source_gather_require_producer_admissi
                     } else {
                         let mut instance = instance.unwrap();
                         instance.turn(&[]).unwrap();
+                        let produced = instance.copied_output(0).unwrap();
+                        assert_eq!(produced.schema(), artifact.outputs()[0].schema);
+                        assert_eq!(
+                            produced.schema_key(),
+                            artifact.schemas().entry(produced.schema()).unwrap().key()
+                        );
+                        assert_eq!(
+                            produced.shape(),
+                            &mech_core::shape_for_resolved_extents(
+                                artifact.schemas().get(produced.schema()).unwrap(),
+                                &[1, 1],
+                            )
+                            .unwrap()
+                        );
+                        let expected = if operation == "literal" {
+                            cell(1, 70)
+                        } else {
+                            cell(2, if large { 25_000 } else { 70 })
+                        };
+                        assert_eq!(
+                            produced.canonical_data_draft().unwrap(),
+                            D::Matrix(vec![expected].into_boxed_slice())
+                        );
                         let value = instance.copied_output(1).unwrap();
                         assert_selected_identity(
                             artifact,
