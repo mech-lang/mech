@@ -268,6 +268,37 @@ class FullWorkflowContractTests(unittest.TestCase):
         # Bind checks to executable function bodies, not comments or literals
         # that merely repeat an old bound elsewhere in the file.
         code = rust_code(source)
+        self.assertNotRegex(code, r"#\s*!\s*\[", "stress target must remain unconditional")
+
+        def enabled_test(name):
+            function = re.search(rf"\bfn\s+{re.escape(name)}\s*\(", code)
+            self.assertIsNotNone(function, name)
+            position = function.start()
+            self.assertEqual(
+                code[:position].count("{") - code[:position].count("}"), 0,
+                f"{name} must remain a top-level stress entry point",
+            )
+            attributes = []
+            while True:
+                while position and code[position - 1].isspace():
+                    position -= 1
+                if not position or code[position - 1] != "]":
+                    break
+                end = position - 1
+                position = end
+                depth = 1
+                while depth and position:
+                    position -= 1
+                    depth += (code[position] == "]") - (code[position] == "[")
+                self.assertEqual(depth, 0, name)
+                start = position
+                while position and code[position - 1].isspace():
+                    position -= 1
+                self.assertGreater(position, 0, name)
+                self.assertEqual(code[position - 1], "#", name)
+                attributes.append(re.sub(r"\s+", "", code[start + 1:end]))
+                position -= 1
+            self.assertEqual(attributes, ["test"], f"{name} must be enabled unconditionally")
 
         def body(name):
             matches = list(re.finditer(rf"\bfn\s+{re.escape(name)}\s*\(", code))
@@ -309,7 +340,7 @@ class FullWorkflowContractTests(unittest.TestCase):
             "large_malformed_tails_consume_every_delta",
             "large_settled_prefix_does_not_increase_small_append_work",
         ):
-            self.assertRegex(code, rf"#\s*\[test\]\s*fn\s+{name}\b")
+            enabled_test(name)
             if name != "large_settled_prefix_does_not_increase_small_append_work":
                 self.assertIn("large_growth(", body(name))
 
@@ -341,6 +372,34 @@ class FullWorkflowContractTests(unittest.TestCase):
                 )
                 with self.assertRaises(AssertionError):
                     self._assert_retained_syntax_stress_settings(mutated)
+
+    def test_syntax_stress_contract_rejects_disabling_attributes_in_any_order(self):
+        source = (ROOT / "src/syntax/tests/document_streaming_complexity.rs").read_text()
+        for name in (
+            "large_generated_mech_consumes_every_delta",
+            "large_mixed_documents_consume_every_delta",
+            "large_unfinished_tokens_and_late_selection_consume_every_delta",
+            "large_executable_fences_consume_every_delta",
+            "large_malformed_tails_consume_every_delta",
+            "large_settled_prefix_does_not_increase_small_append_work",
+        ):
+            original = f"#[test]\nfn {name}"
+            for disabled in (
+                "#[ignore]", '#[ignore = "slow"]', "#[cfg(any())]",
+                "#[cfg_attr(all(), ignore)]", "#[cfg_attr(all(), cfg(any()))]",
+            ):
+                for attributes in (f"{disabled}\n#[test]", f"#[test]\n{disabled}"):
+                    with self.subTest(name=name, attributes=attributes):
+                        mutated = source.replace(original, f"{attributes}\nfn {name}", 1)
+                        self.assertNotEqual(mutated, source)
+                        with self.assertRaises(AssertionError):
+                            self._assert_retained_syntax_stress_settings(mutated)
+        for disabled in (
+            "#![cfg(any())]\n" + source,
+            "#[cfg(any())]\nmod hidden {\n" + source + "\n}\n",
+        ):
+            with self.assertRaises(AssertionError):
+                self._assert_retained_syntax_stress_settings(disabled)
 
     def test_full_source_profile_is_bounded_and_independent(self):
         profile = job_block(CI, "full-source-profile")
