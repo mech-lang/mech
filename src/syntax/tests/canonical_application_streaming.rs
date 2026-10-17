@@ -22,6 +22,7 @@ const FIXTURES: &[&str] = &[
     "text := \"é👩‍👧é\"\ntext |> apply\n",
     "table/join((|a<u8> l<u8>|1u8 7u8|2u8 8u8|), (|a<u8> r<u8>|1u8 9u8|3u8 10u8|))\n",
     "x := (|a<f64> b<bool>|signal<f64> true|9 false|)\n",
+    "x := |a<[u64]>|[1u64]|[2u64]|\n",
 ];
 fn parse(text: &str, config: ParseConfig) -> SyntaxSnapshot {
     parse_canonical_document(

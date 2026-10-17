@@ -102,6 +102,23 @@ fn bracketed_counts_reuse_matrix_expressions_and_keep_stage_order() {
         assert_eq!(body.stages()[1].count(), Ok(None));
     }
 }
+
+#[test]
+fn bracketed_counts_do_not_capture_matrix_table_rows() {
+    for text in [
+        "|a<[u64]>|[1u64]|[2u64]|",
+        "|a<[u64]>|[1u64 2u64]|[3u64 4u64]|",
+        "(|a<[u64]>|[1u64]|[2u64]|) |> next",
+    ] {
+        let parsed = expression(text);
+        assert!(find(parsed.syntax(), SyntaxKind::Table).is_some(), "{text}");
+        assert!(
+            find(parsed.syntax(), SyntaxKind::ApplicationOperator)
+                .is_none_or(|node| node.text().unwrap() == "|>"),
+            "{text}"
+        );
+    }
+}
 #[test]
 fn grouped_complete_expression_retains_match_and_application_owners() {
     let value = expression("(flag ? | true => 1u64 | false => 2u64) |> next");
