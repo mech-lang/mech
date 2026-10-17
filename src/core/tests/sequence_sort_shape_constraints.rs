@@ -40,13 +40,17 @@ fn resolve(
     primary: ResolvedType,
     secondary: ResolvedType,
 ) -> Result<ResolvedOverload, TypeResolutionError> {
-    let declaration = maintained_source_type_declaration("sequence/sort-indices").unwrap();
-    let candidates = declaration
-        .overloads
+    // Shape solving is storage-blind and must run in the minimal core profile,
+    // without requiring the optional function catalog wrapper.
+    let schemes = maintained_source_schemes("sequence/sort-indices")
+        .unwrap()
+        .unwrap();
+    let candidates = schemes
         .iter()
-        .map(|overload| TypeOverloadCandidate {
-            id: u64::from(overload.id),
-            scheme: &overload.scheme,
+        .enumerate()
+        .map(|(id, scheme)| TypeOverloadCandidate {
+            id: id as u64,
+            scheme,
         })
         .collect::<Vec<_>>();
     resolve_type_overloads(

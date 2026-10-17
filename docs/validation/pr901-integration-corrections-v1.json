@@ -25,6 +25,16 @@
   ],
   "corrections": [
     {
+      "area": "minimal core sort-shape regression profile",
+      "source_commit_exposing_failure": "464abb5ff3b019eeb13ed0689f82cad4421ccc2f",
+      "ci_run": 39036311908,
+      "ci_job": 117413907101,
+      "cause": "The complete minimal mech-core suite cannot compile sequence_sort_shape_constraints because its helper calls maintained_source_type_declaration, which belongs to the optional functions catalog module.",
+      "implementation": "Read the same maintained sequence/sort-indices KindSchemes directly from the always-available storage-blind type-system registry. Preserve every live/fixed shape, empty product, rejection, identity-conversion and one-based Index result assertion. Do not gate or skip these tests, enable extra production features, or change the implementation being tested.",
+      "precommit_validation": "The complete minimal mech-core suite passes. With functions enabled, both sort-shape tests and all 26 type-system catalog tests pass. Fresh exact-head review and CI remain required.",
+      "local_watcher_boundary": "The preceding local runtime-owner run on 464abb5ff3b019eeb13ed0689f82cad4421ccc2f stopped at the filesystem wake-up test under the filesystem sandbox (815 passed, one failed). The exact unchanged test binary passes ten consecutive runs outside that sandbox, each within 0.1 seconds. Treat the sandboxed attempt as failed environment-limited evidence, not a production watcher correction or a passing full-owner receipt; run filesystem-dependent qualification with the required access."
+    },
+    {
       "area": "full-suite profile and fixture follow-up after restored browser qualification",
       "source_commit_exposing_failures": "e7fb7f9f46160f2df03c6cd864e32839e24d8d82",
       "ci_run": 39015685289,
