@@ -55,6 +55,14 @@
       "area": "CI profile and diagnostic corrections",
       "implementation": "Remove the unused legacy U8 feature from the CLI provider's standard graph; preserve canonical byte Snapshots. Correct all ten fixture includes after relocating runtime program tests. Handle MemoryPlan/ResourceAdmission and typed kernel resource failures in resident recording without discarding resource-limit details. Update authority and mutation guards to inspect the actual selected-binding and canonical schema-identity paths rather than obsolete wrapper text.",
       "gate_boundary": "No warning, module-layout, schema-identity, bound-call retention or native-evidence gate is disabled. The optional canonical-native inspection helper has a narrowly reasoned, expiring warning-ledger entry. Parser conformance checks feature-enabled acceptance and explicit disabled-feature rejection."
+    },
+    {
+      "area": "post-restack CI repair",
+      "cause": "Runtime activation diagnostics still formatted the old numeric count after IterationCount gained Literal/Elements forms, blocking native, browser, Windows and source-profile consumers. The full-feature activation test helper also omitted the new Iteration node variant. Parent test selection landed in the canonical job but missed native-hosted; an adjacency assertion and composite mutation fixture retained obsolete text. The canonical match guard could mistake scrutinee finalization for result-identity finalization.",
+      "implementation": "Describe literal and element-wise counts explicitly, with tests preserving exact literal diagnostics and identifying count inputs. Keep the simple activation fixture exhaustive by explicitly rejecting Iteration. Select native_source_admission in both required application gates, checking targets independently of order. Match the actual canonical result-identity binding and prove unchecked or unused identities fail; retarget the composite mutation to remove admission before the current fixed/dynamic constructor branch.",
+      "distribution_evidence": "Fresh standard/full catalog probes on a6e1c22721dc88aee62e02ea187c87f31d667a30 each measure the already implemented ten runtime and nine source additions. Refresh only catalog counts and digests: standard 1709/79; full 15709/129. Packages, dependencies, selected hosts, root features and machine operations remain identical. Historical retained catalog projections and their independent exact-addition assertions stay enforced.",
+      "probe_logs": ["tmp/pr-stack-evidence/pr901-ci-standard-v1.json", "tmp/pr-stack-evidence/pr901-ci-full-v1.json"],
+      "qualification": "Targeted CI-selection and mutation regressions pass. Final immutable-source runtime/engine, complete affected contracts and linked qualification are still pending; this entry does not credit earlier receipts as final qualification."
     }
   ],
   "remaining_compatibility_accounting": {
