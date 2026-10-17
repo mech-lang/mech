@@ -1163,7 +1163,7 @@ jobs:
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu
           --no-default-features --features native-build,native-io
           --test native_host_io --test repeated_application
-          --test native_host_application -- --test-threads=1
+          --test native_host_application --test native_source_admission -- --test-threads=1
       - name: Qualify activated native launches with one linked executable
         timeout-minutes: 30
         env:
