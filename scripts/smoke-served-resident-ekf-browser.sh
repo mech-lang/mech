@@ -1508,6 +1508,20 @@ with BrowserCompletionServer() as completion:
             }
             if isinstance(progress_data, dict):
                 write_dataset_snapshot(dom_file, progress_data)
+        if not milestones.get("done"):
+            # A progress beacon describes an earlier successful turn, not the
+            # state which stopped the run. Capture the live error/oracle data
+            # when the renderer still answers; never treat it as qualification.
+            try:
+                live_dataset = browser.evaluate(
+                    "Object.fromEntries(Object.entries(document.documentElement.dataset))",
+                    timeout=5,
+                )
+                if isinstance(live_dataset, dict):
+                    milestones["failureDataset"] = live_dataset
+                    write_dataset_snapshot(dom_file, live_dataset)
+            except Exception as error:
+                milestones["failureSnapshotError"] = str(error)
         browser.close()
         with Path(chrome_log).open("ab") as log:
             log.write((

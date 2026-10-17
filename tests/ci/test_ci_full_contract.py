@@ -933,6 +933,9 @@ class FullWorkflowContractTests(unittest.TestCase):
             self.assertIn(milestone, EKF_BROWSER)
 
     def test_ekf_failure_diagnostics_are_not_numerical_evidence(self):
+        self.assertIn('milestones["failureDataset"] = live_dataset', EKF_BROWSER)
+        self.assertIn('write_dataset_snapshot(dom_file, live_dataset)', EKF_BROWSER)
+        self.assertIn('timeout=5,', EKF_BROWSER)
         for backend, label in (("cpu", "scalar"), ("wgpu", "WebGPU")):
             with self.subTest(backend=backend):
                 steps = job_steps(CI, f"browser-ekf-{backend}")
