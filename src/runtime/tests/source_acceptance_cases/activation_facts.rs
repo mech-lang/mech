@@ -2320,15 +2320,27 @@ fn snapshot_gather_preparation_cannot_publish_a_cross_schema_selector_fact() {
                 "resident preparation must refuse the cumulative demand"
             ),
             Err(ResidentActivationError::ActivationKernelExecution {
+                node,
                 error:
                     mech_core::ResidentKernelError::ResourceLimit {
                         phase: mech_core::ResidentResourcePhase::Admission,
-                        dimension: mech_core::MemoryBudgetDimension::TemporaryBytes,
-                        required,
-                        limit,
+                        dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                        required: 75_030,
+                        limit: 65_536,
                     },
-                ..
-            }) if required > limit && limit == mech_core::RESIDENT_MAX_BYTES => {}
+            }) => {
+                let operation = artifact
+                    .nodes()
+                    .iter()
+                    .find(|candidate| candidate.node == node)
+                    .unwrap();
+                assert!(
+                    matches!(&operation.body, mech_engine::ExecutableNodeBody::Operation(body)
+                    if body.operation.module_path.as_ref() == ["access".to_owned()]
+                        && body.operation.operation_name == "range"),
+                    "denial must belong to the gather producer: {operation:?}"
+                );
+            }
             Err(error) => panic!("unsupported preparation fixture: {error:?}"),
         }
     }
