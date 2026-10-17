@@ -12591,6 +12591,12 @@ fn slot_has_activation_fixed_shape(
             false
         }
         ProducerReference::NodeOutput { .. } => artifact.slot_shape_hint(slot).is_some(),
+        // A published constant keeps its immutable concrete geometry, even
+        // when its schema originated from a turn-shaped resource input.
+        ProducerReference::Output {
+            source: ArtifactSource::Constant(_),
+            ..
+        } => true,
         ProducerReference::Output {
             source: ArtifactSource::Slot(source),
             ..
@@ -15576,6 +15582,162 @@ mod shape_fact_tests {
         }
         assert!(accepted > 1);
         assert!(rejected, "reused child footprints must accumulate");
+    }
+
+    #[test]
+    fn constant_output_aliases_keep_concrete_turn_schema_layouts() {
+        for (element, data, kind) in [
+            (
+                SchemaBody::Bool,
+                ValueDataDraft::Bool(true),
+                ResidentValueKind::Bool,
+            ),
+            (
+                SchemaBody::Index,
+                ValueDataDraft::Index(2),
+                ResidentValueKind::Index,
+            ),
+            (
+                SchemaBody::FloatingPoint(FloatWidth::W64),
+                ValueDataDraft::F64(F64Bits::from_f64(42.0)),
+                ResidentValueKind::F64,
+            ),
+            (
+                SchemaBody::String,
+                ValueDataDraft::String("value".to_owned()),
+                ResidentValueKind::String,
+            ),
+        ] {
+            let mut schemas = SchemaTableBuilder::new();
+            let schema = schemas
+                .insert(
+                    SchemaDraft {
+                        dimension_parameters: (0..2)
+                            .map(|index| DimensionParameterDeclaration {
+                                id: DimensionParameterId::new(index),
+                                origin: DimensionParameterOrigin::Explicit,
+                                lifetime: DimensionLifetime::Turn,
+                                lower_bound: DimensionExpr::Constant(0),
+                                upper_bound: None,
+                            })
+                            .collect::<Vec<_>>()
+                            .into_boxed_slice(),
+                        body: SchemaBody::Matrix {
+                            element: Box::new(element),
+                            dimensions: (0..2)
+                                .map(|index| {
+                                    DimensionExpr::Parameter(DimensionParameterId::new(index))
+                                })
+                                .collect::<Vec<_>>()
+                                .into_boxed_slice(),
+                        },
+                    }
+                    .finalize()
+                    .unwrap(),
+                )
+                .unwrap();
+            let built = schemas.finish().unwrap();
+            let schema = built.resolve(schema).unwrap();
+            let (schemas, _) = built.into_parts();
+            let value = ValueDraft {
+                schema,
+                shape_values: vec![2, 3].into_boxed_slice(),
+                data: ValueDataDraft::Matrix(vec![data; 6].into_boxed_slice()),
+            }
+            .finalize(&SnapshotValidationContext::new(&schemas))
+            .unwrap();
+            let mut constants = ConstantStoreBuilder::new(&schemas);
+            let constant = constants.insert(value).unwrap();
+            let built = constants.finish().unwrap();
+            let constant = built.resolve(constant).unwrap();
+            let (constants, _) = built.into_parts();
+            let artifact = ProgramArtifactDraft {
+                schemas,
+                constants,
+                contracts: OperationContractTableBuilder::new()
+                    .finish()
+                    .unwrap()
+                    .into_parts()
+                    .0,
+                requirements: Default::default(),
+                inputs: Box::new([]),
+                slots: (0..2)
+                    .map(|index| SlotDeclaration {
+                        slot: CellSlotId::new(index),
+                        schema,
+                        role: SlotRole::Output,
+                        producer: ProducerReference::Output {
+                            source: if index == 0 {
+                                ArtifactSource::Constant(constant)
+                            } else {
+                                ArtifactSource::Slot(CellSlotId::new(0))
+                            },
+                            output: mech_core::OutputId::new(index),
+                        },
+                        initializer: (index == 0)
+                            .then_some(InitializerReference::Constant(constant)),
+                    })
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+                nodes: Box::new([]),
+                bindings: Box::new([]),
+                outputs: (0..2)
+                    .map(|index| crate::OutputDeclaration {
+                        output: mech_core::OutputId::new(index),
+                        name: format!("output-{index}"),
+                        interactive_binding: None,
+                        source: CellSlotId::new(index),
+                        schema,
+                    })
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+                constraints: Box::new([]),
+                compute_regions: Box::new([]),
+            }
+            .finalize()
+            .unwrap();
+            let decoded = crate::decode_program_artifact_bytecode_v1(
+                &crate::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+            )
+            .unwrap();
+            let catalog = mech_core::FunctionCatalogBuilder::new().build().unwrap();
+            for artifact in [&artifact, &decoded] {
+                let mut instance = activate(
+                    mech_core::ReactiveInstanceId::new(0x434f, 0),
+                    artifact,
+                    &catalog,
+                    &ActivationFacts::default(),
+                )
+                .unwrap();
+                for slot in &instance.plan.slots {
+                    assert!(slot.activation_fixed_shape);
+                    assert_eq!(slot.region.kind, kind);
+                    assert_eq!(
+                        slot.region.shape,
+                        ResidentShape {
+                            rows: 2,
+                            columns: 3
+                        }
+                    );
+                }
+                for _ in 0..2 {
+                    instance.turn(&[]).unwrap();
+                    for output in 0..2 {
+                        assert!(
+                            instance
+                                .copied_output(output)
+                                .unwrap()
+                                .snapshot_eq(
+                                    artifact.schemas(),
+                                    artifact.constants().get(constant).unwrap(),
+                                    artifact.schemas(),
+                                )
+                                .unwrap()
+                        );
+                    }
+                }
+            }
+        }
     }
 
     fn closed_dense_add_artifact(count: usize, parameterized_output: bool) -> ProgramArtifact {

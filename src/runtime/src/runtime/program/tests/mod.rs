@@ -8494,6 +8494,92 @@ fn canonical_mixed_shipped_ekf_region_compiles() {
     assert!(!mixed.compute.artifact.nodes().is_empty());
 }
 
+#[cfg(feature = "compute")]
+#[test]
+fn canonical_mixed_shipped_ekf_coordinator_compiles() {
+    #[derive(Debug)]
+    struct PlanningScene;
+
+    impl RuntimeResourceProvider for PlanningScene {
+        fn scheme(&self) -> &str {
+            "scene"
+        }
+
+        fn base_uris(&self) -> Vec<String> {
+            vec!["scene://localization/frame".to_owned()]
+        }
+
+        fn semantic_read_contract(&self) -> Option<&'static OperationContractDeclaration> {
+            Some(crate::resource_observation_contract())
+        }
+
+        fn semantic_write_contract(
+            &self,
+            intent: RuntimeResourceWriteIntent,
+        ) -> Option<&'static OperationContractDeclaration> {
+            (intent == RuntimeResourceWriteIntent::Send).then_some(&PRODUCT_SCENE_CONTRACT)
+        }
+
+        fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+            match request.path.as_str() {
+                "pointer-pulse" => RuntimeHostInputValue::F64(0.0).into_value(),
+                "pointer-position" => RuntimeHostInputValue::F64Matrix {
+                    rows: 2,
+                    columns: 1,
+                    values: vec![0.0; 2],
+                }
+                .into_value(),
+                other => panic!("unexpected scene read: {other}"),
+            }
+        }
+
+        fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
+            assert_eq!(request.path, "replace");
+            assert_eq!(request.intent, RuntimeResourceWriteIntent::Send);
+            Ok(())
+        }
+
+        fn plan_write(&self, request: RuntimeResourceWriteCommand) -> MResult<()> {
+            assert_eq!(request.path, "replace");
+            Ok(())
+        }
+
+        fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
+            panic!("compilation must not observe the live scene")
+        }
+
+        fn prepare_write(
+            &self,
+            _request: RuntimeResourceWriteRequest,
+        ) -> MResult<PreparedRuntimeEffect> {
+            panic!("compilation must not prepare a live scene effect")
+        }
+    }
+
+    let shipped = include_str!("../../../../../../examples/ekf/localization.mec");
+    assert_eq!(shipped.matches("  filter-count := 1000.0").count(), 1);
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .resource_provider(Box::new(ProductTimerProvider))
+        .resource_provider(Box::new(PlanningScene))
+        .build_compiler()
+        .unwrap();
+    for filter_count in [1, 1000] {
+        let source = shipped.replacen(
+            "  filter-count := 1000.0",
+            &format!("  filter-count := {filter_count}.0"),
+            1,
+        );
+        let mixed = compiler
+            .compile_mixed_source(&source)
+            .unwrap_or_else(|error| {
+                panic!("EKF coordinator with {filter_count} filters: {error:?}")
+            });
+        assert_eq!(mixed.compute.declaration.name.as_ref(), "ekf-batch");
+        assert_eq!(mixed.activation_inputs.len(), 3);
+    }
+}
+
 #[test]
 fn canonical_document_function_imports_use_catalog_exports() {
     let mut compiler = RuntimeBuilder::new()
