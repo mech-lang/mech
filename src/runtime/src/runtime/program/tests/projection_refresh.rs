@@ -545,11 +545,19 @@ fn anonymous_state_migration_rejects_asymmetric_ambiguity_in_every_declaration_o
                         .unwrap();
                     assert_eq!(states(&candidate), vec![2.0; new_count]);
                     assert_eq!(
+                        canonical_f64(candidate.program_output_value().unwrap().unwrap().value()),
+                        if new_count == 1 { 2.0 } else { 0.0 },
+                    );
+                    assert_eq!(
                         resident_parts(&candidate).1.published_epoch(),
                         candidate_epoch
                     );
                     candidate.step_active_program().unwrap();
                     assert_eq!(states(&candidate), vec![3.0; new_count]);
+                    assert_eq!(
+                        canonical_f64(candidate.program_output_value().unwrap().unwrap().value()),
+                        if new_count == 1 { 3.0 } else { 0.0 },
+                    );
                     assert_eq!(states(&previous), vec![4.0; old_count]);
                     assert_eq!(resident_parts(&previous).1.published_epoch(), old_epoch);
                     assert_eq!(resident_parts(&previous).1.published_state_hash(), old_hash);

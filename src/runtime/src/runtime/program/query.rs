@@ -227,7 +227,7 @@ impl MechRuntime {
     ) -> MResult<Vec<(String, RuntimeValueSnapshot)>> {
         #[cfg(feature = "resident-routing")]
         if self.resident_artifact_and_instance().is_some() {
-            return self.resident_symbol_values(names.iter().map(String::as_str));
+            return self.resident_symbol_values(names.iter().map(String::as_str), false);
         }
         Ok(Vec::new())
     }
@@ -243,7 +243,7 @@ impl MechRuntime {
                 return Err(missing_resident_symbol("root_symbol_value", name));
             }
             return self
-                .resident_symbol_values(std::iter::once(name))?
+                .resident_symbol_values(std::iter::once(name), false)?
                 .pop()
                 .map(|(_, value)| value)
                 .ok_or_else(|| {
