@@ -27,8 +27,9 @@
     {
       "area": "asymmetric anonymous migration, unpublished bulk inspection and bounded CI inventory",
       "reviewed_source_commits": ["b70ca31cd5f2c176ac92c6796b75d9796ceb3855", "63544b972944f7b0b36e21abbb467b8c5af818a9"],
-      "runtime_fix_commits": ["baa157d2e", "2dcf376c26e87e73d837474c223262ab3c4b0938", "78698d980e0917e81f938c22ee7d7befc4cc96c2"],
+      "runtime_fix_commits": ["baa157d2e", "2dcf376c26e87e73d837474c223262ab3c4b0938", "78698d980e0917e81f938c22ee7d7befc4cc96c2", "9e7e227a48b54a7ab0f873a3930c877fa7a255e4", "392a96e2e8e717650273d99a5ae5df11a88029f0"],
       "inventory_fix_commit": "6bdf60fe5958b135ee26f7384d525f6a04210bb1",
+      "inventory_alias_followup": "388f13b735c35759e3e8cc79863ce527954a030c",
       "browser_fixture_followup": "f5d89c9ba",
       "review_comments": [4304589400, 4304589404, 4304589405, 4304589408, 4304589411, 4304589412, 4304589417],
       "anonymous_migration": "Compute eligible anonymous source/target relationships before consuming either end. Only degree-one pairs in both directions migrate, in fixed-point batches against unchanged compatibility evidence. Keep exact-revision, named-state and unique anonymous matches. Retain O(states) candidate/degree storage rather than allocating every compatible edge. Source/decoded regressions cover one-old/two-new, two-old/one-new, both declaration orders and both assignment orders, actual candidate state/output defaults, unchanged previous hash/epoch and the next real turn.",
@@ -37,14 +38,33 @@
       "cargo_inventory": "Parse a bounded option grammar and reject unknown, output-only/unit-graph, unstable and configuration-override modes. A manifest path must be the literal reviewed root Cargo.toml. Retain package exclusions and prevent excluded packages from owning targets. Preserve custom-harness metadata and reject harness=false as ordinary #[test] execution evidence. Composite run steps require explicit supported shells; an invalid composite cannot own any of its steps. These are conservative target/profile checks, not arbitrary Python/shell/host execution attestation or exhaustive platform/declaration coverage.",
       "prior_two_notes": "The supplied rereview's shell hash remapping and unused/input-inapplicable composite findings were already fixed after b70 in20239a4d8 and strengthened by f055793ce. Preserve their direct/recorded/generator, disabled/allowed-failure caller, nested-action and effective engine/hosted input regressions; do not reopen those old defects by replacing current files with the older review source.",
       "qualification": {
-        "source_commit": "2dcf376c26e87e73d837474c223262ab3c4b0938",
-        "status": "IN_PROGRESS",
-        "passed": "All139 CI contracts (including38 inventory methods), six sharder tests and formatting pass on exact clean source; runtime units and source acceptance remain pending.",
-        "ci_log": "tmp/pr-stack-evidence/review-v119-ci-contracts.log",
-        "runtime_log": "tmp/pr-stack-evidence/review-v119-runtime-units.log",
-        "failed_attempt": "v118 passes139 CI contracts, six sharder tests and formatting, then fails Rust compilation at two missing strict-query arguments. v119 includes their explicit strict behavior. The failed log remains failed evidence, not qualification."
+        "source_commit": "392a96e2e8e717650273d99a5ae5df11a88029f0",
+        "status": "SCOPED_RUNTIME_AND_SOURCE_ACCEPTANCE_PASSED_NOT_FULL_QUALIFICATION",
+        "passed": "All832 runtime unit methods and61 source-acceptance cases pass with none ignored or filtered. All139 CI contracts (including38 inventory methods), six sharder tests and formatting also pass on this exact clean source. The last CI-only alias follow-up has separate qualification; these results do not establish browser, linked-executable, all-owner or full-CI success.",
+        "command_profile": "Pinned nightly-2026-03-03, locked/offline, jobs1, no-default-features and full_compiler,full_source,resident-routing-source,resident_external_test_support,resident_ekf_benchmarks,compute; test optimization0, debug0, assertions/overflow checks true, incremental0, one test thread. Source identity and cleanliness checked before and after each phase.",
+        "ci_log": "tmp/pr-stack-evidence/review-v121-ci-contracts.log",
+        "ci_log_sha256": "3b9f1cb107224fa76065f905198c3675f8cc05f0c185a7af8b3f09091ac87a74",
+        "runtime_log": "tmp/pr-stack-evidence/review-v121-runtime-units.log",
+        "runtime_log_sha256": "74e1ebfe25a6d5c87e546e64450a21b8228da17c0550df35dd9b32abeb86d760",
+        "source_acceptance_log": "tmp/pr-stack-evidence/review-v121-source-acceptance.log",
+        "source_acceptance_log_sha256": "420a987e162cfa56b3d4fe2e62584df33531771f452c9f2c5cbc9d16d399da91",
+        "failed_attempts": [
+          "v118 passes139 CI contracts, six sharder tests and formatting, then fails Rust compilation at two missing strict-query arguments;2dcf376c2 supplies the intended strict behavior.",
+          "v119 on2dcf376c2 completes832 runtime units with831 passing and one newly added post-clear epoch assertion failing; source acceptance is not reached. Clearing the last observation activates a new pure program at epoch1, not the retired external program epoch0.9e7e227a4 checks inspection against the post-clear program's epoch, retains the original before-clear unchanged-epoch/zero-provider-read assertions and all before/after publication checks. All13 migration/replacement methods already passed. The failed runtime log SHA256 is03027a3a92e50f5972b333ea413ea3153ab21c776fe611ae0d79e3492f66ffff."
+        ]
       },
-      "source_scope": "v119 is pinned to2dcf376c2. The later browser constant fixture and O(states) candidate storage/docs changes require their own final-head checks; do not relabel the pinned results as their qualification.",
+      "source_scope": "v121 is pinned to392a96e2e and includes the final bounded migration implementation and bulk inspection fixtures. Subsequent changes are confined to CI inventory/regressions and documentation; Rust/manifest/lock identity must be verified before relying on the scoped runtime receipt. Final-head complete CI and all other qualification remain mandatory.",
+      "ci_alias_qualification": {
+        "source_commit": "388f13b735c35759e3e8cc79863ce527954a030c",
+        "result": "PASS all139 CI contracts (38 inventory methods), six sharder tests, formatting and seven production guards: value execution boundary, warnings, type/semantic authority, memory runtime/planner and module layout. Exact clean source checked before and after every phase. Real maintained generators and the complete repository target inventory remain covered.",
+        "additional_alias_cases": "Container insertion, annotated insertion, augmented containers, expression-level binding, destructuring and repeated helper calls cannot expose an untracked mutable alias while retaining command credit. Unknown values remain conservative; unrelated environment dictionary updates remain positive fixtures.",
+        "ci_log": "tmp/pr-stack-evidence/review-v122-ci-contracts.log",
+        "ci_log_sha256": "1783913d60c58bf1d9a131051b7e6a2230e805591097b862c27e1df202316222",
+        "sharder_log": "tmp/pr-stack-evidence/review-v122-sharder.log",
+        "sharder_log_sha256": "947d23b396608b81ca81d8393583d64604b349c19e902a4e523c71062c835c10",
+        "guard_logs": "tmp/pr-stack-evidence/review-v122-{formatting,value-boundary,warnings,type-authority,semantic-authority,memory-runtime,memory-planner,module-layout}.log",
+        "rust_scope": "git diff392a96e2e..388f13b73 for all Rust source, Cargo manifests and Cargo.lock is empty. Scoped832-unit/61-source results remain attributed to392a96e2e, not relabeled as new native/browser/full-CI execution."
+      },
       "recoverable_cache": "Three inactive generated libraries in the separate repair checkout were gzip CRC/uncompressed-SHA256 verified before removing their exact cache originals to make build space. Source, raw logs and linked application evidence are untouched. Archives and per-file hashes remain in tmp/pr-stack-evidence/review-v120-inactive-repair-cache/ and its .log.",
       "remaining": "Finish final-source runtime/owner/application/browser gates, all five actual linked routes with nonempty selection and evidence, exact-head clean review and entirely green CI. The zero-count Snapshot retained-node concern is not a confirmed defect: retain an exact-limit behavioral follow-up, and change production accounting only if a supported case establishes a failure. Keep PR901 draft and unmerged until explicit user approval; no new benchmark credit."
     },
