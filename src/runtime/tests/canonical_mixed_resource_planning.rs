@@ -118,7 +118,11 @@ fn canonical_mixed_sample_shapes_survive_bytecode() {
             assert_eq!(
                 actual
                     .instantiate_shape(
-                        sample.shape().parameter_values().to_vec().into_boxed_slice(),
+                        sample
+                            .shape()
+                            .parameter_values()
+                            .to_vec()
+                            .into_boxed_slice(),
                     )
                     .unwrap(),
                 *sample.shape()
