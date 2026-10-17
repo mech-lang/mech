@@ -164,6 +164,11 @@ impl ParsedSource {
 
     fn matrix_syntax(&self, catalog: Catalog) -> Result<SyntaxNode, String> {
         let imports = ports::SourceBindings::collect(&self.syntax, catalog)?;
+        if self.counted_application
+            && imports.resolve_name("sequence/iterate") != "sequence/iterate"
+        {
+            return Err("counted applications cannot coexist with an import alias named sequence/iterate; rename that alias to avoid shadowing the iteration intrinsic".into());
+        }
         let source = imports.canonical_calls(&self.source, &self.syntax)?;
         let syntax = if source == self.source {
             self.syntax.clone()

@@ -617,6 +617,21 @@ mod tests {
     }
 
     #[test]
+    fn counted_intrinsic_cannot_be_captured_by_an_import_alias() {
+        let source = "+> sequence/iterate := math/sqrt\nstep(x<f64>) => <f64> := x + 1.0\nr := 2.0 |1> step\n";
+        let parsed = ParsedSource::parse(source).unwrap();
+        let error = parsed.matrix_syntax(CATALOG).err().unwrap();
+        assert!(
+            error.contains("import alias named sequence/iterate"),
+            "{error}"
+        );
+        // With no generated counted call, the explicit alias retains normal
+        // catalog resolution rather than becoming a permanently reserved name.
+        let ordinary = "+> sequence/iterate := math/sqrt\nr := 9.0 |> sequence/iterate(_)\n";
+        assert!(compile(ordinary).is_ok());
+    }
+
+    #[test]
     fn ports_fail_closed_on_unbound_dynamic_wrong_direction_or_legacy_routes() {
         for source in [
             "n := number/parse-u64(@missing/1)\n",
