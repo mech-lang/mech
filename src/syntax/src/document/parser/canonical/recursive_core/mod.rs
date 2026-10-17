@@ -213,9 +213,8 @@ pub(crate) fn supports(rule: RuleId) -> bool {
 pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Option<Attempt> {
     let result = match rule {
         rules::APPLICATION_EXPRESSION => expressions::parse_application_expression(parser),
-        rules::APPLICATION_OPERATOR | rules::APPLICATION_STAGE => {
-            precedence::parse_application_support(parser, rule)
-        }
+        rules::APPLICATION_OPERATOR => precedence::parse_application_operator(parser),
+        rules::APPLICATION_STAGE => precedence::parse_application_stage(parser),
         rules::ARGUMENT_LIST => calls::parse_argument_list(parser),
         rules::BINDING => structures::parse_binding(parser),
         rules::BRACE_SUBSCRIPT => subscripts::parse_brace_subscript(parser),

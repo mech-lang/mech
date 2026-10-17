@@ -656,7 +656,7 @@ fn recursive_core_has_exact_parser_typed_views_and_executable_registry() {
 }
 
 #[test]
-fn recursive_dispatcher_and_production_functions_are_exactly_the_frozen_eighty() {
+fn recursive_dispatcher_and_production_functions_match_the_certified_inventory() {
     let root = repository_root();
     let parser_directory = root.join("src/syntax/src/document/parser/canonical/recursive_core");
     let expected_functions = component_report()
