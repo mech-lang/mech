@@ -367,6 +367,31 @@ fn bar_starts_match_arm(code: &str, start: usize) -> bool {
     false
 }
 
+// Locate one possible row boundary. The canonical probe below validates it;
+// projections, outer closers and following stages must not enter that probe.
+fn table_row_end(code: &str, start: usize) -> Option<usize> {
+    let bytes = code.as_bytes();
+    let mut delimiters = Vec::new();
+    for index in start + 1..bytes.len() {
+        match bytes[index] {
+            b'(' | b'[' | b'{' => delimiters.push(bytes[index]),
+            b')' | b']' | b'}' => {
+                delimiters.pop()?;
+            }
+            b'|' if delimiters.is_empty()
+                && bytes.get(index + 1) != Some(&b'|')
+                && bytes[index - 1] != b'|'
+                && !bar_starts_match_arm(code, index) =>
+            {
+                return Some(index + 1);
+            }
+            b'\n' | b'\r' | b';' if delimiters.is_empty() => return None,
+            _ => {}
+        }
+    }
+    None
+}
+
 /// Collect table separators in a forward pass. Header candidates slide over
 /// disjoint intervals; rows are checked independently, never by reparsing an
 /// ever-growing table prefix. The canonical parser owns both decisions.
@@ -409,19 +434,20 @@ fn table_bar_offsets(code: &str) -> Vec<usize> {
                 let context = contexts.last_mut().unwrap();
                 if let Some(start) = context.row_start.take() {
                     let leading = code[start..index].trim().is_empty();
-                    let row = code[index..].split(['\n', '\r']).next().unwrap();
                     // Ordinary leading separators are cheap. Only a row
                     // which looks like a pipe needs an independent canonical
                     // row probe, not a growing multi-row table prefix.
                     let regular_row = leading
-                        && (matches!(pipe_at(code, index), Ok(None)) || {
-                            let table = format!("|application-cell<u64>|\n{row}");
-                            canonical_fragment(
-                                &format!("application-table := {table}\n"),
-                                mech_syntax::document::SyntaxKind::Table,
-                                &table,
-                            )
-                        });
+                        && (matches!(pipe_at(code, index), Ok(None))
+                            || table_row_end(code, index).is_some_and(|end| {
+                                let row = &code[index..end];
+                                let table = format!("|application-cell<u64>|\n{row}");
+                                canonical_fragment(
+                                    &format!("application-table := {table}\n"),
+                                    mech_syntax::document::SyntaxKind::Table,
+                                    &table,
+                                )
+                            }));
                     if regular_row {
                         offsets.push(index);
                         context.first_bar = Some(index);
@@ -1339,6 +1365,7 @@ mod tests {
             "x := |a<bool>|\n|1>limit|",
             "x := |a<bool>|\n  |1>limit|\n  |0>limit|",
             "x := |a<bool>|\r\n|1>limit|",
+            "x := (|a<bool>|\n|1>limit|).a",
             "x := value ? |1>limit ⇒ 1 | * ⇒ 0",
         ] {
             let source = format!("limit := 2\n{binding}\n");
@@ -1353,7 +1380,7 @@ mod tests {
             assert_eq!(normalize(&source).unwrap(), source);
             // An unrelated real pipeline forces the document normalization
             // pass, so its continuation classifier must use the same owners.
-            let program = format!("inc(x<f64>) => <f64> := x + 1.0\n{source}r := 2.0 |1> inc\n");
+            let program = format!("inc(x<f64>) => <f64> := x + 1.0\nr := 2.0 |1> inc\n{source}");
             let normalized = normalize(&program).unwrap();
             assert!(normalized.contains(binding), "{normalized}");
             assert_eq!(normalized.matches("sequence/iterate").count(), 1);
