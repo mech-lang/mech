@@ -1365,7 +1365,7 @@ mod tests {
     fn unannotated_table_kinds_are_not_unannotated_table_literals() {
         assert!(canonical_fragment(
             "value<|a|>\n",
-            mech_syntax::document::SyntaxKind::KindTable,
+            mech_syntax::document::SyntaxKind::TableKind,
             "|a|",
         ));
         for binding in ["x := |a|1>limit|", "x := |a|\n|1>limit|"] {
