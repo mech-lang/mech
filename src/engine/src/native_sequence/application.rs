@@ -463,11 +463,16 @@ fn table_bar_offsets(code: &str) -> Vec<usize> {
                     if let Some(start) = context.first_bar {
                         let header = code[start + 1..index].trim();
                         let table = format!("|{header}| 0 |");
-                        context.in_table = canonical_fragment(
-                            &format!("application-table := {table}\n"),
-                            mech_syntax::document::SyntaxKind::Table,
-                            &table,
-                        );
+                        // A literal header requires a kind annotation. Bare
+                        // fields belong to table *kinds*, not table literals.
+                        // Keep prose bar pairs off the canonical probe path.
+                        context.in_table = header.contains('<')
+                            && header.contains('>')
+                            && canonical_fragment(
+                                &format!("application-table := {table}\n"),
+                                mech_syntax::document::SyntaxKind::Table,
+                                &table,
+                            );
                     }
                     // Failed headers must not hide a later genuine table in
                     // this context (including after a boolean OR expression).
@@ -1329,11 +1334,10 @@ mod tests {
     }
 
     #[test]
-    fn canonical_regular_unannotated_tables_and_unicode_arms_keep_their_bars() {
+    fn canonical_regular_tables_and_unicode_arms_keep_their_bars() {
         for binding in [
             "x := |a<bool>|\n|1>limit|",
-            "x := |a|1>limit|",
-            "x := |a|\n  |1>limit|\n  |0>limit|",
+            "x := |a<bool>|\n  |1>limit|\n  |0>limit|",
             "x := |a<bool>|\r\n|1>limit|",
             "x := value ? |1>limit ⇒ 1 | * ⇒ 0",
         ] {
@@ -1354,6 +1358,25 @@ mod tests {
             assert!(normalized.contains(binding), "{normalized}");
             assert_eq!(normalized.matches("sequence/iterate").count(), 1);
             super::super::ParsedSource::parse(&program).unwrap();
+        }
+    }
+
+    #[test]
+    fn unannotated_table_kinds_are_not_unannotated_table_literals() {
+        assert!(canonical_fragment(
+            "value<|a|>\n",
+            mech_syntax::document::SyntaxKind::KindTable,
+            "|a|",
+        ));
+        for binding in ["x := |a|1>limit|", "x := |a|\n|1>limit|"] {
+            assert!(
+                !canonical_fragment(
+                    &format!("limit := 2\n{binding}\n"),
+                    mech_syntax::document::SyntaxKind::VariableDefine,
+                    binding,
+                ),
+                "a table kind must not widen the literal grammar: {binding}"
+            );
         }
     }
 
