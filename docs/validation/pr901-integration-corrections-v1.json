@@ -25,6 +25,13 @@
   ],
   "corrections": [
     {
+      "area": "isolated resident-source admission expectations",
+      "source_commit_exposing_failures": "60b8f753f3ee3f9cf024af8449405f0a5b9e5c3e",
+      "discovery": "Proactively execute the isolated full_source,resident-artifact stages that follow the earlier core compilation failure in Cargo language CI. The table-join and composite-memory refusals still expect generic InvalidShape despite the retained typed resource-limit implementation.",
+      "implementation": "Require exact node-zero Admission/ComparisonWork refusals: table join requires 65538 against 65536; the original large composite String requires 8388676 against 65536. Preserve the original 300-by-300 join and half-byte-cap String inputs, global limits, publication/schema/shape/value checks and recovery. Exercise both original and decoded join artifacts, assert the actual one-row baseline and unchanged publication epoch on failure, and retain original/decoded composite coverage with exact baseline data and unchanged epoch. Do not restore generic errors or change production accounting.",
+      "precommit_validation": "All 10 collection and 21 structure integration cases pass after both corrections, along with 33 isolated source-frontend and 146 resident-numeric unit cases. Earlier complete target attempts retain their actual failures rather than being relabeled passing. Fresh exact-head qualification, review and CI remain required."
+    },
+    {
       "area": "minimal core sort-shape regression profile",
       "source_commit_exposing_failure": "464abb5ff3b019eeb13ed0689f82cad4421ccc2f",
       "ci_run": 39036311908,
